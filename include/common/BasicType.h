@@ -1,5 +1,5 @@
-#ifndef BASICTYPE
-#define BASICTYPE
+#ifndef BASIC_TYPE_H
+#define BASIC_TYPE_H
 
 #include <numbers>
 #include <random> 
@@ -12,7 +12,9 @@
 
 #define MATH_PI std::numbers::pi
 
-static thread_local std::mt19937 RANDOM_ENGINE(std::random_device{}());
-static std::uniform_real_distribution<double> DIST(0.0, 1.0);
+static std::random_device rd;
+static std::mt19937 RANDOM_ENGINE(rd());
+static std::uniform_int_distribution<uint32_t> DIST_UINT(0, 0xFFFFFFFF);
+static std::uniform_real_distribution<HIGH_PRECISION> DIST_DOUBLE(0.0, 1.0);
 
 #endif

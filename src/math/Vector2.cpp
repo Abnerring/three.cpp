@@ -357,8 +357,8 @@ void Vector2::rotateAround(const Vector2 &center, float angle)
 
 void Vector2::random()
 {
-    m_x = DIST(RANDOM_ENGINE);
-    m_y = DIST(RANDOM_ENGINE);
+    m_x = DIST_DOUBLE(RANDOM_ENGINE);
+    m_y = DIST_DOUBLE(RANDOM_ENGINE);
 }
 
 Vector2 Vector2::operator+(const Vector2 &v) const

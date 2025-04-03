@@ -9,5 +9,6 @@ set(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/bin)
 include_directories(include)
 add_executable(THREECPP 
     src/main.cpp
+    src/math/MathUtils.cpp
     src/math/Vector2.cpp
 )
