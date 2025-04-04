@@ -8,7 +8,7 @@ int main()
     {
         std::cout << "CREAT UUID " + std::to_string(i) + " :" <<  MathUtils::generateUUID() << std::endl;
 
-        std::cout << "randInt " + std::to_string(i) + " :" << MathUtils::randInt(100, 1000) << std::endl;
+        std::cout << "seededRandom " + std::to_string(i) + " :" << MathUtils::seededRandom() << std::endl;
     }
 
     std::cout << "Hello, THREE.CPP!" << std::endl;

@@ -1,7 +1,6 @@
 #include "math/MathUtils.h"
 #include <vector>
 #include <cstdint>
-#include <algorithm>
 
 namespace MathUtils
 {
@@ -44,10 +43,10 @@ namespace MathUtils
 
             _lut[d1 & 0xFF] +
             _lut[(d1 >> 8) & 0xFF] + '-' +
-            _lut[((d1 >> 16) & 0x0F) | 0x40] + // 添加版本号4
+            _lut[((d1 >> 16) & 0x0F) | 0x40] +
             _lut[(d1 >> 24) & 0xFF] + '-' +
 
-            _lut[(d2 & 0x3F) | 0x80] + // 添加变体标识
+            _lut[(d2 & 0x3F) | 0x80] +
             _lut[(d2 >> 8) & 0xFF] + '-' +
 
             _lut[(d2 >> 16) & 0xFF] +
@@ -162,4 +161,38 @@ namespace MathUtils
     {
         return range * (0.5 - (float)DIST_DOUBLE(RANDOM_ENGINE));
     }
+
+    // Deterministic pseudo-random float in the interval [ 0, 1 ]
+    float seededRandom()
+    {
+        return (float)DIST_DOUBLE(RANDOM_ENGINE);
+    }
+
+    float degToRad(float degrees)
+    {
+        return degrees * DEG2RAD;
+    }
+
+    float radToDeg(float radians)
+    {
+        return radians * RAD2DEG;
+    }
+
+    bool isPowerOfTwo(int value)
+    {
+        return (value & (value - 1)) == 0 && value != 0;
+    }
+
+    HIGH_PRECISION ceilPowerOfTwo(HIGH_PRECISION value)
+    {
+        return std::pow(2, std::ceil(std::log(value) / M_LN2));
+    }
+
+    HIGH_PRECISION floorPowerOfTwo(HIGH_PRECISION value)
+    {
+        return std::pow(2, std::floor(std::log(value) / M_LN2));
+    }
+
+    //TODO:
+    // function setQuaternionFromProperEuler( q, a, b, c, order )
 }
