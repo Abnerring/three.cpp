@@ -1,4 +1,5 @@
 #include "math/Vector2.h"
+#include "math/Matrix3.h"
 #include <algorithm>
 #include <cmath>
 #include <stdexcept>
@@ -165,6 +166,15 @@ void Vector2::divide(const Vector2 &v)
 void Vector2::divideScalar(HIGH_PRECISION scalar)
 {
     multiplyScalar(1 / scalar);
+}
+
+void Vector2::applyMatrix3(const Matrix3 &m)
+{
+    auto& x = m_x, y = m_y;
+    auto e = m.elements();
+
+    m_x = e[0] * x + e[3] * y + e[6];
+    m_y = e[1] * x + e[4] * y + e[7];
 }
 
 void Vector2::min(const Vector2 &v)
@@ -361,22 +371,22 @@ void Vector2::random()
     m_y = DIST_DOUBLE(RANDOM_ENGINE);
 }
 
-Vector2 Vector2::operator+(const Vector2 &v) const
+Vector2 Vector2::operator+(const Vector2 &v)
 {
     return Vector2(m_x + v.x(), m_y + v.y());
 }
 
-Vector2 Vector2::operator-(const Vector2 &v) const
+Vector2 Vector2::operator-(const Vector2 &v)
 {
     return Vector2(m_x - v.x(), m_y - v.y());
 }
 
-Vector2 Vector2::operator*(const Vector2 &v) const
+Vector2 Vector2::operator*(const Vector2 &v)
 {
     return Vector2(m_x * v.x(), m_y * v.y());
 }
 
-Vector2 Vector2::operator/(const Vector2 &v) const
+Vector2 Vector2::operator/(const Vector2 &v)
 {
     return Vector2(m_x / v.x(), m_y / v.y());
 }

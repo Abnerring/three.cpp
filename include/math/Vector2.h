@@ -4,6 +4,8 @@
 #include "common/BasicType.h"
 #include <vector>
 
+class Matrix3;
+
 class Vector2
 {
 public:
@@ -41,8 +43,7 @@ public:
     void multiplyScalar(HIGH_PRECISION scalar);
     void divide(const Vector2 &v);
     void divideScalar(HIGH_PRECISION scalar);
-    // TODO : Add function
-    // void applyMatrix3(m);
+    void applyMatrix3(const Matrix3 &m);
     void min(const Vector2 &v);
     void max(const Vector2 &v);
     void clamp(const Vector2 &min, const Vector2 &max);
@@ -76,10 +77,10 @@ public:
     void rotateAround(const Vector2& center, float angle); 
     void random();
 public:
-    Vector2 operator+(const Vector2 &v) const;
-    Vector2 operator-(const Vector2 &v) const;
-    Vector2 operator*(const Vector2 &v) const;
-    Vector2 operator/(const Vector2 &v) const;
+    Vector2 operator+(const Vector2 &v);
+    Vector2 operator-(const Vector2 &v);
+    Vector2 operator*(const Vector2 &v);
+    Vector2 operator/(const Vector2 &v);
     void operator=(const Vector2 &v);
     bool operator==(const Vector2 &v) const;
     HIGH_PRECISION operator[](size_t index) const;
