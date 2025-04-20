@@ -13,4 +13,5 @@ add_executable(THREECPP
     src/math/Vector3.cpp
     src/math/MathUtils.cpp
     src/math/Matrix3.cpp
+    src/math/Matrix4.cpp
 )

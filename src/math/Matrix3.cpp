@@ -2,7 +2,10 @@
 #include "math/Vector2.h"
 #include <stdexcept>
 
-Matrix3::Matrix3(HIGH_PRECISION n11, HIGH_PRECISION n12, HIGH_PRECISION n13, HIGH_PRECISION n21, HIGH_PRECISION n22, HIGH_PRECISION n23, HIGH_PRECISION n31, HIGH_PRECISION n32, HIGH_PRECISION n33)
+Matrix3::Matrix3(
+    HIGH_PRECISION n11, HIGH_PRECISION n12, HIGH_PRECISION n13, 
+    HIGH_PRECISION n21, HIGH_PRECISION n22, HIGH_PRECISION n23, 
+    HIGH_PRECISION n31, HIGH_PRECISION n32, HIGH_PRECISION n33)
 {
     m_isMatrix3 = true;
     set(n11, n12, n13, n21, n22, n23, n31, n32, n33);
@@ -16,16 +19,21 @@ std::span<const HIGH_PRECISION, 9> Matrix3::elements() const
     return m_elements;
 }
 
-void Matrix3::set(HIGH_PRECISION n11, HIGH_PRECISION n12, HIGH_PRECISION n13, HIGH_PRECISION n21, HIGH_PRECISION n22, HIGH_PRECISION n23, HIGH_PRECISION n31, HIGH_PRECISION n32, HIGH_PRECISION n33)
+void Matrix3::set(
+    HIGH_PRECISION n11, HIGH_PRECISION n12, HIGH_PRECISION n13, 
+    HIGH_PRECISION n21, HIGH_PRECISION n22, HIGH_PRECISION n23, 
+    HIGH_PRECISION n31, HIGH_PRECISION n32, HIGH_PRECISION n33)
 {
     auto &te = this->m_elements;
 
     te[0] = n11;
     te[1] = n21;
     te[2] = n31;
+
     te[3] = n12;
     te[4] = n22;
     te[5] = n32;
+    
     te[6] = n13;
     te[7] = n23;
     te[8] = n33;
