@@ -3,6 +3,9 @@
 
 #include "common/BasicType.h"
 #include <algorithm>
+#include <span>
+#include <vector>
+#include <ranges>
 
 namespace MathUtils
 {
@@ -27,7 +30,8 @@ namespace MathUtils
     HIGH_PRECISION floorPowerOfTwo(HIGH_PRECISION value);
     //TODO:
     // function setQuaternionFromProperEuler( q, a, b, c, order )
-
+    std::vector<HIGH_PRECISION> convertSpanToVector(const std::span<const HIGH_PRECISION, 9> &src_span);
+    
     template <typename T>
     HIGH_PRECISION denormalize(HIGH_PRECISION value)
     {

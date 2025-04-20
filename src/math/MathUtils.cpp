@@ -193,6 +193,12 @@ namespace MathUtils
         return std::pow(2, std::floor(std::log(value) / M_LN2));
     }
 
-    //TODO:
-    // function setQuaternionFromProperEuler( q, a, b, c, order )
+    // TODO:
+    //  function setQuaternionFromProperEuler( q, a, b, c, order )
+
+    // 从 span to vector
+    std::vector<HIGH_PRECISION> convertSpanToVector(const std::span<const HIGH_PRECISION, 9> &src_span)
+    {
+        return std::vector<HIGH_PRECISION>(src_span.begin(), src_span.end());
+    }
 }
