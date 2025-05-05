@@ -31,6 +31,7 @@ namespace MathUtils
     //TODO:
     // function setQuaternionFromProperEuler( q, a, b, c, order )
     std::vector<HIGH_PRECISION> convertSpanToVector(const std::span<const HIGH_PRECISION, 9> &src_span);
+    std::vector<HIGH_PRECISION> convertSpanToVector(const std::span<const HIGH_PRECISION, 16> &src_span);
     
     template <typename T>
     HIGH_PRECISION denormalize(HIGH_PRECISION value)

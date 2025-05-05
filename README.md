@@ -8,3 +8,5 @@ C++ Three.js Alternative with Vulkan
 @throws  Exception description
 @note    Additional Notes
 @see     Related methods
+@type    Type
+

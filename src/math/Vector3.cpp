@@ -1,5 +1,6 @@
 #include "math/Vector3.h"
 #include "math/Matrix3.h"
+#include "math/Matrix4.h"
 #include "math/MathUtils.h"
 #include <stdexcept>
 #include <string>
@@ -410,6 +411,12 @@ void Vector3::setFromCylindricalCoords(float radius, float theta, HIGH_PRECISION
     this->m_x = radius * std::sin(theta);
     this->m_y = y;
     this->m_z = radius * std::cos(theta);
+}
+
+void Vector3::setFromMatrixColumn(const Matrix4 &m, size_t index)
+{
+    auto ele_list = MathUtils::convertSpanToVector(m.elements());
+    fromArray(ele_list, index * 4);
 }
 
 void Vector3::setFromMatrix3Column(const Matrix3 &m, size_t index)

@@ -196,8 +196,14 @@ namespace MathUtils
     // TODO:
     //  function setQuaternionFromProperEuler( q, a, b, c, order )
 
-    // 从 span to vector
+    // Matrix3 span to vector Matrix3
     std::vector<HIGH_PRECISION> convertSpanToVector(const std::span<const HIGH_PRECISION, 9> &src_span)
+    {
+        return std::vector<HIGH_PRECISION>(src_span.begin(), src_span.end());
+    }
+
+    // Matrix4 span to vector Matrix3
+    std::vector<HIGH_PRECISION> convertSpanToVector(const std::span<const HIGH_PRECISION, 16> &src_span)
     {
         return std::vector<HIGH_PRECISION>(src_span.begin(), src_span.end());
     }

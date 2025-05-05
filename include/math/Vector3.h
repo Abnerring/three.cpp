@@ -4,6 +4,7 @@
 #include "common/BasicType.h"
 
 class Matrix3;
+class Matrix4;
 
 class Vector3
 {
@@ -82,7 +83,7 @@ public:
     void setFromCylindricalCoords(float radius, float theta, HIGH_PRECISION y);
     // setFromMatrixPosition( m )
     // setFromMatrixScale( m )
-    // setFromMatrixColumn( m, index )
+    void setFromMatrixColumn(const Matrix4 &m, size_t index);
     void setFromMatrix3Column(const Matrix3 &m, size_t index);
     // setFromEuler( e )
     // setFromColor( c )

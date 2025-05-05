@@ -1,5 +1,6 @@
 #include "math/Vector2.h"
 #include "math/Matrix3.h"
+#include "math/MathUtils.h"
 #include <algorithm>
 #include <cmath>
 #include <stdexcept>
@@ -42,29 +43,33 @@ void Vector2::height(HIGH_PRECISION value)
     m_y = value;
 }
 
-void Vector2::set(HIGH_PRECISION x, HIGH_PRECISION y)
+Vector2 &Vector2::set(HIGH_PRECISION x, HIGH_PRECISION y)
 {
     m_x = x;
     m_y = y;
+    return *this;
 }
 
-void Vector2::setScalar(HIGH_PRECISION scalar)
+Vector2 &Vector2::setScalar(HIGH_PRECISION scalar)
 {
     m_x = scalar;
     m_y = scalar;
+    return *this;
 }
 
-void Vector2::setX(HIGH_PRECISION x)
+Vector2 &Vector2::setX(HIGH_PRECISION x)
 {
     m_x = x;
+    return *this;
 }
 
-void Vector2::setY(HIGH_PRECISION y)
+Vector2 &Vector2::setY(HIGH_PRECISION y)
 {
     m_y = y;
+    return *this;
 }
 
-void Vector2::setComponent(size_t index, HIGH_PRECISION value)
+Vector2 &Vector2::setComponent(size_t index, HIGH_PRECISION value)
 {
     switch (index)
     {
@@ -77,6 +82,7 @@ void Vector2::setComponent(size_t index, HIGH_PRECISION value)
     default:
         throw std::out_of_range("Index " + std::to_string(index) + " is out of range [0,1]");
     }
+    return *this;
 }
 
 HIGH_PRECISION Vector2::getComponent(size_t index) const
@@ -97,145 +103,167 @@ Vector2 Vector2::clone()
     return Vector2(m_x, m_y);
 }
 
-void Vector2::copy(const Vector2 &v)
+Vector2 &Vector2::copy(const Vector2 &v)
 {
     m_x = v.x();
     m_y = v.y();
+    return *this;
 }
 
-void Vector2::add(const Vector2 &v)
+Vector2 &Vector2::add(const Vector2 &v)
 {
     m_x += v.x();
     m_y += v.y();
+    return *this;
 }
 
-void Vector2::addScalar(HIGH_PRECISION s)
+Vector2 &Vector2::addScalar(HIGH_PRECISION s)
 {
     m_x += s;
     m_y += s;
+    return *this;
 }
 
-void Vector2::addVectors(const Vector2 &a, const Vector2 &b)
+Vector2 &Vector2::addVectors(const Vector2 &a, const Vector2 &b)
 {
     m_x = a.x() + b.x();
     m_y = a.y() + b.y();
+    return *this;
 }
 
-void Vector2::addScaledVector(const Vector2 &v, HIGH_PRECISION s)
+Vector2 &Vector2::addScaledVector(const Vector2 &v, HIGH_PRECISION s)
 {
     m_x += v.x() * s;
     m_y += v.y() * s;
+    return *this;
 }
 
-void Vector2::sub(const Vector2 &v)
+Vector2 &Vector2::sub(const Vector2 &v)
 {
     m_x -= v.x();
     m_y -= v.y();
+    return *this;
 }
 
-void Vector2::subScalar(HIGH_PRECISION s)
+Vector2 &Vector2::subScalar(HIGH_PRECISION s)
 {
     m_x -= s;
     m_y -= s;
+    return *this;
 }
 
-void Vector2::subVectors(const Vector2 &a, const Vector2 &b)
+Vector2 &Vector2::subVectors(const Vector2 &a, const Vector2 &b)
 {
     m_x = a.x() - b.x();
     m_y = a.y() - b.y();
+    return *this;
 }
 
-void Vector2::multiply(const Vector2 &v)
+Vector2 &Vector2::multiply(const Vector2 &v)
 {
     m_x *= v.x();
     m_y *= v.y();
+    return *this;
 }
 
-void Vector2::multiplyScalar(HIGH_PRECISION scalar)
+Vector2 &Vector2::multiplyScalar(HIGH_PRECISION scalar)
 {
     m_x *= scalar;
     m_y *= scalar;
+    return *this;
 }
 
-void Vector2::divide(const Vector2 &v)
+Vector2 &Vector2::divide(const Vector2 &v)
 {
     m_x /= v.x();
     m_y /= v.y();
+    return *this;
 }
 
-void Vector2::divideScalar(HIGH_PRECISION scalar)
+Vector2 &Vector2::divideScalar(HIGH_PRECISION scalar)
 {
-    multiplyScalar(1 / scalar);
+    return multiplyScalar(1 / scalar);
 }
 
-void Vector2::applyMatrix3(const Matrix3 &m)
+Vector2 &Vector2::applyMatrix3(const Matrix3 &m)
 {
-    auto& x = m_x, y = m_y;
+    auto &x = m_x, y = m_y;
     auto e = m.elements();
 
     m_x = e[0] * x + e[3] * y + e[6];
     m_y = e[1] * x + e[4] * y + e[7];
+    return *this;
 }
 
-void Vector2::min(const Vector2 &v)
+Vector2 &Vector2::min(const Vector2 &v)
 {
     m_x = std::min(m_x, v.x());
     m_y = std::min(m_y, v.y());
+    return *this;
 }
 
-void Vector2::max(const Vector2 &v)
+Vector2 &Vector2::max(const Vector2 &v)
 {
     m_x = std::max(m_x, v.x());
     m_y = std::max(m_y, v.y());
+    return *this;
 }
 
-void Vector2::clamp(const Vector2 &min, const Vector2 &max)
+Vector2 &Vector2::clamp(const Vector2 &min, const Vector2 &max)
 {
     m_x = std::max(min.x(), std::max(max.x(), m_x));
     m_y = std::max(min.y(), std::max(max.y(), m_y));
+    return *this;
 }
 
-void Vector2::clampScalar(HIGH_PRECISION minVal, HIGH_PRECISION maxVal)
+Vector2 &Vector2::clampScalar(HIGH_PRECISION minVal, HIGH_PRECISION maxVal)
 {
     m_x = std::max(minVal, std::min(maxVal, m_x));
     m_y = std::max(minVal, std::min(maxVal, m_y));
+    return *this;
 }
 
-void Vector2::clampLength(HIGH_PRECISION min, HIGH_PRECISION max)
+Vector2 &Vector2::clampLength(HIGH_PRECISION min, HIGH_PRECISION max)
 {
     auto length = this->length();
     this->divideScalar(length || 1);
     multiplyScalar(std::max(min, std::min(max, length)));
+    return *this;
 }
 
-void Vector2::floor()
+Vector2 &Vector2::floor()
 {
     m_x = std::floor(m_x);
     m_y = std::floor(m_y);
+    return *this;
 }
 
-void Vector2::ceil()
+Vector2 &Vector2::ceil()
 {
     m_x = std::ceil(m_x);
     m_y = std::ceil(m_y);
+    return *this;
 }
 
-void Vector2::round()
+Vector2 &Vector2::round()
 {
     m_x = std::round(m_x);
     m_y = std::round(m_y);
+    return *this;
 }
 
-void Vector2::roundToZero()
+Vector2 &Vector2::roundToZero()
 {
     m_x = std::trunc(m_x);
     m_y = std::trunc(m_y);
+    return *this;
 }
 
-void Vector2::negate()
+Vector2 &Vector2::negate()
 {
     m_x = -m_x;
     m_y = -m_y;
+    return *this;
 }
 
 HIGH_PRECISION Vector2::dot(const Vector2 &v)
@@ -263,16 +291,15 @@ HIGH_PRECISION Vector2::manhattanLength()
     return std::abs(m_x) + std::abs(m_y);
 }
 
-void Vector2::normalize()
+Vector2 &Vector2::normalize()
 {
-    this->divideScalar(this->length() || 1);
+    return this->divideScalar(this->length() || 1);
 }
 
-Vector2 Vector2::normalized()
+Vector2 Vector2::getNormal()
 {
     Vector2 vec(m_x, m_y);
-    vec.divideScalar(vec.length() || 1);
-    return vec;
+    return vec.divideScalar(vec.length() || 1);
 }
 
 HIGH_PRECISION Vector2::angle()
@@ -292,11 +319,7 @@ HIGH_PRECISION Vector2::angleTo(const Vector2 &v)
     auto theta = this->dot(v) / denominator;
 
     // clamp, to handle numerical problems
-
-    // TODO : Add MathUtils
-    // return std::acos(MathUtils.clamp(theta, -1, 1));
-
-    return 0.0;
+    return std::acos(MathUtils::clamp(theta, -1, 1));
 }
 
 HIGH_PRECISION Vector2::distanceTo(const Vector2 &v)
@@ -316,22 +339,23 @@ HIGH_PRECISION Vector2::manhattanDistanceTo(const Vector2 &v)
     return std::abs(m_x - v.x()) + std::abs(m_y - v.y());
 }
 
-void Vector2::setLength(HIGH_PRECISION length)
+Vector2 &Vector2::setLength(HIGH_PRECISION length)
 {
-    this->normalize();
-    this->multiplyScalar(length);
+    return this->normalize().multiplyScalar(length);
 }
 
-void Vector2::lerp(const Vector2 &v, HIGH_PRECISION alpha)
+Vector2 &Vector2::lerp(const Vector2 &v, HIGH_PRECISION alpha)
 {
     m_x += (v.x() - m_x) * alpha;
     m_y += (v.y() - m_y) * alpha;
+    return *this;
 }
 
-void Vector2::lerpVectors(const Vector2 &v1, const Vector2 &v2, HIGH_PRECISION alpha)
+Vector2 &Vector2::lerpVectors(const Vector2 &v1, const Vector2 &v2, HIGH_PRECISION alpha)
 {
     m_x = v1.x() + (v2.x() - v1.x()) * alpha;
     m_y = v1.y() + (v2.y() - v1.y()) * alpha;
+    return *this;
 }
 
 bool Vector2::equals(const Vector2 &v, float epsilon) const
@@ -341,19 +365,21 @@ bool Vector2::equals(const Vector2 &v, float epsilon) const
     return x_equal && y_equal;
 }
 
-void Vector2::fromArray(const std::vector<HIGH_PRECISION> &array, size_t offset)
+Vector2 &Vector2::fromArray(const std::vector<HIGH_PRECISION> &array, size_t offset)
 {
     m_x = array[offset];
     m_y = array[offset + 1];
+    return *this;
 }
 
-void Vector2::toArray(std::vector<HIGH_PRECISION> &array, size_t offset)
+std::vector<HIGH_PRECISION> &Vector2::toArray(std::vector<HIGH_PRECISION> &array, size_t offset)
 {
     array[offset] = m_x;
     array[offset + 1] = m_y;
+    return array;
 }
 
-void Vector2::rotateAround(const Vector2 &center, float angle)
+Vector2 &Vector2::rotateAround(const Vector2 &center, float angle)
 {
     auto c = std::cos(angle);
     auto s = std::sin(angle);
@@ -363,32 +389,38 @@ void Vector2::rotateAround(const Vector2 &center, float angle)
 
     m_x = x * c - y * s + center.x();
     m_y = x * s + y * c + center.y();
+    return *this;
 }
 
-void Vector2::random()
+Vector2 &Vector2::random()
 {
     m_x = DIST_DOUBLE(RANDOM_ENGINE);
     m_y = DIST_DOUBLE(RANDOM_ENGINE);
+    return *this;
 }
 
 Vector2 Vector2::operator+(const Vector2 &v)
 {
-    return Vector2(m_x + v.x(), m_y + v.y());
+    auto _vec2 = clone();
+    return _vec2.add(v);
 }
 
 Vector2 Vector2::operator-(const Vector2 &v)
 {
-    return Vector2(m_x - v.x(), m_y - v.y());
+    auto _vec2 = clone();
+    return _vec2.sub(v);
 }
 
 Vector2 Vector2::operator*(const Vector2 &v)
 {
-    return Vector2(m_x * v.x(), m_y * v.y());
+    auto _vec2 = clone();
+    return _vec2.multiply(v);
 }
 
 Vector2 Vector2::operator/(const Vector2 &v)
 {
-    return Vector2(m_x / v.x(), m_y / v.y());
+    auto _vec2 = clone();
+    return _vec2.divide(v);
 }
 
 void Vector2::operator=(const Vector2 &v)
