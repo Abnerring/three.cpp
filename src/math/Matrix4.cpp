@@ -1,6 +1,9 @@
 #include "math/Matrix4.h"
 #include "math/Matrix3.h"
 #include "math/Vector3.h"
+#include "math/Euler.h"
+#include "math/Quaternion.h"
+#include <cmath>
 
 Matrix4::Matrix4(
     HIGH_PRECISION n11, HIGH_PRECISION n12, HIGH_PRECISION n13, HIGH_PRECISION n14,
@@ -100,7 +103,7 @@ void Matrix4::copyPosition(const Matrix4 &m)
 
 void Matrix4::setFromMatrix3(const Matrix3 &m)
 {
-    auto &me = m_elements;
+    auto me = m.elements();
 
     set(
         me[0], me[3], me[6], 0,
@@ -516,3 +519,171 @@ void Matrix4::makeShear(HIGH_PRECISION xy, HIGH_PRECISION xz, HIGH_PRECISION yx,
 
     );
 }
+
+void Matrix4::makeRotationFromEuler(const Euler &euler)
+{
+    auto x = euler.x(), y = euler.y(), z = euler.z();
+    auto order = euler.order();
+
+    auto c1 = std::cos(x);
+    auto c2 = std::cos(y);
+    auto c3 = std::cos(z);
+
+    auto s1 = std::sin(x);
+    auto s2 = std::sin(y);
+    auto s3 = std::sin(z);
+
+    auto &te = m_elements;
+
+    switch (order)
+    {
+    case EulerOrder::XYZ:
+        te[0] = c2 * c3;
+        te[4] = -c2 * s3;
+        te[8] = s2;
+        te[1] = c1 * s3 + c3 * s1 * s2;
+        te[5] = c1 * c3 - s1 * s2 * s3;
+        te[9] = -c2 * s1;
+        te[2] = s1 * s3 - c1 * c3 * s2;
+        te[6] = c3 * s1 + c1 * s2 * s3;
+        te[10] = c1 * c2;
+        break;
+
+    case EulerOrder::YXZ:
+        te[0] = c2 * c3 + s1 * s2 * s3;
+        te[4] = c1 * s3;
+        te[8] = -c2 * s3 + c3 * s1 * s2;
+        te[1] = -c3 * s2 + c1 * c2 * s3;
+        te[5] = c1 * c3;
+        te[9] = c2 * c3 + s1 * c2 * s3;
+        te[2] = c1 * s2;
+        te[6] = -s1;
+        te[10] = c1 * c2;
+        break;
+
+    case EulerOrder::ZXY:
+        te[0] = c2 * c3;
+        te[4] = -c1 * s3 + c3 * s1 * s2;
+        te[8] = c3 * c1 + c2 * s1 * s3;
+        te[1] = c2 * s3;
+        te[5] = c1 * c3 + c2 * s1 * s3;
+        te[9] = -c3 * s1 + c1 * c2 * s3;
+        te[2] = -s2;
+        te[6] = c1 * s2;
+        te[10] = c1 * c2;
+        break;
+
+    case EulerOrder::ZYX:
+        te[0] = c1 * c2;
+        te[4] = c1 * s2 * s3 - c3 * s1;
+        te[8] = c2 * s1 * s3 + c1 * c3;
+        te[1] = c2 * s1;
+        te[5] = c1 * c3 + c2 * s1 * s3;
+        te[9] = c3 * s1 * s2 - c1 * s3;
+        te[2] = -s2;
+        te[6] = c2 * s3;
+        te[10] = c2 * c3;
+        break;
+
+    case EulerOrder::YZX:
+        te[0] = c1 * c2;
+        te[4] = s1 * s3 + c1 * c3 * s2;
+        te[8] = -c3 * s1 + c1 * c2 * s3;
+        te[1] = s2;
+        te[5] = c2 * c3;
+        te[9] = -c2 * s3;
+        te[2] = -c1 * s2;
+        te[6] = c2 * s1 - c1 * c3 * s2;
+        te[10] = c1 * c3 + c2 * s1 * s3;
+        break;
+
+    case EulerOrder::XZY:
+        te[0] = c1 * c3;
+        te[4] = -c2 * s3;
+        te[8] = c1 * s2 * s3 + c3 * s1;
+        te[1] = s1 * s2;
+        te[5] = c2 * c3;
+        te[9] = c1 * s2 * c3 - s1 * s3;
+        te[2] = -c1 * s2;
+        te[6] = s3 * c2;
+        te[10] = c1 * c2 * c3 + s1 * s3;
+        break;
+    }
+
+    te[3] = te[7] = te[11] = te[12] = te[13] = te[14] = 0;
+    te[15] = 1;
+}
+
+void Matrix4::makeRotationFromQuaternion(const Quaternion &q)
+{
+    auto x = q.x(), y = q.y(), z = q.z(), w = q.w();
+
+    auto x2 = x + x, y2 = y + y, z2 = z + z;
+    auto xx = x * x2, xy = x * y2, xz = x * z2;
+    auto yy = y * y2, yz = y * z2, zz = z * z2;
+    auto wx = w * x2, wy = w * y2, wz = w * z2;
+
+    auto &te = m_elements;
+
+    te[0] = 1.0f - (yy + zz);
+    te[4] = xy - wz;
+    te[8] = xz + wy;
+
+    te[1] = xy + wz;
+    te[5] = 1.0f - (xx + zz);
+    te[9] = yz - wx;
+
+    te[2] = xz - wy;
+    te[6] = yz + wx;
+    te[10] = 1.0f - (xx + yy);
+
+    te[3] = te[7] = te[11] = te[12] = te[13] = te[14] = 0;
+    te[15] = 1;
+}
+
+void Matrix4::compose(const Vector3 &position, const Quaternion &quaternion, const Vector3 &scale)
+{
+    auto x = quaternion.x();
+    auto y = quaternion.y();
+    auto z = quaternion.z();
+    auto w = quaternion.w();
+
+    auto x2 = x + x;
+    auto y2 = y + y;
+    auto z2 = z + z;
+    auto xx = x * x2;
+    auto xy = x * y2;
+    auto xz = x * z2;
+    auto yy = y * y2;
+    auto yz = y * z2;
+    auto zz = z * z2;
+    auto wx = w * x2;
+    auto wy = w * y2;
+    auto wz = w * z2;
+    auto sx = scale.x();
+    auto sy = scale.y();
+    auto sz = scale.z();
+
+    auto &te = m_elements;
+
+    te[0] = (1.0f - (yy + zz)) * sx;
+    te[1] = (xy + wz) * sx;
+    te[2] = (xz - wy) * sx;
+    te[3] = 0;
+
+    te[4] = (xy - wz) * sy;
+    te[5] = (1.0f - (xx + zz)) * sy;
+    te[6] = (yz + wx) * sy;
+    te[7] = 0;
+
+    te[8] = (xz + wy) * sz;
+    te[9] = (yz - wx) * sz;
+    te[10] = (1.0f - (xx + yy)) * sz;
+    te[11] = 0;
+
+    te[12] = position.x();
+    te[13] = position.y();
+    te[14] = position.z();
+    te[15] = 1;
+}
+

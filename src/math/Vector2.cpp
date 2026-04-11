@@ -211,8 +211,8 @@ Vector2 &Vector2::max(const Vector2 &v)
 
 Vector2 &Vector2::clamp(const Vector2 &min, const Vector2 &max)
 {
-    m_x = std::max(min.x(), std::max(max.x(), m_x));
-    m_y = std::max(min.y(), std::max(max.y(), m_y));
+    m_x = std::clamp(m_x, min.x(), max.x());
+    m_y = std::clamp(m_y, min.y(), max.y());
     return *this;
 }
 

@@ -2,8 +2,12 @@
 #include "math/Matrix3.h"
 #include "math/Matrix4.h"
 #include "math/MathUtils.h"
+#include "math/Euler.h"
+#include "math/Quaternion.h"
+#include "math/Color.h"
 #include <stdexcept>
 #include <string>
+#include <algorithm>
 
 Vector3::Vector3(HIGH_PRECISION x, HIGH_PRECISION y, HIGH_PRECISION z)
 {
@@ -170,6 +174,20 @@ void Vector3::multiplyVectors(const Vector3 &a, const Vector3 &b)
     this->m_z = a.z() * b.z();
 }
 
+void Vector3::applyEuler(const Euler &euler)
+{
+    Quaternion q;
+    q.setFromEuler(euler);
+    applyQuaternion(q);
+}
+
+void Vector3::applyAxisAngle(const Vector3 &axis, float angle)
+{
+    Quaternion q;
+    q.setFromAxisAngle(axis, angle);
+    applyQuaternion(q);
+}
+
 void Vector3::applyMatrix3(Matrix3 &m)
 {
     auto x = this->m_x, y = this->m_y, z = this->m_z;
@@ -184,6 +202,43 @@ void Vector3::applyNormalMatrix(Matrix3 &m)
 {
     this->applyMatrix3(m);
     this->normalize();
+}
+
+void Vector3::applyMatrix4(const Matrix4 &m)
+{
+    auto x = this->m_x, y = this->m_y, z = this->m_z;
+    auto e = m.elements();
+
+    this->m_x = e[0] * x + e[4] * y + e[8] * z + e[12];
+    this->m_y = e[1] * x + e[5] * y + e[9] * z + e[13];
+    this->m_z = e[2] * x + e[6] * y + e[10] * z + e[14];
+}
+
+void Vector3::applyQuaternion(const Quaternion &q)
+{
+    auto x = this->m_x, y = this->m_y, z = this->m_z;
+
+    auto qx = q.x(), qy = q.y(), qz = q.z(), qw = q.w();
+
+    // v' = q * v * q^-1
+    auto ix = qw * x + qy * z - qz * y;
+    auto iy = qw * y + qz * x - qx * z;
+    auto iz = qw * z + qx * y - qy * x;
+    auto iw = -qx * x - qy * y - qz * z;
+
+    this->m_x = qw * ix + qy * iz - qz * iy - iw * qx;
+    this->m_y = qw * iy + qz * ix - qx * iz - iw * qy;
+    this->m_z = qw * iz + qx * iy - qy * ix - iw * qz;
+}
+
+void Vector3::transformDirection(const Matrix4 &m)
+{
+    auto x = this->m_x, y = this->m_y, z = this->m_z;
+    auto e = m.elements();
+
+    this->m_x = e[0] * x + e[4] * y + e[8] * z;
+    this->m_y = e[1] * x + e[5] * y + e[9] * z;
+    this->m_z = e[2] * x + e[6] * y + e[10] * z;
 }
 
 void Vector3::divide(const Vector3 &v)
@@ -465,6 +520,38 @@ void Vector3::randomDirection()
     m_x = c * std::cos(theta);
     m_y = u;
     m_z = c * std::sin(theta);
+}
+
+void Vector3::setFromMatrixPosition(const Matrix4 &m)
+{
+    auto e = m.elements();
+    m_x = e[12];
+    m_y = e[13];
+    m_z = e[14];
+}
+
+void Vector3::setFromMatrixScale(const Matrix4 &m)
+{
+    auto e = m.elements();
+    m_x = std::sqrt(e[0] * e[0] + e[1] * e[1] + e[2] * e[2]);
+    m_y = std::sqrt(e[4] * e[4] + e[5] * e[5] + e[6] * e[6]);
+    m_z = std::sqrt(e[8] * e[8] + e[9] * e[9] + e[10] * e[10]);
+}
+
+void Vector3::setFromEuler(const Euler &euler)
+{
+    Quaternion q;
+    q.setFromEuler(euler);
+    m_x = q.x();
+    m_y = q.y();
+    m_z = q.z();
+}
+
+void Vector3::setFromColor(const Color &c)
+{
+    m_x = c.r();
+    m_y = c.g();
+    m_z = c.b();
 }
 
 

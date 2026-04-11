@@ -11,7 +11,11 @@ add_executable(THREECPP
     src/main.cpp
     src/math/Vector2.cpp
     src/math/Vector3.cpp
+    src/math/Vector4.cpp
     src/math/MathUtils.cpp
     src/math/Matrix3.cpp
     src/math/Matrix4.cpp
+    src/math/Quaternion.cpp
+    src/math/Euler.cpp
+    src/math/Color.cpp
 )

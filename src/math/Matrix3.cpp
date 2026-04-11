@@ -258,8 +258,7 @@ bool Matrix3::equals(const Matrix3 &matrix, float epsilon) const
 
     for (auto i = 0; i < 9; i++)
     {
-        const bool equal = std::abs(te[i] - me[i]) > epsilon;
-        if (equal)
+        if (std::abs(te[i] - me[i]) > epsilon)
             return false;
     }
 

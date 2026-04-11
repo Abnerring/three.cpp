@@ -22,10 +22,9 @@ namespace MathUtils
         "e0", "e1", "e2", "e3", "e4", "e5", "e6", "e7", "e8", "e9", "ea", "eb", "ec", "ed", "ee", "ef",
         "f0", "f1", "f2", "f3", "f4", "f5", "f6", "f7", "f8", "f9", "fa", "fb", "fc", "fd", "fe", "ff"};
 
-    int _seed = 1234567;
-
     static const float DEG2RAD = MATH_PI / 180.0f;
     static const float RAD2DEG = 180.0f / MATH_PI;
+    static const float LN2 = 0.6931471805599453f;  // std::log(2.0)
 
     // http://stackoverflow.com/questions/105034/how-to-create-a-guid-uuid-in-javascript/21963136#21963136
     std::string generateUUID()
@@ -185,12 +184,12 @@ namespace MathUtils
 
     HIGH_PRECISION ceilPowerOfTwo(HIGH_PRECISION value)
     {
-        return std::pow(2, std::ceil(std::log(value) / M_LN2));
+        return std::pow(2, std::ceil(std::log(value) / LN2));
     }
 
     HIGH_PRECISION floorPowerOfTwo(HIGH_PRECISION value)
     {
-        return std::pow(2, std::floor(std::log(value) / M_LN2));
+        return std::pow(2, std::floor(std::log(value) / LN2));
     }
 
     // TODO:
