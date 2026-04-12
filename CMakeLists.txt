@@ -19,3 +19,7 @@ add_executable(THREECPP
     src/math/Euler.cpp
     src/math/Color.cpp
 )
+
+# Tests
+enable_testing()
+add_subdirectory(test)
