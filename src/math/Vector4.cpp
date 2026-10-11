@@ -1,5 +1,8 @@
 #include "math/Vector4.h"
+#include "core/BufferAttribute.h"
 #include "math/Matrix4.h"
+#include "math/Vector3.h"
+#include "math/Quaternion.h"
 #include "math/MathUtils.h"
 #include <algorithm>
 #include <cmath>
@@ -69,12 +72,13 @@ Vector4 Vector4::clone() const
     return Vector4(m_x, m_y, m_z, m_w);
 }
 
-void Vector4::copy(const Vector4 &v)
+Vector4 &Vector4::copy(const Vector4 &v)
 {
     m_x = v.x();
     m_y = v.y();
     m_z = v.z();
     m_w = v.w();
+    return *this;
 }
 
 Vector4 &Vector4::add(const Vector4 &v)
@@ -187,19 +191,19 @@ Vector4 &Vector4::divideScalar(HIGH_PRECISION scalar)
 
 Vector4 &Vector4::min(const Vector4 &v)
 {
-    m_x = std::min(m_x, v.x());
-    m_y = std::min(m_y, v.y());
-    m_z = std::min(m_z, v.z());
-    m_w = std::min(m_w, v.w());
+    m_x = MathUtils::min(m_x, v.x());
+    m_y = MathUtils::min(m_y, v.y());
+    m_z = MathUtils::min(m_z, v.z());
+    m_w = MathUtils::min(m_w, v.w());
     return *this;
 }
 
 Vector4 &Vector4::max(const Vector4 &v)
 {
-    m_x = std::max(m_x, v.x());
-    m_y = std::max(m_y, v.y());
-    m_z = std::max(m_z, v.z());
-    m_w = std::max(m_w, v.w());
+    m_x = MathUtils::max(m_x, v.x());
+    m_y = MathUtils::max(m_y, v.y());
+    m_z = MathUtils::max(m_z, v.z());
+    m_w = MathUtils::max(m_w, v.w());
     return *this;
 }
 
@@ -224,7 +228,7 @@ Vector4 &Vector4::clampScalar(HIGH_PRECISION minVal, HIGH_PRECISION maxVal)
 Vector4 &Vector4::clampLength(HIGH_PRECISION min, HIGH_PRECISION max)
 {
     auto len = length();
-    divideScalar(len ? len : 1.0);
+    divideScalar((len == 0 || std::isnan(len)) ? 1.0 : len);
     multiplyScalar(MathUtils::clamp(len, min, max));
     return *this;
 }
@@ -249,10 +253,10 @@ Vector4 &Vector4::ceil()
 
 Vector4 &Vector4::round()
 {
-    m_x = std::round(m_x);
-    m_y = std::round(m_y);
-    m_z = std::round(m_z);
-    m_w = std::round(m_w);
+    m_x = MathUtils::round(m_x);
+    m_y = MathUtils::round(m_y);
+    m_z = MathUtils::round(m_z);
+    m_w = MathUtils::round(m_w);
     return *this;
 }
 
@@ -297,7 +301,7 @@ HIGH_PRECISION Vector4::manhattanLength() const
 Vector4 &Vector4::normalize()
 {
     auto len = length();
-    return divideScalar(len ? len : 1.0);
+    return divideScalar((len == 0 || std::isnan(len)) ? 1.0 : len);
 }
 
 Vector4 &Vector4::setLength(HIGH_PRECISION length)
@@ -324,12 +328,10 @@ Vector4 &Vector4::lerpVectors(const Vector4 &v1, const Vector4 &v2, HIGH_PRECISI
     return *this;
 }
 
-bool Vector4::equals(const Vector4 &v, float epsilon) const
+bool Vector4::equals(const Vector4 &v, HIGH_PRECISION epsilon) const
 {
-    return std::abs(m_x - v.x()) <= epsilon &&
-           std::abs(m_y - v.y()) <= epsilon &&
-           std::abs(m_z - v.z()) <= epsilon &&
-           std::abs(m_w - v.w()) <= epsilon;
+    if (epsilon == 0) return m_x == v.x() && m_y == v.y() && m_z == v.z() && m_w == v.w();
+    return std::abs(m_x - v.x()) <= epsilon && std::abs(m_y - v.y()) <= epsilon && std::abs(m_z - v.z()) <= epsilon && std::abs(m_w - v.w()) <= epsilon;
 }
 
 Vector4 &Vector4::fromArray(const std::vector<HIGH_PRECISION> &array, size_t offset)
@@ -341,8 +343,9 @@ Vector4 &Vector4::fromArray(const std::vector<HIGH_PRECISION> &array, size_t off
     return *this;
 }
 
-std::vector<HIGH_PRECISION> &Vector4::toArray(std::vector<HIGH_PRECISION> &array, size_t offset)
+std::vector<HIGH_PRECISION> &Vector4::toArray(std::vector<HIGH_PRECISION> &array, size_t offset) const
 {
+    if (array.size() < offset + 4) array.resize(offset + 4);
     array[offset] = m_x;
     array[offset + 1] = m_y;
     array[offset + 2] = m_z;
@@ -350,9 +353,10 @@ std::vector<HIGH_PRECISION> &Vector4::toArray(std::vector<HIGH_PRECISION> &array
     return array;
 }
 
-void Vector4::fromMatrixColumn(const Matrix4 &m, size_t index)
+Vector4 &Vector4::fromMatrixColumn(const Matrix4 &m, size_t index)
 {
     fromArray(std::vector<HIGH_PRECISION>(m.elements().begin(), m.elements().end()), index * 4);
+    return *this;
 }
 
 Vector4 &Vector4::setFromMatrixPosition(const Matrix4 &m)
@@ -392,6 +396,185 @@ Vector4 Vector4::operator/(const Vector4 &v) const { return clone().divide(v); }
 Vector4 Vector4::operator*(HIGH_PRECISION scalar) const { return clone().multiplyScalar(scalar); }
 Vector4 Vector4::operator/(HIGH_PRECISION scalar) const { return clone().divideScalar(scalar); }
 
-void Vector4::operator=(const Vector4 &v) { copy(v); }
+Vector4 &Vector4::operator=(const Vector4 &v) { copy(v);
+    return *this;
+}
 bool Vector4::operator==(const Vector4 &v) const { return equals(v); }
 HIGH_PRECISION Vector4::operator[](size_t index) const { return getComponent(index); }
+
+std::vector<HIGH_PRECISION> Vector4::toArray() const
+{
+    std::vector<HIGH_PRECISION> array;
+    toArray(array);
+    return array;
+}
+
+Vector4 &Vector4::setAxisAngleFromQuaternion(const Quaternion &q)
+{
+
+
+		// q is assumed to be normalized
+
+		m_w = 2 * std::acos( q.w() );
+
+		const auto s = std::sqrt( 1 - q.w() * q.w() );
+
+		if ( s < 0.0001 ) {
+
+			m_x = 1;
+			m_y = 0;
+			m_z = 0;
+
+		} else {
+
+			m_x = q.x() / s;
+			m_y = q.y() / s;
+			m_z = q.z() / s;
+
+		}
+
+		return *this;
+
+
+}
+
+Vector4 &Vector4::setAxisAngleFromRotationMatrix(const Matrix4 &m)
+{
+
+
+		// assumes the upper 3x3 of m is a pure rotation matrix (i.e, unscaled)
+
+		HIGH_PRECISION angle, x, y, z; // variables for result
+		const auto te = m.elements();
+        const auto epsilon = 0.01,		// margin to allow for rounding errors
+			epsilon2 = 0.1,		// margin to distinguish between 0 and 180 degrees
+
+
+
+			m11 = te[ 0 ], m12 = te[ 4 ], m13 = te[ 8 ],
+			m21 = te[ 1 ], m22 = te[ 5 ], m23 = te[ 9 ],
+			m31 = te[ 2 ], m32 = te[ 6 ], m33 = te[ 10 ];
+
+		if ( ( std::abs( m12 - m21 ) < epsilon ) &&
+		     ( std::abs( m13 - m31 ) < epsilon ) &&
+		     ( std::abs( m23 - m32 ) < epsilon ) ) {
+
+			// singularity found
+			// first check for identity matrix which must have +1 for all terms
+			// in leading diagonal and zero in other terms
+
+			if ( ( std::abs( m12 + m21 ) < epsilon2 ) &&
+			     ( std::abs( m13 + m31 ) < epsilon2 ) &&
+			     ( std::abs( m23 + m32 ) < epsilon2 ) &&
+			     ( std::abs( m11 + m22 + m33 - 3 ) < epsilon2 ) ) {
+
+				// this singularity is identity matrix so angle = 0
+
+				set( 1, 0, 0, 0 );
+
+				return *this; // zero angle, arbitrary axis
+
+			}
+
+			// otherwise this singularity is angle = 180
+
+			angle = MATH_PI;
+
+			const auto xx = ( m11 + 1 ) / 2;
+			const auto yy = ( m22 + 1 ) / 2;
+			const auto zz = ( m33 + 1 ) / 2;
+			const auto xy = ( m12 + m21 ) / 4;
+			const auto xz = ( m13 + m31 ) / 4;
+			const auto yz = ( m23 + m32 ) / 4;
+
+			if ( ( xx > yy ) && ( xx > zz ) ) {
+
+				// m11 is the largest diagonal term
+
+				if ( xx < epsilon ) {
+
+					x = 0;
+					y = 0.707106781;
+					z = 0.707106781;
+
+				} else {
+
+					x = std::sqrt( xx );
+					y = xy / x;
+					z = xz / x;
+
+				}
+
+			} else if ( yy > zz ) {
+
+				// m22 is the largest diagonal term
+
+				if ( yy < epsilon ) {
+
+					x = 0.707106781;
+					y = 0;
+					z = 0.707106781;
+
+				} else {
+
+					y = std::sqrt( yy );
+					x = xy / y;
+					z = yz / y;
+
+				}
+
+			} else {
+
+				// m33 is the largest diagonal term so base result on this
+
+				if ( zz < epsilon ) {
+
+					x = 0.707106781;
+					y = 0.707106781;
+					z = 0;
+
+				} else {
+
+					z = std::sqrt( zz );
+					x = xz / z;
+					y = yz / z;
+
+				}
+
+			}
+
+			set( x, y, z, angle );
+
+			return *this; // return 180 deg rotation
+
+		}
+
+		// as we have reached here there are no singularities so we can handle normally
+
+		auto s = std::sqrt( ( m32 - m23 ) * ( m32 - m23 ) +
+			( m13 - m31 ) * ( m13 - m31 ) +
+			( m21 - m12 ) * ( m21 - m12 ) ); // used to normalize
+
+		if ( std::abs( s ) < 0.001 ) s = 1;
+
+		// prevent divide by zero, should not happen if matrix is orthogonal and should be
+		// caught by singularity test above, but I've left it in just in case
+
+		m_x = ( m32 - m23 ) / s;
+		m_y = ( m13 - m31 ) / s;
+		m_z = ( m21 - m12 ) / s;
+		m_w = std::acos( ( m11 + m22 + m33 - 1 ) / 2 );
+
+		return *this;
+
+
+}
+
+Vector4 &Vector4::set(HIGH_PRECISION x, HIGH_PRECISION y, HIGH_PRECISION z) { return set(x, y, z, m_w); }
+Vector4 &Vector4::copy(const Vector3 &v) { return set(v.x(), v.y(), v.z(), 1); }
+Vector4 &Vector4::setFromMatrixColumn(const Matrix4 &m, size_t index) { return fromMatrixColumn(m, index); }
+
+Vector4 &Vector4::fromBufferAttribute(const BufferAttribute &attribute, size_t index)
+{
+    return set(attribute.getX(index), attribute.getY(index), attribute.getZ(index), attribute.getW(index));
+}

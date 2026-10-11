@@ -1,6 +1,7 @@
 #include "math/MathUtils.h"
 #include <vector>
 #include <cstdint>
+#include "math/Quaternion.h"
 
 namespace MathUtils
 {
@@ -22,9 +23,9 @@ namespace MathUtils
         "e0", "e1", "e2", "e3", "e4", "e5", "e6", "e7", "e8", "e9", "ea", "eb", "ec", "ed", "ee", "ef",
         "f0", "f1", "f2", "f3", "f4", "f5", "f6", "f7", "f8", "f9", "fa", "fb", "fc", "fd", "fe", "ff"};
 
-    static const float DEG2RAD = MATH_PI / 180.0f;
-    static const float RAD2DEG = 180.0f / MATH_PI;
-    static const float LN2 = 0.6931471805599453f;  // std::log(2.0)
+    static const HIGH_PRECISION DEG2RAD = MATH_PI / 180.0;
+    static const HIGH_PRECISION RAD2DEG = 180.0 / MATH_PI;
+    static const HIGH_PRECISION LN2 = 0.6931471805599453;  // std::log(2.0)
 
     // http://stackoverflow.com/questions/105034/how-to-create-a-guid-uuid-in-javascript/21963136#21963136
     std::string generateUUID()
@@ -65,18 +66,14 @@ namespace MathUtils
 
     HIGH_PRECISION clamp(HIGH_PRECISION value, HIGH_PRECISION min, HIGH_PRECISION max)
     {
-        return std::max(min, std::min(max, value));
+        return MathUtils::max(min, MathUtils::min(max, value));
     }
 
     // compute euclidean modulo of m % n
     // https://en.wikipedia.org/wiki/Modulo_operation
-    int euclideanModulo(int n, int m)
+    HIGH_PRECISION euclideanModulo(HIGH_PRECISION n, HIGH_PRECISION m)
     {
-        if (m == 0)
-        {
-            return std::numeric_limits<int>::quiet_NaN();
-        }
-        return ((n % m) + m) % m;
+        return std::fmod(std::fmod(n, m) + m, m);
     }
 
     // Linear mapping from range <a1, a2> to range <b1, b2>
@@ -149,37 +146,42 @@ namespace MathUtils
         return low + std::floor(DIST_DOUBLE(RANDOM_ENGINE) * (high - low + 1));
     }
 
-    // Random float from <low, high> interval
-    float randFloat(float low, float high)
+    // Random HIGH_PRECISION from <low, high> interval
+    HIGH_PRECISION randFloat(HIGH_PRECISION low, HIGH_PRECISION high)
     {
-        return low + (float)DIST_DOUBLE(RANDOM_ENGINE) * (high - low);
+        return low + (HIGH_PRECISION)DIST_DOUBLE(RANDOM_ENGINE) * (high - low);
     }
 
-    // Random float from <-range/2, range/2> interval
-    float randFloatSpread(float range)
+    // Random HIGH_PRECISION from <-range/2, range/2> interval
+    HIGH_PRECISION randFloatSpread(HIGH_PRECISION range)
     {
-        return range * (0.5 - (float)DIST_DOUBLE(RANDOM_ENGINE));
+        return range * (0.5 - (HIGH_PRECISION)DIST_DOUBLE(RANDOM_ENGINE));
     }
 
-    // Deterministic pseudo-random float in the interval [ 0, 1 ]
-    float seededRandom()
+    // Deterministic pseudo-random HIGH_PRECISION in the interval [ 0, 1 ]
+    HIGH_PRECISION seededRandom(std::optional<uint32_t> seed)
     {
-        return (float)DIST_DOUBLE(RANDOM_ENGINE);
+        static uint32_t state = 1234567;
+        if (seed) state = *seed;
+        uint32_t t = (state += 0x6D2B79F5u);
+        t = (t ^ (t >> 15)) * (t | 1u);
+        t ^= t + (t ^ (t >> 7)) * (t | 61u);
+        return static_cast<HIGH_PRECISION>(t ^ (t >> 14)) / 4294967296.0;
     }
 
-    float degToRad(float degrees)
+    HIGH_PRECISION degToRad(HIGH_PRECISION degrees)
     {
         return degrees * DEG2RAD;
     }
 
-    float radToDeg(float radians)
+    HIGH_PRECISION radToDeg(HIGH_PRECISION radians)
     {
         return radians * RAD2DEG;
     }
 
-    bool isPowerOfTwo(int value)
+    bool isPowerOfTwo(HIGH_PRECISION value)
     {
-        return (value & (value - 1)) == 0 && value != 0;
+        return std::isfinite(value) && value > 0 && std::floor(value) == value && std::pow(2.0, MathUtils::round(std::log2(value))) == value;
     }
 
     HIGH_PRECISION ceilPowerOfTwo(HIGH_PRECISION value)
@@ -192,8 +194,28 @@ namespace MathUtils
         return std::pow(2, std::floor(std::log(value) / LN2));
     }
 
-    // TODO:
-    //  function setQuaternionFromProperEuler( q, a, b, c, order )
+    HIGH_PRECISION round(HIGH_PRECISION value)
+    {
+        if (!std::isfinite(value) || value == 0) return value;
+        if (value >= -0.5 && value < 0) return -0.0;
+        const auto lower = std::floor(value);
+        return (value - lower < 0.5) ? lower : lower + 1;
+    }
+
+
+    HIGH_PRECISION min(HIGH_PRECISION a, HIGH_PRECISION b)
+    {
+        if (std::isnan(a) || std::isnan(b)) return std::numeric_limits<HIGH_PRECISION>::quiet_NaN();
+        if (a == 0 && b == 0) return std::signbit(a) || std::signbit(b) ? -0.0 : 0.0;
+        return a < b ? a : b;
+    }
+    HIGH_PRECISION max(HIGH_PRECISION a, HIGH_PRECISION b)
+    {
+        if (std::isnan(a) || std::isnan(b)) return std::numeric_limits<HIGH_PRECISION>::quiet_NaN();
+        if (a == 0 && b == 0) return !std::signbit(a) || !std::signbit(b) ? 0.0 : -0.0;
+        return a > b ? a : b;
+    }
+
 
     // Matrix3 span to vector Matrix3
     std::vector<HIGH_PRECISION> convertSpanToVector(const std::span<const HIGH_PRECISION, 9> &src_span)
@@ -205,5 +227,32 @@ namespace MathUtils
     std::vector<HIGH_PRECISION> convertSpanToVector(const std::span<const HIGH_PRECISION, 16> &src_span)
     {
         return std::vector<HIGH_PRECISION>(src_span.begin(), src_span.end());
+    }
+
+    void setQuaternionFromProperEuler(Quaternion &q, HIGH_PRECISION a, HIGH_PRECISION b, HIGH_PRECISION c, const std::string &order)
+    {
+
+
+
+
+
+	const auto c2 = std::cos( b / 2 );
+	const auto s2 = std::sin( b / 2 );
+
+	const auto c13 = std::cos( ( a + c ) / 2 );
+	const auto s13 = std::sin( ( a + c ) / 2 );
+
+	const auto c1_3 = std::cos( ( a - c ) / 2 );
+	const auto s1_3 = std::sin( ( a - c ) / 2 );
+
+	const auto c3_1 = std::cos( ( c - a ) / 2 );
+	const auto s3_1 = std::sin( ( c - a ) / 2 );
+
+	        if (order == "XYX") { q.set( c2 * s13, s2 * c1_3, s2 * s1_3, c2 * c13 ); }
+        else if (order == "YZY") { q.set( s2 * s1_3, c2 * s13, s2 * c1_3, c2 * c13 ); }
+        else if (order == "ZXZ") { q.set( s2 * c1_3, s2 * s1_3, c2 * s13, c2 * c13 ); }
+        else if (order == "XZX") { q.set( c2 * s13, s2 * s3_1, s2 * c3_1, c2 * c13 ); }
+        else if (order == "YXY") { q.set( s2 * c3_1, c2 * s13, s2 * s3_1, c2 * c13 ); }
+        else if (order == "ZYZ") { q.set( s2 * s3_1, s2 * c3_1, c2 * s13, c2 * c13 ); }
     }
 }

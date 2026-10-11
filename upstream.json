@@ -1,0 +1,8 @@
+{
+  "repository": "https://github.com/mrdoob/three.js",
+  "version": "0.186.0",
+  "revision": "187dev",
+  "commit": "11738a9d55e502fb484cefffcea3a66dc44e9fe9",
+  "scope": "Port the full three.js logic to C++; replace the rendering backend with Vulkan. Partial modules are not completion.",
+  "license": "THREEJS-LICENSE"
+}

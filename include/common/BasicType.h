@@ -10,17 +10,13 @@
 #define BASIC_TYPE_H
 
 #include <numbers>
+#include <cmath>
+#include <cstddef>
+#include <cstdint>
 #include <random>
 
-/**
- * @brief 高精度浮点类型
- * @details x86/x64 架构使用 long double，其他使用 double
- */
-#if defined(__x86_64__) || defined(__i386__)
-    #define HIGH_PRECISION long double
-#else
-    #define HIGH_PRECISION double
-#endif
+/** @brief JavaScript Number-compatible IEEE-754 binary64. */
+#define HIGH_PRECISION double
 
 /**
  * @brief 圆周率常量

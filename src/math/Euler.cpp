@@ -7,9 +7,16 @@
 #include <algorithm>
 #include <cmath>
 #include <sstream>
+#include <utility>
+#include <stdexcept>
 
 Euler::Euler(HIGH_PRECISION x, HIGH_PRECISION y, HIGH_PRECISION z, EulerOrder order)
     : m_x(x), m_y(y), m_z(z), m_order(order)
+{
+}
+
+Euler::Euler(const Euler &euler)
+    : Euler(euler.x(), euler.y(), euler.z(), euler.order())
 {
 }
 
@@ -22,152 +29,108 @@ HIGH_PRECISION Euler::y() const { return m_y; }
 HIGH_PRECISION Euler::z() const { return m_z; }
 EulerOrder Euler::order() const { return m_order; }
 
-Euler &Euler::set(HIGH_PRECISION x, HIGH_PRECISION y, HIGH_PRECISION z, EulerOrder order)
+Euler &Euler::set(HIGH_PRECISION x, HIGH_PRECISION y, HIGH_PRECISION z, std::optional<EulerOrder> order)
 {
-    m_x = x;
-    m_y = y;
-    m_z = z;
-    m_order = order;
+    m_x = x; m_y = y; m_z = z;
+    if (order) m_order = *order;
+    m_onChangeCallback();
     return *this;
 }
 
-Euler &Euler::setX(HIGH_PRECISION x) { m_x = x; return *this; }
-Euler &Euler::setY(HIGH_PRECISION y) { m_y = y; return *this; }
-Euler &Euler::setZ(HIGH_PRECISION z) { m_z = z; return *this; }
-Euler &Euler::setOrder(EulerOrder order) { m_order = order; return *this; }
+Euler &Euler::setX(HIGH_PRECISION x) {
+    m_x = x;
+    m_onChangeCallback();
+    return *this;
+}
+Euler &Euler::setY(HIGH_PRECISION y) {
+    m_y = y;
+    m_onChangeCallback();
+    return *this;
+}
+Euler &Euler::setZ(HIGH_PRECISION z) {
+    m_z = z;
+    m_onChangeCallback();
+    return *this;
+}
+Euler &Euler::setOrder(EulerOrder order) {
+    m_order = order;
+    m_onChangeCallback();
+    return *this;
+}
 
 Euler Euler::clone() const
 {
     return Euler(m_x, m_y, m_z, m_order);
 }
 
-void Euler::copy(const Euler &euler)
+Euler &Euler::copy(const Euler &euler)
 {
-    m_x = euler.x();
-    m_y = euler.y();
-    m_z = euler.z();
-    m_order = euler.order();
+    m_x = euler.x(); m_y = euler.y(); m_z = euler.z(); m_order = euler.order();
+    m_onChangeCallback();
+    return *this;
 }
 
 Euler &Euler::setFromEuler(const Euler &euler)
 {
-    m_x = euler.x();
-    m_y = euler.y();
-    m_z = euler.z();
-    m_order = euler.order();
-    return *this;
+    return copy(euler);
 }
 
-Euler &Euler::setFromQuaternion(const Quaternion &q, EulerOrder order)
+Euler &Euler::setFromQuaternion(const Quaternion &q, std::optional<EulerOrder> order, bool update)
 {
-    auto m = Matrix4();
-    q.toRotationMatrix(m);
-    return setFromRotationMatrix(m, order);
+    Matrix4 m;
+    m.makeRotationFromQuaternion(q);
+    return setFromRotationMatrix(m, order, update);
 }
 
-Euler &Euler::setFromRotationMatrix(const Matrix4 &m, EulerOrder order)
+Euler &Euler::setFromRotationMatrix(const Matrix4 &m, std::optional<EulerOrder> requestedOrder, bool update)
 {
-    auto e = m.elements();
-
-    // Extract rotations based on order
-    // This implementation follows three.js logic
+    const auto order = requestedOrder.value_or(m_order);
+    const auto e = m.elements();
+    const auto m11 = e[0], m12 = e[4], m13 = e[8];
+    const auto m21 = e[1], m22 = e[5], m23 = e[9];
+    const auto m31 = e[2], m32 = e[6], m33 = e[10];
     switch (order)
     {
     case EulerOrder::XYZ:
-        m_y = std::asin(MathUtils::clamp(e[8], -1.0f, 1.0f));
-        if (std::abs(e[8]) < 0.9999999f)
-        {
-            m_x = std::atan2(-e[9], e[10]);
-            m_z = std::atan2(-e[4], e[0]);
-        }
-        else
-        {
-            m_x = std::atan2(e[6], e[5]);
-            m_z = 0.0f;
-        }
+        m_y = std::asin(MathUtils::clamp(m13, -1, 1));
+        if (std::abs(m13) < 0.9999999) { m_x = std::atan2(-m23, m33); m_z = std::atan2(-m12, m11); }
+        else { m_x = std::atan2(m32, m22); m_z = 0; }
         break;
-
     case EulerOrder::YXZ:
-        m_x = std::asin(-MathUtils::clamp(e[9], -1.0f, 1.0f));
-        if (std::abs(e[9]) < 0.9999999f)
-        {
-            m_y = std::atan2(e[8], e[10]);
-            m_z = std::atan2(e[1], e[5]);
-        }
-        else
-        {
-            m_y = std::atan2(-e[2], e[0]);
-            m_z = 0.0f;
-        }
+        m_x = std::asin(-MathUtils::clamp(m23, -1, 1));
+        if (std::abs(m23) < 0.9999999) { m_y = std::atan2(m13, m33); m_z = std::atan2(m21, m22); }
+        else { m_y = std::atan2(-m31, m11); m_z = 0; }
         break;
-
     case EulerOrder::ZXY:
-        m_x = std::asin(MathUtils::clamp(e[9], -1.0f, 1.0f));
-        if (std::abs(e[9]) < 0.9999999f)
-        {
-            m_y = std::atan2(-e[8], e[10]);
-            m_z = std::atan2(-e[1], e[5]);
-        }
-        else
-        {
-            m_y = 0.0f;
-            m_z = std::atan2(e[4], e[0]);
-        }
+        m_x = std::asin(MathUtils::clamp(m32, -1, 1));
+        if (std::abs(m32) < 0.9999999) { m_y = std::atan2(-m31, m33); m_z = std::atan2(-m12, m22); }
+        else { m_y = 0; m_z = std::atan2(m21, m11); }
         break;
-
     case EulerOrder::ZYX:
-        m_y = std::asin(-MathUtils::clamp(e[8], -1.0f, 1.0f));
-        if (std::abs(e[8]) < 0.9999999f)
-        {
-            m_x = std::atan2(e[9], e[10]);
-            m_z = std::atan2(e[4], e[0]);
-        }
-        else
-        {
-            m_x = 0.0f;
-            m_z = std::atan2(-e[1], e[5]);
-        }
+        m_y = std::asin(-MathUtils::clamp(m31, -1, 1));
+        if (std::abs(m31) < 0.9999999) { m_x = std::atan2(m32, m33); m_z = std::atan2(m21, m11); }
+        else { m_x = 0; m_z = std::atan2(-m12, m22); }
         break;
-
     case EulerOrder::YZX:
-        m_z = std::asin(MathUtils::clamp(e[4], -1.0f, 1.0f));
-        if (std::abs(e[4]) < 0.9999999f)
-        {
-            m_x = std::atan2(-e[6], e[10]);
-            m_y = std::atan2(-e[1], e[0]);
-        }
-        else
-        {
-            m_x = 0.0f;
-            m_y = std::atan2(e[8], e[9]);
-        }
+        m_z = std::asin(MathUtils::clamp(m21, -1, 1));
+        if (std::abs(m21) < 0.9999999) { m_x = std::atan2(-m23, m22); m_y = std::atan2(-m31, m11); }
+        else { m_x = 0; m_y = std::atan2(m13, m33); }
         break;
-
     case EulerOrder::XZY:
-        m_z = std::asin(-MathUtils::clamp(e[4], -1.0f, 1.0f));
-        if (std::abs(e[4]) < 0.9999999f)
-        {
-            m_x = std::atan2(e[6], e[5]);
-            m_y = std::atan2(e[8], e[0]);
-        }
-        else
-        {
-            m_x = std::atan2(-e[9], e[10]);
-            m_y = 0.0f;
-        }
+        m_z = std::asin(-MathUtils::clamp(m12, -1, 1));
+        if (std::abs(m12) < 0.9999999) { m_x = std::atan2(m32, m22); m_y = std::atan2(m13, m11); }
+        else { m_x = std::atan2(-m23, m33); m_y = 0; }
         break;
     }
-
     m_order = order;
+    if (update) m_onChangeCallback();
     return *this;
 }
 
-bool Euler::equals(const Euler &euler, float epsilon) const
+bool Euler::equals(const Euler &euler, HIGH_PRECISION epsilon) const
 {
-    return std::abs(m_x - euler.x()) <= epsilon &&
-           std::abs(m_y - euler.y()) <= epsilon &&
-           std::abs(m_z - euler.z()) <= epsilon &&
-           m_order == euler.order();
+    if (epsilon == 0) return m_x == euler.x() && m_y == euler.y() && m_z == euler.z() && m_order == euler.order();
+    return std::abs(m_x - euler.x()) <= epsilon && std::abs(m_y - euler.y()) <= epsilon && std::abs(m_z - euler.z()) <= epsilon && m_order == euler.order();
 }
 
 void Euler::toQuaternion(Quaternion &q) const
@@ -177,77 +140,12 @@ void Euler::toQuaternion(Quaternion &q) const
 
 void Euler::toRotationMatrix(Matrix4 &m) const
 {
-    auto x = m_x, y = m_y, z = m_z;
-
-    auto c1 = std::cos(x);
-    auto c2 = std::cos(y);
-    auto c3 = std::cos(z);
-
-    auto s1 = std::sin(x);
-    auto s2 = std::sin(y);
-    auto s3 = std::sin(z);
-
-    // Use m.set() method to avoid const span issue
-    switch (m_order)
-    {
-    case EulerOrder::XYZ:
-        m.set(
-            c2 * c3, -c2 * s3, s2, 0,
-            c1 * s3 + c3 * s1 * s2, c1 * c3 - s1 * s2 * s3, -c2 * s1, 0,
-            s1 * s3 - c1 * c3 * s2, c3 * s1 + c1 * s2 * s3, c1 * c2, 0,
-            0, 0, 0, 1
-        );
-        break;
-
-    case EulerOrder::YXZ:
-        m.set(
-            c2 * c3 + s1 * s2 * s3, c1 * s3, -c2 * s3 + c3 * s1 * s2, 0,
-            -c3 * s2 + c1 * c2 * s3, c1 * c3, c2 * c3 + s1 * c2 * s3, 0,
-            c1 * s2, -s1, c1 * c2, 0,
-            0, 0, 0, 1
-        );
-        break;
-
-    case EulerOrder::ZXY:
-        m.set(
-            c2 * c3, -c1 * s3 + c3 * s1 * s2, c3 * c1 + c2 * s1 * s3, 0,
-            c2 * s3, c1 * c3 + c2 * s1 * s3, -c3 * s1 + c1 * c2 * s3, 0,
-            -s2, c1 * s2, c1 * c2, 0,
-            0, 0, 0, 1
-        );
-        break;
-
-    case EulerOrder::ZYX:
-        m.set(
-            c1 * c2, c1 * s2 * s3 - c3 * s1, c2 * s1 * s3 + c1 * c3, 0,
-            c2 * s1, c1 * c3 + c2 * s1 * s3, c3 * s1 * s2 - c1 * s3, 0,
-            -s2, c2 * s3, c2 * c3, 0,
-            0, 0, 0, 1
-        );
-        break;
-
-    case EulerOrder::YZX:
-        m.set(
-            c1 * c2, s1 * s3 + c1 * c3 * s2, -c3 * s1 + c1 * c2 * s3, 0,
-            s2, c2 * c3, -c2 * s3, 0,
-            -c1 * s2, c2 * s1 - c1 * c3 * s2, c1 * c3 + c2 * s1 * s3, 0,
-            0, 0, 0, 1
-        );
-        break;
-
-    case EulerOrder::XZY:
-        m.set(
-            c1 * c3, -c2 * s3, c1 * s2 * s3 + c3 * s1, 0,
-            s1 * s2, c2 * c3, c1 * s2 * c3 - s1 * s3, 0,
-            -c1 * s2, s3 * c2, c1 * c2 * c3 + s1 * s3, 0,
-            0, 0, 0, 1
-        );
-        break;
-    }
+    m.makeRotationFromEuler(*this);
 }
 
 std::vector<HIGH_PRECISION> &Euler::toArray(std::vector<HIGH_PRECISION> &array, size_t offset) const
 {
+    if (array.size() < offset + 3) array.resize(offset + 3);
     array[offset] = m_x;
     array[offset + 1] = m_y;
     array[offset + 2] = m_z;
@@ -256,9 +154,8 @@ std::vector<HIGH_PRECISION> &Euler::toArray(std::vector<HIGH_PRECISION> &array, 
 
 Euler &Euler::fromArray(const std::vector<HIGH_PRECISION> &array, size_t offset)
 {
-    m_x = array[offset];
-    m_y = array[offset + 1];
-    m_z = array[offset + 2];
+    m_x = array.at(offset); m_y = array.at(offset + 1); m_z = array.at(offset + 2);
+    m_onChangeCallback();
     return *this;
 }
 
@@ -276,5 +173,50 @@ std::string Euler::getOrderString() const
     }
 }
 
-void Euler::operator=(const Euler &euler) { copy(euler); }
+Euler &Euler::operator=(const Euler &euler) {
+    return copy(euler);
+}
 bool Euler::operator==(const Euler &euler) const { return equals(euler); }
+
+Euler &Euler::_onChange(std::function<void()> callback)
+{
+    m_onChangeCallback = callback ? std::move(callback) : std::function<void()>([] {});
+    return *this;
+}
+Euler &Euler::setFromVector3(const Vector3 &v, std::optional<EulerOrder> order)
+{
+    return set(v.x(), v.y(), v.z(), order);
+}
+Euler &Euler::reorder(EulerOrder order)
+{
+    Quaternion q;
+    q.setFromEuler(*this);
+    return setFromQuaternion(q, order);
+}
+std::vector<Euler::ArrayValue> Euler::toArray() const
+{
+    std::vector<ArrayValue> array;
+    toArray(array);
+    return array;
+}
+std::vector<Euler::ArrayValue> &Euler::toArray(std::vector<ArrayValue> &array, size_t offset) const
+{
+    if (array.size() < offset + 4) array.resize(offset + 4);
+    array[offset] = m_x; array[offset + 1] = m_y; array[offset + 2] = m_z; array[offset + 3] = getOrderString();
+    return array;
+}
+Euler &Euler::fromArray(const std::vector<ArrayValue> &array, size_t offset)
+{
+    auto order = m_order;
+    if (array.size() > offset + 3) {
+        const auto &name = std::get<std::string>(array[offset + 3]);
+        if (name == "XYZ") order = EulerOrder::XYZ;
+        else if (name == "YXZ") order = EulerOrder::YXZ;
+        else if (name == "ZXY") order = EulerOrder::ZXY;
+        else if (name == "ZYX") order = EulerOrder::ZYX;
+        else if (name == "YZX") order = EulerOrder::YZX;
+        else if (name == "XZY") order = EulerOrder::XZY;
+        else throw std::invalid_argument("Unknown Euler order: " + name);
+    }
+    return set(std::get<HIGH_PRECISION>(array.at(offset)), std::get<HIGH_PRECISION>(array.at(offset + 1)), std::get<HIGH_PRECISION>(array.at(offset + 2)), order);
+}

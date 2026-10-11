@@ -4,6 +4,10 @@
 #include "math/Euler.h"
 #include "math/Quaternion.h"
 #include <cmath>
+#include <algorithm>
+#include <stdexcept>
+#include "constants.h"
+#include "math/MathUtils.h"
 
 Matrix4::Matrix4(
     HIGH_PRECISION n11, HIGH_PRECISION n12, HIGH_PRECISION n13, HIGH_PRECISION n14,
@@ -23,7 +27,7 @@ std::span<const HIGH_PRECISION, 16> Matrix4::elements() const
     return m_elements;
 }
 
-void Matrix4::set(
+Matrix4 &Matrix4::set(
     HIGH_PRECISION n11, HIGH_PRECISION n12, HIGH_PRECISION n13, HIGH_PRECISION n14,
     HIGH_PRECISION n21, HIGH_PRECISION n22, HIGH_PRECISION n23, HIGH_PRECISION n24,
     HIGH_PRECISION n31, HIGH_PRECISION n32, HIGH_PRECISION n33, HIGH_PRECISION n34,
@@ -50,25 +54,27 @@ void Matrix4::set(
     te[7] = n42;
     te[11] = n43;
     te[15] = n44;
+    return *this;
 }
 
-void Matrix4::identity()
+Matrix4 &Matrix4::identity()
 {
     set(
         1, 0, 0, 0,
         0, 1, 0, 0,
         0, 0, 1, 0,
         0, 0, 0, 1);
+    return *this;
 }
 
-Matrix4 Matrix4::clone()
+Matrix4 Matrix4::clone() const
 {
     Matrix4 _m4;
     _m4.copy(*this);
     return _m4;
 }
 
-void Matrix4::copy(const Matrix4 &m)
+Matrix4 &Matrix4::copy(const Matrix4 &m)
 {
     auto &te = m_elements;
     auto me = m.elements();
@@ -89,9 +95,10 @@ void Matrix4::copy(const Matrix4 &m)
     te[13] = me[13];
     te[14] = me[14];
     te[15] = me[15];
+    return *this;
 }
 
-void Matrix4::copyPosition(const Matrix4 &m)
+Matrix4 &Matrix4::copyPosition(const Matrix4 &m)
 {
     auto &te = m_elements;
     auto me = m.elements();
@@ -99,9 +106,10 @@ void Matrix4::copyPosition(const Matrix4 &m)
     te[12] = me[12];
     te[13] = me[13];
     te[14] = me[14];
+    return *this;
 }
 
-void Matrix4::setFromMatrix3(const Matrix3 &m)
+Matrix4 &Matrix4::setFromMatrix3(const Matrix3 &m)
 {
     auto me = m.elements();
 
@@ -110,26 +118,30 @@ void Matrix4::setFromMatrix3(const Matrix3 &m)
         me[1], me[4], me[7], 0,
         me[2], me[5], me[8], 0,
         0, 0, 0, 1);
+    return *this;
 }
 
-void Matrix4::extractBasis(Vector3 &xAxis, Vector3 &yAxis, Vector3 &zAxis)
+Matrix4 &Matrix4::extractBasis(Vector3 &xAxis, Vector3 &yAxis, Vector3 &zAxis)
 {
     xAxis.setFromMatrixColumn(*this, 0);
     yAxis.setFromMatrixColumn(*this, 1);
     zAxis.setFromMatrixColumn(*this, 2);
+    return *this;
 }
 
-void Matrix4::makeBasis(const Vector3 &xAxis, const Vector3 &yAxis, const Vector3 &zAxis)
+Matrix4 &Matrix4::makeBasis(const Vector3 &xAxis, const Vector3 &yAxis, const Vector3 &zAxis)
 {
     set(
         xAxis.x(), yAxis.x(), zAxis.x(), 0,
         xAxis.y(), yAxis.y(), zAxis.y(), 0,
         xAxis.z(), yAxis.z(), zAxis.z(), 0,
         0, 0, 0, 1);
+    return *this;
 }
 
-void Matrix4::extractRotation(const Matrix4 &m)
+Matrix4 &Matrix4::extractRotation(const Matrix4 &m)
 {
+    if (m.determinantAffine() == 0) return identity();
     Vector3 _v1;
 
     auto &te = m_elements;
@@ -160,9 +172,10 @@ void Matrix4::extractRotation(const Matrix4 &m)
     te[13] = 0;
     te[14] = 0;
     te[15] = 1;
+    return *this;
 }
 
-void Matrix4::lookAt(Vector3 &eye, Vector3 &target, Vector3 &up)
+Matrix4 &Matrix4::lookAt(const Vector3 &eye, const Vector3 &target, const Vector3 &up)
 {
     auto &te = m_elements;
     Vector3 _z;
@@ -207,19 +220,22 @@ void Matrix4::lookAt(Vector3 &eye, Vector3 &target, Vector3 &up)
     te[2] = _x.z();
     te[6] = _y.z();
     te[10] = _z.z();
+    return *this;
 }
 
-void Matrix4::multiply(const Matrix4 &m)
+Matrix4 &Matrix4::multiply(const Matrix4 &m)
 {
     multiplyMatrices(*this, m);
+    return *this;
 }
 
-void Matrix4::premultiply(const Matrix4 &m)
+Matrix4 &Matrix4::premultiply(const Matrix4 &m)
 {
     multiplyMatrices(m, *this);
+    return *this;
 }
 
-void Matrix4::multiplyMatrices(const Matrix4 &a, const Matrix4 &b)
+Matrix4 &Matrix4::multiplyMatrices(const Matrix4 &a, const Matrix4 &b)
 {
     auto ae = a.elements();
     auto be = b.elements();
@@ -254,9 +270,10 @@ void Matrix4::multiplyMatrices(const Matrix4 &a, const Matrix4 &b)
     te[7] = a41 * b12 + a42 * b22 + a43 * b32 + a44 * b42;
     te[11] = a41 * b13 + a42 * b23 + a43 * b33 + a44 * b43;
     te[15] = a41 * b14 + a42 * b24 + a43 * b34 + a44 * b44;
+    return *this;
 }
 
-void Matrix4::multiplyScalar(HIGH_PRECISION s)
+Matrix4 &Matrix4::multiplyScalar(HIGH_PRECISION s)
 {
     auto &te = m_elements;
 
@@ -276,27 +293,29 @@ void Matrix4::multiplyScalar(HIGH_PRECISION s)
     te[7] *= s;
     te[11] *= s;
     te[15] *= s;
+    return *this;
 }
 
-HIGH_PRECISION Matrix4::determinant()
+HIGH_PRECISION Matrix4::determinant() const
 {
-    auto &te = m_elements;
-
-    auto n11 = te[0], n12 = te[4], n13 = te[8], n14 = te[12];
-    auto n21 = te[1], n22 = te[5], n23 = te[9], n24 = te[13];
-    auto n31 = te[2], n32 = te[6], n33 = te[10], n34 = te[14];
-    auto n41 = te[3], n42 = te[7], n43 = te[11], n44 = te[15];
-
-    // TODO: make this more efficient
-
-    return (
-        n41 * (+n14 * n23 * n32 - n13 * n24 * n32 - n14 * n22 * n33 + n12 * n24 * n33 + n13 * n22 * n34 - n12 * n23 * n34) +
-        n42 * (+n11 * n23 * n34 - n11 * n24 * n33 + n14 * n21 * n33 - n13 * n21 * n34 + n13 * n24 * n31 - n14 * n23 * n31) +
-        n43 * (+n11 * n24 * n32 - n11 * n22 * n34 - n14 * n21 * n32 + n12 * n21 * n34 + n14 * n22 * n31 - n12 * n24 * n31) +
-        n44 * (-n13 * n22 * n31 - n11 * n23 * n32 + n11 * n22 * n33 + n13 * n21 * n32 - n12 * n21 * n33 + n12 * n23 * n31));
+    const auto &te = m_elements;
+    const auto n11 = te[0], n12 = te[4], n13 = te[8], n14 = te[12];
+    const auto n21 = te[1], n22 = te[5], n23 = te[9], n24 = te[13];
+    const auto n31 = te[2], n32 = te[6], n33 = te[10], n34 = te[14];
+    const auto n41 = te[3], n42 = te[7], n43 = te[11], n44 = te[15];
+    const auto t11 = n23 * n34 - n24 * n33;
+    const auto t12 = n22 * n34 - n24 * n32;
+    const auto t13 = n22 * n33 - n23 * n32;
+    const auto t21 = n21 * n34 - n24 * n31;
+    const auto t22 = n21 * n33 - n23 * n31;
+    const auto t23 = n21 * n32 - n22 * n31;
+    return n11 * (n42 * t11 - n43 * t12 + n44 * t13) -
+           n12 * (n41 * t11 - n43 * t21 + n44 * t22) +
+           n13 * (n41 * t12 - n42 * t21 + n44 * t23) -
+           n14 * (n41 * t13 - n42 * t22 + n43 * t23);
 }
 
-void Matrix4::transpose()
+Matrix4 &Matrix4::transpose()
 {
     auto &te = m_elements;
     HIGH_PRECISION tmp;
@@ -320,27 +339,30 @@ void Matrix4::transpose()
     tmp = te[11];
     te[11] = te[14];
     te[14] = tmp;
+    return *this;
 }
 
-void Matrix4::setPosition(HIGH_PRECISION x, HIGH_PRECISION y, HIGH_PRECISION z)
+Matrix4 &Matrix4::setPosition(HIGH_PRECISION x, HIGH_PRECISION y, HIGH_PRECISION z)
 {
     auto &te = m_elements;
 
     te[12] = x;
     te[13] = y;
     te[14] = z;
+    return *this;
 }
 
-void Matrix4::setPosition(const Vector3 &v)
+Matrix4 &Matrix4::setPosition(const Vector3 &v)
 {
     auto &te = m_elements;
 
     te[12] = v.x();
     te[13] = v.y();
     te[14] = v.z();
+    return *this;
 }
 
-void Matrix4::invert()
+Matrix4 &Matrix4::invert()
 {
     // based on http://www.euclideanspace.com/maths/algebra/matrix/functions/inverse/fourD/index.htm
     auto &te = m_elements;
@@ -381,9 +403,10 @@ void Matrix4::invert()
     te[13] = (n13 * n24 * n31 - n14 * n23 * n31 + n14 * n21 * n33 - n11 * n24 * n33 - n13 * n21 * n34 + n11 * n23 * n34) * detInv;
     te[14] = (n14 * n22 * n31 - n12 * n24 * n31 - n14 * n21 * n32 + n11 * n24 * n32 + n12 * n21 * n34 - n11 * n22 * n34) * detInv;
     te[15] = (n12 * n23 * n31 - n13 * n22 * n31 + n13 * n21 * n32 - n11 * n23 * n32 - n12 * n21 * n33 + n11 * n22 * n33) * detInv;
+    return *this;
 }
 
-void Matrix4::scale(const Vector3 &v)
+Matrix4 &Matrix4::scale(const Vector3 &v)
 {
     auto &te = m_elements;
     auto x = v.x(), y = v.y(), z = v.z();
@@ -400,9 +423,10 @@ void Matrix4::scale(const Vector3 &v)
     te[3] *= x;
     te[7] *= y;
     te[11] *= z;
+    return *this;
 }
 
-HIGH_PRECISION Matrix4::getMaxScaleOnAxis()
+HIGH_PRECISION Matrix4::getMaxScaleOnAxis() const
 {
     auto &te = m_elements;
 
@@ -410,10 +434,10 @@ HIGH_PRECISION Matrix4::getMaxScaleOnAxis()
     HIGH_PRECISION scaleYSq = te[4] * te[4] + te[5] * te[5] + te[6] * te[6];
     HIGH_PRECISION scaleZSq = te[8] * te[8] + te[9] * te[9] + te[10] * te[10];
 
-    return std::sqrt(std::max(std::max(scaleXSq, scaleYSq), scaleZSq));
+    return std::sqrt(MathUtils::max(MathUtils::max(scaleXSq, scaleYSq), scaleZSq));
 }
 
-void Matrix4::makeTranslation(HIGH_PRECISION x, HIGH_PRECISION y, HIGH_PRECISION z)
+Matrix4 &Matrix4::makeTranslation(HIGH_PRECISION x, HIGH_PRECISION y, HIGH_PRECISION z)
 {
     set(
 
@@ -423,9 +447,10 @@ void Matrix4::makeTranslation(HIGH_PRECISION x, HIGH_PRECISION y, HIGH_PRECISION
         0, 0, 0, 1
 
     );
+    return *this;
 }
 
-void Matrix4::makeTranslation(const Vector3 &v)
+Matrix4 &Matrix4::makeTranslation(const Vector3 &v)
 {
     set(
 
@@ -435,9 +460,10 @@ void Matrix4::makeTranslation(const Vector3 &v)
         0, 0, 0, 1
 
     );
+    return *this;
 }
 
-void Matrix4::makeRotationX(float theta)
+Matrix4 &Matrix4::makeRotationX(HIGH_PRECISION theta)
 {
     auto c = std::cos(theta), s = std::sin(theta);
 
@@ -449,9 +475,10 @@ void Matrix4::makeRotationX(float theta)
         0, 0, 0, 1
 
     );
+    return *this;
 }
 
-void Matrix4::makeRotationY(float theta)
+Matrix4 &Matrix4::makeRotationY(HIGH_PRECISION theta)
 {
     auto c = std::cos(theta), s = std::sin(theta);
 
@@ -463,9 +490,10 @@ void Matrix4::makeRotationY(float theta)
         0, 0, 0, 1
 
     );
+    return *this;
 }
 
-void Matrix4::makeRotationZ(float theta)
+Matrix4 &Matrix4::makeRotationZ(HIGH_PRECISION theta)
 {
     auto c = std::cos(theta), s = std::sin(theta);
 
@@ -477,9 +505,10 @@ void Matrix4::makeRotationZ(float theta)
         0, 0, 0, 1
 
     );
+    return *this;
 }
 
-void Matrix4::makeRotationAxis(const Vector3 &axis, float angle)
+Matrix4 &Matrix4::makeRotationAxis(const Vector3 &axis, HIGH_PRECISION angle)
 {
     // Based on http://www.gamedev.net/reference/articles/article1199.asp
 
@@ -494,9 +523,10 @@ void Matrix4::makeRotationAxis(const Vector3 &axis, float angle)
         tx * y + s * z, ty * y + c, ty * z - s * x, 0,
         tx * z - s * y, ty * z + s * x, t * z * z + c, 0,
         0, 0, 0, 1);
+    return *this;
 }
 
-void Matrix4::makeScale(HIGH_PRECISION x, HIGH_PRECISION y, HIGH_PRECISION z)
+Matrix4 &Matrix4::makeScale(HIGH_PRECISION x, HIGH_PRECISION y, HIGH_PRECISION z)
 {
     set(
 
@@ -506,9 +536,10 @@ void Matrix4::makeScale(HIGH_PRECISION x, HIGH_PRECISION y, HIGH_PRECISION z)
         0, 0, 0, 1
 
     );
+    return *this;
 }
 
-void Matrix4::makeShear(HIGH_PRECISION xy, HIGH_PRECISION xz, HIGH_PRECISION yx, HIGH_PRECISION yz, HIGH_PRECISION zx, HIGH_PRECISION zy)
+Matrix4 &Matrix4::makeShear(HIGH_PRECISION xy, HIGH_PRECISION xz, HIGH_PRECISION yx, HIGH_PRECISION yz, HIGH_PRECISION zx, HIGH_PRECISION zy)
 {
     set(
 
@@ -518,103 +549,131 @@ void Matrix4::makeShear(HIGH_PRECISION xy, HIGH_PRECISION xz, HIGH_PRECISION yx,
         0, 0, 0, 1
 
     );
+    return *this;
 }
 
-void Matrix4::makeRotationFromEuler(const Euler &euler)
+Matrix4 &Matrix4::makeRotationFromEuler(const Euler &euler)
 {
-    auto x = euler.x(), y = euler.y(), z = euler.z();
-    auto order = euler.order();
+auto &te = m_elements;
 
-    auto c1 = std::cos(x);
-    auto c2 = std::cos(y);
-    auto c3 = std::cos(z);
+		const auto x = euler.x(), y = euler.y(), z = euler.z();
+		const auto a = std::cos( x ), b = std::sin( x );
+		const auto c = std::cos( y ), d = std::sin( y );
+		const auto e = std::cos( z ), f = std::sin( z );
 
-    auto s1 = std::sin(x);
-    auto s2 = std::sin(y);
-    auto s3 = std::sin(z);
+		if ( euler.order() == EulerOrder::XYZ ) {
 
-    auto &te = m_elements;
+			const auto ae = a * e, af = a * f, be = b * e, bf = b * f;
 
-    switch (order)
-    {
-    case EulerOrder::XYZ:
-        te[0] = c2 * c3;
-        te[4] = -c2 * s3;
-        te[8] = s2;
-        te[1] = c1 * s3 + c3 * s1 * s2;
-        te[5] = c1 * c3 - s1 * s2 * s3;
-        te[9] = -c2 * s1;
-        te[2] = s1 * s3 - c1 * c3 * s2;
-        te[6] = c3 * s1 + c1 * s2 * s3;
-        te[10] = c1 * c2;
-        break;
+			te[ 0 ] = c * e;
+			te[ 4 ] = - c * f;
+			te[ 8 ] = d;
 
-    case EulerOrder::YXZ:
-        te[0] = c2 * c3 + s1 * s2 * s3;
-        te[4] = c1 * s3;
-        te[8] = -c2 * s3 + c3 * s1 * s2;
-        te[1] = -c3 * s2 + c1 * c2 * s3;
-        te[5] = c1 * c3;
-        te[9] = c2 * c3 + s1 * c2 * s3;
-        te[2] = c1 * s2;
-        te[6] = -s1;
-        te[10] = c1 * c2;
-        break;
+			te[ 1 ] = af + be * d;
+			te[ 5 ] = ae - bf * d;
+			te[ 9 ] = - b * c;
 
-    case EulerOrder::ZXY:
-        te[0] = c2 * c3;
-        te[4] = -c1 * s3 + c3 * s1 * s2;
-        te[8] = c3 * c1 + c2 * s1 * s3;
-        te[1] = c2 * s3;
-        te[5] = c1 * c3 + c2 * s1 * s3;
-        te[9] = -c3 * s1 + c1 * c2 * s3;
-        te[2] = -s2;
-        te[6] = c1 * s2;
-        te[10] = c1 * c2;
-        break;
+			te[ 2 ] = bf - ae * d;
+			te[ 6 ] = be + af * d;
+			te[ 10 ] = a * c;
 
-    case EulerOrder::ZYX:
-        te[0] = c1 * c2;
-        te[4] = c1 * s2 * s3 - c3 * s1;
-        te[8] = c2 * s1 * s3 + c1 * c3;
-        te[1] = c2 * s1;
-        te[5] = c1 * c3 + c2 * s1 * s3;
-        te[9] = c3 * s1 * s2 - c1 * s3;
-        te[2] = -s2;
-        te[6] = c2 * s3;
-        te[10] = c2 * c3;
-        break;
+		} else if ( euler.order() == EulerOrder::YXZ ) {
 
-    case EulerOrder::YZX:
-        te[0] = c1 * c2;
-        te[4] = s1 * s3 + c1 * c3 * s2;
-        te[8] = -c3 * s1 + c1 * c2 * s3;
-        te[1] = s2;
-        te[5] = c2 * c3;
-        te[9] = -c2 * s3;
-        te[2] = -c1 * s2;
-        te[6] = c2 * s1 - c1 * c3 * s2;
-        te[10] = c1 * c3 + c2 * s1 * s3;
-        break;
+			const auto ce = c * e, cf = c * f, de = d * e, df = d * f;
 
-    case EulerOrder::XZY:
-        te[0] = c1 * c3;
-        te[4] = -c2 * s3;
-        te[8] = c1 * s2 * s3 + c3 * s1;
-        te[1] = s1 * s2;
-        te[5] = c2 * c3;
-        te[9] = c1 * s2 * c3 - s1 * s3;
-        te[2] = -c1 * s2;
-        te[6] = s3 * c2;
-        te[10] = c1 * c2 * c3 + s1 * s3;
-        break;
-    }
+			te[ 0 ] = ce + df * b;
+			te[ 4 ] = de * b - cf;
+			te[ 8 ] = a * d;
 
-    te[3] = te[7] = te[11] = te[12] = te[13] = te[14] = 0;
-    te[15] = 1;
+			te[ 1 ] = a * f;
+			te[ 5 ] = a * e;
+			te[ 9 ] = - b;
+
+			te[ 2 ] = cf * b - de;
+			te[ 6 ] = df + ce * b;
+			te[ 10 ] = a * c;
+
+		} else if ( euler.order() == EulerOrder::ZXY ) {
+
+			const auto ce = c * e, cf = c * f, de = d * e, df = d * f;
+
+			te[ 0 ] = ce - df * b;
+			te[ 4 ] = - a * f;
+			te[ 8 ] = de + cf * b;
+
+			te[ 1 ] = cf + de * b;
+			te[ 5 ] = a * e;
+			te[ 9 ] = df - ce * b;
+
+			te[ 2 ] = - a * d;
+			te[ 6 ] = b;
+			te[ 10 ] = a * c;
+
+		} else if ( euler.order() == EulerOrder::ZYX ) {
+
+			const auto ae = a * e, af = a * f, be = b * e, bf = b * f;
+
+			te[ 0 ] = c * e;
+			te[ 4 ] = be * d - af;
+			te[ 8 ] = ae * d + bf;
+
+			te[ 1 ] = c * f;
+			te[ 5 ] = bf * d + ae;
+			te[ 9 ] = af * d - be;
+
+			te[ 2 ] = - d;
+			te[ 6 ] = b * c;
+			te[ 10 ] = a * c;
+
+		} else if ( euler.order() == EulerOrder::YZX ) {
+
+			const auto ac = a * c, ad = a * d, bc = b * c, bd = b * d;
+
+			te[ 0 ] = c * e;
+			te[ 4 ] = bd - ac * f;
+			te[ 8 ] = bc * f + ad;
+
+			te[ 1 ] = f;
+			te[ 5 ] = a * e;
+			te[ 9 ] = - b * e;
+
+			te[ 2 ] = - d * e;
+			te[ 6 ] = ad * f + bc;
+			te[ 10 ] = ac - bd * f;
+
+		} else if ( euler.order() == EulerOrder::XZY ) {
+
+			const auto ac = a * c, ad = a * d, bc = b * c, bd = b * d;
+
+			te[ 0 ] = c * e;
+			te[ 4 ] = - f;
+			te[ 8 ] = d * e;
+
+			te[ 1 ] = ac * f + bd;
+			te[ 5 ] = a * e;
+			te[ 9 ] = ad * f - bc;
+
+			te[ 2 ] = bc * f - ad;
+			te[ 6 ] = b * e;
+			te[ 10 ] = bd * f + ac;
+
+		}
+
+		// bottom row
+		te[ 3 ] = 0;
+		te[ 7 ] = 0;
+		te[ 11 ] = 0;
+
+		// last column
+		te[ 12 ] = 0;
+		te[ 13 ] = 0;
+		te[ 14 ] = 0;
+		te[ 15 ] = 1;
+
+		return *this;
 }
 
-void Matrix4::makeRotationFromQuaternion(const Quaternion &q)
+Matrix4 &Matrix4::makeRotationFromQuaternion(const Quaternion &q)
 {
     auto x = q.x(), y = q.y(), z = q.z(), w = q.w();
 
@@ -639,9 +698,10 @@ void Matrix4::makeRotationFromQuaternion(const Quaternion &q)
 
     te[3] = te[7] = te[11] = te[12] = te[13] = te[14] = 0;
     te[15] = 1;
+    return *this;
 }
 
-void Matrix4::compose(const Vector3 &position, const Quaternion &quaternion, const Vector3 &scale)
+Matrix4 &Matrix4::compose(const Vector3 &position, const Quaternion &quaternion, const Vector3 &scale)
 {
     auto x = quaternion.x();
     auto y = quaternion.y();
@@ -685,5 +745,89 @@ void Matrix4::compose(const Vector3 &position, const Quaternion &quaternion, con
     te[13] = position.y();
     te[14] = position.z();
     te[15] = 1;
+    return *this;
 }
 
+
+std::span<HIGH_PRECISION, 16> Matrix4::elements()
+{
+    return m_elements;
+}
+HIGH_PRECISION Matrix4::determinantAffine() const
+{
+    const auto &te = m_elements;
+    const auto n11 = te[0], n12 = te[4], n13 = te[8];
+    const auto n21 = te[1], n22 = te[5], n23 = te[9];
+    const auto n31 = te[2], n32 = te[6], n33 = te[10];
+    return n11 * (n22 * n33 - n23 * n32) - n12 * (n21 * n33 - n23 * n31) + n13 * (n21 * n32 - n22 * n31);
+}
+Matrix4 &Matrix4::decompose(Vector3 &position, Quaternion &quaternion, Vector3 &scale)
+{
+    const auto &te = m_elements;
+    position.set(te[12], te[13], te[14]);
+    const auto det = determinantAffine();
+    if (det == 0) {
+        scale.set(1, 1, 1);
+        quaternion.identity();
+        return *this;
+    }
+    auto sx = Vector3(te[0], te[1], te[2]).length();
+    const auto sy = Vector3(te[4], te[5], te[6]).length();
+    const auto sz = Vector3(te[8], te[9], te[10]).length();
+    if (det < 0) sx = -sx;
+    auto rotation = clone();
+    const auto invSX = 1 / sx, invSY = 1 / sy, invSZ = 1 / sz;
+    rotation.m_elements[0] *= invSX; rotation.m_elements[1] *= invSX; rotation.m_elements[2] *= invSX;
+    rotation.m_elements[4] *= invSY; rotation.m_elements[5] *= invSY; rotation.m_elements[6] *= invSY;
+    rotation.m_elements[8] *= invSZ; rotation.m_elements[9] *= invSZ; rotation.m_elements[10] *= invSZ;
+    quaternion.setFromRotationMatrix(rotation);
+    scale.set(sx, sy, sz);
+    return *this;
+}
+Matrix4 &Matrix4::makePerspective(HIGH_PRECISION left, HIGH_PRECISION right, HIGH_PRECISION top, HIGH_PRECISION bottom, HIGH_PRECISION near, HIGH_PRECISION far, int coordinateSystem, bool reversedDepth)
+{
+    const auto x = 2 * near / (right - left), y = 2 * near / (top - bottom);
+    const auto a = (right + left) / (right - left), b = (top + bottom) / (top - bottom);
+    HIGH_PRECISION c, d;
+    if (reversedDepth) { c = near / (far - near); d = far * near / (far - near); }
+    else if (coordinateSystem == WebGLCoordinateSystem) { c = -(far + near) / (far - near); d = -2 * far * near / (far - near); }
+    else if (coordinateSystem == WebGPUCoordinateSystem) { c = -far / (far - near); d = -far * near / (far - near); }
+    else throw std::invalid_argument("Matrix4.makePerspective: invalid coordinate system");
+    return set(x, 0, a, 0, 0, y, b, 0, 0, 0, c, d, 0, 0, -1, 0);
+}
+Matrix4 &Matrix4::makeOrthographic(HIGH_PRECISION left, HIGH_PRECISION right, HIGH_PRECISION top, HIGH_PRECISION bottom, HIGH_PRECISION near, HIGH_PRECISION far, int coordinateSystem, bool reversedDepth)
+{
+    const auto x = 2 / (right - left), y = 2 / (top - bottom);
+    const auto a = -(right + left) / (right - left), b = -(top + bottom) / (top - bottom);
+    HIGH_PRECISION c, d;
+    if (reversedDepth) { c = 1 / (far - near); d = far / (far - near); }
+    else if (coordinateSystem == WebGLCoordinateSystem) { c = -2 / (far - near); d = -(far + near) / (far - near); }
+    else if (coordinateSystem == WebGPUCoordinateSystem) { c = -1 / (far - near); d = -near / (far - near); }
+    else throw std::invalid_argument("Matrix4.makeOrthographic: invalid coordinate system");
+    return set(x, 0, 0, a, 0, y, 0, b, 0, 0, c, d, 0, 0, 0, 1);
+}
+bool Matrix4::equals(const Matrix4 &matrix) const
+{
+    for (size_t i = 0; i < 16; ++i) if (m_elements[i] != matrix.m_elements[i]) return false;
+    return true;
+}
+Matrix4 &Matrix4::fromArray(const std::vector<HIGH_PRECISION> &array, size_t offset)
+{
+    for (size_t i = 0; i < 16; ++i) m_elements[i] = array.at(offset + i);
+    return *this;
+}
+std::vector<HIGH_PRECISION> &Matrix4::toArray(std::vector<HIGH_PRECISION> &array, size_t offset) const
+{
+    if (array.size() < offset + 16) array.resize(offset + 16);
+    std::copy(std::begin(m_elements), std::end(m_elements), array.begin() + offset);
+    return array;
+}
+std::vector<HIGH_PRECISION> Matrix4::toArray() const
+{
+    return std::vector<HIGH_PRECISION>(std::begin(m_elements), std::end(m_elements));
+}
+HIGH_PRECISION Matrix4::operator[](size_t index) const
+{
+    if (index >= 16) throw std::out_of_range("Matrix4 element index");
+    return m_elements[index];
+}

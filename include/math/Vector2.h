@@ -30,6 +30,7 @@ class Matrix3;
 class Vector2
 {
 public:
+    static constexpr bool isVector2 = true;
     /**
      * @brief 构造二维向量
      * @param x X 分量，默认 0
@@ -47,13 +48,13 @@ public:
     HIGH_PRECISION y() const;
 
     /** @brief 获取 X 分量（width 别名）@return X 值 */
-    HIGH_PRECISION width();
+    HIGH_PRECISION width() const;
 
     /** @brief 设置 X 分量（width 别名）@param value X 值 */
     void width(HIGH_PRECISION value);
 
     /** @brief 获取 Y 分量（height 别名）@return Y 值 */
-    HIGH_PRECISION height();
+    HIGH_PRECISION height() const;
 
     /** @brief 设置 Y 分量（height 别名）@param value Y 值 */
     void height(HIGH_PRECISION value);
@@ -95,7 +96,7 @@ public:
     HIGH_PRECISION getComponent(size_t index) const;
 
     /** @brief 克隆向量 @return 向量副本 */
-    Vector2 clone();
+    Vector2 clone() const;
 
     /**
      * @brief 复制向量
@@ -249,14 +250,14 @@ public:
      * @param v 另一个向量
      * @return HIGH_PRECISION 点积结果
      */
-    HIGH_PRECISION dot(const Vector2 &v);
+    HIGH_PRECISION dot(const Vector2 &v) const;
 
     /**
      * @brief 计算叉积（返回标量）
      * @param v 另一个向量
      * @return HIGH_PRECISION 叉积结果
      */
-    HIGH_PRECISION cross(const Vector2 &v);
+    HIGH_PRECISION cross(const Vector2 &v) const;
 
     /**
      * @brief 计算长度平方
@@ -275,7 +276,7 @@ public:
      * @brief 计算曼哈顿长度
      * @return HIGH_PRECISION |x| + |y|
      */
-    HIGH_PRECISION manhattanLength();
+    HIGH_PRECISION manhattanLength() const;
 
     /** @brief 归一化为单位向量 @return Vector2& 自身引用 */
     Vector2 &normalize();
@@ -284,27 +285,27 @@ public:
      * @brief 获取单位向量副本
      * @return Vector2 单位向量
      */
-    Vector2 getNormal();
+    Vector2 getNormal() const;
 
     /**
      * @brief 获取与 X 轴夹角
      * @return HIGH_PRECISION 弧度
      */
-    HIGH_PRECISION angle();
+    HIGH_PRECISION angle() const;
 
     /**
      * @brief 计算与另一向量夹角
      * @param v 另一个向量
      * @return HIGH_PRECISION 弧度
      */
-    HIGH_PRECISION angleTo(const Vector2 &v);
+    HIGH_PRECISION angleTo(const Vector2 &v) const;
 
     /**
      * @brief 计算到另一点距离
      * @param v 目标点
      * @return HIGH_PRECISION 距离
      */
-    HIGH_PRECISION distanceTo(const Vector2 &v);
+    HIGH_PRECISION distanceTo(const Vector2 &v) const;
 
     /**
      * @brief 计算距离平方
@@ -312,14 +313,14 @@ public:
      * @return HIGH_PRECISION 距离平方
      * @note 比较距离时更高效
      */
-    HIGH_PRECISION distanceToSquared(const Vector2 &v);
+    HIGH_PRECISION distanceToSquared(const Vector2 &v) const;
 
     /**
      * @brief 计算曼哈顿距离
      * @param v 目标点
      * @return HIGH_PRECISION 曼哈顿距离
      */
-    HIGH_PRECISION manhattanDistanceTo(const Vector2 &v);
+    HIGH_PRECISION manhattanDistanceTo(const Vector2 &v) const;
 
     /**
      * @brief 设置向量长度
@@ -351,7 +352,7 @@ public:
      * @param epsilon 容差，默认 1e-6
      * @return bool 是否相等
      */
-    bool equals(const Vector2 &v, float epsilon = 1e-6) const;
+    bool equals(const Vector2 &v, HIGH_PRECISION epsilon = 0) const;
 
     /**
      * @brief 从数组设置
@@ -367,7 +368,7 @@ public:
      * @param offset 偏移量，默认 0
      * @return std::vector<HIGH_PRECISION>& 数组引用
      */
-    std::vector<HIGH_PRECISION> &toArray(std::vector<HIGH_PRECISION> &array, size_t offset = 0);
+    std::vector<HIGH_PRECISION> &toArray(std::vector<HIGH_PRECISION> &array, size_t offset = 0) const;
 
     /**
      * @brief 绕中心点旋转
@@ -375,32 +376,36 @@ public:
      * @param angle 角度（弧度）
      * @return Vector2& 自身引用
      */
-    Vector2 &rotateAround(const Vector2 &center, float angle);
+    Vector2 &rotateAround(const Vector2 &center, HIGH_PRECISION angle);
 
     /** @brief 设为随机值 [0, 1) @return Vector2& 自身引用 */
     Vector2 &random();
 
 public:
     /** @brief 加法运算符 @return 新向量 */
-    Vector2 operator+(const Vector2 &v);
+    Vector2 operator+(const Vector2 &v) const;
 
     /** @brief 减法运算符 @return 新向量 */
-    Vector2 operator-(const Vector2 &v);
+    Vector2 operator-(const Vector2 &v) const;
 
     /** @brief 乘法运算符 @return 新向量 */
-    Vector2 operator*(const Vector2 &v);
+    Vector2 operator*(const Vector2 &v) const;
 
     /** @brief 除法运算符 @return 新向量 */
-    Vector2 operator/(const Vector2 &v);
+    Vector2 operator/(const Vector2 &v) const;
 
     /** @brief 赋值运算符 */
-    void operator=(const Vector2 &v);
+    Vector2 &operator=(const Vector2 &v);
 
     /** @brief 相等判断 @return 是否相等 */
     bool operator==(const Vector2 &v) const;
 
     /** @brief 下标访问 @param index 0=x, 1=y @return 分量值 */
     HIGH_PRECISION operator[](size_t index) const;
+
+    std::vector<HIGH_PRECISION> toArray() const;
+
+    Vector2 &fromBufferAttribute(const class BufferAttribute &attribute, size_t index);
 
 private:
     /** @brief X 分量 */

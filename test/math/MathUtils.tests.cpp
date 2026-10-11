@@ -50,17 +50,17 @@ TEST_CASE("MathUtils inverseLerp")
 {
     SECTION("inverseLerp at start")
     {
-        REQUIRE(MathUtils::inverseLerp(0.0, 0.0, 10.0) == Approx(0.0).epsilon(EPSILON));
+        REQUIRE(MathUtils::inverseLerp(0.0, 10.0, 0.0) == Approx(0.0).epsilon(EPSILON));
     }
 
     SECTION("inverseLerp at end")
     {
-        REQUIRE(MathUtils::inverseLerp(10.0, 0.0, 10.0) == Approx(1.0).epsilon(EPSILON));
+        REQUIRE(MathUtils::inverseLerp(0.0, 10.0, 10.0) == Approx(1.0).epsilon(EPSILON));
     }
 
     SECTION("inverseLerp at middle")
     {
-        REQUIRE(MathUtils::inverseLerp(5.0, 0.0, 10.0) == Approx(0.5).epsilon(EPSILON));
+        REQUIRE(MathUtils::inverseLerp(0.0, 10.0, 5.0) == Approx(0.5).epsilon(EPSILON));
     }
 }
 

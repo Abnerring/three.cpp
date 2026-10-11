@@ -14,13 +14,24 @@
 #include <span>
 #include <vector>
 #include <ranges>
+#include <optional>
+#include <string>
+#include <limits>
+#include <type_traits>
 
 /**
  * @brief 数学工具函数命名空间
  * @details 提供常用数学运算、随机数生成、插值等工具函数
  */
+class Quaternion;
+
 namespace MathUtils
 {
+    inline constexpr HIGH_PRECISION PI = MATH_PI;
+    HIGH_PRECISION round(HIGH_PRECISION value);
+    HIGH_PRECISION min(HIGH_PRECISION a, HIGH_PRECISION b);
+    HIGH_PRECISION max(HIGH_PRECISION a, HIGH_PRECISION b);
+    void setQuaternionFromProperEuler(Quaternion &q, HIGH_PRECISION a, HIGH_PRECISION b, HIGH_PRECISION c, const std::string &order);
     /**
      * @brief 生成 UUID
      * @return std::string 格式为 xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx 的 UUID 字符串
@@ -42,7 +53,7 @@ namespace MathUtils
      * @param m 除数
      * @return int 结果满足 0 <= result < m
      */
-    int euclideanModulo(int n, int m);
+    HIGH_PRECISION euclideanModulo(HIGH_PRECISION n, HIGH_PRECISION m);
 
     /**
      * @brief 线性映射
@@ -66,7 +77,7 @@ namespace MathUtils
      * @retval 0 当 x = a
      * @retval 1 当 x = b
      */
-    HIGH_PRECISION inverseLerp(HIGH_PRECISION x, HIGH_PRECISION a, HIGH_PRECISION b);
+    HIGH_PRECISION inverseLerp(HIGH_PRECISION x, HIGH_PRECISION y, HIGH_PRECISION value);
 
     /**
      * @brief 线性插值
@@ -127,43 +138,43 @@ namespace MathUtils
      * @brief 生成随机浮点数
      * @param low 最小值
      * @param high 最大值
-     * @return float 随机浮点数
+     * @return HIGH_PRECISION 随机浮点数
      */
-    float randFloat(float low, float high);
+    HIGH_PRECISION randFloat(HIGH_PRECISION low, HIGH_PRECISION high);
 
     /**
      * @brief 生成对称随机浮点数
      * @param range 范围 [-range, range]
-     * @return float 随机浮点数
+     * @return HIGH_PRECISION 随机浮点数
      */
-    float randFloatSpread(float range);
+    HIGH_PRECISION randFloatSpread(HIGH_PRECISION range);
 
     /**
      * @brief 生成种子随机数 [0, 1)
-     * @return float 随机数
+     * @return HIGH_PRECISION 随机数
      */
-    float seededRandom();
+    HIGH_PRECISION seededRandom(std::optional<uint32_t> seed = std::nullopt);
 
     /**
      * @brief 度数转弧度
      * @param degrees 角度
-     * @return float 弧度
+     * @return HIGH_PRECISION 弧度
      */
-    float degToRad(float degrees);
+    HIGH_PRECISION degToRad(HIGH_PRECISION degrees);
 
     /**
      * @brief 弧度转度数
      * @param radians 弧度
-     * @return float 角度
+     * @return HIGH_PRECISION 角度
      */
-    float radToDeg(float radians);
+    HIGH_PRECISION radToDeg(HIGH_PRECISION radians);
 
     /**
      * @brief 判断是否为 2 的幂
      * @param value 待检测值
      * @return bool 是否为 2 的幂
      */
-    bool isPowerOfTwo(int value);
+    bool isPowerOfTwo(HIGH_PRECISION value);
 
     /**
      * @brief 向上取整到 2 的幂
@@ -195,7 +206,7 @@ namespace MathUtils
 
     /**
      * @brief 反归一化值到目标类型
-     * @tparam T 目标类型（uint8/16/32, int8/16/32, float/double）
+     * @tparam T 目标类型（uint8/16/32, int8/16/32, HIGH_PRECISION/double）
      * @param value 归一化值
      * @return HIGH_PRECISION 反归一化后的值
      * @retval [0, 1] 无符号类型
@@ -205,7 +216,11 @@ namespace MathUtils
     HIGH_PRECISION denormalize(HIGH_PRECISION value)
     {
         // [0.0, 1.0]
-        if constexpr (std::is_unsigned_v<T>)
+        if constexpr (std::is_floating_point_v<T>)
+        {
+            return value;
+        }
+        else if constexpr (std::is_unsigned_v<T>)
         {
             if constexpr (std::is_same_v<T, uint32_t>)
             {
@@ -268,14 +283,14 @@ namespace MathUtils
             // [0.0, 1.0]
             value = std::clamp(value, (HIGH_PRECISION)0.0, (HIGH_PRECISION)1.0);
             constexpr double max = static_cast<double>(std::numeric_limits<T>::max());
-            return static_cast<T>(std::round(value * max));
+            return static_cast<T>(MathUtils::round(value * max));
         }
         else if constexpr (std::is_signed_v<T>)
         {
             // [-1.0, 1.0]
             value = std::clamp(value, (HIGH_PRECISION)-1.0, (HIGH_PRECISION)1.0);
             constexpr double max = static_cast<double>(std::numeric_limits<T>::max());
-            return static_cast<T>(std::round(value * max));
+            return static_cast<T>(MathUtils::round(value * max));
         }
         else
         {

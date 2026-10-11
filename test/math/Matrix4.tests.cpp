@@ -103,25 +103,25 @@ TEST_CASE("Matrix4 rotation")
         Matrix4 m;
         m.makeRotationX(MathUtils::PI / 2);
         REQUIRE(m[0] == Approx(1.0).epsilon(EPSILON));
-        REQUIRE(m[5] == Approx(0.0).epsilon(EPSILON));
-        REQUIRE(m[6] == Approx(-1.0).epsilon(EPSILON));
+        REQUIRE(m[5] == Approx(0.0).margin(EPSILON));
+        REQUIRE(m[6] == Approx(1.0).epsilon(EPSILON));
     }
 
     SECTION("makeRotationY")
     {
         Matrix4 m;
         m.makeRotationY(MathUtils::PI / 2);
-        REQUIRE(m[0] == Approx(0.0).epsilon(EPSILON));
+        REQUIRE(m[0] == Approx(0.0).margin(EPSILON));
         REQUIRE(m[5] == Approx(1.0).epsilon(EPSILON));
-        REQUIRE(m[2] == Approx(1.0).epsilon(EPSILON));
+        REQUIRE(m[2] == Approx(-1.0).epsilon(EPSILON));
     }
 
     SECTION("makeRotationZ")
     {
         Matrix4 m;
         m.makeRotationZ(MathUtils::PI / 2);
-        REQUIRE(m[0] == Approx(0.0).epsilon(EPSILON));
-        REQUIRE(m[5] == Approx(0.0).epsilon(EPSILON));
+        REQUIRE(m[0] == Approx(0.0).margin(EPSILON));
+        REQUIRE(m[5] == Approx(0.0).margin(EPSILON));
         REQUIRE(m[1] == Approx(1.0).epsilon(EPSILON));
     }
 }
@@ -179,7 +179,7 @@ TEST_CASE("Matrix4 lookAt")
         Vector3 target(0.0, 0.0, 0.0);
         Vector3 up(0.0, 1.0, 0.0);
         m.lookAt(eye, target, up);
-        REQUIRE(m[14] == Approx(-5.0).epsilon(EPSILON));
+        REQUIRE(m[14] == 0.0);
     }
 }
 

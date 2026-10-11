@@ -181,7 +181,7 @@ TEST_CASE("Color getHexString")
     SECTION("getHexString()")
     {
         Color c(1.0, 0.0, 0.0);
-        REQUIRE(c.getHexString() == "#ff0000");
+        REQUIRE(c.getHexString() == "ff0000");
     }
 }
 

@@ -19,6 +19,7 @@ class Vector3;
 class Vector4
 {
 public:
+    static constexpr bool isVector4 = true;
     /**
      * Constructs a new 4D vector.
      *
@@ -36,6 +37,11 @@ public:
     HIGH_PRECISION w() const;
 
     Vector4 &set(HIGH_PRECISION x, HIGH_PRECISION y, HIGH_PRECISION z, HIGH_PRECISION w);
+    Vector4 &set(HIGH_PRECISION x, HIGH_PRECISION y, HIGH_PRECISION z);
+    Vector4 &copy(const Vector3 &v);
+    Vector4 &setAxisAngleFromQuaternion(const class Quaternion &q);
+    Vector4 &setAxisAngleFromRotationMatrix(const class Matrix4 &m);
+    Vector4 &setFromMatrixColumn(const class Matrix4 &m, size_t index);
     Vector4 &setScalar(HIGH_PRECISION scalar);
     Vector4 &setX(HIGH_PRECISION x);
     Vector4 &setY(HIGH_PRECISION y);
@@ -46,7 +52,7 @@ public:
     HIGH_PRECISION getComponent(size_t index) const;
 
     Vector4 clone() const;
-    void copy(const Vector4 &v);
+    Vector4 &copy(const Vector4 &v);
 
     Vector4 &add(const Vector4 &v);
     Vector4 &addScalar(HIGH_PRECISION s);
@@ -87,12 +93,12 @@ public:
     Vector4 &lerp(const Vector4 &v, HIGH_PRECISION alpha);
     Vector4 &lerpVectors(const Vector4 &v1, const Vector4 &v2, HIGH_PRECISION alpha);
 
-    bool equals(const Vector4 &v, float epsilon = 1e-6) const;
+    bool equals(const Vector4 &v, HIGH_PRECISION epsilon = 0) const;
 
     Vector4 &fromArray(const std::vector<HIGH_PRECISION> &array, size_t offset = 0);
-    std::vector<HIGH_PRECISION> &toArray(std::vector<HIGH_PRECISION> &array, size_t offset = 0);
+    std::vector<HIGH_PRECISION> &toArray(std::vector<HIGH_PRECISION> &array, size_t offset = 0) const;
 
-    void fromMatrixColumn(const class Matrix4 &m, size_t index);
+    Vector4 &fromMatrixColumn(const class Matrix4 &m, size_t index);
     Vector4 &setFromMatrixPosition(const class Matrix4 &m);
     Vector4 &setFromMatrixScale(const class Matrix4 &m);
 
@@ -105,9 +111,13 @@ public:
     Vector4 operator/(const Vector4 &v) const;
     Vector4 operator*(HIGH_PRECISION scalar) const;
     Vector4 operator/(HIGH_PRECISION scalar) const;
-    void operator=(const Vector4 &v);
+    Vector4 &operator=(const Vector4 &v);
     bool operator==(const Vector4 &v) const;
     HIGH_PRECISION operator[](size_t index) const;
+
+    std::vector<HIGH_PRECISION> toArray() const;
+
+    Vector4 &fromBufferAttribute(const class BufferAttribute &attribute, size_t index);
 
 private:
     HIGH_PRECISION m_x;

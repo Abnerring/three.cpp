@@ -11,6 +11,9 @@
 
 #include "common/BasicType.h"
 #include <string>
+#include <vector>
+#include "math/ColorManagement.h"
+#include "constants.h"
 
 class Vector3;
 class Vector4;
@@ -31,13 +34,16 @@ class Vector4;
 class Color
 {
 public:
+    static constexpr bool isColor = true;
     /**
      * @brief 构造 RGB 颜色
      * @param r 红分量 [0, 1]，默认 1
      * @param g 绿分量 [0, 1]，默认 1
      * @param b 蓝分量 [0, 1]，默认 1
      */
-    Color(HIGH_PRECISION r = 1.0, HIGH_PRECISION g = 1.0, HIGH_PRECISION b = 1.0);
+    Color();
+    Color(HIGH_PRECISION r, HIGH_PRECISION g, HIGH_PRECISION b);
+    explicit Color(HIGH_PRECISION hex);
 
     /**
      * @brief 从十六进制构造
@@ -84,7 +90,7 @@ public:
      * @param hex 十六进制颜色值
      * @return Color& 自身引用
      */
-    Color &setHex(int hex);
+    Color &setHex(HIGH_PRECISION hex, const std::string &colorSpace = std::string(SRGBColorSpace));
 
     /**
      * @brief 从 HSL 设置
@@ -93,14 +99,14 @@ public:
      * @param l 亮度 [0, 1]
      * @return Color& 自身引用
      */
-    Color &setHSL(HIGH_PRECISION h, HIGH_PRECISION s, HIGH_PRECISION l);
+    Color &setHSL(HIGH_PRECISION h, HIGH_PRECISION s, HIGH_PRECISION l, const std::string &colorSpace = ColorManagement::workingColorSpace);
 
     /**
      * @brief 从颜色名设置
      * @param colorName 颜色名，如 "red", "blue"
      * @return Color& 自身引用
      */
-    Color &setColorName(const std::string &colorName);
+    Color &setColorName(const std::string &colorName, const std::string &colorSpace = std::string(SRGBColorSpace));
 
     /** @brief 克隆颜色 @return 颜色副本 */
     Color clone() const;
@@ -192,25 +198,25 @@ public:
      * @param epsilon 容差
      * @return bool 是否相等
      */
-    bool equals(const Color &color, float epsilon = 1e-6) const;
+    bool equals(const Color &color, HIGH_PRECISION epsilon = 0) const;
 
     /**
      * @brief 获取十六进制整数
      * @return int 十六进制颜色值
      */
-    int getHex() const;
+    int getHex(const std::string &colorSpace = std::string(SRGBColorSpace)) const;
 
     /**
      * @brief 获取十六进制字符串
      * @return std::string 如 "#ff0000"
      */
-    std::string getHexString() const;
+    std::string getHexString(const std::string &colorSpace = std::string(SRGBColorSpace)) const;
 
     /**
      * @brief 获取 CSS 样式字符串
      * @return std::string 如 "rgb(255,0,0)"
      */
-    std::string getStyle() const;
+    std::string getStyle(const std::string &colorSpace = std::string(SRGBColorSpace)) const;
 
     /**
      * @brief 获取 HSL 字符串
@@ -222,7 +228,7 @@ public:
      * @brief 获取 HSL 值
      * @param result 输出 HSL 向量 {h, s, l}
      */
-    void getHSL(Vector3 &result) const;
+    Vector3 &getHSL(Vector3 &result, const std::string &colorSpace = ColorManagement::workingColorSpace) const;
 
     /**
      * @brief 从 Vector3 设置
@@ -265,7 +271,7 @@ public:
      * @param gammaFactor gamma 因子，默认 2.0
      * @return Color& 自身引用
      */
-    Color &copyGammaToLinear(const Color &color, float gammaFactor = 2.0f);
+    Color &copyGammaToLinear(const Color &color, HIGH_PRECISION gammaFactor = 2.0f);
 
     /**
      * @brief 从颜色复制并进行逆 gamma 校正
@@ -273,21 +279,21 @@ public:
      * @param gammaFactor gamma 因子，默认 2.0
      * @return Color& 自身引用
      */
-    Color &copyLinearToGamma(const Color &color, float gammaFactor = 2.0f);
+    Color &copyLinearToGamma(const Color &color, HIGH_PRECISION gammaFactor = 2.0f);
 
     /**
      * @brief gamma 校正（原地）
      * @param gammaFactor gamma 因子，默认 2.0
      * @return Color& 自身引用
      */
-    Color &convertGammaToLinear(float gammaFactor = 2.0f);
+    Color &convertGammaToLinear(HIGH_PRECISION gammaFactor = 2.0f);
 
     /**
      * @brief 逆 gamma 校正（原地）
      * @param gammaFactor gamma 因子，默认 2.0
      * @return Color& 自身引用
      */
-    Color &convertLinearToGamma(float gammaFactor = 2.0f);
+    Color &convertLinearToGamma(HIGH_PRECISION gammaFactor = 2.0f);
 
 public:
     /** @brief 加法运算符 @return 新颜色 */
@@ -306,13 +312,33 @@ public:
     Color operator/(HIGH_PRECISION s) const;
 
     /** @brief 赋值运算符 */
-    void operator=(const Color &c);
+    Color &operator=(const Color &c);
 
     /** @brief 相等判断 @return 是否相等 */
     bool operator==(const Color &c) const;
 
     /** @brief 下标访问 @param index 0=r, 1=g, 2=b @return 分量值 */
     HIGH_PRECISION operator[](size_t index) const;
+
+    Color &set(int hex);
+    Color &set(const std::string &style);
+    Color &set(const Color &color);
+    Color &setRGB(HIGH_PRECISION r, HIGH_PRECISION g, HIGH_PRECISION b, const std::string &colorSpace = ColorManagement::workingColorSpace);
+    Color &setStyle(const std::string &style, const std::string &colorSpace = std::string(SRGBColorSpace));
+    Color &copySRGBToLinear(const Color &color);
+    Color &copyLinearToSRGB(const Color &color);
+    Color &convertSRGBToLinear();
+    Color &convertLinearToSRGB();
+    Color &getRGB(Color &result, const std::string &colorSpace = ColorManagement::workingColorSpace) const;
+    Color &lerpColors(const Color &a, const Color &b, HIGH_PRECISION alpha);
+    Color &setFromVector3(const Vector3 &v);
+    Color &fromArray(const std::vector<HIGH_PRECISION> &array, size_t offset = 0);
+    std::vector<HIGH_PRECISION> &toArray(std::vector<HIGH_PRECISION> &array, size_t offset = 0) const;
+    std::vector<HIGH_PRECISION> toArray() const;
+    int toJSON() const;
+
+    Color &applyMatrix3(const class Matrix3 &m);
+    Color &fromBufferAttribute(const class BufferAttribute &attribute, size_t index);
 
 private:
     /** @brief 红分量 */

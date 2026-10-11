@@ -1,0 +1,5303 @@
+{
+  "upstream": {
+    "repository": "https://github.com/mrdoob/three.js",
+    "version": "0.186.0",
+    "revision": "187dev",
+    "commit": "11738a9d55e502fb484cefffcea3a66dc44e9fe9",
+    "scope": "Port the full three.js logic to C++; replace the rendering backend with Vulkan. Partial modules are not completion.",
+    "license": "THREEJS-LICENSE"
+  },
+  "counts": {
+    "missing": 424,
+    "partial-unverified": 41,
+    "vulkan-port-pending": 290
+  },
+  "modules": [
+    {
+      "source": "src/animation/AnimationAction.js",
+      "header": null,
+      "implementation": null,
+      "status": "missing",
+      "verifiedComplete": false
+    },
+    {
+      "source": "src/animation/AnimationClip.js",
+      "header": null,
+      "implementation": null,
+      "status": "missing",
+      "verifiedComplete": false
+    },
+    {
+      "source": "src/animation/AnimationMixer.js",
+      "header": null,
+      "implementation": null,
+      "status": "missing",
+      "verifiedComplete": false
+    },
+    {
+      "source": "src/animation/AnimationObjectGroup.js",
+      "header": null,
+      "implementation": null,
+      "status": "missing",
+      "verifiedComplete": false
+    },
+    {
+      "source": "src/animation/AnimationUtils.js",
+      "header": null,
+      "implementation": null,
+      "status": "missing",
+      "verifiedComplete": false
+    },
+    {
+      "source": "src/animation/KeyframeTrack.js",
+      "header": null,
+      "implementation": null,
+      "status": "missing",
+      "verifiedComplete": false
+    },
+    {
+      "source": "src/animation/PropertyBinding.js",
+      "header": null,
+      "implementation": null,
+      "status": "missing",
+      "verifiedComplete": false
+    },
+    {
+      "source": "src/animation/PropertyMixer.js",
+      "header": null,
+      "implementation": null,
+      "status": "missing",
+      "verifiedComplete": false
+    },
+    {
+      "source": "src/animation/tracks/BooleanKeyframeTrack.js",
+      "header": null,
+      "implementation": null,
+      "status": "missing",
+      "verifiedComplete": false
+    },
+    {
+      "source": "src/animation/tracks/ColorKeyframeTrack.js",
+      "header": null,
+      "implementation": null,
+      "status": "missing",
+      "verifiedComplete": false
+    },
+    {
+      "source": "src/animation/tracks/NumberKeyframeTrack.js",
+      "header": null,
+      "implementation": null,
+      "status": "missing",
+      "verifiedComplete": false
+    },
+    {
+      "source": "src/animation/tracks/QuaternionKeyframeTrack.js",
+      "header": null,
+      "implementation": null,
+      "status": "missing",
+      "verifiedComplete": false
+    },
+    {
+      "source": "src/animation/tracks/StringKeyframeTrack.js",
+      "header": null,
+      "implementation": null,
+      "status": "missing",
+      "verifiedComplete": false
+    },
+    {
+      "source": "src/animation/tracks/VectorKeyframeTrack.js",
+      "header": null,
+      "implementation": null,
+      "status": "missing",
+      "verifiedComplete": false
+    },
+    {
+      "source": "src/audio/Audio.js",
+      "header": null,
+      "implementation": null,
+      "status": "missing",
+      "verifiedComplete": false
+    },
+    {
+      "source": "src/audio/AudioAnalyser.js",
+      "header": null,
+      "implementation": null,
+      "status": "missing",
+      "verifiedComplete": false
+    },
+    {
+      "source": "src/audio/AudioContext.js",
+      "header": null,
+      "implementation": null,
+      "status": "missing",
+      "verifiedComplete": false
+    },
+    {
+      "source": "src/audio/AudioListener.js",
+      "header": null,
+      "implementation": null,
+      "status": "missing",
+      "verifiedComplete": false
+    },
+    {
+      "source": "src/audio/PositionalAudio.js",
+      "header": null,
+      "implementation": null,
+      "status": "missing",
+      "verifiedComplete": false
+    },
+    {
+      "source": "src/cameras/ArrayCamera.js",
+      "header": null,
+      "implementation": null,
+      "status": "missing",
+      "verifiedComplete": false
+    },
+    {
+      "source": "src/cameras/Camera.js",
+      "header": "include/cameras/Camera.h",
+      "implementation": "src/cameras/Camera.cpp",
+      "status": "partial-unverified",
+      "verifiedComplete": false
+    },
+    {
+      "source": "src/cameras/CubeCamera.js",
+      "header": null,
+      "implementation": null,
+      "status": "missing",
+      "verifiedComplete": false
+    },
+    {
+      "source": "src/cameras/OrthographicCamera.js",
+      "header": "include/cameras/OrthographicCamera.h",
+      "implementation": "src/cameras/OrthographicCamera.cpp",
+      "status": "partial-unverified",
+      "verifiedComplete": false
+    },
+    {
+      "source": "src/cameras/PerspectiveCamera.js",
+      "header": "include/cameras/PerspectiveCamera.h",
+      "implementation": "src/cameras/PerspectiveCamera.cpp",
+      "status": "partial-unverified",
+      "verifiedComplete": false
+    },
+    {
+      "source": "src/cameras/StereoCamera.js",
+      "header": null,
+      "implementation": null,
+      "status": "missing",
+      "verifiedComplete": false
+    },
+    {
+      "source": "src/constants.js",
+      "header": "include/constants.h",
+      "implementation": null,
+      "status": "partial-unverified",
+      "verifiedComplete": false
+    },
+    {
+      "source": "src/core/BufferAttribute.js",
+      "header": "include/core/BufferAttribute.h",
+      "implementation": "src/core/BufferAttribute.cpp",
+      "status": "partial-unverified",
+      "verifiedComplete": false
+    },
+    {
+      "source": "src/core/BufferGeometry.js",
+      "header": "include/core/BufferGeometry.h",
+      "implementation": "src/core/BufferGeometry.cpp",
+      "status": "partial-unverified",
+      "verifiedComplete": false
+    },
+    {
+      "source": "src/core/Clock.js",
+      "header": null,
+      "implementation": null,
+      "status": "missing",
+      "verifiedComplete": false
+    },
+    {
+      "source": "src/core/EventDispatcher.js",
+      "header": "include/core/EventDispatcher.h",
+      "implementation": "src/core/EventDispatcher.cpp",
+      "status": "partial-unverified",
+      "verifiedComplete": false
+    },
+    {
+      "source": "src/core/GLBufferAttribute.js",
+      "header": null,
+      "implementation": null,
+      "status": "missing",
+      "verifiedComplete": false
+    },
+    {
+      "source": "src/core/InstancedBufferAttribute.js",
+      "header": null,
+      "implementation": null,
+      "status": "missing",
+      "verifiedComplete": false
+    },
+    {
+      "source": "src/core/InstancedBufferGeometry.js",
+      "header": null,
+      "implementation": null,
+      "status": "missing",
+      "verifiedComplete": false
+    },
+    {
+      "source": "src/core/InstancedInterleavedBuffer.js",
+      "header": null,
+      "implementation": null,
+      "status": "missing",
+      "verifiedComplete": false
+    },
+    {
+      "source": "src/core/InterleavedBuffer.js",
+      "header": null,
+      "implementation": null,
+      "status": "missing",
+      "verifiedComplete": false
+    },
+    {
+      "source": "src/core/InterleavedBufferAttribute.js",
+      "header": null,
+      "implementation": null,
+      "status": "missing",
+      "verifiedComplete": false
+    },
+    {
+      "source": "src/core/Layers.js",
+      "header": "include/core/Layers.h",
+      "implementation": null,
+      "status": "partial-unverified",
+      "verifiedComplete": false
+    },
+    {
+      "source": "src/core/Object3D.js",
+      "header": "include/core/Object3D.h",
+      "implementation": "src/core/Object3D.cpp",
+      "status": "partial-unverified",
+      "verifiedComplete": false
+    },
+    {
+      "source": "src/core/Raycaster.js",
+      "header": "include/core/Raycaster.h",
+      "implementation": "src/core/Raycaster.cpp",
+      "status": "partial-unverified",
+      "verifiedComplete": false
+    },
+    {
+      "source": "src/core/RenderTarget.js",
+      "header": null,
+      "implementation": null,
+      "status": "missing",
+      "verifiedComplete": false
+    },
+    {
+      "source": "src/core/RenderTarget3D.js",
+      "header": null,
+      "implementation": null,
+      "status": "missing",
+      "verifiedComplete": false
+    },
+    {
+      "source": "src/core/Timer.js",
+      "header": null,
+      "implementation": null,
+      "status": "missing",
+      "verifiedComplete": false
+    },
+    {
+      "source": "src/core/Uniform.js",
+      "header": null,
+      "implementation": null,
+      "status": "missing",
+      "verifiedComplete": false
+    },
+    {
+      "source": "src/core/UniformsGroup.js",
+      "header": null,
+      "implementation": null,
+      "status": "missing",
+      "verifiedComplete": false
+    },
+    {
+      "source": "src/extras/Controls.js",
+      "header": null,
+      "implementation": null,
+      "status": "missing",
+      "verifiedComplete": false
+    },
+    {
+      "source": "src/extras/core/Curve.js",
+      "header": null,
+      "implementation": null,
+      "status": "missing",
+      "verifiedComplete": false
+    },
+    {
+      "source": "src/extras/core/CurvePath.js",
+      "header": null,
+      "implementation": null,
+      "status": "missing",
+      "verifiedComplete": false
+    },
+    {
+      "source": "src/extras/core/Interpolations.js",
+      "header": null,
+      "implementation": null,
+      "status": "missing",
+      "verifiedComplete": false
+    },
+    {
+      "source": "src/extras/core/Path.js",
+      "header": null,
+      "implementation": null,
+      "status": "missing",
+      "verifiedComplete": false
+    },
+    {
+      "source": "src/extras/core/Shape.js",
+      "header": null,
+      "implementation": null,
+      "status": "missing",
+      "verifiedComplete": false
+    },
+    {
+      "source": "src/extras/core/ShapePath.js",
+      "header": null,
+      "implementation": null,
+      "status": "missing",
+      "verifiedComplete": false
+    },
+    {
+      "source": "src/extras/curves/ArcCurve.js",
+      "header": null,
+      "implementation": null,
+      "status": "missing",
+      "verifiedComplete": false
+    },
+    {
+      "source": "src/extras/curves/CatmullRomCurve3.js",
+      "header": null,
+      "implementation": null,
+      "status": "missing",
+      "verifiedComplete": false
+    },
+    {
+      "source": "src/extras/curves/CubicBezierCurve.js",
+      "header": null,
+      "implementation": null,
+      "status": "missing",
+      "verifiedComplete": false
+    },
+    {
+      "source": "src/extras/curves/CubicBezierCurve3.js",
+      "header": null,
+      "implementation": null,
+      "status": "missing",
+      "verifiedComplete": false
+    },
+    {
+      "source": "src/extras/curves/Curves.js",
+      "header": null,
+      "implementation": null,
+      "status": "missing",
+      "verifiedComplete": false
+    },
+    {
+      "source": "src/extras/curves/EllipseCurve.js",
+      "header": null,
+      "implementation": null,
+      "status": "missing",
+      "verifiedComplete": false
+    },
+    {
+      "source": "src/extras/curves/LineCurve.js",
+      "header": null,
+      "implementation": null,
+      "status": "missing",
+      "verifiedComplete": false
+    },
+    {
+      "source": "src/extras/curves/LineCurve3.js",
+      "header": null,
+      "implementation": null,
+      "status": "missing",
+      "verifiedComplete": false
+    },
+    {
+      "source": "src/extras/curves/QuadraticBezierCurve.js",
+      "header": null,
+      "implementation": null,
+      "status": "missing",
+      "verifiedComplete": false
+    },
+    {
+      "source": "src/extras/curves/QuadraticBezierCurve3.js",
+      "header": null,
+      "implementation": null,
+      "status": "missing",
+      "verifiedComplete": false
+    },
+    {
+      "source": "src/extras/curves/SplineCurve.js",
+      "header": null,
+      "implementation": null,
+      "status": "missing",
+      "verifiedComplete": false
+    },
+    {
+      "source": "src/extras/DataUtils.js",
+      "header": null,
+      "implementation": null,
+      "status": "missing",
+      "verifiedComplete": false
+    },
+    {
+      "source": "src/extras/Earcut.js",
+      "header": null,
+      "implementation": null,
+      "status": "missing",
+      "verifiedComplete": false
+    },
+    {
+      "source": "src/extras/ImageUtils.js",
+      "header": null,
+      "implementation": null,
+      "status": "missing",
+      "verifiedComplete": false
+    },
+    {
+      "source": "src/extras/lib/earcut.js",
+      "header": null,
+      "implementation": null,
+      "status": "missing",
+      "verifiedComplete": false
+    },
+    {
+      "source": "src/extras/PMREMGenerator.js",
+      "header": null,
+      "implementation": null,
+      "status": "missing",
+      "verifiedComplete": false
+    },
+    {
+      "source": "src/extras/ShapeUtils.js",
+      "header": null,
+      "implementation": null,
+      "status": "missing",
+      "verifiedComplete": false
+    },
+    {
+      "source": "src/extras/TextureUtils.js",
+      "header": null,
+      "implementation": null,
+      "status": "missing",
+      "verifiedComplete": false
+    },
+    {
+      "source": "src/geometries/BoxGeometry.js",
+      "header": "include/geometries/BoxGeometry.h",
+      "implementation": "src/geometries/BoxGeometry.cpp",
+      "status": "partial-unverified",
+      "verifiedComplete": false
+    },
+    {
+      "source": "src/geometries/CapsuleGeometry.js",
+      "header": null,
+      "implementation": null,
+      "status": "missing",
+      "verifiedComplete": false
+    },
+    {
+      "source": "src/geometries/CircleGeometry.js",
+      "header": null,
+      "implementation": null,
+      "status": "missing",
+      "verifiedComplete": false
+    },
+    {
+      "source": "src/geometries/ConeGeometry.js",
+      "header": null,
+      "implementation": null,
+      "status": "missing",
+      "verifiedComplete": false
+    },
+    {
+      "source": "src/geometries/CylinderGeometry.js",
+      "header": null,
+      "implementation": null,
+      "status": "missing",
+      "verifiedComplete": false
+    },
+    {
+      "source": "src/geometries/DodecahedronGeometry.js",
+      "header": null,
+      "implementation": null,
+      "status": "missing",
+      "verifiedComplete": false
+    },
+    {
+      "source": "src/geometries/EdgesGeometry.js",
+      "header": null,
+      "implementation": null,
+      "status": "missing",
+      "verifiedComplete": false
+    },
+    {
+      "source": "src/geometries/ExtrudeGeometry.js",
+      "header": null,
+      "implementation": null,
+      "status": "missing",
+      "verifiedComplete": false
+    },
+    {
+      "source": "src/geometries/Geometries.js",
+      "header": null,
+      "implementation": null,
+      "status": "missing",
+      "verifiedComplete": false
+    },
+    {
+      "source": "src/geometries/IcosahedronGeometry.js",
+      "header": null,
+      "implementation": null,
+      "status": "missing",
+      "verifiedComplete": false
+    },
+    {
+      "source": "src/geometries/LatheGeometry.js",
+      "header": null,
+      "implementation": null,
+      "status": "missing",
+      "verifiedComplete": false
+    },
+    {
+      "source": "src/geometries/OctahedronGeometry.js",
+      "header": null,
+      "implementation": null,
+      "status": "missing",
+      "verifiedComplete": false
+    },
+    {
+      "source": "src/geometries/PlaneGeometry.js",
+      "header": "include/geometries/PlaneGeometry.h",
+      "implementation": "src/geometries/PlaneGeometry.cpp",
+      "status": "partial-unverified",
+      "verifiedComplete": false
+    },
+    {
+      "source": "src/geometries/PolyhedronGeometry.js",
+      "header": null,
+      "implementation": null,
+      "status": "missing",
+      "verifiedComplete": false
+    },
+    {
+      "source": "src/geometries/RingGeometry.js",
+      "header": null,
+      "implementation": null,
+      "status": "missing",
+      "verifiedComplete": false
+    },
+    {
+      "source": "src/geometries/ShapeGeometry.js",
+      "header": null,
+      "implementation": null,
+      "status": "missing",
+      "verifiedComplete": false
+    },
+    {
+      "source": "src/geometries/SphereGeometry.js",
+      "header": null,
+      "implementation": null,
+      "status": "missing",
+      "verifiedComplete": false
+    },
+    {
+      "source": "src/geometries/TetrahedronGeometry.js",
+      "header": null,
+      "implementation": null,
+      "status": "missing",
+      "verifiedComplete": false
+    },
+    {
+      "source": "src/geometries/TorusGeometry.js",
+      "header": null,
+      "implementation": null,
+      "status": "missing",
+      "verifiedComplete": false
+    },
+    {
+      "source": "src/geometries/TorusKnotGeometry.js",
+      "header": null,
+      "implementation": null,
+      "status": "missing",
+      "verifiedComplete": false
+    },
+    {
+      "source": "src/geometries/TubeGeometry.js",
+      "header": null,
+      "implementation": null,
+      "status": "missing",
+      "verifiedComplete": false
+    },
+    {
+      "source": "src/geometries/WireframeGeometry.js",
+      "header": null,
+      "implementation": null,
+      "status": "missing",
+      "verifiedComplete": false
+    },
+    {
+      "source": "src/helpers/ArrowHelper.js",
+      "header": null,
+      "implementation": null,
+      "status": "missing",
+      "verifiedComplete": false
+    },
+    {
+      "source": "src/helpers/AxesHelper.js",
+      "header": null,
+      "implementation": null,
+      "status": "missing",
+      "verifiedComplete": false
+    },
+    {
+      "source": "src/helpers/Box3Helper.js",
+      "header": null,
+      "implementation": null,
+      "status": "missing",
+      "verifiedComplete": false
+    },
+    {
+      "source": "src/helpers/BoxHelper.js",
+      "header": null,
+      "implementation": null,
+      "status": "missing",
+      "verifiedComplete": false
+    },
+    {
+      "source": "src/helpers/CameraHelper.js",
+      "header": null,
+      "implementation": null,
+      "status": "missing",
+      "verifiedComplete": false
+    },
+    {
+      "source": "src/helpers/DirectionalLightHelper.js",
+      "header": null,
+      "implementation": null,
+      "status": "missing",
+      "verifiedComplete": false
+    },
+    {
+      "source": "src/helpers/GridHelper.js",
+      "header": null,
+      "implementation": null,
+      "status": "missing",
+      "verifiedComplete": false
+    },
+    {
+      "source": "src/helpers/HemisphereLightHelper.js",
+      "header": null,
+      "implementation": null,
+      "status": "missing",
+      "verifiedComplete": false
+    },
+    {
+      "source": "src/helpers/PlaneHelper.js",
+      "header": null,
+      "implementation": null,
+      "status": "missing",
+      "verifiedComplete": false
+    },
+    {
+      "source": "src/helpers/PointLightHelper.js",
+      "header": null,
+      "implementation": null,
+      "status": "missing",
+      "verifiedComplete": false
+    },
+    {
+      "source": "src/helpers/PolarGridHelper.js",
+      "header": null,
+      "implementation": null,
+      "status": "missing",
+      "verifiedComplete": false
+    },
+    {
+      "source": "src/helpers/SkeletonHelper.js",
+      "header": null,
+      "implementation": null,
+      "status": "missing",
+      "verifiedComplete": false
+    },
+    {
+      "source": "src/helpers/SpotLightHelper.js",
+      "header": null,
+      "implementation": null,
+      "status": "missing",
+      "verifiedComplete": false
+    },
+    {
+      "source": "src/lights/AmbientLight.js",
+      "header": null,
+      "implementation": null,
+      "status": "missing",
+      "verifiedComplete": false
+    },
+    {
+      "source": "src/lights/DirectionalLight.js",
+      "header": null,
+      "implementation": null,
+      "status": "missing",
+      "verifiedComplete": false
+    },
+    {
+      "source": "src/lights/DirectionalLightShadow.js",
+      "header": null,
+      "implementation": null,
+      "status": "missing",
+      "verifiedComplete": false
+    },
+    {
+      "source": "src/lights/HemisphereLight.js",
+      "header": null,
+      "implementation": null,
+      "status": "missing",
+      "verifiedComplete": false
+    },
+    {
+      "source": "src/lights/Light.js",
+      "header": null,
+      "implementation": null,
+      "status": "missing",
+      "verifiedComplete": false
+    },
+    {
+      "source": "src/lights/LightProbe.js",
+      "header": null,
+      "implementation": null,
+      "status": "missing",
+      "verifiedComplete": false
+    },
+    {
+      "source": "src/lights/LightShadow.js",
+      "header": null,
+      "implementation": null,
+      "status": "missing",
+      "verifiedComplete": false
+    },
+    {
+      "source": "src/lights/PointLight.js",
+      "header": null,
+      "implementation": null,
+      "status": "missing",
+      "verifiedComplete": false
+    },
+    {
+      "source": "src/lights/PointLightShadow.js",
+      "header": null,
+      "implementation": null,
+      "status": "missing",
+      "verifiedComplete": false
+    },
+    {
+      "source": "src/lights/RectAreaLight.js",
+      "header": null,
+      "implementation": null,
+      "status": "missing",
+      "verifiedComplete": false
+    },
+    {
+      "source": "src/lights/SpotLight.js",
+      "header": null,
+      "implementation": null,
+      "status": "missing",
+      "verifiedComplete": false
+    },
+    {
+      "source": "src/lights/SpotLightShadow.js",
+      "header": null,
+      "implementation": null,
+      "status": "missing",
+      "verifiedComplete": false
+    },
+    {
+      "source": "src/lights/webgpu/IESSpotLight.js",
+      "header": null,
+      "implementation": null,
+      "status": "missing",
+      "verifiedComplete": false
+    },
+    {
+      "source": "src/lights/webgpu/ProjectorLight.js",
+      "header": null,
+      "implementation": null,
+      "status": "missing",
+      "verifiedComplete": false
+    },
+    {
+      "source": "src/loaders/AnimationLoader.js",
+      "header": null,
+      "implementation": null,
+      "status": "missing",
+      "verifiedComplete": false
+    },
+    {
+      "source": "src/loaders/AudioLoader.js",
+      "header": null,
+      "implementation": null,
+      "status": "missing",
+      "verifiedComplete": false
+    },
+    {
+      "source": "src/loaders/BufferGeometryLoader.js",
+      "header": null,
+      "implementation": null,
+      "status": "missing",
+      "verifiedComplete": false
+    },
+    {
+      "source": "src/loaders/Cache.js",
+      "header": null,
+      "implementation": null,
+      "status": "missing",
+      "verifiedComplete": false
+    },
+    {
+      "source": "src/loaders/CompressedTextureLoader.js",
+      "header": null,
+      "implementation": null,
+      "status": "missing",
+      "verifiedComplete": false
+    },
+    {
+      "source": "src/loaders/CubeTextureLoader.js",
+      "header": null,
+      "implementation": null,
+      "status": "missing",
+      "verifiedComplete": false
+    },
+    {
+      "source": "src/loaders/DataTextureLoader.js",
+      "header": null,
+      "implementation": null,
+      "status": "missing",
+      "verifiedComplete": false
+    },
+    {
+      "source": "src/loaders/FileLoader.js",
+      "header": null,
+      "implementation": null,
+      "status": "missing",
+      "verifiedComplete": false
+    },
+    {
+      "source": "src/loaders/ImageBitmapLoader.js",
+      "header": null,
+      "implementation": null,
+      "status": "missing",
+      "verifiedComplete": false
+    },
+    {
+      "source": "src/loaders/ImageLoader.js",
+      "header": null,
+      "implementation": null,
+      "status": "missing",
+      "verifiedComplete": false
+    },
+    {
+      "source": "src/loaders/Loader.js",
+      "header": null,
+      "implementation": null,
+      "status": "missing",
+      "verifiedComplete": false
+    },
+    {
+      "source": "src/loaders/LoaderUtils.js",
+      "header": null,
+      "implementation": null,
+      "status": "missing",
+      "verifiedComplete": false
+    },
+    {
+      "source": "src/loaders/LoadingManager.js",
+      "header": null,
+      "implementation": null,
+      "status": "missing",
+      "verifiedComplete": false
+    },
+    {
+      "source": "src/loaders/MaterialLoader.js",
+      "header": null,
+      "implementation": null,
+      "status": "missing",
+      "verifiedComplete": false
+    },
+    {
+      "source": "src/loaders/nodes/NodeLoader.js",
+      "header": null,
+      "implementation": null,
+      "status": "missing",
+      "verifiedComplete": false
+    },
+    {
+      "source": "src/loaders/nodes/NodeMaterialLoader.js",
+      "header": null,
+      "implementation": null,
+      "status": "missing",
+      "verifiedComplete": false
+    },
+    {
+      "source": "src/loaders/nodes/NodeObjectLoader.js",
+      "header": null,
+      "implementation": null,
+      "status": "missing",
+      "verifiedComplete": false
+    },
+    {
+      "source": "src/loaders/ObjectLoader.js",
+      "header": null,
+      "implementation": null,
+      "status": "missing",
+      "verifiedComplete": false
+    },
+    {
+      "source": "src/loaders/TextureLoader.js",
+      "header": null,
+      "implementation": null,
+      "status": "missing",
+      "verifiedComplete": false
+    },
+    {
+      "source": "src/materials/LineBasicMaterial.js",
+      "header": null,
+      "implementation": null,
+      "status": "missing",
+      "verifiedComplete": false
+    },
+    {
+      "source": "src/materials/LineDashedMaterial.js",
+      "header": null,
+      "implementation": null,
+      "status": "missing",
+      "verifiedComplete": false
+    },
+    {
+      "source": "src/materials/Material.js",
+      "header": "include/materials/Material.h",
+      "implementation": "src/materials/Material.cpp",
+      "status": "partial-unverified",
+      "verifiedComplete": false
+    },
+    {
+      "source": "src/materials/Materials.js",
+      "header": null,
+      "implementation": null,
+      "status": "missing",
+      "verifiedComplete": false
+    },
+    {
+      "source": "src/materials/MeshBasicMaterial.js",
+      "header": "include/materials/MeshBasicMaterial.h",
+      "implementation": "src/materials/MeshBasicMaterial.cpp",
+      "status": "partial-unverified",
+      "verifiedComplete": false
+    },
+    {
+      "source": "src/materials/MeshDepthMaterial.js",
+      "header": null,
+      "implementation": null,
+      "status": "missing",
+      "verifiedComplete": false
+    },
+    {
+      "source": "src/materials/MeshDistanceMaterial.js",
+      "header": null,
+      "implementation": null,
+      "status": "missing",
+      "verifiedComplete": false
+    },
+    {
+      "source": "src/materials/MeshLambertMaterial.js",
+      "header": null,
+      "implementation": null,
+      "status": "missing",
+      "verifiedComplete": false
+    },
+    {
+      "source": "src/materials/MeshMatcapMaterial.js",
+      "header": null,
+      "implementation": null,
+      "status": "missing",
+      "verifiedComplete": false
+    },
+    {
+      "source": "src/materials/MeshNormalMaterial.js",
+      "header": null,
+      "implementation": null,
+      "status": "missing",
+      "verifiedComplete": false
+    },
+    {
+      "source": "src/materials/MeshPhongMaterial.js",
+      "header": null,
+      "implementation": null,
+      "status": "missing",
+      "verifiedComplete": false
+    },
+    {
+      "source": "src/materials/MeshPhysicalMaterial.js",
+      "header": null,
+      "implementation": null,
+      "status": "missing",
+      "verifiedComplete": false
+    },
+    {
+      "source": "src/materials/MeshStandardMaterial.js",
+      "header": null,
+      "implementation": null,
+      "status": "missing",
+      "verifiedComplete": false
+    },
+    {
+      "source": "src/materials/MeshToonMaterial.js",
+      "header": null,
+      "implementation": null,
+      "status": "missing",
+      "verifiedComplete": false
+    },
+    {
+      "source": "src/materials/nodes/Line2NodeMaterial.js",
+      "header": null,
+      "implementation": null,
+      "status": "missing",
+      "verifiedComplete": false
+    },
+    {
+      "source": "src/materials/nodes/LineBasicNodeMaterial.js",
+      "header": null,
+      "implementation": null,
+      "status": "missing",
+      "verifiedComplete": false
+    },
+    {
+      "source": "src/materials/nodes/LineDashedNodeMaterial.js",
+      "header": null,
+      "implementation": null,
+      "status": "missing",
+      "verifiedComplete": false
+    },
+    {
+      "source": "src/materials/nodes/manager/NodeMaterialObserver.js",
+      "header": null,
+      "implementation": null,
+      "status": "missing",
+      "verifiedComplete": false
+    },
+    {
+      "source": "src/materials/nodes/MeshBasicNodeMaterial.js",
+      "header": null,
+      "implementation": null,
+      "status": "missing",
+      "verifiedComplete": false
+    },
+    {
+      "source": "src/materials/nodes/MeshLambertNodeMaterial.js",
+      "header": null,
+      "implementation": null,
+      "status": "missing",
+      "verifiedComplete": false
+    },
+    {
+      "source": "src/materials/nodes/MeshMatcapNodeMaterial.js",
+      "header": null,
+      "implementation": null,
+      "status": "missing",
+      "verifiedComplete": false
+    },
+    {
+      "source": "src/materials/nodes/MeshNormalNodeMaterial.js",
+      "header": null,
+      "implementation": null,
+      "status": "missing",
+      "verifiedComplete": false
+    },
+    {
+      "source": "src/materials/nodes/MeshPhongNodeMaterial.js",
+      "header": null,
+      "implementation": null,
+      "status": "missing",
+      "verifiedComplete": false
+    },
+    {
+      "source": "src/materials/nodes/MeshPhysicalNodeMaterial.js",
+      "header": null,
+      "implementation": null,
+      "status": "missing",
+      "verifiedComplete": false
+    },
+    {
+      "source": "src/materials/nodes/MeshSSSNodeMaterial.js",
+      "header": null,
+      "implementation": null,
+      "status": "missing",
+      "verifiedComplete": false
+    },
+    {
+      "source": "src/materials/nodes/MeshStandardNodeMaterial.js",
+      "header": null,
+      "implementation": null,
+      "status": "missing",
+      "verifiedComplete": false
+    },
+    {
+      "source": "src/materials/nodes/MeshToonNodeMaterial.js",
+      "header": null,
+      "implementation": null,
+      "status": "missing",
+      "verifiedComplete": false
+    },
+    {
+      "source": "src/materials/nodes/NodeMaterial.js",
+      "header": null,
+      "implementation": null,
+      "status": "missing",
+      "verifiedComplete": false
+    },
+    {
+      "source": "src/materials/nodes/NodeMaterials.js",
+      "header": null,
+      "implementation": null,
+      "status": "missing",
+      "verifiedComplete": false
+    },
+    {
+      "source": "src/materials/nodes/PointsNodeMaterial.js",
+      "header": null,
+      "implementation": null,
+      "status": "missing",
+      "verifiedComplete": false
+    },
+    {
+      "source": "src/materials/nodes/ProxyNodeMaterial.js",
+      "header": null,
+      "implementation": null,
+      "status": "missing",
+      "verifiedComplete": false
+    },
+    {
+      "source": "src/materials/nodes/ShadowNodeMaterial.js",
+      "header": null,
+      "implementation": null,
+      "status": "missing",
+      "verifiedComplete": false
+    },
+    {
+      "source": "src/materials/nodes/SpriteNodeMaterial.js",
+      "header": null,
+      "implementation": null,
+      "status": "missing",
+      "verifiedComplete": false
+    },
+    {
+      "source": "src/materials/nodes/VolumeNodeMaterial.js",
+      "header": null,
+      "implementation": null,
+      "status": "missing",
+      "verifiedComplete": false
+    },
+    {
+      "source": "src/materials/PointsMaterial.js",
+      "header": null,
+      "implementation": null,
+      "status": "missing",
+      "verifiedComplete": false
+    },
+    {
+      "source": "src/materials/RawShaderMaterial.js",
+      "header": null,
+      "implementation": null,
+      "status": "missing",
+      "verifiedComplete": false
+    },
+    {
+      "source": "src/materials/ShaderMaterial.js",
+      "header": null,
+      "implementation": null,
+      "status": "missing",
+      "verifiedComplete": false
+    },
+    {
+      "source": "src/materials/ShadowMaterial.js",
+      "header": null,
+      "implementation": null,
+      "status": "missing",
+      "verifiedComplete": false
+    },
+    {
+      "source": "src/materials/SpriteMaterial.js",
+      "header": null,
+      "implementation": null,
+      "status": "missing",
+      "verifiedComplete": false
+    },
+    {
+      "source": "src/math/Box2.js",
+      "header": "include/math/Box2.h",
+      "implementation": "src/math/Box2.cpp",
+      "status": "partial-unverified",
+      "verifiedComplete": false
+    },
+    {
+      "source": "src/math/Box3.js",
+      "header": "include/math/Box3.h",
+      "implementation": "src/math/Box3.cpp",
+      "status": "partial-unverified",
+      "verifiedComplete": false
+    },
+    {
+      "source": "src/math/Color.js",
+      "header": "include/math/Color.h",
+      "implementation": "src/math/Color.cpp",
+      "status": "partial-unverified",
+      "verifiedComplete": false
+    },
+    {
+      "source": "src/math/ColorManagement.js",
+      "header": "include/math/ColorManagement.h",
+      "implementation": null,
+      "status": "partial-unverified",
+      "verifiedComplete": false
+    },
+    {
+      "source": "src/math/Cylindrical.js",
+      "header": "include/math/Cylindrical.h",
+      "implementation": "src/math/Cylindrical.cpp",
+      "status": "partial-unverified",
+      "verifiedComplete": false
+    },
+    {
+      "source": "src/math/Euler.js",
+      "header": "include/math/Euler.h",
+      "implementation": "src/math/Euler.cpp",
+      "status": "partial-unverified",
+      "verifiedComplete": false
+    },
+    {
+      "source": "src/math/Frustum.js",
+      "header": "include/math/Frustum.h",
+      "implementation": "src/math/Frustum.cpp",
+      "status": "partial-unverified",
+      "verifiedComplete": false
+    },
+    {
+      "source": "src/math/FrustumArray.js",
+      "header": null,
+      "implementation": null,
+      "status": "missing",
+      "verifiedComplete": false
+    },
+    {
+      "source": "src/math/Interpolant.js",
+      "header": null,
+      "implementation": null,
+      "status": "missing",
+      "verifiedComplete": false
+    },
+    {
+      "source": "src/math/interpolants/BezierInterpolant.js",
+      "header": null,
+      "implementation": null,
+      "status": "missing",
+      "verifiedComplete": false
+    },
+    {
+      "source": "src/math/interpolants/CubicInterpolant.js",
+      "header": null,
+      "implementation": null,
+      "status": "missing",
+      "verifiedComplete": false
+    },
+    {
+      "source": "src/math/interpolants/DiscreteInterpolant.js",
+      "header": null,
+      "implementation": null,
+      "status": "missing",
+      "verifiedComplete": false
+    },
+    {
+      "source": "src/math/interpolants/LinearInterpolant.js",
+      "header": null,
+      "implementation": null,
+      "status": "missing",
+      "verifiedComplete": false
+    },
+    {
+      "source": "src/math/interpolants/QuaternionLinearInterpolant.js",
+      "header": null,
+      "implementation": null,
+      "status": "missing",
+      "verifiedComplete": false
+    },
+    {
+      "source": "src/math/Line3.js",
+      "header": "include/math/Line3.h",
+      "implementation": "src/math/Line3.cpp",
+      "status": "partial-unverified",
+      "verifiedComplete": false
+    },
+    {
+      "source": "src/math/MathUtils.js",
+      "header": "include/math/MathUtils.h",
+      "implementation": "src/math/MathUtils.cpp",
+      "status": "partial-unverified",
+      "verifiedComplete": false
+    },
+    {
+      "source": "src/math/Matrix2.js",
+      "header": "include/math/Matrix2.h",
+      "implementation": "src/math/Matrix2.cpp",
+      "status": "partial-unverified",
+      "verifiedComplete": false
+    },
+    {
+      "source": "src/math/Matrix3.js",
+      "header": "include/math/Matrix3.h",
+      "implementation": "src/math/Matrix3.cpp",
+      "status": "partial-unverified",
+      "verifiedComplete": false
+    },
+    {
+      "source": "src/math/Matrix4.js",
+      "header": "include/math/Matrix4.h",
+      "implementation": "src/math/Matrix4.cpp",
+      "status": "partial-unverified",
+      "verifiedComplete": false
+    },
+    {
+      "source": "src/math/Plane.js",
+      "header": "include/math/Plane.h",
+      "implementation": "src/math/Plane.cpp",
+      "status": "partial-unverified",
+      "verifiedComplete": false
+    },
+    {
+      "source": "src/math/Quaternion.js",
+      "header": "include/math/Quaternion.h",
+      "implementation": "src/math/Quaternion.cpp",
+      "status": "partial-unverified",
+      "verifiedComplete": false
+    },
+    {
+      "source": "src/math/Ray.js",
+      "header": "include/math/Ray.h",
+      "implementation": "src/math/Ray.cpp",
+      "status": "partial-unverified",
+      "verifiedComplete": false
+    },
+    {
+      "source": "src/math/Sphere.js",
+      "header": "include/math/Sphere.h",
+      "implementation": "src/math/Sphere.cpp",
+      "status": "partial-unverified",
+      "verifiedComplete": false
+    },
+    {
+      "source": "src/math/Spherical.js",
+      "header": "include/math/Spherical.h",
+      "implementation": "src/math/Spherical.cpp",
+      "status": "partial-unverified",
+      "verifiedComplete": false
+    },
+    {
+      "source": "src/math/SphericalHarmonics3.js",
+      "header": null,
+      "implementation": null,
+      "status": "missing",
+      "verifiedComplete": false
+    },
+    {
+      "source": "src/math/Triangle.js",
+      "header": "include/math/Triangle.h",
+      "implementation": "src/math/Triangle.cpp",
+      "status": "partial-unverified",
+      "verifiedComplete": false
+    },
+    {
+      "source": "src/math/Vector2.js",
+      "header": "include/math/Vector2.h",
+      "implementation": "src/math/Vector2.cpp",
+      "status": "partial-unverified",
+      "verifiedComplete": false
+    },
+    {
+      "source": "src/math/Vector3.js",
+      "header": "include/math/Vector3.h",
+      "implementation": "src/math/Vector3.cpp",
+      "status": "partial-unverified",
+      "verifiedComplete": false
+    },
+    {
+      "source": "src/math/Vector4.js",
+      "header": "include/math/Vector4.h",
+      "implementation": "src/math/Vector4.cpp",
+      "status": "partial-unverified",
+      "verifiedComplete": false
+    },
+    {
+      "source": "src/nodes/accessors/AccessorsUtils.js",
+      "header": null,
+      "implementation": null,
+      "status": "missing",
+      "verifiedComplete": false
+    },
+    {
+      "source": "src/nodes/accessors/Arrays.js",
+      "header": null,
+      "implementation": null,
+      "status": "missing",
+      "verifiedComplete": false
+    },
+    {
+      "source": "src/nodes/accessors/Batch.js",
+      "header": null,
+      "implementation": null,
+      "status": "missing",
+      "verifiedComplete": false
+    },
+    {
+      "source": "src/nodes/accessors/Bitangent.js",
+      "header": null,
+      "implementation": null,
+      "status": "missing",
+      "verifiedComplete": false
+    },
+    {
+      "source": "src/nodes/accessors/BufferAttributeNode.js",
+      "header": null,
+      "implementation": null,
+      "status": "missing",
+      "verifiedComplete": false
+    },
+    {
+      "source": "src/nodes/accessors/BufferNode.js",
+      "header": null,
+      "implementation": null,
+      "status": "missing",
+      "verifiedComplete": false
+    },
+    {
+      "source": "src/nodes/accessors/BuiltinNode.js",
+      "header": null,
+      "implementation": null,
+      "status": "missing",
+      "verifiedComplete": false
+    },
+    {
+      "source": "src/nodes/accessors/Camera.js",
+      "header": null,
+      "implementation": null,
+      "status": "missing",
+      "verifiedComplete": false
+    },
+    {
+      "source": "src/nodes/accessors/ClippingNode.js",
+      "header": null,
+      "implementation": null,
+      "status": "missing",
+      "verifiedComplete": false
+    },
+    {
+      "source": "src/nodes/accessors/CubeTextureNode.js",
+      "header": null,
+      "implementation": null,
+      "status": "missing",
+      "verifiedComplete": false
+    },
+    {
+      "source": "src/nodes/accessors/Instance.js",
+      "header": null,
+      "implementation": null,
+      "status": "missing",
+      "verifiedComplete": false
+    },
+    {
+      "source": "src/nodes/accessors/Lights.js",
+      "header": null,
+      "implementation": null,
+      "status": "missing",
+      "verifiedComplete": false
+    },
+    {
+      "source": "src/nodes/accessors/MaterialNode.js",
+      "header": null,
+      "implementation": null,
+      "status": "missing",
+      "verifiedComplete": false
+    },
+    {
+      "source": "src/nodes/accessors/MaterialProperties.js",
+      "header": null,
+      "implementation": null,
+      "status": "missing",
+      "verifiedComplete": false
+    },
+    {
+      "source": "src/nodes/accessors/MaterialReferenceNode.js",
+      "header": null,
+      "implementation": null,
+      "status": "missing",
+      "verifiedComplete": false
+    },
+    {
+      "source": "src/nodes/accessors/ModelNode.js",
+      "header": null,
+      "implementation": null,
+      "status": "missing",
+      "verifiedComplete": false
+    },
+    {
+      "source": "src/nodes/accessors/ModelViewProjectionNode.js",
+      "header": null,
+      "implementation": null,
+      "status": "missing",
+      "verifiedComplete": false
+    },
+    {
+      "source": "src/nodes/accessors/Morph.js",
+      "header": null,
+      "implementation": null,
+      "status": "missing",
+      "verifiedComplete": false
+    },
+    {
+      "source": "src/nodes/accessors/Normal.js",
+      "header": null,
+      "implementation": null,
+      "status": "missing",
+      "verifiedComplete": false
+    },
+    {
+      "source": "src/nodes/accessors/Object3DNode.js",
+      "header": null,
+      "implementation": null,
+      "status": "missing",
+      "verifiedComplete": false
+    },
+    {
+      "source": "src/nodes/accessors/PointUVNode.js",
+      "header": null,
+      "implementation": null,
+      "status": "missing",
+      "verifiedComplete": false
+    },
+    {
+      "source": "src/nodes/accessors/Position.js",
+      "header": null,
+      "implementation": null,
+      "status": "missing",
+      "verifiedComplete": false
+    },
+    {
+      "source": "src/nodes/accessors/ReferenceBaseNode.js",
+      "header": null,
+      "implementation": null,
+      "status": "missing",
+      "verifiedComplete": false
+    },
+    {
+      "source": "src/nodes/accessors/ReferenceElementNode.js",
+      "header": null,
+      "implementation": null,
+      "status": "missing",
+      "verifiedComplete": false
+    },
+    {
+      "source": "src/nodes/accessors/ReferenceNode.js",
+      "header": null,
+      "implementation": null,
+      "status": "missing",
+      "verifiedComplete": false
+    },
+    {
+      "source": "src/nodes/accessors/ReflectVector.js",
+      "header": null,
+      "implementation": null,
+      "status": "missing",
+      "verifiedComplete": false
+    },
+    {
+      "source": "src/nodes/accessors/RendererReferenceNode.js",
+      "header": null,
+      "implementation": null,
+      "status": "missing",
+      "verifiedComplete": false
+    },
+    {
+      "source": "src/nodes/accessors/SceneProperties.js",
+      "header": null,
+      "implementation": null,
+      "status": "missing",
+      "verifiedComplete": false
+    },
+    {
+      "source": "src/nodes/accessors/Skinning.js",
+      "header": null,
+      "implementation": null,
+      "status": "missing",
+      "verifiedComplete": false
+    },
+    {
+      "source": "src/nodes/accessors/StorageBufferNode.js",
+      "header": null,
+      "implementation": null,
+      "status": "missing",
+      "verifiedComplete": false
+    },
+    {
+      "source": "src/nodes/accessors/StorageTexture3DNode.js",
+      "header": null,
+      "implementation": null,
+      "status": "missing",
+      "verifiedComplete": false
+    },
+    {
+      "source": "src/nodes/accessors/StorageTextureNode.js",
+      "header": null,
+      "implementation": null,
+      "status": "missing",
+      "verifiedComplete": false
+    },
+    {
+      "source": "src/nodes/accessors/Tangent.js",
+      "header": null,
+      "implementation": null,
+      "status": "missing",
+      "verifiedComplete": false
+    },
+    {
+      "source": "src/nodes/accessors/TangentUtils.js",
+      "header": null,
+      "implementation": null,
+      "status": "missing",
+      "verifiedComplete": false
+    },
+    {
+      "source": "src/nodes/accessors/Texture3DNode.js",
+      "header": null,
+      "implementation": null,
+      "status": "missing",
+      "verifiedComplete": false
+    },
+    {
+      "source": "src/nodes/accessors/TextureBicubic.js",
+      "header": null,
+      "implementation": null,
+      "status": "missing",
+      "verifiedComplete": false
+    },
+    {
+      "source": "src/nodes/accessors/TextureNode.js",
+      "header": null,
+      "implementation": null,
+      "status": "missing",
+      "verifiedComplete": false
+    },
+    {
+      "source": "src/nodes/accessors/TextureSizeNode.js",
+      "header": null,
+      "implementation": null,
+      "status": "missing",
+      "verifiedComplete": false
+    },
+    {
+      "source": "src/nodes/accessors/UniformArrayNode.js",
+      "header": null,
+      "implementation": null,
+      "status": "missing",
+      "verifiedComplete": false
+    },
+    {
+      "source": "src/nodes/accessors/UserDataNode.js",
+      "header": null,
+      "implementation": null,
+      "status": "missing",
+      "verifiedComplete": false
+    },
+    {
+      "source": "src/nodes/accessors/UV.js",
+      "header": null,
+      "implementation": null,
+      "status": "missing",
+      "verifiedComplete": false
+    },
+    {
+      "source": "src/nodes/accessors/VelocityNode.js",
+      "header": null,
+      "implementation": null,
+      "status": "missing",
+      "verifiedComplete": false
+    },
+    {
+      "source": "src/nodes/accessors/VertexColorNode.js",
+      "header": null,
+      "implementation": null,
+      "status": "missing",
+      "verifiedComplete": false
+    },
+    {
+      "source": "src/nodes/code/CodeNode.js",
+      "header": null,
+      "implementation": null,
+      "status": "missing",
+      "verifiedComplete": false
+    },
+    {
+      "source": "src/nodes/code/ExpressionNode.js",
+      "header": null,
+      "implementation": null,
+      "status": "missing",
+      "verifiedComplete": false
+    },
+    {
+      "source": "src/nodes/code/FunctionCallNode.js",
+      "header": null,
+      "implementation": null,
+      "status": "missing",
+      "verifiedComplete": false
+    },
+    {
+      "source": "src/nodes/code/FunctionNode.js",
+      "header": null,
+      "implementation": null,
+      "status": "missing",
+      "verifiedComplete": false
+    },
+    {
+      "source": "src/nodes/core/ArrayNode.js",
+      "header": null,
+      "implementation": null,
+      "status": "missing",
+      "verifiedComplete": false
+    },
+    {
+      "source": "src/nodes/core/AssignNode.js",
+      "header": null,
+      "implementation": null,
+      "status": "missing",
+      "verifiedComplete": false
+    },
+    {
+      "source": "src/nodes/core/AttributeNode.js",
+      "header": null,
+      "implementation": null,
+      "status": "missing",
+      "verifiedComplete": false
+    },
+    {
+      "source": "src/nodes/core/BypassNode.js",
+      "header": null,
+      "implementation": null,
+      "status": "missing",
+      "verifiedComplete": false
+    },
+    {
+      "source": "src/nodes/core/constants.js",
+      "header": null,
+      "implementation": null,
+      "status": "missing",
+      "verifiedComplete": false
+    },
+    {
+      "source": "src/nodes/core/ConstNode.js",
+      "header": null,
+      "implementation": null,
+      "status": "missing",
+      "verifiedComplete": false
+    },
+    {
+      "source": "src/nodes/core/ContextNode.js",
+      "header": null,
+      "implementation": null,
+      "status": "missing",
+      "verifiedComplete": false
+    },
+    {
+      "source": "src/nodes/core/IndexNode.js",
+      "header": null,
+      "implementation": null,
+      "status": "missing",
+      "verifiedComplete": false
+    },
+    {
+      "source": "src/nodes/core/InputNode.js",
+      "header": null,
+      "implementation": null,
+      "status": "missing",
+      "verifiedComplete": false
+    },
+    {
+      "source": "src/nodes/core/InspectorNode.js",
+      "header": null,
+      "implementation": null,
+      "status": "missing",
+      "verifiedComplete": false
+    },
+    {
+      "source": "src/nodes/core/IsolateNode.js",
+      "header": null,
+      "implementation": null,
+      "status": "missing",
+      "verifiedComplete": false
+    },
+    {
+      "source": "src/nodes/core/LightingModel.js",
+      "header": null,
+      "implementation": null,
+      "status": "missing",
+      "verifiedComplete": false
+    },
+    {
+      "source": "src/nodes/core/MRTNode.js",
+      "header": null,
+      "implementation": null,
+      "status": "missing",
+      "verifiedComplete": false
+    },
+    {
+      "source": "src/nodes/core/Node.js",
+      "header": null,
+      "implementation": null,
+      "status": "missing",
+      "verifiedComplete": false
+    },
+    {
+      "source": "src/nodes/core/NodeAttribute.js",
+      "header": null,
+      "implementation": null,
+      "status": "missing",
+      "verifiedComplete": false
+    },
+    {
+      "source": "src/nodes/core/NodeBuilder.js",
+      "header": null,
+      "implementation": null,
+      "status": "missing",
+      "verifiedComplete": false
+    },
+    {
+      "source": "src/nodes/core/NodeCache.js",
+      "header": null,
+      "implementation": null,
+      "status": "missing",
+      "verifiedComplete": false
+    },
+    {
+      "source": "src/nodes/core/NodeCode.js",
+      "header": null,
+      "implementation": null,
+      "status": "missing",
+      "verifiedComplete": false
+    },
+    {
+      "source": "src/nodes/core/NodeError.js",
+      "header": null,
+      "implementation": null,
+      "status": "missing",
+      "verifiedComplete": false
+    },
+    {
+      "source": "src/nodes/core/NodeFrame.js",
+      "header": null,
+      "implementation": null,
+      "status": "missing",
+      "verifiedComplete": false
+    },
+    {
+      "source": "src/nodes/core/NodeFunction.js",
+      "header": null,
+      "implementation": null,
+      "status": "missing",
+      "verifiedComplete": false
+    },
+    {
+      "source": "src/nodes/core/NodeFunctionInput.js",
+      "header": null,
+      "implementation": null,
+      "status": "missing",
+      "verifiedComplete": false
+    },
+    {
+      "source": "src/nodes/core/NodeParser.js",
+      "header": null,
+      "implementation": null,
+      "status": "missing",
+      "verifiedComplete": false
+    },
+    {
+      "source": "src/nodes/core/NodeUniform.js",
+      "header": null,
+      "implementation": null,
+      "status": "missing",
+      "verifiedComplete": false
+    },
+    {
+      "source": "src/nodes/core/NodeUtils.js",
+      "header": null,
+      "implementation": null,
+      "status": "missing",
+      "verifiedComplete": false
+    },
+    {
+      "source": "src/nodes/core/NodeVar.js",
+      "header": null,
+      "implementation": null,
+      "status": "missing",
+      "verifiedComplete": false
+    },
+    {
+      "source": "src/nodes/core/NodeVarying.js",
+      "header": null,
+      "implementation": null,
+      "status": "missing",
+      "verifiedComplete": false
+    },
+    {
+      "source": "src/nodes/core/OutputStructNode.js",
+      "header": null,
+      "implementation": null,
+      "status": "missing",
+      "verifiedComplete": false
+    },
+    {
+      "source": "src/nodes/core/OverrideContextNode.js",
+      "header": null,
+      "implementation": null,
+      "status": "missing",
+      "verifiedComplete": false
+    },
+    {
+      "source": "src/nodes/core/ParameterNode.js",
+      "header": null,
+      "implementation": null,
+      "status": "missing",
+      "verifiedComplete": false
+    },
+    {
+      "source": "src/nodes/core/PropertyNode.js",
+      "header": null,
+      "implementation": null,
+      "status": "missing",
+      "verifiedComplete": false
+    },
+    {
+      "source": "src/nodes/core/StackNode.js",
+      "header": null,
+      "implementation": null,
+      "status": "missing",
+      "verifiedComplete": false
+    },
+    {
+      "source": "src/nodes/core/StackTrace.js",
+      "header": null,
+      "implementation": null,
+      "status": "missing",
+      "verifiedComplete": false
+    },
+    {
+      "source": "src/nodes/core/StructNode.js",
+      "header": null,
+      "implementation": null,
+      "status": "missing",
+      "verifiedComplete": false
+    },
+    {
+      "source": "src/nodes/core/StructType.js",
+      "header": null,
+      "implementation": null,
+      "status": "missing",
+      "verifiedComplete": false
+    },
+    {
+      "source": "src/nodes/core/StructTypeNode.js",
+      "header": null,
+      "implementation": null,
+      "status": "missing",
+      "verifiedComplete": false
+    },
+    {
+      "source": "src/nodes/core/SubBuildNode.js",
+      "header": null,
+      "implementation": null,
+      "status": "missing",
+      "verifiedComplete": false
+    },
+    {
+      "source": "src/nodes/core/TempNode.js",
+      "header": null,
+      "implementation": null,
+      "status": "missing",
+      "verifiedComplete": false
+    },
+    {
+      "source": "src/nodes/core/UniformGroupNode.js",
+      "header": null,
+      "implementation": null,
+      "status": "missing",
+      "verifiedComplete": false
+    },
+    {
+      "source": "src/nodes/core/UniformNode.js",
+      "header": null,
+      "implementation": null,
+      "status": "missing",
+      "verifiedComplete": false
+    },
+    {
+      "source": "src/nodes/core/VarNode.js",
+      "header": null,
+      "implementation": null,
+      "status": "missing",
+      "verifiedComplete": false
+    },
+    {
+      "source": "src/nodes/core/VaryingNode.js",
+      "header": null,
+      "implementation": null,
+      "status": "missing",
+      "verifiedComplete": false
+    },
+    {
+      "source": "src/nodes/display/BlendModes.js",
+      "header": null,
+      "implementation": null,
+      "status": "missing",
+      "verifiedComplete": false
+    },
+    {
+      "source": "src/nodes/display/BumpMapNode.js",
+      "header": null,
+      "implementation": null,
+      "status": "missing",
+      "verifiedComplete": false
+    },
+    {
+      "source": "src/nodes/display/ColorAdjustment.js",
+      "header": null,
+      "implementation": null,
+      "status": "missing",
+      "verifiedComplete": false
+    },
+    {
+      "source": "src/nodes/display/ColorSpaceFunctions.js",
+      "header": null,
+      "implementation": null,
+      "status": "missing",
+      "verifiedComplete": false
+    },
+    {
+      "source": "src/nodes/display/ColorSpaceNode.js",
+      "header": null,
+      "implementation": null,
+      "status": "missing",
+      "verifiedComplete": false
+    },
+    {
+      "source": "src/nodes/display/FrontFacingNode.js",
+      "header": null,
+      "implementation": null,
+      "status": "missing",
+      "verifiedComplete": false
+    },
+    {
+      "source": "src/nodes/display/NormalMapNode.js",
+      "header": null,
+      "implementation": null,
+      "status": "missing",
+      "verifiedComplete": false
+    },
+    {
+      "source": "src/nodes/display/PassNode.js",
+      "header": null,
+      "implementation": null,
+      "status": "missing",
+      "verifiedComplete": false
+    },
+    {
+      "source": "src/nodes/display/PremultiplyAlphaFunctions.js",
+      "header": null,
+      "implementation": null,
+      "status": "missing",
+      "verifiedComplete": false
+    },
+    {
+      "source": "src/nodes/display/RenderOutputNode.js",
+      "header": null,
+      "implementation": null,
+      "status": "missing",
+      "verifiedComplete": false
+    },
+    {
+      "source": "src/nodes/display/ScreenNode.js",
+      "header": null,
+      "implementation": null,
+      "status": "missing",
+      "verifiedComplete": false
+    },
+    {
+      "source": "src/nodes/display/ToneMappingFunctions.js",
+      "header": null,
+      "implementation": null,
+      "status": "missing",
+      "verifiedComplete": false
+    },
+    {
+      "source": "src/nodes/display/ToneMappingNode.js",
+      "header": null,
+      "implementation": null,
+      "status": "missing",
+      "verifiedComplete": false
+    },
+    {
+      "source": "src/nodes/display/ToonOutlinePassNode.js",
+      "header": null,
+      "implementation": null,
+      "status": "missing",
+      "verifiedComplete": false
+    },
+    {
+      "source": "src/nodes/display/ViewportDepthNode.js",
+      "header": null,
+      "implementation": null,
+      "status": "missing",
+      "verifiedComplete": false
+    },
+    {
+      "source": "src/nodes/display/ViewportDepthTextureNode.js",
+      "header": null,
+      "implementation": null,
+      "status": "missing",
+      "verifiedComplete": false
+    },
+    {
+      "source": "src/nodes/display/ViewportSharedTextureNode.js",
+      "header": null,
+      "implementation": null,
+      "status": "missing",
+      "verifiedComplete": false
+    },
+    {
+      "source": "src/nodes/display/ViewportTextureNode.js",
+      "header": null,
+      "implementation": null,
+      "status": "missing",
+      "verifiedComplete": false
+    },
+    {
+      "source": "src/nodes/fog/Fog.js",
+      "header": null,
+      "implementation": null,
+      "status": "missing",
+      "verifiedComplete": false
+    },
+    {
+      "source": "src/nodes/functions/BasicLightingModel.js",
+      "header": null,
+      "implementation": null,
+      "status": "missing",
+      "verifiedComplete": false
+    },
+    {
+      "source": "src/nodes/functions/BSDF/BRDF_EON.js",
+      "header": null,
+      "implementation": null,
+      "status": "missing",
+      "verifiedComplete": false
+    },
+    {
+      "source": "src/nodes/functions/BSDF/BRDF_GGX.js",
+      "header": null,
+      "implementation": null,
+      "status": "missing",
+      "verifiedComplete": false
+    },
+    {
+      "source": "src/nodes/functions/BSDF/BRDF_Lambert.js",
+      "header": null,
+      "implementation": null,
+      "status": "missing",
+      "verifiedComplete": false
+    },
+    {
+      "source": "src/nodes/functions/BSDF/BRDF_Sheen.js",
+      "header": null,
+      "implementation": null,
+      "status": "missing",
+      "verifiedComplete": false
+    },
+    {
+      "source": "src/nodes/functions/BSDF/DFGLUT.js",
+      "header": null,
+      "implementation": null,
+      "status": "missing",
+      "verifiedComplete": false
+    },
+    {
+      "source": "src/nodes/functions/BSDF/D_GGX.js",
+      "header": null,
+      "implementation": null,
+      "status": "missing",
+      "verifiedComplete": false
+    },
+    {
+      "source": "src/nodes/functions/BSDF/D_GGX_Anisotropic.js",
+      "header": null,
+      "implementation": null,
+      "status": "missing",
+      "verifiedComplete": false
+    },
+    {
+      "source": "src/nodes/functions/BSDF/EnvironmentBRDF.js",
+      "header": null,
+      "implementation": null,
+      "status": "missing",
+      "verifiedComplete": false
+    },
+    {
+      "source": "src/nodes/functions/BSDF/F_Schlick.js",
+      "header": null,
+      "implementation": null,
+      "status": "missing",
+      "verifiedComplete": false
+    },
+    {
+      "source": "src/nodes/functions/BSDF/LTC.js",
+      "header": null,
+      "implementation": null,
+      "status": "missing",
+      "verifiedComplete": false
+    },
+    {
+      "source": "src/nodes/functions/BSDF/Schlick_to_F0.js",
+      "header": null,
+      "implementation": null,
+      "status": "missing",
+      "verifiedComplete": false
+    },
+    {
+      "source": "src/nodes/functions/BSDF/V_GGX_SmithCorrelated.js",
+      "header": null,
+      "implementation": null,
+      "status": "missing",
+      "verifiedComplete": false
+    },
+    {
+      "source": "src/nodes/functions/BSDF/V_GGX_SmithCorrelated_Anisotropic.js",
+      "header": null,
+      "implementation": null,
+      "status": "missing",
+      "verifiedComplete": false
+    },
+    {
+      "source": "src/nodes/functions/material/getAlphaHashThreshold.js",
+      "header": null,
+      "implementation": null,
+      "status": "missing",
+      "verifiedComplete": false
+    },
+    {
+      "source": "src/nodes/functions/material/getGeometryRoughness.js",
+      "header": null,
+      "implementation": null,
+      "status": "missing",
+      "verifiedComplete": false
+    },
+    {
+      "source": "src/nodes/functions/material/getParallaxCorrectNormal.js",
+      "header": null,
+      "implementation": null,
+      "status": "missing",
+      "verifiedComplete": false
+    },
+    {
+      "source": "src/nodes/functions/material/getRoughness.js",
+      "header": null,
+      "implementation": null,
+      "status": "missing",
+      "verifiedComplete": false
+    },
+    {
+      "source": "src/nodes/functions/material/getShIrradianceAt.js",
+      "header": null,
+      "implementation": null,
+      "status": "missing",
+      "verifiedComplete": false
+    },
+    {
+      "source": "src/nodes/functions/PhongLightingModel.js",
+      "header": null,
+      "implementation": null,
+      "status": "missing",
+      "verifiedComplete": false
+    },
+    {
+      "source": "src/nodes/functions/PhysicalLightingModel.js",
+      "header": null,
+      "implementation": null,
+      "status": "missing",
+      "verifiedComplete": false
+    },
+    {
+      "source": "src/nodes/functions/ShadowMaskModel.js",
+      "header": null,
+      "implementation": null,
+      "status": "missing",
+      "verifiedComplete": false
+    },
+    {
+      "source": "src/nodes/functions/ToonLightingModel.js",
+      "header": null,
+      "implementation": null,
+      "status": "missing",
+      "verifiedComplete": false
+    },
+    {
+      "source": "src/nodes/functions/VolumetricLightingModel.js",
+      "header": null,
+      "implementation": null,
+      "status": "missing",
+      "verifiedComplete": false
+    },
+    {
+      "source": "src/nodes/geometry/RangeNode.js",
+      "header": null,
+      "implementation": null,
+      "status": "missing",
+      "verifiedComplete": false
+    },
+    {
+      "source": "src/nodes/gpgpu/AtomicFunctionNode.js",
+      "header": null,
+      "implementation": null,
+      "status": "missing",
+      "verifiedComplete": false
+    },
+    {
+      "source": "src/nodes/gpgpu/BarrierNode.js",
+      "header": null,
+      "implementation": null,
+      "status": "missing",
+      "verifiedComplete": false
+    },
+    {
+      "source": "src/nodes/gpgpu/ComputeBuiltinNode.js",
+      "header": null,
+      "implementation": null,
+      "status": "missing",
+      "verifiedComplete": false
+    },
+    {
+      "source": "src/nodes/gpgpu/ComputeNode.js",
+      "header": null,
+      "implementation": null,
+      "status": "missing",
+      "verifiedComplete": false
+    },
+    {
+      "source": "src/nodes/gpgpu/SubgroupFunctionNode.js",
+      "header": null,
+      "implementation": null,
+      "status": "missing",
+      "verifiedComplete": false
+    },
+    {
+      "source": "src/nodes/gpgpu/WorkgroupInfoNode.js",
+      "header": null,
+      "implementation": null,
+      "status": "missing",
+      "verifiedComplete": false
+    },
+    {
+      "source": "src/nodes/lighting/AmbientLightNode.js",
+      "header": null,
+      "implementation": null,
+      "status": "missing",
+      "verifiedComplete": false
+    },
+    {
+      "source": "src/nodes/lighting/AnalyticLightNode.js",
+      "header": null,
+      "implementation": null,
+      "status": "missing",
+      "verifiedComplete": false
+    },
+    {
+      "source": "src/nodes/lighting/AONode.js",
+      "header": null,
+      "implementation": null,
+      "status": "missing",
+      "verifiedComplete": false
+    },
+    {
+      "source": "src/nodes/lighting/BasicEnvironmentNode.js",
+      "header": null,
+      "implementation": null,
+      "status": "missing",
+      "verifiedComplete": false
+    },
+    {
+      "source": "src/nodes/lighting/BasicLightMapNode.js",
+      "header": null,
+      "implementation": null,
+      "status": "missing",
+      "verifiedComplete": false
+    },
+    {
+      "source": "src/nodes/lighting/DirectionalLightNode.js",
+      "header": null,
+      "implementation": null,
+      "status": "missing",
+      "verifiedComplete": false
+    },
+    {
+      "source": "src/nodes/lighting/EnvironmentNode.js",
+      "header": null,
+      "implementation": null,
+      "status": "missing",
+      "verifiedComplete": false
+    },
+    {
+      "source": "src/nodes/lighting/HemisphereLightNode.js",
+      "header": null,
+      "implementation": null,
+      "status": "missing",
+      "verifiedComplete": false
+    },
+    {
+      "source": "src/nodes/lighting/IESSpotLightNode.js",
+      "header": null,
+      "implementation": null,
+      "status": "missing",
+      "verifiedComplete": false
+    },
+    {
+      "source": "src/nodes/lighting/IrradianceNode.js",
+      "header": null,
+      "implementation": null,
+      "status": "missing",
+      "verifiedComplete": false
+    },
+    {
+      "source": "src/nodes/lighting/LightingContextNode.js",
+      "header": null,
+      "implementation": null,
+      "status": "missing",
+      "verifiedComplete": false
+    },
+    {
+      "source": "src/nodes/lighting/LightingNode.js",
+      "header": null,
+      "implementation": null,
+      "status": "missing",
+      "verifiedComplete": false
+    },
+    {
+      "source": "src/nodes/lighting/LightProbeNode.js",
+      "header": null,
+      "implementation": null,
+      "status": "missing",
+      "verifiedComplete": false
+    },
+    {
+      "source": "src/nodes/lighting/LightsNode.js",
+      "header": null,
+      "implementation": null,
+      "status": "missing",
+      "verifiedComplete": false
+    },
+    {
+      "source": "src/nodes/lighting/LightUtils.js",
+      "header": null,
+      "implementation": null,
+      "status": "missing",
+      "verifiedComplete": false
+    },
+    {
+      "source": "src/nodes/lighting/PointLightNode.js",
+      "header": null,
+      "implementation": null,
+      "status": "missing",
+      "verifiedComplete": false
+    },
+    {
+      "source": "src/nodes/lighting/PointShadowNode.js",
+      "header": null,
+      "implementation": null,
+      "status": "missing",
+      "verifiedComplete": false
+    },
+    {
+      "source": "src/nodes/lighting/ProjectorLightNode.js",
+      "header": null,
+      "implementation": null,
+      "status": "missing",
+      "verifiedComplete": false
+    },
+    {
+      "source": "src/nodes/lighting/RectAreaLightNode.js",
+      "header": null,
+      "implementation": null,
+      "status": "missing",
+      "verifiedComplete": false
+    },
+    {
+      "source": "src/nodes/lighting/ShadowBaseNode.js",
+      "header": null,
+      "implementation": null,
+      "status": "missing",
+      "verifiedComplete": false
+    },
+    {
+      "source": "src/nodes/lighting/ShadowFilterNode.js",
+      "header": null,
+      "implementation": null,
+      "status": "missing",
+      "verifiedComplete": false
+    },
+    {
+      "source": "src/nodes/lighting/ShadowNode.js",
+      "header": null,
+      "implementation": null,
+      "status": "missing",
+      "verifiedComplete": false
+    },
+    {
+      "source": "src/nodes/lighting/SpotLightNode.js",
+      "header": null,
+      "implementation": null,
+      "status": "missing",
+      "verifiedComplete": false
+    },
+    {
+      "source": "src/nodes/materialx/MaterialXColor.js",
+      "header": null,
+      "implementation": null,
+      "status": "missing",
+      "verifiedComplete": false
+    },
+    {
+      "source": "src/nodes/materialx/MaterialXColorTransform.js",
+      "header": null,
+      "implementation": null,
+      "status": "missing",
+      "verifiedComplete": false
+    },
+    {
+      "source": "src/nodes/materialx/MaterialXCore.js",
+      "header": null,
+      "implementation": null,
+      "status": "missing",
+      "verifiedComplete": false
+    },
+    {
+      "source": "src/nodes/materialx/MaterialXNodes.js",
+      "header": null,
+      "implementation": null,
+      "status": "missing",
+      "verifiedComplete": false
+    },
+    {
+      "source": "src/nodes/materialx/MaterialXNoise.js",
+      "header": null,
+      "implementation": null,
+      "status": "missing",
+      "verifiedComplete": false
+    },
+    {
+      "source": "src/nodes/math/BitcastNode.js",
+      "header": null,
+      "implementation": null,
+      "status": "missing",
+      "verifiedComplete": false
+    },
+    {
+      "source": "src/nodes/math/BitcountNode.js",
+      "header": null,
+      "implementation": null,
+      "status": "missing",
+      "verifiedComplete": false
+    },
+    {
+      "source": "src/nodes/math/ConditionalNode.js",
+      "header": null,
+      "implementation": null,
+      "status": "missing",
+      "verifiedComplete": false
+    },
+    {
+      "source": "src/nodes/math/Hash.js",
+      "header": null,
+      "implementation": null,
+      "status": "missing",
+      "verifiedComplete": false
+    },
+    {
+      "source": "src/nodes/math/MathNode.js",
+      "header": null,
+      "implementation": null,
+      "status": "missing",
+      "verifiedComplete": false
+    },
+    {
+      "source": "src/nodes/math/MathUtils.js",
+      "header": null,
+      "implementation": null,
+      "status": "missing",
+      "verifiedComplete": false
+    },
+    {
+      "source": "src/nodes/math/OperatorNode.js",
+      "header": null,
+      "implementation": null,
+      "status": "missing",
+      "verifiedComplete": false
+    },
+    {
+      "source": "src/nodes/math/Packed4x8IntegerNode.js",
+      "header": null,
+      "implementation": null,
+      "status": "missing",
+      "verifiedComplete": false
+    },
+    {
+      "source": "src/nodes/math/PackFloatNode.js",
+      "header": null,
+      "implementation": null,
+      "status": "missing",
+      "verifiedComplete": false
+    },
+    {
+      "source": "src/nodes/math/TriNoise3D.js",
+      "header": null,
+      "implementation": null,
+      "status": "missing",
+      "verifiedComplete": false
+    },
+    {
+      "source": "src/nodes/math/UnpackFloatNode.js",
+      "header": null,
+      "implementation": null,
+      "status": "missing",
+      "verifiedComplete": false
+    },
+    {
+      "source": "src/nodes/Nodes.js",
+      "header": null,
+      "implementation": null,
+      "status": "missing",
+      "verifiedComplete": false
+    },
+    {
+      "source": "src/nodes/parsers/GLSLNodeFunction.js",
+      "header": null,
+      "implementation": null,
+      "status": "missing",
+      "verifiedComplete": false
+    },
+    {
+      "source": "src/nodes/parsers/GLSLNodeParser.js",
+      "header": null,
+      "implementation": null,
+      "status": "missing",
+      "verifiedComplete": false
+    },
+    {
+      "source": "src/nodes/pmrem/PMREMNode.js",
+      "header": null,
+      "implementation": null,
+      "status": "missing",
+      "verifiedComplete": false
+    },
+    {
+      "source": "src/nodes/pmrem/PMREMUtils.js",
+      "header": null,
+      "implementation": null,
+      "status": "missing",
+      "verifiedComplete": false
+    },
+    {
+      "source": "src/nodes/procedural/Checker.js",
+      "header": null,
+      "implementation": null,
+      "status": "missing",
+      "verifiedComplete": false
+    },
+    {
+      "source": "src/nodes/shapes/Shapes.js",
+      "header": null,
+      "implementation": null,
+      "status": "missing",
+      "verifiedComplete": false
+    },
+    {
+      "source": "src/nodes/tsl/TSLBase.js",
+      "header": null,
+      "implementation": null,
+      "status": "missing",
+      "verifiedComplete": false
+    },
+    {
+      "source": "src/nodes/tsl/TSLCore.js",
+      "header": null,
+      "implementation": null,
+      "status": "missing",
+      "verifiedComplete": false
+    },
+    {
+      "source": "src/nodes/TSL.js",
+      "header": null,
+      "implementation": null,
+      "status": "missing",
+      "verifiedComplete": false
+    },
+    {
+      "source": "src/nodes/utils/ArrayElementNode.js",
+      "header": null,
+      "implementation": null,
+      "status": "missing",
+      "verifiedComplete": false
+    },
+    {
+      "source": "src/nodes/utils/ConvertNode.js",
+      "header": null,
+      "implementation": null,
+      "status": "missing",
+      "verifiedComplete": false
+    },
+    {
+      "source": "src/nodes/utils/CubeMapNode.js",
+      "header": null,
+      "implementation": null,
+      "status": "missing",
+      "verifiedComplete": false
+    },
+    {
+      "source": "src/nodes/utils/DebugNode.js",
+      "header": null,
+      "implementation": null,
+      "status": "missing",
+      "verifiedComplete": false
+    },
+    {
+      "source": "src/nodes/utils/Discard.js",
+      "header": null,
+      "implementation": null,
+      "status": "missing",
+      "verifiedComplete": false
+    },
+    {
+      "source": "src/nodes/utils/EquirectUV.js",
+      "header": null,
+      "implementation": null,
+      "status": "missing",
+      "verifiedComplete": false
+    },
+    {
+      "source": "src/nodes/utils/EventNode.js",
+      "header": null,
+      "implementation": null,
+      "status": "missing",
+      "verifiedComplete": false
+    },
+    {
+      "source": "src/nodes/utils/FlipNode.js",
+      "header": null,
+      "implementation": null,
+      "status": "missing",
+      "verifiedComplete": false
+    },
+    {
+      "source": "src/nodes/utils/FunctionOverloadingNode.js",
+      "header": null,
+      "implementation": null,
+      "status": "missing",
+      "verifiedComplete": false
+    },
+    {
+      "source": "src/nodes/utils/JoinNode.js",
+      "header": null,
+      "implementation": null,
+      "status": "missing",
+      "verifiedComplete": false
+    },
+    {
+      "source": "src/nodes/utils/LoopNode.js",
+      "header": null,
+      "implementation": null,
+      "status": "missing",
+      "verifiedComplete": false
+    },
+    {
+      "source": "src/nodes/utils/MatcapUV.js",
+      "header": null,
+      "implementation": null,
+      "status": "missing",
+      "verifiedComplete": false
+    },
+    {
+      "source": "src/nodes/utils/MaxMipLevelNode.js",
+      "header": null,
+      "implementation": null,
+      "status": "missing",
+      "verifiedComplete": false
+    },
+    {
+      "source": "src/nodes/utils/MemberNode.js",
+      "header": null,
+      "implementation": null,
+      "status": "missing",
+      "verifiedComplete": false
+    },
+    {
+      "source": "src/nodes/utils/Oscillators.js",
+      "header": null,
+      "implementation": null,
+      "status": "missing",
+      "verifiedComplete": false
+    },
+    {
+      "source": "src/nodes/utils/Packing.js",
+      "header": null,
+      "implementation": null,
+      "status": "missing",
+      "verifiedComplete": false
+    },
+    {
+      "source": "src/nodes/utils/PostProcessingUtils.js",
+      "header": null,
+      "implementation": null,
+      "status": "missing",
+      "verifiedComplete": false
+    },
+    {
+      "source": "src/nodes/utils/ReflectorNode.js",
+      "header": null,
+      "implementation": null,
+      "status": "missing",
+      "verifiedComplete": false
+    },
+    {
+      "source": "src/nodes/utils/Remap.js",
+      "header": null,
+      "implementation": null,
+      "status": "missing",
+      "verifiedComplete": false
+    },
+    {
+      "source": "src/nodes/utils/RotateNode.js",
+      "header": null,
+      "implementation": null,
+      "status": "missing",
+      "verifiedComplete": false
+    },
+    {
+      "source": "src/nodes/utils/RTTNode.js",
+      "header": null,
+      "implementation": null,
+      "status": "missing",
+      "verifiedComplete": false
+    },
+    {
+      "source": "src/nodes/utils/SampleNode.js",
+      "header": null,
+      "implementation": null,
+      "status": "missing",
+      "verifiedComplete": false
+    },
+    {
+      "source": "src/nodes/utils/SetNode.js",
+      "header": null,
+      "implementation": null,
+      "status": "missing",
+      "verifiedComplete": false
+    },
+    {
+      "source": "src/nodes/utils/SplitNode.js",
+      "header": null,
+      "implementation": null,
+      "status": "missing",
+      "verifiedComplete": false
+    },
+    {
+      "source": "src/nodes/utils/SpriteSheetUV.js",
+      "header": null,
+      "implementation": null,
+      "status": "missing",
+      "verifiedComplete": false
+    },
+    {
+      "source": "src/nodes/utils/SpriteUtils.js",
+      "header": null,
+      "implementation": null,
+      "status": "missing",
+      "verifiedComplete": false
+    },
+    {
+      "source": "src/nodes/utils/StorageArrayElementNode.js",
+      "header": null,
+      "implementation": null,
+      "status": "missing",
+      "verifiedComplete": false
+    },
+    {
+      "source": "src/nodes/utils/Timer.js",
+      "header": null,
+      "implementation": null,
+      "status": "missing",
+      "verifiedComplete": false
+    },
+    {
+      "source": "src/nodes/utils/TriplanarTextures.js",
+      "header": null,
+      "implementation": null,
+      "status": "missing",
+      "verifiedComplete": false
+    },
+    {
+      "source": "src/nodes/utils/UVUtils.js",
+      "header": null,
+      "implementation": null,
+      "status": "missing",
+      "verifiedComplete": false
+    },
+    {
+      "source": "src/nodes/utils/ViewportUtils.js",
+      "header": null,
+      "implementation": null,
+      "status": "missing",
+      "verifiedComplete": false
+    },
+    {
+      "source": "src/objects/BatchedMesh.js",
+      "header": null,
+      "implementation": null,
+      "status": "missing",
+      "verifiedComplete": false
+    },
+    {
+      "source": "src/objects/Bone.js",
+      "header": null,
+      "implementation": null,
+      "status": "missing",
+      "verifiedComplete": false
+    },
+    {
+      "source": "src/objects/ClippingGroup.js",
+      "header": null,
+      "implementation": null,
+      "status": "missing",
+      "verifiedComplete": false
+    },
+    {
+      "source": "src/objects/Group.js",
+      "header": "include/objects/Group.h",
+      "implementation": null,
+      "status": "partial-unverified",
+      "verifiedComplete": false
+    },
+    {
+      "source": "src/objects/InstancedMesh.js",
+      "header": null,
+      "implementation": null,
+      "status": "missing",
+      "verifiedComplete": false
+    },
+    {
+      "source": "src/objects/Line.js",
+      "header": null,
+      "implementation": null,
+      "status": "missing",
+      "verifiedComplete": false
+    },
+    {
+      "source": "src/objects/LineLoop.js",
+      "header": null,
+      "implementation": null,
+      "status": "missing",
+      "verifiedComplete": false
+    },
+    {
+      "source": "src/objects/LineSegments.js",
+      "header": null,
+      "implementation": null,
+      "status": "missing",
+      "verifiedComplete": false
+    },
+    {
+      "source": "src/objects/LOD.js",
+      "header": null,
+      "implementation": null,
+      "status": "missing",
+      "verifiedComplete": false
+    },
+    {
+      "source": "src/objects/Mesh.js",
+      "header": "include/objects/Mesh.h",
+      "implementation": "src/objects/Mesh.cpp",
+      "status": "partial-unverified",
+      "verifiedComplete": false
+    },
+    {
+      "source": "src/objects/Points.js",
+      "header": null,
+      "implementation": null,
+      "status": "missing",
+      "verifiedComplete": false
+    },
+    {
+      "source": "src/objects/Skeleton.js",
+      "header": null,
+      "implementation": null,
+      "status": "missing",
+      "verifiedComplete": false
+    },
+    {
+      "source": "src/objects/SkinnedMesh.js",
+      "header": null,
+      "implementation": null,
+      "status": "missing",
+      "verifiedComplete": false
+    },
+    {
+      "source": "src/objects/Sprite.js",
+      "header": null,
+      "implementation": null,
+      "status": "missing",
+      "verifiedComplete": false
+    },
+    {
+      "source": "src/renderers/common/Animation.js",
+      "header": null,
+      "implementation": null,
+      "status": "vulkan-port-pending",
+      "verifiedComplete": false
+    },
+    {
+      "source": "src/renderers/common/Attributes.js",
+      "header": null,
+      "implementation": null,
+      "status": "vulkan-port-pending",
+      "verifiedComplete": false
+    },
+    {
+      "source": "src/renderers/common/Backend.js",
+      "header": null,
+      "implementation": null,
+      "status": "vulkan-port-pending",
+      "verifiedComplete": false
+    },
+    {
+      "source": "src/renderers/common/Background.js",
+      "header": null,
+      "implementation": null,
+      "status": "vulkan-port-pending",
+      "verifiedComplete": false
+    },
+    {
+      "source": "src/renderers/common/BindGroup.js",
+      "header": null,
+      "implementation": null,
+      "status": "vulkan-port-pending",
+      "verifiedComplete": false
+    },
+    {
+      "source": "src/renderers/common/Binding.js",
+      "header": null,
+      "implementation": null,
+      "status": "vulkan-port-pending",
+      "verifiedComplete": false
+    },
+    {
+      "source": "src/renderers/common/Bindings.js",
+      "header": null,
+      "implementation": null,
+      "status": "vulkan-port-pending",
+      "verifiedComplete": false
+    },
+    {
+      "source": "src/renderers/common/BlendMode.js",
+      "header": null,
+      "implementation": null,
+      "status": "vulkan-port-pending",
+      "verifiedComplete": false
+    },
+    {
+      "source": "src/renderers/common/Buffer.js",
+      "header": null,
+      "implementation": null,
+      "status": "vulkan-port-pending",
+      "verifiedComplete": false
+    },
+    {
+      "source": "src/renderers/common/BufferUtils.js",
+      "header": null,
+      "implementation": null,
+      "status": "vulkan-port-pending",
+      "verifiedComplete": false
+    },
+    {
+      "source": "src/renderers/common/BundleGroup.js",
+      "header": null,
+      "implementation": null,
+      "status": "vulkan-port-pending",
+      "verifiedComplete": false
+    },
+    {
+      "source": "src/renderers/common/CanvasTarget.js",
+      "header": null,
+      "implementation": null,
+      "status": "vulkan-port-pending",
+      "verifiedComplete": false
+    },
+    {
+      "source": "src/renderers/common/ChainMap.js",
+      "header": null,
+      "implementation": null,
+      "status": "vulkan-port-pending",
+      "verifiedComplete": false
+    },
+    {
+      "source": "src/renderers/common/ClippingContext.js",
+      "header": null,
+      "implementation": null,
+      "status": "vulkan-port-pending",
+      "verifiedComplete": false
+    },
+    {
+      "source": "src/renderers/common/Color4.js",
+      "header": null,
+      "implementation": null,
+      "status": "vulkan-port-pending",
+      "verifiedComplete": false
+    },
+    {
+      "source": "src/renderers/common/ComputePipeline.js",
+      "header": null,
+      "implementation": null,
+      "status": "vulkan-port-pending",
+      "verifiedComplete": false
+    },
+    {
+      "source": "src/renderers/common/Constants.js",
+      "header": null,
+      "implementation": null,
+      "status": "vulkan-port-pending",
+      "verifiedComplete": false
+    },
+    {
+      "source": "src/renderers/common/CubeRenderTarget.js",
+      "header": null,
+      "implementation": null,
+      "status": "vulkan-port-pending",
+      "verifiedComplete": false
+    },
+    {
+      "source": "src/renderers/common/DataMap.js",
+      "header": null,
+      "implementation": null,
+      "status": "vulkan-port-pending",
+      "verifiedComplete": false
+    },
+    {
+      "source": "src/renderers/common/DirectRenderPipeline.js",
+      "header": null,
+      "implementation": null,
+      "status": "vulkan-port-pending",
+      "verifiedComplete": false
+    },
+    {
+      "source": "src/renderers/common/extras/PMREMGenerator.js",
+      "header": null,
+      "implementation": null,
+      "status": "vulkan-port-pending",
+      "verifiedComplete": false
+    },
+    {
+      "source": "src/renderers/common/Geometries.js",
+      "header": null,
+      "implementation": null,
+      "status": "vulkan-port-pending",
+      "verifiedComplete": false
+    },
+    {
+      "source": "src/renderers/common/IndirectStorageBufferAttribute.js",
+      "header": null,
+      "implementation": null,
+      "status": "vulkan-port-pending",
+      "verifiedComplete": false
+    },
+    {
+      "source": "src/renderers/common/Info.js",
+      "header": null,
+      "implementation": null,
+      "status": "vulkan-port-pending",
+      "verifiedComplete": false
+    },
+    {
+      "source": "src/renderers/common/InspectorBase.js",
+      "header": null,
+      "implementation": null,
+      "status": "vulkan-port-pending",
+      "verifiedComplete": false
+    },
+    {
+      "source": "src/renderers/common/Lighting.js",
+      "header": null,
+      "implementation": null,
+      "status": "vulkan-port-pending",
+      "verifiedComplete": false
+    },
+    {
+      "source": "src/renderers/common/nodes/NodeBuilderState.js",
+      "header": null,
+      "implementation": null,
+      "status": "vulkan-port-pending",
+      "verifiedComplete": false
+    },
+    {
+      "source": "src/renderers/common/nodes/NodeLibrary.js",
+      "header": null,
+      "implementation": null,
+      "status": "vulkan-port-pending",
+      "verifiedComplete": false
+    },
+    {
+      "source": "src/renderers/common/nodes/NodeManager.js",
+      "header": null,
+      "implementation": null,
+      "status": "vulkan-port-pending",
+      "verifiedComplete": false
+    },
+    {
+      "source": "src/renderers/common/nodes/NodeSampledTexture.js",
+      "header": null,
+      "implementation": null,
+      "status": "vulkan-port-pending",
+      "verifiedComplete": false
+    },
+    {
+      "source": "src/renderers/common/nodes/NodeSampler.js",
+      "header": null,
+      "implementation": null,
+      "status": "vulkan-port-pending",
+      "verifiedComplete": false
+    },
+    {
+      "source": "src/renderers/common/nodes/NodeStorageBuffer.js",
+      "header": null,
+      "implementation": null,
+      "status": "vulkan-port-pending",
+      "verifiedComplete": false
+    },
+    {
+      "source": "src/renderers/common/nodes/NodeUniform.js",
+      "header": null,
+      "implementation": null,
+      "status": "vulkan-port-pending",
+      "verifiedComplete": false
+    },
+    {
+      "source": "src/renderers/common/nodes/NodeUniformBuffer.js",
+      "header": null,
+      "implementation": null,
+      "status": "vulkan-port-pending",
+      "verifiedComplete": false
+    },
+    {
+      "source": "src/renderers/common/nodes/NodeUniformsGroup.js",
+      "header": null,
+      "implementation": null,
+      "status": "vulkan-port-pending",
+      "verifiedComplete": false
+    },
+    {
+      "source": "src/renderers/common/Pipeline.js",
+      "header": null,
+      "implementation": null,
+      "status": "vulkan-port-pending",
+      "verifiedComplete": false
+    },
+    {
+      "source": "src/renderers/common/Pipelines.js",
+      "header": null,
+      "implementation": null,
+      "status": "vulkan-port-pending",
+      "verifiedComplete": false
+    },
+    {
+      "source": "src/renderers/common/PostProcessing.js",
+      "header": null,
+      "implementation": null,
+      "status": "vulkan-port-pending",
+      "verifiedComplete": false
+    },
+    {
+      "source": "src/renderers/common/ProgrammableStage.js",
+      "header": null,
+      "implementation": null,
+      "status": "vulkan-port-pending",
+      "verifiedComplete": false
+    },
+    {
+      "source": "src/renderers/common/QuadMesh.js",
+      "header": null,
+      "implementation": null,
+      "status": "vulkan-port-pending",
+      "verifiedComplete": false
+    },
+    {
+      "source": "src/renderers/common/ReadbackBuffer.js",
+      "header": null,
+      "implementation": null,
+      "status": "vulkan-port-pending",
+      "verifiedComplete": false
+    },
+    {
+      "source": "src/renderers/common/RenderBundle.js",
+      "header": null,
+      "implementation": null,
+      "status": "vulkan-port-pending",
+      "verifiedComplete": false
+    },
+    {
+      "source": "src/renderers/common/RenderBundles.js",
+      "header": null,
+      "implementation": null,
+      "status": "vulkan-port-pending",
+      "verifiedComplete": false
+    },
+    {
+      "source": "src/renderers/common/RenderContext.js",
+      "header": null,
+      "implementation": null,
+      "status": "vulkan-port-pending",
+      "verifiedComplete": false
+    },
+    {
+      "source": "src/renderers/common/RenderContexts.js",
+      "header": null,
+      "implementation": null,
+      "status": "vulkan-port-pending",
+      "verifiedComplete": false
+    },
+    {
+      "source": "src/renderers/common/Renderer.js",
+      "header": null,
+      "implementation": null,
+      "status": "vulkan-port-pending",
+      "verifiedComplete": false
+    },
+    {
+      "source": "src/renderers/common/RendererUtils.js",
+      "header": null,
+      "implementation": null,
+      "status": "vulkan-port-pending",
+      "verifiedComplete": false
+    },
+    {
+      "source": "src/renderers/common/RenderList.js",
+      "header": null,
+      "implementation": null,
+      "status": "vulkan-port-pending",
+      "verifiedComplete": false
+    },
+    {
+      "source": "src/renderers/common/RenderLists.js",
+      "header": null,
+      "implementation": null,
+      "status": "vulkan-port-pending",
+      "verifiedComplete": false
+    },
+    {
+      "source": "src/renderers/common/RenderObject.js",
+      "header": null,
+      "implementation": null,
+      "status": "vulkan-port-pending",
+      "verifiedComplete": false
+    },
+    {
+      "source": "src/renderers/common/RenderObjectPipeline.js",
+      "header": null,
+      "implementation": null,
+      "status": "vulkan-port-pending",
+      "verifiedComplete": false
+    },
+    {
+      "source": "src/renderers/common/RenderObjects.js",
+      "header": null,
+      "implementation": null,
+      "status": "vulkan-port-pending",
+      "verifiedComplete": false
+    },
+    {
+      "source": "src/renderers/common/RenderPipeline.js",
+      "header": null,
+      "implementation": null,
+      "status": "vulkan-port-pending",
+      "verifiedComplete": false
+    },
+    {
+      "source": "src/renderers/common/SampledTexture.js",
+      "header": null,
+      "implementation": null,
+      "status": "vulkan-port-pending",
+      "verifiedComplete": false
+    },
+    {
+      "source": "src/renderers/common/Sampler.js",
+      "header": null,
+      "implementation": null,
+      "status": "vulkan-port-pending",
+      "verifiedComplete": false
+    },
+    {
+      "source": "src/renderers/common/Storage3DTexture.js",
+      "header": null,
+      "implementation": null,
+      "status": "vulkan-port-pending",
+      "verifiedComplete": false
+    },
+    {
+      "source": "src/renderers/common/StorageArrayTexture.js",
+      "header": null,
+      "implementation": null,
+      "status": "vulkan-port-pending",
+      "verifiedComplete": false
+    },
+    {
+      "source": "src/renderers/common/StorageBuffer.js",
+      "header": null,
+      "implementation": null,
+      "status": "vulkan-port-pending",
+      "verifiedComplete": false
+    },
+    {
+      "source": "src/renderers/common/StorageBufferAttribute.js",
+      "header": null,
+      "implementation": null,
+      "status": "vulkan-port-pending",
+      "verifiedComplete": false
+    },
+    {
+      "source": "src/renderers/common/StorageInstancedBufferAttribute.js",
+      "header": null,
+      "implementation": null,
+      "status": "vulkan-port-pending",
+      "verifiedComplete": false
+    },
+    {
+      "source": "src/renderers/common/StorageTexture.js",
+      "header": null,
+      "implementation": null,
+      "status": "vulkan-port-pending",
+      "verifiedComplete": false
+    },
+    {
+      "source": "src/renderers/common/Textures.js",
+      "header": null,
+      "implementation": null,
+      "status": "vulkan-port-pending",
+      "verifiedComplete": false
+    },
+    {
+      "source": "src/renderers/common/TimestampQueryPool.js",
+      "header": null,
+      "implementation": null,
+      "status": "vulkan-port-pending",
+      "verifiedComplete": false
+    },
+    {
+      "source": "src/renderers/common/Uniform.js",
+      "header": null,
+      "implementation": null,
+      "status": "vulkan-port-pending",
+      "verifiedComplete": false
+    },
+    {
+      "source": "src/renderers/common/UniformBuffer.js",
+      "header": null,
+      "implementation": null,
+      "status": "vulkan-port-pending",
+      "verifiedComplete": false
+    },
+    {
+      "source": "src/renderers/common/UniformsGroup.js",
+      "header": null,
+      "implementation": null,
+      "status": "vulkan-port-pending",
+      "verifiedComplete": false
+    },
+    {
+      "source": "src/renderers/common/XRManager.js",
+      "header": null,
+      "implementation": null,
+      "status": "vulkan-port-pending",
+      "verifiedComplete": false
+    },
+    {
+      "source": "src/renderers/common/XRRenderTarget.js",
+      "header": null,
+      "implementation": null,
+      "status": "vulkan-port-pending",
+      "verifiedComplete": false
+    },
+    {
+      "source": "src/renderers/shaders/DFGLUTData.js",
+      "header": null,
+      "implementation": null,
+      "status": "vulkan-port-pending",
+      "verifiedComplete": false
+    },
+    {
+      "source": "src/renderers/shaders/ShaderChunk/alphahash_fragment.glsl.js",
+      "header": null,
+      "implementation": null,
+      "status": "vulkan-port-pending",
+      "verifiedComplete": false
+    },
+    {
+      "source": "src/renderers/shaders/ShaderChunk/alphahash_pars_fragment.glsl.js",
+      "header": null,
+      "implementation": null,
+      "status": "vulkan-port-pending",
+      "verifiedComplete": false
+    },
+    {
+      "source": "src/renderers/shaders/ShaderChunk/alphamap_fragment.glsl.js",
+      "header": null,
+      "implementation": null,
+      "status": "vulkan-port-pending",
+      "verifiedComplete": false
+    },
+    {
+      "source": "src/renderers/shaders/ShaderChunk/alphamap_pars_fragment.glsl.js",
+      "header": null,
+      "implementation": null,
+      "status": "vulkan-port-pending",
+      "verifiedComplete": false
+    },
+    {
+      "source": "src/renderers/shaders/ShaderChunk/alphatest_fragment.glsl.js",
+      "header": null,
+      "implementation": null,
+      "status": "vulkan-port-pending",
+      "verifiedComplete": false
+    },
+    {
+      "source": "src/renderers/shaders/ShaderChunk/alphatest_pars_fragment.glsl.js",
+      "header": null,
+      "implementation": null,
+      "status": "vulkan-port-pending",
+      "verifiedComplete": false
+    },
+    {
+      "source": "src/renderers/shaders/ShaderChunk/aomap_fragment.glsl.js",
+      "header": null,
+      "implementation": null,
+      "status": "vulkan-port-pending",
+      "verifiedComplete": false
+    },
+    {
+      "source": "src/renderers/shaders/ShaderChunk/aomap_pars_fragment.glsl.js",
+      "header": null,
+      "implementation": null,
+      "status": "vulkan-port-pending",
+      "verifiedComplete": false
+    },
+    {
+      "source": "src/renderers/shaders/ShaderChunk/batching_pars_vertex.glsl.js",
+      "header": null,
+      "implementation": null,
+      "status": "vulkan-port-pending",
+      "verifiedComplete": false
+    },
+    {
+      "source": "src/renderers/shaders/ShaderChunk/batching_vertex.glsl.js",
+      "header": null,
+      "implementation": null,
+      "status": "vulkan-port-pending",
+      "verifiedComplete": false
+    },
+    {
+      "source": "src/renderers/shaders/ShaderChunk/beginnormal_vertex.glsl.js",
+      "header": null,
+      "implementation": null,
+      "status": "vulkan-port-pending",
+      "verifiedComplete": false
+    },
+    {
+      "source": "src/renderers/shaders/ShaderChunk/begin_vertex.glsl.js",
+      "header": null,
+      "implementation": null,
+      "status": "vulkan-port-pending",
+      "verifiedComplete": false
+    },
+    {
+      "source": "src/renderers/shaders/ShaderChunk/bsdfs.glsl.js",
+      "header": null,
+      "implementation": null,
+      "status": "vulkan-port-pending",
+      "verifiedComplete": false
+    },
+    {
+      "source": "src/renderers/shaders/ShaderChunk/bumpmap_pars_fragment.glsl.js",
+      "header": null,
+      "implementation": null,
+      "status": "vulkan-port-pending",
+      "verifiedComplete": false
+    },
+    {
+      "source": "src/renderers/shaders/ShaderChunk/clearcoat_normal_fragment_begin.glsl.js",
+      "header": null,
+      "implementation": null,
+      "status": "vulkan-port-pending",
+      "verifiedComplete": false
+    },
+    {
+      "source": "src/renderers/shaders/ShaderChunk/clearcoat_normal_fragment_maps.glsl.js",
+      "header": null,
+      "implementation": null,
+      "status": "vulkan-port-pending",
+      "verifiedComplete": false
+    },
+    {
+      "source": "src/renderers/shaders/ShaderChunk/clearcoat_pars_fragment.glsl.js",
+      "header": null,
+      "implementation": null,
+      "status": "vulkan-port-pending",
+      "verifiedComplete": false
+    },
+    {
+      "source": "src/renderers/shaders/ShaderChunk/clipping_planes_fragment.glsl.js",
+      "header": null,
+      "implementation": null,
+      "status": "vulkan-port-pending",
+      "verifiedComplete": false
+    },
+    {
+      "source": "src/renderers/shaders/ShaderChunk/clipping_planes_pars_fragment.glsl.js",
+      "header": null,
+      "implementation": null,
+      "status": "vulkan-port-pending",
+      "verifiedComplete": false
+    },
+    {
+      "source": "src/renderers/shaders/ShaderChunk/clipping_planes_pars_vertex.glsl.js",
+      "header": null,
+      "implementation": null,
+      "status": "vulkan-port-pending",
+      "verifiedComplete": false
+    },
+    {
+      "source": "src/renderers/shaders/ShaderChunk/clipping_planes_vertex.glsl.js",
+      "header": null,
+      "implementation": null,
+      "status": "vulkan-port-pending",
+      "verifiedComplete": false
+    },
+    {
+      "source": "src/renderers/shaders/ShaderChunk/colorspace_fragment.glsl.js",
+      "header": null,
+      "implementation": null,
+      "status": "vulkan-port-pending",
+      "verifiedComplete": false
+    },
+    {
+      "source": "src/renderers/shaders/ShaderChunk/colorspace_pars_fragment.glsl.js",
+      "header": null,
+      "implementation": null,
+      "status": "vulkan-port-pending",
+      "verifiedComplete": false
+    },
+    {
+      "source": "src/renderers/shaders/ShaderChunk/color_fragment.glsl.js",
+      "header": null,
+      "implementation": null,
+      "status": "vulkan-port-pending",
+      "verifiedComplete": false
+    },
+    {
+      "source": "src/renderers/shaders/ShaderChunk/color_pars_fragment.glsl.js",
+      "header": null,
+      "implementation": null,
+      "status": "vulkan-port-pending",
+      "verifiedComplete": false
+    },
+    {
+      "source": "src/renderers/shaders/ShaderChunk/color_pars_vertex.glsl.js",
+      "header": null,
+      "implementation": null,
+      "status": "vulkan-port-pending",
+      "verifiedComplete": false
+    },
+    {
+      "source": "src/renderers/shaders/ShaderChunk/color_vertex.glsl.js",
+      "header": null,
+      "implementation": null,
+      "status": "vulkan-port-pending",
+      "verifiedComplete": false
+    },
+    {
+      "source": "src/renderers/shaders/ShaderChunk/common.glsl.js",
+      "header": null,
+      "implementation": null,
+      "status": "vulkan-port-pending",
+      "verifiedComplete": false
+    },
+    {
+      "source": "src/renderers/shaders/ShaderChunk/defaultnormal_vertex.glsl.js",
+      "header": null,
+      "implementation": null,
+      "status": "vulkan-port-pending",
+      "verifiedComplete": false
+    },
+    {
+      "source": "src/renderers/shaders/ShaderChunk/default_fragment.glsl.js",
+      "header": null,
+      "implementation": null,
+      "status": "vulkan-port-pending",
+      "verifiedComplete": false
+    },
+    {
+      "source": "src/renderers/shaders/ShaderChunk/default_vertex.glsl.js",
+      "header": null,
+      "implementation": null,
+      "status": "vulkan-port-pending",
+      "verifiedComplete": false
+    },
+    {
+      "source": "src/renderers/shaders/ShaderChunk/displacementmap_pars_vertex.glsl.js",
+      "header": null,
+      "implementation": null,
+      "status": "vulkan-port-pending",
+      "verifiedComplete": false
+    },
+    {
+      "source": "src/renderers/shaders/ShaderChunk/displacementmap_vertex.glsl.js",
+      "header": null,
+      "implementation": null,
+      "status": "vulkan-port-pending",
+      "verifiedComplete": false
+    },
+    {
+      "source": "src/renderers/shaders/ShaderChunk/dithering_fragment.glsl.js",
+      "header": null,
+      "implementation": null,
+      "status": "vulkan-port-pending",
+      "verifiedComplete": false
+    },
+    {
+      "source": "src/renderers/shaders/ShaderChunk/dithering_pars_fragment.glsl.js",
+      "header": null,
+      "implementation": null,
+      "status": "vulkan-port-pending",
+      "verifiedComplete": false
+    },
+    {
+      "source": "src/renderers/shaders/ShaderChunk/emissivemap_fragment.glsl.js",
+      "header": null,
+      "implementation": null,
+      "status": "vulkan-port-pending",
+      "verifiedComplete": false
+    },
+    {
+      "source": "src/renderers/shaders/ShaderChunk/emissivemap_pars_fragment.glsl.js",
+      "header": null,
+      "implementation": null,
+      "status": "vulkan-port-pending",
+      "verifiedComplete": false
+    },
+    {
+      "source": "src/renderers/shaders/ShaderChunk/envmap_common_pars_fragment.glsl.js",
+      "header": null,
+      "implementation": null,
+      "status": "vulkan-port-pending",
+      "verifiedComplete": false
+    },
+    {
+      "source": "src/renderers/shaders/ShaderChunk/envmap_fragment.glsl.js",
+      "header": null,
+      "implementation": null,
+      "status": "vulkan-port-pending",
+      "verifiedComplete": false
+    },
+    {
+      "source": "src/renderers/shaders/ShaderChunk/envmap_pars_fragment.glsl.js",
+      "header": null,
+      "implementation": null,
+      "status": "vulkan-port-pending",
+      "verifiedComplete": false
+    },
+    {
+      "source": "src/renderers/shaders/ShaderChunk/envmap_pars_vertex.glsl.js",
+      "header": null,
+      "implementation": null,
+      "status": "vulkan-port-pending",
+      "verifiedComplete": false
+    },
+    {
+      "source": "src/renderers/shaders/ShaderChunk/envmap_physical_pars_fragment.glsl.js",
+      "header": null,
+      "implementation": null,
+      "status": "vulkan-port-pending",
+      "verifiedComplete": false
+    },
+    {
+      "source": "src/renderers/shaders/ShaderChunk/envmap_vertex.glsl.js",
+      "header": null,
+      "implementation": null,
+      "status": "vulkan-port-pending",
+      "verifiedComplete": false
+    },
+    {
+      "source": "src/renderers/shaders/ShaderChunk/fog_fragment.glsl.js",
+      "header": null,
+      "implementation": null,
+      "status": "vulkan-port-pending",
+      "verifiedComplete": false
+    },
+    {
+      "source": "src/renderers/shaders/ShaderChunk/fog_pars_fragment.glsl.js",
+      "header": null,
+      "implementation": null,
+      "status": "vulkan-port-pending",
+      "verifiedComplete": false
+    },
+    {
+      "source": "src/renderers/shaders/ShaderChunk/fog_pars_vertex.glsl.js",
+      "header": null,
+      "implementation": null,
+      "status": "vulkan-port-pending",
+      "verifiedComplete": false
+    },
+    {
+      "source": "src/renderers/shaders/ShaderChunk/fog_vertex.glsl.js",
+      "header": null,
+      "implementation": null,
+      "status": "vulkan-port-pending",
+      "verifiedComplete": false
+    },
+    {
+      "source": "src/renderers/shaders/ShaderChunk/gradientmap_pars_fragment.glsl.js",
+      "header": null,
+      "implementation": null,
+      "status": "vulkan-port-pending",
+      "verifiedComplete": false
+    },
+    {
+      "source": "src/renderers/shaders/ShaderChunk/iridescence_fragment.glsl.js",
+      "header": null,
+      "implementation": null,
+      "status": "vulkan-port-pending",
+      "verifiedComplete": false
+    },
+    {
+      "source": "src/renderers/shaders/ShaderChunk/iridescence_pars_fragment.glsl.js",
+      "header": null,
+      "implementation": null,
+      "status": "vulkan-port-pending",
+      "verifiedComplete": false
+    },
+    {
+      "source": "src/renderers/shaders/ShaderChunk/lightmap_pars_fragment.glsl.js",
+      "header": null,
+      "implementation": null,
+      "status": "vulkan-port-pending",
+      "verifiedComplete": false
+    },
+    {
+      "source": "src/renderers/shaders/ShaderChunk/lightprobes_pars_fragment.glsl.js",
+      "header": null,
+      "implementation": null,
+      "status": "vulkan-port-pending",
+      "verifiedComplete": false
+    },
+    {
+      "source": "src/renderers/shaders/ShaderChunk/lights_fragment_begin.glsl.js",
+      "header": null,
+      "implementation": null,
+      "status": "vulkan-port-pending",
+      "verifiedComplete": false
+    },
+    {
+      "source": "src/renderers/shaders/ShaderChunk/lights_fragment_end.glsl.js",
+      "header": null,
+      "implementation": null,
+      "status": "vulkan-port-pending",
+      "verifiedComplete": false
+    },
+    {
+      "source": "src/renderers/shaders/ShaderChunk/lights_fragment_maps.glsl.js",
+      "header": null,
+      "implementation": null,
+      "status": "vulkan-port-pending",
+      "verifiedComplete": false
+    },
+    {
+      "source": "src/renderers/shaders/ShaderChunk/lights_lambert_fragment.glsl.js",
+      "header": null,
+      "implementation": null,
+      "status": "vulkan-port-pending",
+      "verifiedComplete": false
+    },
+    {
+      "source": "src/renderers/shaders/ShaderChunk/lights_lambert_pars_fragment.glsl.js",
+      "header": null,
+      "implementation": null,
+      "status": "vulkan-port-pending",
+      "verifiedComplete": false
+    },
+    {
+      "source": "src/renderers/shaders/ShaderChunk/lights_pars_begin.glsl.js",
+      "header": null,
+      "implementation": null,
+      "status": "vulkan-port-pending",
+      "verifiedComplete": false
+    },
+    {
+      "source": "src/renderers/shaders/ShaderChunk/lights_phong_fragment.glsl.js",
+      "header": null,
+      "implementation": null,
+      "status": "vulkan-port-pending",
+      "verifiedComplete": false
+    },
+    {
+      "source": "src/renderers/shaders/ShaderChunk/lights_phong_pars_fragment.glsl.js",
+      "header": null,
+      "implementation": null,
+      "status": "vulkan-port-pending",
+      "verifiedComplete": false
+    },
+    {
+      "source": "src/renderers/shaders/ShaderChunk/lights_physical_fragment.glsl.js",
+      "header": null,
+      "implementation": null,
+      "status": "vulkan-port-pending",
+      "verifiedComplete": false
+    },
+    {
+      "source": "src/renderers/shaders/ShaderChunk/lights_physical_pars_fragment.glsl.js",
+      "header": null,
+      "implementation": null,
+      "status": "vulkan-port-pending",
+      "verifiedComplete": false
+    },
+    {
+      "source": "src/renderers/shaders/ShaderChunk/lights_toon_fragment.glsl.js",
+      "header": null,
+      "implementation": null,
+      "status": "vulkan-port-pending",
+      "verifiedComplete": false
+    },
+    {
+      "source": "src/renderers/shaders/ShaderChunk/lights_toon_pars_fragment.glsl.js",
+      "header": null,
+      "implementation": null,
+      "status": "vulkan-port-pending",
+      "verifiedComplete": false
+    },
+    {
+      "source": "src/renderers/shaders/ShaderChunk/logdepthbuf_fragment.glsl.js",
+      "header": null,
+      "implementation": null,
+      "status": "vulkan-port-pending",
+      "verifiedComplete": false
+    },
+    {
+      "source": "src/renderers/shaders/ShaderChunk/logdepthbuf_pars_fragment.glsl.js",
+      "header": null,
+      "implementation": null,
+      "status": "vulkan-port-pending",
+      "verifiedComplete": false
+    },
+    {
+      "source": "src/renderers/shaders/ShaderChunk/logdepthbuf_pars_vertex.glsl.js",
+      "header": null,
+      "implementation": null,
+      "status": "vulkan-port-pending",
+      "verifiedComplete": false
+    },
+    {
+      "source": "src/renderers/shaders/ShaderChunk/logdepthbuf_vertex.glsl.js",
+      "header": null,
+      "implementation": null,
+      "status": "vulkan-port-pending",
+      "verifiedComplete": false
+    },
+    {
+      "source": "src/renderers/shaders/ShaderChunk/map_fragment.glsl.js",
+      "header": null,
+      "implementation": null,
+      "status": "vulkan-port-pending",
+      "verifiedComplete": false
+    },
+    {
+      "source": "src/renderers/shaders/ShaderChunk/map_pars_fragment.glsl.js",
+      "header": null,
+      "implementation": null,
+      "status": "vulkan-port-pending",
+      "verifiedComplete": false
+    },
+    {
+      "source": "src/renderers/shaders/ShaderChunk/map_particle_fragment.glsl.js",
+      "header": null,
+      "implementation": null,
+      "status": "vulkan-port-pending",
+      "verifiedComplete": false
+    },
+    {
+      "source": "src/renderers/shaders/ShaderChunk/map_particle_pars_fragment.glsl.js",
+      "header": null,
+      "implementation": null,
+      "status": "vulkan-port-pending",
+      "verifiedComplete": false
+    },
+    {
+      "source": "src/renderers/shaders/ShaderChunk/metalnessmap_fragment.glsl.js",
+      "header": null,
+      "implementation": null,
+      "status": "vulkan-port-pending",
+      "verifiedComplete": false
+    },
+    {
+      "source": "src/renderers/shaders/ShaderChunk/metalnessmap_pars_fragment.glsl.js",
+      "header": null,
+      "implementation": null,
+      "status": "vulkan-port-pending",
+      "verifiedComplete": false
+    },
+    {
+      "source": "src/renderers/shaders/ShaderChunk/morphcolor_vertex.glsl.js",
+      "header": null,
+      "implementation": null,
+      "status": "vulkan-port-pending",
+      "verifiedComplete": false
+    },
+    {
+      "source": "src/renderers/shaders/ShaderChunk/morphinstance_vertex.glsl.js",
+      "header": null,
+      "implementation": null,
+      "status": "vulkan-port-pending",
+      "verifiedComplete": false
+    },
+    {
+      "source": "src/renderers/shaders/ShaderChunk/morphnormal_vertex.glsl.js",
+      "header": null,
+      "implementation": null,
+      "status": "vulkan-port-pending",
+      "verifiedComplete": false
+    },
+    {
+      "source": "src/renderers/shaders/ShaderChunk/morphtarget_pars_vertex.glsl.js",
+      "header": null,
+      "implementation": null,
+      "status": "vulkan-port-pending",
+      "verifiedComplete": false
+    },
+    {
+      "source": "src/renderers/shaders/ShaderChunk/morphtarget_vertex.glsl.js",
+      "header": null,
+      "implementation": null,
+      "status": "vulkan-port-pending",
+      "verifiedComplete": false
+    },
+    {
+      "source": "src/renderers/shaders/ShaderChunk/normalmap_pars_fragment.glsl.js",
+      "header": null,
+      "implementation": null,
+      "status": "vulkan-port-pending",
+      "verifiedComplete": false
+    },
+    {
+      "source": "src/renderers/shaders/ShaderChunk/normal_fragment_begin.glsl.js",
+      "header": null,
+      "implementation": null,
+      "status": "vulkan-port-pending",
+      "verifiedComplete": false
+    },
+    {
+      "source": "src/renderers/shaders/ShaderChunk/normal_fragment_maps.glsl.js",
+      "header": null,
+      "implementation": null,
+      "status": "vulkan-port-pending",
+      "verifiedComplete": false
+    },
+    {
+      "source": "src/renderers/shaders/ShaderChunk/normal_pars_fragment.glsl.js",
+      "header": null,
+      "implementation": null,
+      "status": "vulkan-port-pending",
+      "verifiedComplete": false
+    },
+    {
+      "source": "src/renderers/shaders/ShaderChunk/normal_pars_vertex.glsl.js",
+      "header": null,
+      "implementation": null,
+      "status": "vulkan-port-pending",
+      "verifiedComplete": false
+    },
+    {
+      "source": "src/renderers/shaders/ShaderChunk/normal_vertex.glsl.js",
+      "header": null,
+      "implementation": null,
+      "status": "vulkan-port-pending",
+      "verifiedComplete": false
+    },
+    {
+      "source": "src/renderers/shaders/ShaderChunk/opaque_fragment.glsl.js",
+      "header": null,
+      "implementation": null,
+      "status": "vulkan-port-pending",
+      "verifiedComplete": false
+    },
+    {
+      "source": "src/renderers/shaders/ShaderChunk/packing.glsl.js",
+      "header": null,
+      "implementation": null,
+      "status": "vulkan-port-pending",
+      "verifiedComplete": false
+    },
+    {
+      "source": "src/renderers/shaders/ShaderChunk/premultiplied_alpha_fragment.glsl.js",
+      "header": null,
+      "implementation": null,
+      "status": "vulkan-port-pending",
+      "verifiedComplete": false
+    },
+    {
+      "source": "src/renderers/shaders/ShaderChunk/project_vertex.glsl.js",
+      "header": null,
+      "implementation": null,
+      "status": "vulkan-port-pending",
+      "verifiedComplete": false
+    },
+    {
+      "source": "src/renderers/shaders/ShaderChunk/roughnessmap_fragment.glsl.js",
+      "header": null,
+      "implementation": null,
+      "status": "vulkan-port-pending",
+      "verifiedComplete": false
+    },
+    {
+      "source": "src/renderers/shaders/ShaderChunk/roughnessmap_pars_fragment.glsl.js",
+      "header": null,
+      "implementation": null,
+      "status": "vulkan-port-pending",
+      "verifiedComplete": false
+    },
+    {
+      "source": "src/renderers/shaders/ShaderChunk/shadowmap_pars_fragment.glsl.js",
+      "header": null,
+      "implementation": null,
+      "status": "vulkan-port-pending",
+      "verifiedComplete": false
+    },
+    {
+      "source": "src/renderers/shaders/ShaderChunk/shadowmap_pars_vertex.glsl.js",
+      "header": null,
+      "implementation": null,
+      "status": "vulkan-port-pending",
+      "verifiedComplete": false
+    },
+    {
+      "source": "src/renderers/shaders/ShaderChunk/shadowmap_vertex.glsl.js",
+      "header": null,
+      "implementation": null,
+      "status": "vulkan-port-pending",
+      "verifiedComplete": false
+    },
+    {
+      "source": "src/renderers/shaders/ShaderChunk/shadowmask_pars_fragment.glsl.js",
+      "header": null,
+      "implementation": null,
+      "status": "vulkan-port-pending",
+      "verifiedComplete": false
+    },
+    {
+      "source": "src/renderers/shaders/ShaderChunk/skinbase_vertex.glsl.js",
+      "header": null,
+      "implementation": null,
+      "status": "vulkan-port-pending",
+      "verifiedComplete": false
+    },
+    {
+      "source": "src/renderers/shaders/ShaderChunk/skinning_pars_vertex.glsl.js",
+      "header": null,
+      "implementation": null,
+      "status": "vulkan-port-pending",
+      "verifiedComplete": false
+    },
+    {
+      "source": "src/renderers/shaders/ShaderChunk/skinning_vertex.glsl.js",
+      "header": null,
+      "implementation": null,
+      "status": "vulkan-port-pending",
+      "verifiedComplete": false
+    },
+    {
+      "source": "src/renderers/shaders/ShaderChunk/skinnormal_vertex.glsl.js",
+      "header": null,
+      "implementation": null,
+      "status": "vulkan-port-pending",
+      "verifiedComplete": false
+    },
+    {
+      "source": "src/renderers/shaders/ShaderChunk/specularmap_fragment.glsl.js",
+      "header": null,
+      "implementation": null,
+      "status": "vulkan-port-pending",
+      "verifiedComplete": false
+    },
+    {
+      "source": "src/renderers/shaders/ShaderChunk/specularmap_pars_fragment.glsl.js",
+      "header": null,
+      "implementation": null,
+      "status": "vulkan-port-pending",
+      "verifiedComplete": false
+    },
+    {
+      "source": "src/renderers/shaders/ShaderChunk/tonemapping_fragment.glsl.js",
+      "header": null,
+      "implementation": null,
+      "status": "vulkan-port-pending",
+      "verifiedComplete": false
+    },
+    {
+      "source": "src/renderers/shaders/ShaderChunk/tonemapping_pars_fragment.glsl.js",
+      "header": null,
+      "implementation": null,
+      "status": "vulkan-port-pending",
+      "verifiedComplete": false
+    },
+    {
+      "source": "src/renderers/shaders/ShaderChunk/transmission_fragment.glsl.js",
+      "header": null,
+      "implementation": null,
+      "status": "vulkan-port-pending",
+      "verifiedComplete": false
+    },
+    {
+      "source": "src/renderers/shaders/ShaderChunk/transmission_pars_fragment.glsl.js",
+      "header": null,
+      "implementation": null,
+      "status": "vulkan-port-pending",
+      "verifiedComplete": false
+    },
+    {
+      "source": "src/renderers/shaders/ShaderChunk/uv_pars_fragment.glsl.js",
+      "header": null,
+      "implementation": null,
+      "status": "vulkan-port-pending",
+      "verifiedComplete": false
+    },
+    {
+      "source": "src/renderers/shaders/ShaderChunk/uv_pars_vertex.glsl.js",
+      "header": null,
+      "implementation": null,
+      "status": "vulkan-port-pending",
+      "verifiedComplete": false
+    },
+    {
+      "source": "src/renderers/shaders/ShaderChunk/uv_vertex.glsl.js",
+      "header": null,
+      "implementation": null,
+      "status": "vulkan-port-pending",
+      "verifiedComplete": false
+    },
+    {
+      "source": "src/renderers/shaders/ShaderChunk/worldpos_vertex.glsl.js",
+      "header": null,
+      "implementation": null,
+      "status": "vulkan-port-pending",
+      "verifiedComplete": false
+    },
+    {
+      "source": "src/renderers/shaders/ShaderChunk.js",
+      "header": null,
+      "implementation": null,
+      "status": "vulkan-port-pending",
+      "verifiedComplete": false
+    },
+    {
+      "source": "src/renderers/shaders/ShaderLib/background.glsl.js",
+      "header": null,
+      "implementation": null,
+      "status": "vulkan-port-pending",
+      "verifiedComplete": false
+    },
+    {
+      "source": "src/renderers/shaders/ShaderLib/backgroundCube.glsl.js",
+      "header": null,
+      "implementation": null,
+      "status": "vulkan-port-pending",
+      "verifiedComplete": false
+    },
+    {
+      "source": "src/renderers/shaders/ShaderLib/cube.glsl.js",
+      "header": null,
+      "implementation": null,
+      "status": "vulkan-port-pending",
+      "verifiedComplete": false
+    },
+    {
+      "source": "src/renderers/shaders/ShaderLib/depth.glsl.js",
+      "header": null,
+      "implementation": null,
+      "status": "vulkan-port-pending",
+      "verifiedComplete": false
+    },
+    {
+      "source": "src/renderers/shaders/ShaderLib/distance.glsl.js",
+      "header": null,
+      "implementation": null,
+      "status": "vulkan-port-pending",
+      "verifiedComplete": false
+    },
+    {
+      "source": "src/renderers/shaders/ShaderLib/equirect.glsl.js",
+      "header": null,
+      "implementation": null,
+      "status": "vulkan-port-pending",
+      "verifiedComplete": false
+    },
+    {
+      "source": "src/renderers/shaders/ShaderLib/linedashed.glsl.js",
+      "header": null,
+      "implementation": null,
+      "status": "vulkan-port-pending",
+      "verifiedComplete": false
+    },
+    {
+      "source": "src/renderers/shaders/ShaderLib/meshbasic.glsl.js",
+      "header": null,
+      "implementation": null,
+      "status": "vulkan-port-pending",
+      "verifiedComplete": false
+    },
+    {
+      "source": "src/renderers/shaders/ShaderLib/meshlambert.glsl.js",
+      "header": null,
+      "implementation": null,
+      "status": "vulkan-port-pending",
+      "verifiedComplete": false
+    },
+    {
+      "source": "src/renderers/shaders/ShaderLib/meshmatcap.glsl.js",
+      "header": null,
+      "implementation": null,
+      "status": "vulkan-port-pending",
+      "verifiedComplete": false
+    },
+    {
+      "source": "src/renderers/shaders/ShaderLib/meshnormal.glsl.js",
+      "header": null,
+      "implementation": null,
+      "status": "vulkan-port-pending",
+      "verifiedComplete": false
+    },
+    {
+      "source": "src/renderers/shaders/ShaderLib/meshphong.glsl.js",
+      "header": null,
+      "implementation": null,
+      "status": "vulkan-port-pending",
+      "verifiedComplete": false
+    },
+    {
+      "source": "src/renderers/shaders/ShaderLib/meshphysical.glsl.js",
+      "header": null,
+      "implementation": null,
+      "status": "vulkan-port-pending",
+      "verifiedComplete": false
+    },
+    {
+      "source": "src/renderers/shaders/ShaderLib/meshtoon.glsl.js",
+      "header": null,
+      "implementation": null,
+      "status": "vulkan-port-pending",
+      "verifiedComplete": false
+    },
+    {
+      "source": "src/renderers/shaders/ShaderLib/points.glsl.js",
+      "header": null,
+      "implementation": null,
+      "status": "vulkan-port-pending",
+      "verifiedComplete": false
+    },
+    {
+      "source": "src/renderers/shaders/ShaderLib/shadow.glsl.js",
+      "header": null,
+      "implementation": null,
+      "status": "vulkan-port-pending",
+      "verifiedComplete": false
+    },
+    {
+      "source": "src/renderers/shaders/ShaderLib/sprite.glsl.js",
+      "header": null,
+      "implementation": null,
+      "status": "vulkan-port-pending",
+      "verifiedComplete": false
+    },
+    {
+      "source": "src/renderers/shaders/ShaderLib/vsm.glsl.js",
+      "header": null,
+      "implementation": null,
+      "status": "vulkan-port-pending",
+      "verifiedComplete": false
+    },
+    {
+      "source": "src/renderers/shaders/ShaderLib.js",
+      "header": null,
+      "implementation": null,
+      "status": "vulkan-port-pending",
+      "verifiedComplete": false
+    },
+    {
+      "source": "src/renderers/shaders/UniformsLib.js",
+      "header": null,
+      "implementation": null,
+      "status": "vulkan-port-pending",
+      "verifiedComplete": false
+    },
+    {
+      "source": "src/renderers/shaders/UniformsUtils.js",
+      "header": null,
+      "implementation": null,
+      "status": "vulkan-port-pending",
+      "verifiedComplete": false
+    },
+    {
+      "source": "src/renderers/webgl/WebGLAnimation.js",
+      "header": null,
+      "implementation": null,
+      "status": "vulkan-port-pending",
+      "verifiedComplete": false
+    },
+    {
+      "source": "src/renderers/webgl/WebGLAttributes.js",
+      "header": null,
+      "implementation": null,
+      "status": "vulkan-port-pending",
+      "verifiedComplete": false
+    },
+    {
+      "source": "src/renderers/webgl/WebGLBackground.js",
+      "header": null,
+      "implementation": null,
+      "status": "vulkan-port-pending",
+      "verifiedComplete": false
+    },
+    {
+      "source": "src/renderers/webgl/WebGLBindingStates.js",
+      "header": null,
+      "implementation": null,
+      "status": "vulkan-port-pending",
+      "verifiedComplete": false
+    },
+    {
+      "source": "src/renderers/webgl/WebGLBufferRenderer.js",
+      "header": null,
+      "implementation": null,
+      "status": "vulkan-port-pending",
+      "verifiedComplete": false
+    },
+    {
+      "source": "src/renderers/webgl/WebGLCapabilities.js",
+      "header": null,
+      "implementation": null,
+      "status": "vulkan-port-pending",
+      "verifiedComplete": false
+    },
+    {
+      "source": "src/renderers/webgl/WebGLClipping.js",
+      "header": null,
+      "implementation": null,
+      "status": "vulkan-port-pending",
+      "verifiedComplete": false
+    },
+    {
+      "source": "src/renderers/webgl/WebGLEnvironments.js",
+      "header": null,
+      "implementation": null,
+      "status": "vulkan-port-pending",
+      "verifiedComplete": false
+    },
+    {
+      "source": "src/renderers/webgl/WebGLExtensions.js",
+      "header": null,
+      "implementation": null,
+      "status": "vulkan-port-pending",
+      "verifiedComplete": false
+    },
+    {
+      "source": "src/renderers/webgl/WebGLGeometries.js",
+      "header": null,
+      "implementation": null,
+      "status": "vulkan-port-pending",
+      "verifiedComplete": false
+    },
+    {
+      "source": "src/renderers/webgl/WebGLIndexedBufferRenderer.js",
+      "header": null,
+      "implementation": null,
+      "status": "vulkan-port-pending",
+      "verifiedComplete": false
+    },
+    {
+      "source": "src/renderers/webgl/WebGLInfo.js",
+      "header": null,
+      "implementation": null,
+      "status": "vulkan-port-pending",
+      "verifiedComplete": false
+    },
+    {
+      "source": "src/renderers/webgl/WebGLLights.js",
+      "header": null,
+      "implementation": null,
+      "status": "vulkan-port-pending",
+      "verifiedComplete": false
+    },
+    {
+      "source": "src/renderers/webgl/WebGLMaterials.js",
+      "header": null,
+      "implementation": null,
+      "status": "vulkan-port-pending",
+      "verifiedComplete": false
+    },
+    {
+      "source": "src/renderers/webgl/WebGLMorphtargets.js",
+      "header": null,
+      "implementation": null,
+      "status": "vulkan-port-pending",
+      "verifiedComplete": false
+    },
+    {
+      "source": "src/renderers/webgl/WebGLObjects.js",
+      "header": null,
+      "implementation": null,
+      "status": "vulkan-port-pending",
+      "verifiedComplete": false
+    },
+    {
+      "source": "src/renderers/webgl/WebGLOutput.js",
+      "header": null,
+      "implementation": null,
+      "status": "vulkan-port-pending",
+      "verifiedComplete": false
+    },
+    {
+      "source": "src/renderers/webgl/WebGLProgram.js",
+      "header": null,
+      "implementation": null,
+      "status": "vulkan-port-pending",
+      "verifiedComplete": false
+    },
+    {
+      "source": "src/renderers/webgl/WebGLPrograms.js",
+      "header": null,
+      "implementation": null,
+      "status": "vulkan-port-pending",
+      "verifiedComplete": false
+    },
+    {
+      "source": "src/renderers/webgl/WebGLProperties.js",
+      "header": null,
+      "implementation": null,
+      "status": "vulkan-port-pending",
+      "verifiedComplete": false
+    },
+    {
+      "source": "src/renderers/webgl/WebGLRenderLists.js",
+      "header": null,
+      "implementation": null,
+      "status": "vulkan-port-pending",
+      "verifiedComplete": false
+    },
+    {
+      "source": "src/renderers/webgl/WebGLRenderStates.js",
+      "header": null,
+      "implementation": null,
+      "status": "vulkan-port-pending",
+      "verifiedComplete": false
+    },
+    {
+      "source": "src/renderers/webgl/WebGLShader.js",
+      "header": null,
+      "implementation": null,
+      "status": "vulkan-port-pending",
+      "verifiedComplete": false
+    },
+    {
+      "source": "src/renderers/webgl/WebGLShaderCache.js",
+      "header": null,
+      "implementation": null,
+      "status": "vulkan-port-pending",
+      "verifiedComplete": false
+    },
+    {
+      "source": "src/renderers/webgl/WebGLShadowMap.js",
+      "header": null,
+      "implementation": null,
+      "status": "vulkan-port-pending",
+      "verifiedComplete": false
+    },
+    {
+      "source": "src/renderers/webgl/WebGLState.js",
+      "header": null,
+      "implementation": null,
+      "status": "vulkan-port-pending",
+      "verifiedComplete": false
+    },
+    {
+      "source": "src/renderers/webgl/WebGLTextures.js",
+      "header": null,
+      "implementation": null,
+      "status": "vulkan-port-pending",
+      "verifiedComplete": false
+    },
+    {
+      "source": "src/renderers/webgl/WebGLUniforms.js",
+      "header": null,
+      "implementation": null,
+      "status": "vulkan-port-pending",
+      "verifiedComplete": false
+    },
+    {
+      "source": "src/renderers/webgl/WebGLUniformsGroups.js",
+      "header": null,
+      "implementation": null,
+      "status": "vulkan-port-pending",
+      "verifiedComplete": false
+    },
+    {
+      "source": "src/renderers/webgl/WebGLUtils.js",
+      "header": null,
+      "implementation": null,
+      "status": "vulkan-port-pending",
+      "verifiedComplete": false
+    },
+    {
+      "source": "src/renderers/webgl-fallback/nodes/GLSLNodeBuilder.js",
+      "header": null,
+      "implementation": null,
+      "status": "vulkan-port-pending",
+      "verifiedComplete": false
+    },
+    {
+      "source": "src/renderers/webgl-fallback/utils/WebGLAttributeUtils.js",
+      "header": null,
+      "implementation": null,
+      "status": "vulkan-port-pending",
+      "verifiedComplete": false
+    },
+    {
+      "source": "src/renderers/webgl-fallback/utils/WebGLCapabilities.js",
+      "header": null,
+      "implementation": null,
+      "status": "vulkan-port-pending",
+      "verifiedComplete": false
+    },
+    {
+      "source": "src/renderers/webgl-fallback/utils/WebGLConstants.js",
+      "header": null,
+      "implementation": null,
+      "status": "vulkan-port-pending",
+      "verifiedComplete": false
+    },
+    {
+      "source": "src/renderers/webgl-fallback/utils/WebGLExtensions.js",
+      "header": null,
+      "implementation": null,
+      "status": "vulkan-port-pending",
+      "verifiedComplete": false
+    },
+    {
+      "source": "src/renderers/webgl-fallback/utils/WebGLState.js",
+      "header": null,
+      "implementation": null,
+      "status": "vulkan-port-pending",
+      "verifiedComplete": false
+    },
+    {
+      "source": "src/renderers/webgl-fallback/utils/WebGLTextureUtils.js",
+      "header": null,
+      "implementation": null,
+      "status": "vulkan-port-pending",
+      "verifiedComplete": false
+    },
+    {
+      "source": "src/renderers/webgl-fallback/utils/WebGLTimestampQueryPool.js",
+      "header": null,
+      "implementation": null,
+      "status": "vulkan-port-pending",
+      "verifiedComplete": false
+    },
+    {
+      "source": "src/renderers/webgl-fallback/utils/WebGLUtils.js",
+      "header": null,
+      "implementation": null,
+      "status": "vulkan-port-pending",
+      "verifiedComplete": false
+    },
+    {
+      "source": "src/renderers/webgl-fallback/utils/WebGLVertexArrayUtils.js",
+      "header": null,
+      "implementation": null,
+      "status": "vulkan-port-pending",
+      "verifiedComplete": false
+    },
+    {
+      "source": "src/renderers/webgl-fallback/WebGLBackend.js",
+      "header": null,
+      "implementation": null,
+      "status": "vulkan-port-pending",
+      "verifiedComplete": false
+    },
+    {
+      "source": "src/renderers/webgl-fallback/WebGLBufferRenderer.js",
+      "header": null,
+      "implementation": null,
+      "status": "vulkan-port-pending",
+      "verifiedComplete": false
+    },
+    {
+      "source": "src/renderers/WebGL3DRenderTarget.js",
+      "header": null,
+      "implementation": null,
+      "status": "vulkan-port-pending",
+      "verifiedComplete": false
+    },
+    {
+      "source": "src/renderers/WebGLArrayRenderTarget.js",
+      "header": null,
+      "implementation": null,
+      "status": "vulkan-port-pending",
+      "verifiedComplete": false
+    },
+    {
+      "source": "src/renderers/WebGLCubeRenderTarget.js",
+      "header": null,
+      "implementation": null,
+      "status": "vulkan-port-pending",
+      "verifiedComplete": false
+    },
+    {
+      "source": "src/renderers/WebGLRenderer.js",
+      "header": null,
+      "implementation": null,
+      "status": "vulkan-port-pending",
+      "verifiedComplete": false
+    },
+    {
+      "source": "src/renderers/WebGLRenderTarget.js",
+      "header": null,
+      "implementation": null,
+      "status": "vulkan-port-pending",
+      "verifiedComplete": false
+    },
+    {
+      "source": "src/renderers/webgpu/descriptors/GPUBindGroupDescriptor.js",
+      "header": null,
+      "implementation": null,
+      "status": "vulkan-port-pending",
+      "verifiedComplete": false
+    },
+    {
+      "source": "src/renderers/webgpu/descriptors/GPUBufferDescriptor.js",
+      "header": null,
+      "implementation": null,
+      "status": "vulkan-port-pending",
+      "verifiedComplete": false
+    },
+    {
+      "source": "src/renderers/webgpu/descriptors/GPUCommandEncoderDescriptor.js",
+      "header": null,
+      "implementation": null,
+      "status": "vulkan-port-pending",
+      "verifiedComplete": false
+    },
+    {
+      "source": "src/renderers/webgpu/descriptors/GPUComputePassDescriptor.js",
+      "header": null,
+      "implementation": null,
+      "status": "vulkan-port-pending",
+      "verifiedComplete": false
+    },
+    {
+      "source": "src/renderers/webgpu/descriptors/GPUComputePipelineDescriptor.js",
+      "header": null,
+      "implementation": null,
+      "status": "vulkan-port-pending",
+      "verifiedComplete": false
+    },
+    {
+      "source": "src/renderers/webgpu/descriptors/GPUCopyExternalImageDestInfo.js",
+      "header": null,
+      "implementation": null,
+      "status": "vulkan-port-pending",
+      "verifiedComplete": false
+    },
+    {
+      "source": "src/renderers/webgpu/descriptors/GPUCopyExternalImageSourceInfo.js",
+      "header": null,
+      "implementation": null,
+      "status": "vulkan-port-pending",
+      "verifiedComplete": false
+    },
+    {
+      "source": "src/renderers/webgpu/descriptors/GPUExtent3D.js",
+      "header": null,
+      "implementation": null,
+      "status": "vulkan-port-pending",
+      "verifiedComplete": false
+    },
+    {
+      "source": "src/renderers/webgpu/descriptors/GPUPipelineLayoutDescriptor.js",
+      "header": null,
+      "implementation": null,
+      "status": "vulkan-port-pending",
+      "verifiedComplete": false
+    },
+    {
+      "source": "src/renderers/webgpu/descriptors/GPUQuerySetDescriptor.js",
+      "header": null,
+      "implementation": null,
+      "status": "vulkan-port-pending",
+      "verifiedComplete": false
+    },
+    {
+      "source": "src/renderers/webgpu/descriptors/GPURenderBundleEncoderDescriptor.js",
+      "header": null,
+      "implementation": null,
+      "status": "vulkan-port-pending",
+      "verifiedComplete": false
+    },
+    {
+      "source": "src/renderers/webgpu/descriptors/GPURenderPassColorAttachment.js",
+      "header": null,
+      "implementation": null,
+      "status": "vulkan-port-pending",
+      "verifiedComplete": false
+    },
+    {
+      "source": "src/renderers/webgpu/descriptors/GPURenderPassDepthStencilAttachment.js",
+      "header": null,
+      "implementation": null,
+      "status": "vulkan-port-pending",
+      "verifiedComplete": false
+    },
+    {
+      "source": "src/renderers/webgpu/descriptors/GPURenderPassDescriptor.js",
+      "header": null,
+      "implementation": null,
+      "status": "vulkan-port-pending",
+      "verifiedComplete": false
+    },
+    {
+      "source": "src/renderers/webgpu/descriptors/GPURenderPassTimestampWrites.js",
+      "header": null,
+      "implementation": null,
+      "status": "vulkan-port-pending",
+      "verifiedComplete": false
+    },
+    {
+      "source": "src/renderers/webgpu/descriptors/GPURenderPipelineDescriptor.js",
+      "header": null,
+      "implementation": null,
+      "status": "vulkan-port-pending",
+      "verifiedComplete": false
+    },
+    {
+      "source": "src/renderers/webgpu/descriptors/GPUSamplerDescriptor.js",
+      "header": null,
+      "implementation": null,
+      "status": "vulkan-port-pending",
+      "verifiedComplete": false
+    },
+    {
+      "source": "src/renderers/webgpu/descriptors/GPUShaderModuleDescriptor.js",
+      "header": null,
+      "implementation": null,
+      "status": "vulkan-port-pending",
+      "verifiedComplete": false
+    },
+    {
+      "source": "src/renderers/webgpu/descriptors/GPUTexelCopyBufferInfo.js",
+      "header": null,
+      "implementation": null,
+      "status": "vulkan-port-pending",
+      "verifiedComplete": false
+    },
+    {
+      "source": "src/renderers/webgpu/descriptors/GPUTexelCopyBufferLayout.js",
+      "header": null,
+      "implementation": null,
+      "status": "vulkan-port-pending",
+      "verifiedComplete": false
+    },
+    {
+      "source": "src/renderers/webgpu/descriptors/GPUTexelCopyTextureInfo.js",
+      "header": null,
+      "implementation": null,
+      "status": "vulkan-port-pending",
+      "verifiedComplete": false
+    },
+    {
+      "source": "src/renderers/webgpu/descriptors/GPUTextureDescriptor.js",
+      "header": null,
+      "implementation": null,
+      "status": "vulkan-port-pending",
+      "verifiedComplete": false
+    },
+    {
+      "source": "src/renderers/webgpu/descriptors/GPUTextureViewDescriptor.js",
+      "header": null,
+      "implementation": null,
+      "status": "vulkan-port-pending",
+      "verifiedComplete": false
+    },
+    {
+      "source": "src/renderers/webgpu/nodes/BasicNodeLibrary.js",
+      "header": null,
+      "implementation": null,
+      "status": "vulkan-port-pending",
+      "verifiedComplete": false
+    },
+    {
+      "source": "src/renderers/webgpu/nodes/StandardNodeLibrary.js",
+      "header": null,
+      "implementation": null,
+      "status": "vulkan-port-pending",
+      "verifiedComplete": false
+    },
+    {
+      "source": "src/renderers/webgpu/nodes/WGSLNodeBuilder.js",
+      "header": null,
+      "implementation": null,
+      "status": "vulkan-port-pending",
+      "verifiedComplete": false
+    },
+    {
+      "source": "src/renderers/webgpu/nodes/WGSLNodeFunction.js",
+      "header": null,
+      "implementation": null,
+      "status": "vulkan-port-pending",
+      "verifiedComplete": false
+    },
+    {
+      "source": "src/renderers/webgpu/nodes/WGSLNodeParser.js",
+      "header": null,
+      "implementation": null,
+      "status": "vulkan-port-pending",
+      "verifiedComplete": false
+    },
+    {
+      "source": "src/renderers/webgpu/utils/WebGPUAttributeUtils.js",
+      "header": null,
+      "implementation": null,
+      "status": "vulkan-port-pending",
+      "verifiedComplete": false
+    },
+    {
+      "source": "src/renderers/webgpu/utils/WebGPUBindingUtils.js",
+      "header": null,
+      "implementation": null,
+      "status": "vulkan-port-pending",
+      "verifiedComplete": false
+    },
+    {
+      "source": "src/renderers/webgpu/utils/WebGPUCapabilities.js",
+      "header": null,
+      "implementation": null,
+      "status": "vulkan-port-pending",
+      "verifiedComplete": false
+    },
+    {
+      "source": "src/renderers/webgpu/utils/WebGPUConstants.js",
+      "header": null,
+      "implementation": null,
+      "status": "vulkan-port-pending",
+      "verifiedComplete": false
+    },
+    {
+      "source": "src/renderers/webgpu/utils/WebGPUPipelineUtils.js",
+      "header": null,
+      "implementation": null,
+      "status": "vulkan-port-pending",
+      "verifiedComplete": false
+    },
+    {
+      "source": "src/renderers/webgpu/utils/WebGPUTexturePassUtils.js",
+      "header": null,
+      "implementation": null,
+      "status": "vulkan-port-pending",
+      "verifiedComplete": false
+    },
+    {
+      "source": "src/renderers/webgpu/utils/WebGPUTextureUtils.js",
+      "header": null,
+      "implementation": null,
+      "status": "vulkan-port-pending",
+      "verifiedComplete": false
+    },
+    {
+      "source": "src/renderers/webgpu/utils/WebGPUTimestampQueryPool.js",
+      "header": null,
+      "implementation": null,
+      "status": "vulkan-port-pending",
+      "verifiedComplete": false
+    },
+    {
+      "source": "src/renderers/webgpu/utils/WebGPUUtils.js",
+      "header": null,
+      "implementation": null,
+      "status": "vulkan-port-pending",
+      "verifiedComplete": false
+    },
+    {
+      "source": "src/renderers/webgpu/WebGPUBackend.js",
+      "header": null,
+      "implementation": null,
+      "status": "vulkan-port-pending",
+      "verifiedComplete": false
+    },
+    {
+      "source": "src/renderers/webgpu/WebGPURenderer.js",
+      "header": null,
+      "implementation": null,
+      "status": "vulkan-port-pending",
+      "verifiedComplete": false
+    },
+    {
+      "source": "src/renderers/webgpu/WebGPURenderer.Nodes.js",
+      "header": null,
+      "implementation": null,
+      "status": "vulkan-port-pending",
+      "verifiedComplete": false
+    },
+    {
+      "source": "src/renderers/webxr/WebXRController.js",
+      "header": null,
+      "implementation": null,
+      "status": "vulkan-port-pending",
+      "verifiedComplete": false
+    },
+    {
+      "source": "src/renderers/webxr/WebXRDepthSensing.js",
+      "header": null,
+      "implementation": null,
+      "status": "vulkan-port-pending",
+      "verifiedComplete": false
+    },
+    {
+      "source": "src/renderers/webxr/WebXRManager.js",
+      "header": null,
+      "implementation": null,
+      "status": "vulkan-port-pending",
+      "verifiedComplete": false
+    },
+    {
+      "source": "src/scenes/Fog.js",
+      "header": "include/scenes/Fog.h",
+      "implementation": null,
+      "status": "partial-unverified",
+      "verifiedComplete": false
+    },
+    {
+      "source": "src/scenes/FogExp2.js",
+      "header": "include/scenes/FogExp2.h",
+      "implementation": null,
+      "status": "partial-unverified",
+      "verifiedComplete": false
+    },
+    {
+      "source": "src/scenes/Scene.js",
+      "header": "include/scenes/Scene.h",
+      "implementation": "src/scenes/Scene.cpp",
+      "status": "partial-unverified",
+      "verifiedComplete": false
+    },
+    {
+      "source": "src/textures/CanvasTexture.js",
+      "header": null,
+      "implementation": null,
+      "status": "missing",
+      "verifiedComplete": false
+    },
+    {
+      "source": "src/textures/CompressedArrayTexture.js",
+      "header": null,
+      "implementation": null,
+      "status": "missing",
+      "verifiedComplete": false
+    },
+    {
+      "source": "src/textures/CompressedCubeTexture.js",
+      "header": null,
+      "implementation": null,
+      "status": "missing",
+      "verifiedComplete": false
+    },
+    {
+      "source": "src/textures/CompressedTexture.js",
+      "header": null,
+      "implementation": null,
+      "status": "missing",
+      "verifiedComplete": false
+    },
+    {
+      "source": "src/textures/CubeDepthTexture.js",
+      "header": null,
+      "implementation": null,
+      "status": "missing",
+      "verifiedComplete": false
+    },
+    {
+      "source": "src/textures/CubeTexture.js",
+      "header": null,
+      "implementation": null,
+      "status": "missing",
+      "verifiedComplete": false
+    },
+    {
+      "source": "src/textures/Data3DTexture.js",
+      "header": null,
+      "implementation": null,
+      "status": "missing",
+      "verifiedComplete": false
+    },
+    {
+      "source": "src/textures/DataArrayTexture.js",
+      "header": null,
+      "implementation": null,
+      "status": "missing",
+      "verifiedComplete": false
+    },
+    {
+      "source": "src/textures/DataTexture.js",
+      "header": null,
+      "implementation": null,
+      "status": "missing",
+      "verifiedComplete": false
+    },
+    {
+      "source": "src/textures/DepthTexture.js",
+      "header": null,
+      "implementation": null,
+      "status": "missing",
+      "verifiedComplete": false
+    },
+    {
+      "source": "src/textures/ExternalTexture.js",
+      "header": null,
+      "implementation": null,
+      "status": "missing",
+      "verifiedComplete": false
+    },
+    {
+      "source": "src/textures/FramebufferTexture.js",
+      "header": null,
+      "implementation": null,
+      "status": "missing",
+      "verifiedComplete": false
+    },
+    {
+      "source": "src/textures/HTMLTexture.js",
+      "header": null,
+      "implementation": null,
+      "status": "missing",
+      "verifiedComplete": false
+    },
+    {
+      "source": "src/textures/Texture.js",
+      "header": null,
+      "implementation": null,
+      "status": "missing",
+      "verifiedComplete": false
+    },
+    {
+      "source": "src/textures/TextureSource.js",
+      "header": null,
+      "implementation": null,
+      "status": "missing",
+      "verifiedComplete": false
+    },
+    {
+      "source": "src/textures/VideoFrameTexture.js",
+      "header": null,
+      "implementation": null,
+      "status": "missing",
+      "verifiedComplete": false
+    },
+    {
+      "source": "src/textures/VideoTexture.js",
+      "header": null,
+      "implementation": null,
+      "status": "missing",
+      "verifiedComplete": false
+    },
+    {
+      "source": "src/Three.Core.js",
+      "header": null,
+      "implementation": null,
+      "status": "missing",
+      "verifiedComplete": false
+    },
+    {
+      "source": "src/Three.js",
+      "header": "include/Three.h",
+      "implementation": null,
+      "status": "partial-unverified",
+      "verifiedComplete": false
+    },
+    {
+      "source": "src/Three.Legacy.js",
+      "header": null,
+      "implementation": null,
+      "status": "missing",
+      "verifiedComplete": false
+    },
+    {
+      "source": "src/Three.TSL.js",
+      "header": null,
+      "implementation": null,
+      "status": "missing",
+      "verifiedComplete": false
+    },
+    {
+      "source": "src/Three.WebGPU.js",
+      "header": null,
+      "implementation": null,
+      "status": "missing",
+      "verifiedComplete": false
+    },
+    {
+      "source": "src/Three.WebGPU.Nodes.js",
+      "header": null,
+      "implementation": null,
+      "status": "missing",
+      "verifiedComplete": false
+    },
+    {
+      "source": "src/utils.js",
+      "header": null,
+      "implementation": null,
+      "status": "missing",
+      "verifiedComplete": false
+    }
+  ],
+  "note": "A matching header only establishes port presence. It does not prove API, behavioral, numerical, serialization, or rendering parity. No module is marked complete by this inventory."
+}

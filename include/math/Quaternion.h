@@ -11,6 +11,7 @@
 
 #include "common/BasicType.h"
 #include <vector>
+#include <functional>
 
 class Vector3;
 class Euler;
@@ -34,6 +35,7 @@ class Matrix4;
 class Quaternion
 {
 public:
+    static constexpr bool isQuaternion = true;
     /**
      * @brief 构造四元数
      * @param x x 分量（向量部分），默认 0
@@ -43,6 +45,7 @@ public:
      */
     Quaternion(HIGH_PRECISION x = 0.0, HIGH_PRECISION y = 0.0, HIGH_PRECISION z = 0.0, HIGH_PRECISION w = 1.0);
 
+    Quaternion(const Quaternion &quaternion);
     /** @brief 析构函数 */
     ~Quaternion();
 
@@ -94,14 +97,14 @@ public:
      * @brief 复制四元数
      * @param q 源四元数
      */
-    void copy(const Quaternion &q);
+    Quaternion &copy(const Quaternion &q);
 
     /**
      * @brief 从欧拉角设置
      * @param euler 欧拉角
      * @return Quaternion& 自身引用
      */
-    Quaternion &setFromEuler(const Euler &euler);
+    Quaternion &setFromEuler(const Euler &euler, bool update = true);
 
     /**
      * @brief 从轴角设置
@@ -109,7 +112,7 @@ public:
      * @param angle 角度（弧度）
      * @return Quaternion& 自身引用
      */
-    Quaternion &setFromAxisAngle(const Vector3 &axis, float angle);
+    Quaternion &setFromAxisAngle(const Vector3 &axis, HIGH_PRECISION angle);
 
     /**
      * @brief 从旋转矩阵设置
@@ -133,7 +136,7 @@ public:
      * @return bool 是否相等
      * @note 考虑四元数 q 和 -q 表示相同旋转
      */
-    bool isQuaternionEqual(const Quaternion &q, float epsilon = 1e-6) const;
+    bool isQuaternionEqual(const Quaternion &q, HIGH_PRECISION epsilon = 0) const;
 
     /** @brief 归一化为单位四元数 @return Quaternion& 自身引用 */
     Quaternion &normalize();
@@ -246,7 +249,7 @@ public:
      * @param epsilon 容差
      * @return bool 是否相等
      */
-    bool equals(const Quaternion &q, float epsilon = 1e-6) const;
+    bool equals(const Quaternion &q, HIGH_PRECISION epsilon = 0) const;
 
     /**
      * @brief 从数组设置
@@ -300,12 +303,25 @@ public:
     Quaternion operator/(HIGH_PRECISION s) const;
 
     /** @brief 赋值运算符 */
-    void operator=(const Quaternion &q);
+    Quaternion &operator=(const Quaternion &q);
 
     /** @brief 相等判断 @return 是否相等 */
     bool operator==(const Quaternion &q) const;
 
+    Quaternion &_onChange(std::function<void()> callback);
+    HIGH_PRECISION angleTo(const Quaternion &q) const;
+    Quaternion &rotateTowards(const Quaternion &q, HIGH_PRECISION step);
+    Quaternion &identity();
+    Quaternion &random();
+    std::vector<HIGH_PRECISION> toArray() const;
+
+    static void slerpFlat(std::vector<HIGH_PRECISION> &dst, size_t dstOffset, const std::vector<HIGH_PRECISION> &src0, size_t srcOffset0, const std::vector<HIGH_PRECISION> &src1, size_t srcOffset1, HIGH_PRECISION t);
+    static std::vector<HIGH_PRECISION> &multiplyQuaternionsFlat(std::vector<HIGH_PRECISION> &dst, size_t dstOffset, const std::vector<HIGH_PRECISION> &src0, size_t srcOffset0, const std::vector<HIGH_PRECISION> &src1, size_t srcOffset1);
+    std::vector<HIGH_PRECISION> toJSON() const;
+    Quaternion &fromBufferAttribute(const class BufferAttribute &attribute, size_t index);
+
 private:
+    std::function<void()> m_onChangeCallback = [] {};
     /** @brief x 分量（向量部分）*/
     HIGH_PRECISION m_x;
 
