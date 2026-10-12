@@ -1,4 +1,5 @@
 #include "core/Object3D.h"
+#include "animation/AnimationClip.h"
 #include "math/MathUtils.h"
 #include <algorithm>
 #include <atomic>
@@ -8,7 +9,7 @@ namespace {
 std::atomic<std::uint64_t> nextObjectId{0};
 const Vector3 xAxis{1, 0, 0}, yAxis{0, 1, 0}, zAxis{0, 0, 1};
 JsonValue vectorJSON(const Vector3& vector) {
-    return JsonValue::Array{vector.x(), vector.y(), vector.z()};
+    return JsonValue::Array{vector.x, vector.y, vector.z};
 }
 } // namespace
 
@@ -176,7 +177,7 @@ Object3D& Object3D::removeFromParent() {
 }
 
 Object3D& Object3D::clear() {
-    const auto oldChildren = children;
+    const auto oldChildren = children.slice();
     for (const auto& child : oldChildren)
         remove(child);
     return *this;
@@ -295,21 +296,27 @@ Vector3& Object3D::getWorldDirection(Vector3& target) {
 void Object3D::traverse(const std::function<void(Object3D&)>& callback) {
     callback(*this);
     const auto descendants = children;
-    for (const auto& child : descendants)
-        child->traverse(callback);
+    for (std::size_t i = 0, count = descendants.size(); i < count; ++i) {
+        if (i >= descendants.size() || !descendants[i]) throw JSTypeError("Object3D child is undefined");
+        const auto child = descendants[i]; child->traverse(callback);
+    }
 }
 void Object3D::traverseVisible(const std::function<void(Object3D&)>& callback) {
     if (!visible)
         return;
     callback(*this);
     const auto descendants = children;
-    for (const auto& child : descendants)
-        child->traverseVisible(callback);
+    for (std::size_t i = 0, count = descendants.size(); i < count; ++i) {
+        if (i >= descendants.size() || !descendants[i]) throw JSTypeError("Object3D child is undefined");
+        const auto child = descendants[i]; child->traverseVisible(callback);
+    }
 }
 void Object3D::traverseAncestors(const std::function<void(Object3D&)>& callback) {
-    if (parent) {
-        callback(*parent);
-        parent->traverseAncestors(callback);
+    const auto ancestor = parent;
+    const auto keepAlive = ancestor ? ancestor->weak_from_this().lock() : nullptr;
+    if (ancestor) {
+        callback(*ancestor);
+        ancestor->traverseAncestors(callback);
     }
 }
 
@@ -317,7 +324,7 @@ void Object3D::updateMatrix() {
     matrix.compose(position, quaternion, scale);
     if (pivot) {
         const auto e = matrix.elements();
-        const auto px = pivot->x(), py = pivot->y(), pz = pivot->z();
+        const auto px = pivot->x, py = pivot->y, pz = pivot->z;
         matrix.setPosition(e[12] + px - e[0] * px - e[4] * py - e[8] * pz,
                            e[13] + py - e[1] * px - e[5] * py - e[9] * pz,
                            e[14] + pz - e[2] * px - e[6] * py - e[10] * pz);
@@ -337,12 +344,17 @@ void Object3D::updateMatrixWorld(bool force) {
         matrixWorldNeedsUpdate = false;
         force = true;
     }
-    for (const auto& child : children)
-        child->updateMatrixWorld(force);
+    const auto descendants = children;
+    for (std::size_t i = 0, count = descendants.size(); i < count; ++i) {
+        if (i >= descendants.size() || !descendants[i]) throw JSTypeError("Object3D child is undefined");
+        const auto child = descendants[i]; child->updateMatrixWorld(force);
+    }
 }
 void Object3D::updateWorldMatrix(bool updateParents, bool updateChildren, bool force) {
-    if (updateParents && parent)
-        parent->updateWorldMatrix(true, false);
+    const auto ancestor = parent;
+    const auto keepAlive = ancestor ? ancestor->weak_from_this().lock() : nullptr;
+    if (updateParents && ancestor)
+        ancestor->updateWorldMatrix(true, false);
     if (matrixAutoUpdate)
         updateMatrix();
     if (matrixWorldNeedsUpdate || force) {
@@ -355,9 +367,13 @@ void Object3D::updateWorldMatrix(bool updateParents, bool updateChildren, bool f
         matrixWorldNeedsUpdate = false;
         force = true;
     }
-    if (updateChildren)
-        for (const auto& child : children)
-            child->updateWorldMatrix(false, true, force);
+    if (updateChildren) {
+        const auto descendants = children;
+        for (std::size_t i = 0, count = descendants.size(); i < count; ++i) {
+            if (i >= descendants.size() || !descendants[i]) throw JSTypeError("Object3D child is undefined");
+            const auto child = descendants[i]; child->updateWorldMatrix(false, true, force);
+        }
+    }
 }
 
 std::shared_ptr<Object3D> Object3D::clone(bool recursive) const {
@@ -371,7 +387,7 @@ Object3D& Object3D::copy(const Object3D& source, bool recursive) {
     name = source.name;
     up.copy(source.up);
     position.copy(source.position);
-    rotation.setOrder(source.rotation.order());
+    rotation.setOrder(source.rotation.order);
     quaternion.copy(source.quaternion);
     scale.copy(source.scale);
     pivot = source.pivot;
@@ -390,8 +406,11 @@ Object3D& Object3D::copy(const Object3D& source, bool recursive) {
     animations = source.animations;
     userData = source.userData.copyJSON();
     if (recursive)
-        for (const auto& child : source.children)
+        for (std::size_t i = 0; i < source.children.size(); ++i) {
+            const auto child = source.children[i];
+            if (!child) throw JSTypeError("Object3D child is undefined");
             add(child->clone());
+        }
     return *this;
 }
 
@@ -469,10 +488,10 @@ JsonValue Object3D::toJSON(Object3DJSONContext* meta) const {
                                          {"frustumCulled", frustumCulled},
                                          {"renderOrder", renderOrder},
                                          {"static", isStatic},
-                                         {"matrixAutoUpdate", matrixAutoUpdate},
-                                         {"layers", layers.mask}};
+                                         {"matrixAutoUpdate", matrixAutoUpdate}};
     if (userData.size() > 0)
-        object["userData"] = userData;
+        object["userData"] = userData.sharedCopy();
+    object["layers"] = layers.mask;
     JsonValue::Array matrixArray;
     for (const auto element : matrix.elements())
         matrixArray.emplace_back(element);
@@ -489,8 +508,16 @@ JsonValue Object3D::toJSON(Object3DJSONContext* meta) const {
         }
         object["children"] = std::move(childArray);
     }
-    if (!animations.empty())
-        throw std::logic_error("AnimationClip JSON serialization is not implemented");
+    if (!animations.empty()) {
+        JsonValue::Array references;
+        for (std::size_t i = 0; i < animations.size(); ++i) {
+            const auto animation = animations[i];
+            if (!animation) throw JSTypeError("Cannot read properties of null (reading 'uuid')");
+            meta->cacheResource("animations", animation->uuid.toString(), [&] { return animation->toJSONValue(); });
+            references.push_back(animation->uuid.toJSON().value_or(JsonValue{}));
+        }
+        object["animations"] = std::move(references);
+    }
     if (root)
         meta->extractCaches(output);
     output["object"] = std::move(object);

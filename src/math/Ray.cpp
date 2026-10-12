@@ -162,22 +162,22 @@ bool Ray::intersectsPlane(const Plane& plane) const {
 
 Vector3* Ray::intersectBox(const Box3& box, Vector3& target) const {
     HIGH_PRECISION tmin, tmax, tymin, tymax, tzmin, tzmax;
-    const auto invdirx = 1 / this->direction.x(), invdiry = 1 / this->direction.y(),
-               invdirz = 1 / this->direction.z();
+    const auto invdirx = 1 / this->direction.x, invdiry = 1 / this->direction.y,
+               invdirz = 1 / this->direction.z;
     const auto& origin = this->origin;
     if (invdirx >= 0) {
-        tmin = (box.min.x() - origin.x()) * invdirx;
-        tmax = (box.max.x() - origin.x()) * invdirx;
+        tmin = (box.min.x - origin.x) * invdirx;
+        tmax = (box.max.x - origin.x) * invdirx;
     } else {
-        tmin = (box.max.x() - origin.x()) * invdirx;
-        tmax = (box.min.x() - origin.x()) * invdirx;
+        tmin = (box.max.x - origin.x) * invdirx;
+        tmax = (box.min.x - origin.x) * invdirx;
     }
     if (invdiry >= 0) {
-        tymin = (box.min.y() - origin.y()) * invdiry;
-        tymax = (box.max.y() - origin.y()) * invdiry;
+        tymin = (box.min.y - origin.y) * invdiry;
+        tymax = (box.max.y - origin.y) * invdiry;
     } else {
-        tymin = (box.max.y() - origin.y()) * invdiry;
-        tymax = (box.min.y() - origin.y()) * invdiry;
+        tymin = (box.max.y - origin.y) * invdiry;
+        tymax = (box.min.y - origin.y) * invdiry;
     }
     if ((tmin > tymax) || (tymin > tmax))
         return nullptr;
@@ -186,11 +186,11 @@ Vector3* Ray::intersectBox(const Box3& box, Vector3& target) const {
     if (tymax < tmax || std::isnan(tmax))
         tmax = tymax;
     if (invdirz >= 0) {
-        tzmin = (box.min.z() - origin.z()) * invdirz;
-        tzmax = (box.max.z() - origin.z()) * invdirz;
+        tzmin = (box.min.z - origin.z) * invdirz;
+        tzmax = (box.max.z - origin.z) * invdirz;
     } else {
-        tzmin = (box.max.z() - origin.z()) * invdirz;
-        tzmax = (box.min.z() - origin.z()) * invdirz;
+        tzmin = (box.max.z - origin.z) * invdirz;
+        tzmax = (box.min.z - origin.z) * invdirz;
     }
     if ((tmin > tzmax) || (tzmin > tmax))
         return nullptr;
@@ -212,12 +212,12 @@ Vector3* Ray::intersectTriangle(const Vector3& a, const Vector3& b, const Vector
                                 bool backfaceCulling, Vector3& target) const {
     const auto& origin = this->origin;
     const auto& direction = this->direction;
-    const auto dx = direction.x();
-    const auto dy = direction.y();
-    const auto dz = direction.z();
-    const auto aox = a.x() - origin.x(), aoy = a.y() - origin.y(), aoz = a.z() - origin.z();
-    const auto box = b.x() - origin.x(), boy = b.y() - origin.y(), boz = b.z() - origin.z();
-    const auto cox = c.x() - origin.x(), coy = c.y() - origin.y(), coz = c.z() - origin.z();
+    const auto dx = direction.x;
+    const auto dy = direction.y;
+    const auto dz = direction.z;
+    const auto aox = a.x - origin.x, aoy = a.y - origin.y, aoz = a.z - origin.z;
+    const auto box = b.x - origin.x, boy = b.y - origin.y, boz = b.z - origin.z;
+    const auto cox = c.x - origin.x, coy = c.y - origin.y, coz = c.z - origin.z;
     const auto adx = std::abs(dx), ady = std::abs(dy), adz = std::abs(dz);
     HIGH_PRECISION dkx, dky, dkz;
     HIGH_PRECISION akx, aky, akz, bkx, bky, bkz, ckx, cky, ckz;

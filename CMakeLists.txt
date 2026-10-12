@@ -3,10 +3,24 @@ project(THREECPP VERSION 0.1.0 LANGUAGES CXX)
 set(CMAKE_CXX_STANDARD 20)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 set(CMAKE_CXX_EXTENSIONS OFF)
+include(CheckCXXSourceCompiles)
+check_cxx_source_compiles("#include <charconv>
+int main() {
+    char text[64] = {'1'};
+    double value = 0;
+    const auto parsed = std::from_chars(text, text + 1, value, std::chars_format::general);
+    const auto formatted = std::to_chars(text, text + sizeof(text), value, std::chars_format::general);
+    return parsed.ec == formatted.ec ? 0 : 1;
+}" THREECPP_HAS_FLOATING_CHARCONV)
+if(NOT THREECPP_HAS_FLOATING_CHARCONV)
+    message(FATAL_ERROR "three.cpp requires a C++20 standard library with floating-point std::from_chars and std::to_chars. Select a toolchain with floating-point charconv support.")
+endif()
 set(CMAKE_RUNTIME_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}/bin")
 option(THREECPP_BUILD_TESTS "Build CPU tests and three.js differential checks" ON)
 option(THREECPP_BUILD_VULKAN "Build the Vulkan renderer and rendering checks" ON)
+option(THREECPP_BUILD_ADDONS "Build ported examples/jsm addons" ON)
 set(THREEJS_SOURCE_DIR "" CACHE PATH "Pinned upstream three.js checkout for differential tests")
+find_package(Threads REQUIRED)
 
 add_library(threecpp
     src/math/MathUtils.cpp src/math/Vector2.cpp src/math/Vector3.cpp src/math/Vector4.cpp
@@ -14,26 +28,163 @@ add_library(threecpp
     src/math/Color.cpp src/math/Box3.cpp src/math/Sphere.cpp
     src/math/Box2.cpp src/math/Cylindrical.cpp src/math/Spherical.cpp src/math/Matrix2.cpp
     src/math/Plane.cpp src/math/Line3.cpp src/math/Triangle.cpp src/math/Ray.cpp src/math/Frustum.cpp
-    src/core/EventDispatcher.cpp src/core/Object3D.cpp
-    src/core/BufferAttribute.cpp src/core/BufferGeometry.cpp
+    src/math/Interpolant.cpp src/math/JSNumberMath.cpp
+    src/math/interpolants/DiscreteInterpolant.cpp src/math/interpolants/LinearInterpolant.cpp
+    src/math/interpolants/CubicInterpolant.cpp src/math/interpolants/QuaternionLinearInterpolant.cpp
+    src/math/interpolants/BezierInterpolant.cpp
+    src/core/EventDispatcher.cpp src/core/Object3D.cpp src/core/JSValue.cpp src/core/NativeObject.cpp
+    src/core/BufferAttribute.cpp src/core/BufferGeometry.cpp src/core/JSDataSnapshot.cpp
     src/core/Raycaster.cpp
     src/cameras/Camera.cpp src/cameras/PerspectiveCamera.cpp src/cameras/OrthographicCamera.cpp
     src/scenes/Scene.cpp src/geometries/PlaneGeometry.cpp src/geometries/BoxGeometry.cpp
+    src/geometries/CircleGeometry.cpp
+    src/geometries/RingGeometry.cpp
+    src/geometries/SphereGeometry.cpp
+    src/geometries/CylinderGeometry.cpp
+    src/geometries/ConeGeometry.cpp
+    src/geometries/TorusGeometry.cpp
+    src/geometries/TorusKnotGeometry.cpp
+    src/geometries/LatheGeometry.cpp
+    src/geometries/CapsuleGeometry.cpp
+    src/geometries/PolyhedronGeometry.cpp
+    src/geometries/TetrahedronGeometry.cpp
+    src/geometries/OctahedronGeometry.cpp
+    src/geometries/IcosahedronGeometry.cpp
+    src/geometries/DodecahedronGeometry.cpp
+    src/geometries/ShapeGeometry.cpp
+    src/geometries/ExtrudeGeometry.cpp
+    src/geometries/TubeGeometry.cpp
+    src/geometries/EdgesGeometry.cpp
+    src/geometries/WireframeGeometry.cpp
     src/materials/Material.cpp src/materials/MeshBasicMaterial.cpp src/objects/Mesh.cpp
-    src/objects/MeshRaycast.cpp
+    src/textures/TextureSource.cpp src/textures/Texture.cpp src/textures/DataTexture.cpp
+    src/textures/DataArrayTexture.cpp src/textures/Data3DTexture.cpp src/textures/CubeTexture.cpp
+    src/textures/DepthTexture.cpp src/textures/CubeDepthTexture.cpp src/textures/FramebufferTexture.cpp
+    src/textures/CompressedTexture.cpp src/textures/CompressedArrayTexture.cpp
+    src/textures/CompressedCubeTexture.cpp src/textures/ExternalTexture.cpp
+    src/animation/AnimationUtils.cpp src/animation/AnimationJSON.cpp src/animation/KeyframeTrack.cpp
+    src/animation/AnimationClip.cpp src/animation/PropertyMixer.cpp src/animation/PropertyBinding.cpp
+    src/animation/AnimationAction.cpp src/animation/AnimationMixer.cpp
+    src/animation/AnimationObjectGroup.cpp src/animation/AnimationRuntime.cpp
+    src/animation/tracks/BooleanKeyframeTrack.cpp src/animation/tracks/ColorKeyframeTrack.cpp
+    src/animation/tracks/NumberKeyframeTrack.cpp src/animation/tracks/QuaternionKeyframeTrack.cpp
+    src/animation/tracks/StringKeyframeTrack.cpp src/animation/tracks/VectorKeyframeTrack.cpp
+    src/extras/core/Curve.cpp
+    src/extras/core/Interpolations.cpp src/extras/core/CurvePath.cpp
+    src/extras/core/Path.cpp src/extras/core/Shape.cpp src/extras/core/ShapePath.cpp
+    src/extras/ShapeUtils.cpp src/extras/DataUtils.cpp src/extras/lib/earcut.cpp
+    src/extras/curves/LineCurve.cpp src/extras/curves/LineCurve3.cpp
+    src/extras/curves/QuadraticBezierCurve.cpp src/extras/curves/QuadraticBezierCurve3.cpp
+    src/extras/curves/CubicBezierCurve.cpp src/extras/curves/CubicBezierCurve3.cpp
+    src/extras/curves/EllipseCurve.cpp src/extras/curves/ArcCurve.cpp
+    src/extras/curves/SplineCurve.cpp src/extras/curves/CatmullRomCurve3.cpp
+)
+target_sources(threecpp PRIVATE
+    src/core/JSJobs.cpp src/core/JSPromise.cpp src/core/AbortController.cpp
+    src/core/NativeEventLoop.cpp
+    src/core/JSWeakMap.cpp
+    src/core/GLBufferAttribute.cpp
+    src/core/UnicodeNormalization.cpp
+    src/core/Clock.cpp src/core/Timer.cpp src/core/InstancedBufferGeometry.cpp
+    src/cameras/ArrayCamera.cpp src/cameras/StereoCamera.cpp
+    src/math/FrustumArray.cpp src/objects/ClippingGroup.cpp
+    src/helpers/ArrowHelper.cpp src/helpers/AxesHelper.cpp
+    src/helpers/Box3Helper.cpp src/helpers/BoxHelper.cpp src/helpers/CameraHelper.cpp
+    src/helpers/DirectionalLightHelper.cpp src/helpers/GridHelper.cpp
+    src/helpers/HemisphereLightHelper.cpp src/helpers/PlaneHelper.cpp
+    src/helpers/PointLightHelper.cpp src/helpers/PolarGridHelper.cpp
+    src/helpers/SkeletonHelper.cpp src/helpers/SpotLightHelper.cpp
+    src/loaders/Cache.cpp src/loaders/Loader.cpp src/loaders/LoaderUtils.cpp
+    src/loaders/LoadingManager.cpp src/loaders/AnimationLoader.cpp
+    src/loaders/BufferGeometryLoader.cpp src/loaders/MaterialLoader.cpp
+    src/core/InterleavedBufferAttribute.cpp
+    src/objects/Line.cpp
+    src/objects/LineLoop.cpp
+    src/objects/LineSegments.cpp
+    src/objects/Points.cpp
+    src/objects/Sprite.cpp
+    src/objects/LOD.cpp
+    src/renderers/shaders/UniformsUtils.cpp
+    src/renderers/shaders/UniformsLib.cpp
+    src/renderers/webgl/WebGLInfo.cpp
+    src/renderers/webgl/WebGLProperties.cpp
+    src/renderers/webgl/WebGLAttributes.cpp
+    src/renderers/webgl/WebGLRenderLists.cpp
+    src/renderers/webgl/WebGLBufferRenderer.cpp
+    src/renderers/webgl/WebGLIndexedBufferRenderer.cpp
+    src/core/Uniform.cpp
+    src/core/UniformsGroup.cpp
+    src/core/NativeArray.cpp
+    src/core/InterleavedBuffer.cpp
+    src/core/InstancedInterleavedBuffer.cpp
+    src/core/RenderTarget.cpp
+    src/core/RenderTarget3D.cpp
+    src/core/InstancedBufferAttribute.cpp
+    src/objects/Bone.cpp
+    src/objects/Skeleton.cpp
+    src/objects/SkinnedMesh.cpp
+    src/objects/InstancedMesh.cpp
+    src/math/SphericalHarmonics3.cpp
+    src/lights/AmbientLight.cpp
+    src/lights/DirectionalLight.cpp
+    src/lights/DirectionalLightShadow.cpp
+    src/lights/HemisphereLight.cpp
+    src/lights/Light.cpp
+    src/lights/LightProbe.cpp
+    src/lights/LightShadow.cpp
+    src/lights/PointLight.cpp
+    src/lights/PointLightShadow.cpp
+    src/lights/RectAreaLight.cpp
+    src/lights/SpotLight.cpp
+    src/lights/SpotLightShadow.cpp
+    src/lights/webgpu/IESSpotLight.cpp
+    src/lights/webgpu/ProjectorLight.cpp
+    src/materials/LineBasicMaterial.cpp
+    src/materials/LineDashedMaterial.cpp
+    src/materials/MeshDepthMaterial.cpp
+    src/materials/MeshDistanceMaterial.cpp
+    src/materials/MeshLambertMaterial.cpp
+    src/materials/MeshMatcapMaterial.cpp
+    src/materials/MeshNormalMaterial.cpp
+    src/materials/MeshPhongMaterial.cpp
+    src/materials/MeshPhysicalMaterial.cpp
+    src/materials/MeshStandardMaterial.cpp
+    src/materials/MeshToonMaterial.cpp
+    src/materials/PointsMaterial.cpp
+    src/materials/RawShaderMaterial.cpp
+    src/materials/ShaderMaterial.cpp
+    src/materials/ShadowMaterial.cpp
+    src/materials/SpriteMaterial.cpp
 )
 add_library(threecpp::threecpp ALIAS threecpp)
-target_include_directories(threecpp PUBLIC "$<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>")
+target_include_directories(threecpp PUBLIC "$<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/src>")
 target_compile_features(threecpp PUBLIC cxx_std_20)
+target_link_libraries(threecpp PUBLIC Threads::Threads)
 if(MSVC)
     target_compile_options(threecpp PUBLIC /utf-8 /permissive-)
     target_compile_options(threecpp PRIVATE /W4 /fp:strict)
 else()
     target_compile_options(threecpp PRIVATE -Wall -Wextra -Wpedantic -ffp-contract=off)
 endif()
-add_executable(threecpp_example src/main.cpp)
+if(THREECPP_BUILD_ADDONS)
+    add_library(threecpp_addons
+        examples/jsm/helpers/VertexNormalsHelper.cpp
+        examples/jsm/helpers/VertexTangentsHelper.cpp)
+    add_library(threecpp::addons ALIAS threecpp_addons)
+    target_link_libraries(threecpp_addons PUBLIC threecpp::threecpp)
+    target_include_directories(threecpp_addons PUBLIC
+        "$<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/examples/jsm>")
+    if(MSVC)
+        target_compile_options(threecpp_addons PRIVATE /W4 /fp:strict)
+    else()
+        target_compile_options(threecpp_addons PRIVATE -Wall -Wextra -Wpedantic -ffp-contract=off)
+    endif()
+endif()
+add_executable(threecpp_example examples/math_basic.cpp)
 set_target_properties(threecpp_example PROPERTIES OUTPUT_NAME THREECPP)
 target_link_libraries(threecpp_example PRIVATE threecpp::threecpp)
+add_executable(animation_keyframes examples/animation_keyframes.cpp)
+target_link_libraries(animation_keyframes PRIVATE threecpp::threecpp)
 
 if(THREECPP_BUILD_VULKAN)
     find_path(THREECPP_VULKAN_INCLUDE_DIR vulkan/vulkan.h HINTS "$ENV{VULKAN_SDK}" PATH_SUFFIXES Include include)
@@ -42,16 +193,18 @@ if(THREECPP_BUILD_VULKAN)
         message(FATAL_ERROR "Vulkan requires headers and glslangValidator. Set THREECPP_VULKAN_INCLUDE_DIR and THREECPP_GLSLANG_VALIDATOR, or install the Vulkan SDK.")
     endif()
     set(THREECPP_SHADER_OUTPUTS)
-    foreach(shader basic.vert basic.frag)
+    foreach(stage vert frag)
+        set(shader "basic.${stage}")
+        set(shader_source "${CMAKE_CURRENT_SOURCE_DIR}/src/renderers/shaders/ShaderLib/meshbasic.${stage}.glsl")
         set(output "${CMAKE_CURRENT_BINARY_DIR}/shaders/${shader}.spv")
         add_custom_command(OUTPUT "${output}"
             COMMAND "${CMAKE_COMMAND}" -E make_directory "${CMAKE_CURRENT_BINARY_DIR}/shaders"
-            COMMAND "${THREECPP_GLSLANG_VALIDATOR}" -V --target-env vulkan1.1 "${CMAKE_CURRENT_SOURCE_DIR}/shaders/${shader}" -o "${output}"
-            DEPENDS "${CMAKE_CURRENT_SOURCE_DIR}/shaders/${shader}" VERBATIM)
+            COMMAND "${THREECPP_GLSLANG_VALIDATOR}" -V --target-env vulkan1.1 -S "${stage}" "${shader_source}" -o "${output}"
+            DEPENDS "${shader_source}" VERBATIM)
         list(APPEND THREECPP_SHADER_OUTPUTS "${output}")
     endforeach()
     add_custom_target(threecpp_shaders DEPENDS ${THREECPP_SHADER_OUTPUTS})
-    add_library(threecpp_vulkan src/renderers/VulkanRenderer.cpp)
+    add_library(threecpp_vulkan src/renderers/VulkanRenderer.cpp src/renderers/vulkan/VulkanBufferCommands.cpp)
     add_library(threecpp::vulkan ALIAS threecpp_vulkan)
     target_link_libraries(threecpp_vulkan PUBLIC threecpp::threecpp PRIVATE ${CMAKE_DL_LIBS})
     target_include_directories(threecpp_vulkan PRIVATE "${THREECPP_VULKAN_INCLUDE_DIR}")

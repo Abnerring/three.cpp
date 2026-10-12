@@ -240,7 +240,7 @@ Matrix3 &Matrix3::translate(HIGH_PRECISION tx, HIGH_PRECISION ty)
 // for 2D Transforms
 Matrix3 &Matrix3::makeTranslation(const Vector2 &v)
 {
-    this->makeTranslation(v.x(), v.y());
+    this->makeTranslation(v.x, v.y);
     return *this;
 }
 

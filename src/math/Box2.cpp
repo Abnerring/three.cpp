@@ -31,7 +31,7 @@ Box2& Box2::makeEmpty() {
     return *this;
 }
 bool Box2::isEmpty() const {
-    return max.x() < min.x() || max.y() < min.y();
+    return max.x < min.x || max.y < min.y;
 }
 Vector2& Box2::getCenter(Vector2& target) const {
     return isEmpty() ? target.set(0, 0) : target.addVectors(min, max).multiplyScalar(0.5);
@@ -55,20 +55,20 @@ Box2& Box2::expandByScalar(double scalar) {
     return *this;
 }
 bool Box2::containsPoint(const Vector2& point) const {
-    return point.x() >= min.x() && point.x() <= max.x() && point.y() >= min.y() &&
-           point.y() <= max.y();
+    return point.x >= min.x && point.x <= max.x && point.y >= min.y &&
+           point.y <= max.y;
 }
 bool Box2::containsBox(const Box2& box) const {
-    return min.x() <= box.min.x() && box.max.x() <= max.x() && min.y() <= box.min.y() &&
-           box.max.y() <= max.y();
+    return min.x <= box.min.x && box.max.x <= max.x && min.y <= box.min.y &&
+           box.max.y <= max.y;
 }
 Vector2& Box2::getParameter(const Vector2& point, Vector2& target) const {
-    return target.set((point.x() - min.x()) / (max.x() - min.x()),
-                      (point.y() - min.y()) / (max.y() - min.y()));
+    return target.set((point.x - min.x) / (max.x - min.x),
+                      (point.y - min.y) / (max.y - min.y));
 }
 bool Box2::intersectsBox(const Box2& box) const {
-    return box.max.x() >= min.x() && box.min.x() <= max.x() && box.max.y() >= min.y() &&
-           box.min.y() <= max.y();
+    return box.max.x >= min.x && box.min.x <= max.x && box.max.y >= min.y &&
+           box.min.y <= max.y;
 }
 Vector2& Box2::clampPoint(const Vector2& point, Vector2& target) const {
     return target.copy(point).clamp(min, max);

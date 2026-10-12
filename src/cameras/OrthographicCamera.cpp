@@ -42,9 +42,9 @@ OrthographicCamera& OrthographicCamera::copy(const Object3D& source, bool recurs
     view = camera->view;
     return *this;
 }
-std::shared_ptr<Object3D> OrthographicCamera::clone(bool recursive) const {
+std::shared_ptr<Object3D> OrthographicCamera::clone(bool) const {
     auto result = std::make_shared<OrthographicCamera>();
-    result->copy(*this, recursive);
+    result->copy(*this);
     return result;
 }
 void OrthographicCamera::setViewOffset(HIGH_PRECISION fullWidth, HIGH_PRECISION fullHeight,

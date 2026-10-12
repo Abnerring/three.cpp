@@ -122,7 +122,7 @@ Plane& Plane::applyMatrix4(const Matrix4& matrix, const Matrix3* optionalNormalM
     return *this;
 }
 JsonValue Plane::toJSON() const {
-    return JsonValue::Object{{"normal", JsonValue::Array{normal.x(), normal.y(), normal.z()}},
+    return JsonValue::Object{{"normal", JsonValue::Array{normal.x, normal.y, normal.z}},
                              {"constant", constant}};
 }
 Plane& Plane::fromJSON(const JsonValue& json) {

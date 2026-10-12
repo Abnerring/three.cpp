@@ -2,6 +2,11 @@
 #include "math/Box3.h"
 #include "math/Matrix4.h"
 #include "objects/Mesh.h"
+#include "objects/SkinnedMesh.h"
+#include "objects/InstancedMesh.h"
+#include "objects/Line.h"
+#include "objects/Points.h"
+#include "objects/Sprite.h"
 #include <stdexcept>
 #include <string>
 
@@ -50,19 +55,36 @@ Frustum& Frustum::setFromProjectionMatrix(const Matrix4& m, int coordinateSystem
     }
     return *this;
 }
+Sphere& Frustum::sharedSphere() {
+    static thread_local Sphere sphere;
+    return sphere;
+}
 bool Frustum::intersectsObject(Object3D& object) const {
     auto* mesh = dynamic_cast<Mesh*>(&object);
-    if (!mesh || !mesh->geometry)
-        throw std::invalid_argument("Frustum.intersectsObject requires an object with geometry");
-    auto& geometry = *mesh->geometry;
-    if (!geometry.boundingSphere)
-        geometry.computeBoundingSphere();
-    Sphere sphere;
-    sphere.copy(*geometry.boundingSphere).applyMatrix4(object.matrixWorld);
+    auto& sphere = sharedSphere();
+    if (auto* skinned = dynamic_cast<SkinnedMesh*>(mesh)) {
+        if (!skinned->boundingSphere) skinned->computeBoundingSphere();
+        if (!skinned->boundingSphere) throw JSTypeError("Cannot read properties of null (reading 'center')");
+        sphere.copy(*skinned->boundingSphere);
+    } else if (auto* instanced = dynamic_cast<InstancedMesh*>(mesh)) {
+        if (!instanced->boundingSphere) instanced->computeBoundingSphere();
+        if (!instanced->boundingSphere) throw JSTypeError("Cannot read properties of null (reading 'center')");
+        sphere.copy(*instanced->boundingSphere);
+    } else {
+        const auto geometry = mesh ? mesh->geometry
+            : dynamic_cast<Line*>(&object) ? dynamic_cast<Line&>(object).geometry
+            : dynamic_cast<Points*>(&object) ? dynamic_cast<Points&>(object).geometry
+            : dynamic_cast<Sprite*>(&object) ? dynamic_cast<Sprite&>(object).geometry : nullptr;
+        if (!geometry) throw JSTypeError("Cannot read properties of null or undefined (reading 'boundingSphere')");
+        if (!geometry->boundingSphere) geometry->computeBoundingSphere();
+        if (!geometry->boundingSphere) throw JSTypeError("Cannot read properties of null (reading 'center')");
+        sphere.copy(*geometry->boundingSphere);
+    }
+    sphere.applyMatrix4(object.matrixWorld);
     return intersectsSphere(sphere);
 }
 bool Frustum::intersectsSprite(const Vector2& center, const Matrix4& matrixWorld) const {
-    Sphere sphere;
+    auto& sphere = sharedSphere();
     sphere.center.set(0, 0, 0);
     const auto offset = Vector2(0.5, 0.5).distanceTo(center);
     sphere.radius = 0.7071067811865476 + offset;
@@ -83,9 +105,9 @@ bool Frustum::intersectsBox(const Box3& box) const {
     Vector3 vector;
     for (size_t i = 0; i < 6; ++i) {
         const auto& plane = planes[i];
-        vector.setX(plane.normal.x() > 0 ? box.max.x() : box.min.x());
-        vector.setY(plane.normal.y() > 0 ? box.max.y() : box.min.y());
-        vector.setZ(plane.normal.z() > 0 ? box.max.z() : box.min.z());
+        vector.setX(plane.normal.x > 0 ? box.max.x : box.min.x);
+        vector.setY(plane.normal.y > 0 ? box.max.y : box.min.y);
+        vector.setZ(plane.normal.z > 0 ? box.max.z : box.min.z);
         if (plane.distanceToPoint(vector) < 0)
             return false;
     }

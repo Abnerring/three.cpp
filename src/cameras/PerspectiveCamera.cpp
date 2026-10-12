@@ -46,9 +46,9 @@ PerspectiveCamera& PerspectiveCamera::copy(const Object3D& source, bool recursiv
     filmOffset = camera->filmOffset;
     return *this;
 }
-std::shared_ptr<Object3D> PerspectiveCamera::clone(bool recursive) const {
+std::shared_ptr<Object3D> PerspectiveCamera::clone(bool) const {
     auto result = std::make_shared<PerspectiveCamera>();
-    result->copy(*this, recursive);
+    result->copy(*this);
     return result;
 }
 void PerspectiveCamera::setFocalLength(HIGH_PRECISION focalLength) {
@@ -74,12 +74,12 @@ void PerspectiveCamera::getViewBounds(HIGH_PRECISION distance, Vector2& minTarge
                                       Vector2& maxTarget) const {
     Vector3 v{-1, -1, HIGH_PRECISION(0.5)};
     v.applyMatrix4(projectionMatrixInverse);
-    minTarget.set(v.x(), v.y());
-    minTarget.multiplyScalar(-distance / v.z());
+    minTarget.set(v.x, v.y);
+    minTarget.multiplyScalar(-distance / v.z);
     v.set(1, 1, HIGH_PRECISION(0.5));
     v.applyMatrix4(projectionMatrixInverse);
-    maxTarget.set(v.x(), v.y());
-    maxTarget.multiplyScalar(-distance / v.z());
+    maxTarget.set(v.x, v.y);
+    maxTarget.multiplyScalar(-distance / v.z);
 }
 Vector2& PerspectiveCamera::getViewSize(HIGH_PRECISION distance, Vector2& target) const {
     Vector2 min, max;

@@ -42,7 +42,7 @@ void Camera::updateViewMatrix() {
     Quaternion q;
     matrixWorld.decompose(p, q, s);
     // three.js r186 excludes scale from camera view matrices to conform to glTF.
-    if (s.x() == 1 && s.y() == 1 && s.z() == 1)
+    if (s.x == 1 && s.y == 1 && s.z == 1)
         matrixWorldInverse.copy(matrixWorld);
     else {
         s.set(1, 1, 1);
@@ -58,8 +58,8 @@ void Camera::updateWorldMatrix(bool updateParents, bool updateChildren, bool for
     Object3D::updateWorldMatrix(updateParents, updateChildren, force);
     updateViewMatrix();
 }
-std::shared_ptr<Object3D> Camera::clone(bool recursive) const {
+std::shared_ptr<Object3D> Camera::clone(bool) const {
     auto result = std::make_shared<Camera>();
-    result->copy(*this, recursive);
+    result->copy(*this);
     return result;
 }

@@ -1,4 +1,6 @@
 #include "core/BufferGeometry.h"
+#include "core/JSDataSnapshot.h"
+#include "core/NativeObject.h"
 #include "math/MathUtils.h"
 #include <algorithm>
 #include <cmath>
@@ -13,12 +15,12 @@ BufferGeometry& BufferGeometry::setIndex(const std::vector<std::uint32_t>& value
             std::vector<std::uint16_t>(values.begin(), values.end()), 1);
     return *this;
 }
-std::shared_ptr<BufferAttribute> BufferGeometry::getAttribute(const std::string& name) const {
+std::shared_ptr<VertexAttribute> BufferGeometry::getAttribute(const std::string& name) const {
     const auto it = attributes.find(name);
     return it == attributes.end() ? nullptr : it->second;
 }
 BufferGeometry& BufferGeometry::setAttribute(const std::string& name,
-                                             std::shared_ptr<BufferAttribute> a) {
+                                             std::shared_ptr<VertexAttribute> a) {
     attributes[name] = std::move(a);
     return *this;
 }
@@ -29,29 +31,29 @@ BufferGeometry& BufferGeometry::deleteAttribute(const std::string& name) {
 bool BufferGeometry::hasAttribute(const std::string& name) const {
     return attributes.contains(name);
 }
-void BufferGeometry::addGroup(std::size_t start, std::size_t count, std::size_t materialIndex) {
+void BufferGeometry::addGroup(double start, double count, double materialIndex) {
     groups.push_back({start, count, materialIndex});
 }
 void BufferGeometry::clearGroups() {
     groups.clear();
 }
-void BufferGeometry::setDrawRange(std::size_t start, std::size_t count) {
+void BufferGeometry::setDrawRange(double start, double count) {
     drawRange = {start, count};
 }
 BufferGeometry& BufferGeometry::applyMatrix4(const Matrix4& m) {
     if (auto a = getAttribute("position")) {
         a->applyMatrix4(m);
-        a->needsUpdate = true;
+        a->setNeedsUpdate(true);
     }
     if (auto a = getAttribute("normal")) {
         Matrix3 n;
         n.getNormalMatrix(m);
         a->applyNormalMatrix(n);
-        a->needsUpdate = true;
+        a->setNeedsUpdate(true);
     }
     if (auto a = getAttribute("tangent")) {
         a->transformDirection(m);
-        a->needsUpdate = true;
+        a->setNeedsUpdate(true);
     }
     if (boundingBox)
         computeBoundingBox();
@@ -95,7 +97,7 @@ BufferGeometry& BufferGeometry::center() {
     Vector3 v;
     boundingBox->getCenter(v);
     v.negate();
-    return translate(v.x(), v.y(), v.z());
+    return translate(v.x, v.y, v.z);
 }
 BufferGeometry& BufferGeometry::setFromPoints(const std::vector<Vector3>& points) {
     auto a = getAttribute("position");
@@ -103,16 +105,16 @@ BufferGeometry& BufferGeometry::setFromPoints(const std::vector<Vector3>& points
         std::vector<float> values;
         values.reserve(points.size() * 3);
         for (const auto& p : points) {
-            values.push_back(static_cast<float>(p.x()));
-            values.push_back(static_cast<float>(p.y()));
-            values.push_back(static_cast<float>(p.z() == 0 || std::isnan(p.z()) ? 0 : p.z()));
+            values.push_back(static_cast<float>(p.x));
+            values.push_back(static_cast<float>(p.y));
+            values.push_back(static_cast<float>(p.z == 0 || std::isnan(p.z) ? 0 : p.z));
         }
         setAttribute("position", std::make_shared<Float32BufferAttribute>(std::move(values), 3));
     } else {
-        for (std::size_t i = 0; i < std::min(a->count, points.size()); ++i)
-            a->setXYZ(i, points[i].x(), points[i].y(),
-                      points[i].z() == 0 || std::isnan(points[i].z()) ? 0 : points[i].z());
-        a->needsUpdate = true;
+        for (std::size_t i = 0; i < MathUtils::min(a->getCount(), double(points.size())); ++i)
+            a->setXYZ(i, points[i].x, points[i].y,
+                      points[i].z == 0 || std::isnan(points[i].z) ? 0 : points[i].z);
+        a->setNeedsUpdate(true);
     }
     return *this;
 }
@@ -167,16 +169,16 @@ void BufferGeometry::computeBoundingSphere() {
         }
     b.getCenter(boundingSphere->center);
     double radiusSq = 0;
-    for (std::size_t i = 0; i < p->count; ++i) {
-        Vector3 v(p->getX(i), p->getY(i), p->getZ(i));
+    for (std::size_t i = 0; i < p->getCount(); ++i) {
+        Vector3 v;v.fromBufferAttribute(*p,double(i));
         radiusSq = MathUtils::max(radiusSq, v.distanceToSquared(boundingSphere->center));
     }
     if (it != morphAttributes.end())
         for (const auto& a : it->second)
-            for (std::size_t i = 0; i < a->count; ++i) {
-                Vector3 v(a->getX(i), a->getY(i), a->getZ(i));
+            for (std::size_t i = 0; i < a->getCount(); ++i) {
+                Vector3 v;v.fromBufferAttribute(*a,double(i));
                 if (morphTargetsRelative) {
-                    Vector3 base(p->getX(i), p->getY(i), p->getZ(i));
+                    Vector3 base;base.fromBufferAttribute(*p,double(i));
                     v.add(base);
                 }
                 radiusSq = MathUtils::max(radiusSq, v.distanceToSquared(boundingSphere->center));
@@ -188,65 +190,74 @@ void BufferGeometry::computeVertexNormals() {
     if (!p)
         return;
     auto n = getAttribute("normal");
-    if (!n || n->count != p->count) {
-        n = std::make_shared<Float32BufferAttribute>(std::vector<float>(p->count * 3, 0), 3);
+    if (!n || n->getCount() != p->getCount()) {
+        n = std::make_shared<BufferAttribute>(Float32Array(p->getCount() * 3), 3);
         setAttribute("normal", n);
     } else
-        for (std::size_t i = 0; i < n->count; ++i)
+        for (double i = 0, limit = n->getCount(); i < limit; ++i)
             n->setXYZ(i, 0, 0, 0);
-    const auto length = index ? index->count : p->count;
-    for (std::size_t i = 0; i + 2 < length; i += 3) {
-        const std::size_t a = index ? static_cast<std::size_t>(index->getX(i)) : i,
-                          b = index ? static_cast<std::size_t>(index->getX(i + 1)) : i + 1,
-                          c = index ? static_cast<std::size_t>(index->getX(i + 2)) : i + 2;
-        Vector3 pa(p->getX(a), p->getY(a), p->getZ(a)), pb(p->getX(b), p->getY(b), p->getZ(b)),
-            pc(p->getX(c), p->getY(c), p->getZ(c)), cb, ab;
+    const auto length = index ? index->count : p->getCount();
+    for (double i = 0; i < length; i += 3) {
+        const double a = index ? index->getX(i) : i,
+                     b = index ? index->getX(i + 1) : i + 1,
+                     c = index ? index->getX(i + 2) : i + 2;
+          Vector3 pa, pb, pc, cb, ab;
+          pa.fromBufferAttribute(*p, a); pb.fromBufferAttribute(*p, b); pc.fromBufferAttribute(*p, c);
         cb.subVectors(pc, pb);
         ab.subVectors(pa, pb);
         cb.cross(ab);
-        for (auto v : {a, b, c}) {
-            if (index)
-                n->setXYZ(v, n->getX(v) + cb.x(), n->getY(v) + cb.y(), n->getZ(v) + cb.z());
-            else
-                n->setXYZ(v, cb.x(), cb.y(), cb.z());
+        if (index) {
+              Vector3 na, nb, nc;
+              na.fromBufferAttribute(*n, a); nb.fromBufferAttribute(*n, b); nc.fromBufferAttribute(*n, c);
+            na.add(cb); nb.add(cb); nc.add(cb);
+            n->setXYZ(a, na.x, na.y, na.z);
+            n->setXYZ(b, nb.x, nb.y, nb.z);
+            n->setXYZ(c, nc.x, nc.y, nc.z);
+        } else {
+            for (auto v : {a, b, c}) n->setXYZ(v, cb.x, cb.y, cb.z);
         }
     }
     normalizeNormals();
-    n->needsUpdate = true;
+    n->setNeedsUpdate(true);
 }
 void BufferGeometry::normalizeNormals() {
     auto n = getAttribute("normal");
     if (!n)
         return;
-    for (std::size_t i = 0; i < n->count; ++i) {
-        Vector3 v(n->getX(i), n->getY(i), n->getZ(i));
+    for (double i = 0, limit = n->getCount(); i < limit; ++i) {
+        Vector3 v;
+        v.fromBufferAttribute(*n, i);
         v.normalize();
-        n->setXYZ(i, v.x(), v.y(), v.z());
+        n->setXYZ(i, v.x, v.y, v.z);
     }
 }
 std::shared_ptr<BufferGeometry> BufferGeometry::toNonIndexed() {
     if (!index)
         return shared_from_this();
     auto result = std::make_shared<BufferGeometry>();
-    const auto convert = [&](const std::shared_ptr<BufferAttribute>& a) {
-        auto copy = std::visit(
-            [&](const auto& storage) -> std::shared_ptr<BufferAttribute> {
-                using T = typename std::decay_t<decltype(storage)>::value_type;
-                std::vector<T> values;
-                values.reserve(index->count * a->itemSize);
-                for (std::size_t i = 0; i < index->count; ++i) {
-                    const auto rawIndex = std::visit(
-                        [&](const auto& values) { return static_cast<std::size_t>(values.at(i)); },
-                        index->array);
-                    const auto offset = rawIndex * a->itemSize;
-                    for (std::size_t c = 0; c < a->itemSize; ++c)
-                        values.push_back(storage.at(offset + c));
-                }
-                return std::make_shared<BufferAttribute>(std::move(values), a->itemSize,
-                                                         a->normalized);
-            },
-            a->array);
-        return copy;
+    const auto indices=nativeArray(index->getArray());
+    const auto convert = [&](const std::shared_ptr<VertexAttribute>& a)->std::shared_ptr<BufferAttribute> {
+        const auto array=nativeArray(a->getArray()),size=a->getProperty("itemSize"),normalized=a->getProperty("normalized");
+        const auto constructor=array.get("constructor");const auto length=indices.get("length");
+        auto values=constructor.construct({Interpolant_detail::multiply(length,size)});
+        double outputIndex=0;
+        const auto limit=indices.get("length");
+        for(double i=0;i<limit.toNumber();++i) {
+            JSValue offset;
+            if(a->getProperty("isInterleavedBufferAttribute").toBoolean()) {
+                const auto input=indices.get(JSValue(i).toString()),stride=a->getProperty("data").get("stride");
+                const auto product=Interpolant_detail::multiply(input,stride);offset=Interpolant_detail::add(product,a->getProperty("offset"));
+            } else offset=Interpolant_detail::multiply(indices.get(JSValue(i).toString()),size);
+            for(double c=0;c<size.toNumber();++c) {
+                const auto oldOffset=offset.toNumber();offset=oldOffset+1;
+                const auto value=array.get(JSValue(oldOffset).toString());values.set(JSValue(outputIndex++).toString(),value);
+            }
+        }
+        const auto storage=animationArray(values);
+        return std::visit([&](const auto& input)->std::shared_ptr<BufferAttribute> {
+            if constexpr(std::is_same_v<std::decay_t<decltype(input)>,JSValue>) throw JSTypeError("Expected TypedArray");
+            else return std::make_shared<BufferAttribute>(input,size.toNumber(),normalized.toBoolean());
+        },storage.storage());
     };
     for (const auto& [name, a] : attributes)
         result->setAttribute(name, convert(a));
@@ -264,19 +275,18 @@ std::shared_ptr<BufferGeometry> BufferGeometry::clone() const {
     return result;
 }
 BufferGeometry& BufferGeometry::copy(const BufferGeometry& source) {
-    if (this == &source)
-        return *this;
-    index = source.index ? source.index->clone() : nullptr;
+    index.reset();
     attributes.clear();
     morphAttributes.clear();
+    groups.clear();boundingBox.reset();boundingSphere.reset();
+    auto metadata=JSValue::object();name=source.name;
+    index=source.index?source.index->clone():nullptr;
     for (const auto& [name, a] : source.attributes)
-        attributes[name] = a->clone();
+        attributes[name] = a->cloneAttribute(metadata);
     for (const auto& [name, as] : source.morphAttributes)
         for (const auto& a : as)
-            morphAttributes[name].push_back(a->clone());
-    name = source.name;
+            morphAttributes[name].push_back(a->cloneAttribute(metadata));
     morphTargetsRelative = source.morphTargetsRelative;
-    groups.clear();
     for (const auto& group : source.groups)
         addGroup(group.start, group.count, group.materialIndex);
     boundingBox = source.boundingBox;
@@ -300,40 +310,28 @@ JsonValue BufferGeometry::toJSON() const {
                           {"type", type},
                           {"name", name}};
     if (userData.size())
-        result["userData"] = userData;
-    JsonValue data = JsonValue::Object{{"attributes", JsonValue::Object{}}};
-    if (index) {
-        auto serialized = index->toJSON();
-        data["index"] =
-            JsonValue::Object{{"type", serialized.at("type")}, {"array", serialized.at("array")}};
+        result["userData"] = userData.sharedCopy();
+    auto data=JSValue::object(),attributesJSON=JSValue::object();data.set("attributes",attributesJSON);
+    if(index) {
+        auto serialized=index->toJSON();
+        data.set("index",JSValue::fromJSON(JsonValue::Object{{"type",serialized.at("type")},{"array",serialized.at("array")}}));
     }
-    for (const auto& [key, a] : attributes)
-        data["attributes"][key] = a->toJSON();
-    JsonValue morphs = JsonValue::Object{};
-    for (const auto& [key, as] : morphAttributes) {
-        if (as.empty())
-            continue;
+    for(const auto& [key,attribute]:attributes) attributesJSON.set(key,attribute->serializeAttribute(data));
+    auto morphs=JSValue::object();
+    for(const auto& [key,items]:morphAttributes) {
+        if(items.empty()) continue;
+        auto serialized=JSValue::array();
+        for(const auto& attribute:items) serialized.get("push").call(serialized,{attribute->serializeAttribute(data)});
+        morphs.set(key,serialized);
+    }
+    if(!morphs.keys().empty()) {data.set("morphAttributes",morphs);data.set("morphTargetsRelative",morphTargetsRelative);}
+    if(!groups.empty()) {
         JsonValue::Array serialized;
-        for (const auto& a : as)
-            serialized.push_back(a->toJSON());
-        morphs[key] = std::move(serialized);
+        for(const auto& group:groups) serialized.push_back(JsonValue::Object{{"start",group.start},{"count",group.count},{"materialIndex",group.materialIndex}});
+        data.set("groups",JSValue::fromJSON(JsonValue(serialized).copyJSON()));
     }
-    if (morphs.size()) {
-        data["morphAttributes"] = morphs;
-        data["morphTargetsRelative"] = morphTargetsRelative;
-    }
-    if (!groups.empty()) {
-        JsonValue::Array serialized;
-        for (const auto& g : groups)
-            serialized.push_back(JsonValue::Object{
-                {"start", g.start}, {"count", g.count}, {"materialIndex", g.materialIndex}});
-        data["groups"] = std::move(serialized);
-    }
-    if (boundingSphere)
-        data["boundingSphere"] = JsonValue::Object{
-            {"center", JsonValue::Array{boundingSphere->center.x(), boundingSphere->center.y(),
-                                        boundingSphere->center.z()}},
-            {"radius", boundingSphere->radius}};
-    result["data"] = std::move(data);
+    if(boundingSphere) data.set("boundingSphere",JSValue::fromJSON(JsonValue::Object{{"radius",boundingSphere->radius},
+        {"center",JsonValue::Array{boundingSphere->center.x,boundingSphere->center.y,boundingSphere->center.z}}}));
+    result["data"] = *snapshotData(data);
     return result;
 }

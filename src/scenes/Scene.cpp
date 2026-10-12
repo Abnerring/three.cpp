@@ -1,5 +1,6 @@
 #include "scenes/Scene.h"
 #include "materials/Material.h"
+#include "textures/Texture.h"
 #include <stdexcept>
 
 std::optional<JsonValue> Scene::propertyValue(const std::string& property) const {
@@ -17,11 +18,10 @@ Scene& Scene::copy(const Object3D& source, bool recursive) {
     const auto* scene = dynamic_cast<const Scene*>(&source);
     if (!scene)
         throw std::invalid_argument("Scene::copy requires a Scene");
-    if (scene->environment)
-        throw std::logic_error("Scene environment cloning requires the unported Texture module");
     Object3D::copy(source, recursive);
     background = scene->background;
-    environment.reset();
+    const auto sourceEnvironment = scene->environment;
+    environment = sourceEnvironment ? sourceEnvironment->clone() : nullptr;
     fog = scene->fog ? scene->fog->clone() : nullptr;
     backgroundBlurriness = scene->backgroundBlurriness;
     backgroundIntensity = scene->backgroundIntensity;
@@ -36,11 +36,11 @@ std::shared_ptr<Object3D> Scene::clone(bool recursive) const {
     result->copy(*this, recursive);
     return result;
 }
-void Scene::serializeObjectResources(Object3DJSONContext&, JsonValue& object) const {
-    if (environment)
-        throw std::logic_error("Scene environment JSON requires the unported Texture module");
+void Scene::serializeObjectResources(Object3DJSONContext& meta, JsonValue& object) const {
     if (background)
         object["background"] = background->getHex();
+    const auto texture = environment;
+    if (texture && !texture->isRenderTargetTexture) object["environment"] = texture->toJSON(&meta).at("uuid");
 }
 JsonValue Scene::toJSON(Object3DJSONContext* meta) const {
     auto output = Object3D::toJSON(meta);
@@ -50,11 +50,11 @@ JsonValue Scene::toJSON(Object3DJSONContext* meta) const {
     object["backgroundBlurriness"] = backgroundBlurriness;
     object["backgroundIntensity"] = backgroundIntensity;
     object["backgroundRotation"] =
-        JsonValue::Array{backgroundRotation.x(), backgroundRotation.y(), backgroundRotation.z(),
+        JsonValue::Array{backgroundRotation.x, backgroundRotation.y, backgroundRotation.z,
                          backgroundRotation.getOrderString()};
     object["environmentIntensity"] = environmentIntensity;
     object["environmentRotation"] =
-        JsonValue::Array{environmentRotation.x(), environmentRotation.y(), environmentRotation.z(),
+        JsonValue::Array{environmentRotation.x, environmentRotation.y, environmentRotation.z,
                          environmentRotation.getOrderString()};
     return output;
 }

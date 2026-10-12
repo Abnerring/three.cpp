@@ -1,3 +1,4 @@
+#include "math/JSNumberMath.h"
 #include "math/Quaternion.h"
 #include "core/BufferAttribute.h"
 #include "math/Vector3.h"
@@ -15,7 +16,7 @@ Quaternion::Quaternion(HIGH_PRECISION x, HIGH_PRECISION y, HIGH_PRECISION z, HIG
 }
 
 Quaternion::Quaternion(const Quaternion &q)
-    : Quaternion(q.x(), q.y(), q.z(), q.w())
+    : Quaternion(q.x, q.y, q.z, q.w)
 {
 }
 
@@ -23,35 +24,30 @@ Quaternion::~Quaternion()
 {
 }
 
-HIGH_PRECISION Quaternion::x() const { return m_x; }
-HIGH_PRECISION Quaternion::y() const { return m_y; }
-HIGH_PRECISION Quaternion::z() const { return m_z; }
-HIGH_PRECISION Quaternion::w() const { return m_w; }
-
 Quaternion &Quaternion::set(HIGH_PRECISION x, HIGH_PRECISION y, HIGH_PRECISION z, HIGH_PRECISION w)
 {
     m_x = x;
     m_y = y;
     m_z = z;
     m_w = w;
-    m_onChangeCallback();
+    notifyPropertyChange(m_onChangeCallback);
     return *this;
 }
 
 Quaternion &Quaternion::setScalar(HIGH_PRECISION s)
 {
     m_x = m_y = m_z = m_w = s;
-    m_onChangeCallback();
+    notifyPropertyChange(m_onChangeCallback);
     return *this;
 }
 
-Quaternion &Quaternion::setX(HIGH_PRECISION x) { m_x = x; m_onChangeCallback();
+Quaternion &Quaternion::setX(HIGH_PRECISION x) { m_x = x; notifyPropertyChange(m_onChangeCallback);
     return *this; }
-Quaternion &Quaternion::setY(HIGH_PRECISION y) { m_y = y; m_onChangeCallback();
+Quaternion &Quaternion::setY(HIGH_PRECISION y) { m_y = y; notifyPropertyChange(m_onChangeCallback);
     return *this; }
-Quaternion &Quaternion::setZ(HIGH_PRECISION z) { m_z = z; m_onChangeCallback();
+Quaternion &Quaternion::setZ(HIGH_PRECISION z) { m_z = z; notifyPropertyChange(m_onChangeCallback);
     return *this; }
-Quaternion &Quaternion::setW(HIGH_PRECISION w) { m_w = w; m_onChangeCallback();
+Quaternion &Quaternion::setW(HIGH_PRECISION w) { m_w = w; notifyPropertyChange(m_onChangeCallback);
     return *this; }
 
 Quaternion Quaternion::clone() const
@@ -61,25 +57,25 @@ Quaternion Quaternion::clone() const
 
 Quaternion &Quaternion::copy(const Quaternion &q)
 {
-    m_x = q.x(); m_y = q.y(); m_z = q.z(); m_w = q.w();
-    m_onChangeCallback();
+    m_x = q.x; m_y = q.y; m_z = q.z; m_w = q.w;
+    notifyPropertyChange(m_onChangeCallback);
     return *this;
 }
 
 Quaternion &Quaternion::setFromEuler(const Euler &euler, bool update)
 {
-    auto x = euler.x();
-    auto y = euler.y();
-    auto z = euler.z();
-    auto order = euler.order();
+    HIGH_PRECISION x = euler.x;
+    HIGH_PRECISION y = euler.y;
+    HIGH_PRECISION z = euler.z;
+    EulerOrder order = euler.order;
 
     auto c1 = std::cos(x / 2.0f);
     auto c2 = std::cos(y / 2.0f);
     auto c3 = std::cos(z / 2.0f);
 
-    auto s1 = std::sin(x / 2.0f);
-    auto s2 = std::sin(y / 2.0f);
-    auto s3 = std::sin(z / 2.0f);
+    auto s1 = JSNumberMath::sin(x / 2.0f);
+    auto s2 = JSNumberMath::sin(y / 2.0f);
+    auto s3 = JSNumberMath::sin(z / 2.0f);
 
     if (order == EulerOrder::XYZ)
     {
@@ -124,16 +120,16 @@ Quaternion &Quaternion::setFromEuler(const Euler &euler, bool update)
         m_w = c1 * c2 * c3 + s1 * s2 * s3;
     }
 
-    if (update) m_onChangeCallback();
+    if (update) notifyPropertyChange(m_onChangeCallback);
     return *this;
 }
 
 Quaternion &Quaternion::setFromAxisAngle(const Vector3 &axis, HIGH_PRECISION angle)
 {
     const auto halfAngle = angle / 2;
-    const auto s = std::sin(halfAngle);
-    m_x = axis.x() * s; m_y = axis.y() * s; m_z = axis.z() * s; m_w = std::cos(halfAngle);
-    m_onChangeCallback();
+    const auto s = JSNumberMath::sin(halfAngle);
+    m_x = axis.x * s; m_y = axis.y * s; m_z = axis.z * s; m_w = std::cos(halfAngle);
+    notifyPropertyChange(m_onChangeCallback);
     return *this;
 }
 
@@ -177,7 +173,7 @@ Quaternion &Quaternion::setFromRotationMatrix(const Matrix4 &m)
         m_z = 0.25f * s;
     }
 
-    m_onChangeCallback();
+    notifyPropertyChange(m_onChangeCallback);
     return *this;
 }
 
@@ -186,12 +182,12 @@ Quaternion &Quaternion::setFromUnitVectors(const Vector3 &v1, const Vector3 &v2)
     auto r = v1.dot(v2) + 1;
     if (r < 1e-8) {
         r = 0;
-        if (std::abs(v1.x()) > std::abs(v1.z())) { m_x = -v1.y(); m_y = v1.x(); m_z = 0; m_w = r; }
-        else { m_x = 0; m_y = -v1.z(); m_z = v1.y(); m_w = r; }
+        if (std::abs(v1.x) > std::abs(v1.z)) { m_x = -v1.y; m_y = v1.x; m_z = 0; m_w = r; }
+        else { m_x = 0; m_y = -v1.z; m_z = v1.y; m_w = r; }
     } else {
-        m_x = v1.y() * v2.z() - v1.z() * v2.y();
-        m_y = v1.z() * v2.x() - v1.x() * v2.z();
-        m_z = v1.x() * v2.y() - v1.y() * v2.x();
+        m_x = v1.y * v2.z - v1.z * v2.y;
+        m_y = v1.z * v2.x - v1.x * v2.z;
+        m_z = v1.x * v2.y - v1.y * v2.x;
         m_w = r;
     }
     return normalize();
@@ -207,7 +203,7 @@ Quaternion &Quaternion::normalize()
     auto len = length();
     if (len == 0) { m_x = 0; m_y = 0; m_z = 0; m_w = 1; }
     else { len = 1 / len; m_x *= len; m_y *= len; m_z *= len; m_w *= len; }
-    m_onChangeCallback();
+    notifyPropertyChange(m_onChangeCallback);
     return *this;
 }
 
@@ -216,7 +212,7 @@ Quaternion &Quaternion::conjugate()
     m_x = -m_x;
     m_y = -m_y;
     m_z = -m_z;
-    m_onChangeCallback();
+    notifyPropertyChange(m_onChangeCallback);
     return *this;
 }
 
@@ -227,27 +223,27 @@ Quaternion &Quaternion::invert()
 
 Quaternion &Quaternion::add(const Quaternion &q)
 {
-    m_x += q.x();
-    m_y += q.y();
-    m_z += q.z();
-    m_w += q.w();
-    m_onChangeCallback();
+    m_x += q.x;
+    m_y += q.y;
+    m_z += q.z;
+    m_w += q.w;
+    notifyPropertyChange(m_onChangeCallback);
     return *this;
 }
 
 Quaternion &Quaternion::sub(const Quaternion &q)
 {
-    m_x -= q.x();
-    m_y -= q.y();
-    m_z -= q.z();
-    m_w -= q.w();
-    m_onChangeCallback();
+    m_x -= q.x;
+    m_y -= q.y;
+    m_z -= q.z;
+    m_w -= q.w;
+    notifyPropertyChange(m_onChangeCallback);
     return *this;
 }
 
 HIGH_PRECISION Quaternion::dot(const Quaternion &q) const
 {
-    return m_x * q.x() + m_y * q.y() + m_z * q.z() + m_w * q.w();
+    return m_x * q.x + m_y * q.y + m_z * q.z + m_w * q.w;
 }
 
 HIGH_PRECISION Quaternion::lengthSq() const
@@ -274,31 +270,31 @@ Quaternion &Quaternion::premultiply(const Quaternion &q)
 
 Quaternion &Quaternion::multiplyQuaternions(const Quaternion &a, const Quaternion &b)
 {
-    auto qax = a.x(), qay = a.y(), qaz = a.z(), qaw = a.w();
-    auto qbx = b.x(), qby = b.y(), qbz = b.z(), qbw = b.w();
+    HIGH_PRECISION qax = a.x, qay = a.y, qaz = a.z, qaw = a.w;
+    HIGH_PRECISION qbx = b.x, qby = b.y, qbz = b.z, qbw = b.w;
 
     m_x = qax * qbw + qaw * qbx + qay * qbz - qaz * qby;
     m_y = qay * qbw + qaw * qby + qaz * qbx - qax * qbz;
     m_z = qaz * qbw + qaw * qbz + qax * qby - qay * qbx;
     m_w = qaw * qbw - qax * qbx - qay * qby - qaz * qbz;
 
-    m_onChangeCallback();
+    notifyPropertyChange(m_onChangeCallback);
     return *this;
 }
 
 Quaternion &Quaternion::slerp(const Quaternion &qb, HIGH_PRECISION t)
 {
-    auto x = qb.x(), y = qb.y(), z = qb.z(), w = qb.w();
+    HIGH_PRECISION x = qb.x, y = qb.y, z = qb.z, w = qb.w;
     auto dotValue = dot(qb);
     if (dotValue < 0) { x = -x; y = -y; z = -z; w = -w; dotValue = -dotValue; }
     auto s = 1 - t;
     if (dotValue < 0.9995) {
-        const auto theta = std::acos(dotValue);
-        const auto sinTheta = std::sin(theta);
-        s = std::sin(s * theta) / sinTheta;
-        t = std::sin(t * theta) / sinTheta;
+        const auto theta = JSNumberMath::acos(dotValue);
+        const auto sinTheta = JSNumberMath::sin(theta);
+        s = JSNumberMath::sin(s * theta) / sinTheta;
+        t = JSNumberMath::sin(t * theta) / sinTheta;
         m_x = m_x * s + x * t; m_y = m_y * s + y * t; m_z = m_z * s + z * t; m_w = m_w * s + w * t;
-        m_onChangeCallback();
+        notifyPropertyChange(m_onChangeCallback);
     } else {
         m_x = m_x * s + x * t; m_y = m_y * s + y * t; m_z = m_z * s + z * t; m_w = m_w * s + w * t;
         normalize();
@@ -314,8 +310,8 @@ Quaternion &Quaternion::slerpQuaternions(const Quaternion &qa, const Quaternion 
 
 bool Quaternion::equals(const Quaternion &q, HIGH_PRECISION epsilon) const
 {
-    if (epsilon == 0) return m_x == q.x() && m_y == q.y() && m_z == q.z() && m_w == q.w();
-    return std::abs(m_x - q.x()) <= epsilon && std::abs(m_y - q.y()) <= epsilon && std::abs(m_z - q.z()) <= epsilon && std::abs(m_w - q.w()) <= epsilon;
+    if (epsilon == 0) return m_x == q.x && m_y == q.y && m_z == q.z && m_w == q.w;
+    return std::abs(m_x - q.x) <= epsilon && std::abs(m_y - q.y) <= epsilon && std::abs(m_z - q.z) <= epsilon && std::abs(m_w - q.w) <= epsilon;
 }
 
 Quaternion &Quaternion::fromArray(const std::vector<HIGH_PRECISION> &array, size_t offset)
@@ -324,7 +320,7 @@ Quaternion &Quaternion::fromArray(const std::vector<HIGH_PRECISION> &array, size
     m_y = array[offset + 1];
     m_z = array[offset + 2];
     m_w = array[offset + 3];
-    m_onChangeCallback();
+    notifyPropertyChange(m_onChangeCallback);
     return *this;
 }
 
@@ -370,10 +366,10 @@ Quaternion &Quaternion::lerp(const Quaternion &qb, HIGH_PRECISION t)
     if (t <= 0.0f) return *this;
     if (t >= 1.0f) { copy(qb); return *this; }
 
-    m_x += (qb.x() - m_x) * t;
-    m_y += (qb.y() - m_y) * t;
-    m_z += (qb.z() - m_z) * t;
-    m_w += (qb.w() - m_w) * t;
+    m_x += (qb.x - m_x) * t;
+    m_y += (qb.y - m_y) * t;
+    m_z += (qb.z - m_z) * t;
+    m_w += (qb.w - m_w) * t;
 
     return normalize();
 }
@@ -384,7 +380,7 @@ Quaternion &Quaternion::multiplyScalar(HIGH_PRECISION s)
     m_y *= s;
     m_z *= s;
     m_w *= s;
-    m_onChangeCallback();
+    notifyPropertyChange(m_onChangeCallback);
     return *this;
 }
 
@@ -395,12 +391,12 @@ Quaternion &Quaternion::divideScalar(HIGH_PRECISION s)
 
 Quaternion &Quaternion::_onChange(std::function<void()> callback)
 {
-    m_onChangeCallback = callback ? std::move(callback) : std::function<void()>([] {});
+    m_onChangeCallback = makeChangeCallback(std::move(callback));
     return *this;
 }
 HIGH_PRECISION Quaternion::angleTo(const Quaternion &q) const
 {
-    return 2 * std::acos(std::abs(MathUtils::clamp(dot(q), -1, 1)));
+    return 2 * JSNumberMath::acos(std::abs(MathUtils::clamp(dot(q), -1, 1)));
 }
 Quaternion &Quaternion::rotateTowards(const Quaternion &q, HIGH_PRECISION step)
 {
@@ -418,7 +414,7 @@ Quaternion &Quaternion::random()
     const auto theta2 = 2 * MATH_PI * DIST_DOUBLE(RANDOM_ENGINE);
     const auto x0 = DIST_DOUBLE(RANDOM_ENGINE);
     const auto r1 = std::sqrt(1 - x0), r2 = std::sqrt(x0);
-    return set(r1 * std::sin(theta1), r1 * std::cos(theta1), r2 * std::sin(theta2), r2 * std::cos(theta2));
+    return set(r1 * JSNumberMath::sin(theta1), r1 * std::cos(theta1), r2 * JSNumberMath::sin(theta2), r2 * std::cos(theta2));
 }
 std::vector<HIGH_PRECISION> Quaternion::toArray() const
 {
@@ -467,11 +463,11 @@ void Quaternion::slerpFlat(std::vector<HIGH_PRECISION> &dst, size_t dstOffset, c
 
 				// slerp
 
-				const auto theta = std::acos( dot );
-				const auto sin = std::sin( theta );
+				const auto theta = JSNumberMath::acos( dot );
+				const auto sin = JSNumberMath::sin( theta );
 
-				s = std::sin( s * theta ) / sin;
-				t = std::sin( t * theta ) / sin;
+				s = JSNumberMath::sin( s * theta ) / sin;
+				t = JSNumberMath::sin( t * theta ) / sin;
 
 				x0 = x0 * s + x1 * t;
 				y0 = y0 * s + y1 * t;
@@ -533,3 +529,6 @@ std::vector<HIGH_PRECISION> & Quaternion::multiplyQuaternionsFlat(std::vector<HI
 }
 
 std::vector<HIGH_PRECISION> Quaternion::toJSON() const { return toArray(); }
+
+Quaternion::Quaternion(Quaternion&& source) : Quaternion(static_cast<const Quaternion&>(source)) {}
+Quaternion& Quaternion::operator=(Quaternion&& source) { return copy(source); }

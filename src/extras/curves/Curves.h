@@ -1,0 +1,11 @@
+#pragma once
+#include "extras/curves/ArcCurve.h"
+#include "extras/curves/CatmullRomCurve3.h"
+#include "extras/curves/CubicBezierCurve.h"
+#include "extras/curves/CubicBezierCurve3.h"
+#include "extras/curves/EllipseCurve.h"
+#include "extras/curves/LineCurve.h"
+#include "extras/curves/LineCurve3.h"
+#include "extras/curves/QuadraticBezierCurve.h"
+#include "extras/curves/QuadraticBezierCurve3.h"
+#include "extras/curves/SplineCurve.h"

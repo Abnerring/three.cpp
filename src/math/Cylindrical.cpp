@@ -13,7 +13,7 @@ Cylindrical& Cylindrical::copy(const Cylindrical& other) {
     return set(other.radius, other.theta, other.y);
 }
 Cylindrical& Cylindrical::setFromVector3(const Vector3& vector) {
-    return setFromCartesianCoords(vector.x(), vector.y(), vector.z());
+    return setFromCartesianCoords(vector.x, vector.y, vector.z);
 }
 Cylindrical& Cylindrical::setFromCartesianCoords(double x, double y, double z) {
     radius = std::sqrt(x * x + z * z);

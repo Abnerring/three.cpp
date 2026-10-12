@@ -1,4 +1,5 @@
 #include "core/Raycaster.h"
+#include "core/ArraySort.h"
 #include "cameras/Camera.h"
 #include "cameras/OrthographicCamera.h"
 #include "cameras/PerspectiveCamera.h"
@@ -15,20 +16,20 @@ void intersect(Object3D& object, const Raycaster& raycaster, std::vector<Interse
     if (object.layers.test(raycaster.layers))
         propagate = object.raycast(raycaster, target);
     if (propagate && recursive) {
-        // Retain each descendant during custom raycast callbacks.
-        const auto length = object.children.size();
+        // Upstream retains the children array even if a callback replaces the field.
+        const auto children = object.children;
+        const auto length = children.size();
         for (std::size_t i = 0; i < length; ++i) {
-            if (i >= object.children.size())
-                throw std::logic_error("Object3D children changed during raycast traversal");
-            auto child = object.children[i];
+            if (i >= children.size() || !children[i])
+                throw JSTypeError("Cannot read layers of missing raycast child");
+            auto child = children[i];
             intersect(*child, raycaster, target, true);
         }
     }
 }
 void sortIntersections(std::vector<Intersection>& target) {
-    std::stable_sort(
-        target.begin(), target.end(),
-        [](const Intersection& a, const Intersection& b) { return a.distance - b.distance < 0; });
+    v8ArraySort(target,
+        [](const Intersection& a, const Intersection& b) { return a.distance - b.distance; });
 }
 } // namespace
 
@@ -40,14 +41,14 @@ void Raycaster::set(const Vector3& origin, const Vector3& direction) {
 void Raycaster::setFromCamera(const Vector2& coordinates, Camera& viewCamera) {
     if (dynamic_cast<PerspectiveCamera*>(&viewCamera)) {
         ray.origin.setFromMatrixPosition(viewCamera.matrixWorld);
-        ray.direction.set(coordinates.x(), coordinates.y(), 0.5)
+        ray.direction.set(coordinates.x, coordinates.y, 0.5)
             .unproject(viewCamera)
             .sub(ray.origin)
             .normalize();
         camera = &viewCamera;
         cameraOwner_ = std::dynamic_pointer_cast<Camera>(viewCamera.weak_from_this().lock());
     } else if (dynamic_cast<OrthographicCamera*>(&viewCamera)) {
-        ray.origin.set(coordinates.x(), coordinates.y(), viewCamera.projectionMatrix.elements()[14])
+        ray.origin.set(coordinates.x, coordinates.y, viewCamera.projectionMatrix.elements()[14])
             .unproject(viewCamera);
         ray.direction.set(0, 0, -1).transformDirection(viewCamera.matrixWorld);
         camera = &viewCamera;
@@ -74,12 +75,12 @@ std::vector<Intersection> Raycaster::intersectObject(Object3D& object, bool recu
     return target;
 }
 std::vector<Intersection>&
-Raycaster::intersectObjects(const std::vector<std::shared_ptr<Object3D>>& objects, bool recursive,
+Raycaster::intersectObjects(SharedArray<std::shared_ptr<Object3D>> objects, bool recursive,
                             std::vector<Intersection>& target) const {
     const auto length = objects.size();
     for (std::size_t i = 0; i < length; ++i) {
-        if (i >= objects.size())
-            throw std::logic_error("Object list changed during raycast traversal");
+        if (i >= objects.size() || !objects[i])
+            throw JSTypeError("Cannot read layers of missing raycast object");
         auto object = objects[i];
         intersect(*object, *this, target, recursive);
     }
@@ -87,7 +88,7 @@ Raycaster::intersectObjects(const std::vector<std::shared_ptr<Object3D>>& object
     return target;
 }
 std::vector<Intersection>
-Raycaster::intersectObjects(const std::vector<std::shared_ptr<Object3D>>& objects,
+Raycaster::intersectObjects(SharedArray<std::shared_ptr<Object3D>> objects,
                             bool recursive) const {
     std::vector<Intersection> target;
     intersectObjects(objects, recursive, target);

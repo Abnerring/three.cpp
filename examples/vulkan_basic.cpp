@@ -1,10 +1,4 @@
-#include "cameras/PerspectiveCamera.h"
-#include "geometries/BoxGeometry.h"
-#include "geometries/PlaneGeometry.h"
-#include "materials/MeshBasicMaterial.h"
-#include "objects/Mesh.h"
-#include "renderers/VulkanRenderer.h"
-#include "scenes/Scene.h"
+#include "Three.h"
 #include <fstream>
 #include <iostream>
 

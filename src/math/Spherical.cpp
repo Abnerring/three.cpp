@@ -18,7 +18,7 @@ Spherical& Spherical::makeSafe() {
     return *this;
 }
 Spherical& Spherical::setFromVector3(const Vector3& vector) {
-    return setFromCartesianCoords(vector.x(), vector.y(), vector.z());
+    return setFromCartesianCoords(vector.x, vector.y, vector.z);
 }
 Spherical& Spherical::setFromCartesianCoords(double x, double y, double z) {
     radius = std::sqrt(x * x + y * y + z * z);

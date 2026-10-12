@@ -4,5 +4,54 @@
   "revision": "187dev",
   "commit": "11738a9d55e502fb484cefffcea3a66dc44e9fe9",
   "scope": "Port the full three.js logic to C++; replace the rendering backend with Vulkan. Partial modules are not completion.",
-  "license": "THREEJS-LICENSE"
+  "includedRoots": ["src", "examples/jsm"],
+  "excludedApplications": ["editor", "manual"],
+  "apiPolicy": "upstream-first",
+  "language": "C++20",
+  "renderingBackend": "Vulkan",
+  "browserEmbedding": false,
+  "javascriptBridge": false,
+  "platforms": ["Windows", "Linux", "macOS"],
+  "license": "THREEJS-LICENSE",
+  "nativeDependencies": [
+    {
+      "name": "Unicode NFC data",
+      "revision": "Unicode 17.0.0",
+      "sources": [
+        {
+          "source": "https://www.unicode.org/Public/17.0.0/ucd/UnicodeData.txt",
+          "sourceSHA256": "2e1efc1dcb59c575eedf5ccae60f95229f706ee6d031835247d843c11d96470c"
+        },
+        {
+          "source": "https://www.unicode.org/Public/17.0.0/ucd/CompositionExclusions.txt",
+          "sourceSHA256": "2f239196ef3b5b61db5cc476e9bd80f534d15aa1b74e1be1dea5d042a344c85f"
+        }
+      ],
+      "implementation": "src/core/UnicodeNormalization.cpp",
+      "generatedData": "src/core/UnicodeNormalizationData.h",
+      "generator": "utils/generate-unicode-normalization.py",
+      "license": "src/core/Unicode-LICENSE.txt",
+      "licenseSource": "https://www.unicode.org/license.txt",
+      "licenseSourceSHA256": "e7a93b009565cfce55919a381437ac4db883e9da2126fa28b91d12732bc53d96",
+      "purpose": "Native NFC normalization of LoadingManager URLs with the pinned Node oracle Unicode version; no JavaScript engine"
+    },
+    {
+      "name": "V8 fdlibm sin/acos",
+      "source": "https://github.com/nodejs/node/blob/v26.5.0/deps/v8/src/base/ieee754.cc",
+      "revision": "Node.js v26.5.0 / V8 14.6.202.34-node.24",
+      "sourceSHA256": "badd30a2643ed785dcfbbce42f95c2522ccea3605cd39e2933467688aae1de14",
+      "implementation": "src/math/JSNumberMath.cpp",
+      "license": "Sun fdlibm notice and V8 BSD-3-Clause, retained in implementation",
+      "purpose": "Native binary64 arithmetic for quaternion interpolation and observable animation callbacks; no JavaScript engine"
+    },
+    {
+      "name": "V8 TimSort",
+      "source": "https://github.com/nodejs/node/blob/v26.5.0/deps/v8/third_party/v8/builtins/array-sort.tq",
+      "revision": "Node.js v26.5.0 / V8 14.6.202.34-node.24",
+      "sourceSHA256": "431b4a52e984d0e3add8bf2f0929a73390ad867b3bcebf41cc071d0c3c9e5310",
+      "implementation": "src/core/ArraySort.h",
+      "license": "V8 BSD-3-Clause and Python license chain, retained in src/core/ArraySort.LICENSE",
+      "purpose": "Native stable sorting with the pinned oracle comparator order, including NaN and inconsistent comparators; no JavaScript engine"
+    }
+  ]
 }

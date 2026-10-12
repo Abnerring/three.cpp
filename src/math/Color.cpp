@@ -16,18 +16,18 @@ Color::Color() : Color(1.0, 1.0, 1.0) {}
 Color::Color(HIGH_PRECISION hex) : Color() { setHex(hex); }
 
 Color::Color(HIGH_PRECISION r, HIGH_PRECISION g, HIGH_PRECISION b)
-    : m_r(r), m_g(g), m_b(b)
+    : r(r), g(g), b(b)
 {
 }
 
 Color::Color(int hex)
-    : m_r(1.0), m_g(1.0), m_b(1.0)
+    : r(1.0), g(1.0), b(1.0)
 {
     setHex(hex);
 }
 
 Color::Color(const std::string &colorString)
-    : m_r(1.0), m_g(1.0), m_b(1.0)
+    : r(1.0), g(1.0), b(1.0)
 {
     setStyle(colorString);
 }
@@ -36,10 +36,6 @@ Color::~Color()
 {
 }
 
-HIGH_PRECISION Color::r() const { return m_r; }
-HIGH_PRECISION Color::g() const { return m_g; }
-HIGH_PRECISION Color::b() const { return m_b; }
-
 Color &Color::set(HIGH_PRECISION r, HIGH_PRECISION g, HIGH_PRECISION b)
 {
     return setRGB(r, g, b);
@@ -47,14 +43,14 @@ Color &Color::set(HIGH_PRECISION r, HIGH_PRECISION g, HIGH_PRECISION b)
 
 Color &Color::setScalar(HIGH_PRECISION scalar)
 {
-    m_r = m_g = m_b = scalar;
+    this->r = this->g = this->b = scalar;
     return *this;
 }
 
 Color &Color::setHex(HIGH_PRECISION hex, const std::string &colorSpace)
 {
     const auto value = static_cast<uint32_t>(static_cast<int64_t>(std::floor(hex)));
-    m_r = ((value >> 16) & 255) / 255.0; m_g = ((value >> 8) & 255) / 255.0; m_b = (value & 255) / 255.0;
+    this->r = ((value >> 16) & 255) / 255.0; this->g = ((value >> 8) & 255) / 255.0; this->b = (value & 255) / 255.0;
     return ColorManagement::colorSpaceToWorking(*this, colorSpace);
 }
 
@@ -65,7 +61,7 @@ Color &Color::setHSL(HIGH_PRECISION h, HIGH_PRECISION s, HIGH_PRECISION l, const
     l = MathUtils::clamp(l, 0, 1);
     if (s == 0.0)
     {
-        m_r = m_g = m_b = l;
+        this->r = this->g = this->b = l;
     }
     else
     {
@@ -82,9 +78,9 @@ Color &Color::setHSL(HIGH_PRECISION h, HIGH_PRECISION s, HIGH_PRECISION l, const
         auto q = l <= 0.5 ? l * (1.0 + s) : l + s - l * s;
         auto p = 2.0 * l - q;
 
-        m_r = hue2rgb(p, q, h + 1.0 / 3.0);
-        m_g = hue2rgb(p, q, h);
-        m_b = hue2rgb(p, q, h - 1.0 / 3.0);
+        this->r = hue2rgb(p, q, h + 1.0 / 3.0);
+        this->g = hue2rgb(p, q, h);
+        this->b = hue2rgb(p, q, h - 1.0 / 3.0);
     }
 
     return ColorManagement::colorSpaceToWorking(*this, colorSpace);
@@ -255,68 +251,68 @@ int Color::getHexColorName(const std::string &name)
 
 Color Color::clone() const
 {
-    return Color(m_r, m_g, m_b);
+    return Color(this->r, this->g, this->b);
 }
 
 Color &Color::copy(const Color &color)
 {
-    m_r = color.r();
-    m_g = color.g();
-    m_b = color.b();
+    this->r = color.r;
+    this->g = color.g;
+    this->b = color.b;
     return *this;
 }
 
 Color &Color::add(const Color &color)
 {
-    m_r += color.r();
-    m_g += color.g();
-    m_b += color.b();
+    this->r += color.r;
+    this->g += color.g;
+    this->b += color.b;
     return *this;
 }
 
 Color &Color::addColors(const Color &color1, const Color &color2)
 {
-    m_r = color1.r() + color2.r();
-    m_g = color1.g() + color2.g();
-    m_b = color1.b() + color2.b();
+    this->r = color1.r + color2.r;
+    this->g = color1.g + color2.g;
+    this->b = color1.b + color2.b;
     return *this;
 }
 
 Color &Color::addScalar(HIGH_PRECISION s)
 {
-    m_r += s;
-    m_g += s;
-    m_b += s;
+    this->r += s;
+    this->g += s;
+    this->b += s;
     return *this;
 }
 
 Color &Color::sub(const Color &color)
 {
-    m_r = MathUtils::max(0.0, m_r - color.r()); m_g = MathUtils::max(0.0, m_g - color.g()); m_b = MathUtils::max(0.0, m_b - color.b());
+    this->r = MathUtils::max(0.0, this->r - color.r); this->g = MathUtils::max(0.0, this->g - color.g); this->b = MathUtils::max(0.0, this->b - color.b);
     return *this;
 }
 
 Color &Color::subScalar(HIGH_PRECISION s)
 {
-    m_r -= s;
-    m_g -= s;
-    m_b -= s;
+    this->r -= s;
+    this->g -= s;
+    this->b -= s;
     return *this;
 }
 
 Color &Color::multiply(const Color &color)
 {
-    m_r *= color.r();
-    m_g *= color.g();
-    m_b *= color.b();
+    this->r *= color.r;
+    this->g *= color.g;
+    this->b *= color.b;
     return *this;
 }
 
 Color &Color::multiplyScalar(HIGH_PRECISION scalar)
 {
-    m_r *= scalar;
-    m_g *= scalar;
-    m_b *= scalar;
+    this->r *= scalar;
+    this->g *= scalar;
+    this->b *= scalar;
     return *this;
 }
 
@@ -327,9 +323,9 @@ Color &Color::divideScalar(HIGH_PRECISION scalar)
 
 Color &Color::lerp(const Color &color, HIGH_PRECISION alpha)
 {
-    m_r += (color.r() - m_r) * alpha;
-    m_g += (color.g() - m_g) * alpha;
-    m_b += (color.b() - m_b) * alpha;
+    this->r += (color.r - this->r) * alpha;
+    this->g += (color.g - this->g) * alpha;
+    this->b += (color.b - this->b) * alpha;
     return *this;
 }
 
@@ -337,20 +333,20 @@ Color &Color::lerpHSL(const Color &color, HIGH_PRECISION alpha)
 {
     Vector3 a, b;
     getHSL(a); color.getHSL(b);
-    return setHSL(MathUtils::lerp(a.x(), b.x(), alpha), MathUtils::lerp(a.y(), b.y(), alpha), MathUtils::lerp(a.z(), b.z(), alpha));
+    return setHSL(MathUtils::lerp(a.x, b.x, alpha), MathUtils::lerp(a.y, b.y, alpha), MathUtils::lerp(a.z, b.z, alpha));
 }
 
 bool Color::equals(const Color &color, HIGH_PRECISION epsilon) const
 {
-    if (epsilon == 0) return m_r == color.r() && m_g == color.g() && m_b == color.b();
-    return std::abs(m_r - color.r()) <= epsilon && std::abs(m_g - color.g()) <= epsilon && std::abs(m_b - color.b()) <= epsilon;
+    if (epsilon == 0) return this->r == color.r && this->g == color.g && this->b == color.b;
+    return std::abs(this->r - color.r) <= epsilon && std::abs(this->g - color.g) <= epsilon && std::abs(this->b - color.b) <= epsilon;
 }
 
 int Color::getHex(const std::string &colorSpace) const
 {
     auto color = clone();
     ColorManagement::workingToColorSpace(color, colorSpace);
-    return static_cast<int>(MathUtils::round(MathUtils::clamp(color.r() * 255, 0, 255))) * 65536 + static_cast<int>(MathUtils::round(MathUtils::clamp(color.g() * 255, 0, 255))) * 256 + static_cast<int>(MathUtils::round(MathUtils::clamp(color.b() * 255, 0, 255)));
+    return static_cast<int>(MathUtils::round(MathUtils::clamp(color.r * 255, 0, 255))) * 65536 + static_cast<int>(MathUtils::round(MathUtils::clamp(color.g * 255, 0, 255))) * 256 + static_cast<int>(MathUtils::round(MathUtils::clamp(color.b * 255, 0, 255)));
 }
 
 std::string Color::getHexString(const std::string &colorSpace) const
@@ -365,8 +361,8 @@ std::string Color::getStyle(const std::string &colorSpace) const
     auto color = clone();
     ColorManagement::workingToColorSpace(color, colorSpace);
     std::ostringstream ss;
-    if (colorSpace != SRGBColorSpace) ss << "color(" << colorSpace << " " << std::fixed << std::setprecision(3) << color.r() << " " << color.g() << " " << color.b() << ")";
-    else ss << "rgb(" << MathUtils::round(color.r() * 255) << "," << MathUtils::round(color.g() * 255) << "," << MathUtils::round(color.b() * 255) << ")";
+    if (colorSpace != SRGBColorSpace) ss << "color(" << colorSpace << " " << std::fixed << std::setprecision(3) << color.r << " " << color.g << " " << color.b << ")";
+    else ss << "rgb(" << MathUtils::round(color.r * 255) << "," << MathUtils::round(color.g * 255) << "," << MathUtils::round(color.b * 255) << ")";
     return ss.str();
 }
 
@@ -374,7 +370,7 @@ Vector3 &Color::getHSL(Vector3 &result, const std::string &colorSpace) const
 {
     auto color = clone();
     ColorManagement::workingToColorSpace(color, colorSpace);
-    auto r = color.r(), g = color.g(), b = color.b();
+    auto r = color.r, g = color.g, b = color.b;
 
     auto max = MathUtils::max(MathUtils::max(r, g), b);
     auto min = MathUtils::min(MathUtils::min(r, g), b);
@@ -412,46 +408,46 @@ std::string Color::getHSL() const
     Vector3 hsl;
     getHSL(hsl);
     std::ostringstream ss;
-    ss << "hsl(" << int(hsl.x() * 360) << "," << int(hsl.y() * 100) << "%," << int(hsl.z() * 100) << "%)";
+    ss << "hsl(" << int(hsl.x * 360) << "," << int(hsl.y * 100) << "%," << int(hsl.z * 100) << "%)";
     return ss.str();
 }
 
 Color &Color::fromVector3(const Vector3 &v)
 {
-    return set(v.x(), v.y(), v.z());
+    return set(v.x, v.y, v.z);
 }
 
 Color &Color::fromVector4(const Vector4 &v)
 {
-    return set(v.x(), v.y(), v.z());
+    return set(v.x, v.y, v.z);
 }
 
 void Color::toVector3(Vector3 &result) const
 {
-    result.set(m_r, m_g, m_b);
+    result.set(this->r, this->g, this->b);
 }
 
 void Color::toVector4(Vector4 &result) const
 {
-    result.set(m_r, m_g, m_b, 1.0);
+    result.set(this->r, this->g, this->b, 1.0);
 }
 
 Color &Color::offsetHSL(HIGH_PRECISION h, HIGH_PRECISION s, HIGH_PRECISION l)
 {
     Vector3 hsl;
     getHSL(hsl);
-    hsl.setX(hsl.x() + h);
-    hsl.setY(hsl.y() + s);
-    hsl.setZ(hsl.z() + l);
-    setHSL(hsl.x(), hsl.y(), hsl.z());
+    hsl.setX(hsl.x + h);
+    hsl.setY(hsl.y + s);
+    hsl.setZ(hsl.z + l);
+    setHSL(hsl.x, hsl.y, hsl.z);
     return *this;
 }
 
 Color &Color::copyGammaToLinear(const Color &color, HIGH_PRECISION gammaFactor)
 {
-    m_r = std::pow(color.r(), gammaFactor);
-    m_g = std::pow(color.g(), gammaFactor);
-    m_b = std::pow(color.b(), gammaFactor);
+    this->r = std::pow(color.r, gammaFactor);
+    this->g = std::pow(color.g, gammaFactor);
+    this->b = std::pow(color.b, gammaFactor);
     return *this;
 }
 
@@ -463,9 +459,9 @@ Color &Color::copyLinearToGamma(const Color &color, HIGH_PRECISION gammaFactor)
 
 Color &Color::convertGammaToLinear(HIGH_PRECISION gammaFactor)
 {
-    m_r = std::pow(m_r, gammaFactor);
-    m_g = std::pow(m_g, gammaFactor);
-    m_b = std::pow(m_b, gammaFactor);
+    this->r = std::pow(this->r, gammaFactor);
+    this->g = std::pow(this->g, gammaFactor);
+    this->b = std::pow(this->b, gammaFactor);
     return *this;
 }
 
@@ -491,10 +487,10 @@ HIGH_PRECISION Color::operator[](size_t index) const
 {
     switch (index)
     {
-    case 0: return m_r;
-    case 1: return m_g;
-    case 2: return m_b;
-    default: return m_r;
+    case 0: return this->r;
+    case 1: return this->g;
+    case 2: return this->b;
+    default: return this->r;
     }
 }
 
@@ -503,17 +499,17 @@ Color &Color::set(const std::string &style) { return setStyle(style); }
 Color &Color::set(const Color &color) { return copy(color); }
 Color &Color::setRGB(HIGH_PRECISION r, HIGH_PRECISION g, HIGH_PRECISION b, const std::string &colorSpace)
 {
-    m_r = r; m_g = g; m_b = b;
+    this->r = r; this->g = g; this->b = b;
     return ColorManagement::colorSpaceToWorking(*this, colorSpace);
 }
 Color &Color::copySRGBToLinear(const Color &color)
 {
-    m_r = SRGBToLinear(color.r()); m_g = SRGBToLinear(color.g()); m_b = SRGBToLinear(color.b());
+    this->r = SRGBToLinear(color.r); this->g = SRGBToLinear(color.g); this->b = SRGBToLinear(color.b);
     return *this;
 }
 Color &Color::copyLinearToSRGB(const Color &color)
 {
-    m_r = LinearToSRGB(color.r()); m_g = LinearToSRGB(color.g()); m_b = LinearToSRGB(color.b());
+    this->r = LinearToSRGB(color.r); this->g = LinearToSRGB(color.g); this->b = LinearToSRGB(color.b);
     return *this;
 }
 Color &Color::convertSRGBToLinear() { return copySRGBToLinear(*this); }
@@ -525,22 +521,22 @@ Color &Color::getRGB(Color &result, const std::string &colorSpace) const
 }
 Color &Color::lerpColors(const Color &a, const Color &b, HIGH_PRECISION alpha)
 {
-    m_r = a.r() + (b.r() - a.r()) * alpha; m_g = a.g() + (b.g() - a.g()) * alpha; m_b = a.b() + (b.b() - a.b()) * alpha;
+    this->r = a.r + (b.r - a.r) * alpha; this->g = a.g + (b.g - a.g) * alpha; this->b = a.b + (b.b - a.b) * alpha;
     return *this;
 }
 Color &Color::setFromVector3(const Vector3 &v) { return fromVector3(v); }
 Color &Color::fromArray(const std::vector<HIGH_PRECISION> &array, size_t offset)
 {
-    m_r = array.at(offset); m_g = array.at(offset + 1); m_b = array.at(offset + 2);
+    this->r = array.at(offset); this->g = array.at(offset + 1); this->b = array.at(offset + 2);
     return *this;
 }
 std::vector<HIGH_PRECISION> &Color::toArray(std::vector<HIGH_PRECISION> &array, size_t offset) const
 {
     if (array.size() < offset + 3) array.resize(offset + 3);
-    array[offset] = m_r; array[offset + 1] = m_g; array[offset + 2] = m_b;
+    array[offset] = this->r; array[offset + 1] = this->g; array[offset + 2] = this->b;
     return array;
 }
-std::vector<HIGH_PRECISION> Color::toArray() const { return { m_r, m_g, m_b }; }
+std::vector<HIGH_PRECISION> Color::toArray() const { return { this->r, this->g, this->b }; }
 int Color::toJSON() const { return getHex(); }
 Color &ColorManagement::convert(Color &color, const std::string &source, const std::string &target)
 {
@@ -581,17 +577,20 @@ Color &Color::setStyle(const std::string &style, const std::string &colorSpace)
     return *this;
 }
 
-Color &Color::fromBufferAttribute(const BufferAttribute &attribute, size_t index)
+Color &Color::fromBufferAttribute(const BufferAttribute &attribute, double index)
 {
-    return setRGB(attribute.getX(index), attribute.getY(index), attribute.getZ(index));
+    r = attribute.getX(index);
+    g = attribute.getY(index);
+    b = attribute.getZ(index);
+    return *this;
 }
 
 Color &Color::applyMatrix3(const Matrix3 &m)
 {
     const auto e = m.elements();
-    const auto r = m_r, g = m_g, b = m_b;
-    m_r = e[0] * r + e[3] * g + e[6] * b;
-    m_g = e[1] * r + e[4] * g + e[7] * b;
-    m_b = e[2] * r + e[5] * g + e[8] * b;
+    const auto r = this->r, g = this->g, b = this->b;
+    this->r = e[0] * r + e[3] * g + e[6] * b;
+    this->g = e[1] * r + e[4] * g + e[7] * b;
+    this->b = e[2] * r + e[5] * g + e[8] * b;
     return *this;
 }

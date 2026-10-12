@@ -16,7 +16,7 @@ Euler::Euler(HIGH_PRECISION x, HIGH_PRECISION y, HIGH_PRECISION z, EulerOrder or
 }
 
 Euler::Euler(const Euler &euler)
-    : Euler(euler.x(), euler.y(), euler.z(), euler.order())
+    : Euler(euler.x, euler.y, euler.z, euler.order)
 {
 }
 
@@ -24,37 +24,32 @@ Euler::~Euler()
 {
 }
 
-HIGH_PRECISION Euler::x() const { return m_x; }
-HIGH_PRECISION Euler::y() const { return m_y; }
-HIGH_PRECISION Euler::z() const { return m_z; }
-EulerOrder Euler::order() const { return m_order; }
-
 Euler &Euler::set(HIGH_PRECISION x, HIGH_PRECISION y, HIGH_PRECISION z, std::optional<EulerOrder> order)
 {
     m_x = x; m_y = y; m_z = z;
     if (order) m_order = *order;
-    m_onChangeCallback();
+    notifyPropertyChange(m_onChangeCallback);
     return *this;
 }
 
 Euler &Euler::setX(HIGH_PRECISION x) {
     m_x = x;
-    m_onChangeCallback();
+    notifyPropertyChange(m_onChangeCallback);
     return *this;
 }
 Euler &Euler::setY(HIGH_PRECISION y) {
     m_y = y;
-    m_onChangeCallback();
+    notifyPropertyChange(m_onChangeCallback);
     return *this;
 }
 Euler &Euler::setZ(HIGH_PRECISION z) {
     m_z = z;
-    m_onChangeCallback();
+    notifyPropertyChange(m_onChangeCallback);
     return *this;
 }
 Euler &Euler::setOrder(EulerOrder order) {
     m_order = order;
-    m_onChangeCallback();
+    notifyPropertyChange(m_onChangeCallback);
     return *this;
 }
 
@@ -65,8 +60,8 @@ Euler Euler::clone() const
 
 Euler &Euler::copy(const Euler &euler)
 {
-    m_x = euler.x(); m_y = euler.y(); m_z = euler.z(); m_order = euler.order();
-    m_onChangeCallback();
+    m_x = euler.x; m_y = euler.y; m_z = euler.z; m_order = euler.order;
+    notifyPropertyChange(m_onChangeCallback);
     return *this;
 }
 
@@ -123,14 +118,14 @@ Euler &Euler::setFromRotationMatrix(const Matrix4 &m, std::optional<EulerOrder> 
         break;
     }
     m_order = order;
-    if (update) m_onChangeCallback();
+    if (update) notifyPropertyChange(m_onChangeCallback);
     return *this;
 }
 
 bool Euler::equals(const Euler &euler, HIGH_PRECISION epsilon) const
 {
-    if (epsilon == 0) return m_x == euler.x() && m_y == euler.y() && m_z == euler.z() && m_order == euler.order();
-    return std::abs(m_x - euler.x()) <= epsilon && std::abs(m_y - euler.y()) <= epsilon && std::abs(m_z - euler.z()) <= epsilon && m_order == euler.order();
+    if (epsilon == 0) return m_x == euler.x && m_y == euler.y && m_z == euler.z && m_order == euler.order;
+    return std::abs(m_x - euler.x) <= epsilon && std::abs(m_y - euler.y) <= epsilon && std::abs(m_z - euler.z) <= epsilon && m_order == euler.order;
 }
 
 void Euler::toQuaternion(Quaternion &q) const
@@ -155,7 +150,7 @@ std::vector<HIGH_PRECISION> &Euler::toArray(std::vector<HIGH_PRECISION> &array, 
 Euler &Euler::fromArray(const std::vector<HIGH_PRECISION> &array, size_t offset)
 {
     m_x = array.at(offset); m_y = array.at(offset + 1); m_z = array.at(offset + 2);
-    m_onChangeCallback();
+    notifyPropertyChange(m_onChangeCallback);
     return *this;
 }
 
@@ -180,12 +175,12 @@ bool Euler::operator==(const Euler &euler) const { return equals(euler); }
 
 Euler &Euler::_onChange(std::function<void()> callback)
 {
-    m_onChangeCallback = callback ? std::move(callback) : std::function<void()>([] {});
+    m_onChangeCallback = makeChangeCallback(std::move(callback));
     return *this;
 }
 Euler &Euler::setFromVector3(const Vector3 &v, std::optional<EulerOrder> order)
 {
-    return set(v.x(), v.y(), v.z(), order);
+    return set(v.x, v.y, v.z, order);
 }
 Euler &Euler::reorder(EulerOrder order)
 {
@@ -220,3 +215,6 @@ Euler &Euler::fromArray(const std::vector<ArrayValue> &array, size_t offset)
     }
     return set(std::get<HIGH_PRECISION>(array.at(offset)), std::get<HIGH_PRECISION>(array.at(offset + 1)), std::get<HIGH_PRECISION>(array.at(offset + 2)), order);
 }
+
+Euler::Euler(Euler&& source) : Euler(static_cast<const Euler&>(source)) {}
+Euler& Euler::operator=(Euler&& source) { return copy(source); }

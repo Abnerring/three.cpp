@@ -4,23 +4,20 @@ PlaneGeometry::PlaneGeometry(double width, double height, double widthSegments,
                              double heightSegments)
     : parameters{width, height, widthSegments, heightSegments} {
     type = "PlaneGeometry";
-    if (!std::isfinite(widthSegments) || !std::isfinite(heightSegments))
-        throw std::invalid_argument("PlaneGeometry segments must be finite");
-    const auto gx = static_cast<int>(std::floor(widthSegments)),
-               gy = static_cast<int>(std::floor(heightSegments));
+    const double gx = std::floor(widthSegments), gy = std::floor(heightSegments);
+    if (gy == INFINITY || (gy + 1 > 0 && gx == INFINITY))
+        throw JSRangeError("PlaneGeometry infinite subdivision does not terminate");
     const double sw = width / gx, sh = height / gy;
-    std::vector<float> vertices, normals, uvs;
+    std::vector<double> vertices, normals, uvs;
     std::vector<std::uint32_t> indices;
-    for (int iy = 0; iy < gy + 1; ++iy)
-        for (int ix = 0; ix < gx + 1; ++ix) {
-            vertices.insert(vertices.end(), {static_cast<float>(ix * sw - width / 2),
-                                             static_cast<float>(-(iy * sh - height / 2)), 0});
+    for (double iy = 0; iy < gy + 1; ++iy)
+        for (double ix = 0; ix < gx + 1; ++ix) {
+            vertices.insert(vertices.end(), {ix * sw - width / 2, -(iy * sh - height / 2), 0});
             normals.insert(normals.end(), {0, 0, 1});
-            uvs.insert(uvs.end(), {static_cast<float>(static_cast<double>(ix) / gx),
-                                   static_cast<float>(1 - static_cast<double>(iy) / gy)});
+            uvs.insert(uvs.end(), {ix / gx, 1 - iy / gy});
         }
-    for (int iy = 0; iy < gy; ++iy)
-        for (int ix = 0; ix < gx; ++ix) {
+    for (double iy = 0; iy < gy; ++iy)
+        for (double ix = 0; ix < gx; ++ix) {
             const auto a = static_cast<std::uint32_t>(ix + (gx + 1) * iy),
                        b = static_cast<std::uint32_t>(ix + (gx + 1) * (iy + 1)),
                        c = static_cast<std::uint32_t>(ix + 1 + (gx + 1) * (iy + 1)),
@@ -44,15 +41,23 @@ std::shared_ptr<BufferGeometry> PlaneGeometry::clone() const {
     return result;
 }
 JsonValue PlaneGeometry::toJSON() const {
-    auto result = BufferGeometry::toJSON();
     if (_transformed) {
+        auto result = BufferGeometry::toJSON();
         result["type"] = "BufferGeometry";
         return result;
     }
-    result.get<JsonValue::Object>().erase("data");
+    JsonValue result = JsonValue::Object{
+        {"metadata", JsonValue::Object{{"version", 4.7}, {"type", "BufferGeometry"},
+                                        {"generator", "BufferGeometry.toJSON"}}},
+        {"uuid", uuid}, {"type", type}, {"name", name}};
+    if (userData.size()) result["userData"] = userData.sharedCopy();
     result["width"] = parameters.width;
     result["height"] = parameters.height;
     result["widthSegments"] = parameters.widthSegments;
     result["heightSegments"] = parameters.heightSegments;
     return result;
+}
+std::shared_ptr<PlaneGeometry> PlaneGeometry::fromJSON(const JsonValue& json) {
+    const auto number = [&](const char* key) { return json.contains(key) ? JSValue::fromJSON(json.at(key)).toNumber() : 1.; };
+    return std::make_shared<PlaneGeometry>(number("width"), number("height"), number("widthSegments"), number("heightSegments"));
 }

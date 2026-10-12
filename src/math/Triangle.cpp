@@ -1,5 +1,5 @@
 #include "math/Triangle.h"
-#include "core/BufferAttribute.h"
+#include "core/VertexAttribute.h"
 #include "math/Box3.h"
 #include "math/Plane.h"
 #include <cmath>
@@ -45,7 +45,7 @@ bool Triangle::containsPoint(const Vector3& point, const Vector3& a, const Vecto
     if (Triangle::getBarycoord(point, a, b, c, _v3) == nullptr) {
         return false;
     }
-    return (_v3.x() >= 0) && (_v3.y() >= 0) && ((_v3.x() + _v3.y()) <= 1);
+    return (_v3.x >= 0) && (_v3.y >= 0) && ((_v3.x + _v3.y) <= 1);
 }
 
 bool Triangle::isFrontFacing(const Vector3& a, const Vector3& b, const Vector3& c,
@@ -63,7 +63,7 @@ Triangle& Triangle::set(const Vector3& a, const Vector3& b, const Vector3& c) {
     return *this;
 }
 
-Triangle& Triangle::setFromAttributeAndIndices(const BufferAttribute& attribute, size_t i0,
+Triangle& Triangle::setFromAttributeAndIndices(const VertexAttribute& attribute, size_t i0,
                                                size_t i1, size_t i2) {
     this->a.fromBufferAttribute(attribute, i0);
     this->b.fromBufferAttribute(attribute, i1);
@@ -179,15 +179,15 @@ Triangle& Triangle::setFromPointsAndIndices(const std::vector<Vector3>& points, 
 namespace {
 template <class V> V attributeVector(const Vector4& source) {
     V value;
-    value.setX(source.x()).setY(source.y());
+    value.setX(source.x).setY(source.y);
     if constexpr (requires { value.setZ(0); })
-        value.setZ(source.z());
+        value.setZ(source.z);
     if constexpr (requires { value.setW(0); })
-        value.setW(source.w());
+        value.setW(source.w);
     return value;
 }
 template <class V>
-V& interpolateAttribute(const BufferAttribute& attr, size_t i1, size_t i2, size_t i3,
+V& interpolateAttribute(const VertexAttribute& attr, size_t i1, size_t i2, size_t i3,
                         const Vector3& barycoord, V& target) {
     Vector4 v40, v41, v42;
     v40.setScalar(0);
@@ -197,21 +197,21 @@ V& interpolateAttribute(const BufferAttribute& attr, size_t i1, size_t i2, size_
     v41.fromBufferAttribute(attr, i2);
     v42.fromBufferAttribute(attr, i3);
     target.setScalar(0);
-    target.addScaledVector(attributeVector<V>(v40), barycoord.x());
-    target.addScaledVector(attributeVector<V>(v41), barycoord.y());
-    target.addScaledVector(attributeVector<V>(v42), barycoord.z());
+    target.addScaledVector(attributeVector<V>(v40), barycoord.x);
+    target.addScaledVector(attributeVector<V>(v41), barycoord.y);
+    target.addScaledVector(attributeVector<V>(v42), barycoord.z);
     return target;
 }
 } // namespace
-Vector2& Triangle::getInterpolatedAttribute(const BufferAttribute& attr, size_t i1, size_t i2,
+Vector2& Triangle::getInterpolatedAttribute(const VertexAttribute& attr, size_t i1, size_t i2,
                                             size_t i3, const Vector3& barycoord, Vector2& target) {
     return interpolateAttribute(attr, i1, i2, i3, barycoord, target);
 }
-Vector3& Triangle::getInterpolatedAttribute(const BufferAttribute& attr, size_t i1, size_t i2,
+Vector3& Triangle::getInterpolatedAttribute(const VertexAttribute& attr, size_t i1, size_t i2,
                                             size_t i3, const Vector3& barycoord, Vector3& target) {
     return interpolateAttribute(attr, i1, i2, i3, barycoord, target);
 }
-Vector4& Triangle::getInterpolatedAttribute(const BufferAttribute& attr, size_t i1, size_t i2,
+Vector4& Triangle::getInterpolatedAttribute(const VertexAttribute& attr, size_t i1, size_t i2,
                                             size_t i3, const Vector3& barycoord, Vector4& target) {
     return interpolateAttribute(attr, i1, i2, i3, barycoord, target);
 }

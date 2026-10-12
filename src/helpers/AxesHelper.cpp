@@ -1,0 +1,6 @@
+#include "helpers/AxesHelper.h"
+namespace {std::shared_ptr<BufferGeometry> createGeometry(double size){auto geometry=Helper_detail::geometry({0,0,0,size,0,0,0,0,0,0,size,0,0,0,0,0,0,size});geometry->setAttribute("color",std::make_shared<Float32BufferAttribute>(std::vector<double>{1,0,0,1,.6,0,0,1,0,.6,1,0,0,0,1,0,.6,1},3));return geometry;}}
+AxesHelper::AxesHelper(double size):LineSegments(createGeometry(size),Helper_detail::lineMaterial({},true)){type="AxesHelper";}
+AxesHelper& AxesHelper::setColors(HelperColor x,HelperColor y,HelperColor z){Color color;const auto attribute=geometry->getAttribute("color");if(!attribute)throw JSTypeError("color attribute is undefined");auto array=attribute->getArray();const auto write=[&](const JSValue& value,double offset){Helper_detail::setColor(color,value);for(int vertex=0;vertex<2;++vertex){array.set(offset+vertex*3,color.r);array.set(offset+vertex*3+1,color.g);array.set(offset+vertex*3+2,color.b);}};write(x.value,0);write(y.value,6);write(z.value,12);geometry->getAttribute("color")->setNeedsUpdate(true);return *this;}
+std::shared_ptr<Object3D> AxesHelper::clone(bool recursive)const{auto result=std::make_shared<AxesHelper>();result->copy(*this,recursive);return result;}
+void AxesHelper::dispose(){LineSegments::dispose();Helper_detail::disposeGeometry(geometry);Helper_detail::disposeMaterial(material);}
