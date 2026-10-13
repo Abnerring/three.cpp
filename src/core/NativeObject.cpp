@@ -1,4 +1,5 @@
 #include "core/NativeObject.h"
+#include "core/NativeRenderingObject.h"
 #include "core/NativeObjectExtension.h"
 #include "core/InterleavedBufferAttribute.h"
 #include "animation/AnimationRuntime.h"
@@ -7,6 +8,8 @@
 #include "materials/MeshBasicMaterial.h"
 #include "math/Vector2.h"
 #include "math/Vector4.h"
+#include "math/ColorManagement.h"
+#include "math/JSNumberMath.h"
 #include "objects/Mesh.h"
 #include "objects/SkinnedMesh.h"
 #include "objects/InstancedMesh.h"
@@ -25,6 +28,8 @@
 #include "helpers/SkeletonHelper.h"
 #include "helpers/SpotLightHelper.h"
 #include "cameras/ArrayCamera.h"
+#include "cameras/OrthographicCamera.h"
+#include "lights/AmbientLight.h"
 #include "objects/ClippingGroup.h"
 #include "core/InstancedBufferGeometry.h"
 #include "lights/Light.h"
@@ -38,6 +43,7 @@
 #include "core/RenderTarget.h"
 #include "scenes/Scene.h"
 #include "textures/Texture.h"
+#include "textures/DepthTexture.h"
 #include <cmath>
 #include <limits>
 #include <optional>
@@ -83,13 +89,19 @@ void accessor(JSValue object, const char* name, JSValue::NativeFunction read,
     d.enumerable = enumerable; d.configurable = true;
     object.defineProperty(name, d);
 }
+template <class Factory> JSValue cachedModuleValue(JSWeakValue& cached, Factory create) {
+    if (const auto value = cached.lock(); value && value->isObject()) return *value;
+    auto value = create();
+    value.retainForHeapLifetime();
+    cached = JSWeakValue(value);
+    return value;
+}
 void method(JSValue object, const char* name, JSValue::NativeFunction callback, const char* tag = "") {
-    static thread_local std::map<std::string, JSValue> functions;
+    static thread_local std::map<std::string, JSWeakValue> functions;
     const auto key = std::string(tag) + ":" + name;
-    auto found = functions.find(key);
-    if (found == functions.end()) found = functions.emplace(key, JSValue::function(callback, {JSValue(name)})).first;
+    const auto function = cachedModuleValue(functions[key], [&] { return JSValue::function(callback, {JSValue(name)}); });
     JSPropertyDescriptor d;
-    d.value = found->second;
+    d.value = function;
     d.writable = true; d.configurable = true; d.enumerable = false;
     object.defineProperty(name, d);
 }
@@ -165,6 +177,12 @@ std::vector<JSNativeOwnerNode> textureOwners(const JSValue&);
 std::vector<JSNativeOwnerNode> attributeOwners(const JSValue&);
 std::vector<JSNativeOwnerNode> skeletonOwners(const JSValue&);
 std::vector<JSNativeOwnerNode> animationObjectOwners(const JSValue&);
+std::vector<JSNativeOwnerNode> shadowOwners(const JSValue&);
+std::vector<JSNativeOwnerNode> targetOwners(const JSValue&);
+void traceShadow(const JSValue&,const std::shared_ptr<LightShadow>&,std::vector<JSValue>&,std::unordered_set<const Object3D*>&);
+JSValue nativeShadow(const std::shared_ptr<LightShadow>&);
+JSValue nativeShadowTarget(const std::shared_ptr<RenderTarget>&);
+JSValue nativeHarmonics(const std::shared_ptr<SphericalHarmonics3>&);
 JSValue nativeSkeleton(const std::shared_ptr<Skeleton>& skeleton);
 template <class T> std::vector<JSNativeOwnerNode> arrayOwners(const JSValue&);
 void cachedEdge(const JSValue& self, std::vector<JSValue>& result, const void* identity,
@@ -359,19 +377,101 @@ JSValue mathCopy(const JSValue& self, const Args& args, const Args&) {
 std::vector<JSNativeOwnerNode> mathOwners(const JSValue& self) {
     const auto owner=self.getHostSlot("nativeObjectOwner");
     if(owner.isHostObject(objectTag))return animationObjectOwners(owner);
+    const auto shadow=self.getHostSlot("nativeShadowOwner");
+    if(shadow.isHostObject("three.LightShadow"))return shadowOwners(shadow);
+    const auto texture=self.getHostSlot("nativeTextureOwner");
+    if(texture.isHostObject("three.Texture"))return textureOwners(texture);
     return {{self.hostPayload(self.getHostSlot("nativeTag").string()),{},{}}};
 }
-template <class T> JSValue wrapMath(std::shared_ptr<T> value, const char* tag, const char* components,
-                                   const char* flag, bool privateComponents = false) {
-    if (!value) return nullptr;
-    auto result = JSValue::hostObject(value, value.get(), tag);
-    if (initialize(result)) {
-        result.setHostSlot("nativeTag", tag);
-        static auto hooks = [] { auto h = std::make_shared<JSHostObjectHooks>(); h->nativeOwnership = mathOwners; return h; }();
-        result.setHostHooks(hooks);
-        static thread_local std::map<std::string, JSValue> prototypes;
-        auto prototype = prototypes.find(tag);
-        if (prototype == prototypes.end()) {
+// Public mathematical protocols used by renderer uniform modules. Read and
+// write through JSValue, so borrowed receivers, accessors and overridden methods
+// retain their call order instead of bypassing the managed graph via payloads.
+JSValue mathAdd(const JSValue& left,const JSValue& right) {
+    const auto a=left.toPrimitive(),b=right.toPrimitive();
+    if(a.type()==JSValue::Type::String||b.type()==JSValue::Type::String)return a.toString()+b.toString();
+    const auto x=a.toNumber();const auto y=b.toNumber();return x+y;
+}
+double mathProduct(const JSValue& left,const JSValue& right) {const auto x=left.toNumber();const auto y=right.toNumber();return x*y;}
+JSValue mathCall(const JSValue& self,const char* name,const Args& args={}) {return self.get(name).call(self,args);}
+JSValue lightingMath(const JSValue& self,const Args& args,const Args& captures) {
+    const auto name=captures[0].string(),tag=captures[1].string();auto result=self;
+    const auto source=argument(args,0),scalar=argument(args,1);
+    const char* components=tag=="three.Color"?"rgb":tag=="three.Vector2"?"xy":"xyz";
+    if(name=="copy") {for(const char* c=components;*c;++c){const std::string field(1,*c);result.set(field,source.get(field));}return self;}
+    if(name=="negate") {for(const char* c=components;*c;++c){const std::string field(1,*c);result.set(field,-self.get(field).toNumber());}return self;}
+    if(name=="fromArray"||name=="toArray") {
+        auto array=source;if(name=="toArray"&&array.isUndefined())array=JSValue::array();
+        const auto offset=scalar.isUndefined()?JSValue(0):scalar;
+        for(int i=0;components[i];++i) {
+            const auto index=i?mathAdd(offset,i):offset;const std::string field(1,components[i]);
+            if(name=="fromArray") {
+                const auto key=index.toPrimitive(JSValue::PreferredType::String).toString();result.set(field,array.get(key));
+            } else {
+                const auto value=self.get(field);
+                const auto key=index.toPrimitive(JSValue::PreferredType::String).toString();array.set(key,value);
+            }
+        }
+        return name=="fromArray"?self:array;
+    }
+    if(name=="set") {
+        auto z=argument(args,2);if(tag=="three.Vector3"&&z.isUndefined())z=self.get("z");
+        result.set("x",source);result.set("y",scalar);if(tag=="three.Vector3")result.set("z",z);return self;
+    }
+    if(name=="multiplyScalar"||name=="multiply"||name=="sub"||name=="addScaledVector") {
+        for(const char* c=components;*c;++c) {
+            const std::string field(1,*c);const auto current=self.get(field);
+            if(name=="multiplyScalar")result.set(field,mathProduct(current,source));
+            else if(name=="multiply") {const auto value=source.get(field);result.set(field,mathProduct(current,value));}
+            else if(name=="sub") {const auto value=source.get(field);const auto x=current.toNumber();const auto y=value.toNumber();result.set(field,x-y);}
+            else {const auto value=source.get(field);const auto product=mathProduct(value,scalar);result.set(field,mathAdd(current,product));}
+        }return self;
+    }
+    if(name=="length"||name=="lengthSq") {
+        double sum=0;bool first=true;for(const char* c=components;*c;++c){const std::string field(1,*c);const auto x=self.get(field),y=self.get(field);const auto product=mathProduct(x,y);if(first){sum=product;first=false;}else sum+=product;}
+        return name=="length"?std::sqrt(sum):sum;
+    }
+    if(name=="divideScalar") {const auto fn=self.get("multiplyScalar");const auto reciprocal=1/source.toNumber();return fn.call(self,{reciprocal});}
+    if(name=="normalize") {const auto fn=self.get("divideScalar"),length=mathCall(self,"length");return fn.call(self,{length.toBoolean()?length:JSValue(1)});}
+    if(name=="setFromMatrixPosition") {const auto elements=source.get("elements");for(int i=0;i<3;++i)result.set(std::string(1,"xyz"[i]),elements.get(std::to_string(12+i)));return self;}
+    if(name=="setFromMatrixColumn") {const auto fn=self.get("fromArray"),elements=source.get("elements");const auto offset=scalar.toNumber()*4;return fn.call(self,{elements,offset});}
+    if(name=="dot") {
+        double total=0;
+        for(int i=0;i<3;++i) {
+            const std::string field(1,"xyz"[i]);
+            const auto left=self.get(field),right=source.get(field);
+            const auto product=mathProduct(left,right);
+            total=i?total+product:product;
+        }
+        return total;
+    }
+    if(name=="applyMatrix3") {
+        const auto x=self.get(std::string(1,components[0])),y=self.get(std::string(1,components[1])),z=self.get(std::string(1,components[2])),elements=source.get("elements");
+        for(int i=0;i<3;++i) {
+            const auto e0=elements.get(std::to_string(i));const auto a=mathProduct(e0,x);
+            const auto e1=elements.get(std::to_string(i+3));const auto b=mathProduct(e1,y);
+            const auto e2=elements.get(std::to_string(i+6));const auto c=mathProduct(e2,z);
+            result.set(std::string(1,components[i]),(a+b)+c);
+        }
+        return self;
+    }
+    if(name=="applyMatrix4"||name=="transformDirection") {
+        const auto x=self.get("x"),y=self.get("y"),z=self.get("z"),elements=source.get("elements");
+        const auto term=[&](int index,const JSValue& value){const auto element=elements.get(std::to_string(index));return mathProduct(element,value);};
+        double w=1;
+        if(name=="applyMatrix4") {const auto a=term(3,x),b=term(7,y),c=term(11,z);const auto d=elements.get("15");w=1/mathAdd((a+b)+c,d).toNumber();}
+        for(int i=0;i<3;++i) {const auto a=term(i,x),b=term(i+4,y),c=term(i+8,z);JSValue value=(a+b)+c;if(name=="applyMatrix4"){const auto d=elements.get(std::to_string(i+12));value=mathAdd(value,d);value=value.toNumber()*w;}result.set(std::string(1,"xyz"[i]),value);}
+        return name=="transformDirection"?mathCall(self,"normalize"):self;
+    }
+    throw JSTypeError("Unknown mathematical protocol");
+}
+void lightingMethod(JSValue object,const char* name,JSValue::NativeFunction callback,const char* tag,unsigned arity) {
+    auto fn=JSValue::function(callback,{name,tag},name,arity);JSPropertyDescriptor d;d.value=fn;d.writable=d.configurable=true;d.enumerable=false;object.defineProperty(name,d);
+}
+JSValue materialsColor(const JSValue&,const Args&,const Args&);
+JSValue colorScratch();
+JSValue mathPrototype(const char* tag,const char* components,const char* flag,bool privateComponents) {
+    static thread_local std::map<std::string, JSWeakValue> prototypes;
+    return cachedModuleValue(prototypes[tag], [&] {
             auto p = JSValue::object();
             if (!privateComponents && std::string(tag) != "three.Color") p.set(flag,true);
             if (privateComponents) {
@@ -391,12 +491,61 @@ template <class T> JSValue wrapMath(std::shared_ptr<T> value, const char* tag, c
                 else if (value.type() == JSValue::Type::String) c->setStyle(value.string());
                 return self;
             },tag);
-            if (std::string(tag) == "three.Color") method(p, "getHex", [](const JSValue& self, const Args& args, const Args&) {
-                return JSValue(payload<Color>(self,"three.Color")->getHex(argument(args,0).isUndefined() ? SRGBColorSpace : argument(args,0).toString()));
-            }, tag);
-            prototype = prototypes.emplace(tag, p).first;
-        }
-        result.setPrototype(prototype->second);
+            if (std::string(tag) == "three.Color") {
+                method(p, "getHex", [](const JSValue& self, const Args& args, const Args&) {
+                    return JSValue(payload<Color>(self,"three.Color")->getHex(argument(args,0).isUndefined() ? SRGBColorSpace : argument(args,0).toString()));
+                }, tag);
+                lightingMethod(p,"getRGB",materialsColor,tag,1);
+                lightingMethod(p,"applyMatrix3",lightingMath,tag,1);
+            }
+            if (std::string(tag)=="three.Color"||std::string(tag)=="three.Vector2"||std::string(tag)=="three.Vector3") {
+                for(const auto* name:{"copy","fromArray"})lightingMethod(p,name,lightingMath,tag,1);
+                lightingMethod(p,"toArray",lightingMath,tag,0);
+                lightingMethod(p,"multiplyScalar",lightingMath,tag,1);
+                if(std::string(tag)!="three.Color") {
+                    lightingMethod(p,"set",lightingMath,tag,std::string(tag)=="three.Vector2"?2:3);
+                    for(const auto* name:{"multiply","sub","divideScalar"})lightingMethod(p,name,lightingMath,tag,1);
+                    lightingMethod(p,"addScaledVector",lightingMath,tag,2);
+                    for(const auto* name:{"length","lengthSq","normalize"})lightingMethod(p,name,lightingMath,tag,0);
+                    if(std::string(tag)=="three.Vector2")lightingMethod(p,"negate",lightingMath,tag,0);
+                    if(std::string(tag)=="three.Vector3") {
+                        for(const auto* name:{"setFromMatrixPosition","applyMatrix3","applyMatrix4","transformDirection","dot"})lightingMethod(p,name,lightingMath,tag,1);
+                        lightingMethod(p,"setFromMatrixColumn",lightingMath,tag,2);
+                    }
+                }
+            }
+            return p;
+        });
+}
+JSValue colorScratch() {
+    static thread_local JSWeakValue cached;
+    return cachedModuleValue(cached,[] {
+        auto color=JSValue::object(mathPrototype("three.Color","rgb","isColor",false));
+        // The imported Color module owns this ordinary instance. Native scalar
+        // fields would coerce borrowed receiver values before conversion uses them.
+        color.defineProperty("isColor",dataDescriptor(true));
+        for(const auto* field:{"r","g","b"})color.defineProperty(field,dataDescriptor(1));
+        return color;
+    });
+}
+JSValue materialsColor(const JSValue& self,const Args& args,const Args&) {
+    auto target=argument(args,0),targetSpace=argument(args,1);
+    auto management=nativeColorManagement();if(targetSpace.isUndefined())targetSpace=management.get("workingColorSpace");
+    const auto fn=management.get("workingToColorSpace");auto scratch=colorScratch();
+    const auto converted=mathCall(scratch,"copy",{self});fn.call(management,{converted,targetSpace});
+    for(const auto* field:{"r","g","b"})target.set(field,scratch.get(field));return target;
+}
+
+template <class T> JSValue wrapMath(std::shared_ptr<T> value, const char* tag, const char* components,
+                                   const char* flag, bool privateComponents = false) {
+    if (!value) return nullptr;
+    auto result = JSValue::hostObject(value, value.get(), tag);
+    if (initialize(result)) {
+        result.setHostSlot("nativeTag", tag);
+        static auto hooks = [] { auto h = std::make_shared<JSHostObjectHooks>(); h->nativeOwnership = mathOwners; return h; }();
+        result.setHostHooks(hooks);
+        const auto prototype = mathPrototype(tag,components,flag,privateComponents);
+        result.setPrototype(prototype);
         if (privateComponents || std::string(tag) == "three.Color") result.set(flag,true);
         for (const char* c = components; *c; ++c) {
             const std::string key = (privateComponents ? "_" : "") + std::string(1,*c);
@@ -413,7 +562,8 @@ JSValue nativeVector(const std::shared_ptr<Vector3>& v) { return wrapMath(v, "th
 JSValue nativeVector(const std::shared_ptr<Vector4>& v) { return wrapMath(v, "three.Vector4", "xyzw", "isVector4"); }
 JSValue nativeQuaternion(const std::shared_ptr<Quaternion>& q) { return wrapMath(q, "three.Quaternion", "xyzw", "isQuaternion", true); }
 JSValue nativeEuler(const std::shared_ptr<Euler>& e) { return wrapMath(e, "three.Euler", "xyz", "isEuler", true); }
-JSValue nativeColor(const std::shared_ptr<Color>& c) { return wrapMath(c, "three.Color", "rgb", "isColor"); }
+JSValue nativeColorPrototype() {return mathPrototype("three.Color","rgb","isColor",false);}
+JSValue nativeColor(const std::shared_ptr<Color>& c) { auto result=wrapMath(c, "three.Color", "rgb", "isColor"); if(c)colorScratch(); return result; }
 
 namespace {
 std::size_t matrixElementCount(const JSValue& self) { return self.isHostObject("three.MatrixElements9") ? 9 : 16; }
@@ -467,12 +617,212 @@ JSValue matrixMethod(const JSValue& self, const Args& args, const Args& capture)
     auto elements = self.get("elements");
     for (int i = 0; i < size; ++i) {
         const auto index = i == 0 ? offset : Interpolant_detail::add(offset, JSValue(i));
-        if (read) array.set(index.toString(), elements.get(std::to_string(i)));
+        if (read) { const auto value=elements.get(std::to_string(i));const auto key=index.toPrimitive(JSValue::PreferredType::String).toString();array.set(key,value); }
         else elements.set(std::to_string(i),array.get(index.toString()));
     }
     return read ? array : self;
 }
-template <class T> JSValue wrapMatrix(const std::shared_ptr<T>& value, const char* tag, const char* elementsTag, const char* flag) {
+JSValue lightingMatrix(const JSValue& self,const Args& args,const Args& captures) {
+    const auto name=captures[0].string();auto result=self;const auto source=argument(args,0);
+    if(name=="set") {auto elements=self.get("elements");for(int row=0;row<4;++row)for(int col=0;col<4;++col)elements.set(std::to_string(row+col*4),argument(args,row*4+col));return self;}
+    if(name=="identity")return mathCall(self,"set",{1,0,0,0,0,1,0,0,0,0,1,0,0,0,0,1});
+    if(name=="copy") {auto elements=self.get("elements");const auto from=source.get("elements");for(int i=0;i<16;++i)elements.set(std::to_string(i),from.get(std::to_string(i)));return self;}
+    if(name=="multiply"||name=="premultiply") {const auto fn=self.get("multiplyMatrices");return fn.call(self,name=="multiply"?Args{self,source}:Args{source,self});}
+    if(name=="multiplyMatrices") {
+        const auto a=source.get("elements"),b=argument(args,1).get("elements");auto elements=self.get("elements");
+        std::array<JSValue,16> av,bv;for(int row=0;row<4;++row)for(int col=0;col<4;++col)av[row+col*4]=a.get(std::to_string(row+col*4));
+        for(int row=0;row<4;++row)for(int col=0;col<4;++col)bv[row+col*4]=b.get(std::to_string(row+col*4));
+        for(int row=0;row<4;++row)for(int col=0;col<4;++col) {const auto p0=mathProduct(av[row],bv[col*4]),p1=mathProduct(av[row+4],bv[col*4+1]),p2=mathProduct(av[row+8],bv[col*4+2]),p3=mathProduct(av[row+12],bv[col*4+3]);elements.set(std::to_string(row+col*4),((p0+p1)+p2)+p3);}return self;
+    }
+    if(name=="determinantAffine") {
+        const auto elements=self.get("elements");std::array<JSValue,9> v;for(int row=0;row<3;++row)for(int col=0;col<3;++col)v[row*3+col]=elements.get(std::to_string(row+col*4));
+        const auto p0=mathProduct(v[4],v[8]),p1=mathProduct(v[5],v[7]);const auto t0=mathProduct(v[0],p0-p1);
+        const auto p2=mathProduct(v[3],v[8]),p3=mathProduct(v[5],v[6]);const auto t1=mathProduct(v[1],p2-p3);
+        const auto p4=mathProduct(v[3],v[7]),p5=mathProduct(v[4],v[6]);const auto t2=mathProduct(v[2],p4-p5);return (t0-t1)+t2;
+    }
+    if(name=="extractRotation") {
+        if(mathCall(source,"determinantAffine").strictEquals(JSValue(0)))return mathCall(self,"identity");
+        auto elements=self.get("elements");const auto from=source.get("elements");
+        static thread_local JSWeakValue weak;JSValue scratch;if(const auto alive=weak.lock();alive&&alive->isObject())scratch=*alive;else{scratch=nativeVector(std::make_shared<Vector3>());scratch.retainForHeapLifetime();weak=JSWeakValue(scratch);}
+        double scales[3];for(int i=0;i<3;++i){const auto vector=mathCall(scratch,"setFromMatrixColumn",{source,i});const auto length=mathCall(vector,"length");scales[i]=1/length.toNumber();}
+        for(int col=0;col<3;++col){for(int row=0;row<3;++row){const auto value=from.get(std::to_string(col*4+row));elements.set(std::to_string(col*4+row),mathProduct(value,scales[col]));}elements.set(std::to_string(col*4+3),0);}
+        elements.set("12",0);elements.set("13",0);elements.set("14",0);elements.set("15",1);return self;
+    }
+    throw JSTypeError("Unknown matrix protocol");
+}
+JSValue clippingMatrix(const JSValue& self,const Args& args,const Args& captures) {
+    const auto name=captures[0].string();
+    if(name=="getNormalMatrix") {
+        const auto from=mathCall(self,"setFromMatrix4",{argument(args,0)});
+        const auto inverse=mathCall(from,"invert");
+        return mathCall(inverse,"transpose");
+    }
+    if(name=="setFromMatrix4") {
+        const auto elements=argument(args,0).get("elements"),fn=self.get("set");
+        Args values;for(const int index:{0,4,8,1,5,9,2,6,10})values.push_back(elements.get(std::to_string(index)));
+        fn.call(self,values);return self;
+    }
+    auto elements=self.get("elements");
+    if(name=="set") {
+        for(int col=0;col<3;++col)for(int row=0;row<3;++row)
+            elements.set(std::to_string(col*3+row),argument(args,row*3+col));
+        return self;
+    }
+    if(name=="transpose") {
+        for(const auto pair:{std::pair{1,3},std::pair{2,6},std::pair{5,7}}) {
+            const auto first=std::to_string(pair.first),second=std::to_string(pair.second);
+            const auto temporary=elements.get(first),value=elements.get(second);
+            elements.set(first,value);elements.set(second,temporary);
+        }
+        return self;
+    }
+    if(name=="invert") {
+        const auto n11=elements.get("0"),n21=elements.get("1"),n31=elements.get("2"),
+                   n12=elements.get("3"),n22=elements.get("4"),n32=elements.get("5"),
+                   n13=elements.get("6"),n23=elements.get("7"),n33=elements.get("8");
+        const auto difference=[](const JSValue& a,const JSValue& b,const JSValue& c,const JSValue& d) {
+            const auto first=mathProduct(a,b);const auto second=mathProduct(c,d);return first-second;
+        };
+        const auto t11=difference(n33,n22,n32,n23),t12=difference(n32,n13,n33,n12),
+                   t13=difference(n23,n12,n22,n13);
+        const auto d0=mathProduct(n11,t11),d1=mathProduct(n21,t12),d2=mathProduct(n31,t13);
+        const auto determinant=(d0+d1)+d2;
+        if(determinant==0)return mathCall(self,"set",{0,0,0,0,0,0,0,0,0});
+        const auto inverse=1/determinant;
+        elements.set("0",t11*inverse);
+        elements.set("1",difference(n31,n23,n33,n21)*inverse);
+        elements.set("2",difference(n32,n21,n31,n22)*inverse);
+        elements.set("3",t12*inverse);
+        elements.set("4",difference(n33,n11,n31,n13)*inverse);
+        elements.set("5",difference(n31,n12,n32,n11)*inverse);
+        elements.set("6",t13*inverse);
+        elements.set("7",difference(n21,n13,n23,n11)*inverse);
+        elements.set("8",difference(n22,n11,n21,n12)*inverse);
+        return self;
+    }
+    throw JSTypeError("Unknown Matrix3 clipping protocol");
+}
+JSValue materialsMatrix3(const JSValue& self,const Args& args,const Args& captures) {
+    const auto name=captures[0].string();
+    if(name=="multiply"||name=="premultiply") {
+        const auto fn=self.get("multiplyMatrices");
+        const auto source=argument(args,0);
+        return fn.call(self,name=="multiply"?Args{self,source}:Args{source,self});
+    }
+    if(name=="copy") {
+        auto elements=self.get("elements");
+        const auto source=argument(args,0).get("elements");
+        for(int i=0;i<9;++i)elements.set(std::to_string(i),source.get(std::to_string(i)));
+        return self;
+    }
+    if(name=="multiplyMatrices") {
+        const auto a=argument(args,0).get("elements");
+        const auto b=argument(args,1).get("elements");
+        auto elements=self.get("elements");
+        std::array<JSValue,9> av,bv;
+        for(int row=0;row<3;++row)for(int col=0;col<3;++col)av[row+col*3]=a.get(std::to_string(row+col*3));
+        for(int row=0;row<3;++row)for(int col=0;col<3;++col)bv[row+col*3]=b.get(std::to_string(row+col*3));
+        for(int row=0;row<3;++row)for(int col=0;col<3;++col) {
+            const auto p0=mathProduct(av[row],bv[col*3]);
+            const auto p1=mathProduct(av[row+3],bv[col*3+1]);
+            const auto p2=mathProduct(av[row+6],bv[col*3+2]);
+            elements.set(std::to_string(row+col*3),(p0+p1)+p2);
+        }
+        return self;
+    }
+    if(name=="setUvTransform") {
+        const auto tx=argument(args,0),ty=argument(args,1),sx=argument(args,2),sy=argument(args,3),
+                   rotation=argument(args,4),cx=argument(args,5),cy=argument(args,6);
+        const auto c=JSNumberMath::cos(rotation.toNumber());
+        const auto s=JSNumberMath::sin(rotation.toNumber());
+        const auto fn=self.get("set");
+        Args values;
+        values.push_back(mathProduct(sx,c));
+        values.push_back(mathProduct(sx,s));
+        const auto minusSx=-sx.toNumber();
+        const auto cCx=mathProduct(c,cx);
+        const auto sCy=mathProduct(s,cy);
+        const auto xCenter=mathAdd(minusSx*(cCx+sCy),cx);
+        values.push_back(mathAdd(xCenter,tx));
+        values.push_back(-sy.toNumber()*s);
+        values.push_back(mathProduct(sy,c));
+        const auto minusSy=-sy.toNumber();
+        const auto sCx=mathProduct(-s,cx);
+        const auto cCy=mathProduct(c,cy);
+        const auto yCenter=mathAdd(minusSy*(sCx+cCy),cy);
+        values.push_back(mathAdd(yCenter,ty));
+        values.insert(values.end(),{0,0,1});
+        fn.call(self,values);
+        return self;
+    }
+    throw JSTypeError("Unknown Matrix3 materials protocol");
+}
+JSValue materialsRotation(const JSValue& self,const Args& args,const Args&) {
+    auto te=self.get("elements");
+    const auto euler=argument(args,0);
+    const auto x=euler.get("x"),y=euler.get("y"),z=euler.get("z");
+    const auto a=JSNumberMath::cos(x.toNumber()),b=JSNumberMath::sin(x.toNumber());
+    const auto c=JSNumberMath::cos(y.toNumber()),d=JSNumberMath::sin(y.toNumber());
+    const auto e=JSNumberMath::cos(z.toNumber()),f=JSNumberMath::sin(z.toNumber());
+    if(euler.get("order").strictEquals("XYZ")) {
+        const auto ae=a*e,af=a*f,be=b*e,bf=b*f;
+        te.set("0",c*e);te.set("4",-c*f);te.set("8",d);
+        te.set("1",af+be*d);te.set("5",ae-bf*d);te.set("9",-b*c);
+        te.set("2",bf-ae*d);te.set("6",be+af*d);te.set("10",a*c);
+    } else if(euler.get("order").strictEquals("YXZ")) {
+        const auto ce=c*e,cf=c*f,de=d*e,df=d*f;
+        te.set("0",ce+df*b);te.set("4",de*b-cf);te.set("8",a*d);
+        te.set("1",a*f);te.set("5",a*e);te.set("9",-b);
+        te.set("2",cf*b-de);te.set("6",df+ce*b);te.set("10",a*c);
+    } else if(euler.get("order").strictEquals("ZXY")) {
+        const auto ce=c*e,cf=c*f,de=d*e,df=d*f;
+        te.set("0",ce-df*b);te.set("4",-a*f);te.set("8",de+cf*b);
+        te.set("1",cf+de*b);te.set("5",a*e);te.set("9",df-ce*b);
+        te.set("2",-a*d);te.set("6",b);te.set("10",a*c);
+    } else if(euler.get("order").strictEquals("ZYX")) {
+        const auto ae=a*e,af=a*f,be=b*e,bf=b*f;
+        te.set("0",c*e);te.set("4",be*d-af);te.set("8",ae*d+bf);
+        te.set("1",c*f);te.set("5",bf*d+ae);te.set("9",af*d-be);
+        te.set("2",-d);te.set("6",b*c);te.set("10",a*c);
+    } else if(euler.get("order").strictEquals("YZX")) {
+        const auto ac=a*c,ad=a*d,bc=b*c,bd=b*d;
+        te.set("0",c*e);te.set("4",bd-ac*f);te.set("8",bc*f+ad);
+        te.set("1",f);te.set("5",a*e);te.set("9",-b*e);
+        te.set("2",-d*e);te.set("6",ad*f+bc);te.set("10",ac-bd*f);
+    } else if(euler.get("order").strictEquals("XZY")) {
+        const auto ac=a*c,ad=a*d,bc=b*c,bd=b*d;
+        te.set("0",c*e);te.set("4",-f);te.set("8",d*e);
+        te.set("1",ac*f+bd);te.set("5",a*e);te.set("9",ad*f-bc);
+        te.set("2",bc*f-ad);te.set("6",b*e);te.set("10",bd*f+ac);
+    }
+    for(const auto* key:{"3","7","11","12","13","14"})te.set(key,0);
+    te.set("15",1);
+    return self;
+}
+JSValue matrixPrototype(bool matrix4) {
+    static thread_local JSWeakValue cached3,cached4;
+    return cachedModuleValue(matrix4?cached4:cached3,[matrix4] {
+        const auto* tag=matrix4?"three.Matrix4":"three.Matrix3";
+        auto p=JSValue::object();
+        p.set(matrix4?"isMatrix4":"isMatrix3",true);
+        for (const char* name : {"fromArray","toArray","clone"}) method(p,name,matrixMethod,tag);
+        if(matrix4) {
+            lightingMethod(p,"set",lightingMatrix,tag,16);lightingMethod(p,"multiplyMatrices",lightingMatrix,tag,2);
+            for(const auto* name:{"copy","multiply","premultiply","extractRotation"})lightingMethod(p,name,lightingMatrix,tag,1);
+            for(const auto* name:{"identity","determinantAffine"})lightingMethod(p,name,lightingMatrix,tag,0);
+            lightingMethod(p,"makeRotationFromEuler",materialsRotation,tag,1);
+        } else {
+            lightingMethod(p,"set",clippingMatrix,tag,9);
+            for(const auto* name:{"setFromMatrix4","getNormalMatrix"})lightingMethod(p,name,clippingMatrix,tag,1);
+            for(const auto* name:{"invert","transpose"})lightingMethod(p,name,clippingMatrix,tag,0);
+            for(const auto* name:{"copy","multiply","premultiply"})lightingMethod(p,name,materialsMatrix3,tag,1);
+            lightingMethod(p,"multiplyMatrices",materialsMatrix3,tag,2);
+            lightingMethod(p,"setUvTransform",materialsMatrix3,tag,7);
+        }
+        return p;
+    });
+}
+template <class T> JSValue wrapMatrix(const std::shared_ptr<T>& value, const char* tag, const char* elementsTag) {
     if (!value) return nullptr;
     auto result = JSValue::hostObject(value,value.get(),tag);
     if (initialize(result)) {
@@ -487,23 +837,20 @@ template <class T> JSValue wrapMatrix(const std::shared_ptr<T>& value, const cha
         }
         result.setHostSlot("elements",elements);
         accessor(result,"elements",[](const JSValue& self,const Args&,const Args&){ return self.getHostSlot("elements"); });
-        static thread_local auto prototype = [tag,flag] {
-            auto p = JSValue::object();
-            p.set(flag,true);
-            for (const char* methodName : {"fromArray","toArray","clone"}) method(p,methodName,matrixMethod,tag);
-            return p;
-        }();
+        const auto prototype=matrixPrototype(std::is_same_v<T,Matrix4>);
         result.setPrototype(prototype);
     }
     return result;
 }
 }
-JSValue nativeMatrix(const std::shared_ptr<Matrix3>& matrix) { return wrapMatrix(matrix,"three.Matrix3","three.MatrixElements9","isMatrix3"); }
+JSValue nativeMatrix3Prototype() { return matrixPrototype(false); }
+JSValue nativeMatrix4Prototype() { return matrixPrototype(true); }
+JSValue nativeMatrix(const std::shared_ptr<Matrix3>& matrix) { return wrapMatrix(matrix,"three.Matrix3","three.MatrixElements9"); }
 JSValue nativeMatrix(const std::shared_ptr<Matrix4>& matrix) {
     auto target = matrix;
     std::shared_ptr<Object3D> owner;
     while (target && target->aliasTarget()) {if(auto source=target->aliasObjectOwner().lock())owner=std::move(source);target = target->aliasTarget();}
-    auto result=wrapMatrix(target,"three.Matrix4","three.MatrixElements16","isMatrix4");
+    auto result=wrapMatrix(target,"three.Matrix4","three.MatrixElements16");
     if(owner){auto wrapper=nativeObject(owner);result.setHostSlot("nativeObjectOwner",wrapper);result.getHostSlot("elements").setHostSlot("nativeObjectOwner",wrapper);}
     return result;
 }
@@ -587,6 +934,7 @@ JSValue wrapGeometry(const std::shared_ptr<BufferGeometry>& geometry) {
         static auto hooks = [] { auto h = std::make_shared<JSHostObjectHooks>(); h->trace = [](const JSValue& self) {
             std::vector<JSValue> result; traceNativeGeometry(self, payload<BufferGeometry>(self, "three.BufferGeometry"), result); return result;
         };h->nativeOwnership=geometryOwners; return h; }(); result.setHostHooks(hooks);
+        installNativeGeometryRenderingBridge(result,geometry,hooks);
     }
     return result;
 }
@@ -597,10 +945,60 @@ template <class T> JSValue primitiveRead(const std::shared_ptr<T>& object,const 
     if (key == "morphTargetDictionary") return nativeDictionary(object->morphTargetDictionary);
     return {};
 }
+JSValue planeScratch() {
+    static thread_local JSWeakValue weak;
+    if(const auto alive=weak.lock();alive&&alive->isObject())return *alive;
+    auto state=JSValue::object(nullptr);
+    // Shared module temporaries use ordinary fields, as in Plane.js. The public
+    // native prototypes provide the methods, including user overrides.
+    auto vector=JSValue::object(nativeVector(std::make_shared<Vector3>()).getPrototype());
+    vector.set("x",0);vector.set("y",0);vector.set("z",0);
+    auto matrix=JSValue::object(nativeMatrix(std::make_shared<Matrix3>()).getPrototype());
+    auto elements=JSValue::array();
+    for(int i=0;i<9;++i) {
+        JSPropertyDescriptor entry;entry.value=i%4==0?1:0;
+        entry.writable=entry.enumerable=entry.configurable=true;
+        elements.defineProperty(std::to_string(i),entry);
+    }
+    matrix.set("elements",elements);state.set("vector",vector);state.set("normalMatrix",matrix);
+    state.retainForHeapLifetime();weak=JSWeakValue(state);return state;
+}
+JSValue clippingPlane(const JSValue& self,const Args& args,const Args& captures) {
+    const auto name=captures[0].string();const auto source=argument(args,0);auto result=self;
+    if(name=="copy") {
+        const auto normal=self.get("normal"),fn=normal.get("copy"),input=source.get("normal");
+        fn.call(normal,{input});result.set("constant",source.get("constant"));return self;
+    }
+    if(name=="coplanarPoint") {
+        const auto fn=source.get("copy"),normal=self.get("normal");
+        const auto target=fn.call(source,{normal}),multiply=target.get("multiplyScalar");
+        const auto constant=self.get("constant");return multiply.call(target,{-constant.toNumber()});
+    }
+    if(name=="applyMatrix4") {
+        const auto scratch=planeScratch();const auto optional=argument(args,1);
+        const auto normalMatrix=optional.toBoolean()?optional:mathCall(scratch.get("normalMatrix"),"getNormalMatrix",{source});
+        const auto point=mathCall(self,"coplanarPoint",{scratch.get("vector")});
+        const auto reference=mathCall(point,"applyMatrix4",{source});
+        const auto transformed=mathCall(self.get("normal"),"applyMatrix3",{normalMatrix});
+        const auto normal=mathCall(transformed,"normalize");
+        const auto distance=mathCall(reference,"dot",{normal});result.set("constant",-distance.toNumber());return self;
+    }
+    throw JSTypeError("Unknown Plane clipping protocol");
+}
+JSValue planePrototype() {
+    static thread_local JSWeakValue weakPrototype;
+    if(const auto existing=weakPrototype.lock();existing&&existing->isObject())return *existing;
+    auto prototype=JSValue::object();
+    static_cast<void>(planeScratch());
+    for(const auto* name:{"copy","coplanarPoint"})lightingMethod(prototype,name,clippingPlane,"three.Plane",1);
+    lightingMethod(prototype,"applyMatrix4",clippingPlane,"three.Plane",2);
+    prototype.retainForHeapLifetime();weakPrototype=JSWeakValue(prototype);return prototype;
+}
 JSValue wrapPlane(const std::shared_ptr<Plane>& plane) {
     if(!plane)return nullptr;auto result=JSValue::hostObject(plane,plane.get(),"three.Plane");
     if(initialize(result)) {
         result.setHostSlot("nativeTag","three.Plane");
+        result.setPrototype(planePrototype());
         static auto hooks=[] {auto h=std::make_shared<JSHostObjectHooks>();h->nativeOwnership=mathOwners;return h;}();result.setHostHooks(hooks);
         accessor(result,"normal",[](const JSValue& self,const Args&,const Args&){auto p=payload<Plane>(self,"three.Plane");return nativeVector(std::shared_ptr<Vector3>(p,&p->normal));});
         accessor(result,"constant",[](const JSValue& self,const Args&,const Args&){return JSValue(payload<Plane>(self,"three.Plane")->constant);},[](const JSValue& self,const Args& args,const Args&){payload<Plane>(self,"three.Plane")->constant=argument(args,0).toNumber();return JSValue();});
@@ -629,6 +1027,63 @@ std::optional<JSValue> helperRead(const std::shared_ptr<Object3D>& object,const 
     if(const auto g=std::dynamic_pointer_cast<ClippingGroup>(object)){if(key=="clippingPlanes")return nativeSharedArray(g->clippingPlanes);if(key=="enabled")return g->enabled;if(key=="clipIntersection")return g->clipIntersection;if(key=="clipShadows")return g->clipShadows;if(key=="isClippingGroup")return g->isClippingGroup;}
     return {};
 }
+JSValue nativeShadowTarget(const std::shared_ptr<RenderTarget>& target) {
+    if(!target)return nullptr;auto result=JSValue::hostObject(target,target.get(),"three.RenderTarget");
+    if(initialize(result)) {
+        for(const auto* key:{"texture","depthTexture"})accessor(result,key,[](const JSValue& self,const Args&,const Args& c){const auto target=payload<RenderTarget>(self,"three.RenderTarget");return nativeTexture(c[0].string()=="texture"?target->texture.get():target->depthTexture.get());},[](const JSValue& self,const Args& args,const Args& c){const auto target=payload<RenderTarget>(self,"three.RenderTarget");const auto value=argument(args,0);const auto texture=value.isNull()?nullptr:payload<Texture>(value,"three.Texture");if(c[0].string()=="texture")target->texture=texture;else target->depthTexture=texture;return JSValue();});
+        static auto hooks=[]{auto h=std::make_shared<JSHostObjectHooks>();h->nativeOwnership=targetOwners;h->trace=+[](const JSValue& self){std::vector<JSValue> values;const auto target=payload<RenderTarget>(self,"three.RenderTarget");for(const auto& texture:target->textures)traceNativeTexture(self,texture,values);traceNativeTexture(self,target->_depthTexture,values);return values;};return h;}();result.setHostHooks(hooks);
+    }return result;
+}
+JSValue shadowRead(const JSValue& self,const Args&,const Args& captures) {
+    const auto shadow=payload<LightShadow>(self,"three.LightShadow");const auto key=captures[0].string();
+    if(key=="camera")return nativeObject(shadow->camera);
+    if(key=="map")return nativeShadowTarget(shadow->map);
+    if(key=="mapPass")return nativeShadowTarget(shadow->mapPass);
+    if(key=="biasNode")return shadow->biasNode;
+    if(key=="mapSize"){auto vector=nativeVector(std::shared_ptr<Vector2>(shadow,&shadow->mapSize));vector.setHostSlot("nativeShadowOwner",self);return vector;}
+    if(key=="matrix"){auto matrix=nativeMatrix(std::shared_ptr<Matrix4>(shadow,&shadow->matrix));matrix.setHostSlot("nativeShadowOwner",self);matrix.getHostSlot("elements").setHostSlot("nativeShadowOwner",self);return matrix;}
+    if(key=="intensity")return shadow->intensity;if(key=="bias")return shadow->bias;if(key=="normalBias")return shadow->normalBias;if(key=="radius")return shadow->radius;
+    return {};
+}
+JSValue shadowWrite(const JSValue& self,const Args& args,const Args& captures) {
+    const auto shadow=payload<LightShadow>(self,"three.LightShadow");const auto key=captures[0].string();const auto value=argument(args,0);
+    if(key=="camera") {const auto camera=value.isNull()?nullptr:std::dynamic_pointer_cast<Camera>(payload<Object3D>(value,objectTag));if(!value.isNull()&&!camera)throw JSTypeError("LightShadow camera requires a native Camera");shadow->camera=camera;}
+    else if(key=="map"||key=="mapPass") {const auto target=value.isNull()?nullptr:payload<RenderTarget>(value,"three.RenderTarget");(key=="map"?shadow->map:shadow->mapPass)=target;}
+    else if(key=="biasNode")shadow->biasNode=value;
+    else if(key=="intensity")shadow->intensity=value.toNumber();else if(key=="bias")shadow->bias=value.toNumber();else if(key=="normalBias")shadow->normalBias=value.toNumber();else if(key=="radius")shadow->radius=value.toNumber();
+    else if(key=="mapSize"){const auto x=value.get("x").toNumber();const auto y=value.get("y").toNumber();shadow->mapSize.set(x,y);}
+    else if(key=="matrix"){const auto values=value.get("elements");for(int i=0;i<16;++i)shadow->matrix.elements()[i]=values.get(std::to_string(i)).toNumber();}
+    return {};
+}
+JSValue shadowMethod(const JSValue& self,const Args& args,const Args& captures) {
+    const auto shadow=payload<LightShadow>(self,"three.LightShadow");const auto name=captures[0].string();
+    if(!shadow)throw JSTypeError("LightShadow method requires a native LightShadow");
+    if(name=="getViewportCount")return shadow->getViewportCount();
+    if(name=="getFrameExtents"){auto vector=nativeVector(std::shared_ptr<Vector2>(shadow,&shadow->_frameExtents));vector.setHostSlot("nativeShadowOwner",self);return vector;}
+    if(name=="updateMatrices"){const auto light=std::dynamic_pointer_cast<Light>(payload<Object3D>(argument(args,0),objectTag));if(!light)throw JSTypeError("LightShadow requires a native Light");shadow->updateMatrices(*light);return {};}
+    if(name=="dispose"){shadow->dispose();return {};}
+    return {};
+}
+JSValue nativeShadow(const std::shared_ptr<LightShadow>& shadow) {
+    if(!shadow)return nullptr;auto result=JSValue::hostObject(shadow,shadow.get(),"three.LightShadow");
+    if(initialize(result)) {
+        for(const auto* field:{"camera","map","mapPass","biasNode","mapSize","matrix","intensity","bias","normalBias","radius"})accessor(result,field,shadowRead,shadowWrite);
+        static thread_local JSWeakValue weakPrototype;
+        JSValue prototype;if(const auto alive=weakPrototype.lock();alive&&alive->isObject())prototype=*alive;else{
+            prototype=JSValue::object();for(const auto* name:{"getViewportCount","getFrameExtents","updateMatrices","dispose"})lightingMethod(prototype,name,shadowMethod,"three.LightShadow",std::string(name)=="updateMatrices"?1:0);
+            prototype.retainForHeapLifetime();weakPrototype=JSWeakValue(prototype);
+        }result.setPrototype(prototype);
+        static auto hooks=[]{auto h=std::make_shared<JSHostObjectHooks>();h->nativeOwnership=shadowOwners;h->trace=+[](const JSValue& self){std::vector<JSValue> values;std::unordered_set<const Object3D*> visited;traceShadow(self,payload<LightShadow>(self,"three.LightShadow"),values,visited);return values;};return h;}();result.setHostHooks(hooks);
+    }return result;
+}
+JSValue nativeHarmonics(const std::shared_ptr<SphericalHarmonics3>& sh) {
+    if(!sh)return nullptr;auto result=JSValue::hostObject(sh,sh.get(),"three.SphericalHarmonics3");
+    if(initialize(result)) {
+        auto coefficients=JSValue::array();for(int i=0;i<9;++i)coefficients.set(std::to_string(i),nativeVector(std::shared_ptr<Vector3>(sh,&sh->coefficients[i])));
+        result.set("coefficients",coefficients);result.set("isSphericalHarmonics3",true);
+        static auto hooks=[]{auto h=std::make_shared<JSHostObjectHooks>();h->nativeOwnership=+[](const JSValue& self){return std::vector<JSNativeOwnerNode>{{payload<SphericalHarmonics3>(self,"three.SphericalHarmonics3"),{},{}}};};return h;}();result.setHostHooks(hooks);
+    }return result;
+}
 JSValue objectRead(const JSValue& self, const Args&, const Args& capture) {
     auto o = payload<Object3D>(self, objectTag);
     const auto& key = capture[0].string();
@@ -648,6 +1103,7 @@ JSValue objectRead(const JSValue& self, const Args&, const Args& capture) {
     if (key == "up") return nativeVector(std::shared_ptr<Vector3>(o, &o->up));
     if (key == "quaternion") return nativeQuaternion(std::shared_ptr<Quaternion>(o, &o->quaternion));
     if (key == "rotation") return nativeEuler(std::shared_ptr<Euler>(o, &o->rotation));
+    if (key == "layers") return o->layers.object();
     if (key == "children") return nativeSharedArray(o->children);
     if (key == "animations") return nativeAnimationClips(std::shared_ptr<std::vector<std::shared_ptr<AnimationClip>>>(o,&o->animations));
     if (key == "parent") return o->parent ? nativeObject(o->parent->weak_from_this().lock()) : JSValue(nullptr);
@@ -667,6 +1123,17 @@ JSValue objectRead(const JSValue& self, const Args&, const Args& capture) {
     if (key == "matrixAutoUpdate") return o->matrixAutoUpdate;
     if (key == "matrixWorldAutoUpdate") return o->matrixWorldAutoUpdate;
     if (key == "renderOrder") return o->renderOrder;
+    if (key == "castShadow") return o->castShadow;
+    if(const auto camera=std::dynamic_pointer_cast<Camera>(o)) {
+        if(key=="matrixWorldInverse"||key=="projectionMatrix"||key=="projectionMatrixInverse") {
+            auto& matrix=key=="matrixWorldInverse"?camera->matrixWorldInverse:key=="projectionMatrix"?camera->projectionMatrix:camera->projectionMatrixInverse;
+            auto value=nativeMatrix(std::shared_ptr<Matrix4>(camera,&matrix));value.setHostSlot("nativeObjectOwner",self);value.getHostSlot("elements").setHostSlot("nativeObjectOwner",self);return value;
+        }
+        if(key=="coordinateSystem")return camera->coordinateSystem;
+        if(key=="reversedDepth")return camera->reversedDepth;
+    }
+    if(const auto camera=std::dynamic_pointer_cast<PerspectiveCamera>(o)) {if(key=="near")return camera->near;if(key=="far")return camera->far;}
+    if(const auto camera=std::dynamic_pointer_cast<OrthographicCamera>(o)) {if(key=="near")return camera->near;if(key=="far")return camera->far;}
     if (const auto lod = std::dynamic_pointer_cast<LOD>(o)) {
         if (key == "isLOD") return lod->isLOD;
         if (key == "autoUpdate") return lod->autoUpdate;
@@ -702,13 +1169,16 @@ JSValue objectRead(const JSValue& self, const Args&, const Args& capture) {
     }
     if (auto light = std::dynamic_pointer_cast<DirectionalLight>(o)) {
         if (key == "target") return nativeObject(light->target);
+        if (key == "shadow") return nativeShadow(light->shadow);
     }
     if (auto light = std::dynamic_pointer_cast<PointLight>(o)) {
+        if (key == "shadow") return nativeShadow(light->shadow);
         if (key == "power") return light->getPower();
         if (key == "distance") return light->distance;
         if (key == "decay") return light->decay;
     }
     if (auto light = std::dynamic_pointer_cast<SpotLight>(o)) {
+        if (key == "shadow") return nativeShadow(light->shadow);
         if (key == "target") return nativeObject(light->target);
         if (key == "map") return nativeTexture(light->map);
         if (key == "power") return light->getPower();
@@ -722,6 +1192,7 @@ JSValue objectRead(const JSValue& self, const Args&, const Args& capture) {
         if (key == "width") return light->width;
         if (key == "height") return light->height;
     }
+    if(const auto light=std::dynamic_pointer_cast<LightProbe>(o))if(key=="sh")return nativeHarmonics(light->sh);
     return {};
 }
 template <class T> SharedArray<T> readSharedArray(const JSValue& value) {
@@ -773,6 +1244,8 @@ JSValue objectWrite(const JSValue& self, const Args& args, const Args& capture) 
     else if (key == "matrixAutoUpdate") o->matrixAutoUpdate = value.toBoolean();
     else if (key == "matrixWorldAutoUpdate") o->matrixWorldAutoUpdate = value.toBoolean();
     else if (key == "renderOrder") o->renderOrder = value.toNumber();
+    else if (key == "castShadow") o->castShadow = value.toBoolean();
+    else if (key == "layers") o->layers = Layers::fromObject(value);
     else if (key == "children") o->children = readSharedArray<std::shared_ptr<Object3D>>(value);
     else if (const auto lod = std::dynamic_pointer_cast<LOD>(o)) {
         if (key == "isLOD") lod->isLOD = value.toBoolean();
@@ -807,6 +1280,12 @@ JSValue objectWrite(const JSValue& self, const Args& args, const Args& capture) 
     }
     if (auto light = std::dynamic_pointer_cast<Light>(o)) if (key == "intensity") light->intensity = value.toNumber();
     if (auto light = std::dynamic_pointer_cast<DirectionalLight>(o)) if (key == "target") light->target = payload<Object3D>(value,objectTag);
+    if(key=="shadow") {
+        const auto shadow=value.isNull()?nullptr:payload<LightShadow>(value,"three.LightShadow");
+        if(const auto light=std::dynamic_pointer_cast<DirectionalLight>(o)) {const auto typed=std::dynamic_pointer_cast<DirectionalLightShadow>(shadow);if(shadow&&!typed)throw JSTypeError("DirectionalLight shadow requires matching native type");light->shadow=typed;}
+        if(const auto light=std::dynamic_pointer_cast<PointLight>(o)) {const auto typed=std::dynamic_pointer_cast<PointLightShadow>(shadow);if(shadow&&!typed)throw JSTypeError("PointLight shadow requires matching native type");light->shadow=typed;}
+        if(const auto light=std::dynamic_pointer_cast<SpotLight>(o)) {const auto typed=std::dynamic_pointer_cast<SpotLightShadow>(shadow);if(shadow&&!typed)throw JSTypeError("SpotLight shadow requires matching native type");light->shadow=typed;}
+    }
     if (auto light = std::dynamic_pointer_cast<PointLight>(o)) {
         if (key == "power") light->setPower(value.toNumber());
         else if (key == "distance") light->distance = value.toNumber();
@@ -847,7 +1326,8 @@ JSValue nativeSkeleton(const std::shared_ptr<Skeleton>& skeleton) {
         accessor(result,"boneMatrices",[](const JSValue& self,const Args&,const Args&) { return nativeArray(payload<Skeleton>(self,"three.Skeleton")->boneMatrices); });
         accessor(result,"boneTexture",[](const JSValue& self,const Args&,const Args&) { return nativeTexture(payload<Skeleton>(self,"three.Skeleton")->boneTexture); });
         accessor(result,"uuid",[](const JSValue& self,const Args&,const Args&) { return JSValue(payload<Skeleton>(self,"three.Skeleton")->uuid); });
-        static thread_local auto prototype = [] {
+        static thread_local JSWeakValue cachedPrototype;
+        const auto prototype = cachedModuleValue(cachedPrototype, [] {
             auto p = JSValue::object();
             method(p,"getBoneByName",[](const JSValue& self,const Args& args,const Args&) {
                 const auto name = argument(args,0);
@@ -856,8 +1336,9 @@ JSValue nativeSkeleton(const std::shared_ptr<Skeleton>& skeleton) {
                 return bone ? nativeObject(bone) : JSValue();
             },"three.Skeleton");
             return p;
-        }();
+        });
         result.setPrototype(prototype);
+        installNativeSkeletonRenderingBridge(result,skeleton);
     }
     return result;
 }
@@ -942,7 +1423,7 @@ JSValue materialRead(const JSValue& self, const Args&, const Args& capture) {
             return nativeJSON(*field);
         } else if constexpr (std::is_same_v<T,Material::ClippingPlanes>) {
             if (!*field) return nullptr;
-            throw JSTypeError("Material.clippingPlanes native array is not yet a runtime array; use its native field");
+            return nativeSharedArray(**field);
         } else return *field;
     },*property);
 }
@@ -978,7 +1459,8 @@ JSValue materialWrite(const JSValue& self, const Args& args, const Args& capture
         else if constexpr (std::is_same_v<T,JSValue>) *field = value;
         else if constexpr (std::is_same_v<T,JsonValue>) *field = jsonFieldValue(value);
         else if constexpr (std::is_same_v<T,Material::ClippingPlanes>) {
-            throw JSTypeError("Use the native material field until its storage is runtime-backed");
+            if (value.isNull()) field->reset();
+            else *field = readSharedArray<std::shared_ptr<Plane>>(value);
         } else *field = value.toNumber();
     },*property);
     return {};
@@ -1056,6 +1538,13 @@ JSValue textureRead(const JSValue& self, const Args&, const Args& capture) {
     if (key == "offset") return nativeVector(std::shared_ptr<Vector2>(t, &t->offset));
     if (key == "repeat") return nativeVector(std::shared_ptr<Vector2>(t, &t->repeat));
     if (key == "center") return nativeVector(std::shared_ptr<Vector2>(t, &t->center));
+    if (key == "matrix") {
+        auto matrix=nativeMatrix(std::shared_ptr<Matrix3>(t,&t->matrix));
+        matrix.setHostSlot("nativeTextureOwner",self);
+        matrix.getHostSlot("elements").setHostSlot("nativeTextureOwner",self);
+        return matrix;
+    }
+    if (key == "colorSpace") return t->colorSpace;
     if (key == "rotation") return t->rotation;
     if (key == "uuid") return t->uuid;
     if (key == "name") return t->name;
@@ -1066,11 +1555,20 @@ JSValue textureRead(const JSValue& self, const Args&, const Args& capture) {
     if (key == "wrapS") return t->wrapS;
     if (key == "wrapT") return t->wrapT;
     if (key == "channel") return t->channel;
+    if (key == "format") return t->format;
+    if (key == "isDataArrayTexture") return t->isDataArrayTexture;
+    if (key == "isData3DTexture") return t->isData3DTexture;
+    if (key == "isCubeTexture") return t->isCubeTexture;
+    if (key == "isDepthTexture") return t->isDepthTexture;
+    if (key == "isCubeDepthTexture") return t->isCubeDepthTexture;
+    if (key == "compareFunction") {const auto depth=std::dynamic_pointer_cast<DepthTexture>(t);if(!depth)throw JSTypeError("DepthTexture receiver required");return depth->compareFunction?JSValue(*depth->compareFunction):JSValue(nullptr);}
+
     return {};
 }
 JSValue textureWrite(const JSValue& self, const Args& args, const Args& capture) {
     auto t = payload<Texture>(self, "three.Texture"); const auto& key = capture[0].string(); const auto value = argument(args, 0);
     if (key == "rotation") t->rotation = value.toNumber();
+    else if (key == "colorSpace") t->colorSpace = value.toString();
     else if (key == "uuid") t->uuid = value.toString();
     else if (key == "name") t->name = value.toString();
     else if (key == "version") t->version = value.toNumber();
@@ -1078,6 +1576,14 @@ JSValue textureWrite(const JSValue& self, const Args& args, const Args& capture)
     else if (key == "wrapS") t->wrapS = value.toNumber();
     else if (key == "wrapT") t->wrapT = value.toNumber();
     else if (key == "channel") t->channel = value.toNumber();
+    else if (key == "format") t->format = value.toNumber();
+    else if (key == "isDataArrayTexture") t->isDataArrayTexture = value.toBoolean();
+    else if (key == "isData3DTexture") t->isData3DTexture = value.toBoolean();
+    else if (key == "isCubeTexture") t->isCubeTexture = value.toBoolean();
+    else if (key == "isDepthTexture") t->isDepthTexture = value.toBoolean();
+    else if (key == "isCubeDepthTexture") t->isCubeDepthTexture = value.toBoolean();
+    else if (key == "compareFunction") {const auto depth=std::dynamic_pointer_cast<DepthTexture>(t);if(!depth)throw JSTypeError("DepthTexture receiver required");depth->compareFunction=value.isNull()?std::nullopt:std::optional<double>(value.toNumber());}
+
     else if (key == "needsUpdate") t->needsUpdate = value;
     return {};
 }
@@ -1085,10 +1591,20 @@ void traceNativeTexture(const JSValue& self, const std::shared_ptr<Texture>& tex
     if (!texture) return;
     cachedEdge(self, result, texture.get(), "three.Texture");
     for (const auto* vector : {&texture->offset, &texture->repeat, &texture->center}) cachedEdge(self, result, vector, "three.Vector2");
+    cachedEdge(self,result,&texture->matrix,"three.Matrix3");
+    cachedEdge(self,result,texture->matrix.elements().data(),"three.MatrixElements9",JSValue::Type::Array);
 }
 void traceNativeMaterial(const JSValue& self, const std::shared_ptr<Material>& material, std::vector<JSValue>& result) {
     if (!material) return;
     cachedEdge(self, result, material.get(), materialTag);
+    if (material->clippingPlanes) {
+        cachedEdge(self,result,material->clippingPlanes->storage().get(),
+                   arrayTag<std::shared_ptr<Plane>>(),JSValue::Type::Array);
+        for (const auto& plane : *material->clippingPlanes) if (plane) {
+            cachedEdge(self,result,plane.get(),"three.Plane");
+            cachedEdge(self,result,&plane->normal,"three.Vector3");
+        }
+    }
     if (const auto basic = std::dynamic_pointer_cast<MeshBasicMaterial>(material)) {
         cachedEdge(self, result, &basic->color, "three.Color");
         for (const auto& texture : {basic->map,basic->alphaMap,basic->lightMap,basic->aoMap,basic->specularMap,basic->envMap}) traceNativeTexture(self, texture, result);
@@ -1128,15 +1644,23 @@ template <class T> void traceNativePrimitive(const JSValue& self,const std::shar
     if (object->morphTargetInfluences) cachedEdge(self,result,object->morphTargetInfluences->storage().get(),arrayTag<double>(),JSValue::Type::Array);
     if (object->morphTargetDictionary) cachedEdge(self,result,object->morphTargetDictionary.get(),"three.MorphDictionary");
 }
+void traceShadow(const JSValue& self,const std::shared_ptr<LightShadow>& shadow,std::vector<JSValue>& result,std::unordered_set<const Object3D*>& visited) {
+    if(!shadow)return;cachedEdge(self,result,shadow.get(),"three.LightShadow");
+    cachedEdge(self,result,&shadow->mapSize,"three.Vector2");cachedEdge(self,result,&shadow->_frameExtents,"three.Vector2");cachedEdge(self,result,&shadow->matrix,"three.Matrix4");cachedEdge(self,result,shadow->matrix.elements().data(),"three.MatrixElements16",JSValue::Type::Array);
+    traceNativeObject(self,shadow->camera,result,visited);
+    for(const auto& target:{shadow->map,shadow->mapPass})if(target){cachedEdge(self,result,target.get(),"three.RenderTarget");for(const auto& texture:target->textures)traceNativeTexture(self,texture,result);traceNativeTexture(self,target->_depthTexture,result);}
+}
 void traceNativeObject(const JSValue& self, const std::shared_ptr<Object3D>& object,
                        std::vector<JSValue>& result, std::unordered_set<const Object3D*>& visited) {
     if (!object || !visited.insert(object.get()).second) return;
     cachedEdge(self, result, object.get(), objectTag);
+    result.push_back(*object->layers.runtimeRoot());
     for(const auto* matrix:{&object->matrix,&object->matrixWorld,&object->modelViewMatrix}) {
         auto resolved=matrix;
         while(resolved->aliasTarget()){if(const auto owner=resolved->aliasObjectOwner().lock())traceNativeObject(self,owner,result,visited);resolved=resolved->aliasTarget().get();}
         cachedEdge(self,result,resolved,"three.Matrix4");cachedEdge(self,result,resolved->elements().data(),"three.MatrixElements16",JSValue::Type::Array);
     }
+    if(const auto camera=std::dynamic_pointer_cast<Camera>(object))for(const auto* matrix:{&camera->matrixWorldInverse,&camera->projectionMatrix,&camera->projectionMatrixInverse}){cachedEdge(self,result,matrix,"three.Matrix4");cachedEdge(self,result,matrix->elements().data(),"three.MatrixElements16",JSValue::Type::Array);}
     cachedEdge(self,result,&object->animations,"three.AnimationClipArray",JSValue::Type::Array);
     for(const auto& clip:object->animations)if(clip)cachedEdge(self,result,clip.get(),"three.AnimationClip");
     for (const auto* vector : {&object->position, &object->scale, &object->up}) cachedEdge(self, result, vector, "three.Vector3");
@@ -1164,6 +1688,12 @@ void traceNativeObject(const JSValue& self, const std::shared_ptr<Object3D>& obj
         traceNativeTexture(self,instanced->morphTexture,result);
     }
     const auto child=[&](const std::shared_ptr<Object3D>& value){traceNativeObject(self,value,result,visited);};
+    if(const auto light=std::dynamic_pointer_cast<Light>(object))cachedEdge(self,result,&light->color,"three.Color");
+    if(const auto light=std::dynamic_pointer_cast<HemisphereLight>(object))cachedEdge(self,result,&light->groundColor,"three.Color");
+    if(const auto light=std::dynamic_pointer_cast<DirectionalLight>(object)){child(light->target);traceShadow(self,light->shadow,result,visited);}
+    if(const auto light=std::dynamic_pointer_cast<PointLight>(object))traceShadow(self,light->shadow,result,visited);
+    if(const auto light=std::dynamic_pointer_cast<SpotLight>(object)){child(light->target);traceShadow(self,light->shadow,result,visited);traceNativeTexture(self,light->map,result);}
+    if(const auto light=std::dynamic_pointer_cast<LightProbe>(object))if(light->sh){cachedEdge(self,result,light->sh.get(),"three.SphericalHarmonics3");for(const auto& coefficient:light->sh->coefficients)cachedEdge(self,result,&coefficient,"three.Vector3");}
     if(const auto h=std::dynamic_pointer_cast<ArrowHelper>(object)){child(h->line);child(h->cone);}
     if(const auto h=std::dynamic_pointer_cast<BoxHelper>(object))child(h->object);
     if(const auto h=std::dynamic_pointer_cast<Box3Helper>(object))if(h->box){cachedEdge(self,result,h->box.get(),"three.Box3");cachedEdge(self,result,&h->box->min,"three.Vector3");cachedEdge(self,result,&h->box->max,"three.Vector3");}
@@ -1233,7 +1763,11 @@ struct NativeOwners {
                 if constexpr (std::is_same_v<T,std::shared_ptr<Texture>>) { edge(node,*field); texture(*field); }
                 else if constexpr (std::is_same_v<T,JSValue>) node.roots.push_back(field);
                 else if constexpr (std::is_same_v<T,Material::ClippingPlanes>) {
-                    if (*field) for (const auto& plane : **field) { edge(node,plane); if (enter(plane)) nodes.push_back({plane,{},{}}); }
+                    if (*field) {
+                        const auto storage = (*field)->storage();
+                        node.edges.push_back({&**field,storage});
+                        array<std::shared_ptr<Plane>>(storage);
+                    }
                 }
             },property);
         });
@@ -1330,8 +1864,9 @@ struct NativeOwners {
     }
     void object(const std::shared_ptr<Object3D>& value) {
         if (!enter(value)) return;
-        JSNativeOwnerNode node{value,{},{}};
+        JSNativeOwnerNode node{value,{value->layers.runtimeRoot()},{}};
         matrix(node,value->matrix);matrix(node,value->matrixWorld);matrix(node,value->modelViewMatrix);
+        if(const auto camera=std::dynamic_pointer_cast<Camera>(value)){matrix(node,camera->matrixWorldInverse);matrix(node,camera->projectionMatrix);matrix(node,camera->projectionMatrixInverse);}
         clips(value,value->animations);
         if (const auto lod = std::dynamic_pointer_cast<LOD>(value)) {
             const auto roots = lod->runtimeRoots();
@@ -1408,6 +1943,8 @@ struct NativeOwners {
 std::vector<JSNativeOwnerNode> animationObjectOwners(const JSValue& self) {
     NativeOwners graph; graph.object(payload<Object3D>(self,objectTag)); return std::move(graph.nodes);
 }
+std::vector<JSNativeOwnerNode> shadowOwners(const JSValue& self) {NativeOwners graph;graph.shadow(payload<LightShadow>(self,"three.LightShadow"));return std::move(graph.nodes);}
+std::vector<JSNativeOwnerNode> targetOwners(const JSValue& self) {NativeOwners graph;graph.target(payload<RenderTarget>(self,"three.RenderTarget"));return std::move(graph.nodes);}
 std::vector<JSNativeOwnerNode> geometryOwners(const JSValue& self) {
     NativeOwners graph; graph.geometry(payload<BufferGeometry>(self,"three.BufferGeometry")); return std::move(graph.nodes);
 }
@@ -1434,6 +1971,8 @@ template <class T> std::vector<JSNativeOwnerNode> arrayOwners(const JSValue& sel
 }
 } // namespace
 
+JSValue nativePlane(const std::shared_ptr<Plane>& plane) { return wrapPlane(plane); }
+JSValue nativePlanePrototype() { return planePrototype(); }
 JSValue nativeGeometry(const std::shared_ptr<BufferGeometry>& geometry) {
     return wrapGeometry(geometry);
 }
@@ -1497,7 +2036,8 @@ JSValue attributeMethod(const JSValue& self,const Args& args,const Args& capture
     return self;
 }
 JSValue attributePrototype() {
-    static thread_local auto value=[] {
+    static thread_local JSWeakValue cachedPrototype;
+    return cachedModuleValue(cachedPrototype, [] {
         auto constructor=JSValue::constructor([](const JSValue& receiver,const Args& args,const Args&)->JSValue {
             const auto array=animationArray(argument(args,0));const auto size=argument(args,1).toNumber();const auto normalized=argument(args,2);
             const auto attribute=std::visit([&](const auto& input)->std::shared_ptr<BufferAttribute> {
@@ -1512,7 +2052,7 @@ JSValue attributePrototype() {
         }
         JSPropertyDescriptor needsUpdate;needsUpdate.setter=JSValue::function(attributeMethod,{"needsUpdate"},"set needsUpdate",1);needsUpdate.configurable=true;
         result.defineProperty("needsUpdate",needsUpdate);return result;
-    }();return value;
+    });
 }
 }
 void initializeBufferAttributeRuntime(BufferAttribute& attribute) {
@@ -1528,11 +2068,67 @@ void initializeBufferAttributeRuntime(BufferAttribute& attribute) {
     static auto hooks=[] {auto h=std::make_shared<JSHostObjectHooks>();h->nativeOwnership=attributeOwners;return h;}();
     result.setHostHooks(hooks);
 }
+namespace {
+constexpr const char* instanceDescriptorSlot="nativeInstanceDescriptors";
+JSValue instanceDescriptors(const JSValue& self) {
+    return self.getHostSlot(instanceDescriptorSlot);
+}
+JSHostPropertyResult instanceOwn(const JSValue& self,const std::string& key) {
+    if(key!="meshPerAttribute")return {};
+    auto descriptor=instanceDescriptors(self).getOwnPropertyDescriptor(key);
+    if(descriptor&&descriptor->value)descriptor->value=payload<BufferAttributeRuntime>(self,"three.BufferAttribute")->storage->meshPerAttribute;
+    return {true,std::move(descriptor)};
+}
+
+std::shared_ptr<const JSHostObjectHooks> instanceHooks();
+struct InstanceHooksGuard {
+    JSValue object;
+    explicit InstanceHooksGuard(const JSValue& value):object(value){object.setHostHooks({});}
+    ~InstanceHooksGuard(){object.setHostHooks(instanceHooks());}
+};
+std::optional<bool> instanceDefine(const JSValue& self,const std::string& key,const JSPropertyDescriptor& descriptor) {
+    if(key!="meshPerAttribute")return {};
+    const auto previous=instanceOwn(self,key).descriptor;
+    if(!previous&&!self.isExtensible())return false;
+    auto next=JSValue::object(nullptr);if(previous)next.defineProperty(key,*previous);
+    if(!next.defineOwnProperty(key,descriptor))return false;
+    const auto result=*next.getOwnPropertyDescriptor(key);auto metadata=result;
+    if(metadata.value)metadata.value=JSValue();
+    if(metadata.getter)metadata.getter=JSValue();
+    if(metadata.setter)metadata.setter=JSValue();
+    {InstanceHooksGuard guard(self);if(!guard.object.defineOwnProperty(key,metadata))return false;}
+    auto stored=JSValue::object(nullptr);auto privateMetadata=result;if(privateMetadata.value)privateMetadata.value=JSValue();stored.defineProperty(key,privateMetadata);
+    auto object=self;object.setHostSlot(instanceDescriptorSlot,stored);
+    const auto state=payload<BufferAttributeRuntime>(self,"three.BufferAttribute");
+    state->storage->meshPerAttribute=result.value?*result.value:JSValue();
+    return true;
+}
+std::optional<bool> instanceErase(const JSValue& self,const std::string& key) {
+    if(key!="meshPerAttribute")return {};
+    auto fields=instanceDescriptors(self);
+    const auto existing=fields.getOwnPropertyDescriptor(key);if(existing&&!existing->configurable.value_or(false))return false;
+    {InstanceHooksGuard guard(self);if(!guard.object.erase(key))return false;}
+    fields.erase(key);
+    const auto state=payload<BufferAttributeRuntime>(self,"three.BufferAttribute");state->storage->meshPerAttribute={};return true;
+}
+std::shared_ptr<const JSHostObjectHooks> instanceHooks() {
+    static auto hooks=[] {auto h=std::make_shared<JSHostObjectHooks>();h->nativeOwnership=attributeOwners;h->getOwnProperty=instanceOwn;h->defineOwnProperty=instanceDefine;h->erase=instanceErase;return h;}();return hooks;
+}
+
+void initializeInstanceProtocol(JSValue object,const std::shared_ptr<BufferAttribute>& attribute) {
+    if(!std::dynamic_pointer_cast<InstancedBufferAttribute>(attribute)||!object.getHostSlot(instanceDescriptorSlot).isUndefined())return;
+    object.defineProperty("isInstancedBufferAttribute",dataDescriptor(true));
+    object.defineProperty("meshPerAttribute",dataDescriptor(JSValue()));
+    auto fields=JSValue::object(nullptr);fields.defineProperty("meshPerAttribute",dataDescriptor(JSValue()));object.setHostSlot(instanceDescriptorSlot,fields);
+    object.setHostHooks(instanceHooks());
+}
+}
 void bindBufferAttributeRuntime(const JSValue& object,const std::shared_ptr<BufferAttribute>& attribute) {
     static_cast<void>(JSWeakValue(object));
     const auto state=payload<BufferAttributeRuntime>(object,"three.BufferAttribute");
     if(state->storage!=attribute->runtimeStorage())throw JSTypeError("BufferAttribute runtime storage mismatch");
     state->owner=attribute;
+    initializeInstanceProtocol(object,attribute);
 }
 std::shared_ptr<BufferAttribute> bufferAttributeRuntimeValue(const JSValue& object) {
     static_cast<void>(JSWeakValue(object));
@@ -1560,9 +2156,11 @@ JSValue nativeObject(const std::shared_ptr<Object3D>& object) {
             std::vector<JSValue> result; std::unordered_set<const Object3D*> visited;
             traceNativeObject(self, payload<Object3D>(self, objectTag), result, visited); return result;
         };h->nativeOwnership=animationObjectOwners; return h; }(); result.setHostHooks(hooks);
-        for (const char* key : {"uuid", "name", "type", "visible", "matrixWorldNeedsUpdate", "matrixAutoUpdate", "matrixWorldAutoUpdate", "renderOrder", "children"}) accessor(result, key, objectRead, objectWrite);
+        for (const char* key : {"uuid", "name", "type", "visible", "matrixWorldNeedsUpdate", "matrixAutoUpdate", "matrixWorldAutoUpdate", "renderOrder", "castShadow", "layers", "children"}) accessor(result, key, objectRead, objectWrite);
         for (const char* key : {"id", "isObject3D", "isMesh", "isLight", "isBone", "isSkinnedMesh", "isInstancedMesh", "parent", "position", "scale", "up", "rotation", "quaternion", "animations"}) accessor(result, key, objectRead);
         for(const auto* key:{"matrix","matrixWorld"})accessor(result,key,objectRead);
+        if(std::dynamic_pointer_cast<Camera>(object))for(const auto* key:{"matrixWorldInverse","projectionMatrix","projectionMatrixInverse","coordinateSystem","reversedDepth"})accessor(result,key,objectRead);
+        if(std::dynamic_pointer_cast<PerspectiveCamera>(object)||std::dynamic_pointer_cast<OrthographicCamera>(object))for(const auto* key:{"near","far"})accessor(result,key,objectRead);
         const auto helperFields=[&](std::initializer_list<const char*> names){for(const auto* name:names)accessor(result,name,objectRead,objectWrite);};
         if(std::dynamic_pointer_cast<ArrowHelper>(object))helperFields({"line","cone"});
         if(std::dynamic_pointer_cast<BoxHelper>(object))helperFields({"object"});
@@ -1598,12 +2196,21 @@ JSValue nativeObject(const std::shared_ptr<Object3D>& object) {
             for (const char* key : {"bindMatrix","bindMatrixInverse"}) accessor(result,key,objectRead);
         }
         if (std::dynamic_pointer_cast<Light>(object)) { accessor(result,"color",objectRead); accessor(result,"intensity",objectRead,objectWrite); }
+        if(std::dynamic_pointer_cast<AmbientLight>(object))result.set("isAmbientLight",true);
+        if(std::dynamic_pointer_cast<DirectionalLight>(object))result.set("isDirectionalLight",true);
+        if(std::dynamic_pointer_cast<SpotLight>(object))result.set("isSpotLight",true);
+        if(std::dynamic_pointer_cast<PointLight>(object))result.set("isPointLight",true);
+        if(std::dynamic_pointer_cast<HemisphereLight>(object))result.set("isHemisphereLight",true);
+        if(std::dynamic_pointer_cast<RectAreaLight>(object))result.set("isRectAreaLight",true);
+        if(std::dynamic_pointer_cast<LightProbe>(object)){result.set("isLightProbe",true);accessor(result,"sh",objectRead);}
+        if(std::dynamic_pointer_cast<DirectionalLight>(object)||std::dynamic_pointer_cast<PointLight>(object)||std::dynamic_pointer_cast<SpotLight>(object))accessor(result,"shadow",objectRead,objectWrite);
         if (std::dynamic_pointer_cast<HemisphereLight>(object)) accessor(result,"groundColor",objectRead);
         if (std::dynamic_pointer_cast<DirectionalLight>(object)) accessor(result,"target",objectRead,objectWrite);
         if (std::dynamic_pointer_cast<PointLight>(object)) for (const char* key : {"power","distance","decay"}) accessor(result,key,objectRead,objectWrite);
         if (std::dynamic_pointer_cast<SpotLight>(object)) for (const char* key : {"power","distance","decay","angle","penumbra","target","map"}) accessor(result,key,objectRead,objectWrite);
         if (std::dynamic_pointer_cast<RectAreaLight>(object)) for (const char* key : {"power","width","height"}) accessor(result,key,objectRead,objectWrite);
         if(const auto extension=std::dynamic_pointer_cast<NativeObjectExtension>(object))extension->initializeNativeWrapper(result);
+        installNativeObjectRenderingBridge(result,object);
     }
     return result;
 }
@@ -1614,9 +2221,8 @@ JSValue nativeMaterial(const std::shared_ptr<Material>& material) {
         static auto hooks = [] { auto h = std::make_shared<JSHostObjectHooks>(JSHostObjectHooks{materialOwn,materialDefine,materialErase,materialNames}); h->trace = [](const JSValue& self) {
             std::vector<JSValue> result; traceNativeMaterial(self, payload<Material>(self, materialTag), result); return result;
         }; h->nativeOwnership=materialOwners; return h; }(); result.setHostHooks(hooks);
-        static thread_local std::map<std::string,JSValue> prototypes;
-        auto prototype = prototypes.find(material->type);
-        if (prototype == prototypes.end()) {
+        static thread_local std::map<std::string,JSWeakValue> prototypes;
+        const auto prototype = cachedModuleValue(prototypes[material->type], [&] {
             auto p = JSValue::object();
             accessor(p,"needsUpdate",nullptr,materialWrite,false);
             material->visitProperties([&](std::string_view key,Material::PropertyReference property) {
@@ -1627,9 +2233,9 @@ JSValue nativeMaterial(const std::shared_ptr<Material>& material) {
             method(p,"toJSON",[](const JSValue& self,const Args&,const Args&){ return JSValue::fromJSON(payload<Material>(self,materialTag)->toJSON()); },"three.Material");
             method(p,"onBeforeCompile",[](const JSValue&,const Args&,const Args&){ return JSValue(); },"three.Material");
             method(p,"customProgramCacheKey",[](const JSValue& self,const Args&,const Args&){ const auto callback = self.get("onBeforeCompile"); return callback.get("toString").call(callback); },"three.Material");
-            prototype = prototypes.emplace(material->type,p).first;
-        }
-        result.setPrototype(prototype->second);
+            return p;
+        });
+        result.setPrototype(prototype);
         material->visitProperties([&](std::string_view key,Material::PropertyReference property) {
             if (std::holds_alternative<Material::Reflectivity*>(property)) {
                 JSPropertyDescriptor d; d.getter = JSValue::function(materialRead,{JSValue(std::string(key))});
@@ -1647,15 +2253,32 @@ JSValue nativeTexture(const std::shared_ptr<Texture>& texture) {
         static auto hooks = [] { auto h = std::make_shared<JSHostObjectHooks>(); h->trace = [](const JSValue& self) {
             std::vector<JSValue> result; traceNativeTexture(self, payload<Texture>(self, "three.Texture"), result); return result;
         }; h->nativeOwnership=textureOwners; return h; }(); result.setHostHooks(hooks);
-        static thread_local auto prototype = [] {
+        static thread_local JSWeakValue cachedPrototype;
+        const auto prototype = cachedModuleValue(cachedPrototype, [] {
             auto p = JSValue::object();
+            lightingMethod(p,"updateMatrix",[](const JSValue& self,const Args&,const Args&)->JSValue {
+                const auto matrix=self.get("matrix"),fn=matrix.get("setUvTransform");
+                Args args;
+                args.push_back(self.get("offset").get("x"));
+                args.push_back(self.get("offset").get("y"));
+                args.push_back(self.get("repeat").get("x"));
+                args.push_back(self.get("repeat").get("y"));
+                args.push_back(self.get("rotation"));
+                args.push_back(self.get("center").get("x"));
+                args.push_back(self.get("center").get("y"));
+                fn.call(matrix,args);return {};
+            },"three.Texture",0);
             method(p,"clone",[](const JSValue& self,const Args&,const Args&){ return nativeTexture(payload<Texture>(self,"three.Texture")->clone()); },"three.Texture");
             method(p,"toJSON",[](const JSValue& self,const Args&,const Args&){ return JSValue::fromJSON(payload<Texture>(self,"three.Texture")->toJSON()); },"three.Texture");
             return p;
-        }();
+        });
         result.setPrototype(prototype);
-        for (const char* key : {"offset", "repeat", "center", "isTexture", "isRenderTargetTexture"}) accessor(result, key, textureRead);
-        for (const char* key : {"rotation", "uuid", "name", "version", "matrixAutoUpdate", "wrapS", "wrapT", "channel", "needsUpdate"}) accessor(result, key, textureRead, textureWrite);
+        for (const char* key : {"offset", "repeat", "center", "matrix", "isTexture", "isRenderTargetTexture"}) accessor(result, key, textureRead);
+        for (const char* key : {"rotation", "colorSpace", "uuid", "name", "version", "matrixAutoUpdate", "wrapS", "wrapT", "channel", "format", "needsUpdate"}) accessor(result, key, textureRead, textureWrite);
+        for (const auto& [name,enabled]:std::initializer_list<std::pair<const char*,bool>>{{"isDataArrayTexture",texture->isDataArrayTexture},{"isData3DTexture",texture->isData3DTexture},{"isCubeTexture",texture->isCubeTexture},{"isDepthTexture",texture->isDepthTexture},{"isCubeDepthTexture",texture->isCubeDepthTexture}})
+            if(enabled)accessor(result,name,textureRead,textureWrite);
+        if(std::dynamic_pointer_cast<DepthTexture>(texture))accessor(result,"compareFunction",textureRead,textureWrite);
+
     }
     return result;
 }

@@ -44,7 +44,7 @@ TEST_CASE("Layers implements all 32 bits and JavaScript shift counts", "[core]")
     a.disable(0);
     REQUIRE(a.mask == 0);
     a.enableAll();
-    REQUIRE(a.mask == 0xffffffffu);
+    REQUIRE(a.mask == -1);
     a.disableAll();
     REQUIRE(a.mask == 0);
     a.set(32);

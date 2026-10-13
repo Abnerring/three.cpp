@@ -139,8 +139,6 @@
 #include "materials/PointsMaterial.h"
 #include "materials/RawShaderMaterial.h"
 #include "materials/ShaderMaterial.h"
-#include "renderers/shaders/UniformsUtils.h"
-#include "renderers/shaders/UniformsLib.h"
 #include "materials/ShadowMaterial.h"
 #include "materials/SpriteMaterial.h"
 #include "core/Clock.h"

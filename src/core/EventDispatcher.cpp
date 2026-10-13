@@ -52,29 +52,24 @@ JSValue eventMethod(const JSValue& receiver, const Args& args, const Args& captu
 }
 
 JSValue EventDispatcher::runtimePrototype() {
-    static thread_local JSValue prototype = [] {
-        auto object = JSValue::object();
-        auto constructor = JSValue::function([](const JSValue&, const Args&, const Args&) -> JSValue {
-            throw JSTypeError("Class constructor EventDispatcher cannot be invoked without 'new'");
-        }, {}, "EventDispatcher", 0);
-        JSPropertyDescriptor prototypeProperty;
-        prototypeProperty.value = object;
-        prototypeProperty.writable = false; prototypeProperty.enumerable = false; prototypeProperty.configurable = false;
-        constructor.defineProperty("prototype", prototypeProperty);
-        JSPropertyDescriptor constructorProperty;
-        constructorProperty.value = constructor;
-        constructorProperty.writable = true; constructorProperty.enumerable = false; constructorProperty.configurable = true;
-        object.defineProperty("constructor", constructorProperty);
-        for (const auto* name : {"addEventListener", "hasEventListener", "removeEventListener", "dispatchEvent"}) {
-            JSPropertyDescriptor descriptor;
-            descriptor.value = JSValue::function(eventMethod, {name}, name, std::string(name) == "dispatchEvent" ? 1 : 2);
-            descriptor.writable = true; descriptor.enumerable = false; descriptor.configurable = true;
-            object.defineProperty(name, descriptor);
-        }
-        return object;
-    }();
-    return prototype;
+    static thread_local JSWeakValue cached;
+    if (const auto constructor = cached.lock(); constructor && constructor->isCallable())
+        return constructor->get("prototype");
+    auto constructor = JSValue::constructor([](const JSValue&, const Args&, const Args&) -> JSValue {
+        return {};
+    }, {}, "EventDispatcher", 0);
+    auto object = constructor.get("prototype");
+    for (const auto* name : {"addEventListener", "hasEventListener", "removeEventListener", "dispatchEvent"}) {
+        JSPropertyDescriptor descriptor;
+        descriptor.value = JSValue::function(eventMethod, {name}, name, std::string(name) == "dispatchEvent" ? 1 : 2);
+        descriptor.writable = true; descriptor.enumerable = false; descriptor.configurable = true;
+        object.defineProperty(name, descriptor);
+    }
+    constructor.retainForHeapLifetime();
+    cached = JSWeakValue(constructor);
+    return object;
 }
+
 JSValue EventDispatcher::runtimeObject() { return JSValue::object(runtimePrototype()); }
 
 EventDispatcher::Listener EventDispatcher::addEventListener(const std::string& type,

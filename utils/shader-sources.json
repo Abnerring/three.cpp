@@ -1,0 +1,1617 @@
+{
+  "commit": "11738a9d55e502fb484cefffcea3a66dc44e9fe9",
+  "modules": [
+    {
+      "file": "src/renderers/shaders/ShaderChunk/alphahash_fragment.glsl.js",
+      "group": "ShaderChunk",
+      "base": "alphahash_fragment",
+      "exports": [
+        {
+          "name": "defaultSource",
+          "original": "default"
+        }
+      ]
+    },
+    {
+      "file": "src/renderers/shaders/ShaderChunk/alphahash_pars_fragment.glsl.js",
+      "group": "ShaderChunk",
+      "base": "alphahash_pars_fragment",
+      "exports": [
+        {
+          "name": "defaultSource",
+          "original": "default"
+        }
+      ]
+    },
+    {
+      "file": "src/renderers/shaders/ShaderChunk/alphamap_fragment.glsl.js",
+      "group": "ShaderChunk",
+      "base": "alphamap_fragment",
+      "exports": [
+        {
+          "name": "defaultSource",
+          "original": "default"
+        }
+      ]
+    },
+    {
+      "file": "src/renderers/shaders/ShaderChunk/alphamap_pars_fragment.glsl.js",
+      "group": "ShaderChunk",
+      "base": "alphamap_pars_fragment",
+      "exports": [
+        {
+          "name": "defaultSource",
+          "original": "default"
+        }
+      ]
+    },
+    {
+      "file": "src/renderers/shaders/ShaderChunk/alphatest_fragment.glsl.js",
+      "group": "ShaderChunk",
+      "base": "alphatest_fragment",
+      "exports": [
+        {
+          "name": "defaultSource",
+          "original": "default"
+        }
+      ]
+    },
+    {
+      "file": "src/renderers/shaders/ShaderChunk/alphatest_pars_fragment.glsl.js",
+      "group": "ShaderChunk",
+      "base": "alphatest_pars_fragment",
+      "exports": [
+        {
+          "name": "defaultSource",
+          "original": "default"
+        }
+      ]
+    },
+    {
+      "file": "src/renderers/shaders/ShaderChunk/aomap_fragment.glsl.js",
+      "group": "ShaderChunk",
+      "base": "aomap_fragment",
+      "exports": [
+        {
+          "name": "defaultSource",
+          "original": "default"
+        }
+      ]
+    },
+    {
+      "file": "src/renderers/shaders/ShaderChunk/aomap_pars_fragment.glsl.js",
+      "group": "ShaderChunk",
+      "base": "aomap_pars_fragment",
+      "exports": [
+        {
+          "name": "defaultSource",
+          "original": "default"
+        }
+      ]
+    },
+    {
+      "file": "src/renderers/shaders/ShaderChunk/batching_pars_vertex.glsl.js",
+      "group": "ShaderChunk",
+      "base": "batching_pars_vertex",
+      "exports": [
+        {
+          "name": "defaultSource",
+          "original": "default"
+        }
+      ]
+    },
+    {
+      "file": "src/renderers/shaders/ShaderChunk/batching_vertex.glsl.js",
+      "group": "ShaderChunk",
+      "base": "batching_vertex",
+      "exports": [
+        {
+          "name": "defaultSource",
+          "original": "default"
+        }
+      ]
+    },
+    {
+      "file": "src/renderers/shaders/ShaderChunk/begin_vertex.glsl.js",
+      "group": "ShaderChunk",
+      "base": "begin_vertex",
+      "exports": [
+        {
+          "name": "defaultSource",
+          "original": "default"
+        }
+      ]
+    },
+    {
+      "file": "src/renderers/shaders/ShaderChunk/beginnormal_vertex.glsl.js",
+      "group": "ShaderChunk",
+      "base": "beginnormal_vertex",
+      "exports": [
+        {
+          "name": "defaultSource",
+          "original": "default"
+        }
+      ]
+    },
+    {
+      "file": "src/renderers/shaders/ShaderChunk/bsdfs.glsl.js",
+      "group": "ShaderChunk",
+      "base": "bsdfs",
+      "exports": [
+        {
+          "name": "defaultSource",
+          "original": "default"
+        }
+      ]
+    },
+    {
+      "file": "src/renderers/shaders/ShaderChunk/bumpmap_pars_fragment.glsl.js",
+      "group": "ShaderChunk",
+      "base": "bumpmap_pars_fragment",
+      "exports": [
+        {
+          "name": "defaultSource",
+          "original": "default"
+        }
+      ]
+    },
+    {
+      "file": "src/renderers/shaders/ShaderChunk/clearcoat_normal_fragment_begin.glsl.js",
+      "group": "ShaderChunk",
+      "base": "clearcoat_normal_fragment_begin",
+      "exports": [
+        {
+          "name": "defaultSource",
+          "original": "default"
+        }
+      ]
+    },
+    {
+      "file": "src/renderers/shaders/ShaderChunk/clearcoat_normal_fragment_maps.glsl.js",
+      "group": "ShaderChunk",
+      "base": "clearcoat_normal_fragment_maps",
+      "exports": [
+        {
+          "name": "defaultSource",
+          "original": "default"
+        }
+      ]
+    },
+    {
+      "file": "src/renderers/shaders/ShaderChunk/clearcoat_pars_fragment.glsl.js",
+      "group": "ShaderChunk",
+      "base": "clearcoat_pars_fragment",
+      "exports": [
+        {
+          "name": "defaultSource",
+          "original": "default"
+        }
+      ]
+    },
+    {
+      "file": "src/renderers/shaders/ShaderChunk/clipping_planes_fragment.glsl.js",
+      "group": "ShaderChunk",
+      "base": "clipping_planes_fragment",
+      "exports": [
+        {
+          "name": "defaultSource",
+          "original": "default"
+        }
+      ]
+    },
+    {
+      "file": "src/renderers/shaders/ShaderChunk/clipping_planes_pars_fragment.glsl.js",
+      "group": "ShaderChunk",
+      "base": "clipping_planes_pars_fragment",
+      "exports": [
+        {
+          "name": "defaultSource",
+          "original": "default"
+        }
+      ]
+    },
+    {
+      "file": "src/renderers/shaders/ShaderChunk/clipping_planes_pars_vertex.glsl.js",
+      "group": "ShaderChunk",
+      "base": "clipping_planes_pars_vertex",
+      "exports": [
+        {
+          "name": "defaultSource",
+          "original": "default"
+        }
+      ]
+    },
+    {
+      "file": "src/renderers/shaders/ShaderChunk/clipping_planes_vertex.glsl.js",
+      "group": "ShaderChunk",
+      "base": "clipping_planes_vertex",
+      "exports": [
+        {
+          "name": "defaultSource",
+          "original": "default"
+        }
+      ]
+    },
+    {
+      "file": "src/renderers/shaders/ShaderChunk/color_fragment.glsl.js",
+      "group": "ShaderChunk",
+      "base": "color_fragment",
+      "exports": [
+        {
+          "name": "defaultSource",
+          "original": "default"
+        }
+      ]
+    },
+    {
+      "file": "src/renderers/shaders/ShaderChunk/color_pars_fragment.glsl.js",
+      "group": "ShaderChunk",
+      "base": "color_pars_fragment",
+      "exports": [
+        {
+          "name": "defaultSource",
+          "original": "default"
+        }
+      ]
+    },
+    {
+      "file": "src/renderers/shaders/ShaderChunk/color_pars_vertex.glsl.js",
+      "group": "ShaderChunk",
+      "base": "color_pars_vertex",
+      "exports": [
+        {
+          "name": "defaultSource",
+          "original": "default"
+        }
+      ]
+    },
+    {
+      "file": "src/renderers/shaders/ShaderChunk/color_vertex.glsl.js",
+      "group": "ShaderChunk",
+      "base": "color_vertex",
+      "exports": [
+        {
+          "name": "defaultSource",
+          "original": "default"
+        }
+      ]
+    },
+    {
+      "file": "src/renderers/shaders/ShaderChunk/colorspace_fragment.glsl.js",
+      "group": "ShaderChunk",
+      "base": "colorspace_fragment",
+      "exports": [
+        {
+          "name": "defaultSource",
+          "original": "default"
+        }
+      ]
+    },
+    {
+      "file": "src/renderers/shaders/ShaderChunk/colorspace_pars_fragment.glsl.js",
+      "group": "ShaderChunk",
+      "base": "colorspace_pars_fragment",
+      "exports": [
+        {
+          "name": "defaultSource",
+          "original": "default"
+        }
+      ]
+    },
+    {
+      "file": "src/renderers/shaders/ShaderChunk/common.glsl.js",
+      "group": "ShaderChunk",
+      "base": "common",
+      "exports": [
+        {
+          "name": "defaultSource",
+          "original": "default"
+        }
+      ]
+    },
+    {
+      "file": "src/renderers/shaders/ShaderChunk/default_fragment.glsl.js",
+      "group": "ShaderChunk",
+      "base": "default_fragment",
+      "exports": [
+        {
+          "name": "defaultSource",
+          "original": "default"
+        }
+      ]
+    },
+    {
+      "file": "src/renderers/shaders/ShaderChunk/default_vertex.glsl.js",
+      "group": "ShaderChunk",
+      "base": "default_vertex",
+      "exports": [
+        {
+          "name": "defaultSource",
+          "original": "default"
+        }
+      ]
+    },
+    {
+      "file": "src/renderers/shaders/ShaderChunk/defaultnormal_vertex.glsl.js",
+      "group": "ShaderChunk",
+      "base": "defaultnormal_vertex",
+      "exports": [
+        {
+          "name": "defaultSource",
+          "original": "default"
+        }
+      ]
+    },
+    {
+      "file": "src/renderers/shaders/ShaderChunk/displacementmap_pars_vertex.glsl.js",
+      "group": "ShaderChunk",
+      "base": "displacementmap_pars_vertex",
+      "exports": [
+        {
+          "name": "defaultSource",
+          "original": "default"
+        }
+      ]
+    },
+    {
+      "file": "src/renderers/shaders/ShaderChunk/displacementmap_vertex.glsl.js",
+      "group": "ShaderChunk",
+      "base": "displacementmap_vertex",
+      "exports": [
+        {
+          "name": "defaultSource",
+          "original": "default"
+        }
+      ]
+    },
+    {
+      "file": "src/renderers/shaders/ShaderChunk/dithering_fragment.glsl.js",
+      "group": "ShaderChunk",
+      "base": "dithering_fragment",
+      "exports": [
+        {
+          "name": "defaultSource",
+          "original": "default"
+        }
+      ]
+    },
+    {
+      "file": "src/renderers/shaders/ShaderChunk/dithering_pars_fragment.glsl.js",
+      "group": "ShaderChunk",
+      "base": "dithering_pars_fragment",
+      "exports": [
+        {
+          "name": "defaultSource",
+          "original": "default"
+        }
+      ]
+    },
+    {
+      "file": "src/renderers/shaders/ShaderChunk/emissivemap_fragment.glsl.js",
+      "group": "ShaderChunk",
+      "base": "emissivemap_fragment",
+      "exports": [
+        {
+          "name": "defaultSource",
+          "original": "default"
+        }
+      ]
+    },
+    {
+      "file": "src/renderers/shaders/ShaderChunk/emissivemap_pars_fragment.glsl.js",
+      "group": "ShaderChunk",
+      "base": "emissivemap_pars_fragment",
+      "exports": [
+        {
+          "name": "defaultSource",
+          "original": "default"
+        }
+      ]
+    },
+    {
+      "file": "src/renderers/shaders/ShaderChunk/envmap_common_pars_fragment.glsl.js",
+      "group": "ShaderChunk",
+      "base": "envmap_common_pars_fragment",
+      "exports": [
+        {
+          "name": "defaultSource",
+          "original": "default"
+        }
+      ]
+    },
+    {
+      "file": "src/renderers/shaders/ShaderChunk/envmap_fragment.glsl.js",
+      "group": "ShaderChunk",
+      "base": "envmap_fragment",
+      "exports": [
+        {
+          "name": "defaultSource",
+          "original": "default"
+        }
+      ]
+    },
+    {
+      "file": "src/renderers/shaders/ShaderChunk/envmap_pars_fragment.glsl.js",
+      "group": "ShaderChunk",
+      "base": "envmap_pars_fragment",
+      "exports": [
+        {
+          "name": "defaultSource",
+          "original": "default"
+        }
+      ]
+    },
+    {
+      "file": "src/renderers/shaders/ShaderChunk/envmap_pars_vertex.glsl.js",
+      "group": "ShaderChunk",
+      "base": "envmap_pars_vertex",
+      "exports": [
+        {
+          "name": "defaultSource",
+          "original": "default"
+        }
+      ]
+    },
+    {
+      "file": "src/renderers/shaders/ShaderChunk/envmap_physical_pars_fragment.glsl.js",
+      "group": "ShaderChunk",
+      "base": "envmap_physical_pars_fragment",
+      "exports": [
+        {
+          "name": "defaultSource",
+          "original": "default"
+        }
+      ]
+    },
+    {
+      "file": "src/renderers/shaders/ShaderChunk/envmap_vertex.glsl.js",
+      "group": "ShaderChunk",
+      "base": "envmap_vertex",
+      "exports": [
+        {
+          "name": "defaultSource",
+          "original": "default"
+        }
+      ]
+    },
+    {
+      "file": "src/renderers/shaders/ShaderChunk/fog_fragment.glsl.js",
+      "group": "ShaderChunk",
+      "base": "fog_fragment",
+      "exports": [
+        {
+          "name": "defaultSource",
+          "original": "default"
+        }
+      ]
+    },
+    {
+      "file": "src/renderers/shaders/ShaderChunk/fog_pars_fragment.glsl.js",
+      "group": "ShaderChunk",
+      "base": "fog_pars_fragment",
+      "exports": [
+        {
+          "name": "defaultSource",
+          "original": "default"
+        }
+      ]
+    },
+    {
+      "file": "src/renderers/shaders/ShaderChunk/fog_pars_vertex.glsl.js",
+      "group": "ShaderChunk",
+      "base": "fog_pars_vertex",
+      "exports": [
+        {
+          "name": "defaultSource",
+          "original": "default"
+        }
+      ]
+    },
+    {
+      "file": "src/renderers/shaders/ShaderChunk/fog_vertex.glsl.js",
+      "group": "ShaderChunk",
+      "base": "fog_vertex",
+      "exports": [
+        {
+          "name": "defaultSource",
+          "original": "default"
+        }
+      ]
+    },
+    {
+      "file": "src/renderers/shaders/ShaderChunk/gradientmap_pars_fragment.glsl.js",
+      "group": "ShaderChunk",
+      "base": "gradientmap_pars_fragment",
+      "exports": [
+        {
+          "name": "defaultSource",
+          "original": "default"
+        }
+      ]
+    },
+    {
+      "file": "src/renderers/shaders/ShaderChunk/iridescence_fragment.glsl.js",
+      "group": "ShaderChunk",
+      "base": "iridescence_fragment",
+      "exports": [
+        {
+          "name": "defaultSource",
+          "original": "default"
+        }
+      ]
+    },
+    {
+      "file": "src/renderers/shaders/ShaderChunk/iridescence_pars_fragment.glsl.js",
+      "group": "ShaderChunk",
+      "base": "iridescence_pars_fragment",
+      "exports": [
+        {
+          "name": "defaultSource",
+          "original": "default"
+        }
+      ]
+    },
+    {
+      "file": "src/renderers/shaders/ShaderChunk/lightmap_pars_fragment.glsl.js",
+      "group": "ShaderChunk",
+      "base": "lightmap_pars_fragment",
+      "exports": [
+        {
+          "name": "defaultSource",
+          "original": "default"
+        }
+      ]
+    },
+    {
+      "file": "src/renderers/shaders/ShaderChunk/lightprobes_pars_fragment.glsl.js",
+      "group": "ShaderChunk",
+      "base": "lightprobes_pars_fragment",
+      "exports": [
+        {
+          "name": "defaultSource",
+          "original": "default"
+        }
+      ]
+    },
+    {
+      "file": "src/renderers/shaders/ShaderChunk/lights_fragment_begin.glsl.js",
+      "group": "ShaderChunk",
+      "base": "lights_fragment_begin",
+      "exports": [
+        {
+          "name": "defaultSource",
+          "original": "default"
+        }
+      ]
+    },
+    {
+      "file": "src/renderers/shaders/ShaderChunk/lights_fragment_end.glsl.js",
+      "group": "ShaderChunk",
+      "base": "lights_fragment_end",
+      "exports": [
+        {
+          "name": "defaultSource",
+          "original": "default"
+        }
+      ]
+    },
+    {
+      "file": "src/renderers/shaders/ShaderChunk/lights_fragment_maps.glsl.js",
+      "group": "ShaderChunk",
+      "base": "lights_fragment_maps",
+      "exports": [
+        {
+          "name": "defaultSource",
+          "original": "default"
+        }
+      ]
+    },
+    {
+      "file": "src/renderers/shaders/ShaderChunk/lights_lambert_fragment.glsl.js",
+      "group": "ShaderChunk",
+      "base": "lights_lambert_fragment",
+      "exports": [
+        {
+          "name": "defaultSource",
+          "original": "default"
+        }
+      ]
+    },
+    {
+      "file": "src/renderers/shaders/ShaderChunk/lights_lambert_pars_fragment.glsl.js",
+      "group": "ShaderChunk",
+      "base": "lights_lambert_pars_fragment",
+      "exports": [
+        {
+          "name": "defaultSource",
+          "original": "default"
+        }
+      ]
+    },
+    {
+      "file": "src/renderers/shaders/ShaderChunk/lights_pars_begin.glsl.js",
+      "group": "ShaderChunk",
+      "base": "lights_pars_begin",
+      "exports": [
+        {
+          "name": "defaultSource",
+          "original": "default"
+        }
+      ]
+    },
+    {
+      "file": "src/renderers/shaders/ShaderChunk/lights_phong_fragment.glsl.js",
+      "group": "ShaderChunk",
+      "base": "lights_phong_fragment",
+      "exports": [
+        {
+          "name": "defaultSource",
+          "original": "default"
+        }
+      ]
+    },
+    {
+      "file": "src/renderers/shaders/ShaderChunk/lights_phong_pars_fragment.glsl.js",
+      "group": "ShaderChunk",
+      "base": "lights_phong_pars_fragment",
+      "exports": [
+        {
+          "name": "defaultSource",
+          "original": "default"
+        }
+      ]
+    },
+    {
+      "file": "src/renderers/shaders/ShaderChunk/lights_physical_fragment.glsl.js",
+      "group": "ShaderChunk",
+      "base": "lights_physical_fragment",
+      "exports": [
+        {
+          "name": "defaultSource",
+          "original": "default"
+        }
+      ]
+    },
+    {
+      "file": "src/renderers/shaders/ShaderChunk/lights_physical_pars_fragment.glsl.js",
+      "group": "ShaderChunk",
+      "base": "lights_physical_pars_fragment",
+      "exports": [
+        {
+          "name": "defaultSource",
+          "original": "default"
+        }
+      ]
+    },
+    {
+      "file": "src/renderers/shaders/ShaderChunk/lights_toon_fragment.glsl.js",
+      "group": "ShaderChunk",
+      "base": "lights_toon_fragment",
+      "exports": [
+        {
+          "name": "defaultSource",
+          "original": "default"
+        }
+      ]
+    },
+    {
+      "file": "src/renderers/shaders/ShaderChunk/lights_toon_pars_fragment.glsl.js",
+      "group": "ShaderChunk",
+      "base": "lights_toon_pars_fragment",
+      "exports": [
+        {
+          "name": "defaultSource",
+          "original": "default"
+        }
+      ]
+    },
+    {
+      "file": "src/renderers/shaders/ShaderChunk/logdepthbuf_fragment.glsl.js",
+      "group": "ShaderChunk",
+      "base": "logdepthbuf_fragment",
+      "exports": [
+        {
+          "name": "defaultSource",
+          "original": "default"
+        }
+      ]
+    },
+    {
+      "file": "src/renderers/shaders/ShaderChunk/logdepthbuf_pars_fragment.glsl.js",
+      "group": "ShaderChunk",
+      "base": "logdepthbuf_pars_fragment",
+      "exports": [
+        {
+          "name": "defaultSource",
+          "original": "default"
+        }
+      ]
+    },
+    {
+      "file": "src/renderers/shaders/ShaderChunk/logdepthbuf_pars_vertex.glsl.js",
+      "group": "ShaderChunk",
+      "base": "logdepthbuf_pars_vertex",
+      "exports": [
+        {
+          "name": "defaultSource",
+          "original": "default"
+        }
+      ]
+    },
+    {
+      "file": "src/renderers/shaders/ShaderChunk/logdepthbuf_vertex.glsl.js",
+      "group": "ShaderChunk",
+      "base": "logdepthbuf_vertex",
+      "exports": [
+        {
+          "name": "defaultSource",
+          "original": "default"
+        }
+      ]
+    },
+    {
+      "file": "src/renderers/shaders/ShaderChunk/map_fragment.glsl.js",
+      "group": "ShaderChunk",
+      "base": "map_fragment",
+      "exports": [
+        {
+          "name": "defaultSource",
+          "original": "default"
+        }
+      ]
+    },
+    {
+      "file": "src/renderers/shaders/ShaderChunk/map_pars_fragment.glsl.js",
+      "group": "ShaderChunk",
+      "base": "map_pars_fragment",
+      "exports": [
+        {
+          "name": "defaultSource",
+          "original": "default"
+        }
+      ]
+    },
+    {
+      "file": "src/renderers/shaders/ShaderChunk/map_particle_fragment.glsl.js",
+      "group": "ShaderChunk",
+      "base": "map_particle_fragment",
+      "exports": [
+        {
+          "name": "defaultSource",
+          "original": "default"
+        }
+      ]
+    },
+    {
+      "file": "src/renderers/shaders/ShaderChunk/map_particle_pars_fragment.glsl.js",
+      "group": "ShaderChunk",
+      "base": "map_particle_pars_fragment",
+      "exports": [
+        {
+          "name": "defaultSource",
+          "original": "default"
+        }
+      ]
+    },
+    {
+      "file": "src/renderers/shaders/ShaderChunk/metalnessmap_fragment.glsl.js",
+      "group": "ShaderChunk",
+      "base": "metalnessmap_fragment",
+      "exports": [
+        {
+          "name": "defaultSource",
+          "original": "default"
+        }
+      ]
+    },
+    {
+      "file": "src/renderers/shaders/ShaderChunk/metalnessmap_pars_fragment.glsl.js",
+      "group": "ShaderChunk",
+      "base": "metalnessmap_pars_fragment",
+      "exports": [
+        {
+          "name": "defaultSource",
+          "original": "default"
+        }
+      ]
+    },
+    {
+      "file": "src/renderers/shaders/ShaderChunk/morphcolor_vertex.glsl.js",
+      "group": "ShaderChunk",
+      "base": "morphcolor_vertex",
+      "exports": [
+        {
+          "name": "defaultSource",
+          "original": "default"
+        }
+      ]
+    },
+    {
+      "file": "src/renderers/shaders/ShaderChunk/morphinstance_vertex.glsl.js",
+      "group": "ShaderChunk",
+      "base": "morphinstance_vertex",
+      "exports": [
+        {
+          "name": "defaultSource",
+          "original": "default"
+        }
+      ]
+    },
+    {
+      "file": "src/renderers/shaders/ShaderChunk/morphnormal_vertex.glsl.js",
+      "group": "ShaderChunk",
+      "base": "morphnormal_vertex",
+      "exports": [
+        {
+          "name": "defaultSource",
+          "original": "default"
+        }
+      ]
+    },
+    {
+      "file": "src/renderers/shaders/ShaderChunk/morphtarget_pars_vertex.glsl.js",
+      "group": "ShaderChunk",
+      "base": "morphtarget_pars_vertex",
+      "exports": [
+        {
+          "name": "defaultSource",
+          "original": "default"
+        }
+      ]
+    },
+    {
+      "file": "src/renderers/shaders/ShaderChunk/morphtarget_vertex.glsl.js",
+      "group": "ShaderChunk",
+      "base": "morphtarget_vertex",
+      "exports": [
+        {
+          "name": "defaultSource",
+          "original": "default"
+        }
+      ]
+    },
+    {
+      "file": "src/renderers/shaders/ShaderChunk/normal_fragment_begin.glsl.js",
+      "group": "ShaderChunk",
+      "base": "normal_fragment_begin",
+      "exports": [
+        {
+          "name": "defaultSource",
+          "original": "default"
+        }
+      ]
+    },
+    {
+      "file": "src/renderers/shaders/ShaderChunk/normal_fragment_maps.glsl.js",
+      "group": "ShaderChunk",
+      "base": "normal_fragment_maps",
+      "exports": [
+        {
+          "name": "defaultSource",
+          "original": "default"
+        }
+      ]
+    },
+    {
+      "file": "src/renderers/shaders/ShaderChunk/normal_pars_fragment.glsl.js",
+      "group": "ShaderChunk",
+      "base": "normal_pars_fragment",
+      "exports": [
+        {
+          "name": "defaultSource",
+          "original": "default"
+        }
+      ]
+    },
+    {
+      "file": "src/renderers/shaders/ShaderChunk/normal_pars_vertex.glsl.js",
+      "group": "ShaderChunk",
+      "base": "normal_pars_vertex",
+      "exports": [
+        {
+          "name": "defaultSource",
+          "original": "default"
+        }
+      ]
+    },
+    {
+      "file": "src/renderers/shaders/ShaderChunk/normal_vertex.glsl.js",
+      "group": "ShaderChunk",
+      "base": "normal_vertex",
+      "exports": [
+        {
+          "name": "defaultSource",
+          "original": "default"
+        }
+      ]
+    },
+    {
+      "file": "src/renderers/shaders/ShaderChunk/normalmap_pars_fragment.glsl.js",
+      "group": "ShaderChunk",
+      "base": "normalmap_pars_fragment",
+      "exports": [
+        {
+          "name": "defaultSource",
+          "original": "default"
+        }
+      ]
+    },
+    {
+      "file": "src/renderers/shaders/ShaderChunk/opaque_fragment.glsl.js",
+      "group": "ShaderChunk",
+      "base": "opaque_fragment",
+      "exports": [
+        {
+          "name": "defaultSource",
+          "original": "default"
+        }
+      ]
+    },
+    {
+      "file": "src/renderers/shaders/ShaderChunk/packing.glsl.js",
+      "group": "ShaderChunk",
+      "base": "packing",
+      "exports": [
+        {
+          "name": "defaultSource",
+          "original": "default"
+        }
+      ]
+    },
+    {
+      "file": "src/renderers/shaders/ShaderChunk/premultiplied_alpha_fragment.glsl.js",
+      "group": "ShaderChunk",
+      "base": "premultiplied_alpha_fragment",
+      "exports": [
+        {
+          "name": "defaultSource",
+          "original": "default"
+        }
+      ]
+    },
+    {
+      "file": "src/renderers/shaders/ShaderChunk/project_vertex.glsl.js",
+      "group": "ShaderChunk",
+      "base": "project_vertex",
+      "exports": [
+        {
+          "name": "defaultSource",
+          "original": "default"
+        }
+      ]
+    },
+    {
+      "file": "src/renderers/shaders/ShaderChunk/roughnessmap_fragment.glsl.js",
+      "group": "ShaderChunk",
+      "base": "roughnessmap_fragment",
+      "exports": [
+        {
+          "name": "defaultSource",
+          "original": "default"
+        }
+      ]
+    },
+    {
+      "file": "src/renderers/shaders/ShaderChunk/roughnessmap_pars_fragment.glsl.js",
+      "group": "ShaderChunk",
+      "base": "roughnessmap_pars_fragment",
+      "exports": [
+        {
+          "name": "defaultSource",
+          "original": "default"
+        }
+      ]
+    },
+    {
+      "file": "src/renderers/shaders/ShaderChunk/shadowmap_pars_fragment.glsl.js",
+      "group": "ShaderChunk",
+      "base": "shadowmap_pars_fragment",
+      "exports": [
+        {
+          "name": "defaultSource",
+          "original": "default"
+        }
+      ]
+    },
+    {
+      "file": "src/renderers/shaders/ShaderChunk/shadowmap_pars_vertex.glsl.js",
+      "group": "ShaderChunk",
+      "base": "shadowmap_pars_vertex",
+      "exports": [
+        {
+          "name": "defaultSource",
+          "original": "default"
+        }
+      ]
+    },
+    {
+      "file": "src/renderers/shaders/ShaderChunk/shadowmap_vertex.glsl.js",
+      "group": "ShaderChunk",
+      "base": "shadowmap_vertex",
+      "exports": [
+        {
+          "name": "defaultSource",
+          "original": "default"
+        }
+      ]
+    },
+    {
+      "file": "src/renderers/shaders/ShaderChunk/shadowmask_pars_fragment.glsl.js",
+      "group": "ShaderChunk",
+      "base": "shadowmask_pars_fragment",
+      "exports": [
+        {
+          "name": "defaultSource",
+          "original": "default"
+        }
+      ]
+    },
+    {
+      "file": "src/renderers/shaders/ShaderChunk/skinbase_vertex.glsl.js",
+      "group": "ShaderChunk",
+      "base": "skinbase_vertex",
+      "exports": [
+        {
+          "name": "defaultSource",
+          "original": "default"
+        }
+      ]
+    },
+    {
+      "file": "src/renderers/shaders/ShaderChunk/skinning_pars_vertex.glsl.js",
+      "group": "ShaderChunk",
+      "base": "skinning_pars_vertex",
+      "exports": [
+        {
+          "name": "defaultSource",
+          "original": "default"
+        }
+      ]
+    },
+    {
+      "file": "src/renderers/shaders/ShaderChunk/skinning_vertex.glsl.js",
+      "group": "ShaderChunk",
+      "base": "skinning_vertex",
+      "exports": [
+        {
+          "name": "defaultSource",
+          "original": "default"
+        }
+      ]
+    },
+    {
+      "file": "src/renderers/shaders/ShaderChunk/skinnormal_vertex.glsl.js",
+      "group": "ShaderChunk",
+      "base": "skinnormal_vertex",
+      "exports": [
+        {
+          "name": "defaultSource",
+          "original": "default"
+        }
+      ]
+    },
+    {
+      "file": "src/renderers/shaders/ShaderChunk/specularmap_fragment.glsl.js",
+      "group": "ShaderChunk",
+      "base": "specularmap_fragment",
+      "exports": [
+        {
+          "name": "defaultSource",
+          "original": "default"
+        }
+      ]
+    },
+    {
+      "file": "src/renderers/shaders/ShaderChunk/specularmap_pars_fragment.glsl.js",
+      "group": "ShaderChunk",
+      "base": "specularmap_pars_fragment",
+      "exports": [
+        {
+          "name": "defaultSource",
+          "original": "default"
+        }
+      ]
+    },
+    {
+      "file": "src/renderers/shaders/ShaderChunk/tonemapping_fragment.glsl.js",
+      "group": "ShaderChunk",
+      "base": "tonemapping_fragment",
+      "exports": [
+        {
+          "name": "defaultSource",
+          "original": "default"
+        }
+      ]
+    },
+    {
+      "file": "src/renderers/shaders/ShaderChunk/tonemapping_pars_fragment.glsl.js",
+      "group": "ShaderChunk",
+      "base": "tonemapping_pars_fragment",
+      "exports": [
+        {
+          "name": "defaultSource",
+          "original": "default"
+        }
+      ]
+    },
+    {
+      "file": "src/renderers/shaders/ShaderChunk/transmission_fragment.glsl.js",
+      "group": "ShaderChunk",
+      "base": "transmission_fragment",
+      "exports": [
+        {
+          "name": "defaultSource",
+          "original": "default"
+        }
+      ]
+    },
+    {
+      "file": "src/renderers/shaders/ShaderChunk/transmission_pars_fragment.glsl.js",
+      "group": "ShaderChunk",
+      "base": "transmission_pars_fragment",
+      "exports": [
+        {
+          "name": "defaultSource",
+          "original": "default"
+        }
+      ]
+    },
+    {
+      "file": "src/renderers/shaders/ShaderChunk/uv_pars_fragment.glsl.js",
+      "group": "ShaderChunk",
+      "base": "uv_pars_fragment",
+      "exports": [
+        {
+          "name": "defaultSource",
+          "original": "default"
+        }
+      ]
+    },
+    {
+      "file": "src/renderers/shaders/ShaderChunk/uv_pars_vertex.glsl.js",
+      "group": "ShaderChunk",
+      "base": "uv_pars_vertex",
+      "exports": [
+        {
+          "name": "defaultSource",
+          "original": "default"
+        }
+      ]
+    },
+    {
+      "file": "src/renderers/shaders/ShaderChunk/uv_vertex.glsl.js",
+      "group": "ShaderChunk",
+      "base": "uv_vertex",
+      "exports": [
+        {
+          "name": "defaultSource",
+          "original": "default"
+        }
+      ]
+    },
+    {
+      "file": "src/renderers/shaders/ShaderChunk/worldpos_vertex.glsl.js",
+      "group": "ShaderChunk",
+      "base": "worldpos_vertex",
+      "exports": [
+        {
+          "name": "defaultSource",
+          "original": "default"
+        }
+      ]
+    },
+    {
+      "file": "src/renderers/shaders/ShaderLib/background.glsl.js",
+      "group": "ShaderLib",
+      "base": "background",
+      "exports": [
+        {
+          "name": "vertex",
+          "original": "vertex"
+        },
+        {
+          "name": "fragment",
+          "original": "fragment"
+        }
+      ]
+    },
+    {
+      "file": "src/renderers/shaders/ShaderLib/backgroundCube.glsl.js",
+      "group": "ShaderLib",
+      "base": "backgroundCube",
+      "exports": [
+        {
+          "name": "vertex",
+          "original": "vertex"
+        },
+        {
+          "name": "fragment",
+          "original": "fragment"
+        }
+      ]
+    },
+    {
+      "file": "src/renderers/shaders/ShaderLib/cube.glsl.js",
+      "group": "ShaderLib",
+      "base": "cube",
+      "exports": [
+        {
+          "name": "vertex",
+          "original": "vertex"
+        },
+        {
+          "name": "fragment",
+          "original": "fragment"
+        }
+      ]
+    },
+    {
+      "file": "src/renderers/shaders/ShaderLib/depth.glsl.js",
+      "group": "ShaderLib",
+      "base": "depth",
+      "exports": [
+        {
+          "name": "vertex",
+          "original": "vertex"
+        },
+        {
+          "name": "fragment",
+          "original": "fragment"
+        }
+      ]
+    },
+    {
+      "file": "src/renderers/shaders/ShaderLib/distance.glsl.js",
+      "group": "ShaderLib",
+      "base": "distance",
+      "exports": [
+        {
+          "name": "vertex",
+          "original": "vertex"
+        },
+        {
+          "name": "fragment",
+          "original": "fragment"
+        }
+      ]
+    },
+    {
+      "file": "src/renderers/shaders/ShaderLib/equirect.glsl.js",
+      "group": "ShaderLib",
+      "base": "equirect",
+      "exports": [
+        {
+          "name": "vertex",
+          "original": "vertex"
+        },
+        {
+          "name": "fragment",
+          "original": "fragment"
+        }
+      ]
+    },
+    {
+      "file": "src/renderers/shaders/ShaderLib/linedashed.glsl.js",
+      "group": "ShaderLib",
+      "base": "linedashed",
+      "exports": [
+        {
+          "name": "vertex",
+          "original": "vertex"
+        },
+        {
+          "name": "fragment",
+          "original": "fragment"
+        }
+      ]
+    },
+    {
+      "file": "src/renderers/shaders/ShaderLib/meshbasic.glsl.js",
+      "group": "ShaderLib",
+      "base": "meshbasic",
+      "exports": [
+        {
+          "name": "vertex",
+          "original": "vertex"
+        },
+        {
+          "name": "fragment",
+          "original": "fragment"
+        }
+      ]
+    },
+    {
+      "file": "src/renderers/shaders/ShaderLib/meshlambert.glsl.js",
+      "group": "ShaderLib",
+      "base": "meshlambert",
+      "exports": [
+        {
+          "name": "vertex",
+          "original": "vertex"
+        },
+        {
+          "name": "fragment",
+          "original": "fragment"
+        }
+      ]
+    },
+    {
+      "file": "src/renderers/shaders/ShaderLib/meshmatcap.glsl.js",
+      "group": "ShaderLib",
+      "base": "meshmatcap",
+      "exports": [
+        {
+          "name": "vertex",
+          "original": "vertex"
+        },
+        {
+          "name": "fragment",
+          "original": "fragment"
+        }
+      ]
+    },
+    {
+      "file": "src/renderers/shaders/ShaderLib/meshnormal.glsl.js",
+      "group": "ShaderLib",
+      "base": "meshnormal",
+      "exports": [
+        {
+          "name": "vertex",
+          "original": "vertex"
+        },
+        {
+          "name": "fragment",
+          "original": "fragment"
+        }
+      ]
+    },
+    {
+      "file": "src/renderers/shaders/ShaderLib/meshphong.glsl.js",
+      "group": "ShaderLib",
+      "base": "meshphong",
+      "exports": [
+        {
+          "name": "vertex",
+          "original": "vertex"
+        },
+        {
+          "name": "fragment",
+          "original": "fragment"
+        }
+      ]
+    },
+    {
+      "file": "src/renderers/shaders/ShaderLib/meshphysical.glsl.js",
+      "group": "ShaderLib",
+      "base": "meshphysical",
+      "exports": [
+        {
+          "name": "vertex",
+          "original": "vertex"
+        },
+        {
+          "name": "fragment",
+          "original": "fragment"
+        }
+      ]
+    },
+    {
+      "file": "src/renderers/shaders/ShaderLib/meshtoon.glsl.js",
+      "group": "ShaderLib",
+      "base": "meshtoon",
+      "exports": [
+        {
+          "name": "vertex",
+          "original": "vertex"
+        },
+        {
+          "name": "fragment",
+          "original": "fragment"
+        }
+      ]
+    },
+    {
+      "file": "src/renderers/shaders/ShaderLib/points.glsl.js",
+      "group": "ShaderLib",
+      "base": "points",
+      "exports": [
+        {
+          "name": "vertex",
+          "original": "vertex"
+        },
+        {
+          "name": "fragment",
+          "original": "fragment"
+        }
+      ]
+    },
+    {
+      "file": "src/renderers/shaders/ShaderLib/shadow.glsl.js",
+      "group": "ShaderLib",
+      "base": "shadow",
+      "exports": [
+        {
+          "name": "vertex",
+          "original": "vertex"
+        },
+        {
+          "name": "fragment",
+          "original": "fragment"
+        }
+      ]
+    },
+    {
+      "file": "src/renderers/shaders/ShaderLib/sprite.glsl.js",
+      "group": "ShaderLib",
+      "base": "sprite",
+      "exports": [
+        {
+          "name": "vertex",
+          "original": "vertex"
+        },
+        {
+          "name": "fragment",
+          "original": "fragment"
+        }
+      ]
+    },
+    {
+      "file": "src/renderers/shaders/ShaderLib/vsm.glsl.js",
+      "group": "ShaderLib",
+      "base": "vsm",
+      "exports": [
+        {
+          "name": "vertex",
+          "original": "vertex"
+        },
+        {
+          "name": "fragment",
+          "original": "fragment"
+        }
+      ]
+    }
+  ],
+  "chunkKeys": [
+    "alphahash_fragment",
+    "alphahash_pars_fragment",
+    "alphamap_fragment",
+    "alphamap_pars_fragment",
+    "alphatest_fragment",
+    "alphatest_pars_fragment",
+    "aomap_fragment",
+    "aomap_pars_fragment",
+    "batching_pars_vertex",
+    "batching_vertex",
+    "begin_vertex",
+    "beginnormal_vertex",
+    "bsdfs",
+    "iridescence_fragment",
+    "bumpmap_pars_fragment",
+    "clipping_planes_fragment",
+    "clipping_planes_pars_fragment",
+    "clipping_planes_pars_vertex",
+    "clipping_planes_vertex",
+    "color_fragment",
+    "color_pars_fragment",
+    "color_pars_vertex",
+    "color_vertex",
+    "common",
+    "defaultnormal_vertex",
+    "displacementmap_pars_vertex",
+    "displacementmap_vertex",
+    "emissivemap_fragment",
+    "emissivemap_pars_fragment",
+    "colorspace_fragment",
+    "colorspace_pars_fragment",
+    "envmap_fragment",
+    "envmap_common_pars_fragment",
+    "envmap_pars_fragment",
+    "envmap_pars_vertex",
+    "envmap_physical_pars_fragment",
+    "envmap_vertex",
+    "fog_vertex",
+    "fog_pars_vertex",
+    "fog_fragment",
+    "fog_pars_fragment",
+    "gradientmap_pars_fragment",
+    "lightmap_pars_fragment",
+    "lights_lambert_fragment",
+    "lights_lambert_pars_fragment",
+    "lights_pars_begin",
+    "lights_toon_fragment",
+    "lights_toon_pars_fragment",
+    "lights_phong_fragment",
+    "lights_phong_pars_fragment",
+    "lights_physical_fragment",
+    "lights_physical_pars_fragment",
+    "lights_fragment_begin",
+    "lights_fragment_maps",
+    "lights_fragment_end",
+    "lightprobes_pars_fragment",
+    "logdepthbuf_fragment",
+    "logdepthbuf_pars_fragment",
+    "logdepthbuf_pars_vertex",
+    "logdepthbuf_vertex",
+    "map_fragment",
+    "map_pars_fragment",
+    "map_particle_fragment",
+    "map_particle_pars_fragment",
+    "metalnessmap_fragment",
+    "metalnessmap_pars_fragment",
+    "morphinstance_vertex",
+    "morphcolor_vertex",
+    "morphnormal_vertex",
+    "morphtarget_pars_vertex",
+    "morphtarget_vertex",
+    "normal_fragment_begin",
+    "normal_fragment_maps",
+    "normal_pars_fragment",
+    "normal_pars_vertex",
+    "normal_vertex",
+    "normalmap_pars_fragment",
+    "clearcoat_normal_fragment_begin",
+    "clearcoat_normal_fragment_maps",
+    "clearcoat_pars_fragment",
+    "iridescence_pars_fragment",
+    "opaque_fragment",
+    "packing",
+    "premultiplied_alpha_fragment",
+    "project_vertex",
+    "dithering_fragment",
+    "dithering_pars_fragment",
+    "roughnessmap_fragment",
+    "roughnessmap_pars_fragment",
+    "shadowmap_pars_fragment",
+    "shadowmap_pars_vertex",
+    "shadowmap_vertex",
+    "shadowmask_pars_fragment",
+    "skinbase_vertex",
+    "skinning_pars_vertex",
+    "skinning_vertex",
+    "skinnormal_vertex",
+    "specularmap_fragment",
+    "specularmap_pars_fragment",
+    "tonemapping_fragment",
+    "tonemapping_pars_fragment",
+    "transmission_fragment",
+    "transmission_pars_fragment",
+    "uv_pars_fragment",
+    "uv_pars_vertex",
+    "uv_vertex",
+    "worldpos_vertex",
+    "background_vert",
+    "background_frag",
+    "backgroundCube_vert",
+    "backgroundCube_frag",
+    "cube_vert",
+    "cube_frag",
+    "depth_vert",
+    "depth_frag",
+    "distance_vert",
+    "distance_frag",
+    "equirect_vert",
+    "equirect_frag",
+    "linedashed_vert",
+    "linedashed_frag",
+    "meshbasic_vert",
+    "meshbasic_frag",
+    "meshlambert_vert",
+    "meshlambert_frag",
+    "meshmatcap_vert",
+    "meshmatcap_frag",
+    "meshnormal_vert",
+    "meshnormal_frag",
+    "meshphong_vert",
+    "meshphong_frag",
+    "meshphysical_vert",
+    "meshphysical_frag",
+    "meshtoon_vert",
+    "meshtoon_frag",
+    "points_vert",
+    "points_frag",
+    "shadow_vert",
+    "shadow_frag",
+    "sprite_vert",
+    "sprite_frag"
+  ]
+}

@@ -37,6 +37,7 @@ function expression(n,depth=0){
     throw Error(`Unsupported uniform initializer: ${n.type}`);
 }
 const output=`// Generated from the pinned three.js UniformsLib.js by utils/generate-uniforms.mjs.
+// Source license: THREEJS-LICENSE.
 #include "renderers/shaders/UniformsLib.h"
 #include "core/NativeObject.h"
 #include "math/Color.h"
@@ -49,11 +50,22 @@ const output=`// Generated from the pinned three.js UniformsLib.js by utils/gene
 namespace {
 JSValue object(std::initializer_list<std::pair<const char*,JSValue>> fields) {
     auto result = JSValue::object();
-    for (const auto& [name,value] : fields) result.set(name,value);
+    for (const auto& [name,value] : fields) {
+        JSPropertyDescriptor descriptor; descriptor.value=value;
+        descriptor.writable=descriptor.enumerable=descriptor.configurable=true;
+        result.defineProperty(name,descriptor);
+    }
     return result;
 }
 }
-thread_local JSValue UniformsLib = ${expression(declaration.init)};
+JSValue nativeUniformsLib() {
+    static thread_local JSWeakValue cache;
+    if(const auto existing=cache.lock();existing&&existing->isObject())return *existing;
+    static thread_local bool initializing=false;
+    JSModuleInitializationScope initialization(initializing,"UniformsLib");
+    auto result = ${expression(declaration.init)};
+    result.retainForHeapLifetime();cache=JSWeakValue(result);return result;
+}
 `;
 const destination=path.join(root,'src/renderers/shaders/UniformsLib.cpp');
 if(process.argv.includes('--check'))assert.equal(fs.readFileSync(destination,'utf8').replaceAll('\r\n','\n'),output);

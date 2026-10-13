@@ -1,0 +1,10 @@
+// Generated from three.js src/renderers/shaders/ShaderChunk/lights_lambert_fragment.glsl.js at 11738a9d55e502fb484cefffcea3a66dc44e9fe9.
+// Regenerate with utils/generate-shaders.mjs. See THREEJS-LICENSE.
+#include "renderers/shaders/ShaderChunk/lights_lambert_fragment.glsl.h"
+namespace ShaderSource::Chunk::lights_lambert_fragment {
+std::string_view defaultSource() { return R"three_glsl_0(
+LambertMaterial material;
+material.diffuseColor = diffuseColor.rgb;
+material.specularStrength = specularStrength;
+)three_glsl_0"; }
+}

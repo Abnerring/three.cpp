@@ -2,6 +2,7 @@
 #define THREECPP_VULKAN_RENDERER_H
 
 #include "math/Color.h"
+#include "core/JSValue.h"
 #include <cstdint>
 #include <memory>
 #include <string>
@@ -18,10 +19,11 @@ struct VulkanRendererParameters {
 
 struct VulkanRendererInfo {
     std::string deviceName;
-    std::uint64_t frame = 0;
-    std::uint64_t calls = 0;
+    double frame = 0;
+    double calls = 0;
     double triangles = 0;
     double lines = 0;
+    double points = 0;
     std::uint64_t attributeBuffers = 0;
     std::uint64_t attributeUploadBuffers = 0;
     std::uint64_t textureImages = 0, textureUploads = 0;
@@ -42,6 +44,12 @@ class VulkanRenderer {
     bool autoClearDepth = true;
     bool sortObjects = true;
     bool srgbOutput = true;
+    JSValue clippingPlanes = JSValue::array();
+    JSValue localClippingEnabled = false;
+
+    // The same mutable statistics object exposed by WebGLRenderer. GPU draw
+    // helpers retain the original object, as upstream closures do.
+    JSValue info;
 
     void setSize(std::uint32_t width, std::uint32_t height);
     std::uint32_t getWidth() const;

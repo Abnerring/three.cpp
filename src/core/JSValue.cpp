@@ -1,4 +1,9 @@
 #include "core/JSValue.h"
+#include "core/JSNumber.h"
+#include "core/JSJobs.h"
+#include "core/JSIterator.h"
+#include "core/JSString.h"
+#include "core/JSObject.h"
 #include "core/OrderedMap.h"
 #include "core/ArraySort.h"
 #include <algorithm>
@@ -238,17 +243,23 @@ JSValue objectValueOf(const JSValue& receiver, const std::vector<JSValue>&, cons
     return receiver;
 }
 JSValue objectToString(const JSValue& receiver, const std::vector<JSValue>&, const std::vector<JSValue>&) {
-    switch (receiver.type()) {
-    case JSValue::Type::Undefined: return "[object Undefined]";
-    case JSValue::Type::Null: return "[object Null]";
-    case JSValue::Type::Array: return "[object Array]";
-    case JSValue::Type::Function: return "[object Function]";
-    case JSValue::Type::String: return "[object String]";
-    case JSValue::Type::Boolean: return "[object Boolean]";
-    case JSValue::Type::Number: return "[object Number]";
-    default: return "[object Object]";
+    if(receiver.isUndefined())return "[object Undefined]";
+    if(receiver.isNull())return "[object Null]";
+    const auto custom=receiver.get(JSValue::wellKnownSymbol("toStringTag"));
+    if(custom.type()==JSValue::Type::String)return "[object "+custom.string()+"]";
+    if(isNativeStringObject(receiver))return "[object String]";
+    if(isNativeNumberObject(receiver))return "[object Number]";
+    switch(receiver.type()){
+    case JSValue::Type::Array:return "[object Array]";
+    case JSValue::Type::Function:return "[object Function]";
+    case JSValue::Type::String:return "[object String]";
+    case JSValue::Type::Boolean:return "[object Boolean]";
+    case JSValue::Type::Number:return "[object Number]";
+    case JSValue::Type::Symbol:return "[object Symbol]";
+    default:return "[object Object]";
     }
 }
+
 JSValue emptyFunction(const JSValue&, const std::vector<JSValue>&, const std::vector<JSValue>&) { return {}; }
 JSValue nativeToString(const JSValue& receiver, const std::vector<JSValue>&, const std::vector<JSValue>&) {
     return receiver.nativeFunctionSource();
@@ -297,20 +308,16 @@ std::uint64_t relativeIndex(JSValue index, std::uint64_t length) {
     const auto n = integerOrInfinity(index);
     return static_cast<std::uint64_t>(n < 0 ? std::max(double(length) + n, 0.0) : std::min(n, double(length)));
 }
-// The runtime lacks primitive wrapper prototypes. Preserve ToObject's own
-// String-exotic properties and primitive conversion, as Array.map already does.
+// String and Number use their real boxed prototypes. Boolean boxing still uses
+// the existing primitive conversion adapter until its wrapper intrinsic lands.
 JSValue arrayMethodObject(const JSValue& receiver) {
     if (receiver.isNull() || receiver.isUndefined())
         throw JSTypeError("Array operation requires a non-null receiver");
     if (receiver.isObject()) return receiver;
+    if (receiver.type() == JSValue::Type::String) return createNativeStringObject(receiver);
+    if (receiver.type() == JSValue::Type::Number) return createNativeNumberObject(receiver);
     auto object = JSValue::object();
     object.setPrimitiveConverter(JSValue::function([](const JSValue&, const Args&, const Args& captures) { return captures[0]; }, {receiver}));
-    if (receiver.type() == JSValue::Type::String) {
-        const auto units = utf16(receiver.string());
-        for (std::size_t i = 0; i < units.size(); ++i)
-            object.defineProperty(std::to_string(i), dataDescriptor(encodeUnit(units[i]), false, true, false));
-        object.defineProperty("length", dataDescriptor(units.size(), false, false, false));
-    }
     return object;
 }
 JSValue arrayUnshift(const JSValue& receiver, const Args& args, const Args&) {
@@ -372,16 +379,68 @@ JSValue arrayPop(const JSValue& receiver, const Args&, const Args&) {
     const auto key = std::to_string(length - 1); const auto result = object.get(key);
     deleteOrThrow(object, key); object.set("length", length - 1); return result;
 }
+JSValue arrayShift(const JSValue& receiver, const Args&, const Args&) {
+    auto object = arrayMethodObject(receiver);
+    const auto length = arrayLikeLength(object);
+    if (length == 0) { object.set("length", 0); return {}; }
+    const auto first = object.get("0");
+    for (std::uint64_t index = 1; index < length; ++index) {
+        const auto from = std::to_string(index), to = std::to_string(index - 1);
+        if (object.has(from)) {
+            const auto value = object.get(from);
+            object.set(to, value);
+        } else deleteOrThrow(object, to);
+    }
+    deleteOrThrow(object, std::to_string(length - 1));
+    object.set("length", length - 1);
+    return first;
+}
 JSValue arrayResult(JSValue original, std::uint64_t length) {
+    JSValue constructor;
     if (original.type() == JSValue::Type::Array) {
-        // ArraySpeciesCreate observes constructor even when @@species is absent.
-        // Symbol keys/custom species are outside the supported runtime types.
-        const auto constructor = original.get("constructor");
-        if (!constructor.isUndefined() && !constructor.isObject())
-            throw JSTypeError("Array constructor is not an object");
+        constructor = original.get("constructor");
+        // Cross-realm intrinsic replacement is outside the single-realm
+        // runtime. All supported constructor/species reads are live.
+        if (constructor.isObject()) {
+            constructor = constructor.get(JSValue::wellKnownSymbol("species"));
+            if (constructor.isNull()) constructor = {};
+        }
+    }
+    if (!constructor.isUndefined()) {
+        if (!constructor.isConstructible()) throw JSTypeError("Array species is not a constructor");
+        return constructor.construct({JSValue(length)});
     }
     if (length > 0xffffffffULL) throw JSRangeError("Invalid array length");
     return JSValue::array(static_cast<std::uint32_t>(length));
+}
+JSValue arrayConcat(const JSValue& receiver, const Args& args, const Args&) {
+    const auto object = arrayMethodObject(receiver);
+    auto result = arrayResult(object, 0);
+    std::uint64_t next = 0;
+    const auto append = [&](const JSValue& item) {
+        // Custom species is handled by arrayResult. The remaining
+        // @@isConcatSpreadable hook still needs its own implementation.
+        if (item.type() == JSValue::Type::Array) {
+            const auto length = arrayLikeLength(item);
+            if (length > 9007199254740991ULL - next)
+                throw JSTypeError("Array-like length exceeds maximum safe integer");
+            for (std::uint64_t index = 0; index < length; ++index, ++next) {
+                const auto source = std::to_string(index);
+                if (item.has(source)) {
+                    const auto value = item.get(source);
+                    result.defineProperty(std::to_string(next), dataDescriptor(value));
+                }
+            }
+        } else {
+            if (next >= 9007199254740991ULL)
+                throw JSTypeError("Array-like length exceeds maximum safe integer");
+            result.defineProperty(std::to_string(next++), dataDescriptor(item));
+        }
+    };
+    append(object);
+    for (const auto& item : args) append(item);
+    result.set("length", next);
+    return result;
 }
 JSValue arraySlice(const JSValue& receiver, const Args& args, const Args&) {
     auto object = arrayObject(receiver); const auto length = arrayLikeLength(object);
@@ -420,6 +479,23 @@ JSValue arrayMap(const JSValue& receiver, const Args& args, const Args&) {
             const auto value = object.get(key);
             const auto mapped = callback.call(thisArg, {value, JSValue(i), object});
             result.defineProperty(key, dataDescriptor(mapped));
+        }
+    }
+    return result;
+}
+JSValue arrayFilter(const JSValue& receiver, const Args& args, const Args&) {
+    const auto object = arrayMethodObject(receiver);
+    const auto length = arrayLikeLength(object);
+    const auto callback = argument(args, 0), thisArg = argument(args, 1);
+    if (!callback.isCallable()) throw JSTypeError("Array.prototype.filter callback is not callable");
+    auto result = arrayResult(object, 0);
+    std::uint64_t next = 0;
+    for (std::uint64_t index = 0; index < length; ++index) {
+        const auto key = std::to_string(index);
+        if (object.has(key)) {
+            const auto value = object.get(key);
+            if (callback.call(thisArg, {value, JSValue(index), object}).toBoolean())
+                result.defineProperty(std::to_string(next++), dataDescriptor(value));
         }
     }
     return result;
@@ -467,10 +543,10 @@ JSValue functionCall(const JSValue& receiver, const Args& args, const Args&) {
     return receiver.call(argument(args, 0), Args(args.begin() + std::min<std::size_t>(1, args.size()), args.end()));
 }
 JSValue objectHasOwn(const JSValue& receiver, const Args& args, const Args&) {
-    const auto key = argument(args, 0).toString(); return receiver.hasOwn(key);
+    const auto key = argument(args, 0).toPropertyKey(); return receiver.hasOwn(key);
 }
 JSValue objectEnumerable(const JSValue& receiver, const Args& args, const Args&) {
-    const auto key = argument(args, 0).toString(); const auto descriptor = receiver.getOwnPropertyDescriptor(key);
+    const auto key = argument(args, 0).toPropertyKey(); const auto descriptor = receiver.getOwnPropertyDescriptor(key);
     return descriptor && descriptor->enumerable.value_or(false);
 }
 JSValue objectPrototypeOf(const JSValue& receiver, const Args& args, const Args&) {
@@ -507,12 +583,12 @@ JSValue objectLocaleString(const JSValue& receiver, const Args&, const Args&) {
 JSValue objectDefineAccessor(const JSValue& receiver, const Args& args, const Args& captures) {
     auto object = arrayObject(receiver); const auto callback = argument(args, 1);
     if (!callback.isCallable()) throw JSTypeError("Accessor must be callable");
-    const auto key = argument(args, 0).toString(); JSPropertyDescriptor descriptor;
+    const auto key = argument(args, 0).toPropertyKey(); JSPropertyDescriptor descriptor;
     if (captures[0].toBoolean()) descriptor.getter = callback; else descriptor.setter = callback;
     descriptor.enumerable = true; descriptor.configurable = true; object.defineProperty(key, descriptor); return {};
 }
 JSValue objectLookupAccessor(const JSValue& receiver, const Args& args, const Args& captures) {
-    auto object = arrayObject(receiver); const auto key = argument(args, 0).toString();
+    auto object = arrayObject(receiver); const auto key = argument(args, 0).toPropertyKey();
     while (!object.isNull()) {
         const auto descriptor = object.getOwnPropertyDescriptor(key);
         if (descriptor) return captures[0].toBoolean() ? descriptor->getter.value_or(JSValue()) : descriptor->setter.value_or(JSValue());
@@ -528,10 +604,71 @@ class JSHeap : public std::enable_shared_from_this<JSHeap> {
         JSValue value, getter, setter;
         bool accessor = false, writable = false, enumerable = false, configurable = false;
     };
+
+    struct KeyHash {
+        std::size_t operator()(const JSValue& key) const {
+            std::size_t result=static_cast<std::size_t>(key.type())*0x9e3779b9u;
+            switch(key.type()) {
+                case JSValue::Type::Boolean: return result^std::hash<bool>{}(key.toBoolean());
+                case JSValue::Type::Number: return result^(std::isnan(key.number())?std::size_t{0x7ff80000u}:std::hash<double>{}(key.number()==0?0:key.number()));
+                case JSValue::Type::String: return result^std::hash<std::string>{}(key.string());
+                case JSValue::Type::Object:case JSValue::Type::Array:case JSValue::Type::Function:case JSValue::Type::Symbol:
+                    return result^std::hash<std::uint64_t>{}(std::get<JSValue::Reference>(key.value_).id);
+                default:return result;
+            }
+        }
+    };
+    struct KeyEqual {
+        bool operator()(const JSValue& left,const JSValue& right) const {
+            return left.strictEquals(right)||(left.type()==JSValue::Type::Number&&right.type()==JSValue::Type::Number&&std::isnan(left.number())&&std::isnan(right.number()));
+        }
+    };
+    struct Cursor { std::size_t index=0;bool finished=false; };
+    struct CollectionData {
+        struct Entry {JSValue key,value;};
+        unsigned brand;
+        std::vector<std::optional<Entry>> entries;
+        std::unordered_map<JSValue,std::size_t,KeyHash,KeyEqual> index;
+        std::vector<std::weak_ptr<Cursor>> cursors;
+        explicit CollectionData(unsigned type):brand(type) {}
+        std::shared_ptr<Cursor> cursor() {
+            std::erase_if(cursors,[](const auto& value){const auto item=value.lock();return !item||item->finished;});
+            auto value=std::make_shared<Cursor>();cursors.push_back(value);return value;
+        }
+        void compact(bool force=false) {
+            if(!force && (entries.size()<64 || entries.size()-index.size()<=index.size()))return;
+            // A cursor denotes the boundary before its next entry. Relocating
+            // that boundary preserves unseen insertions after delete/clear.
+            std::vector<std::size_t> prefix(entries.size()+1);
+            for(std::size_t i=0;i<entries.size();++i)prefix[i+1]=prefix[i]+(entries[i]?1:0);
+            std::erase_if(cursors,[&](const auto& weak){
+                const auto value=weak.lock();if(!value||value->finished)return true;
+                value->index=prefix[std::min(value->index,entries.size())];return false;
+            });
+            std::vector<std::optional<Entry>> live;live.reserve(index.size());
+            index.clear();
+            for(auto& entry:entries)if(entry) {
+                index.emplace(entry->key.graphEdge(),live.size());
+                live.push_back(std::move(entry));
+            }
+            entries.swap(live);
+        }
+    };
+    struct IteratorData {
+        unsigned brand,kind;
+        JSValue target;
+        std::shared_ptr<CollectionData> collection;
+        std::shared_ptr<Cursor> cursor;
+        std::vector<std::uint16_t> units;
+    };
+
     struct Record {
         enum class ConstructMode { None, Class, Callable, Object, Array, Builtin };
         OrderedMap<Property> properties;
         OrderedMap<JSValue> hostSlots;
+        struct SymbolProperty { JSValue key; Property property; };
+        std::vector<SymbolProperty> symbolProperties;
+        std::optional<std::string> symbolDescription;
         std::shared_ptr<void> hostPayload;
         std::shared_ptr<const JSHostObjectHooks> hostHooks;
         std::string hostTag;
@@ -541,8 +678,24 @@ class JSHeap : public std::enable_shared_from_this<JSHeap> {
         // Ordinary records and empty WeakMaps allocate no conditional table.
         // Keys are non-owning identities. Values are graph edges which become
         // strong only when both this map and its key have been marked.
+        std::shared_ptr<CollectionData> collection;
+        std::unique_ptr<IteratorData> iterator;
         bool weakMap = false;
         std::unique_ptr<std::unordered_map<std::uint64_t, JSValue>> weakEntries;
+        // Weak identities never own a heap or count as graph roots. Callback
+        // and held values are ordinary strong edges of a reachable registry.
+        bool weakRef = false;
+        std::optional<JSValue::Reference> weakTarget;
+        struct FinalizationCell {
+            std::optional<std::uint64_t> target, token;
+            JSValue heldValue;
+        };
+        struct FinalizationData {
+            JSValue callback;
+            std::vector<FinalizationCell> cells;
+            bool queued = false, running = false;
+        };
+        std::unique_ptr<FinalizationData> finalization;
         JSValue::NativeFunction callback = nullptr;
         ConstructMode constructMode = ConstructMode::None;
         std::string nativeName;
@@ -566,7 +719,8 @@ class JSHeap : public std::enable_shared_from_this<JSHeap> {
     std::unordered_map<std::uint64_t, std::unique_ptr<Record>> records;
     std::unordered_map<HostKey, std::uint64_t, HostKeyHash> hosts;
     std::uint64_t nextId = 0;
-    JSValue objectPrototype, arrayPrototype, functionPrototype;
+    std::unordered_set<std::uint64_t> keptObjects;
+    JSValue objectPrototype, arrayPrototype, functionPrototype, intrinsicObject;
     bool initialized = false, collecting = false;
     static std::weak_ptr<JSHeap>& currentHeapStorage() {
         static thread_local std::weak_ptr<JSHeap> heap;
@@ -589,7 +743,7 @@ class JSHeap : public std::enable_shared_from_this<JSHeap> {
     }
     Record& record(const JSValue& value) const { return *records.at(std::get<JSValue::Reference>(value.value_).id); }
     void validateEdge(const JSValue& value) const {
-        if (value.isObject() && value.heap_ != this)
+        if ((value.isObject() || value.isSymbol()) && value.heap_ != this)
             throw std::logic_error("Cross-heap runtime references are not implemented");
     }
     JSValue createFunction(JSValue::NativeFunction callback, const std::vector<JSValue>& captures,
@@ -633,9 +787,11 @@ class JSHeap : public std::enable_shared_from_this<JSHeap> {
         }
         auto constructor = createFunction(objectConstructor, {}, "Object", 1);
         record(constructor).intrinsic = true;
+        intrinsicObject = constructor.graphEdge();
         record(constructor).constructMode = Record::ConstructMode::Object;
         constructor.defineProperty("prototype", dataDescriptor(object, false, false, false));
         object.defineProperty("constructor", dataDescriptor(constructor, true, false, true));
+        initializeNativeObjectMethods(constructor);
         JSPropertyDescriptor proto;
         proto.getter = createFunction(objectGetProto, {}, "get __proto__", 0);
         proto.setter = createFunction(objectSetProto, {}, "set __proto__", 1);
@@ -644,15 +800,30 @@ class JSHeap : public std::enable_shared_from_this<JSHeap> {
         install(function, "call", functionCall, 1);
         install(array, "join", arrayJoin, 1); install(array, "toString", arrayToString, 0);
         install(array, "push", arrayPush, 1); install(array, "pop", arrayPop, 0);
+        install(array, "shift", arrayShift, 0);
         install(array, "unshift", arrayUnshift, 1); install(array, "sort", arraySort, 1);
-        install(array, "slice", arraySlice, 2); install(array, "indexOf", arrayIndexOf, 1);
+        install(array, "concat", arrayConcat, 1); install(array, "slice", arraySlice, 2); install(array, "indexOf", arrayIndexOf, 1);
         install(array, "splice", arraySplice, 2);
         install(array, "map", arrayMap, 1);
+        install(array, "filter", arrayFilter, 1);
         auto arrayCtor = createFunction(arrayConstructor, {}, "Array", 1);
         record(arrayCtor).intrinsic = true;
         record(arrayCtor).constructMode = Record::ConstructMode::Array;
         arrayCtor.defineProperty("prototype", dataDescriptor(array, false, false, false));
         array.defineProperty("constructor", dataDescriptor(arrayCtor, true, false, true));
+        JSPropertyDescriptor arraySpecies;
+        arraySpecies.getter = createFunction([](const JSValue& receiver, const Args&, const Args&) {
+            return receiver;
+        }, {}, "get [Symbol.species]", 0);
+        record(*arraySpecies.getter).intrinsic = true;
+        arraySpecies.enumerable = false;
+        arraySpecies.configurable = true;
+        arrayCtor.defineProperty(JSValue::wellKnownSymbol("species"), arraySpecies);
+        // Well-known identities are realm intrinsics, never user allocations.
+        for(const auto* name:{"iterator","asyncIterator","toStringTag","toPrimitive","species","isConcatSpreadable",
+            "hasInstance","match","matchAll","replace","search","split","unscopables","dispose","asyncDispose"})
+            static_cast<void>(JSValue::wellKnownSymbol(name));
+        initializeNativeIteration(array);
     }
     std::size_t collect() {
         // Native destructors may read JS fields, retain them externally, or ask
@@ -716,7 +887,7 @@ class JSHeap : public std::enable_shared_from_this<JSHeap> {
                 }
             }
             for (const auto* value : node.roots) {
-                if (countedRoots.insert(value).second && value->isObject()) {
+                if (countedRoots.insert(value).second && (value->isObject() || value->isSymbol())) {
                     validateEdge(*value);
                     if (value->owner_) ++internalRoots[std::get<JSValue::Reference>(value->value_).id];
                 }
@@ -731,8 +902,9 @@ class JSHeap : public std::enable_shared_from_this<JSHeap> {
         for (const auto& [id, value] : records) {
             if (value->roots > internalRoots[id] || value->intrinsic) pending.push_back(id);
         }
+        pending.insert(pending.end(), keptObjects.begin(), keptObjects.end());
         auto edge = [&](const JSValue& value) {
-            if (value.isObject()) pending.push_back(std::get<JSValue::Reference>(value.value_).id);
+            if (value.isObject() || value.isSymbol()) pending.push_back(std::get<JSValue::Reference>(value.value_).id);
         };
         std::vector<Owner> nativePending;
         std::map<Owner, bool, std::owner_less<Owner>> nativeMarked;
@@ -782,7 +954,7 @@ class JSHeap : public std::enable_shared_from_this<JSHeap> {
             const auto& record = *records.at(id);
             if (record.weakMap && record.weakEntries) {
                 for (const auto& [key, value] : *record.weakEntries) {
-                    if (!value.isObject()) continue;
+                    if (!value.isObject() && !value.isSymbol()) continue;
                     const auto target = std::get<JSValue::Reference>(value.value_).id;
                     if (marked.contains(target)) continue;
                     if (marked.contains(key)) pending.push_back(target);
@@ -796,6 +968,19 @@ class JSHeap : public std::enable_shared_from_this<JSHeap> {
                 for (const auto& value : hooks->trace(host)) { validateEdge(value); edge(value); }
             }
             edge(record.prototype); edge(record.primitiveConverter);
+            if(record.collection) for(const auto& entry:record.collection->entries) if(entry) {edge(entry->key);edge(entry->value);}
+            if(record.iterator) {
+                edge(record.iterator->target);
+                if(record.iterator->collection)for(const auto& entry:record.iterator->collection->entries)
+                    if(entry){edge(entry->key);edge(entry->value);}
+            }
+            if (record.finalization) {
+                edge(record.finalization->callback);
+                for (const auto& cell : record.finalization->cells) edge(cell.heldValue);
+            }
+            for (const auto& entry : record.symbolProperties) {
+                edge(entry.key);edge(entry.property.value);edge(entry.property.getter);edge(entry.property.setter);
+            }
             for (const auto& capture : record.captures) edge(capture);
             for (const auto& [key, value] : record.hostSlots) { (void) key; edge(value); }
             for (const auto& [key, value] : record.properties) {
@@ -835,9 +1020,25 @@ class JSHeap : public std::enable_shared_from_this<JSHeap> {
         // Finalizers above can resurrect ordinary JS records or change weak
         // entries. Prune only after the final re-mark, before detached records
         // are destroyed, so no stale key can later match an unrelated record.
+        std::vector<std::uint64_t> cleanupRegistries;
         for (const auto& [id, record] : records) {
             if (record->weakEntries && marked.contains(id))
                 std::erase_if(*record->weakEntries, [&](const auto& entry) { return !marked.contains(entry.first); });
+            if (!marked.contains(id)) continue;
+            if (record->weakRef && record->weakTarget && !marked.contains(record->weakTarget->id))
+                record->weakTarget.reset();
+            if (record->finalization) {
+                auto& data = *record->finalization;
+                bool ready = false;
+                for (auto& cell : data.cells) {
+                    if (cell.target && !marked.contains(*cell.target)) cell.target.reset();
+                    if (cell.token && !marked.contains(*cell.token)) cell.token.reset();
+                    ready = ready || !cell.target;
+                }
+                if (ready && !data.queued && !data.running) {
+                    data.queued = true; cleanupRegistries.push_back(id);
+                }
+            }
         }
         std::vector<std::unique_ptr<Record>> garbage;
         for (auto entry = records.begin(); entry != records.end();) {
@@ -851,6 +1052,10 @@ class JSHeap : public std::enable_shared_from_this<JSHeap> {
             if (!records.contains(entry->second)) entry = hosts.erase(entry);
             else ++entry;
         }
+        // Enqueue only after the final native re-mark and sweep. The host queue
+        // is weak: dropping the registry before its task cancels the cleanup.
+        for (const auto id : cleanupRegistries)
+            queueFinalizationRegistryCleanup(JSWeakValue(JSValue(keepHeap, id, JSValue::Type::Object)));
         return garbage.size();
     }
 };
@@ -859,6 +1064,145 @@ void JSValue::retainForHeapLifetime() const {
     static_cast<void>(JSWeakValue(*this));
     if (!isObject()) throw JSTypeError("A runtime module root must be an object");
     heap_->record(*this).intrinsic = true;
+}
+
+
+JSValue JSValue::createCollectionData(const JSValue& prototype,unsigned brand) {
+    static_cast<void>(JSWeakValue(prototype));
+    if(brand!=1&&brand!=2)throw std::logic_error("Invalid collection brand");
+    if(!prototype.isObject()&&!prototype.isNull())throw JSTypeError("Collection prototype must be object or null");
+    const auto heap=JSHeap::current();heap->validateEdge(prototype);
+    auto result=heap->allocate(Type::Object);auto& record=heap->record(result);
+    record.collection=std::make_shared<JSHeap::CollectionData>(brand);record.prototype=prototype.graphEdge();return result;
+}
+bool JSValue::hasCollectionData(unsigned brand) const {
+    static_cast<void>(JSWeakValue(*this));
+    return isObject()&&heap_->record(*this).collection&&heap_->record(*this).collection->brand==brand;
+}
+std::size_t JSValue::collectionSize(unsigned brand) const {
+    if(!hasCollectionData(brand))throw JSTypeError("Collection receiver has incompatible brand");
+    return heap_->record(*this).collection->index.size();
+}
+bool JSValue::collectionHas(const JSValue& key,unsigned brand) const {
+    if(!hasCollectionData(brand))throw JSTypeError("Collection receiver has incompatible brand");
+    static_cast<void>(JSWeakValue(key));heap_->validateEdge(key);
+    return heap_->record(*this).collection->index.contains(key);
+}
+JSValue JSValue::collectionGet(const JSValue& key,unsigned brand) const {
+    if(!hasCollectionData(brand))throw JSTypeError("Collection receiver has incompatible brand");
+    static_cast<void>(JSWeakValue(key));heap_->validateEdge(key);
+    const auto& data=*heap_->record(*this).collection;const auto found=data.index.find(key);
+    return found==data.index.end()?JSValue{}:JSValue(data.entries[found->second]->value);
+}
+void JSValue::collectionSet(const JSValue& key,const JSValue& value,unsigned brand) {
+    if(!hasCollectionData(brand))throw JSTypeError("Collection receiver has incompatible brand");
+    static_cast<void>(JSWeakValue(key));static_cast<void>(JSWeakValue(value));
+    heap_->validateEdge(key);heap_->validateEdge(value);
+    auto& data=*heap_->record(*this).collection;
+    if(const auto found=data.index.find(key);found!=data.index.end()) {
+        if(brand==1)data.entries[found->second]->value=value.graphEdge();
+        return;
+    }
+    const auto normalized=key.type()==Type::Number&&key.number()==0?JSValue(0):key;
+    data.entries.push_back(JSHeap::CollectionData::Entry{normalized.graphEdge(),value.graphEdge()});
+    try { data.index.emplace(normalized.graphEdge(),data.entries.size()-1); }
+    catch(...) {data.entries.pop_back();throw;}
+}
+bool JSValue::collectionErase(const JSValue& key,unsigned brand) {
+    if(!hasCollectionData(brand))throw JSTypeError("Collection receiver has incompatible brand");
+    static_cast<void>(JSWeakValue(key));heap_->validateEdge(key);
+    auto& data=*heap_->record(*this).collection;const auto found=data.index.find(key);
+    if(found==data.index.end())return false;
+    data.entries[found->second].reset();data.index.erase(found);data.compact();return true;
+}
+void JSValue::collectionClear(unsigned brand) {
+    if(!hasCollectionData(brand))throw JSTypeError("Collection receiver has incompatible brand");
+    auto& data=*heap_->record(*this).collection;
+    data.index.clear();for(auto& entry:data.entries)entry.reset();data.compact(true);
+}
+void JSValue::collectionForEach(const JSValue& callback,const JSValue& thisArg,unsigned brand) const {
+    if(!hasCollectionData(brand))throw JSTypeError("Collection receiver has incompatible brand");
+    static_cast<void>(JSWeakValue(callback));static_cast<void>(JSWeakValue(thisArg));
+    heap_->validateEdge(callback);heap_->validateEdge(thisArg);
+    if(!callback.isCallable())throw JSTypeError("Collection forEach callback is not callable");
+    const auto self=*this,rootedCallback=callback,rootedThis=thisArg;
+    auto& data=*heap_->record(self).collection;const auto cursor=data.cursor();
+    while(cursor->index<data.entries.size()) {
+        const auto index=cursor->index++;
+        if(!data.entries[index])continue;
+        const auto key=JSValue(data.entries[index]->key);
+        const auto value=brand==1?JSValue(data.entries[index]->value):key;
+        rootedCallback.call(rootedThis,{value,key,self});
+    }
+    cursor->finished=true;
+}
+JSValue JSValue::createIteratorData(const JSValue& prototype,const JSValue& receiver,unsigned brand,unsigned kind) {
+    static_cast<void>(JSWeakValue(prototype));static_cast<void>(JSWeakValue(receiver));
+    const auto heap=JSHeap::current();heap->validateEdge(prototype);heap->validateEdge(receiver);
+    JSValue target=receiver;
+    if(brand<=2) {
+        if(!receiver.hasCollectionData(brand))throw JSTypeError("Iterator receiver has incompatible collection brand");
+    } else if(brand==3)target=arrayMethodObject(receiver);
+    else if(brand==4) {
+        if(receiver.isNull()||receiver.isUndefined())throw JSTypeError("String iterator requires a non-null receiver");
+        target=receiver.toString();
+    } else throw std::logic_error("Invalid iterator brand");
+    auto result=heap->allocate(Type::Object);auto& record=heap->record(result);
+    record.prototype=prototype.graphEdge();record.iterator=std::make_unique<JSHeap::IteratorData>();
+    auto& iterator=*record.iterator;iterator.brand=brand;iterator.kind=kind;
+    if(brand<=2)iterator.collection=heap->record(target).collection;
+    else iterator.target=target.graphEdge();
+    iterator.cursor=brand<=2?iterator.collection->cursor():std::make_shared<JSHeap::Cursor>();
+    if(brand==4)iterator.units=utf16(target.string());
+    return result;
+}
+JSValue JSValue::iteratorNext(unsigned brand) const {
+    static_cast<void>(JSWeakValue(*this));
+    if(!isObject()||!heap_->record(*this).iterator||heap_->record(*this).iterator->brand!=brand)
+        throw JSTypeError("Iterator next receiver has incompatible brand");
+    const auto self=*this;
+    auto& iterator=*heap_->record(self).iterator;const auto cursor=iterator.cursor;
+    auto result=[](const JSValue& value,bool done) {
+        auto object=JSValue::object();object.defineProperty("value",dataDescriptor(value,true,true,true));
+        object.defineProperty("done",dataDescriptor(done,true,true,true));return object;
+    };
+    auto finish=[&] {
+        cursor->finished=true;iterator.target={};iterator.collection.reset();iterator.units.clear();return result({},true);
+    };
+    auto pair=[](const JSValue& key,const JSValue& value) {
+        auto array=JSValue::array(2);array.defineProperty("0",dataDescriptor(key,true,true,true));
+        array.defineProperty("1",dataDescriptor(value,true,true,true));return array;
+    };
+    if(cursor->finished)return result({},true);
+    const auto target=JSValue(iterator.target);
+    if(brand<=2) {
+        auto& data=*iterator.collection;
+        while(cursor->index<data.entries.size()) {
+            const auto index=cursor->index++;
+            if(!data.entries[index])continue;
+            const auto key=JSValue(data.entries[index]->key);
+            const auto value=brand==1?JSValue(data.entries[index]->value):key;
+            return result(iterator.kind==0?key:iterator.kind==1?value:pair(key,value),false);
+        }
+        return finish();
+    }
+    if(brand==3) {
+        // V8's Array Iterator captures the next index before observing length.
+        // A reentrant length getter can advance the same iterator in between.
+        const auto index=cursor->index;const auto length=arrayLikeLength(target);
+        if(index>=length)return finish();
+        cursor->index=index+1;
+        if(iterator.kind==0)return result(index,false);
+        const auto value=target.get(std::to_string(index));
+        return result(iterator.kind==1?value:pair(index,value),false);
+    }
+    if(cursor->index>=iterator.units.size())return finish();
+    const auto first=iterator.units[cursor->index++];std::string value=encodeUnit(first);
+    if(first>=0xd800&&first<=0xdbff&&cursor->index<iterator.units.size()) {
+        const auto second=iterator.units[cursor->index];
+        if(second>=0xdc00&&second<=0xdfff) {++cursor->index;value+=encodeUnit(second);}
+    }
+    return result(value,false);
 }
 
 JSValue JSValue::createWeakMapData(const JSValue& prototype) {
@@ -908,6 +1252,89 @@ void JSValue::weakMapSet(const JSValue& key, const JSValue& value) {
     entries->insert_or_assign(std::get<Reference>(key.value_).id, value.graphEdge());
 }
 
+JSValue JSValue::createWeakRefData(const JSValue& prototype, const JSValue& target) {
+    if (!target.isObject()) throw JSTypeError("WeakRef target must be held weakly");
+    static_cast<void>(JSWeakValue(target)); static_cast<void>(JSWeakValue(prototype));
+    const auto heap = JSHeap::current(); heap->validateEdge(target); heap->validateEdge(prototype);
+    if (!prototype.isObject() && !prototype.isNull()) throw JSTypeError("WeakRef prototype must be object or null");
+    auto result = heap->allocate(Type::Object);
+    auto& record = heap->record(result); record.weakRef = true;
+    record.weakTarget = std::get<Reference>(target.value_);
+    record.prototype = prototype.graphEdge();
+    heap->keptObjects.insert(record.weakTarget->id);
+    return result;
+}
+bool JSValue::hasWeakRefData() const {
+    static_cast<void>(JSWeakValue(*this));
+    return isObject() && heap_->record(*this).weakRef;
+}
+JSValue JSValue::weakRefDeref() const {
+    if (!hasWeakRefData()) throw JSTypeError("WeakRef.deref receiver lacks WeakRef data");
+    const auto target = heap_->record(*this).weakTarget;
+    if (!target) return {};
+    heap_->keptObjects.insert(target->id);
+    return JSValue(heap_->shared_from_this(), target->id, target->type);
+}
+void JSValue::clearKeptObjects() {
+    if (const auto heap = JSHeap::currentHeapStorage().lock()) heap->keptObjects.clear();
+}
+JSValue JSValue::createFinalizationRegistryData(const JSValue& prototype, const JSValue& callback) {
+    if (!callback.isCallable()) throw JSTypeError("FinalizationRegistry cleanup must be callable");
+    static_cast<void>(JSWeakValue(callback)); static_cast<void>(JSWeakValue(prototype));
+    const auto heap = JSHeap::current(); heap->validateEdge(callback); heap->validateEdge(prototype);
+    if (!prototype.isObject() && !prototype.isNull()) throw JSTypeError("FinalizationRegistry prototype must be object or null");
+    auto result = heap->allocate(Type::Object);
+    auto& record = heap->record(result); record.prototype = prototype.graphEdge();
+    record.finalization = std::make_unique<JSHeap::Record::FinalizationData>();
+    record.finalization->callback = callback.graphEdge();
+    return result;
+}
+bool JSValue::hasFinalizationRegistryData() const {
+    static_cast<void>(JSWeakValue(*this));
+    return isObject() && bool(heap_->record(*this).finalization);
+}
+void JSValue::finalizationRegistryRegister(const JSValue& target, const JSValue& heldValue,
+                                         const JSValue& token) {
+    if (!hasFinalizationRegistryData()) throw JSTypeError("FinalizationRegistry.register receiver lacks registry data");
+    if (!target.isObject()) throw JSTypeError("FinalizationRegistry target must be held weakly");
+    if (target.sameValue(heldValue)) throw JSTypeError("FinalizationRegistry target and held value must differ");
+    if (!token.isUndefined() && !token.isObject()) throw JSTypeError("FinalizationRegistry token must be held weakly");
+    for (const auto* value : {&target, &heldValue, &token}) {
+        static_cast<void>(JSWeakValue(*value)); heap_->validateEdge(*value);
+    }
+    const auto tokenId = token.isObject() ? std::optional<std::uint64_t>(std::get<Reference>(token.value_).id) : std::nullopt;
+    heap_->record(*this).finalization->cells.push_back({std::get<Reference>(target.value_).id, tokenId, heldValue.graphEdge()});
+}
+bool JSValue::finalizationRegistryUnregister(const JSValue& token) {
+    if (!hasFinalizationRegistryData()) throw JSTypeError("FinalizationRegistry.unregister receiver lacks registry data");
+    if (!token.isObject()) throw JSTypeError("FinalizationRegistry token must be held weakly");
+    static_cast<void>(JSWeakValue(token)); heap_->validateEdge(token);
+    const auto id = std::get<Reference>(token.value_).id;
+    auto& cells = heap_->record(*this).finalization->cells;
+    return std::erase_if(cells, [&](const auto& cell) { return cell.token && *cell.token == id; }) != 0;
+}
+void JSValue::finalizationRegistryCleanup() {
+    if (!hasFinalizationRegistryData()) throw JSTypeError("Cleanup receiver lacks registry data");
+    auto& data = *heap_->record(*this).finalization;
+    if (data.running) return;
+    data.queued = false; data.running = true;
+    struct Reset { bool& running; ~Reset() { running = false; } } reset{data.running};
+    try {
+        for (;;) {
+            const auto cell = std::find_if(data.cells.begin(), data.cells.end(), [](const auto& item) { return !item.target; });
+            if (cell == data.cells.end()) break;
+            auto held = JSValue(cell->heldValue);
+            data.cells.erase(cell); // Remove before user code; unregister/reentry sees the current list.
+            data.callback.call({}, {held});
+        }
+    } catch (...) {
+        if (std::any_of(data.cells.begin(), data.cells.end(), [](const auto& cell) { return !cell.target; })) {
+            data.queued = true; queueFinalizationRegistryCleanup(JSWeakValue(*this));
+        }
+        throw;
+    }
+}
+
 JSWeakValue::JSWeakValue(const JSValue& value) : value_(value.value_) {
     if (!std::holds_alternative<JSValue::Reference>(value_)) return;
     // Compare identities before reading heap storage. A foreign JSValue can
@@ -923,20 +1350,20 @@ JSValue::Type JSWeakValue::type() const {
     return static_cast<JSValue::Type>(value_.index());
 }
 bool JSWeakValue::isObject() const {
-    return std::holds_alternative<JSValue::Reference>(value_);
+    return type()==JSValue::Type::Object || type()==JSValue::Type::Array || type()==JSValue::Type::Function;
 }
 void JSWeakValue::checkThread() const {
-    if (isObject() && threadToken_ != runtimeThreadToken())
+    if (std::holds_alternative<JSValue::Reference>(value_) && threadToken_ != runtimeThreadToken())
         throw JSTypeError("Weak runtime references cannot access another thread's heap");
 }
 bool JSWeakValue::expired() const {
-    if (!isObject()) return false;
+    if (!std::holds_alternative<JSValue::Reference>(value_)) return false;
     checkThread();
     const auto heap = heap_.lock();
     return !heap || !heap->records.contains(std::get<JSValue::Reference>(value_).id);
 }
 std::optional<JSValue> JSWeakValue::lock() const {
-    if (!isObject()) {
+    if (!std::holds_alternative<JSValue::Reference>(value_)) {
         JSValue result;
         result.value_ = value_;
         return result;
@@ -994,6 +1421,33 @@ std::string JSValue::normalizeString(const std::string& value) {
     return result;
 }
 JSValue JSValue::graphEdge() const { JSValue edge; edge.value_ = value_; edge.heap_ = heap_; return edge; }
+JSValue JSValue::symbol(const std::optional<std::string>& description) {
+    const auto heap=JSHeap::current();auto value=heap->allocate(Type::Symbol);
+    if(description)heap->record(value).symbolDescription=normalizeString(*description);
+    return value;
+}
+JSValue JSValue::wellKnownSymbol(const std::string& name) {
+    static const std::unordered_set<std::string> names{"iterator","asyncIterator","toStringTag","toPrimitive","species","isConcatSpreadable","hasInstance","match","matchAll","replace","search","split","unscopables","dispose","asyncDispose"};
+    if(!names.contains(name))throw JSTypeError("Unknown well-known Symbol");
+    static thread_local std::unordered_map<std::string,JSWeakValue> cached;
+    if(const auto value=cached[name].lock();value&&value->isSymbol())return *value;
+    auto value=symbol("Symbol."+name);value.heap_->record(value).intrinsic=true;
+    cached[name]=JSWeakValue(value);return value;
+}
+std::optional<std::string> JSValue::symbolDescription() const {
+    static_cast<void>(JSWeakValue(*this));
+    if(!isSymbol())throw JSTypeError("Symbol receiver required");
+    return heap_->record(*this).symbolDescription;
+}
+JSValue JSValue::toPropertyKey() const {
+    static_cast<void>(JSWeakValue(*this));
+    const auto primitive=toPrimitive(PreferredType::String);
+    return primitive.isSymbol()?primitive:JSValue(primitive.toString());
+}
+JSValue JSValue::intrinsicObjectConstructor() {
+    auto heap=JSHeap::current();return JSValue(heap->intrinsicObject);
+}
+bool JSValue::hasActiveHeap() {return !JSHeap::currentHeapStorage().expired();}
 JSValue JSValue::object() {
     auto heap = JSHeap::current(); auto value = heap->allocate(Type::Object);
     heap->record(value).prototype = heap->objectPrototype.graphEdge(); return value;
@@ -1106,13 +1560,10 @@ bool JSValue::toBoolean() const {
     }
 }
 JSValue JSValue::toPrimitive(PreferredType hint) const {
+    static_cast<void>(JSWeakValue(*this));
     const JSValue self = *this;
     if (!self.isObject()) return self;
-    JSValue converter;
-    for (auto value = self; !value.isNull(); value = value.getPrototype()) {
-        const auto& record = value.heap_->record(value);
-        if (record.hasPrimitiveConverter) { converter = record.primitiveConverter; break; }
-    }
+    const auto converter=self.get(wellKnownSymbol("toPrimitive"));
     if (!converter.isUndefined() && !converter.isNull()) {
         if (!converter.isCallable()) throw JSTypeError("@@toPrimitive is not callable");
         auto value = converter.call(self, {hint == PreferredType::String ? "string" :
@@ -1135,6 +1586,7 @@ double JSValue::toNumber() const {
     case Type::Boolean: return std::get<bool>(value_) ? 1 : 0;
     case Type::Number: return number();
     case Type::String: return stringNumber(string());
+    case Type::Symbol: throw JSTypeError("Cannot convert a Symbol value to a number");
     default: return toPrimitive(PreferredType::Number).toNumber();
     }
 }
@@ -1145,11 +1597,15 @@ std::string JSValue::toString() const {
     case Type::Boolean: return std::get<bool>(value_) ? "true" : "false";
     case Type::Number: return numberString(number());
     case Type::String: return string();
+    case Type::Symbol: throw JSTypeError("Cannot convert a Symbol value to a string");
     default: return toPrimitive(PreferredType::String).toString();
     }
 }
 JSValue JSValue::call() const { return call(JSValue{}); }
 JSValue JSValue::call(const JSValue& receiver, const std::vector<JSValue>& args) const {
+    static_cast<void>(JSWeakValue(*this));
+    static_cast<void>(JSWeakValue(receiver));
+    for (const auto& argument : args) static_cast<void>(JSWeakValue(argument));
     if (!isCallable()) throw JSTypeError("Value is not callable");
     // Root everything before user code detaches properties or runs collection.
     const JSValue function = *this, rootedReceiver = receiver;
@@ -1218,6 +1674,8 @@ std::optional<JSValue::PropertyDescriptor> JSValue::getOwnPropertyDescriptor(con
 }
 JSValue JSValue::get(const std::string& key) const { return get(key, *this); }
 JSValue JSValue::get(const std::string& rawKey, const JSValue& receiver) const {
+    static_cast<void>(JSWeakValue(*this));
+    static_cast<void>(JSWeakValue(receiver));
     const auto key = normalizeString(rawKey);
     const JSValue self = *this, rootedReceiver = receiver;
     if (self.isUndefined() || self.isNull()) throw JSTypeError("Property access on null/undefined");
@@ -1225,7 +1683,9 @@ JSValue JSValue::get(const std::string& rawKey, const JSValue& receiver) const {
         const auto units = utf16(self.string());
         if (key == "length") return units.size();
         if (const auto index = arrayIndex(key); index && *index < units.size()) return encodeUnit(units[*index]);
+        return nativeStringPrototype().get(key,rootedReceiver);
     }
+    if (self.type() == Type::Number) return nativeNumberPrototype().get(key, rootedReceiver);
     if (!self.isObject()) return {};
     const auto descriptor = self.getOwnPropertyDescriptor(key);
     if (descriptor) {
@@ -1423,6 +1883,127 @@ std::vector<std::string> JSValue::ownPropertyNames() const {
     }
     return result;
 }
+std::optional<JSValue::PropertyDescriptor> JSValue::getOwnPropertyDescriptor(const char* key) const {
+    return getOwnPropertyDescriptor(std::string(key));
+}
+std::optional<JSValue::PropertyDescriptor> JSValue::getOwnPropertyDescriptor(const JSValue& input) const {
+    static_cast<void>(JSWeakValue(*this));
+    if(!isObject())throw JSTypeError("Expected runtime object");
+    const auto key=input.toPropertyKey();if(!key.isSymbol())return getOwnPropertyDescriptor(key.string());
+    static_cast<void>(JSWeakValue(*this));static_cast<void>(JSWeakValue(key));
+    if(!isObject())throw JSTypeError("Expected runtime object");heap_->validateEdge(key);
+    const auto& properties=heap_->record(*this).symbolProperties;
+    const auto found=std::find_if(properties.begin(),properties.end(),[&](const auto& entry){return entry.key.sameValue(key);});
+    if(found==properties.end())return {};
+    const auto& p=found->property;PropertyDescriptor d;
+    if(p.accessor){d.getter=p.getter;d.setter=p.setter;}else{d.value=p.value;d.writable=p.writable;}
+    d.enumerable=p.enumerable;d.configurable=p.configurable;return d;
+}
+JSValue JSValue::get(const JSValue& key) const {return get(key,*this);}
+JSValue JSValue::get(const JSValue& input,const JSValue& receiver) const {
+    static_cast<void>(JSWeakValue(*this));static_cast<void>(JSWeakValue(receiver));
+    if(isNull()||isUndefined())throw JSTypeError("Property access on null/undefined");
+    const auto key=input.toPropertyKey();if(!key.isSymbol())return get(key.string(),receiver);
+    static_cast<void>(JSWeakValue(*this));static_cast<void>(JSWeakValue(key));static_cast<void>(JSWeakValue(receiver));
+    const JSValue self=*this,rootedReceiver=receiver;
+    if(self.isNull()||self.isUndefined())throw JSTypeError("Property access on null/undefined");
+    if(self.type()==Type::String)return nativeStringPrototype().get(key,rootedReceiver);
+    if(self.type()==Type::Number)return nativeNumberPrototype().get(key,rootedReceiver);
+    if(!self.isObject())return {};
+    const auto d=self.getOwnPropertyDescriptor(key);
+    if(d){if(d->value)return *d->value;return d->getter->isUndefined()?JSValue{}:d->getter->call(rootedReceiver);}
+    const auto prototype=self.getPrototype();return prototype.isNull()?JSValue{}:prototype.get(key,rootedReceiver);
+}
+bool JSValue::hasOwn(const JSValue& input) const {
+    static_cast<void>(JSWeakValue(*this));
+    if(isNull()||isUndefined())throw JSTypeError("Property access on null/undefined");
+    const auto key=input.toPropertyKey();if(!key.isSymbol())return hasOwn(key.string());
+    static_cast<void>(JSWeakValue(*this));static_cast<void>(JSWeakValue(key));
+    if(isNull()||isUndefined())throw JSTypeError("Property access on null/undefined");
+    return isObject()&&getOwnPropertyDescriptor(key).has_value();
+}
+bool JSValue::has(const JSValue& input) const {
+    static_cast<void>(JSWeakValue(*this));
+    if(!isObject())throw JSTypeError("Right operand of 'in' must be an object");
+    const auto key=input.toPropertyKey();if(!key.isSymbol())return has(key.string());
+    static_cast<void>(JSWeakValue(*this));static_cast<void>(JSWeakValue(key));
+    if(!isObject())throw JSTypeError("Right operand of 'in' must be an object");
+    if(hasOwn(key))return true;const auto prototype=getPrototype();return !prototype.isNull()&&prototype.has(key);
+}
+bool JSValue::reflectSet(const JSValue& input,const JSValue& value,const JSValue& receiver) const {
+    for(const auto* v:{this,&value,&receiver})static_cast<void>(JSWeakValue(*v));
+    if(!isObject())throw JSTypeError("Expected runtime object");
+    const auto key=input.toPropertyKey();if(!key.isSymbol())return reflectSet(key.string(),value,receiver);
+    for(const auto* v:{this,&key,&value,&receiver})static_cast<void>(JSWeakValue(*v));
+    const JSValue self=*this,rootedValue=value,rootedReceiver=receiver;
+    if(!self.isObject())throw JSTypeError("Expected runtime object");
+    self.heap_->validateEdge(key);self.heap_->validateEdge(rootedValue);self.heap_->validateEdge(rootedReceiver);
+    auto d=self.getOwnPropertyDescriptor(key);
+    if(!d){const auto prototype=self.getPrototype();if(!prototype.isNull())return prototype.reflectSet(key,rootedValue,rootedReceiver);d=dataDescriptor(JSValue{});}
+    if(d->value){
+        if(!*d->writable||!rootedReceiver.isObject())return false;
+        const auto existing=rootedReceiver.getOwnPropertyDescriptor(key);
+        if(existing&&(!existing->value||!*existing->writable))return false;
+        PropertyDescriptor update;update.value=rootedValue;auto target=rootedReceiver;
+        return target.defineOwnProperty(key,existing?update:dataDescriptor(rootedValue));
+    }
+    if(d->setter->isUndefined())return false;
+    d->setter->call(rootedReceiver,{rootedValue});return true;
+}
+void JSValue::set(const JSValue& key,const JSValue& value) {
+    if(!reflectSet(key,value,*this))throw JSTypeError("Cannot assign property");
+}
+bool JSValue::defineOwnProperty(const JSValue& input,const PropertyDescriptor& descriptor) {
+    static_cast<void>(JSWeakValue(*this));
+    if(!isObject())throw JSTypeError("Expected runtime object");
+    for(const auto* v:{&descriptor.value,&descriptor.getter,&descriptor.setter})if(*v)static_cast<void>(JSWeakValue(**v));
+    const auto key=input.toPropertyKey();if(!key.isSymbol())return defineOwnProperty(key.string(),descriptor);
+    static_cast<void>(JSWeakValue(*this));static_cast<void>(JSWeakValue(key));
+    if(!isObject())throw JSTypeError("Expected runtime object");heap_->validateEdge(key);
+    const bool accessor=descriptor.getter.has_value()||descriptor.setter.has_value();
+    const bool data=descriptor.value.has_value()||descriptor.writable.has_value();
+    if(accessor&&data)throw JSTypeError("Invalid property descriptor: accessor and value/writable");
+    for(const auto* value:{&descriptor.value,&descriptor.getter,&descriptor.setter})if(*value){static_cast<void>(JSWeakValue(**value));heap_->validateEdge(**value);}
+    for(const auto* method:{&descriptor.getter,&descriptor.setter})if(*method&&!(**method).isUndefined()&&!(**method).isCallable())throw JSTypeError("Getter/setter must be callable or undefined");
+    auto& record=heap_->record(*this);auto& properties=record.symbolProperties;
+    auto found=std::find_if(properties.begin(),properties.end(),[&](const auto& entry){return entry.key.sameValue(key);});
+    const bool present=found!=properties.end();if(!present&&!record.extensible)return false;
+    if(present){const auto& old=found->property;if(!old.configurable){
+        if(descriptor.configurable.value_or(false)||(descriptor.enumerable&&*descriptor.enumerable!=old.enumerable))return false;
+        if((accessor||data)&&accessor!=old.accessor)return false;
+        if(old.accessor){if((descriptor.getter&&!descriptor.getter->sameValue(old.getter))||(descriptor.setter&&!descriptor.setter->sameValue(old.setter)))return false;}
+        else if(!old.writable&&(descriptor.writable.value_or(false)||(descriptor.value&&!descriptor.value->sameValue(old.value))))return false;
+    }}
+    if(!present){properties.push_back({key.graphEdge(),{}});found=std::prev(properties.end());}
+    auto& p=found->property;
+    if((!present&&accessor)||(present&&(accessor||data)&&accessor!=p.accessor)){p.value={};p.getter={};p.setter={};p.writable=false;p.accessor=accessor;}
+    if(descriptor.value)p.value=descriptor.value->graphEdge();if(descriptor.writable)p.writable=*descriptor.writable;
+    if(descriptor.getter)p.getter=descriptor.getter->graphEdge();if(descriptor.setter)p.setter=descriptor.setter->graphEdge();
+    if(descriptor.enumerable)p.enumerable=*descriptor.enumerable;if(descriptor.configurable)p.configurable=*descriptor.configurable;
+    return true;
+}
+void JSValue::defineProperty(const JSValue& key,const PropertyDescriptor& descriptor) {
+    if(!defineOwnProperty(key,descriptor))throw JSTypeError("Cannot redefine property");
+}
+bool JSValue::erase(const JSValue& input) {
+    static_cast<void>(JSWeakValue(*this));
+    if(!isObject())throw JSTypeError("Expected runtime object");
+    const auto key=input.toPropertyKey();if(!key.isSymbol())return erase(key.string());
+    static_cast<void>(JSWeakValue(*this));static_cast<void>(JSWeakValue(key));
+    if(!isObject())throw JSTypeError("Expected runtime object");heap_->validateEdge(key);
+    auto& properties=heap_->record(*this).symbolProperties;
+    const auto found=std::find_if(properties.begin(),properties.end(),[&](const auto& entry){return entry.key.sameValue(key);});
+    if(found==properties.end())return true;if(!found->property.configurable)return false;properties.erase(found);return true;
+}
+std::vector<JSValue> JSValue::ownPropertySymbols() const {
+    static_cast<void>(JSWeakValue(*this));if(!isObject())throw JSTypeError("Expected runtime object");
+    std::vector<JSValue> result;for(const auto& entry:heap_->record(*this).symbolProperties)result.push_back(entry.key);return result;
+}
+std::vector<JSValue> JSValue::ownPropertyKeys() const {
+    static_cast<void>(JSWeakValue(*this));
+    std::vector<JSValue> result;for(const auto& name:ownPropertyNames())result.emplace_back(name);
+    for(const auto& symbol:ownPropertySymbols())result.push_back(symbol);return result;
+}
 JSValue JSValue::getPrototype() const {
     if (!isObject()) throw JSTypeError("Expected runtime object");
     return heap_->record(*this).prototype;
@@ -1440,10 +2021,9 @@ bool JSValue::setPrototype(const JSValue& prototype) {
 void JSValue::preventExtensions() { if (!isObject()) throw JSTypeError("Expected runtime object"); heap_->record(*this).extensible = false; }
 bool JSValue::isExtensible() const { if (!isObject()) throw JSTypeError("Expected runtime object"); return heap_->record(*this).extensible; }
 void JSValue::setPrimitiveConverter(const JSValue& converter) {
-    if (!isObject()) throw JSTypeError("Expected runtime object");
-    heap_->validateEdge(converter);
-    auto& record = heap_->record(*this); record.primitiveConverter = converter.graphEdge(); record.hasPrimitiveConverter = true;
+    defineProperty(wellKnownSymbol("toPrimitive"),dataDescriptor(converter,true,false,true));
 }
+
 std::uint32_t JSValue::length() const {
     if (type() != Type::Array) throw JSTypeError("Expected runtime array");
     const auto hooks = heap_->record(*this).hostHooks;
@@ -1470,11 +2050,12 @@ JSValue JSValue::fromJSON(const JsonValue& value) {
     }, value.storage());
 }
 std::optional<JsonValue> JSValue::toJSON() const {
+    static_cast<void>(JSWeakValue(*this));
     std::unordered_set<std::uint64_t> active;
     std::function<std::optional<JsonValue>(JSValue, const std::string&)> encode = [&](JSValue value, const std::string& key) -> std::optional<JsonValue> {
         if (value.isObject()) { const auto method = value.get("toJSON"); if (method.isCallable()) value = method.call(value, {key}); }
         switch (value.type()) {
-        case Type::Undefined: case Type::Function: return std::nullopt;
+        case Type::Undefined: case Type::Function: case Type::Symbol: return std::nullopt;
         case Type::Null: return JsonValue(nullptr);
         case Type::Boolean: return JsonValue(std::get<bool>(value.value_));
         case Type::Number: return std::isfinite(value.number()) ? JsonValue(value.number() == 0 ? 0 : value.number()) : JsonValue(nullptr);
@@ -1503,6 +2084,7 @@ std::optional<JsonValue> JSValue::toJSON() const {
     return encode(*this, "");
 }
 JsonValue JSValue::trace() const {
+    static_cast<void>(JSWeakValue(*this));
     std::unordered_map<std::uint64_t, std::uint64_t> identities;
     std::function<JsonValue(JSValue)> encode = [&](JSValue value) -> JsonValue {
         switch (value.type()) {
@@ -1510,6 +2092,7 @@ JsonValue JSValue::trace() const {
         case Type::Null: return JsonValue::Object{{"type", "null"}};
         case Type::Boolean: return JsonValue::Object{{"type", "boolean"}, {"value", std::get<bool>(value.value_)}};
         case Type::String: return JsonValue::Object{{"type", "string"}, {"value", value.string()}};
+        case Type::Symbol: {const auto description=value.symbolDescription();return JsonValue::Object{{"type","symbol"},{"description",description?JsonValue(*description):JsonValue(nullptr)}};}
         case Type::Number: {
             JsonValue number = value.number();
             if (std::isnan(value.number())) number = "NaN";

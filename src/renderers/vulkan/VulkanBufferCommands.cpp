@@ -11,6 +11,7 @@ using Args = std::vector<JSValue>;
 using Storage = VulkanBufferCommands::Storage;
 constexpr const char* stateTag = "VulkanBufferCommands.State";
 constexpr const char* bufferTag = "VulkanBufferCommands.Buffer";
+constexpr const char* attachmentTag = "VulkanBufferCommands.Attachment";
 constexpr std::uint32_t arrayTarget = 0x8892, elementTarget = 0x8893;
 constexpr std::uint32_t invalidEnum = 0x0500, invalidValue = 0x0501;
 constexpr std::uint32_t invalidOperation = 0x0502, outOfMemory = 0x0505;
@@ -21,6 +22,17 @@ struct Handle {
     std::optional<std::uint32_t> target;
     std::uint64_t revision = 0;
     bool deleted = false;
+    std::size_t attachments = 0;
+};
+struct Attachment {
+    std::shared_ptr<Handle> handle;
+    explicit Attachment(std::shared_ptr<Handle> value) : handle(std::move(value)) { ++handle->attachments; }
+    void release() {
+        if (!handle) return;
+        if (--handle->attachments == 0 && handle->deleted) handle->storage.reset();
+        handle.reset();
+    }
+    ~Attachment() { release(); }
 };
 struct State {
     VulkanBufferCommands::Factory factory;
@@ -125,7 +137,7 @@ std::vector<std::byte> copyBytes(const InterpolantArray& source, std::size_t fir
 std::shared_ptr<Handle> bound(State& context, std::uint32_t target) {
     if (!validTarget(context, target)) return {};
     const auto value = context.bindings[bindingIndex(target)];
-    if (!value || value->deleted || !value->storage) { context.error(invalidOperation); return {}; }
+    if (!value || !value->storage) { context.error(invalidOperation); return {}; }
     return value;
 }
 void requireRevision(const Handle& value) {
@@ -136,6 +148,35 @@ JSNativeOwnerNode handleNode(const std::shared_ptr<Handle>& value) {
     JSNativeOwnerNode result{value, {}, {}};
     if (value->storage) result.edges.push_back({&value->storage, value->storage});
     return result;
+}
+std::shared_ptr<Attachment> attachment(const JSValue& value) {
+    static_cast<void>(JSWeakValue(value));
+    if (!value.isHostObject(attachmentTag)) throw JSTypeError("Expected a native buffer attachment");
+    return std::static_pointer_cast<Attachment>(value.hostPayload(attachmentTag));
+}
+JSValue attach(const std::shared_ptr<State>& context, const JSValue& buffer) {
+    if (buffer.isNull()) return nullptr;
+    const auto target = handle(buffer);
+    if (!owned(context, target) || target->deleted || !target->storage)
+        throw JSTypeError("Cannot attach an unavailable buffer");
+    auto value = std::make_shared<Attachment>(target);
+    auto result = JSValue::hostObject(value, value.get(), attachmentTag);
+    static const auto hooks = [] {
+        auto h = std::make_shared<JSHostObjectHooks>();
+        h->nativeOwnership = +[](const JSValue& self) {
+            const auto value = attachment(self);
+            JSNativeOwnerNode node{value, {}, {}};
+            std::vector<JSNativeOwnerNode> nodes;
+            if (value->handle) {
+                node.edges.push_back({&value->handle, value->handle});
+                nodes.push_back(handleNode(value->handle));
+                if (value->handle->storage) nodes.push_back({value->handle->storage, {}, {}});
+            }
+            nodes.push_back(std::move(node)); return nodes;
+        };
+        return h;
+    }();
+    result.setHostHooks(hooks); return result;
 }
 JSValue create(const std::shared_ptr<State>& context) {
     auto value = std::make_shared<Handle>();
@@ -169,31 +210,50 @@ JSValue command(const JSValue&, const Args& args, const Args& captures) {
     const auto context = state(captures[0]);
     context->requireOpen();
     const auto name = captures[1].string();
+    if(name=="recordError") {
+        requireArgs(args,1);const auto code=std::uint32_t(unsignedInteger(args[0],32));
+        if(code<invalidEnum || code>outOfMemory)throw JSRangeError("Invalid internal GL error flag");
+        context->error(code);return {};
+    }
+    if (name == "attach") { requireArgs(args,1); return attach(context,args[0]); }
+    if (name == "release") {
+        requireArgs(args,1);if (!args[0].isNull()) attachment(args[0])->release(); return {};
+    }
+    if (name == "restoreElement") {
+        requireArgs(args,1);
+        const auto value = args[0].isNull() ? std::shared_ptr<Handle>{} : attachment(args[0])->handle;
+        if (value && !owned(context,value)) throw JSTypeError("Foreign buffer attachment");
+        context->bindings[1] = value; return {};
+    }
     if (name == "createBuffer") return create(context);
     if (name == "getError") return context->getError();
-    if (name == "bindBuffer") {
+    if (name == "bindBuffer" || name == "checkedBind") {
         requireArgs(args, 2);
         const auto target = std::uint32_t(unsignedInteger(args[0], 32));
         const auto value = handle(args[1], true);
         context->requireOpen();
-        if (!validTarget(*context, target)) return {};
-        if (value && (!owned(context, value) || value->deleted)) { context->error(invalidOperation); return {}; }
-        // With the two supported targets, element and non-element buffer classes
-        // are disjoint, as required by WebGL's Buffer Object Binding restriction.
-        if (value && value->target && *value->target != target) { context->error(invalidOperation); return {}; }
-        if (value) value->target = target;
-        context->bindings[bindingIndex(target)] = value;
-        return {};
+        bool success = validTarget(*context,target);
+        if (success && value && (!owned(context,value) || value->deleted || (value->target && *value->target != target))) {
+            context->error(invalidOperation);success=false;
+        }
+        if (success) {
+            if (value) value->target=target;
+            context->bindings[bindingIndex(target)]=value;
+        }
+        return name=="checkedBind" ? JSValue(success) : JSValue{};
     }
-    if (name == "deleteBuffer") {
+    if (name == "deleteBuffer" || name == "checkedDelete") {
         requireArgs(args, 1);const auto value = handle(args[0], true);
-        if (!value) return {};
-        if (!owned(context, value)) { context->error(invalidOperation); return {}; }
-        if (value->deleted) return {};
-        value->deleted = true;
-        for (auto& binding : context->bindings) if (binding == value) binding.reset();
-        value->storage.reset();
-        return {};
+        bool success = false;
+        if (value) {
+            if (!owned(context,value)) context->error(invalidOperation);
+            else if (!value->deleted) {
+                success=true;value->deleted=true;
+                for(auto& binding:context->bindings)if(binding==value)binding.reset();
+                if(!value->attachments)value->storage.reset();
+            }
+        }
+        return name=="checkedDelete" ? JSValue(success) : JSValue{};
     }
     requireArgs(args, 3);
     const auto target = std::uint32_t(unsignedInteger(args[0], 32));
@@ -246,8 +306,9 @@ void property(JSValue object, const char* key, JSValue value) {
 }
 std::shared_ptr<Handle> readable(const JSValue& stateValue, const JSValue& buffer) {
     const auto context = state(stateValue);context->requireOpen();
-    const auto value = handle(buffer);
-    if (!owned(context, value) || value->deleted || !value->storage)
+    const bool isAttachment=buffer.isHostObject(attachmentTag);
+    const auto value = isAttachment ? attachment(buffer)->handle : handle(buffer);
+    if (!owned(context, value) || (!isAttachment && value->deleted && !value->attachments) || !value->storage)
         throw JSTypeError("Vulkan buffer is foreign, deleted, or unavailable");
     return value;
 }
@@ -287,6 +348,20 @@ VulkanBufferCommands::VulkanBufferCommands(Factory factory) : object_(JSValue::o
 JSValue VulkanBufferCommands::object() const {
     static_cast<void>(JSWeakValue(object_));return object_;
 }
+JSValue VulkanBufferCommands::bindingInterface() const {
+    state(state_)->requireOpen();auto result=JSValue::object();result.setPrototype(nullptr);
+    for(const auto& [name,arity]:std::initializer_list<std::pair<const char*,unsigned>>{
+        {"attach",1},{"release",1},{"restoreElement",1},{"checkedBind",2},{"checkedDelete",1},{"recordError",1}})
+        property(result,name,JSValue::function(command,{state_,name},name,arity));
+    return result;
+}
 std::uint64_t VulkanBufferCommands::revision(const JSValue& buffer) const { return readable(state_, buffer)->revision; }
 std::vector<std::byte> VulkanBufferCommands::read(const JSValue& buffer) const { return readable(state_, buffer)->storage->read(); }
+bool VulkanBufferCommands::hasStorage(const JSValue& buffer) const {
+    const auto context=state(state_);context->requireOpen();
+    const bool isAttachment=buffer.isHostObject(attachmentTag);
+    if(!isAttachment && !buffer.isHostObject(bufferTag))return false;
+    const auto value=isAttachment ? attachment(buffer)->handle : handle(buffer);
+    return owned(context,value) && (isAttachment || !value->deleted || value->attachments) && bool(value->storage);
+}
 void VulkanBufferCommands::shutdown() { state(state_)->close(); }

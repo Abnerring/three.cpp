@@ -2,6 +2,7 @@
 #include "constants.h"
 #include "core/BufferGeometry.h"
 #include "core/EventDispatcher.h"
+#include "core/SharedArray.h"
 #include "math/Color.h"
 #include "math/Vector2.h"
 #include "math/Euler.h"
@@ -49,7 +50,9 @@ class Material : public EventDispatcher {
         Reflectivity& operator=(double value);
         Reflectivity& operator=(const Reflectivity& value) { return *this = double(value); }
     };
-    using ClippingPlanes = std::optional<std::vector<std::shared_ptr<Plane>>>;
+    // Array identity belongs to shared storage. Replacing the field does not
+    // retarget previously obtained native or managed array handles.
+    using ClippingPlanes = std::optional<SharedArray<std::shared_ptr<Plane>>>;
     // Every pointer denotes the authoritative native field. Adapters may use
     // these addresses for live properties and ownership edges, never snapshots.
     using PropertyReference = std::variant<bool*, int*, unsigned*, double*, std::string*,

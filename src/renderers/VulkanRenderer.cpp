@@ -3,9 +3,17 @@
 #include "extras/DataUtils.h"
 #include "cameras/Camera.h"
 #include "core/BufferGeometry.h"
+#include "core/InstancedBufferGeometry.h"
 #include "core/ArraySort.h"
 #include "core/NativeObject.h"
 #include "renderers/webgl/WebGLAttributes.h"
+#include "renderers/webgl/WebGLInfo.h"
+#include "renderers/webgl/WebGLGeometries.h"
+#include "renderers/webgl/WebGLObjects.h"
+#include "renderers/webgl/WebGLBindingStates.h"
+#include "renderers/webgl/WebGLClipping.h"
+#include "renderers/webgl/WebGLProperties.h"
+#include "renderers/vulkan/VulkanBindingCommands.h"
 #include "renderers/vulkan/VulkanBufferCommands.h"
 #include "materials/MeshBasicMaterial.h"
 #include "math/Frustum.h"
@@ -51,6 +59,58 @@
 #endif
 
 namespace {
+// A stack camera has no owning shared_ptr. Its clipping view borrows live matrix
+// elements only for this render; escaped views fail after either exit path.
+struct ClippingCameraView {
+    struct Borrow { Camera* camera = nullptr; };
+    std::shared_ptr<Borrow> borrow;
+    JSValue value;
+    ClippingCameraView(Camera& camera, const std::shared_ptr<Object3D>& owner) {
+        if (owner) { value = nativeObject(owner); return; }
+        borrow = std::make_shared<Borrow>(); borrow->camera = &camera;
+        const auto token = JSValue::hostObject(borrow, borrow.get(), "three.ClippingCameraBorrow");
+        auto elements = JSValue::object(nullptr), matrix = JSValue::object(nullptr);
+        const JSValue::NativeFunction live = [](const JSValue&, const auto&, const auto& captures) -> JSValue {
+            const auto state = std::static_pointer_cast<Borrow>(captures[0].hostPayload("three.ClippingCameraBorrow"));
+            if (!state || !state->camera) throw JSTypeError("Clipping camera view has expired");
+            return captures[1];
+        };
+        for (unsigned i = 0; i < 16; ++i) {
+            JSPropertyDescriptor d; d.enumerable = true; d.configurable = false;
+            d.getter = JSValue::function([](const JSValue&, const auto&, const auto& captures) -> JSValue {
+                const auto state = std::static_pointer_cast<Borrow>(captures[0].hostPayload("three.ClippingCameraBorrow"));
+                if (!state || !state->camera) throw JSTypeError("Clipping camera view has expired");
+                return state->camera->matrixWorldInverse.elements()[unsigned(captures[1].number())];
+            }, {token, i});
+            d.setter = JSValue::function([](const JSValue&, const auto& args, const auto& captures) -> JSValue {
+                const auto state = std::static_pointer_cast<Borrow>(captures[0].hostPayload("three.ClippingCameraBorrow"));
+                if (!state || !state->camera) throw JSTypeError("Clipping camera view has expired");
+                const auto number = (args.empty() ? JSValue() : args[0]).toNumber();
+                if (!state->camera) throw JSTypeError("Clipping camera view has expired");
+                state->camera->matrixWorldInverse.elements()[unsigned(captures[1].number())] = number;
+                return {};
+            }, {token, i});
+            elements.defineProperty(std::to_string(i), d);
+        }
+        JSPropertyDescriptor d; d.value = 16; elements.defineProperty("length", d);
+        d = {}; d.getter = JSValue::function(live, {token, elements}); matrix.defineProperty("elements", d);
+        value = JSValue::object(nullptr);
+        d.getter = JSValue::function(live, {token, matrix}); value.defineProperty("matrixWorldInverse", d);
+    }
+    ~ClippingCameraView() { if (borrow) borrow->camera = nullptr; }
+};
+
+double geometryInstanceCount(const std::shared_ptr<BufferGeometry>& geometry) {
+    const auto value = nativeGeometry(geometry);
+    const bool missingMaximum = value.get("_maxInstanceCount").isUndefined();
+    const auto maximum = missingMaximum
+                             ? JSValue(std::numeric_limits<double>::infinity())
+                             : value.get("_maxInstanceCount");
+    const auto requested = value.get("instanceCount");
+    const auto requestedNumber = requested.toNumber();
+    return MathUtils::min(requestedNumber, maximum.toNumber());
+}
+
 void check(VkResult result, const char* operation) {
     if (result != VK_SUCCESS)
         throw std::runtime_error(std::string(operation) + " failed (VkResult " +
@@ -327,7 +387,31 @@ struct VulkanRenderer::Impl {
         std::size_t size() const override { return length; }
     };
     std::unique_ptr<VulkanBufferCommands> attributeCommands;
+    std::unique_ptr<VulkanBindingCommands> bindingCommands;
+    std::unique_ptr<WebGLBindingStates> bindingStates;
+    std::unordered_map<std::string, JSValue> programs;
     std::unique_ptr<WebGLAttributes> attributes;
+    std::unique_ptr<WebGLInfo> drawInfo;
+    std::unique_ptr<WebGLGeometries> geometries;
+    std::unique_ptr<WebGLObjects> objects;
+    std::unique_ptr<WebGLProperties> clippingProperties;
+    std::unique_ptr<WebGLClipping> clipping;
+    JSValue clippingEnabled = false, localClipping = false;
+    JSValue currentMaterialId = -1;
+    const Camera* currentCamera = nullptr;
+    std::uint64_t currentCameraId = 0;
+    JSValue currentCameraOwner;
+    struct ClippingMaterial {
+        std::weak_ptr<Material> owner;
+        EventDispatcher::Listener listener;
+        JSWeakValue properties;
+    };
+    std::unordered_map<std::uint64_t, std::shared_ptr<ClippingMaterial>> clippingMaterials;
+    struct Lifecycle {
+        Impl* owner = nullptr;
+    };
+    std::shared_ptr<Lifecycle> lifecycle = std::make_shared<Lifecycle>();
+    JSValue managedAttributes, managedBindings;
     struct TextureConfig {
         std::uint32_t width = 1, height = 1, levels = 1, components = 4, componentBytes = 1;
         VkFormat format = VK_FORMAT_R8G8B8A8_UNORM;
@@ -354,6 +438,8 @@ struct VulkanRenderer::Impl {
         TextureRef resource;
         std::vector<std::byte> pixels;
         bool dataInitialized = false;
+        std::size_t usedTimes = 0;
+        bool memoryTracked = false;
     };
     struct SourceCache {
         std::weak_ptr<TextureSource> owner;
@@ -367,6 +453,7 @@ struct VulkanRenderer::Impl {
         std::shared_ptr<SourceCache> source;
         std::shared_ptr<TextureEntry> entry;
         std::string key;
+        bool entryRetired = false;
     };
     std::unordered_map<std::uint64_t, std::shared_ptr<TextureCache>> textureCache;
     std::unordered_map<std::uint64_t, std::shared_ptr<SourceCache>> sourceCache;
@@ -379,11 +466,15 @@ struct VulkanRenderer::Impl {
         // matrix stride, color stride, morph target count, morph vertex stride
         std::uint32_t instanceLayout[4]{};
         std::uint32_t matrixDivisors[4]{1,1,1,1};
+        std::uint32_t inputLayout[4][4]{};
+        std::uint32_t matrixEnabled[4]{1,1,1,1};
     };
     struct AttributeSnapshot {
         BufferAttribute::Array array;
         double itemSize, count;
         bool normalized, isFloat16;
+        double componentStride = 0, componentOffset = 0, pointerSize = 0;
+        bool boundView = false, constantInput = false;
         explicit AttributeSnapshot(const BufferAttribute& attribute)
             : array(std::visit([](const auto& values) -> BufferAttribute::Array {
                   return values.slice();
@@ -393,7 +484,8 @@ struct VulkanRenderer::Impl {
             : array(std::move(array)), itemSize(attribute.itemSize), count(attribute.count),
               normalized(attribute.normalized), isFloat16(half) {}
         double getComponent(double index, double component) const {
-            const auto offset = index * itemSize + component;
+            if (boundView && component >= pointerSize) return component == 3 ? 1.0 : 0.0;
+            const auto offset = (constantInput ? 0 : index) * (boundView ? componentStride : itemSize) + component + componentOffset;
             return std::visit([&](const auto& values) -> double {
                 using Component = typename std::decay_t<decltype(values)>::value_type;
                 const auto raw = values.get(offset);
@@ -411,6 +503,17 @@ struct VulkanRenderer::Impl {
                 return value;
             }, array);
         }
+        AttributeSnapshot(BufferAttribute::Array values, const VulkanBindingCommands::Attribute& pointer, unsigned outputSize)
+            : array(std::move(values)), itemSize(outputSize), count(0), normalized(pointer.normalized),
+              isFloat16(pointer.type == 0x140b), pointerSize(pointer.size), boundView(true) {
+            const auto width = pointer.type == 0x1400 || pointer.type == 0x1401 ? 1u
+                : pointer.type == 0x1402 || pointer.type == 0x1403 || pointer.type == 0x140b ? 2u : 4u;
+            componentStride = double(pointer.stride ? pointer.stride : pointer.size * width) / width;
+            componentOffset = double(pointer.offset) / width;
+            const auto length = std::visit([](const auto& v) { return v.size(); }, array);
+            count = length < componentOffset + pointerSize ? 0
+                : std::floor((double(length) - componentOffset - pointerSize) / componentStride) + 1;
+        }
         double getX(std::size_t index) const { return getComponent(index, 0); }
         double getY(std::size_t index) const { return getComponent(index, 1); }
         double getZ(std::size_t index) const { return getComponent(index, 2); }
@@ -422,16 +525,12 @@ struct VulkanRenderer::Impl {
         std::array<BufferRef, 2> vertices;
         BufferRef indices;
         JSWeakValue key;
-        JSValue data;
+        JSWeakValue data;
+        JSWeakValue boundBuffer;
         std::uint64_t revision = std::numeric_limits<std::uint64_t>::max();
     };
     struct GeometryCache {
         std::weak_ptr<BufferGeometry> owner;
-        EventDispatcher::Listener disposeListener;
-        std::uint64_t updatedFrame = 0;
-        BufferRef wireframe;
-        std::vector<std::uint32_t> wireframeIndices;
-        double wireframeVersion = 0;
         std::vector<AttributeSnapshot> morphPositions;
         bool morphInitialized = false;
         BufferRef morphBuffer;
@@ -439,24 +538,34 @@ struct VulkanRenderer::Impl {
     };
     struct InstanceCache {
         struct Binding {
-            std::vector<std::weak_ptr<BufferAttribute>> attributes;
+            std::vector<JSWeakValue> attributes;
             std::uint32_t matrixStride = 16, colorStride = 3, matrixDivisor = 1, colorDivisor = 1;
             std::array<std::uint32_t,4> matrixDivisors{1,1,1,1};
             bool matrixNormalized = false, colorNormalized = false;
             bool matrixEnabled = false, colorEnabled = false;
-            std::weak_ptr<Buffer> wireframe;
         };
         std::weak_ptr<InstancedMesh> owner;
-        EventDispatcher::Listener disposeListener;
-        std::uint64_t updatedFrame = 0;
-        bool listening = false;
         std::unordered_map<std::string, std::shared_ptr<Binding>> bindings;
     };
     std::unordered_map<std::uint64_t, std::shared_ptr<AttributeCache>> attributeCache;
     std::unordered_map<std::uint64_t, std::shared_ptr<GeometryCache>> geometryCache;
     std::unordered_map<std::uint64_t, std::shared_ptr<InstanceCache>> instanceCache;
+    struct BoundInput {
+        JSWeakValue buffer;
+        VulkanBindingCommands::Attribute pointer;
+        unsigned outputSize = 0;
+        std::shared_ptr<AttributeCache> cached;
+    };
+    std::vector<BoundInput> boundInputs;
+    struct MatrixInput {
+        std::array<JSWeakValue,4> buffers;
+        std::array<VulkanBindingCommands::Attribute,4> pointers;
+        std::array<std::uint64_t,4> revisions{};
+        std::shared_ptr<AttributeCache> cached;
+    };
+    std::vector<MatrixInput> matrixInputs;
     BufferRef whiteColor, noFog, emptyStorage;
-    std::uint64_t uploadFrame = 0, recordingEpoch = 0;
+    std::uint64_t recordingEpoch = 0;
     std::uint32_t maxVertexStride = 0;
     VkDeviceSize maxStorageBufferRange = 0;
     VkFramebuffer framebuffer = VK_NULL_HANDLE;
@@ -629,9 +738,14 @@ struct VulkanRenderer::Impl {
             {3, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, 1, VK_SHADER_STAGE_VERTEX_BIT, nullptr},
             {4, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, 1, VK_SHADER_STAGE_VERTEX_BIT, nullptr},
             {5, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, 1, VK_SHADER_STAGE_VERTEX_BIT, nullptr},
-            {6, VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, 1, VK_SHADER_STAGE_VERTEX_BIT, nullptr}};
+            {6, VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, 1, VK_SHADER_STAGE_VERTEX_BIT, nullptr},
+            {7, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, 1, VK_SHADER_STAGE_VERTEX_BIT, nullptr},
+            {8, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, 1, VK_SHADER_STAGE_VERTEX_BIT, nullptr},
+            {9, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, 1, VK_SHADER_STAGE_VERTEX_BIT, nullptr},
+            {10, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, 1, VK_SHADER_STAGE_VERTEX_BIT, nullptr},
+            {11, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, 1, VK_SHADER_STAGE_FRAGMENT_BIT, nullptr}};
         VkDescriptorSetLayoutCreateInfo textureLayoutCreate{VK_STRUCTURE_TYPE_DESCRIPTOR_SET_LAYOUT_CREATE_INFO};
-        textureLayoutCreate.bindingCount = 7;
+        textureLayoutCreate.bindingCount = 12;
         textureLayoutCreate.pBindings = textureBindings;
         check(api.vkCreateDescriptorSetLayout(device, &textureLayoutCreate, nullptr, &textureLayout),
               "vkCreateDescriptorSetLayout");
@@ -652,14 +766,91 @@ struct VulkanRenderer::Impl {
         attributeCommands = std::make_unique<VulkanBufferCommands>([this] {
             return std::make_shared<AttributeStorage>(*this);
         });
-        attributes = std::make_unique<WebGLAttributes>(attributeCommands->object());
+        VkPhysicalDeviceProperties inputProperties{};
+        api.vkGetPhysicalDeviceProperties(physicalDevice, &inputProperties);
+        bindingCommands = std::make_unique<VulkanBindingCommands>(attributeCommands->object(), attributeCommands->bindingInterface(),
+            inputProperties.limits.maxVertexInputAttributes);
+        attributes = std::make_unique<WebGLAttributes>(bindingCommands->object());
+    }
+
+    void initializeObjectProtocols() {
+        lifecycle->owner = this;
+        const auto token = JSValue::hostObject(lifecycle, lifecycle.get(), "VulkanRenderer.Lifecycle");
+        managedAttributes = JSValue::object();
+        managedBindings = JSValue::object();
+        const auto define = [](JSValue target, const char* name, unsigned arity,
+                               JSValue::NativeFunction callback, std::vector<JSValue> captures) {
+            JSPropertyDescriptor descriptor;
+            descriptor.value = JSValue::constructor(callback, captures, name, arity,
+                                                    JSValue::ConstructorKind::Callable);
+            descriptor.writable = descriptor.enumerable = descriptor.configurable = true;
+            target.defineProperty(name, descriptor);
+        };
+        for (const auto& [name, arity] : std::initializer_list<std::pair<const char*, unsigned>>{
+                 {"get", 1}, {"remove", 1}, {"update", 2}}) {
+            define(managedAttributes, name, arity,
+                +[](const JSValue&, const std::vector<JSValue>& args,
+                    const std::vector<JSValue>& captures)->JSValue {
+                    const auto lifetime = std::static_pointer_cast<Lifecycle>(
+                        captures[0].hostPayload("VulkanRenderer.Lifecycle"));
+                    if (!lifetime->owner) return {};
+                    const auto raw = captures[1], method = raw.get(captures[2].string());
+                    const auto result = method.call(raw, args);
+                    // Raw protocol calls complete before any native bookkeeping.
+                    // Neither tracking nor decoding executes another update/getter.
+                    if (lifetime->owner && !args.empty()) {
+                        if (captures[2].strictEquals("update")) lifetime->owner->trackAttribute(args[0]);
+                        else if (captures[2].strictEquals("remove")) lifetime->owner->dropAttributeKey(args[0]);
+                    }
+                    return result;
+                }, {token, attributes->object(), name});
+        }
+        bindingStates = std::make_unique<WebGLBindingStates>(bindingCommands->object(), managedAttributes);
+        for (const char* name : {"releaseStatesOfGeometry", "releaseStatesOfObject"}) {
+            define(managedBindings, name, 1,
+                +[](const JSValue&, const std::vector<JSValue>& args,
+                    const std::vector<JSValue>& captures)->JSValue {
+                    const auto lifetime = std::static_pointer_cast<Lifecycle>(
+                        captures[0].hostPayload("VulkanRenderer.Lifecycle"));
+                    if (!lifetime->owner) return {};
+                    const auto value = args.empty() ? JSValue{} : args[0];
+                    const auto bindings = lifetime->owner->bindingStates->object();
+                    bindings.get(captures[1].string()).call(bindings,{value});
+                    if (!lifetime->owner) return {};
+                    if (captures[1].strictEquals("releaseStatesOfGeometry")) {
+                        const auto geometry = std::static_pointer_cast<BufferGeometry>(
+                            value.hostPayload("three.BufferGeometry"));
+                        lifetime->owner->removeGeometry(geometry->id);
+                    } else {
+                        const auto object = std::static_pointer_cast<Object3D>(value.hostPayload("three.Object3D"));
+                        lifetime->owner->removeInstance(object->id);
+                    }
+                    return {};
+                }, {token, name});
+        }
+        // The actual binding module and command state feed Vulkan draw preparation.
+        geometries = std::make_unique<WebGLGeometries>(bindingCommands->object(), managedAttributes,
+                                                      drawInfo->object(), managedBindings);
+        objects = std::make_unique<WebGLObjects>(bindingCommands->object(), geometries->object(),
+                                                managedAttributes, managedBindings, drawInfo->object());
     }
 
     ~Impl() {
         disposing = true;
+        // Escaped listeners and managed closures may survive this renderer.
+        // Retire their native capability before cleanup can invoke user code.
+        lifecycle->owner = nullptr;
+        for (const auto& [id, cached] : clippingMaterials)
+            if (const auto material = cached->owner.lock()) material->removeEventListener("dispose", cached->listener);
+        clippingMaterials.clear();
         if (device && api.vkDeviceWaitIdle)
             api.vkDeviceWaitIdle(device);
         if (device) {
+            // Native destruction cannot propagate managed callback exceptions.
+            // Every escaped interface remains inert even if disposal is interrupted.
+            try { if (objects) objects->dispose(); if (geometries) geometries->dispose(); } catch (...) {}
+            try { if (bindingStates) bindingStates->dispose(); } catch (...) {}
+            boundInputs.clear(); matrixInputs.clear(); programs.clear();
             while (!instanceCache.empty()) removeInstance(instanceCache.begin()->first, true);
             while (!geometryCache.empty())
                 removeGeometry(geometryCache.begin()->first);
@@ -667,7 +858,13 @@ struct VulkanRenderer::Impl {
                 removeAttribute(attributeCache.begin()->first);
             // Managed wrappers may outlive this renderer. Retire every native
             // upload resource while its device and function table still exist.
+            if (bindingCommands) bindingCommands->shutdown();
             if (attributeCommands) attributeCommands->shutdown();
+            bindingStates.reset(); bindingCommands.reset();
+            objects.reset();
+            geometries.reset();
+            managedBindings = {};
+            managedAttributes = {};
             attributes.reset();
             attributeCommands.reset();
             while (!textureCache.empty()) removeTexture(textureCache.begin()->first);
@@ -772,7 +969,12 @@ struct VulkanRenderer::Impl {
             std::trunc(snapshot.itemSize) != snapshot.itemSize)
             throw std::invalid_argument("Vulkan vertex attribute itemSize must be a positive integer");
         snapshot.normalized = normalized;
-        std::vector<float> values(componentCount(snapshot));
+        std::vector<float> values(snapshot.boundView ? std::size_t(snapshot.count) * std::size_t(snapshot.itemSize) : componentCount(snapshot));
+        if(snapshot.boundView) {
+            for(std::size_t i=0;i<values.size();++i)
+                values[i]=float(snapshot.getComponent(double(i/std::size_t(snapshot.itemSize)),double(i%std::size_t(snapshot.itemSize))));
+            return values;
+        }
         for (std::size_t i = 0; i < values.size(); ++i)
             values[i] = static_cast<float>(snapshot.getComponent(0, double(i)));
         return values;
@@ -811,7 +1013,7 @@ struct VulkanRenderer::Impl {
                             values.data() + range.start, range.count * sizeof(T));
         api.vkUnmapMemory(device, buffer->memory);
     }
-    void removeAttribute(std::uint64_t id) {
+    void removeAttribute(std::uint64_t id, bool removeRaw = true) {
         const auto found = attributeCache.find(id);
         if (found == attributeCache.end())
             return;
@@ -819,32 +1021,56 @@ struct VulkanRenderer::Impl {
         if (const auto owner = cached->owner.lock())
             owner->removeEventListener("dispose", cached->disposeListener);
         attributeCache.erase(found);
-        if (const auto key = cached->key.lock(); !disposing && key && attributes)
-            attributes->remove(*key);
+        if (const auto key = cached->key.lock(); !disposing && removeRaw && key && attributes)
+            managedAttributes.get("remove").call(managedAttributes, {*key});
+    }
+    void dropAttributeKey(const JSValue& key) {
+        pruneBoundInputs();
+        std::vector<std::uint64_t> ids;
+        for (const auto& [id, cached] : attributeCache)
+            if (const auto candidate = cached->key.lock(); candidate && candidate->sameValue(key))
+                ids.push_back(id);
+        for (const auto id : ids) {
+            const auto found = attributeCache.find(id);
+            if (found == attributeCache.end()) continue;
+            const auto cached = found->second;
+            if (const auto owner = cached->owner.lock())
+                owner->removeEventListener("dispose", cached->disposeListener);
+            attributeCache.erase(found);
+        }
+    }
+    void adjustMemory(const char* name, double change) {
+        if (disposing || !drawInfo) return;
+        auto memory = drawInfo->object().get("memory");
+        memory.set(name, memory.get(name).toNumber() + change);
     }
     void removeGeometry(std::uint64_t id) {
+        pruneBoundInputs();
         const auto found = geometryCache.find(id);
         if (found == geometryCache.end()) return;
-        const auto cached = found->second;
-        std::vector<std::uint64_t> attributeIds;
-        if (const auto owner = cached->owner.lock()) {
-            if (owner->index) attributeIds.push_back(owner->index->id);
-            for (const auto& [name, attribute] : owner->attributes)
-                if (const auto buffer = std::dynamic_pointer_cast<BufferAttribute>(attribute))
-                    attributeIds.push_back(buffer->id);
-            owner->removeEventListener("dispose", cached->disposeListener);
-        }
         geometryCache.erase(found);
         const auto prefix = std::to_string(id) + ":";
         for (auto& [objectId, instance] : instanceCache)
             for (auto binding = instance->bindings.begin(); binding != instance->bindings.end();)
                 if (binding->first.starts_with(prefix)) binding = instance->bindings.erase(binding);
                 else ++binding;
-        // Managed remove can call getters that dispose or modify this geometry.
-        // No container iterator or listener may survive across those callbacks.
-        for (const auto attributeId : attributeIds) removeAttribute(attributeId);
+        // WebGLGeometries alone owns raw removal, listeners and memory accounting.
+        // This adapter retires only derived Vulkan binding/deformation storage.
+    }
+    void pruneBoundInputs() {
+        std::erase_if(boundInputs, [&](const auto& input) {
+            const auto key=input.buffer.lock();return !key || !attributeCommands->hasStorage(*key);
+        });
+        std::erase_if(matrixInputs, [&](const auto& input) {
+            for(unsigned i=0;i<4;++i) if(input.pointers[i].enabled) {
+                const auto key=input.buffers[i].lock();if(!key || !attributeCommands->hasStorage(*key))return true;
+            }
+            return false;
+        });
     }
     void pruneResources() {
+        pruneBoundInputs();
+        std::erase_if(clippingMaterials, [](const auto& item) { return item.second->owner.expired(); });
         std::vector<std::uint64_t> expired;
         for (const auto& [id, cached] : instanceCache)
             if (cached->owner.expired()) expired.push_back(id);
@@ -883,37 +1109,16 @@ struct VulkanRenderer::Impl {
         const auto found = instanceCache.find(id);
         if (found == instanceCache.end()) return;
         const auto cached = found->second;
-        std::vector<std::uint64_t> attributeIds;
-        if (const auto owner = cached->owner.lock()) {
-            owner->removeEventListener("dispose", cached->disposeListener);
-            if (owner->instanceMatrix) attributeIds.push_back(owner->instanceMatrix->id);
-            if (owner->instanceColor) attributeIds.push_back(owner->instanceColor->id);
-        }
-        cached->listening = false;
         cached->bindings.clear();
         if (forget) instanceCache.erase(found);
-        for (const auto attributeId : attributeIds) removeAttribute(attributeId);
     }
-    void updateInstances(const std::shared_ptr<InstancedMesh>& mesh, std::uint64_t frame) {
+    void registerInstance(const std::shared_ptr<InstancedMesh>& mesh) {
         auto found = instanceCache.find(mesh->id);
         if (found == instanceCache.end()) {
             auto entry = std::make_shared<InstanceCache>();
             entry->owner = mesh;
             found = instanceCache.emplace(mesh->id, std::move(entry)).first;
         }
-        const auto cached = found->second;
-        if (!cached->listening) {
-            cached->disposeListener = mesh->addEventListener("dispose", [this, id = mesh->id](auto&) {
-                removeInstance(id);
-            });
-            cached->listening = true;
-        }
-        if (cached->updatedFrame == frame) return;
-        if (!mesh->instanceMatrix) throw JSTypeError("Cannot read properties of null (reading 'isGLBufferAttribute')");
-        updateAttribute(mesh->instanceMatrix);
-        // The matrix upload callback may replace or remove the color attribute.
-        if (mesh->instanceColor) updateAttribute(mesh->instanceColor);
-        cached->updatedFrame = frame;
     }
     void removeTexture(std::uint64_t id) {
         const auto found = textureCache.find(id);
@@ -922,6 +1127,24 @@ struct VulkanRenderer::Impl {
         if (const auto owner = cached->owner.lock())
             owner->removeEventListener("dispose", cached->disposeListener);
         textureCache.erase(found);
+        releaseTextureEntry(cached);
+    }
+    void releaseTextureEntry(const std::shared_ptr<TextureCache>& cached) {
+        const auto entry = cached->entry;
+        if (!entry || cached->entryRetired) return;
+        cached->entryRetired = true;
+        if (--entry->usedTimes != 0) return;
+        // Retire the logical source/cache-key storage before observable memory
+        // conversion. Recorded draws can still retain their physical VkImage.
+        if (cached->source) {
+            const auto found = cached->source->entries.find(cached->key);
+            if (found != cached->source->entries.end() && found->second.lock() == entry)
+                cached->source->entries.erase(found);
+        }
+        if (entry->memoryTracked) {
+            entry->memoryTracked = false;
+            adjustMemory("textures", -1);
+        }
     }
     static std::string textureKey(const Texture& texture) {
         std::string key;
@@ -1233,7 +1456,12 @@ struct VulkanRenderer::Impl {
             auto entry = sharedSource->entries[key].lock();
             const bool forceUpload = !entry || !entry->resource;
             if (!entry) { entry = std::make_shared<TextureEntry>(); sharedSource->entries[key] = entry; }
-            cached->source = sharedSource; cached->entry = entry; cached->key = key;
+            if (cached->entry != entry || cached->entryRetired) {
+                releaseTextureEntry(cached);
+                cached->source = sharedSource; cached->entry = entry; cached->key = key;
+                cached->entryRetired = false;
+                ++entry->usedTimes;
+            }
             if (forceUpload || sharedSource->version != source->version) {
                 const auto mipmaps = texture->mipmaps;
                 const bool manual = mipmaps && !mipmaps->empty();
@@ -1313,6 +1541,10 @@ struct VulkanRenderer::Impl {
                 }
                 if (source->dataReady || !entry->resource) {
                     entry->resource = createTextureResource(config, uploads, entry->resource);
+                    if (!entry->memoryTracked) {
+                        entry->memoryTracked = true;
+                        adjustMemory("textures", 1);
+                    }
                     entry->pixels = std::move(pixels);
                     if (source->dataReady) { entry->dataInitialized = true; ++info.textureUploads; }
                 }
@@ -1328,14 +1560,44 @@ struct VulkanRenderer::Impl {
         binding = cached ? cached->entry : nullptr;
         return binding && binding->resource ? binding->resource : fallbackTexture(false);
     }
+    void registerClippingMaterial(const std::shared_ptr<Material>& material, const JSValue& properties) {
+        const auto found = clippingMaterials.find(material->id);
+        const auto previous = found == clippingMaterials.end() ? nullptr : found->second;
+        if (previous)
+            if (const auto state = previous->properties.lock(); state && state->sameValue(properties)) return;
+        auto cached = std::make_shared<ClippingMaterial>(); cached->owner = material;
+        // getProgram obtains the current properties again for a new material state.
+        cached->properties = JSWeakValue(clippingProperties->get(nativeMaterial(material)));
+        if (previous) cached->listener = previous->listener;
+        else cached->listener = std::make_shared<std::function<void(Event&)>>([token = lifecycle, id = material->id](auto&) {
+            const auto renderer = token->owner;
+            if (!renderer) return;
+            const auto found = renderer->clippingMaterials.find(id);
+            if (found == renderer->clippingMaterials.end()) return;
+            const auto retired = found->second;
+            if (const auto owner = retired->owner.lock()) {
+                owner->removeEventListener("dispose", retired->listener);
+                const auto propertyObject = renderer->clippingProperties->object();
+                propertyObject.get("remove").call(propertyObject, {nativeMaterial(owner)});
+            }
+            if (token->owner != renderer) return;
+            const auto current = renderer->clippingMaterials.find(id);
+            if (current != renderer->clippingMaterials.end() && current->second == retired)
+                renderer->clippingMaterials.erase(current);
+        });
+        material->addEventListener("dispose", cached->listener);
+        clippingMaterials[material->id] = std::move(cached);
+    }
     VkDescriptorSet textureDescriptor(const TextureRef& map, const TextureRef& alpha, const BufferRef& uniforms,
                                       const BufferRef& matrices, const BufferRef& colors,
-                                      const BufferRef& morph, const TextureRef& weights) {
+                                      const BufferRef& morph, const TextureRef& weights,
+                                      const BufferRef& positions, const BufferRef& vertexColors,
+                                      const BufferRef& mapUv, const BufferRef& alphaUv, const BufferRef& clipPlanes) {
         VkDescriptorSet set = VK_NULL_HANDLE;
         for (;;) {
             if (activeDescriptorPool == descriptorPools.size()) {
                 VkDescriptorPoolSize sizes[] = {{VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, 12288},
-                    {VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, 4096}, {VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, 12288}};
+                    {VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, 4096}, {VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, 32768}};
                 VkDescriptorPoolCreateInfo create{VK_STRUCTURE_TYPE_DESCRIPTOR_POOL_CREATE_INFO};
                 create.maxSets = 4096; create.poolSizeCount = 3; create.pPoolSizes = sizes;
                 VkDescriptorPool pool;
@@ -1353,17 +1615,20 @@ struct VulkanRenderer::Impl {
                                            {alpha->sampler, alpha->image.view, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL},
                                            {weights->sampler, weights->image.view, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL}};
         VkDescriptorBufferInfo buffers[] = {{uniforms->buffer, 0, sizeof(TextureUniforms)},
-            {matrices->buffer, 0, matrices->size}, {colors->buffer, 0, colors->size}, {morph->buffer, 0, morph->size}};
-        VkWriteDescriptorSet writes[7]{};
-        for (std::uint32_t i = 0; i < 7; ++i) {
+            {matrices->buffer, 0, matrices->size}, {colors->buffer, 0, colors->size}, {morph->buffer, 0, morph->size},
+            {positions->buffer, 0, positions->size}, {vertexColors->buffer, 0, vertexColors->size},
+            {mapUv->buffer, 0, mapUv->size}, {alphaUv->buffer, 0, alphaUv->size},
+            {clipPlanes->buffer, 0, clipPlanes->size}};
+        VkWriteDescriptorSet writes[12]{};
+        for (std::uint32_t i = 0; i < 12; ++i) {
             writes[i].sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET; writes[i].dstSet = set;
             writes[i].dstBinding = i; writes[i].descriptorCount = 1;
             writes[i].descriptorType = i < 2 || i == 6 ? VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER
                 : i == 2 ? VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER : VK_DESCRIPTOR_TYPE_STORAGE_BUFFER;
             if (i < 2 || i == 6) writes[i].pImageInfo = &images[i == 6 ? 2 : i];
-            else writes[i].pBufferInfo = &buffers[i - 2];
+            else writes[i].pBufferInfo = &buffers[i < 6 ? i - 2 : i - 3];
         }
-        api.vkUpdateDescriptorSets(device, 7, writes, 0, nullptr);
+        api.vkUpdateDescriptorSets(device, 12, writes, 0, nullptr);
         return set;
     }
     static BufferAttribute::Array uploadedArray(const std::vector<std::byte>& bytes, double type) {
@@ -1381,14 +1646,25 @@ struct VulkanRenderer::Impl {
         default: throw std::invalid_argument("Unsupported uploaded vertex attribute format");
         }
     }
-    void syncAttribute(const std::shared_ptr<AttributeCache>& cached, const BufferAttribute& attribute) {
-        const auto buffer = cached->data.get("buffer");
+    void syncAttribute(const std::shared_ptr<AttributeCache>& cached, const BufferAttribute& attribute,
+                       const JSValue& capturedBuffer = {}) {
+        // The upload data belongs to WebGLAttributes' ephemeron. A derived draw
+        // cache must not keep that data (and its raw Vulkan allocation) alive
+        // after the managed attribute key becomes unreachable.
+        const auto data = cached->data.lock();
+        if (!data || data->isUndefined())
+            throw std::runtime_error("Attribute upload cache was retired before binding");
+        const auto buffer = capturedBuffer.isUndefined() ? data->get("buffer") : capturedBuffer;
+        const auto previousBuffer=cached->boundBuffer.lock();
+        if(!previousBuffer || !previousBuffer->sameValue(buffer)) {
+            cached->boundBuffer=JSWeakValue(buffer);cached->revision=UINT64_MAX;
+        }
         const auto revision = attributeCommands->revision(buffer);
         if (cached->snapshot && revision == cached->revision) return;
         // The upper cache owns version/range/callback decisions. The adapter's
         // revision observes completed byte writes, including writes preceding a
         // later JavaScript exception. Draw conversions never re-upload an array.
-        const auto type = cached->data.get("type").toNumber();
+        const auto type = data->get("type").toNumber();
         const auto bytes = attributeCommands->read(buffer);
         auto snapshot = std::make_shared<AttributeSnapshot>(uploadedArray(bytes, type), attribute,
                                                             type == 5131);
@@ -1402,13 +1678,140 @@ struct VulkanRenderer::Impl {
         cached->snapshot = std::move(snapshot);
         cached->revision = revision;
     }
-    std::shared_ptr<AttributeCache> updateAttribute(std::shared_ptr<BufferAttribute> attribute,
-                                                  bool index = false) {
-        const auto key = nativeAttribute(attribute);
-        attributes->update(key, index ? 34963 : 34962);
-        const auto data = attributes->get(key);
-        if (data.isUndefined())
-            throw std::runtime_error("Attribute upload callback removed its buffer before binding");
+        static bool samePointer(const VulkanBindingCommands::Attribute& a,
+                            const VulkanBindingCommands::Attribute& b) {
+        return a.enabled == b.enabled && a.normalized == b.normalized && a.integer == b.integer &&
+            a.size == b.size && a.type == b.type && a.stride == b.stride && a.offset == b.offset &&
+            a.divisor == b.divisor && a.value == b.value;
+    }
+    std::shared_ptr<AttributeCache> boundInput(const VulkanBindingCommands::Attribute& pointer,
+                                             unsigned outputSize) {
+        // MeshBasicMaterial has floating shader inputs. Integer pointers require
+        // matching integer shader declarations, not a numeric conversion here.
+        if(pointer.enabled && pointer.integer)
+            throw std::invalid_argument("Integer vertex attributes cannot bind a floating-point shader input");
+        BoundInput* previous = nullptr;
+        for(auto& input : boundInputs) {
+            if(input.outputSize != outputSize || !samePointer(input.pointer,pointer))continue;
+            const auto key=input.buffer.lock();
+            if((!pointer.enabled && pointer.buffer.isNull()) || (key && key->sameValue(pointer.buffer))) {
+                previous=&input;break;
+            }
+        }
+        if(!previous) {
+            BoundInput input;
+            input.buffer=JSWeakValue(pointer.buffer);input.pointer=pointer;input.pointer.buffer={};
+            input.outputSize=outputSize;input.cached=std::make_shared<AttributeCache>();
+            boundInputs.push_back(std::move(input));previous=&boundInputs.back();
+        }
+        const auto cached=previous->cached;
+        const auto revision=pointer.enabled ? attributeCommands->revision(pointer.buffer) : 0;
+        if(cached->snapshot && cached->revision==revision)return cached;
+        auto actual=pointer;
+        BufferAttribute::Array values;
+        if(pointer.enabled)values=uploadedArray(attributeCommands->read(pointer.buffer),pointer.type);
+        else {
+            values=Float32Array(std::vector<float>(pointer.value.begin(),pointer.value.end()));
+            actual.size=4;actual.type=0x1406;actual.normalized=false;actual.stride=0;actual.offset=0;
+        }
+        auto source=std::make_shared<AttributeSnapshot>(std::move(values),actual,outputSize);
+        const auto normalized=source->normalized;
+        const auto flattened=vertexValues(*source,normalized);
+        if(!pointer.enabled) {source->constantInput=true;source->count=std::numeric_limits<double>::infinity();}
+        // Keep the fetch view for bounds and CPU fog/morph; the GPU conversion
+        // is packed, independent of the source's byte stride and offset.
+        if(cached->vertices[false])updateBuffer(cached->vertices[false],flattened,{{0,flattened.size()}},
+            VK_BUFFER_USAGE_VERTEX_BUFFER_BIT | VK_BUFFER_USAGE_STORAGE_BUFFER_BIT);
+        else cached->vertices[false]=sharedBuffer(std::max<std::size_t>(flattened.size(),1)*sizeof(float),
+            VK_BUFFER_USAGE_VERTEX_BUFFER_BIT | VK_BUFFER_USAGE_STORAGE_BUFFER_BIT,
+            flattened.empty()?nullptr:flattened.data(),true);
+        cached->snapshot=std::move(source);cached->revision=revision;return cached;
+    }
+    std::shared_ptr<AttributeCache> boundMatrix(const VulkanBindingCommands::Snapshot& bindings) {
+        std::array<VulkanBindingCommands::Attribute,4> pointers;
+        for(unsigned i=0;i<4;++i)pointers[i]=bindings.attributes[5+i];
+        MatrixInput* previous=nullptr;
+        for(auto& input:matrixInputs) {
+            bool same=true;
+            for(unsigned i=0;i<4 && same;++i) {
+                same=samePointer(input.pointers[i],pointers[i]);
+                if(pointers[i].enabled){const auto key=input.buffers[i].lock();same=same && key && key->sameValue(pointers[i].buffer);}
+            }
+            if(same){previous=&input;break;}
+        }
+        if(!previous) {
+            MatrixInput input;
+            for(unsigned i=0;i<4;++i){input.buffers[i]=JSWeakValue(pointers[i].buffer);input.pointers[i]=pointers[i];input.pointers[i].buffer={};}
+            input.revisions.fill(UINT64_MAX);input.cached=std::make_shared<AttributeCache>();
+            matrixInputs.push_back(std::move(input));previous=&matrixInputs.back();
+        }
+        std::array<std::uint64_t,4> revisions{};
+        std::array<std::shared_ptr<AttributeSnapshot>,4> columns;
+        bool changed=false;std::size_t rows=SIZE_MAX;
+        for(unsigned i=0;i<4;++i) {
+            revisions[i]=pointers[i].enabled?attributeCommands->revision(pointers[i].buffer):0;
+            changed=changed || revisions[i]!=previous->revisions[i];
+            if(pointers[i].enabled) {
+                if(pointers[i].integer)throw std::invalid_argument("Integer instance attributes cannot bind a floating-point shader input");
+                columns[i]=std::make_shared<AttributeSnapshot>(uploadedArray(attributeCommands->read(pointers[i].buffer),pointers[i].type),pointers[i],4);
+                rows=std::min(rows,std::size_t(columns[i]->count));
+            } else {
+                auto constant=pointers[i];constant.size=4;constant.type=0x1406;constant.normalized=false;constant.offset=constant.stride=0;
+                columns[i]=std::make_shared<AttributeSnapshot>(Float32Array(std::vector<float>(constant.value.begin(),constant.value.end())),constant,4);
+            }
+        }
+        if(rows==SIZE_MAX)rows=1;
+        auto cached=previous->cached;
+        if(cached->snapshot && !changed)return cached;
+        std::vector<float> values(rows*16);
+        for(std::size_t row=0;row<rows;++row)for(unsigned col=0;col<4;++col)for(unsigned c=0;c<4;++c)
+            values[row*16+col*4+c]=float(columns[col]->getComponent(pointers[col].enabled?double(row):0,c));
+        VulkanBindingCommands::Attribute packed;packed.size=16;packed.type=0x1406;
+        auto snapshot=std::make_shared<AttributeSnapshot>(Float32Array(values),packed,16);
+        if(cached->vertices[false])updateBuffer(cached->vertices[false],values,{{0,values.size()}},VK_BUFFER_USAGE_STORAGE_BUFFER_BIT);
+        else cached->vertices[false]=sharedBuffer(std::max<std::size_t>(values.size(),1)*sizeof(float),
+            VK_BUFFER_USAGE_STORAGE_BUFFER_BIT,values.empty()?nullptr:values.data(),true);
+        cached->snapshot=std::move(snapshot);previous->revisions=revisions;return cached;
+    }
+    JSValue bindingProgram(const MeshBasicMaterial& material,const std::shared_ptr<BufferGeometry>& geometry,
+                           const InstancedMesh* instanced,const std::shared_ptr<Texture>& map,
+                           const std::shared_ptr<Texture>& alpha,bool colors,
+                           std::uint32_t numPlanes, std::uint32_t numIntersection) {
+        const auto color=geometry->getAttribute("color");
+        const std::string key=std::to_string(material.vertexColors)+":"+std::to_string(colors)+":"+
+            std::to_string(colors && color && color->getItemSize()==4)+":"+std::to_string(bool(instanced))+":"+
+            std::to_string(instanced && bool(instanced->instanceColor))+":"+
+            (map?std::to_string(map->channel):"-")+":"+(alpha?std::to_string(alpha->channel):"-")+":"+
+            std::to_string(double(material.alphaTest)>0)+":"+std::to_string(material.premultipliedAlpha)+":"+
+            std::to_string(material.side)+":"+std::to_string(material.fog)+":"+
+            std::to_string(geometry->morphAttributes.contains("position"))+":"+
+            std::to_string(instanced && bool(instanced->morphTexture))+":"+
+            std::to_string(numPlanes)+":"+std::to_string(numIntersection);
+        if(const auto found=programs.find(key);found!=programs.end())return found->second;
+        const auto literal=[](JSValue target,const char* name,JSValue value) {
+            JSPropertyDescriptor d;d.value=std::move(value);d.writable=d.enumerable=d.configurable=true;
+            target.defineProperty(name,d);
+        };
+        auto inputs=JSValue::object();
+        const auto add=[&](const std::string& name,int location,int size) {
+            auto value=JSValue::object();literal(value,"location",location);literal(value,"locationSize",size);
+            literal(inputs,name.c_str(),value);
+        };
+        add("position",0,1);if(colors)add("color",1,1);
+        const auto uvName=[](double channel){return channel==0?std::string("uv"):"uv"+std::to_string(int(channel));};
+        if(map)add(uvName(map->channel),3,1);
+        if(alpha && (!map || alpha->channel!=map->channel))add(uvName(alpha->channel),4,1);
+        if(instanced){add("instanceMatrix",5,4);if(instanced->instanceColor)add("instanceColor",9,1);}
+        auto program=JSValue::object();literal(program,"id",double(programs.size()));
+        literal(program,"getAttributes",JSValue::function(+[](const JSValue&,const auto&,const auto& captures){return captures[0];},{inputs}));
+        programs.emplace(key,program);return program;
+    }
+
+    void trackAttribute(const JSValue& key) {
+        // Tracking the native extension's dispose event requires no managed field
+        // reads. Raw uploads also cover unused attributes without decoding them.
+        if (!key.isHostObject("three.BufferAttribute")) return;
+        const auto attribute = std::dynamic_pointer_cast<BufferAttribute>(::vertexAttribute(key));
         auto found = attributeCache.find(attribute->id);
         if (found != attributeCache.end() && found->second->owner.lock() != attribute) {
             // A native handle may have expired while its managed attribute stayed
@@ -1416,17 +1819,31 @@ struct VulkanRenderer::Impl {
             attributeCache.erase(found);
             found = attributeCache.end();
         }
-        const bool initial = found == attributeCache.end();
-        auto cached = initial ? std::make_shared<AttributeCache>() : found->second;
-        if (initial) {
-            cached->owner = attribute;
-            cached->key = JSWeakValue(key);
-        }
-        if (!cached->data.sameValue(data)) {
-            cached->data = data;
+        if (found != attributeCache.end()) return;
+        auto cached = std::make_shared<AttributeCache>();
+        cached->owner = attribute;
+        cached->key = JSWeakValue(key);
+        cached->disposeListener = attribute->addEventListener("dispose",
+            [weak = std::weak_ptr<Lifecycle>(lifecycle), id = attribute->id](auto&) {
+                if (const auto lifetime = weak.lock(); lifetime && lifetime->owner)
+                    lifetime->owner->removeAttribute(id);
+            });
+        attributeCache[attribute->id] = std::move(cached);
+    }
+    std::shared_ptr<AttributeCache> decodeAttribute(const std::shared_ptr<BufferAttribute>& attribute,
+                                                   bool index = false,const JSValue& capturedBuffer = {}) {
+        const auto key = nativeAttribute(attribute);
+        const auto data = attributes->get(key);
+        if (data.isUndefined())
+            throw std::runtime_error("Attribute upload callback removed its buffer before binding");
+        trackAttribute(key);
+        const auto cached = attributeCache.at(attribute->id);
+        const auto previousData = cached->data.lock();
+        if (!previousData || !previousData->sameValue(data)) {
+            cached->data = JSWeakValue(data);
             cached->revision = std::numeric_limits<std::uint64_t>::max();
         }
-        syncAttribute(cached, *attribute);
+        syncAttribute(cached, *attribute,capturedBuffer);
         if (index) {
             if (!cached->indices) {
                 const auto values = indexValues(*cached->snapshot);
@@ -1441,20 +1858,20 @@ struct VulkanRenderer::Impl {
                              VK_BUFFER_USAGE_VERTEX_BUFFER_BIT | VK_BUFFER_USAGE_STORAGE_BUFFER_BIT,
                              values.empty() ? nullptr : values.data(), true);
         }
-        if (initial) {
-            cached->disposeListener = attribute->addEventListener("dispose", [this, id = attribute->id](auto&) {
-                removeAttribute(id);
-            });
-            attributeCache[attribute->id] = cached;
-        }
         return cached;
+    }
+    std::shared_ptr<AttributeCache> uploadIndex(const std::shared_ptr<BufferAttribute>& attribute) {
+        // WebGLBindingStates.setup uploads its effective index only after a valid
+        // draw range. Vertex/instance uploads already happened in WebGLObjects.
+        managedAttributes.get("update").call(managedAttributes,
+            {nativeAttribute(attribute), attributeCommands->object().get("ELEMENT_ARRAY_BUFFER")});
+        return decodeAttribute(attribute, true);
     }
     std::shared_ptr<AttributeCache> vertexAttribute(const std::shared_ptr<BufferAttribute>& attribute) {
         const auto found = attributeCache.find(attribute->id);
         if (found == attributeCache.end() || found->second->owner.lock() != attribute)
             throw std::invalid_argument("Introducing uncached vertex attributes inside render callbacks is not supported");
-        auto cached = found->second;
-        syncAttribute(cached, *attribute);
+        auto cached = decodeAttribute(attribute);
         cached->snapshot->itemSize = attribute->itemSize;
         cached->snapshot->count = attribute->count;
         cached->snapshot->normalized = attribute->normalized;
@@ -1476,30 +1893,8 @@ struct VulkanRenderer::Impl {
             return found->second;
         auto cached = std::make_shared<GeometryCache>();
         cached->owner = geometry;
-        cached->disposeListener = geometry->addEventListener("dispose", [this, id = geometry->id](auto&) {
-            removeGeometry(id);
-        });
         geometryCache[geometry->id] = cached;
         return cached;
-    }
-    void updateGeometry(const std::shared_ptr<BufferGeometry>& geometry, std::uint64_t frame) {
-        auto cached = registerGeometry(geometry);
-        if (cached->updatedFrame == frame)
-            return;
-        std::vector<std::string> names;
-        for (const auto& [name, attribute] : geometry->attributes)
-            names.push_back(name);
-        // Snapshot enumeration keys, then read each attribute after preceding
-        // upload callbacks. A callback can replace or delete a later attribute.
-        for (const auto& name : names) {
-            const auto found = geometry->attributes.find(name);
-            if (found == geometry->attributes.end()) continue;
-            const auto attribute = ordinaryAttribute(found->second);
-            if (!attribute)
-                throw JSTypeError("Cannot read properties of null (reading 'isInterleavedBufferAttribute')");
-            updateAttribute(attribute);
-        }
-        cached->updatedFrame = frame;
     }
     void createImage(Image& result, VkFormat format, VkImageUsageFlags usage,
                      VkImageAspectFlags aspect) {
@@ -1670,24 +2065,9 @@ struct VulkanRenderer::Impl {
         stages[0].module = vertexShader;
         stages[1].stage = VK_SHADER_STAGE_FRAGMENT_BIT;
         stages[1].module = fragmentShader;
-        const VkVertexInputBindingDescription bindings[] = {
-            {0, positionStride, VK_VERTEX_INPUT_RATE_VERTEX},
-            {1, colors ? static_cast<std::uint32_t>(colorStride) : 0u,
-             colors ? VK_VERTEX_INPUT_RATE_VERTEX : VK_VERTEX_INPUT_RATE_INSTANCE},
-            {2, fog ? std::uint32_t(sizeof(float)) : 0u, fog ? VK_VERTEX_INPUT_RATE_VERTEX : VK_VERTEX_INPUT_RATE_INSTANCE},
-            {3, mapUv ? mapSize * std::uint32_t(sizeof(float)) : 0u, mapUv ? VK_VERTEX_INPUT_RATE_VERTEX : VK_VERTEX_INPUT_RATE_INSTANCE},
-            {4, alphaUv ? alphaSize * std::uint32_t(sizeof(float)) : 0u, alphaUv ? VK_VERTEX_INPUT_RATE_VERTEX : VK_VERTEX_INPUT_RATE_INSTANCE}};
-        const VkVertexInputAttributeDescription attributes[] = {
-            {0, 0, VK_FORMAT_R32G32B32_SFLOAT, 0},
-            {1, 1, colorSize == 4 ? VK_FORMAT_R32G32B32A32_SFLOAT : VK_FORMAT_R32G32B32_SFLOAT, 0},
-            {2, 2, VK_FORMAT_R32_SFLOAT, 0},
-            {3, 3, VK_FORMAT_R32G32_SFLOAT, 0}, {4, 4, VK_FORMAT_R32G32_SFLOAT, 0}};
-        VkPipelineVertexInputStateCreateInfo vertex{
-            VK_STRUCTURE_TYPE_PIPELINE_VERTEX_INPUT_STATE_CREATE_INFO};
-        vertex.vertexBindingDescriptionCount = 5;
-        vertex.pVertexBindingDescriptions = bindings;
-        vertex.vertexAttributeDescriptionCount = 5;
-        vertex.pVertexAttributeDescriptions = attributes;
+        // Vertex pulling consumes the binding module's explicit byte-layout
+        // snapshot. It supports all integer divisors without device extensions.
+        VkPipelineVertexInputStateCreateInfo vertex{VK_STRUCTURE_TYPE_PIPELINE_VERTEX_INPUT_STATE_CREATE_INFO};
         VkPipelineInputAssemblyStateCreateInfo assembly{
             VK_STRUCTURE_TYPE_PIPELINE_INPUT_ASSEMBLY_STATE_CREATE_INFO};
         assembly.topology = material.wireframe ? VK_PRIMITIVE_TOPOLOGY_LINE_LIST
@@ -1908,6 +2288,14 @@ struct VulkanRenderer::Impl {
 VulkanRenderer::VulkanRenderer(const VulkanRendererParameters& parameters)
     : impl(std::make_unique<Impl>()) {
     impl->initialize(parameters);
+    auto modes = JSValue::object();
+    modes.set("TRIANGLES", 4); modes.set("LINES", 1); modes.set("LINE_STRIP", 3);
+    modes.set("LINE_LOOP", 2); modes.set("POINTS", 0);
+    impl->drawInfo = std::make_unique<WebGLInfo>(modes);
+    info = impl->drawInfo->object();
+    impl->initializeObjectProtocols();
+    impl->clippingProperties = std::make_unique<WebGLProperties>();
+    impl->clipping = std::make_unique<WebGLClipping>(impl->clippingProperties->object());
 }
 VulkanRenderer::~VulkanRenderer() = default;
 void VulkanRenderer::setSize(std::uint32_t width, std::uint32_t height) {
@@ -1953,6 +2341,12 @@ std::vector<std::uint8_t> VulkanRenderer::readPixels() const {
     return impl->pixels;
 }
 const VulkanRendererInfo& VulkanRenderer::getInfo() const {
+    const auto render = info.get("render");
+    impl->info.frame = render.get("frame").toNumber();
+    impl->info.calls = render.get("calls").toNumber();
+    impl->info.triangles = render.get("triangles").toNumber();
+    impl->info.lines = render.get("lines").toNumber();
+    impl->info.points = render.get("points").toNumber();
     return impl->info;
 }
 std::vector<std::string> VulkanRenderer::getValidationMessages() const {
@@ -1981,12 +2375,14 @@ void VulkanRenderer::render(Scene& scene, Camera& camera) {
         camera.updateMatrixWorld();
     if (scene.onBeforeRender)
         scene.onBeforeRender(*this, scene, camera, nullptr, nullptr, nullptr);
-    const auto uploadFrame = ++impl->uploadFrame;
     impl->reversedDepth = camera.reversedDepth;
     Matrix4 viewProjection;
     viewProjection.multiplyMatrices(camera.projectionMatrix, camera.matrixWorldInverse);
     Frustum frustum;
     frustum.setFromProjectionMatrix(viewProjection, camera.coordinateSystem, camera.reversedDepth);
+    impl->localClipping = localClippingEnabled;
+    impl->clippingEnabled = impl->clipping->init(clippingPlanes, impl->localClipping);
+    ClippingCameraView clippingCamera(camera, cameraLifetime);
     struct Item {
         std::shared_ptr<Object3D> object;
         std::shared_ptr<BufferGeometry> geometry;
@@ -2009,9 +2405,15 @@ void VulkanRenderer::render(Scene& scene, Camera& camera) {
             }
             auto projectPrimitive = [&](auto& primitive) {
                 if (object.frustumCulled && !primitive.intersectsFrustum(frustum)) return;
-                const auto geometry = primitive.geometry;
+                auto geometry = primitive.geometry;
                 if (!geometry) throw JSTypeError("Cannot read properties of null (reading 'id')");
-                // Unsupported primitive uploads are deferred with their draw capability check.
+                const auto updateObject = [&]() {
+                    if (!objectLifetime) throw std::invalid_argument("Scene objects must use shared_ptr ownership");
+                    const auto updated = impl->objects->update(nativeObject(objectLifetime));
+                    return std::static_pointer_cast<BufferGeometry>(updated.hostPayload("three.BufferGeometry"));
+                };
+                if constexpr (!std::is_same_v<std::remove_reference_t<decltype(primitive)>, Sprite>)
+                    geometry = updateObject();
                 Vector4 projected;
                 if (sortObjects) {
                     if constexpr (std::is_same_v<std::remove_reference_t<decltype(primitive)>, Sprite>) {
@@ -2023,6 +2425,8 @@ void VulkanRenderer::render(Scene& scene, Camera& camera) {
                     }
                     projected.applyMatrix4(viewProjection);
                 }
+                if constexpr (std::is_same_v<std::remove_reference_t<decltype(primitive)>, Sprite>)
+                    geometry = updateObject();
                 auto add = [&](const std::shared_ptr<Material>& material,
                                std::shared_ptr<BufferGeometry::Group> group) {
                     if (!material || !material->visible) return;
@@ -2048,68 +2452,62 @@ void VulkanRenderer::render(Scene& scene, Camera& camera) {
             else if (auto* points = dynamic_cast<Points*>(&object)) projectPrimitive(*points);
             else if (auto* sprite = dynamic_cast<Sprite*>(&object)) projectPrimitive(*sprite);
             if (auto* mesh = dynamic_cast<Mesh*>(&object); mesh && mesh->geometry) {
-                const auto position = mesh->geometry->getAttribute("position");
-                if (position) {
-                    if (position->getItemSize() < 3)
-                        throw std::invalid_argument(
-                            "Mesh position attribute requires at least three components");
-                    if (!object.frustumCulled || mesh->intersectsFrustum(frustum)) {
-                        const auto geometry = mesh->geometry;
-                        if (!geometry) throw JSTypeError("Cannot read properties of null (reading 'id')");
-                        impl->updateGeometry(geometry, uploadFrame);
-                        if (mesh->isInstancedMesh) {
-                            const auto instanced = std::dynamic_pointer_cast<InstancedMesh>(objectLifetime);
-                            if (!instanced) throw std::invalid_argument("InstancedMesh requires a managed native instance");
-                            impl->updateInstances(instanced, uploadFrame);
-                        }
-                        Vector4 projected;
-                        if (sortObjects) {
-                            if (auto* instanced = dynamic_cast<InstancedMesh*>(mesh)) {
-                                if (!instanced->boundingSphere) instanced->computeBoundingSphere();
-                                if (!instanced->boundingSphere) throw JSTypeError("Cannot read properties of null (reading 'center')");
-                                projected.copy(instanced->boundingSphere->center);
-                            } else if (auto* skinned = dynamic_cast<SkinnedMesh*>(mesh)) {
-                                if (!skinned->boundingSphere) skinned->computeBoundingSphere();
-                                if (!skinned->boundingSphere) throw JSTypeError("Cannot read properties of null (reading 'center')");
-                                projected.copy(skinned->boundingSphere->center);
-                            } else {
-                                if (!geometry->boundingSphere) geometry->computeBoundingSphere();
-                                if (!geometry->boundingSphere) throw JSTypeError("Cannot read properties of null (reading 'center')");
-                                projected.copy(geometry->boundingSphere->center);
-                            }
-                            projected.applyMatrix4(object.matrixWorld).applyMatrix4(viewProjection);
-                        }
-                        const auto z = projected.z * (camera.reversedDepth ? -1 : 1);
-                        auto add = [&](const std::shared_ptr<Material>& material,
-                                       std::shared_ptr<BufferGeometry::Group> group) {
-                            if (!material || !material->visible)
-                                return;
-                            auto meshLifetime =
-                                std::dynamic_pointer_cast<Mesh>(mesh->weak_from_this().lock());
-                            if (!meshLifetime)
-                                throw std::invalid_argument(
-                                    "Scene meshes must use shared_ptr ownership");
-                            Item item{std::move(meshLifetime),
-                                      geometry,
-                                      material,
-                                      group,
-                                      groupOrder,
-                                      mesh->renderOrder,
-                                      z};
-                            (material->transparent ? transparent : opaque)
-                                .push_back(std::move(item));
-                        };
-                        if (mesh->materialIsArray || !mesh->materials.empty()) {
-                            for (const auto& group : geometry->groups) {
-                                if (!(group.materialIndex >= 0 && group.materialIndex < double(mesh->materials.size())) ||
-                                    std::floor(group.materialIndex) != group.materialIndex)
-                                    continue;
-                                add(mesh->materials[static_cast<std::size_t>(group.materialIndex)],
-                                    geometry->groups.owner(group));
-                            }
-                        } else
-                            add(mesh->material, nullptr);
+                if (!object.frustumCulled || mesh->intersectsFrustum(frustum)) {
+                    const auto updated = impl->objects->update(nativeObject(objectLifetime));
+                    const auto geometry = std::static_pointer_cast<BufferGeometry>(updated.hostPayload("three.BufferGeometry"));
+                    if (!geometry) throw JSTypeError("Cannot read properties of null (reading 'id')");
+                    if (mesh->isInstancedMesh) {
+                        const auto instanced = std::dynamic_pointer_cast<InstancedMesh>(objectLifetime);
+                        if (!instanced) throw std::invalid_argument("InstancedMesh requires a managed native instance");
+                        impl->registerInstance(instanced);
                     }
+                    Vector4 projected;
+                    if (sortObjects) {
+                        if (auto* instanced = dynamic_cast<InstancedMesh*>(mesh)) {
+                            if (!instanced->boundingSphere) instanced->computeBoundingSphere();
+                            if (!instanced->boundingSphere) throw JSTypeError("Cannot read properties of null (reading 'center')");
+                            projected.copy(instanced->boundingSphere->center);
+                        } else if (auto* skinned = dynamic_cast<SkinnedMesh*>(mesh)) {
+                            if (!skinned->boundingSphere) skinned->computeBoundingSphere();
+                            if (!skinned->boundingSphere) throw JSTypeError("Cannot read properties of null (reading 'center')");
+                            projected.copy(skinned->boundingSphere->center);
+                        } else {
+                            if (!geometry->boundingSphere) geometry->computeBoundingSphere();
+                            if (!geometry->boundingSphere) throw JSTypeError("Cannot read properties of null (reading 'center')");
+                            projected.copy(geometry->boundingSphere->center);
+                        }
+                        projected.applyMatrix4(object.matrixWorld).applyMatrix4(viewProjection);
+                    }
+                    const auto z = projected.z * (camera.reversedDepth ? -1 : 1);
+                    auto add = [&](const std::shared_ptr<Material>& material,
+                                   std::shared_ptr<BufferGeometry::Group> group) {
+                        if (!material || !material->visible)
+                            return;
+                        auto meshLifetime =
+                            std::dynamic_pointer_cast<Mesh>(mesh->weak_from_this().lock());
+                        if (!meshLifetime)
+                            throw std::invalid_argument(
+                                "Scene meshes must use shared_ptr ownership");
+                        Item item{std::move(meshLifetime),
+                                  geometry,
+                                  material,
+                                  group,
+                                  groupOrder,
+                                  mesh->renderOrder,
+                                  z};
+                        (material->transparent ? transparent : opaque)
+                            .push_back(std::move(item));
+                    };
+                    if (mesh->materialIsArray || !mesh->materials.empty()) {
+                        for (const auto& group : geometry->groups) {
+                            if (!(group.materialIndex >= 0 && group.materialIndex < double(mesh->materials.size())) ||
+                                std::floor(group.materialIndex) != group.materialIndex)
+                                continue;
+                            add(mesh->materials[static_cast<std::size_t>(group.materialIndex)],
+                                geometry->groups.owner(group));
+                        }
+                    } else
+                        add(mesh->material, nullptr);
                 }
             }
         }
@@ -2148,7 +2546,7 @@ void VulkanRenderer::render(Scene& scene, Camera& camera) {
     // Retain uploaded buffers until every recorded draw has completed on the GPU.
     struct Prepared {
         Impl::BufferRef positions, colors, fog, indices, mapUv, alphaUv, textureUniforms;
-        Impl::BufferRef instanceMatrices, instanceColors, morphPositions;
+        Impl::BufferRef instanceMatrices, instanceColors, morphPositions, clippingPlanes;
         Impl::TextureRef map, alpha, morphWeights;
         VkDescriptorSet descriptor = VK_NULL_HANDLE;
         VkPipeline pipeline;
@@ -2158,6 +2556,7 @@ void VulkanRenderer::render(Scene& scene, Camera& camera) {
         JSValue logicalInstanceCount{1};
         std::uint32_t instanceCount = 1;
         bool skipInstances = false;
+        bool invalidBindings = false;
         bool indexed, wireframe, colorWrite;
     };
     std::vector<Prepared> prepared;
@@ -2165,9 +2564,16 @@ void VulkanRenderer::render(Scene& scene, Camera& camera) {
         prepared.clear();
     };
     try {
-        impl->info.calls = 0;
-        impl->info.triangles = impl->info.lines = 0;
-        ++impl->info.frame;
+        auto renderInfo = info.get("render");
+        renderInfo.set("frame", renderInfo.get("frame").toNumber() + 1);
+        if (info.get("autoReset").strictEquals(true)) {
+            const auto reset = info.get("reset");
+            reset.call(info);
+        }
+        if (impl->clippingEnabled.strictEquals(true)) impl->clipping->beginShadows();
+        // Shadow rendering is not part of the current MeshBasic path.
+        if (impl->clippingEnabled.strictEquals(true)) impl->clipping->endShadows();
+        if (impl->clippingEnabled.strictEquals(true)) impl->clipping->setGlobalState(clippingPlanes, clippingCamera.value);
         const bool forceClear = autoClear || scene.background.has_value();
         impl->activeClearColor.copy(scene.background ? *scene.background : impl->clearColor);
         impl->activeClearAlpha = scene.background ? 1 : impl->clearAlpha;
@@ -2197,11 +2603,48 @@ void VulkanRenderer::render(Scene& scene, Camera& camera) {
             const auto& material = *basic;
             if (material.lightMap || material.aoMap || material.specularMap || material.envMap)
                 throw std::invalid_argument("Vulkan lightMap, aoMap, specularMap and envMap sampling are not implemented yet");
-            if (material.alphaHash || material.alphaToCoverage || material.stencilWrite ||
-                material.dithering ||
-                (material.clippingPlanes && !material.clippingPlanes->empty()))
-                throw std::invalid_argument("Vulkan alphaHash, alphaToCoverage, stencil, dithering "
-                                            "and clipping are not implemented yet");
+            if (material.alphaHash || material.alphaToCoverage || material.stencilWrite || material.dithering)
+                throw std::invalid_argument("Vulkan alphaHash, alphaToCoverage, stencil and dithering are not implemented yet");
+            const auto managedMaterial = nativeMaterial(basic);
+            const auto materialProperties = impl->clippingProperties->get(managedMaterial);
+            const bool sameCamera = &camera == impl->currentCamera && camera.id == impl->currentCameraId &&
+                (clippingCamera.borrow ? impl->currentCameraOwner.isUndefined()
+                                      : clippingCamera.value.sameValue(impl->currentCameraOwner));
+            if (impl->clippingEnabled.strictEquals(true) &&
+                (impl->localClipping.strictEquals(true) || !sameCamera)) {
+                const bool useCache = sameCamera &&
+                    managedMaterial.get("id").strictEquals(impl->currentMaterialId);
+                impl->clipping->setState(managedMaterial, clippingCamera.value, useCache);
+            }
+            impl->registerClippingMaterial(basic, materialProperties);
+            if (!managedMaterial.get("id").strictEquals(impl->currentMaterialId))
+                impl->currentMaterialId = managedMaterial.get("id");
+            impl->currentCamera = &camera;
+            impl->currentCameraId = camera.id;
+            impl->currentCameraOwner = clippingCamera.borrow ? JSValue() : clippingCamera.value;
+            const auto planeCount = impl->clipping->numPlanes.toNumber();
+            const auto intersectionCount = impl->clipping->numIntersection.toNumber();
+            if (!std::isfinite(planeCount) || planeCount < 0 || std::floor(planeCount) != planeCount ||
+                !std::isfinite(intersectionCount) || intersectionCount < 0 || intersectionCount > planeCount ||
+                std::floor(intersectionCount) != intersectionCount ||
+                16 + planeCount * 16 > impl->maxStorageBufferRange)
+                throw std::invalid_argument("Clipping planes exceed Vulkan storage limits");
+            const auto numPlanes = static_cast<std::uint32_t>(planeCount);
+            const auto numIntersection = static_cast<std::uint32_t>(intersectionCount);
+            std::vector<std::byte> clippingData(16 + numPlanes * 16);
+            const std::uint32_t clippingHeader[] = {numPlanes, numPlanes - numIntersection, 0, 0};
+            std::memcpy(clippingData.data(), clippingHeader, sizeof(clippingHeader));
+            if (numPlanes) {
+                const auto uniform = impl->clipping->uniform.value();
+                const auto source = NativeArray_detail::unwrap(uniform.get("value"));
+                const auto* values = std::get_if<Float32Array>(&source.storage());
+                if (!values || values->size() < numPlanes * 4)
+                    throw JSTypeError("Clipping uniform must contain its projected Float32 planes");
+                for (std::size_t i = 0; i < numPlanes * 4; ++i) {
+                    const float value = (*values)[i];
+                    std::memcpy(clippingData.data() + 16 + i * sizeof(float), &value, sizeof(value));
+                }
+            }
             if (material.polygonOffset || (material.wireframe && material.wireframeLinewidth != 1))
                 throw std::invalid_argument(
                     "Vulkan polygon offset and wide wireframe lines are not implemented yet");
@@ -2279,12 +2722,12 @@ void VulkanRenderer::render(Scene& scene, Camera& camera) {
             // Snapshot both transforms before upload callbacks, as refreshMaterialUniforms does.
             matrix(mapTexture, textureUniforms.mapTransform);
             matrix(alphaTexture, textureUniforms.alphaTransform);
-            const auto uvAttribute = [&](const std::shared_ptr<Texture>& texture) -> std::shared_ptr<BufferAttribute> {
+            const auto uvAttribute = [&](const std::shared_ptr<Texture>& texture) -> std::shared_ptr<VertexAttribute> {
                 if (!texture) return nullptr;
                 if (!std::isfinite(texture->channel) || texture->channel < 0 || texture->channel > 3 ||
                     std::trunc(texture->channel) != texture->channel)
                     throw std::invalid_argument("Vulkan texture channel must select uv, uv1, uv2 or uv3");
-                return ordinaryAttribute(item.geometry->getAttribute(texture->channel == 0 ? "uv" : "uv" + std::to_string(int(texture->channel))));
+                return item.geometry->getAttribute(texture->channel == 0 ? "uv" : "uv" + std::to_string(int(texture->channel)));
             };
             const auto mapUv = uvAttribute(mapTexture), alphaUv = uvAttribute(alphaTexture);
             std::shared_ptr<Impl::TextureEntry> mapBinding, alphaBinding;
@@ -2295,57 +2738,21 @@ void VulkanRenderer::render(Scene& scene, Camera& camera) {
             if (alphaBinding && alphaBinding->resource) alphaResource = alphaBinding->resource;
             if (morphBinding && morphBinding->resource) morphResource = morphBinding->resource;
             const Matrix4& modelView = mesh.modelViewMatrix;
-            const auto position = ordinaryAttribute(item.geometry->getAttribute("position"));
+            const auto position = item.geometry->getAttribute("position");
             if (!position)
                 return;
+
             const auto index = item.geometry->index;
+            auto effectiveIndex = index;
             std::vector<std::uint32_t> indices;
             Impl::BufferRef indexBuffer;
             if (material.wireframe) {
-                if (!geometryCache->wireframe ||
-                    (index && geometryCache->wireframeVersion < index->version.toNumber())) {
-                    // WebGLGeometries uses the raw array length, including an incomplete
-                    // final triangle, and converts its undefined entries to unsigned zero.
-                    const double sourceCount = index ? double(Impl::componentCount(*index))
-                        : double(Impl::componentCount(*position)) / 3 - 1;
-                    const double edgeCount = std::ceil(sourceCount / 3) * 6;
-                    if (edgeCount > UINT32_MAX)
-                        throw std::invalid_argument("Wireframe exceeds Vulkan draw limits");
-                    const bool wide = position->count >= 65535;
-                    const auto convert = [wide](double value) {
-                        if (!std::isfinite(value) || value == 0)
-                            return std::uint32_t(0);
-                        const double modulus = wide ? 4294967296.0 : 65536.0;
-                        auto result = std::fmod(std::trunc(value), modulus);
-                        if (result < 0)
-                            result += modulus;
-                        return static_cast<std::uint32_t>(result);
-                    };
-                    const auto sourceAt = [&](std::size_t i) {
-                        if (!index)
-                            return convert(double(i));
-                        return std::visit([&](const auto& values) {
-                            return convert(values.get(double(i)).toNumber());
-                        }, index->array);
-                    };
-                    auto& edges = geometryCache->wireframeIndices;
-                    edges.clear();
-                    edges.reserve(static_cast<std::size_t>(edgeCount));
-                    for (std::size_t i = 0; double(i) < sourceCount; i += 3) {
-                        const auto a = sourceAt(i), b = sourceAt(i + 1), c = sourceAt(i + 2);
-                        edges.insert(edges.end(), {a, b, b, c, c, a});
-                    }
-                    geometryCache->wireframe = impl->sharedBuffer(
-                        std::max<std::size_t>(edges.size(), 1) * sizeof(std::uint32_t),
-                        VK_BUFFER_USAGE_INDEX_BUFFER_BIT, edges.empty() ? nullptr : edges.data());
-                    geometryCache->wireframeVersion = index ? index->version.toNumber() : position->version.toNumber();
-                }
-                indices = geometryCache->wireframeIndices;
-                indexBuffer = geometryCache->wireframe;
+                const auto wire = impl->geometries->getWireframeAttribute(nativeGeometry(item.geometry));
+                if (wire.isUndefined()) return;
+                effectiveIndex = std::dynamic_pointer_cast<BufferAttribute>(::vertexAttribute(wire));
             }
             const double factor = material.wireframe ? 2 : 1;
-            const double geometryCount = material.wireframe ? double(indices.size())
-                : index ? index->count : position->count;
+            const double geometryCount = effectiveIndex ? effectiveIndex->count : position->getCount();
             double start = double(item.geometry->drawRange.start) * factor;
             double end = (double(item.geometry->drawRange.start) +
                           double(item.geometry->drawRange.count)) * factor;
@@ -2374,25 +2781,56 @@ void VulkanRenderer::render(Scene& scene, Camera& camera) {
             draw.wireframe = material.wireframe;
             draw.colorWrite = material.colorWrite;
             draw.morphWeights = morphResource;
-            if (index && !material.wireframe) {
-                if (index->itemSize != 1)
-                    throw std::invalid_argument("Mesh index attribute requires one component");
-                const auto cachedIndex = impl->updateAttribute(index, true);
+            const auto colors = material.vertexColors ? item.geometry->getAttribute("color") : nullptr;
+            const bool programHasInstanceColor = instanced && instanced->instanceColor != nullptr;
+            const auto program = impl->bindingProgram(material, item.geometry, instanced, mapTexture, alphaTexture,
+                material.vertexColors, numPlanes, numIntersection);
+            impl->bindingStates->setup(nativeObject(item.object), nativeMaterial(basic), program,
+                nativeGeometry(item.geometry), effectiveIndex ? nativeAttribute(effectiveIndex) : JSValue(nullptr));
+            auto bindings = impl->bindingCommands->snapshot();
+            bool validBindings = true;
+            const auto activeLocation=[&](unsigned location) {
+                return location==0 || (location==1 && material.vertexColors) ||
+                    (location==3 && bool(mapTexture)) || (location==4 && bool(alphaTexture) && (!mapTexture || mapTexture->channel!=alphaTexture->channel)) ||
+                    (instanced && location>=5 && location<=8) || (location==9 && programHasInstanceColor);
+            };
+            for(unsigned location=0;location<bindings.attributes.size();++location) {
+                const auto& input=bindings.attributes[location];
+                if(activeLocation(location) && input.enabled &&
+                    (!impl->attributeCommands->hasStorage(input.buffer) || input.integer))validBindings=false;
+            }
+            if(draw.indexed && !impl->attributeCommands->hasStorage(bindings.index))validBindings=false;
+            // An enabled vertex array without a buffer is a WebGL draw error.
+            // Preserve callback/statistic flow while submitting no unsafe fetch.
+            if(!validBindings) {
+                impl->bindingCommands->invalidDraw();
+                draw.invalidBindings=true;
+                if(instanced)draw.logicalInstanceCount=mesh.count.asValue();
+                else if(item.geometry->isInstancedBufferGeometry)
+                    draw.logicalInstanceCount=geometryInstanceCount(item.geometry);
+                draw.skipInstances=draw.logicalInstanceCount.strictEquals(0);
+                prepared.push_back(std::move(draw));return;
+            }
+            if (effectiveIndex) {
+                const auto cachedIndex = impl->decodeAttribute(effectiveIndex, true,bindings.index);
                 indices = impl->indexValues(*cachedIndex->snapshot);
                 indexBuffer = cachedIndex->indices;
             }
             if (draw.indexed && (draw.start > indices.size() ||
-                                draw.count > indices.size() - draw.start))
-                throw std::invalid_argument("Mesh draw range exceeds its uploaded index array");
-            auto colors = material.vertexColors ? ordinaryAttribute(item.geometry->getAttribute("color")) : nullptr;
-            if (colors && colors->itemSize < 3)
-                throw std::invalid_argument("Invalid mesh color attribute");
-            const auto positionCache = impl->vertexAttribute(position);
-            const auto colorCache = colors ? impl->vertexAttribute(colors) : nullptr;
-            const auto mapCache = mapUv ? impl->vertexAttribute(mapUv) : nullptr;
-            const auto alphaCache = alphaUv ? impl->vertexAttribute(alphaUv) : nullptr;
-            if ((mapUv && mapUv->itemSize < 2) || (alphaUv && alphaUv->itemSize < 2))
-                throw std::invalid_argument("Texture UV attributes require at least two components");
+                                draw.count > indices.size() - draw.start)) {
+                impl->bindingCommands->invalidDraw();draw.invalidBindings=true;
+                if(instanced)draw.logicalInstanceCount=mesh.count.asValue();
+                else if(item.geometry->isInstancedBufferGeometry)
+                    draw.logicalInstanceCount=geometryInstanceCount(item.geometry);
+                draw.skipInstances=draw.logicalInstanceCount.strictEquals(0);
+                prepared.push_back(std::move(draw));return;
+            }
+            const auto positionCache = impl->boundInput(bindings.attributes[0], std::max(3u, bindings.attributes[0].size));
+            const auto colorCache = material.vertexColors ? impl->boundInput(bindings.attributes[1], colors && colors->getItemSize()==4 ? 4 : 3) : nullptr;
+            const auto mapLocation = mapTexture ? 3u : 4u;
+            const auto alphaLocation = alphaTexture && mapTexture && alphaTexture->channel == mapTexture->channel ? 3u : 4u;
+            const auto mapCache = mapTexture ? impl->boundInput(bindings.attributes[mapLocation], 2) : nullptr;
+            const auto alphaCache = alphaTexture ? impl->boundInput(bindings.attributes[alphaLocation], 2) : nullptr;
             if (!impl->emptyStorage) {
                 constexpr float defaults[] = {0,0,0,1, 0,0,0,1, 0,0,0,1, 0,0,0,1};
                 impl->emptyStorage = impl->sharedBuffer(sizeof(defaults), VK_BUFFER_USAGE_STORAGE_BUFFER_BIT, defaults);
@@ -2401,108 +2839,36 @@ void VulkanRenderer::render(Scene& scene, Camera& camera) {
             std::shared_ptr<Impl::AttributeCache> matrixCache, instanceColorCache;
             std::uint32_t matrixDivisor = 1, colorDivisor = 1;
             if (instanced) {
-                auto matrices = ordinaryAttribute(item.geometry->getAttribute("instanceMatrix"));
-                auto instanceColors = ordinaryAttribute(item.geometry->getAttribute("instanceColor"));
-                if (!item.geometry->hasAttribute("instanceMatrix")) matrices = instanced->instanceMatrix;
-                else if (!matrices) throw JSTypeError("Cannot read properties of null (reading 'isGLBufferAttribute')");
-                if (!item.geometry->hasAttribute("instanceColor")) instanceColors = instanced->instanceColor;
-                // Program attribute presence follows the object, even if geometry overrides its storage.
-                const bool hasInstanceColor = instanced->instanceColor != nullptr;
-                if (hasInstanceColor && item.geometry->hasAttribute("instanceColor") && !instanceColors)
-                    throw JSTypeError("Cannot read properties of null (reading 'isGLBufferAttribute')");
-                const std::vector<std::shared_ptr<BufferAttribute>> bindingAttributes{
-                    position, colors, mapUv, alphaUv, matrices, hasInstanceColor ? instanceColors : nullptr,
-                    material.wireframe ? nullptr : index};
-                const auto bindingKey = std::to_string(item.geometry->id) + ":" +
-                    std::to_string(material.wireframe) + ":" + std::to_string(hasInstanceColor) + ":" +
-                    std::to_string(bool(mapTexture)) + ":" + std::to_string(bool(alphaTexture)) + ":" +
-                    std::to_string(material.vertexColors) + ":" + std::to_string(fogEnabled) + ":" +
-                    std::to_string(bool(morphTexture)) + ":" + std::to_string(side) + ":" +
-                    std::to_string(double(material.alphaTest)>0) + ":" + std::to_string(material.premultipliedAlpha) + ":" +
-                    std::to_string(srgbOutput) + ":" +
-                    std::to_string(colors && colors->itemSize==4) + ":" + std::to_string(geometryCache->morphPositions.size());
-                auto& bindingSlot = impl->instanceCache.at(mesh.id)->bindings[bindingKey];
-                if (!bindingSlot) bindingSlot = std::make_shared<Impl::InstanceCache::Binding>();
-                const auto bindingLifetime = bindingSlot;
-                auto& binding = *bindingLifetime;
-                bool changed = binding.attributes.size() != bindingAttributes.size();
-                if (material.wireframe && binding.wireframe.lock()!=indexBuffer) changed = true;
-                for (std::size_t i = 0; !changed && i < bindingAttributes.size(); ++i)
-                    changed = binding.attributes[i].lock() != bindingAttributes[i];
-                const auto findCache = [&](const auto& attribute) -> std::shared_ptr<Impl::AttributeCache> {
-                    if (!attribute) return nullptr;
-                    const auto found = impl->attributeCache.find(attribute->id);
-                    return found != impl->attributeCache.end() && found->second->owner.lock() == attribute ? found->second : nullptr;
-                };
-                auto matrixAtSetup = findCache(matrices), colorAtSetup = findCache(instanceColors);
-                if (changed) {
-                    binding.wireframe = material.wireframe ? indexBuffer : nullptr;
-                    binding.attributes.clear();
-                    for (const auto& attribute : bindingAttributes) binding.attributes.emplace_back(attribute);
-                    binding.matrixEnabled = bool(matrixAtSetup);
-                    const auto capture = [](const auto& attribute, std::uint32_t size,
-                                            std::uint32_t& stride, std::uint32_t& divisor, bool& normalized) {
-                        stride = size; divisor = 1; normalized = false;
-                        if (!attribute) return;
-                        if (attribute->itemSize != size)
-                            throw std::invalid_argument("Vulkan instance attribute size must match its shader input");
-                        const bool integral32 = std::holds_alternative<Int32Array>(attribute->array) ||
-                            std::holds_alternative<Uint32Array>(attribute->array);
-                        if (integral32 || attribute->gpuType.strictEquals(IntType))
-                            throw std::invalid_argument("Integer instance attributes cannot bind a floating-point shader input");
-                        stride = size; normalized = attribute->normalized;
-                        const auto repeated = std::dynamic_pointer_cast<InstancedBufferAttribute>(attribute);
-                        divisor = repeated ? unsignedLong(repeated->meshPerAttribute.toNumber()) : 0;
-                    };
-                    if (binding.matrixEnabled) capture(matrices, 16, binding.matrixStride, binding.matrixDivisor, binding.matrixNormalized);
-                    binding.matrixDivisors[0] = binding.matrixDivisor;
-                    if (binding.matrixEnabled) {
-                        const auto repeated = std::dynamic_pointer_cast<InstancedBufferAttribute>(matrices);
-                        for (std::size_t column=1;column<4;++column)
-                            binding.matrixDivisors[column] = repeated ? unsignedLong(repeated->meshPerAttribute.toNumber()) : 0;
-                    }
-                    if (hasInstanceColor) {
-                        instanceColors = ordinaryAttribute(item.geometry->getAttribute("instanceColor"));
-                        if (!item.geometry->hasAttribute("instanceColor")) instanceColors = instanced->instanceColor;
-                        else if (!instanceColors) throw JSTypeError("Cannot read properties of null (reading 'isGLBufferAttribute')");
-                        colorAtSetup = findCache(instanceColors);
-                    }
-                    binding.colorEnabled = hasInstanceColor && bool(colorAtSetup);
-                    if (binding.colorEnabled) capture(instanceColors, 3, binding.colorStride, binding.colorDivisor, binding.colorNormalized);
-                }
-                const auto cached = [&](const std::shared_ptr<Impl::AttributeCache>& value, bool normalized) -> std::shared_ptr<Impl::AttributeCache> {
-                    if (!value) return nullptr;
-                    if (!value->vertices[normalized]) {
-                        const auto values = Impl::vertexValues(*value->snapshot, normalized);
-                        value->vertices[normalized] = impl->sharedBuffer(std::max<std::size_t>(values.size(),1) * sizeof(float),
-                            VK_BUFFER_USAGE_VERTEX_BUFFER_BIT | VK_BUFFER_USAGE_STORAGE_BUFFER_BIT,
-                            values.empty() ? nullptr : values.data(), true);
-                    }
-                    return value;
-                };
-                matrixCache = binding.matrixEnabled ? cached(matrixAtSetup, binding.matrixNormalized) : nullptr;
-                instanceColorCache = binding.colorEnabled ? cached(colorAtSetup, binding.colorNormalized) : nullptr;
-                matrixDivisor = binding.matrixDivisor; colorDivisor = binding.colorDivisor;
-                if (matrixCache) draw.instanceMatrices = matrixCache->vertices[binding.matrixNormalized];
-                if (instanceColorCache) draw.instanceColors = instanceColorCache->vertices[binding.colorNormalized];
-                textureUniforms.instance[0] = 1;
-                textureUniforms.instance[1] = hasInstanceColor ? 1 : 0;
-                textureUniforms.instance[2] = matrixDivisor;
-                textureUniforms.instance[3] = colorDivisor;
-                textureUniforms.instanceLayout[0] = matrixCache ? binding.matrixStride : 0;
-                textureUniforms.instanceLayout[1] = instanceColorCache ? binding.colorStride : 0;
-                std::copy(binding.matrixDivisors.begin(),binding.matrixDivisors.end(),textureUniforms.matrixDivisors);
-                for (int i = 0; i < 16; ++i) textureUniforms.modelView[i] = float(modelView.elements()[i]);
-                draw.logicalInstanceCount = mesh.count.asValue();
-                draw.skipInstances = draw.logicalInstanceCount.strictEquals(JSValue(0));
-                if (!draw.skipInstances) {
-                    const auto converted = unsignedLong(draw.logicalInstanceCount.toNumber());
-                    if (converted > INT32_MAX)
-                        throw std::invalid_argument("Negative WebGL instance count cannot be submitted to Vulkan");
-                    draw.instanceCount = converted;
-                } else draw.instanceCount = 0;
+                const bool hasInstanceColor = programHasInstanceColor;
+                matrixCache = impl->boundMatrix(bindings);
+                instanceColorCache = hasInstanceColor ? impl->boundInput(bindings.attributes[9],3) : nullptr;
+                matrixDivisor=bindings.attributes[5].divisor;
+                colorDivisor=bindings.attributes[9].divisor;
+                draw.instanceMatrices=matrixCache->vertices[false];
+                if(instanceColorCache)draw.instanceColors=instanceColorCache->vertices[false];
+                textureUniforms.instance[0]=1;textureUniforms.instance[1]=hasInstanceColor?1:0;
+                textureUniforms.instance[2]=matrixDivisor;textureUniforms.instance[3]=colorDivisor;
+                textureUniforms.instanceLayout[0]=16;
+                textureUniforms.instanceLayout[1]=instanceColorCache?3:0;
+                for(unsigned col=0;col<4;++col)textureUniforms.matrixDivisors[col]=bindings.attributes[5+col].divisor;
+                for(int i=0;i<16;++i)textureUniforms.modelView[i]=float(modelView.elements()[i]);
+                draw.logicalInstanceCount=mesh.count.asValue();
+                draw.skipInstances=draw.logicalInstanceCount.strictEquals(JSValue(0));
+                if(!draw.skipInstances) {
+                    const auto converted=unsignedLong(draw.logicalInstanceCount.toNumber());
+                    if(converted>INT32_MAX)throw std::invalid_argument("Negative WebGL instance count cannot be submitted to Vulkan");
+                    draw.instanceCount=converted;
+                } else draw.instanceCount=0;
+            }
+            else if(item.geometry->isInstancedBufferGeometry) {
+                draw.logicalInstanceCount=geometryInstanceCount(item.geometry);
+                draw.skipInstances=draw.logicalInstanceCount.strictEquals(0);
+                draw.instanceCount=draw.skipInstances?0:unsignedLong(draw.logicalInstanceCount.toNumber());
+                if(draw.instanceCount>INT32_MAX)throw std::invalid_argument("Negative WebGL instance count cannot be submitted to Vulkan");
             }
             const bool deform = hasMorph && !morphTexture && mesh.morphTargetInfluences;
+            if(deform && bindings.attributes[0].divisor!=0)
+                throw std::invalid_argument("Per-instance position attributes with uniform morph weights require the GPU morph path, which is not implemented yet");
             if (deform && draw.count > 0 && mesh.morphTargetInfluences->size() < geometryCache->morphPositions.size())
                 throw std::invalid_argument("Short morph influence arrays require retained WebGL uniform state, which is not implemented");
             // Vulkan may fetch every submitted vertex, including an incomplete primitive.
@@ -2512,34 +2878,49 @@ void VulkanRenderer::render(Scene& scene, Camera& camera) {
                                     : std::size_t(draw.start) + offset;
             };
             const auto availableVertices = [](const auto& snapshot, std::size_t components) {
+                if(snapshot.constantInput)return SIZE_MAX;
+                if(snapshot.boundView)return std::size_t(snapshot.count);
                 const auto size = Impl::componentCount(snapshot);
                 return size < components ? std::size_t(0)
                     : std::size_t(std::floor(double(size - components) / snapshot.itemSize)) + 1;
             };
             const auto availablePositions = availableVertices(*positionCache->snapshot, 3);
-            const auto availableColors = colors ? availableVertices(*colorCache->snapshot,
-                colors->itemSize == 4 ? 4 : 3) : 0;
+            const auto inputRow = [&](unsigned location,std::size_t vertex,std::uint32_t instance)->std::size_t {
+                const auto& input=bindings.attributes[location];
+                if(!input.enabled)return 0;
+                return input.divisor?instance/input.divisor:vertex;
+            };
+            const auto availableColors = colorCache ? availableVertices(*colorCache->snapshot,
+                colorCache->snapshot->itemSize == 4 ? 4 : 3) : 0;
             const auto availableMapUv = mapCache ? availableVertices(*mapCache->snapshot, 2) : 0;
             const auto availableAlphaUv = alphaCache ? availableVertices(*alphaCache->snapshot, 2) : 0;
             std::size_t vertexCount = 0;
+            bool invalidFetch=false;
             const auto fetchCount = draw.instanceCount == 0 ? 0u : draw.count;
             for (std::size_t offset = 0; offset < fetchCount; ++offset) {
                 const auto vertex = fetchedVertex(offset);
-                if (vertex >= availablePositions || (colors && vertex >= availableColors))
-                    throw std::invalid_argument("Mesh draw fetch exceeds its uploaded vertex array");
-                if ((mapCache && vertex >= availableMapUv) || (alphaCache && vertex >= availableAlphaUv))
-                    throw std::invalid_argument("Mesh draw fetch exceeds its uploaded texture UV array");
+                const auto instance=draw.instanceCount?draw.instanceCount-1:0;
+                if (inputRow(0,vertex,instance) >= availablePositions ||
+                    (colorCache && inputRow(1,vertex,instance) >= availableColors))
+                    invalidFetch=true;
+                if ((mapCache && inputRow(mapLocation,vertex,instance) >= availableMapUv) ||
+                    (alphaCache && inputRow(alphaLocation,vertex,instance) >= availableAlphaUv))
+                    invalidFetch=true;
                 vertexCount = std::max(vertexCount, vertex + 1);
             }
             if (instanced && fetchCount > 0) {
                 const auto checkInstances = [&](const auto& cache, std::uint32_t divisor, std::size_t components) {
                     if (!cache) return;
                     const auto rows = divisor == 0 ? vertexCount : (std::uint64_t(draw.instanceCount) - 1) / divisor + 1;
-                    if (rows > Impl::componentCount(*cache->snapshot) / components)
-                        throw std::invalid_argument("Instance draw fetch exceeds its uploaded attribute array");
+                    if (rows > (cache->snapshot->boundView ? cache->snapshot->count : Impl::componentCount(*cache->snapshot) / components))
+                        invalidFetch=true;
                 };
                 for (const auto divisor : textureUniforms.matrixDivisors) checkInstances(matrixCache, divisor, 16);
                 checkInstances(instanceColorCache, colorDivisor, 3);
+            }
+            if(invalidFetch) {
+                impl->bindingCommands->invalidDraw();draw.invalidBindings=true;
+                prepared.push_back(std::move(draw));return;
             }
             if (morphTexture) {
                 if (!geometryCache->morphBuffer) {
@@ -2567,7 +2948,8 @@ void VulkanRenderer::render(Scene& scene, Camera& camera) {
             for (std::size_t offset = 0; offset < fetchCount; ++offset) {
                 const auto i = fetchedVertex(offset);
                 const auto& snapshot = *positionCache->snapshot;
-                Vector3 deformed(snapshot.getX(i), snapshot.getY(i), snapshot.getZ(i));
+                const auto sourceRow=inputRow(0,i,0);
+                Vector3 deformed(snapshot.getX(sourceRow), snapshot.getY(sourceRow), snapshot.getZ(sourceRow));
                 if (deform) {
                     Vector3 displacement;
                     for (std::size_t j = 0; j < geometryCache->morphPositions.size(); ++j) {
@@ -2613,35 +2995,36 @@ void VulkanRenderer::render(Scene& scene, Camera& camera) {
             std::copy(std::begin(uniformSnapshot.fogParams), std::end(uniformSnapshot.fogParams), draw.constants.fogParams);
             Matrix4 world;
             world.copy(mesh.matrixWorld);
-            const auto positionStride = deform ? 3 * sizeof(float) : position->itemSize * sizeof(float);
-            if (positionStride > UINT32_MAX || (colors && colors->itemSize > UINT32_MAX / sizeof(float)))
+            const auto positionStride = deform ? 3 * sizeof(float) : positionCache->snapshot->itemSize * sizeof(float);
+            if (positionStride > UINT32_MAX || (colorCache && colorCache->snapshot->itemSize > UINT32_MAX / sizeof(float)))
                 throw std::invalid_argument("Attribute itemSize exceeds Vulkan vertex binding limits");
-            if ((mapUv && mapUv->itemSize > UINT32_MAX / sizeof(float)) ||
-                (alphaUv && alphaUv->itemSize > UINT32_MAX / sizeof(float)))
+            if ((mapCache && mapCache->snapshot->itemSize > UINT32_MAX / sizeof(float)) ||
+                (alphaCache && alphaCache->snapshot->itemSize > UINT32_MAX / sizeof(float)))
                 throw std::invalid_argument("UV itemSize exceeds Vulkan vertex binding limits");
             draw.pipeline =
                 impl->pipeline(material, side, world.determinant() < 0, camera.reversedDepth,
                                static_cast<std::uint32_t>(positionStride),
-                               colors ? static_cast<std::uint32_t>(colors->itemSize) : 4,
-                               colors != nullptr, fogEnabled,
-                               mapUv ? std::uint32_t(mapUv->itemSize) : 2,
-                               alphaUv ? std::uint32_t(alphaUv->itemSize) : 2,
-                               bool(mapUv), bool(alphaUv));
+                               colorCache ? static_cast<std::uint32_t>(colorCache->snapshot->itemSize) : 4,
+                colorCache != nullptr && bindings.attributes[1].enabled, fogEnabled,
+                               mapCache ? std::uint32_t(mapCache->snapshot->itemSize) : 2,
+                               alphaCache ? std::uint32_t(alphaCache->snapshot->itemSize) : 2,
+                               bool(mapCache) && bindings.attributes[mapLocation].enabled,
+                               bool(alphaCache) && bindings.attributes[alphaLocation].enabled);
             draw.positions = deform
                                  ? impl->sharedBuffer(
                                        std::max<std::size_t>(deformedPositions.size(), 1) * sizeof(float),
-                                       VK_BUFFER_USAGE_VERTEX_BUFFER_BIT,
+                                       VK_BUFFER_USAGE_VERTEX_BUFFER_BIT | VK_BUFFER_USAGE_STORAGE_BUFFER_BIT,
                                        deformedPositions.empty() ? nullptr : deformedPositions.data())
-                                 : positionCache->vertices[position->normalized];
+                                 : positionCache->vertices[false];
             if (!impl->whiteColor) {
                 constexpr float white[] = {1, 1, 1, 1};
-                impl->whiteColor = impl->sharedBuffer(sizeof(white), VK_BUFFER_USAGE_VERTEX_BUFFER_BIT, white);
+                impl->whiteColor = impl->sharedBuffer(sizeof(white), VK_BUFFER_USAGE_VERTEX_BUFFER_BIT | VK_BUFFER_USAGE_STORAGE_BUFFER_BIT, white);
             }
             if (!impl->noFog) {
                 constexpr float zero = 0;
                 impl->noFog = impl->sharedBuffer(sizeof(zero), VK_BUFFER_USAGE_VERTEX_BUFFER_BIT, &zero);
             }
-            draw.colors = colorCache ? colorCache->vertices[colors->normalized] : impl->whiteColor;
+            draw.colors = colorCache ? colorCache->vertices[false] : impl->whiteColor;
             draw.fog = fogEnabled
                            ? impl->sharedBuffer(std::max<std::size_t>(fogDepths.size(), 1) * sizeof(float),
                                                 VK_BUFFER_USAGE_VERTEX_BUFFER_BIT,
@@ -2649,31 +3032,51 @@ void VulkanRenderer::render(Scene& scene, Camera& camera) {
                            : impl->noFog;
             if (!impl->zeroUv) {
                 constexpr float zero[] = {0, 0};
-                impl->zeroUv = impl->sharedBuffer(sizeof(zero), VK_BUFFER_USAGE_VERTEX_BUFFER_BIT, zero);
+                impl->zeroUv = impl->sharedBuffer(sizeof(zero), VK_BUFFER_USAGE_VERTEX_BUFFER_BIT | VK_BUFFER_USAGE_STORAGE_BUFFER_BIT, zero);
             }
-            draw.mapUv = mapCache ? mapCache->vertices[mapUv->normalized] : impl->zeroUv;
-            draw.alphaUv = alphaCache ? alphaCache->vertices[alphaUv->normalized] : impl->zeroUv;
-            for (const auto& buffer : {draw.instanceMatrices, draw.instanceColors, draw.morphPositions})
+            draw.mapUv = mapCache ? mapCache->vertices[false] : impl->zeroUv;
+            draw.alphaUv = alphaCache ? alphaCache->vertices[false] : impl->zeroUv;
+            for (const auto& buffer : {draw.instanceMatrices, draw.instanceColors, draw.morphPositions,draw.positions,draw.colors,draw.mapUv,draw.alphaUv})
                 if (buffer->size > impl->maxStorageBufferRange)
                     throw std::invalid_argument("Instance storage exceeds the Vulkan device range limit");
+            const std::array<unsigned,4> locations{0,1,mapLocation,alphaLocation};
+            const std::array<std::uint32_t,4> strides{deform?3u:std::uint32_t(positionCache->snapshot->itemSize),
+                colorCache?std::uint32_t(colorCache->snapshot->itemSize):4u,2u,2u};
+            for(unsigned i=0;i<4;++i) {
+                const auto& input=bindings.attributes[locations[i]];
+                textureUniforms.inputLayout[i][0]=strides[i];
+                textureUniforms.inputLayout[i][1]=input.divisor;
+                textureUniforms.inputLayout[i][2]=input.enabled && (i!=1 || bool(colorCache)) && (i!=2 || bool(mapCache)) && (i!=3 || bool(alphaCache));
+            }
+            if(deform) {textureUniforms.inputLayout[0][1]=0;textureUniforms.inputLayout[0][2]=1;}
+            textureUniforms.inputLayout[1][3]=bindings.attributes[9].enabled;
+            for(unsigned c=0;c<4;++c)textureUniforms.matrixEnabled[c]=bindings.attributes[5+c].enabled;
+            if(instanced && !bindings.attributes[9].enabled)textureUniforms.instanceLayout[1]=0;
+            for(int i=0;i<16;++i)textureUniforms.modelView[i]=float(modelView.elements()[i]);
             draw.textureUniforms = impl->sharedBuffer(sizeof(textureUniforms), VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT, &textureUniforms);
+            draw.clippingPlanes = impl->sharedBuffer(clippingData.size(), VK_BUFFER_USAGE_STORAGE_BUFFER_BIT, clippingData.data());
             draw.descriptor = impl->textureDescriptor(draw.map, draw.alpha, draw.textureUniforms,
-                draw.instanceMatrices, draw.instanceColors, draw.morphPositions, draw.morphWeights);
+                draw.instanceMatrices, draw.instanceColors, draw.morphPositions, draw.morphWeights,
+                draw.positions, draw.colors, draw.mapUv, draw.alphaUv, draw.clippingPlanes);
             draw.indices = indexBuffer;
             prepared.push_back(std::move(draw));
         };
         auto recordDraw = [&](const Prepared& draw) {
             if (draw.skipInstances) return;
+            if(draw.invalidBindings) {
+                impl->drawInfo->update(draw.logicalCount,draw.wireframe?1:4,draw.logicalInstanceCount);
+                return;
+            }
             impl->colorWrite = draw.colorWrite;
             impl->api.vkCmdBindPipeline(impl->commandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS,
                                         draw.pipeline);
             const VkBuffer buffers[] = {draw.positions->buffer, draw.colors->buffer, draw.fog->buffer, draw.mapUv->buffer, draw.alphaUv->buffer};
             const VkDeviceSize offsets[] = {0, 0, 0, 0, 0};
             for (const auto& buffer : {draw.positions, draw.colors, draw.fog, draw.indices, draw.mapUv, draw.alphaUv,
-                                       draw.instanceMatrices, draw.instanceColors, draw.morphPositions})
+                                       draw.instanceMatrices, draw.instanceColors, draw.morphPositions, draw.clippingPlanes})
                 if (buffer)
                     buffer->usedEpoch = impl->recordingEpoch;
-            impl->api.vkCmdBindVertexBuffers(impl->commandBuffer, 0, 5, buffers, offsets);
+            // Vertex data is read from the prepared storage buffers using shader fetch.
             impl->api.vkCmdBindDescriptorSets(impl->commandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS,
                                               impl->pipelineLayout, 0, 1, &draw.descriptor, 0, nullptr);
             impl->api.vkCmdPushConstants(impl->commandBuffer, impl->pipelineLayout,
@@ -2685,11 +3088,8 @@ void VulkanRenderer::render(Scene& scene, Camera& camera) {
                 impl->api.vkCmdDrawIndexed(impl->commandBuffer, draw.count, draw.instanceCount, draw.start, 0, 0);
             } else
                 impl->api.vkCmdDraw(impl->commandBuffer, draw.count, draw.instanceCount, draw.start, 0);
-            ++impl->info.calls;
-            if (draw.wireframe)
-                impl->info.lines += draw.logicalInstanceCount.toNumber() * (draw.logicalCount / 2);
-            else
-                impl->info.triangles += draw.logicalInstanceCount.toNumber() * (draw.logicalCount / 3);
+            impl->drawInfo->update(draw.logicalCount, draw.wireframe ? 1 : 4,
+                                   draw.logicalInstanceCount);
         };
         auto prepareList = [&](const std::vector<Item>& list) {
             const auto overrideMaterial = scene.overrideMaterial;
@@ -2731,6 +3131,10 @@ void VulkanRenderer::render(Scene& scene, Camera& camera) {
         cleanup();
         if (scene.onAfterRender)
             scene.onAfterRender(*this, scene, camera, nullptr, nullptr, nullptr);
+        impl->currentMaterialId = -1;
+        impl->currentCamera = nullptr;
+        impl->currentCameraId = 0;
+        impl->currentCameraOwner = {};
     } catch (...) {
         impl->abortFrame();
         cleanup();

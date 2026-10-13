@@ -4,6 +4,7 @@
 #include "geometries/PlaneGeometry.h"
 #include "extras/DataUtils.h"
 #include "core/NativeObject.h"
+#include "core/JSJobs.h"
 #include "materials/MeshBasicMaterial.h"
 #include "objects/Group.h"
 #include "objects/Mesh.h"
@@ -27,6 +28,19 @@ void require(bool condition, const char* description) {
     ++assertions;
     if (!condition)
         throw std::runtime_error(description);
+}
+void finishHostTurn() {
+    endJSJob();
+    JSValue::object().collectGarbage();
+}
+void renderHostTurn(VulkanRenderer& renderer, Scene& scene, Camera& camera) {
+    // These synchronous native test calls are separate host turns. Production
+    // render/prune must never end WeakRef keepalive or run a checkpoint itself.
+    static bool active = false;
+    if (!active) finishHostTurn();
+    struct Guard { bool& active; bool previous; ~Guard() { active = previous; } } guard{active, active};
+    active = true;
+    renderer.render(scene, camera);
 }
 std::array<int, 4> pixel(const VulkanRenderer& renderer, unsigned x = 32, unsigned y = 32) {
     const auto pixels = renderer.readPixels();
@@ -69,13 +83,15 @@ void unsupportedMeshTests(bool validation) {
         if (instanced) mesh = std::make_shared<InstancedMesh>(geometry, material, 1);
         else {
             auto skinned=std::make_shared<SkinnedMesh>(geometry, material);
+            // Objects updates a skeleton before material visibility/GPU capability.
+            skinned->skeleton = std::make_shared<Skeleton>();
             skinned->boundingSphere=std::make_shared<Sphere>(Vector3(),1.2);
             mesh=skinned;
         }
         auto parent = std::make_shared<Group>();
         parent->add(mesh); scene.add(parent);
         const auto expectSkipped = [&](const char* message) {
-            renderer.render(scene, camera);
+            renderHostTurn(renderer, scene, camera);
             require(renderer.getInfo().calls == 1, message);
             expectPixel(renderer, {0, 255, 0, 255}, message);
         };
@@ -97,7 +113,7 @@ void unsupportedMeshTests(bool validation) {
         supported->onBeforeRender = {};
         mesh->layers.set(0);
         bool rejected = false;
-        try { renderer.render(scene, camera); }
+        try { renderHostTurn(renderer, scene, camera); }
         catch (const std::invalid_argument& error) {
             rejected = std::string(error.what()) == (instanced
                 ? "Vulkan InstancedMesh rendering is not implemented yet"
@@ -121,7 +137,7 @@ void unsupportedPrimitiveTests(bool validation) {
         auto parent=std::make_shared<Group>();parent->add(primitive);scene.add(parent);
         const auto material=primitive->material;
         auto expectSkipped=[&](const char* description) {
-            renderer.render(scene,camera);
+            renderHostTurn(renderer, scene,camera);
             require(renderer.getInfo().calls==1,description);
             expectPixel(renderer,{0,255,0,255},description);
         };
@@ -157,7 +173,7 @@ void unsupportedPrimitiveTests(bool validation) {
         require(before==0 && materialBefore==0,"Filtered primitive does not invoke render callbacks");
         supported->onBeforeRender={};primitive->layers.set(0);
         bool rejected=false;
-        try { renderer.render(scene,camera); }
+        try { renderHostTurn(renderer, scene,camera); }
         catch(const std::invalid_argument& error){rejected=std::string(error.what())==rejection;}
         require(rejected,"Submitted primitive explicitly rejects its unsupported GPU path");
         require(before==1 && materialBefore==1 && after==0,
@@ -195,7 +211,7 @@ void instancingTests(bool validation) {
     geometry->index->onUpload([&]{order.push_back("index");});
     mesh->onAfterRender=[&](auto&,auto&,auto&,auto*,auto*,auto*){order.push_back("after");};
     scene.add(mesh);
-    renderer.render(scene,camera);
+    renderHostTurn(renderer, scene,camera);
     require(order==std::vector<std::string>{"position","matrix","color","before","index","after"},
         "Instance attributes upload after geometry and before object hooks");
     expectPixel(renderer,{255,0,0,255},"First instance uses its matrix and color",16,32);
@@ -203,59 +219,59 @@ void instancingTests(bool validation) {
     require(renderer.getInfo().calls==1 && renderer.getInfo().triangles==4,"Instance draw uses one call and multiplied triangle statistics");
     const auto buffers=renderer.getInfo().attributeBuffers;
     order.clear(); mesh->setColorAt(0,Color(0,1,0));
-    renderer.render(scene,camera);
+    renderHostTurn(renderer, scene,camera);
     expectPixel(renderer,{255,0,0,255},"Instance color writes require needsUpdate",16,32);
     require(order==std::vector<std::string>{"before","after"},"Unchanged instance versions do not upload");
     mesh->instanceColor->addUpdateRange(0,3);mesh->instanceColor->needsUpdate=true;
-    renderer.render(scene,camera);
+    renderHostTurn(renderer, scene,camera);
     expectPixel(renderer,{0,255,0,255},"Instance color partial upload reaches GPU",16,32);
     expectPixel(renderer,{0,0,255,255},"Instance color partial upload preserves other rows",48,32);
     require(mesh->instanceColor->updateRanges.get("length").strictEquals(0),"Instance update ranges clear after upload");
     mesh->onBeforeRender=[&](auto&,auto&,auto&,auto*,auto*,auto*){
         mesh->setMatrixAt(0,right);mesh->instanceMatrix->needsUpdate=true;
     };
-    renderer.render(scene,camera);
+    renderHostTurn(renderer, scene,camera);
     expectPixel(renderer,{0,255,0,255},"Object callback cannot retroactively upload an instance matrix",16,32);
-    mesh->onBeforeRender={};renderer.render(scene,camera);
+    mesh->onBeforeRender={};renderHostTurn(renderer, scene,camera);
     expectPixel(renderer,{0,0,0,255},"Instance matrix callback changes upload next frame",16,32);
     mesh->setMatrixAt(0,left);mesh->instanceMatrix->needsUpdate=true;
     mesh->instanceMatrix->meshPerAttribute=2;
-    renderer.render(scene,camera);
+    renderHostTurn(renderer, scene,camera);
     expectPixel(renderer,{0,0,255,255},"Same-identity divisor changes retain existing vertex binding",48,32);
     geometry->setAttribute("position",position->clone());
     position->dispose();
-    renderer.render(scene,camera);
+    renderHostTurn(renderer, scene,camera);
     expectPixel(renderer,{0,0,0,255},"Attribute identity changes rebind the instance divisor",48,32);
     mesh->instanceMatrix->meshPerAttribute=1;
-    mesh->dispose();renderer.render(scene,camera);
+    mesh->dispose();renderHostTurn(renderer, scene,camera);
     expectPixel(renderer,{0,0,255,255},"Disposal releases instance bindings and recreates them",48,32);
     require(renderer.getInfo().attributeBuffers==buffers,"Instance resources are recreated without accumulating buffers");
     int hooks=0; mesh->onBeforeRender=[&](auto&,auto&,auto&,auto*,auto*,auto*){++hooks;};
     mesh->onAfterRender=[&](auto&,auto&,auto&,auto*,auto*,auto*){++hooks;};
-    mesh->count=0;renderer.render(scene,camera);
+    mesh->count=0;renderHostTurn(renderer, scene,camera);
     require(renderer.getInfo().calls==0 && hooks==2,"Numeric zero skips instance draw but keeps object hooks");
-    mesh->count=JSValue("0");renderer.render(scene,camera);
+    mesh->count=JSValue("0");renderHostTurn(renderer, scene,camera);
     require(renderer.getInfo().calls==1 && renderer.getInfo().triangles==0,"String zero retains a zero-instance draw and statistics");
-    mesh->count=1.5;renderer.render(scene,camera);
+    mesh->count=1.5;renderHostTurn(renderer, scene,camera);
     require(renderer.getInfo().calls==1 && renderer.getInfo().triangles==3,"Fractional count truncates GPU instances but preserves logical statistics");
     expectPixel(renderer,{0,0,0,255},"Fractional count does not draw its truncated instance",48,32);
-    mesh->count=3;bool rejected=false;
-    try {renderer.render(scene,camera);}catch(const std::invalid_argument&){rejected=true;}
-    require(rejected,"Instance count beyond uploaded matrix capacity is explicitly rejected");
-    mesh->count=2;geometry->setDrawRange(0,0);renderer.render(scene,camera);
+    mesh->count=3;renderHostTurn(renderer, scene,camera);
+    require(pixel(renderer,16,32)==std::array<int,4>{0,0,0,255} && renderer.getInfo().calls==1,
+            "Instance fetch beyond storage reports a draw error without GPU submission or aborting info");
+    mesh->count=2;geometry->setDrawRange(0,0);renderHostTurn(renderer, scene,camera);
     require(renderer.getInfo().calls==1 && renderer.getInfo().triangles==0,"Zero vertex count preserves instanced draw statistics");
     geometry->setDrawRange(0,INFINITY);
     mesh->frustumCulled=true;mesh->position.x=10;
     left.makeTranslation(-10.5,0,0);right.makeTranslation(-9.5,0,0);
     mesh->setMatrixAt(0,left).setMatrixAt(1,right);mesh->instanceMatrix->needsUpdate=true;mesh->boundingSphere.reset();
-    renderer.render(scene,camera);
+    renderHostTurn(renderer, scene,camera);
     expectPixel(renderer,{0,255,0,255},"Instance bounds keep visible instances when mesh origin is outside the frustum",16,32);
     require(renderer.getInfo().calls==1,"Instance frustum uses the object sphere");
     mesh->position.x=0;left.makeTranslation(-.5,0,0);right.makeTranslation(.5,0,0);
     mesh->setMatrixAt(0,left).setMatrixAt(1,right);mesh->instanceMatrix->needsUpdate=true;mesh->boundingSphere.reset();
     scene.fog=std::make_shared<Fog>(Color(1,1,1),4,6);
     right.makeTranslation(.5,0,1);mesh->setMatrixAt(1,right);mesh->instanceMatrix->needsUpdate=true;
-    renderer.render(scene,camera);
+    renderHostTurn(renderer, scene,camera);
     expectPixel(renderer,{128,255,128,255},"Instance fog uses transformed view depth",16,32,2);
     expectPixel(renderer,{0,0,255,255},"Instance depth changes its own fog amount",48,32,2);
     scene.fog.reset();
@@ -265,14 +281,14 @@ void instancingTests(bool validation) {
         std::get<Float32Array>(overrideMatrix->array)[i]=float(left.elements()[i]);
         std::get<Float32Array>(overrideMatrix->array)[i+16]=float(left.elements()[i]);
     }
-    geometry->setAttribute("instanceMatrix",overrideMatrix);renderer.render(scene,camera);
+    geometry->setAttribute("instanceMatrix",overrideMatrix);renderHostTurn(renderer, scene,camera);
     expectPixel(renderer,{0,0,0,255},"Geometry instanceMatrix takes precedence over the object matrix",48,32);
-    geometry->deleteAttribute("instanceMatrix");renderer.render(scene,camera);
+    geometry->deleteAttribute("instanceMatrix");renderHostTurn(renderer, scene,camera);
     expectPixel(renderer,{0,0,255,255},"Removing geometry override restores object matrix",48,32);
     mesh->onBeforeRender={};mesh->onAfterRender={};
     mesh->dispose();
     require(renderer.getInfo().attributeBuffers==buffers-1,"Mesh dispose removes current instance matrix and color caches only");
-    scene.remove(mesh);geometry->dispose();renderer.render(scene,camera);
+    scene.remove(mesh);geometry->dispose();renderHostTurn(renderer, scene,camera);
     require(renderer.getInfo().calls==0,"Removing an instanced mesh leaves a valid empty frame");
     require(renderer.getValidationMessages().empty(),"Instance rendering produces no validation messages");
 
@@ -291,7 +307,7 @@ void instancingTests(bool validation) {
     weights.morphTargetInfluences->at(0)=1;morphMesh->setMorphAt(1,weights);
     morphScene.add(morphMesh);
     const auto textureUploads=renderer.getInfo().textureUploads;
-    renderer.render(morphScene,camera);
+    renderHostTurn(renderer, morphScene,camera);
     require(morphMesh->morphTexture->version==0 && renderer.getInfo().textureUploads==textureUploads,
             "Version-zero morph textures retain the uninitialized black texture fallback");
     require(renderer.getInfo().calls==1 && renderer.getInfo().triangles==4,
@@ -300,27 +316,27 @@ void instancingTests(bool validation) {
     expectPixel(renderer,{0,0,0,255},"Black morph fallback safely handles rows beyond its one texel",48,19);
     const auto fullMorphTexture=morphMesh->morphTexture;
     morphMesh->morphTexture=std::make_shared<DataTexture>(Float32Array{1},1,1,RedFormat,FloatType);
-    morphMesh->morphTexture->needsUpdate=true;renderer.render(morphScene,camera);
+    morphMesh->morphTexture->needsUpdate=true;renderHostTurn(renderer, morphScene,camera);
     expectPixel(renderer,{255,0,0,255},"Missing morph weight columns fetch zero",16,32);
     expectPixel(renderer,{0,0,0,255},"Missing morph texture rows fetch zero",48,32);
     morphMesh->morphTexture=fullMorphTexture;
-    morphMesh->morphTexture->needsUpdate=true;renderer.render(morphScene,camera);
+    morphMesh->morphTexture->needsUpdate=true;renderHostTurn(renderer, morphScene,camera);
     expectPixel(renderer,{255,0,0,255},"Instance morph base weight preserves first row",16,32);
     expectPixel(renderer,{0,0,255,255},"Instance morph weights use their own texture row",48,19);
     expectPixel(renderer,{0,0,0,255},"Morphed instance leaves its original position",48,32);
     weights.morphTargetInfluences->at(0)=0;morphMesh->setMorphAt(1,weights);
-    renderer.render(morphScene,camera);
+    renderHostTurn(renderer, morphScene,camera);
     expectPixel(renderer,{0,0,255,255},"Morph texture array changes require version update",48,19);
-    morphMesh->morphTexture->needsUpdate=true;renderer.render(morphScene,camera);
+    morphMesh->morphTexture->needsUpdate=true;renderHostTurn(renderer, morphScene,camera);
     expectPixel(renderer,{0,0,255,255},"Versioned morph weights update GPU deformation",48,32);
     weights.morphTargetInfluences->at(0)=1;morphMesh->setMorphAt(1,weights);morphMesh->morphTexture->needsUpdate=true;
     for(double i=0;i<target->count;++i) target->setY(i,target->getY(i)+.3);
-    target->needsUpdate=true;renderer.render(morphScene,camera);
+    target->needsUpdate=true;renderHostTurn(renderer, morphScene,camera);
     expectPixel(renderer,{0,0,255,255},"Morph target cache preserves unchanged target-count storage",48,19);
-    morphMesh->instanceMatrix->meshPerAttribute=2;material->alphaTest=.01;renderer.render(morphScene,camera);
+    morphMesh->instanceMatrix->meshPerAttribute=2;material->alphaTest=.01;renderHostTurn(renderer, morphScene,camera);
     expectPixel(renderer,{0,0,255,255},"Morph texture row does not use the matrix divisor",16,19);
     morphMesh->geometry=morphGeometry->toNonIndexed();morphMesh->instanceMatrix->meshPerAttribute=1;
-    renderer.render(morphScene,camera);
+    renderHostTurn(renderer, morphScene,camera);
     require(renderer.getInfo().calls==1 && renderer.getInfo().triangles==4,"Non-indexed instance draw preserves statistics");
     expectPixel(renderer,{0,0,255,255},"Non-indexed morph uses gl_VertexIndex",48,10);
 
@@ -338,11 +354,11 @@ void instancingTests(bool validation) {
         return calls;
     },{nativeObject(reentry)}));
     reentry->instanceMatrix->meshPerAttribute=coercion;
-    renderer.render(reentryScene,camera);
+    renderHostTurn(renderer, reentryScene,camera);
     require(coercion.get("calls").number()==4,"Matrix divisor conversion runs independently for all four columns");
     expectPixel(renderer,{0,0,0,255},"Per-column divisors survive dispose during binding conversion",48,32);
     reentry->instanceMatrix->meshPerAttribute=1;
-    renderer.render(reentryScene,camera);
+    renderHostTurn(renderer, reentryScene,camera);
     expectPixel(renderer,{0,0,255,255},"Instance cache recovers after divisor conversion disposes resources",48,32);
     auto clearing=JSValue::object();clearing.set("calls",0);
     clearing.set("valueOf",JSValue::function(+[](const JSValue& self,const auto&,const auto& captures)->JSValue {
@@ -351,20 +367,20 @@ void instancingTests(bool validation) {
         object->instanceColor.reset();return 1;
     },{nativeObject(reentry)}));
     reentry->instanceMatrix->meshPerAttribute=clearing;material->alphaTest=.01;
-    renderer.render(reentryScene,camera);
+    renderHostTurn(renderer, reentryScene,camera);
     require(clearing.get("calls").number()==4,"Color replacement does not change matrix column conversion count");
     expectPixel(renderer,{0,0,0,255},"Matrix conversion clearing instanceColor disables the current color slot",48,32);
-    renderer.render(reentryScene,camera);
+    renderHostTurn(renderer, reentryScene,camera);
     expectPixel(renderer,{255,255,255,255},"Next program omits removed instance colors",48,32);
 
     Scene lodScene;auto lod=std::make_shared<LOD>();
     lod->addLevel(plane(Color(1,0,0)),0);lod->addLevel(plane(Color(0,0,1)),8,.1);lodScene.add(lod);
-    renderer.render(lodScene,camera);expectPixel(renderer,{255,0,0,255},"LOD updates before child projection");
-    camera.position.z=10;renderer.render(lodScene,camera);
+    renderHostTurn(renderer, lodScene,camera);expectPixel(renderer,{255,0,0,255},"LOD updates before child projection");
+    camera.position.z=10;renderHostTurn(renderer, lodScene,camera);
     expectPixel(renderer,{0,0,255,255},"LOD selects distant child during rendering");
-    lod->autoUpdate=JSValue("true");camera.position.z=5;renderer.render(lodScene,camera);
+    lod->autoUpdate=JSValue("true");camera.position.z=5;renderHostTurn(renderer, lodScene,camera);
     expectPixel(renderer,{0,0,255,255},"LOD automatic update requires strict true");
-    lod->autoUpdate=true;renderer.render(lodScene,camera);
+    lod->autoUpdate=true;renderHostTurn(renderer, lodScene,camera);
     expectPixel(renderer,{255,0,0,255},"LOD resumes automatic selection");
 }
 
@@ -397,142 +413,142 @@ void textureTests(bool validation) {
         material->map = texture;
         int updates = 0;
         texture->onUpdate = [&](Texture&) { ++updates; };
-        renderer.render(scene, camera);
+        renderHostTurn(renderer, scene, camera);
         expectPixel(renderer, {0, 0, 0, 255}, "Texture version zero uses the upstream empty texture");
         require(updates == 0 && renderer.getInfo().textureImages == 0, "Version zero does not allocate or call onUpdate");
         texture->needsUpdate = true;
-        renderer.render(scene, camera);
+        renderHostTurn(renderer, scene, camera);
         expectPixel(renderer, {255, 0, 0, 255}, "RGBA8 DataTexture samples uploaded texels");
         require(updates == 1 && renderer.getInfo().textureImages == 1, "Initial texture upload creates one resource and callback");
         auto& data = std::get<Uint8Array>(texture->image->data);
         data.set(Uint8Array{0, 255, 0, 255});
-        renderer.render(scene, camera);
+        renderHostTurn(renderer, scene, camera);
         expectPixel(renderer, {255, 0, 0, 255}, "Raw texture mutations wait for needsUpdate");
         texture->needsUpdate = true;
-        renderer.render(scene, camera);
+        renderHostTurn(renderer, scene, camera);
         expectPixel(renderer, {0, 255, 0, 255}, "Texture version changes upload the changed data");
         require(updates == 2 && renderer.getInfo().textureImages == 1, "Superseded texture resources retire after submission");
         texture->dispose();
         require(renderer.getInfo().textureImages == 0, "Texture dispose releases an unused GPU resource immediately");
-        renderer.render(scene, camera);
+        renderHostTurn(renderer, scene, camera);
         expectPixel(renderer, {0, 255, 0, 255}, "Disposed live textures can upload again");
         require(updates == 3, "Disposal restores the first-upload callback path");
     }
     material->map.reset();
-    renderer.render(scene, camera);
+    renderHostTurn(renderer, scene, camera);
     require(renderer.getInfo().textureImages == 0, "Expired texture owners release GPU images without cycles");
     {
         auto texture = rgba(Uint8Array{255,0,0,255, 0,255,0,255, 0,0,255,255, 255,255,255,255}, 2, 2);
         material->map = texture;
         uv(.25, .25);
-        renderer.render(scene, camera);
+        renderHostTurn(renderer, scene, camera);
         expectPixel(renderer, {255,0,0,255}, "DataTexture default flipY false samples its first row at v zero");
         texture->flipY = true; texture->needsUpdate = true;
-        renderer.render(scene, camera);
+        renderHostTurn(renderer, scene, camera);
         expectPixel(renderer, {0,0,255,255}, "flipY reverses typed-array texture rows");
         texture->flipY = false; texture->needsUpdate = true;
         texture->offset.set(.5, 0);
-        renderer.render(scene, camera);
+        renderHostTurn(renderer, scene, camera);
         expectPixel(renderer, {0,255,0,255}, "Texture matrixAutoUpdate applies offset before sampling");
         texture->offset.set(0, 0); texture->repeat.set(1, 1); texture->center.set(.5, .5); texture->rotation = MATH_PI;
-        renderer.render(scene, camera);
+        renderHostTurn(renderer, scene, camera);
         expectPixel(renderer, {255,255,255,255}, "Texture matrix applies rotation about center");
         texture->matrixAutoUpdate = false;
         texture->matrix.set(1,0,0, 0,1,.5, 0,0,1);
-        renderer.render(scene, camera);
+        renderHostTurn(renderer, scene, camera);
         expectPixel(renderer, {0,0,255,255}, "Explicit texture matrix remains effective with matrixAutoUpdate false");
         texture->matrix.identity();
         uv(.75,.25,"uv1"); texture->channel = 1;
-        renderer.render(scene, camera);
+        renderHostTurn(renderer, scene, camera);
         expectPixel(renderer, {0,255,0,255}, "Texture channel one selects geometry uv1");
         uv(.25,.75,"uv2"); texture->channel = 2;
-        renderer.render(scene, camera);
+        renderHostTurn(renderer, scene, camera);
         expectPixel(renderer, {0,0,255,255}, "Texture channel two selects geometry uv2");
         texture->channel = 3;
-        renderer.render(scene, camera);
+        renderHostTurn(renderer, scene, camera);
         expectPixel(renderer, {255,0,0,255}, "A missing texture UV channel uses the default zero attribute");
         texture->channel = 0;
         uv(1.25,.25); texture->wrapS = RepeatWrapping; texture->needsUpdate = true;
-        renderer.render(scene, camera);
+        renderHostTurn(renderer, scene, camera);
         expectPixel(renderer, {255,0,0,255}, "RepeatWrapping repeats positive UV coordinates");
         texture->wrapS = ClampToEdgeWrapping; texture->needsUpdate = true;
-        renderer.render(scene, camera);
+        renderHostTurn(renderer, scene, camera);
         expectPixel(renderer, {0,255,0,255}, "ClampToEdgeWrapping clamps UV coordinates");
         texture->wrapS = MirroredRepeatWrapping; texture->needsUpdate = true;
-        renderer.render(scene, camera);
+        renderHostTurn(renderer, scene, camera);
         expectPixel(renderer, {0,255,0,255}, "MirroredRepeatWrapping mirrors odd UV periods");
         uv(-.25,.25);
-        renderer.render(scene, camera);
+        renderHostTurn(renderer, scene, camera);
         expectPixel(renderer, {255,0,0,255}, "MirroredRepeatWrapping handles negative UV coordinates");
         texture->wrapS = RepeatWrapping; texture->needsUpdate = true;
-        renderer.render(scene, camera);
+        renderHostTurn(renderer, scene, camera);
         expectPixel(renderer, {0,255,0,255}, "RepeatWrapping handles negative UV coordinates");
         uv(.5,.25); texture->magFilter = LinearFilter; texture->minFilter = LinearFilter; texture->needsUpdate = true;
-        renderer.render(scene, camera);
+        renderHostTurn(renderer, scene, camera);
         expectPixel(renderer, {128,128,0,255}, "Linear magnification interpolates neighboring texels");
     }
     {
         auto texture = rgba(Uint8Array{128,128,128,255}); material->map = texture;
         texture->colorSpace = SRGBColorSpace;
-        renderer.render(scene, camera);
+        renderHostTurn(renderer, scene, camera);
         expectPixel(renderer, {55,55,55,255}, "sRGB texture sampling decodes into the linear working space");
         renderer.srgbOutput = true;
-        renderer.render(scene, camera);
+        renderHostTurn(renderer, scene, camera);
         expectPixel(renderer, {128,128,128,255}, "sRGB texture input and sRGB output round trip");
         renderer.srgbOutput = false;
         texture->colorSpace = LinearSRGBColorSpace; texture->needsUpdate = true;
-        renderer.render(scene, camera);
+        renderHostTurn(renderer, scene, camera);
         expectPixel(renderer, {128,128,128,255}, "LinearSRGB texture bytes bypass the transfer function");
         texture->colorSpace = NoColorSpace; texture->needsUpdate = true;
-        renderer.render(scene, camera);
+        renderHostTurn(renderer, scene, camera);
         expectPixel(renderer, {128,128,128,255}, "NoColorSpace texture bytes bypass the transfer function");
         auto floating = std::make_shared<DataTexture>(Float32Array{.25f,.5f,1.f,1.f},1,1,RGBAFormat,FloatType);
         floating->needsUpdate = true; material->map = floating;
-        renderer.render(scene, camera);
+        renderHostTurn(renderer, scene, camera);
         expectPixel(renderer, {64,128,255,255}, "Float32 DataTexture samples floating-point storage");
         auto half = std::make_shared<DataTexture>(Uint16Array{toHalfFloat(.25),toHalfFloat(.5),toHalfFloat(1),toHalfFloat(1)},1,1,RGBAFormat,HalfFloatType);
         half->needsUpdate = true; material->map = half;
-        renderer.render(scene, camera);
+        renderHostTurn(renderer, scene, camera);
         expectPixel(renderer, {64,128,255,255}, "HalfFloat DataTexture samples decoded half storage");
         auto red = std::make_shared<DataTexture>(Uint8Array{128},1,1,RedFormat);
         red->needsUpdate = true; material->map = red;
-        renderer.render(scene, camera);
+        renderHostTurn(renderer, scene, camera);
         expectPixel(renderer, {128,0,0,255}, "Red texture fills absent green/blue with zero and alpha with one");
         auto rg = std::make_shared<DataTexture>(Uint8Array{64,128},1,1,RGFormat);
         rg->needsUpdate = true; material->map = rg;
-        renderer.render(scene, camera);
+        renderHostTurn(renderer, scene, camera);
         expectPixel(renderer, {64,128,0,255}, "RG texture preserves two channels and implicit alpha one");
         auto aligned = std::make_shared<DataTexture>(Uint8Array{32,0,0,0, 200},1,2,RedFormat);
         aligned->unpackAlignment = 4; aligned->needsUpdate = true; material->map = aligned;
         uv(.25,.75);
-        renderer.render(scene, camera);
+        renderHostTurn(renderer, scene, camera);
         expectPixel(renderer, {200,0,0,255}, "Typed-array uploads honor unpackAlignment row padding");
     }
     {
         auto map = rgba(Uint8Array{200,100,50,128});
         auto alpha = rgba(Uint8Array{255,128,0,0});
         material->map = map; material->alphaMap = alpha; material->blending = NoBlending; material->opacity = .5;
-        renderer.render(scene, camera);
+        renderHostTurn(renderer, scene, camera);
         expectPixel(renderer, {200,100,50,32}, "alphaMap uses green and multiplies map alpha and material opacity");
         material->alphaTest = .2;
-        renderer.render(scene, camera);
+        renderHostTurn(renderer, scene, camera);
         expectPixel(renderer, {0,0,0,255}, "alphaTest sees combined map and alphaMap alpha");
         material->alphaTest = 0; material->opacity = 1; material->alphaMap.reset();
         map->premultiplyAlpha = true; map->needsUpdate = true;
-        renderer.render(scene, camera);
+        renderHostTurn(renderer, scene, camera);
         expectPixel(renderer, {100,50,25,128}, "premultiplyAlpha multiplies typed-array RGB during upload");
         auto low=rgba(Uint8Array{1,3,5,128}); low->premultiplyAlpha=true;
         material->map=low;
-        renderer.render(scene,camera);
+        renderHostTurn(renderer, scene,camera);
         expectPixel(renderer,{0,1,2,128},"RGBA8 premultiply quantization follows Blink typed-array truncation",32,32,0);
         auto overflow=std::make_shared<DataTexture>(Uint16Array{0x7bff,0,0,0x4000},1,1,RGBAFormat,HalfFloatType);
         overflow->premultiplyAlpha=true; overflow->needsUpdate=true; material->map=overflow;
         material->color.set(1.0/131008,1,1);
-        renderer.render(scene,camera);
+        renderHostTurn(renderer, scene,camera);
         expectPixel(renderer,{255,0,0,255},"Half-float premultiplication preserves overflow to infinity instead of saturating");
         material->color.set(1,1,1);
         material->map.reset(); material->blending = NormalBlending;
-        renderer.render(scene, camera);
+        renderHostTurn(renderer, scene, camera);
         expectPixel(renderer, {255,255,255,255}, "Removing maps restores white sampler defaults");
     }
     {
@@ -547,21 +563,21 @@ void textureTests(bool validation) {
         texture->repeat.set(128,128);
         const auto standardUv=std::make_shared<PlaneGeometry>(1.6,1.6)->getAttribute("uv");
         mesh->geometry->setAttribute("uv",standardUv);
-        renderer.render(scene,camera);
+        renderHostTurn(renderer, scene,camera);
         expectPixel(renderer,{128,128,128,255},"Automatic mipmaps filter a minified checkerboard");
         texture->minFilter=NearestMipmapNearestFilter; texture->needsUpdate=true;
-        renderer.render(scene,camera);
+        renderHostTurn(renderer, scene,camera);
         expectPixel(renderer,{128,128,128,255},"Nearest mip-level selection uses generated mip levels");
         for (std::size_t i=0;i<data.size();i+=4) { data[i]=255; data[i+1]=0; data[i+2]=0; }
         texture->needsUpdate=true;
-        renderer.render(scene,camera);
+        renderHostTurn(renderer, scene,camera);
         expectPixel(renderer,{255,0,0,255},"Texture updates regenerate the automatic mip chain");
     }
     {
         uv(.25,.25);
         auto texture=rgba(Uint8Array{255,0,0,255, 0,255,0,255, 0,0,255,255, 255,255,255,255},2,2);
         material->map=texture;
-        renderer.render(scene,camera);
+        renderHostTurn(renderer, scene,camera);
         auto& data=std::get<Uint8Array>(texture->image->data);
         data.set(Uint8Array{10,20,30,255, 80,90,100,255, 110,120,130,255, 140,150,160,255});
         auto range=std::make_shared<Texture::UpdateRange>(Texture::UpdateRange{0,2});
@@ -569,15 +585,15 @@ void textureTests(bool validation) {
         bool cleared=false;
         texture->onUpdate=[&](Texture& value) { cleared=value.updateRanges->empty(); };
         texture->needsUpdate=true;
-        renderer.render(scene,camera);
+        renderHostTurn(renderer, scene,camera);
         expectPixel(renderer,{10,20,30,255},"Texture updateRanges upload changed texels");
         require(cleared && range->count==4,"Texture ranges merge in place and clear before onUpdate");
         uv(.75,.25);
-        renderer.render(scene,camera);
+        renderHostTurn(renderer, scene,camera);
         expectPixel(renderer,{0,255,0,255},"Texture updateRanges preserve untouched uploaded texels");
         texture->addUpdateRange(8,4); texture->flipY=true; texture->needsUpdate=true;
         uv(.25,.75);
-        renderer.render(scene,camera);
+        renderHostTurn(renderer, scene,camera);
         expectPixel(renderer,{110,120,130,255},"Partial uploads flip a one-row region without moving its destination");
     }
     {
@@ -589,23 +605,23 @@ void textureTests(bool validation) {
                 value.needsUpdate=true;
             }
         };
-        renderer.render(scene,camera);
+        renderHostTurn(renderer, scene,camera);
         expectPixel(renderer,{255,0,0,255},"Texture callback runs after pixel capture");
-        renderer.render(scene,camera);
+        renderHostTurn(renderer, scene,camera);
         expectPixel(renderer,{255,0,0,255},"Callback texture version increments are cached after callback");
         require(callbacks==1,"Callback version increment does not schedule a second upload");
         texture->needsUpdate=true;
-        renderer.render(scene,camera);
+        renderHostTurn(renderer, scene,camera);
         expectPixel(renderer,{0,255,0,255},"A later needsUpdate uploads callback pixel mutations");
         require(callbacks==2,"A later upload invokes onUpdate again");
         int state=0;
         texture->onUpdate=[count=0,&state](Texture&) mutable {state=++count;};
-        texture->needsUpdate=true; renderer.render(scene,camera);
-        texture->needsUpdate=true; renderer.render(scene,camera);
+        texture->needsUpdate=true; renderHostTurn(renderer, scene,camera);
+        texture->needsUpdate=true; renderHostTurn(renderer, scene,camera);
         require(state==2,"Copying onUpdate for lifetime safety preserves its mutable closure state");
         bool rejected=false;
-        texture->onUpdate=[&](Texture&) {try {renderer.render(scene,camera);} catch(const std::logic_error&) {rejected=true;}};
-        texture->needsUpdate=true; renderer.render(scene,camera);
+        texture->onUpdate=[&](Texture&) {try {renderHostTurn(renderer, scene,camera);} catch(const std::logic_error&) {rejected=true;}};
+        texture->needsUpdate=true; renderHostTurn(renderer, scene,camera);
         require(rejected,"Texture onUpdate rejects recursive rendering across the full render guard");
         texture->onUpdate=nullptr;
     }
@@ -613,9 +629,9 @@ void textureTests(bool validation) {
         auto texture=rgba(Uint8Array{255,255,255,255}); material->map=texture;
         material->blending=NoBlending;
         texture->onUpdate=[&](Texture& value) { material->color.set(1,0,0); material->opacity=.5; value.onUpdate=nullptr; };
-        renderer.render(scene,camera);
+        renderHostTurn(renderer, scene,camera);
         expectPixel(renderer,{255,255,255,255},"Texture callbacks cannot retroactively change already refreshed material uniforms");
-        renderer.render(scene,camera);
+        renderHostTurn(renderer, scene,camera);
         expectPixel(renderer,{255,0,0,128},"A later draw refreshes material uniforms modified by the upload callback");
         material->color.set(1,1,1); material->opacity=1; material->blending=NormalBlending;
     }
@@ -626,42 +642,42 @@ void textureTests(bool validation) {
         texture->updateRanges->push_back(pendingRange);
         int callbacks=0; texture->onUpdate=[&](Texture&){++callbacks;};
         const auto uploads=renderer.getInfo().textureUploads;
-        renderer.render(scene,camera);
+        renderHostTurn(renderer, scene,camera);
         expectPixel(renderer,{0,0,0,255},"dataReady false allocates safely initialized storage without user pixels");
         require(renderer.getInfo().textureUploads==uploads && callbacks==1 && texture->updateRanges->size()==1,
                 "dataReady false records allocation/callback but preserves pending ranges and upload count");
         texture->source->dataReady=true;
-        renderer.render(scene,camera);
+        renderHostTurn(renderer, scene,camera);
         expectPixel(renderer,{0,0,0,255},"Setting dataReady alone does not change the texture version");
         texture->needsUpdate=true;
-        renderer.render(scene,camera);
+        renderHostTurn(renderer, scene,camera);
         expectPixel(renderer,{255,0,0,255},"dataReady plus needsUpdate uploads real pixel data");
         require(renderer.getInfo().textureUploads==uploads+1 && texture->updateRanges->empty(),"Ready upload consumes pending ranges once");
         texture->source->dataReady=false; texture->needsUpdate=true;
         std::get<Uint8Array>(texture->image->data).set(Uint8Array{0,255,0,255});
-        renderer.render(scene,camera);
+        renderHostTurn(renderer, scene,camera);
         expectPixel(renderer,{255,0,0,255},"dataReady false preserves previously uploaded pixels");
         texture->source->dataReady=true; texture->needsUpdate=true;
-        renderer.render(scene,camera);
+        renderHostTurn(renderer, scene,camera);
         expectPixel(renderer,{0,255,0,255},"A subsequent ready version refreshes existing storage");
     }
     {
-        material->map.reset(); renderer.render(scene,camera);
+        material->map.reset(); renderHostTurn(renderer, scene,camera);
         auto texture=rgba(Uint8Array{255,0,0,255}); material->map=texture;
-        renderer.render(scene,camera);
+        renderHostTurn(renderer, scene,camera);
         const auto images=renderer.getInfo().textureImages, uploads=renderer.getInfo().textureUploads;
         const auto clone=texture->clone();
         material->map=clone;
-        renderer.render(scene,camera);
+        renderHostTurn(renderer, scene,camera);
         expectPixel(renderer,{255,0,0,255},"Texture clone samples its shared Source");
         require(renderer.getInfo().textureImages==images && renderer.getInfo().textureUploads==uploads+1,
                 "A cloned texture shares the cache entry but its incremented source version uploads");
         std::get<Uint8Array>(clone->image->data).set(Uint8Array{0,255,0,255}); clone->needsUpdate=true;
-        renderer.render(scene,camera);
-        material->map=texture; renderer.render(scene,camera);
+        renderHostTurn(renderer, scene,camera);
+        material->map=texture; renderHostTurn(renderer, scene,camera);
         expectPixel(renderer,{0,255,0,255},"Shared Source uploads remain visible through an unchanged texture handle");
         clone->wrapS=RepeatWrapping; clone->needsUpdate=true; material->map=clone;
-        renderer.render(scene,camera);
+        renderHostTurn(renderer, scene,camera);
         require(renderer.getInfo().textureImages==images+1,"Different upstream texture cache keys create separate GPU storage");
         clone->dispose();
         require(renderer.getInfo().textureImages==images,"Disposing one cache key retains a separately used Source entry");
@@ -669,35 +685,35 @@ void textureTests(bool validation) {
     }
     {
         auto texture=rgba(Uint8Array{255,0,0,255}); material->map=texture;
-        renderer.render(scene,camera);
+        renderHostTurn(renderer, scene,camera);
         auto alpha=texture->clone(); material->alphaMap=alpha; material->blending=NoBlending;
         std::get<Uint8Array>(texture->image->data).set(Uint8Array{0,255,0,128});
-        renderer.render(scene,camera);
+        renderHostTurn(renderer, scene,camera);
         expectPixel(renderer,{0,255,0,128},"Shared map/alphaMap storage observes the later upload in both bindings");
         material->alphaMap.reset(); material->blending=NormalBlending;
     }
     {
         auto texture=rgba(Uint8Array{255,0,0,255}); material->map=texture;
         texture->version=.25; texture->source->version=.5;
-        renderer.render(scene,camera);
+        renderHostTurn(renderer, scene,camera);
         expectPixel(renderer,{255,0,0,255},"Positive fractional texture versions upload without integer truncation");
         std::get<Uint8Array>(texture->image->data).set(Uint8Array{0,255,0,255});
         texture->version=.5; texture->source->version=.75;
-        renderer.render(scene,camera);
+        renderHostTurn(renderer, scene,camera);
         expectPixel(renderer,{0,255,0,255},"Fractional source and texture version changes remain distinct");
         std::get<Uint8Array>(texture->image->data).set(Uint8Array{0,0,255,255});
         texture->version=std::numeric_limits<double>::quiet_NaN(); texture->source->version=1;
-        renderer.render(scene,camera);
+        renderHostTurn(renderer, scene,camera);
         expectPixel(renderer,{0,255,0,255},"NaN texture versions do not satisfy the upstream upload guard");
         texture->version=-1;
-        renderer.render(scene,camera);
+        renderHostTurn(renderer, scene,camera);
         expectPixel(renderer,{0,255,0,255},"Negative texture versions preserve the currently uploaded binding");
         texture->version=1;
-        renderer.render(scene,camera);
+        renderHostTurn(renderer, scene,camera);
         expectPixel(renderer,{0,0,255,255},"Returning to a positive version resumes texture updates");
     }
     {
-        scene.clear(); material->map.reset(); renderer.render(scene,camera);
+        scene.clear(); material->map.reset(); renderHostTurn(renderer, scene,camera);
         auto texture=rgba(Uint8Array{255,0,0,255});
         auto first=plane(Color(1,1,1)), second=plane(Color(1,1,1));
         first->scale.set(.5,1,1); second->scale.set(.5,1,1);
@@ -708,41 +724,41 @@ void textureTests(bool validation) {
             std::get<Uint8Array>(texture->image->data).set(Uint8Array{0,255,0,255}); texture->needsUpdate=true;
         };
         scene.add(first); scene.add(second);
-        renderer.render(scene,camera);
+        renderHostTurn(renderer, scene,camera);
         expectPixel(renderer,{255,0,0,255},"A same-frame texture update preserves an earlier recorded draw",16,32);
         expectPixel(renderer,{0,255,0,255},"A same-frame texture update affects the following draw",48,32);
         require(renderer.getInfo().textureImages==1,"Superseded same-frame texture resources retire after GPU completion");
         first->onAfterRender=[&](auto&,auto&,auto&,auto*,auto*,auto*) { texture->dispose(); };
-        renderer.render(scene,camera);
+        renderHostTurn(renderer, scene,camera);
         expectPixel(renderer,{0,255,0,255},"Disposal during a frame preserves previously recorded texture references",16,32);
         expectPixel(renderer,{0,255,0,255},"A later draw recreates a texture disposed by the earlier hook",48,32);
         scene.clear();
     }
-    material->map.reset(); scene.add(mesh); renderer.render(scene,camera);
+    material->map.reset(); scene.add(mesh); renderHostTurn(renderer, scene,camera);
     require(renderer.getInfo().textureImages==0,"Texture frame fixtures leave no owned images");
     {
         auto texture=rgba(Uint8Array{255,0,0,255}); material->map=texture;
         int callbacks=0; texture->onUpdate=[&](Texture&){++callbacks;};
         mesh->geometry->setDrawRange(0,0);
-        renderer.render(scene,camera);
+        renderHostTurn(renderer, scene,camera);
         require(callbacks==1 && renderer.getInfo().calls==1,"Zero-count draws still upload textures and execute a draw call");
         texture->needsUpdate=true; mesh->geometry->setDrawRange(9,0);
-        renderer.render(scene,camera);
+        renderHostTurn(renderer, scene,camera);
         require(callbacks==2 && renderer.getInfo().calls==0,"Texture uploads precede rejection of negative clipped draw ranges");
         mesh->geometry->setDrawRange(0,std::numeric_limits<double>::infinity());
         texture->onUpdate=[&](Texture& value) { value.dispose(); value.onUpdate=nullptr; };
         texture->needsUpdate=true;
-        renderer.render(scene,camera);
+        renderHostTurn(renderer, scene,camera);
         expectPixel(renderer,{255,0,0,255},"Disposing a texture from its upload callback keeps the current draw alive");
         require(renderer.getInfo().textureImages==0,"Upload callback disposal does not leave a reinserted cache entry");
-        texture->needsUpdate=true; renderer.render(scene,camera);
+        texture->needsUpdate=true; renderHostTurn(renderer, scene,camera);
         expectPixel(renderer,{255,0,0,255},"A texture disposed during upload can be used again");
     }
     {
         auto texture=rgba(Uint8Array{255,0,0,255}); material->map=texture;
         const auto reject=[&](const char* message) {
             bool rejected=false;
-            try {renderer.render(scene,camera);} catch(const std::invalid_argument&) {rejected=true;}
+            try {renderHostTurn(renderer, scene,camera);} catch(const std::invalid_argument&) {rejected=true;}
             require(rejected,message);
         };
         texture->magFilter=1234;
@@ -750,7 +766,7 @@ void textureTests(bool validation) {
         texture->magFilter=NearestFilter; texture->image->width=2;
         reject("Texture upload rejects short typed arrays before any GPU out-of-bounds access");
         texture->image->width=1;
-        renderer.render(scene,camera);
+        renderHostTurn(renderer, scene,camera);
         expectPixel(renderer,{255,0,0,255},"A failed first upload can recover with valid image data");
         texture->mipmaps->push_back(std::make_shared<TextureImage>(Uint8Array{255,0,0,255},-1,1));
         texture->needsUpdate=true;
@@ -760,23 +776,25 @@ void textureTests(bool validation) {
         texture->image->data=Uint8Array{255,0,0,255,0,255,0,255};
         reject("Resizing immutable uploaded texture storage requires disposal");
         texture->dispose();
-        renderer.render(scene,camera);
+        renderHostTurn(renderer, scene,camera);
         uv(.75,.25);
-        renderer.render(scene,camera);
+        renderHostTurn(renderer, scene,camera);
         expectPixel(renderer,{0,255,0,255},"Disposal permits reallocation with changed texture dimensions");
         texture->addUpdateRange(4,8); texture->needsUpdate=true;
         reject("An update range crossing its image row fails explicitly");
         texture->clearUpdateRanges();
-        renderer.render(scene,camera);
+        renderHostTurn(renderer, scene,camera);
         expectPixel(renderer,{0,255,0,255},"The renderer recovers after a rejected texture update range");
         texture->channel=4;
         reject("Unsupported UV channel fails explicitly");
         texture->channel=0;
         auto tooShort=std::make_shared<Float32BufferAttribute>(std::vector<float>{0,0},2);
         mesh->geometry->setAttribute("uv",tooShort);
-        reject("Texture UV fetch bounds are checked before GPU submission");
+        renderHostTurn(renderer, scene,camera);
+        require(pixel(renderer,32,32)==std::array<int,4>{0,0,0,255} && renderer.getInfo().calls==1,
+                "Out-of-bounds UV fetch is a draw error without GPU submission");
         mesh->geometry->setAttribute("uv",std::make_shared<PlaneGeometry>(1.6,1.6)->getAttribute("uv"));
-        renderer.render(scene,camera);
+        renderHostTurn(renderer, scene,camera);
         require(renderer.getInfo().calls==1,"UV fetch validation failure leaves the next frame usable");
     }
     {
@@ -787,7 +805,7 @@ void textureTests(bool validation) {
         local.reset(); texture->dispose();
         require(disposes==1,"Renderer destruction unregisters texture dispose listeners");
     }
-    material->map.reset(); renderer.render(scene,camera);
+    material->map.reset(); renderHostTurn(renderer, scene,camera);
     require(renderer.getInfo().textureImages==0,"Texture tests release application-owned cached images");
     require(renderer.getValidationMessages().empty(),"Texture rendering emitted no validation warning or error");
 }
@@ -808,7 +826,7 @@ void mipmapTests(bool validation) {
         return value;
     };
     const auto sample=[&](const std::shared_ptr<Texture>& value,double repeat,std::array<int,4> expected,const char* message) {
-        material->map=value;value->repeat.set(repeat,repeat);renderer.render(scene,camera);expectPixel(renderer,expected,message);
+        material->map=value;value->repeat.set(repeat,repeat);renderHostTurn(renderer, scene,camera);expectPixel(renderer,expected,message);
     };
     {
         auto value=texture();*value->mipmaps={solid(8,4,{255,0,0,255}),solid(4,2,{0,255,0,255}),
@@ -935,22 +953,22 @@ void mipmapTests(bool validation) {
     }
     {
         auto zero=texture();*zero->mipmaps={solid(0,1,{255,0,0,255})};material->map=zero;
-        bool zeroRejected=false;try{renderer.render(scene,camera);}catch(const std::invalid_argument&){zeroRejected=true;}
+        bool zeroRejected=false;try{renderHostTurn(renderer, scene,camera);}catch(const std::invalid_argument&){zeroRejected=true;}
         require(zeroRejected,"Initial immutable mipmap storage cannot have zero dimensions");
         auto value=texture();*value->mipmaps={solid(8,4,{255,0,0,255}),solid(5,2,{0,255,0,255})};material->map=value;
-        bool rejected=false;try{renderer.render(scene,camera);}catch(const std::invalid_argument&){rejected=true;}
+        bool rejected=false;try{renderHostTurn(renderer, scene,camera);}catch(const std::invalid_argument&){rejected=true;}
         require(rejected,"Manual mip dimensions cannot exceed their allocated level");
         value->mipmaps->at(1)=std::make_shared<TextureImage>(Uint8Array{0,255,0,255},4,2);
-        rejected=false;try{renderer.render(scene,camera);}catch(const std::invalid_argument&){rejected=true;}
+        rejected=false;try{renderHostTurn(renderer, scene,camera);}catch(const std::invalid_argument&){rejected=true;}
         require(rejected,"Each manual mip validates its own typed-array byte length");
         value->mipmaps->at(1)=solid(4,2,{0,255,0,255});
         sample(value,16,{0,255,0,255},"A rejected first manual upload can recover without leaked cache resources");
         value->mipmaps->push_back(solid(2,1,{0,0,255,255}));value->needsUpdate=true;
-        rejected=false;try{renderer.render(scene,camera);}catch(const std::invalid_argument&){rejected=true;}
+        rejected=false;try{renderHostTurn(renderer, scene,camera);}catch(const std::invalid_argument&){rejected=true;}
         require(rejected,"Adding a mip beyond immutable storage requires disposal");
         value->dispose();sample(value,64,{0,0,255,255},"Disposal permits a larger manual mip allocation");
     }
-    material->map.reset();renderer.render(scene,camera);
+    material->map.reset();renderHostTurn(renderer, scene,camera);
     require(renderer.getInfo().textureImages==0,"Manual mip fixtures release every application-owned image");
     require(renderer.getValidationMessages().empty(),"Manual mip uploads emitted no Vulkan validation warning or error");
 }
@@ -963,25 +981,25 @@ void renderOrderTests(bool validation) {
     for(const auto& mesh:{red,green}){basic(mesh)->depthTest=false;basic(mesh)->depthWrite=false;}
     auto high=std::make_shared<Group>(),low=std::make_shared<Group>();high->add(red);low->add(green);
     high->renderOrder=.75;low->renderOrder=.25;scene.add(high);scene.add(low);
-    renderer.render(scene,camera);
+    renderHostTurn(renderer, scene,camera);
     expectPixel(renderer,{255,0,0,255},"Fractional Group renderOrder remains distinct for opaque sorting");
     basic(red)->transparent=basic(green)->transparent=true;
-    renderer.render(scene,camera);
+    renderHostTurn(renderer, scene,camera);
     expectPixel(renderer,{255,0,0,255},"Fractional Group renderOrder remains distinct for transparent sorting");
     high->renderOrder=std::numeric_limits<double>::quiet_NaN();low->renderOrder=0;
     red->renderOrder=10;green->renderOrder=-10;
-    renderer.render(scene,camera);
+    renderHostTurn(renderer, scene,camera);
     expectPixel(renderer,{0,255,0,255},"NaN group comparison returns equality before consulting per-object renderOrder");
     high->renderOrder=0;red->renderOrder=std::numeric_limits<double>::quiet_NaN();
-    renderer.render(scene,camera);
+    renderHostTurn(renderer, scene,camera);
     expectPixel(renderer,{0,255,0,255},"NaN object renderOrder preserves collected order instead of consulting depth or id");
     basic(red)->transparent=basic(green)->transparent=false;
     red->renderOrder=0;green->renderOrder=1;
     green->geometry=std::make_shared<PlaneGeometry>(1.6,1.6);
     std::dynamic_pointer_cast<BufferAttribute>(green->geometry->getAttribute("position"))->onUpload([&]{red->renderOrder=2;});
-    renderer.render(scene,camera);
+    renderHostTurn(renderer, scene,camera);
     expectPixel(renderer,{0,255,0,255},"Queued renderOrder values remain snapshots when later uploads mutate objects");
-    renderer.render(scene,camera);
+    renderHostTurn(renderer, scene,camera);
     expectPixel(renderer,{255,0,0,255},"The next frame collects the changed renderOrder");
 
     scene.clear();
@@ -995,11 +1013,11 @@ void renderOrderTests(bool validation) {
         object->onBeforeRender=[&,i](auto&,auto&,auto&,auto*,auto*,auto*){draws.push_back(i);};
         scene.add(object);
     }
-    renderer.render(scene,camera);
+    renderHostTurn(renderer, scene,camera);
     require(draws==expected,"Mixed NaN opaque render orders follow the pinned V8 comparison algorithm");
     expectPixel(renderer,{0,0,255,255},"Opaque nontransitive sorting preserves the upstream final draw");
     for (const auto& object:scene.children) std::static_pointer_cast<Mesh>(object)->material->transparent=true;
-    draws.clear();renderer.render(scene,camera);
+    draws.clear();renderHostTurn(renderer, scene,camera);
     require(draws==expected,"Mixed NaN transparent render orders follow the pinned V8 comparison algorithm");
     expectPixel(renderer,{0,0,255,255},"Transparent nontransitive sorting preserves the upstream final draw");
 }
@@ -1010,7 +1028,7 @@ void attributeRangeSortTests(bool validation) {
     Scene scene;auto mesh=plane(Color(1,1,1));basic(mesh)->vertexColors=true;
     auto colors=std::make_shared<Float32BufferAttribute>(12.0,3);
     for(int i=0;i<4;++i)colors->setXYZ(i,1,0,0);
-    mesh->geometry->setAttribute("color",colors);scene.add(mesh);renderer.render(scene,camera);
+    mesh->geometry->setAttribute("color",colors);scene.add(mesh);renderHostTurn(renderer, scene,camera);
     for(int i=0;i<4;++i)colors->setXYZ(i,0,1,0);
     // These counts and upload order are observed from the pinned WebGLAttributes.
     const std::vector<double> starts{2,NAN,1,7,NAN,0,9,4,6,3,NAN,8,5,10};
@@ -1021,7 +1039,7 @@ void attributeRangeSortTests(bool validation) {
         cleared=colors->updateRanges.get("length").strictEquals(0);
         for(std::size_t i=0;i<handles.length();++i)callbackCounts.push_back(handles.get(std::to_string(i)).get("count").toNumber());
     });
-    colors->needsUpdate=true;renderer.render(scene,camera);
+    colors->needsUpdate=true;renderHostTurn(renderer, scene,camera);
     require(callbackCounts==std::vector<double>{1,1,7,1,1,1,1,1,1,1,1,3,1,1},
             "NaN updateRange sorting and merging mutate the same range identities as WebGLAttributes");
     require(cleared,"NaN range uploads clear the original range list before the upload callback");
@@ -1047,32 +1065,32 @@ void attributeNumberTests(bool validation) {
     std::vector<int> uploads;
     colors->onUpload([state = 0, &uploads]() mutable { uploads.push_back(++state); });
     colors->version = .25;
-    renderer.render(scene, camera);
+    renderHostTurn(renderer, scene, camera);
     expectPixel(renderer, {255, 0, 0, 255}, "Fractional attribute versions preserve initial uploads");
     paint(0, 1, 0); colors->version = .5;
-    renderer.render(scene, camera);
+    renderHostTurn(renderer, scene, camera);
     expectPixel(renderer, {0, 255, 0, 255}, "Increasing fractional attribute versions upload new bytes");
     paint(0, 0, 1); colors->version = .4;
-    renderer.render(scene, camera);
+    renderHostTurn(renderer, scene, camera);
     expectPixel(renderer, {0, 255, 0, 255}, "Decreasing attribute versions retain GPU data");
     colors->version = std::numeric_limits<double>::quiet_NaN();
-    renderer.render(scene, camera);
+    renderHostTurn(renderer, scene, camera);
     expectPixel(renderer, {0, 255, 0, 255}, "NaN attribute versions fail the upstream less-than comparison");
     colors->version = 1;
-    renderer.render(scene, camera);
+    renderHostTurn(renderer, scene, camera);
     expectPixel(renderer, {0, 0, 255, 255}, "A greater numeric attribute version resumes uploads");
     require(uploads == std::vector<int>{1, 2, 3}, "Upload callbacks preserve their mutable function state");
     const auto ranges = colors->updateRanges.value();
     colors->addUpdateRange(2, 1); colors->addUpdateRange(0, 1);
     const auto merged = ranges.get("1"), later = ranges.get("0");
     colors->version = 2;
-    renderer.render(scene, camera);
+    renderHostTurn(renderer, scene, camera);
     require(merged.get("count").strictEquals(3) && merged.get("start").strictEquals(0) && later.get("count").strictEquals(1),
             "Attribute range merging changes the original range object after sorting handles");
     require(ranges.sameValue(colors->updateRanges.value()) && ranges.get("length").strictEquals(0),
             "Clearing consumed attribute ranges preserves their array identity");
     paint(0, 1, 0); colors->addUpdateRange(0, 0); colors->version = 3;
-    renderer.render(scene, camera);
+    renderHostTurn(renderer, scene, camera);
     expectPixel(renderer, {0, 255, 0, 255}, "Zero range counts upload the remaining attribute array");
 
     auto expected = std::get<Float32Array>(colors->array).slice();
@@ -1081,10 +1099,10 @@ void attributeNumberTests(bool validation) {
     Uint8Array expectedBytes(expected.buffer);
     expectedBytes.set(Uint8Array(source.buffer).subarray(0, 44), 1);
     colors->addUpdateRange(.25, 11.75); colors->version = 4;
-    renderer.render(scene, camera);
+    renderHostTurn(renderer, scene, camera);
     const auto fractionalImage = renderer.readPixels();
     mesh->geometry->setAttribute("color", std::make_shared<BufferAttribute>(expected, 3));
-    renderer.render(scene, camera);
+    renderHostTurn(renderer, scene, camera);
     require(fractionalImage == renderer.readPixels(),
             "Fractional starts convert byte and element offsets independently before upload");
     mesh->geometry->setAttribute("color", colors);
@@ -1092,34 +1110,34 @@ void attributeNumberTests(bool validation) {
     colors->addUpdateRange(std::numeric_limits<double>::quiet_NaN(),
                            std::numeric_limits<double>::quiet_NaN());
     colors->version = 5;
-    renderer.render(scene, camera);
+    renderHostTurn(renderer, scene, camera);
     expectPixel(renderer, {0, 0, 255, 255}, "WebIDL converts NaN offsets and counts to zero");
     paint(1, 0, 0); colors->addUpdateRange(-0.0, -4294967296.0); colors->version = 6;
-    renderer.render(scene, camera);
+    renderHostTurn(renderer, scene, camera);
     expectPixel(renderer, {255, 0, 0, 255}, "Attribute range counts use WebIDL unsigned 32-bit conversion");
     require(uploads == std::vector<int>{1, 2, 3, 4, 5, 6, 7, 8},
             "Each accepted attribute version invokes the same upload callback once");
     paint(0, 1, 0); colors->addUpdateRange(-.25, 1); colors->version = 7;
-    renderer.render(scene, camera);
+    renderHostTurn(renderer, scene, camera);
     expectPixel(renderer, {255, 0, 0, 255}, "Negative byte offsets produce a WebGL error without writing bytes");
     require(colors->updateRanges.get("length").strictEquals(0) && uploads.back() == 9,
             "WebGL range errors still clear ranges and invoke the upload callback");
-    renderer.render(scene, camera);
+    renderHostTurn(renderer, scene, camera);
     require(uploads.back() == 9, "WebGL range errors still advance the cached version");
     colors->clearUpdateRanges(); colors->onUploadCallback = nullptr;
     colors->needsUpdate = true;
     bool nullCallback = false;
-    try { renderer.render(scene, camera); }
+    try { renderHostTurn(renderer, scene, camera); }
     catch (const JSTypeError&) { nullCallback = true; }
     require(nullCallback, "An explicit null attribute upload callback raises TypeError");
     colors->onUpload([] {});
-    renderer.render(scene, camera);
+    renderHostTurn(renderer, scene, camera);
     expectPixel(renderer, {0, 255, 0, 255}, "Attribute uploads recover after a callback exception");
     auto initialNull = std::make_shared<BufferAttribute>(std::get<Float32Array>(colors->array), 3);
     initialNull->onUploadCallback = nullptr;
     mesh->geometry->setAttribute("color", initialNull);
     nullCallback = false;
-    try { renderer.render(scene, camera); }
+    try { renderHostTurn(renderer, scene, camera); }
     catch (const JSTypeError&) { nullCallback = true; }
     require(nullCallback, "First-time attribute uploads also call an explicit null callback");
     scene.clear();
@@ -1128,25 +1146,194 @@ void attributeNumberTests(bool validation) {
     auto groupMesh = std::make_shared<Mesh>(grouped, std::vector<std::shared_ptr<Material>>{groupMaterial});
     grouped->addGroup(0, 6, std::numeric_limits<double>::quiet_NaN());
     scene.add(groupMesh);
-    renderer.render(scene, camera);
+    renderHostTurn(renderer, scene, camera);
     require(renderer.getInfo().calls == 0, "NaN material indices do not resolve a material array entry");
     grouped->groups[0].materialIndex = -.25;
-    renderer.render(scene, camera);
+    renderHostTurn(renderer, scene, camera);
     require(renderer.getInfo().calls == 0, "Negative fractional material indices preserve missing-property behavior");
     grouped->groups[0].materialIndex = 0;
     grouped->groups[0].count = 2.5;
-    renderer.render(scene, camera);
+    renderHostTurn(renderer, scene, camera);
     require(renderer.getInfo().triangles == 2.5 / 3,
             "Fractional group counts survive until the Vulkan draw-count conversion");
     expectPixel(renderer, {0, 0, 0, 255}, "An incomplete grouped triangle produces no fragments");
     grouped->groups[0].count = 6;
     grouped->setDrawRange(0, 2.5);
-    renderer.render(scene, camera);
+    renderHostTurn(renderer, scene, camera);
     require(renderer.getInfo().triangles == 2.5 / 3,
             "Fractional drawRange counts preserve upstream statistics");
     grouped->setDrawRange(0, std::numeric_limits<double>::infinity());
-    renderer.render(scene, camera);
+    renderHostTurn(renderer, scene, camera);
     expectPixel(renderer, {255, 0, 0, 255}, "Infinite drawRange counts clip to the geometry extent");
+}
+
+void rendererInfoTests(bool validation) {
+    VulkanRenderer renderer({64,64,validation});
+    renderer.srgbOutput = false;
+    OrthographicCamera camera(-1,1,1,-1,.1,20);
+    camera.position.z = 5;
+    Scene scene;
+    auto mesh = plane(Color(0,1,0));
+    mesh->frustumCulled = false;
+    scene.add(mesh);
+    const auto info = renderer.info;
+    auto render = info.get("render");
+    require(info.get("autoReset").strictEquals(true) && render.get("frame").strictEquals(0),
+            "Renderer exposes the original WebGLInfo defaults");
+    renderHostTurn(renderer, scene,camera);
+    require(render.get("frame").strictEquals(1) && render.get("calls").strictEquals(1) &&
+            render.get("triangles").strictEquals(2) && render.get("points").strictEquals(0),
+            "Real Vulkan draws update the managed statistics object");
+    require(info.get("memory").get("geometries").strictEquals(1) &&
+            info.get("memory").get("textures").strictEquals(0),
+            "Geometry registration updates logical memory without counting fallback textures");
+    auto mutableInfo = info;
+    mutableInfo.set("autoReset",false);
+    renderHostTurn(renderer, scene,camera);
+    require(render.get("frame").strictEquals(2) && render.get("calls").strictEquals(2) &&
+            render.get("triangles").strictEquals(4), "autoReset false accumulates multiple renders");
+    mutableInfo.set("autoReset",1);
+    renderHostTurn(renderer, scene,camera);
+    require(render.get("calls").strictEquals(3) && render.get("triangles").strictEquals(6),
+            "Only strict true automatically resets the statistics");
+    const auto originalReset = info.get("reset"), originalUpdate = info.get("update");
+    originalReset.call(info);
+    require(render.get("calls").strictEquals(0) && render.get("triangles").strictEquals(0) &&
+            render.get("frame").strictEquals(3), "Explicit reset preserves the frame counter");
+    render.set("triangles","prefix:"); render.set("calls","4");
+    renderHostTurn(renderer, scene,camera);
+    require(render.get("triangles").strictEquals("prefix:2") && render.get("calls").strictEquals(5),
+            "Draw statistics preserve compound addition and increment conversions");
+
+    auto events = JSValue::array();
+    mutableInfo.set("autoReset",true);
+    mutableInfo.set("reset",JSValue::function(+[](const JSValue& receiver,const auto&,const auto& c)->JSValue {
+        auto trace=c[0]; trace.get("push").call(trace,{receiver.get("render").get("frame")});
+        c[1].call(receiver); return {};
+    },{events,originalReset}));
+    renderHostTurn(renderer, scene,camera);
+    require(events.get("0").strictEquals(5) && render.get("calls").strictEquals(1),
+            "Renderer increments frame before invoking the live reset method");
+    mutableInfo.set("reset",originalReset);
+
+    auto replacement = JSValue::object();
+    replacement.set("frame",100); replacement.set("calls",77); replacement.set("triangles",88);
+    replacement.set("lines",99); replacement.set("points",111);
+    mutableInfo.set("render",replacement);
+    renderHostTurn(renderer, scene,camera);
+    require(replacement.get("frame").strictEquals(101) && replacement.get("calls").strictEquals(77),
+            "Renderer frame lookup observes a replacement public render object");
+    require(render.get("frame").strictEquals(5) && render.get("calls").strictEquals(1) &&
+            render.get("triangles").strictEquals(2),
+            "Reset and draw closures retain the original render object after replacement");
+    require(renderer.getInfo().frame==101 && renderer.getInfo().calls==77,
+            "The native compatibility snapshot reads current public statistics");
+    mutableInfo.set("render",render); mutableInfo.set("autoReset",false);
+    mutableInfo.set("update",JSValue::function(+[](const JSValue& receiver,const auto& a,const auto& c)->JSValue {
+        auto trace=c[0]; trace.get("push").call(trace,{receiver,a[0],a[1],a[2]}); return {};
+    },{events}));
+    renderHostTurn(renderer, scene,camera);
+    require(events.get("1").sameValue(info) && events.get("2").strictEquals(6) &&
+            events.get("3").strictEquals(4) && events.get("4").strictEquals(1),
+            "Actual draws invoke a replacement update with receiver, logical count, mode and instances");
+    require(render.get("calls").strictEquals(1), "Replacing update controls the original counter mutation");
+    expectPixel(renderer,{0,255,0,255},"Replacing statistics methods preserves actual GPU rendering");
+    mutableInfo.set("update",JSValue::function(+[](const JSValue&,const auto&,const auto&)->JSValue {
+        throw JSTypeError("statistics callback");
+    }));
+    bool threw=false;
+    try { renderHostTurn(renderer, scene,camera); } catch(const JSTypeError&) { threw=true; }
+    require(threw,"A statistics callback exception propagates through the Vulkan render path");
+    mutableInfo.set("update",originalUpdate); renderHostTurn(renderer, scene,camera);
+    require(render.get("calls").strictEquals(2),"Rendering recovers after a statistics callback exception");
+    expectPixel(renderer,{0,255,0,255},"Recovered statistics callbacks leave Vulkan command state usable");
+
+    auto texture = std::make_shared<DataTexture>(Uint8Array{255,255,255,255},1,1);
+    texture->needsUpdate = true;
+    auto clone = texture->clone();
+    basic(mesh)->map = texture;
+    auto other = plane(Color(0,1,0)); other->frustumCulled = false;
+    basic(other)->map = clone; scene.add(other);
+    renderHostTurn(renderer, scene,camera);
+    const auto memory = info.get("memory");
+    require(memory.get("geometries").strictEquals(2) && memory.get("textures").strictEquals(1),
+            "Textures sharing Source and cache key count one logical allocation");
+    texture->dispose();
+    require(memory.get("textures").strictEquals(1),"Disposing one shared texture preserves the remaining logical allocation");
+    clone->dispose();
+    require(memory.get("textures").strictEquals(0),"Disposing the last texture releases its logical memory count");
+    renderHostTurn(renderer, scene,camera);
+    require(memory.get("textures").strictEquals(1),"Disposed texture owners can reinitialize shared logical storage");
+    clone->wrapS = RepeatWrapping; clone->needsUpdate = true;
+    renderHostTurn(renderer, scene,camera);
+    require(memory.get("textures").strictEquals(2),"Different cache keys allocate separate logical texture storage");
+    clone->dispose(); texture->dispose();
+    require(memory.get("textures").strictEquals(0),"Every active Source/cache-key allocation has a matching logical release");
+    mesh->geometry->dispose();
+    require(memory.get("geometries").strictEquals(1),"Explicit geometry disposal decrements the managed geometry counter");
+    auto mutableMemory = memory; mutableMemory.set("geometries","8");
+    renderHostTurn(renderer, scene,camera);
+    require(memory.get("geometries").strictEquals(9),"Geometry memory increments preserve numeric update conversion");
+}
+
+void attributeCacheWeakLifetimeTests(bool validation) {
+    VulkanRenderer renderer({64, 64, validation});
+    renderer.srgbOutput = false;
+    renderer.setClearColor(Color(0, 0, 0), 1);
+    OrthographicCamera camera(-1, 1, 1, -1, .1, 20);
+    camera.position.z = 5;
+    Scene scene;
+    auto geometry = std::make_shared<BufferGeometry>();
+    auto positions = std::make_shared<Float32BufferAttribute>(
+        std::vector<float>{-1,-1,0, 1,-1,0, 0,1,0}, 3);
+    auto colors = std::make_shared<Float32BufferAttribute>(
+        std::vector<float>{0,1,0, 0,1,0, 0,1,0}, 3);
+    auto normals = std::make_shared<Float32BufferAttribute>(
+        std::vector<float>{0,0,1, 0,0,1, 0,0,1}, 3);
+    geometry->setAttribute("position", positions).setAttribute("color", colors)
+        .setAttribute("normal", normals);
+    auto material = std::make_shared<MeshBasicMaterial>();
+    material->vertexColors = true;
+    auto mesh = std::make_shared<Mesh>(geometry, material);
+    mesh->frustumCulled = false;
+    scene.add(mesh);
+    renderHostTurn(renderer, scene, camera);
+    expectPixel(renderer, {0,255,0,255}, "Weak upload cache fixture renders actual Vulkan bytes");
+    require(renderer.getInfo().attributeUploadBuffers == 3,
+            "Three ordinary attributes allocate three raw upload buffers");
+    renderHostTurn(renderer, scene, camera);
+    require(renderer.getInfo().attributeUploadBuffers == 3,
+            "Unchanged versions reuse all raw upload buffers");
+    geometry->dispose();
+    require(renderer.getInfo().attributeUploadBuffers == 0,
+            "Explicit geometry disposal releases every registered raw buffer");
+    renderHostTurn(renderer, scene, camera);
+    require(renderer.getInfo().attributeUploadBuffers == 3,
+            "A disposed geometry can upload its attributes again");
+    auto positionObject = nativeAttribute(positions);
+    auto colorObject = nativeAttribute(colors);
+    auto normalObject = nativeAttribute(normals);
+    const std::weak_ptr<BufferAttribute> weakPosition = positions;
+    const std::weak_ptr<BufferAttribute> weakColor = colors;
+    const std::weak_ptr<BufferAttribute> weakNormal = normals;
+    geometry->deleteAttribute("position").deleteAttribute("color").deleteAttribute("normal");
+    positions.reset(); colors.reset(); normals.reset();
+    require(weakPosition.expired() && weakColor.expired() && weakNormal.expired(),
+            "Managed keys and renderer caches do not strongly retain native handles");
+    auto heap = JSValue::object();
+    heap.collectGarbage();
+    require(renderer.getInfo().attributeUploadBuffers == 3,
+            "Live managed keys retain their ephemeron upload data after native handle release");
+    positionObject = {}; colorObject = {}; normalObject = {};
+    require(heap.collectGarbage() > 0, "Unreachable managed attribute keys are collected");
+    require(renderer.getInfo().attributeUploadBuffers == 2,
+            "Pinned BindingStates retains the used position/color attribute keys and raw buffers after geometry fields are deleted");
+    scene.clear();
+    renderHostTurn(renderer, scene, camera);
+    require(renderer.getInfo().attributeBuffers == 2,
+            "The next render preserves derived data belonging to the source binding state's live raw resources");
+    require(renderer.getInfo().attributeUploadBuffers == 2,
+            "Geometry GC does not release the pinned binding state's referenced buffers");
 }
 
 void attributeManagedUploadTests(bool validation) {
@@ -1160,7 +1347,7 @@ void attributeManagedUploadTests(bool validation) {
     const auto compareImage=[&](const std::vector<std::uint8_t>& actual,const Float32Array& expected,
                                 const std::shared_ptr<BufferAttribute>& original,const char* label) {
         mesh->geometry->setAttribute("color",std::make_shared<BufferAttribute>(expected,3));
-        renderer.render(scene,camera);require(actual==renderer.readPixels(),label);
+        renderHostTurn(renderer, scene,camera);require(actual==renderer.readPixels(),label);
         mesh->geometry->setAttribute("color",original);
     };
     // Distinct prefix/suffix data makes reading backing-buffer offset zero fail.
@@ -1177,17 +1364,17 @@ void attributeManagedUploadTests(bool validation) {
         if(uploads==1) { colors->array=Float32Array(24);colors->version=5; }
     });
     mesh->geometry->setAttribute("color",colors);
-    renderer.render(scene,camera);
+    renderHostTurn(renderer, scene,camera);
     expectPixel(renderer,{255,0,0,255},"Initial GPU upload captures the original nonzero-offset native view");
-    renderer.render(scene,camera);
+    renderHostTurn(renderer, scene,camera);
     expectPixel(renderer,{255,0,0,255},"Callback array replacement is deferred until its version changes");
     require(uploads==1,"Initial upload captures the callback's new version");
     colors->needsUpdate=true;
     bool resized=false;
-    try { renderer.render(scene,camera); }
+    try { renderHostTurn(renderer, scene,camera); }
     catch(const std::runtime_error& error) { resized=std::string(error.what()).find("Resizing buffer attributes")!=std::string::npos; }
     require(resized,"First array size remains authoritative after callback replacement");
-    colors->array=view; colors->needsUpdate=true;renderer.render(scene,camera);
+    colors->array=view; colors->needsUpdate=true;renderHostTurn(renderer, scene,camera);
     require(backing[0]==1234 && backing[17]==1234,"Uploading a view preserves backing-buffer sentinels");
 
     auto half=std::make_shared<BufferAttribute>(Uint16Array(std::vector<std::uint16_t>{
@@ -1198,29 +1385,29 @@ void attributeManagedUploadTests(bool validation) {
         auto receiver=self;receiver.set("isFloat16BufferAttribute",true);return {};
     },{halfObject});
     half->onUpload(callback);mesh->geometry->setAttribute("color",half);
-    renderer.render(scene,camera);
+    renderHostTurn(renderer, scene,camera);
     expectPixel(renderer,{0,0,255,255},"Initial upload chooses HALF_FLOAT after the live callback changes its flag");
     half->onUpload([&] { half->isFloat16BufferAttribute=false; });
-    half->needsUpdate=true;renderer.render(scene,camera);
+    half->needsUpdate=true;renderHostTurn(renderer, scene,camera);
     expectPixel(renderer,{0,0,255,255},"Later callbacks do not change the cached GPU component type");
 
     paint(view,1,0,0);colors->array=view;colors->onUpload([&]{++uploads;});
-    colors->needsUpdate=true;mesh->geometry->setAttribute("color",colors);renderer.render(scene,camera);
+    colors->needsUpdate=true;mesh->geometry->setAttribute("color",colors);renderHostTurn(renderer, scene,camera);
     const auto before=uploads;
     auto expected=view.slice();paint(view,0,1,0);
     expected[0]=0;expected[10]=1;
     colors->addUpdateRange(0,1);colors->addUpdateRange(5,-1);colors->addUpdateRange(10,1);
-    colors->needsUpdate=true;renderer.render(scene,camera);
+    colors->needsUpdate=true;renderHostTurn(renderer, scene,camera);
     require(uploads==before+1 && colors->updateRanges.get("length").strictEquals(0),
             "An invalid middle range does not skip later writes, clear, or callback");
     compareImage(renderer.readPixels(),expected,colors,
                  "Valid ranges on both sides of a WebGL error reach Vulkan memory independently");
-    renderer.render(scene,camera);
+    renderHostTurn(renderer, scene,camera);
     require(uploads==before+1,"A range error advances the upstream cached version");
 
     // Second range conversion throws only inside bufferSubData. The first
     // command has already written native GPU memory, before callback/version.
-    paint(view,1,0,0);colors->needsUpdate=true;renderer.render(scene,camera);
+    paint(view,1,0,0);colors->needsUpdate=true;renderHostTurn(renderer, scene,camera);
     const auto oldVersion=colors->version.value();const auto beforeThrow=uploads;
     expected=view.slice();paint(view,0,1,0);expected[0]=0;
     colors->addUpdateRange(0,1);colors->addUpdateRange(9,1);
@@ -1228,10 +1415,10 @@ void attributeManagedUploadTests(bool validation) {
         +[](const JSValue&,const auto&,const auto&)->JSValue {throw JSTypeError("second range conversion");}));
     colors->updateRanges.get("1").set("count",throwing);
     colors->needsUpdate=true;bool failed=false;
-    try {renderer.render(scene,camera);}catch(const JSTypeError& error){failed=std::string(error.what())=="second range conversion";}
+    try {renderHostTurn(renderer, scene,camera);}catch(const JSTypeError& error){failed=std::string(error.what())=="second range conversion";}
     require(failed && uploads==beforeThrow && colors->updateRanges.get("length").strictEquals(2),
             "Throwing range conversion preserves pending ranges and skips callback/version commit");
-    colors->version=oldVersion;renderer.render(scene,camera);
+    colors->version=oldVersion;renderHostTurn(renderer, scene,camera);
     compareImage(renderer.readPixels(),expected,colors,
                  "A completed write before an exception survives without another upload");
     colors->clearUpdateRanges();colors->onUpload([]{});
@@ -1244,7 +1431,7 @@ void attributeManagedUploadTests(bool validation) {
         auto values=captures[0];values.get("push").call(values,{self});
         auto receiver=self;receiver.set("updateRanges",JSValue::array());return {};
     },{events}));
-    colors->needsUpdate=true;renderer.render(scene,camera);
+    colors->needsUpdate=true;renderHostTurn(renderer, scene,camera);
     require(events.get("0").sameValue(object) && retained.get("length").strictEquals(1) &&
             !retained.sameValue(colors->updateRanges.value()),
             "GPU uploads invoke replacement clearUpdateRanges on the live native object");
@@ -1253,17 +1440,17 @@ void attributeManagedUploadTests(bool validation) {
     auto transientArray=std::get<Float32Array>(transient->array);paint(transientArray,0,0,1);
     auto managed=nativeAttribute(transient);const auto identity=transient->id;
     int nativeUploads=0;transient->onUpload([&]{++nativeUploads;});
-    mesh->geometry->setAttribute("color",transient);renderer.render(scene,camera);
+    mesh->geometry->setAttribute("color",transient);renderHostTurn(renderer, scene,camera);
     std::weak_ptr<BufferAttribute> expired=transient;
     mesh->geometry->deleteAttribute("color");transient.reset();
     require(expired.expired(),"A managed attribute retains storage without retaining its old native handle");
     paint(transientArray,0,1,0);
     auto restored=std::dynamic_pointer_cast<BufferAttribute>(vertexAttribute(managed));
     require(restored->id==identity,"Reconstructing a native handle preserves attribute identity");
-    mesh->geometry->setAttribute("color",restored);renderer.render(scene,camera);
+    mesh->geometry->setAttribute("color",restored);renderHostTurn(renderer, scene,camera);
     require(nativeUploads==1,"Native handle retirement does not remove the managed upload cache");
     expectPixel(renderer,{0,0,255,255},"Reconstructed handles keep uploaded bytes until needsUpdate");
-    restored->needsUpdate=true;renderer.render(scene,camera);
+    restored->needsUpdate=true;renderHostTurn(renderer, scene,camera);
     require(nativeUploads==2,"A reconstructed handle can advance its existing upload cache");
     expectPixel(renderer,{0,255,0,255},"Explicit updates upload the shared storage of a reconstructed handle");
 
@@ -1276,11 +1463,14 @@ void attributeManagedUploadTests(bool validation) {
         geometry->deleteAttribute("position");geometry->dispose();return false;
     },{nativeGeometry(mesh->geometry),removal});
     positionObject.defineProperty("isInterleavedBufferAttribute",reentrant);
+    const auto memoryBeforeReentry = renderer.info.get("memory").get("geometries").toNumber();
     mesh->geometry->dispose();
     require(removal.get("calls").strictEquals(1) && !mesh->geometry->hasAttribute("position"),
             "Managed removal can mutate and dispose its geometry without retaining invalid native iterators");
+    require(renderer.info.get("memory").get("geometries").toNumber() == memoryBeforeReentry - 2,
+            "Pinned nested geometry disposal decrements memory twice after its live removal callbacks");
     positionObject.erase("isInterleavedBufferAttribute");mesh->geometry->setAttribute("position",position);
-    renderer.render(scene,camera);
+    renderHostTurn(renderer, scene,camera);
     expectPixel(renderer,{0,255,0,255},"Geometry resources remain reusable after reentrant removal");
 }
 
@@ -1300,7 +1490,7 @@ void attributeStorageAndReentryTests(bool validation) {
     int uploads = 0;
     colors->onUpload([&] { ++uploads; });
     scene.add(mesh);
-    renderer.render(scene, camera);
+    renderHostTurn(renderer, scene, camera);
     expectPixel(renderer, {255,0,0,255}, "Initial attribute bytes establish the GPU format");
     const auto bufferCount = renderer.getInfo().attributeBuffers;
     const auto bytes = [](float r, float g, float b) {
@@ -1309,11 +1499,11 @@ void attributeStorageAndReentryTests(bool validation) {
                           double(std::size_t(values.byteLength)));
     };
     colors->array = bytes(0, 1, 0);
-    renderer.render(scene, camera);
+    renderHostTurn(renderer, scene, camera);
     expectPixel(renderer, {255,0,0,255}, "Changing array type without a version keeps cached bytes");
     require(uploads == 1, "Array replacement alone does not upload");
     colors->needsUpdate = true;
-    renderer.render(scene, camera);
+    renderHostTurn(renderer, scene, camera);
     expectPixel(renderer, {0,255,0,255}, "Same-size Uint8 storage uploads raw bytes into the retained float format");
     require(uploads == 2 && renderer.getInfo().attributeBuffers == bufferCount,
             "A same-size type change reuses the original GPU buffer");
@@ -1321,7 +1511,7 @@ void attributeStorageAndReentryTests(bool validation) {
     colors->array = bytes(0, 0, 1);
     for (int row = 0; row < 4; ++row) colors->addUpdateRange(row * 12 + 4, 8);
     colors->needsUpdate = true;
-    renderer.render(scene, camera);
+    renderHostTurn(renderer, scene, camera);
     expectPixel(renderer, {0,0,255,255}, "Partial uploads use the new source element size and old GPU format");
     require(uploads == 3 && colors->updateRanges.get("length").strictEquals(0), "Changed-type partial ranges clear before callback");
 
@@ -1332,13 +1522,13 @@ void attributeStorageAndReentryTests(bool validation) {
         colors->addUpdateRange(row * 6 + 5, 1);
     }
     colors->needsUpdate = true;
-    renderer.render(scene, camera);
+    renderHostTurn(renderer, scene, camera);
     expectPixel(renderer, {255,0,0,255}, "Unaligned Uint16 ranges refresh every affected cached Float32 component");
     require(uploads == 4 && colors->updateRanges.get("length").strictEquals(0), "Unaligned changed-type uploads preserve range lifecycle");
     colors->array = bytes(0, 1, 0);
     colors->addUpdateRange(0, 0);
     colors->needsUpdate = true;
-    renderer.render(scene, camera);
+    renderHostTurn(renderer, scene, camera);
     expectPixel(renderer, {0,255,0,255}, "Zero-length ranges upload the remaining changed-type source bytes");
 
     auto index = mesh->geometry->index;
@@ -1346,15 +1536,15 @@ void attributeStorageAndReentryTests(bool validation) {
     index->array = Uint8Array(originalIndex.buffer, double(std::size_t(originalIndex.byteOffset)),
                              double(std::size_t(originalIndex.byteLength)));
     index->needsUpdate = true;
-    renderer.render(scene, camera);
+    renderHostTurn(renderer, scene, camera);
     expectPixel(renderer, {0,255,0,255}, "Index uploads also retain their original element interpretation");
     index->array = Float32Array(3);
     index->needsUpdate = true;
-    renderer.render(scene, camera);
+    renderHostTurn(renderer, scene, camera);
     expectPixel(renderer, {0,0,0,255}, "Float32 index source bytes are reinterpreted as cached Uint16 indices");
     index->array = originalIndex;
     index->needsUpdate = true;
-    renderer.render(scene, camera);
+    renderHostTurn(renderer, scene, camera);
     expectPixel(renderer, {0,255,0,255}, "Index storage recovers after several same-size type replacements");
 
     scene.clear();
@@ -1381,24 +1571,86 @@ void attributeStorageAndReentryTests(bool validation) {
         reentrant->geometry->setAttribute("added", added);
     });
     scene.add(reentrant);
-    renderer.render(scene, camera);
+    renderHostTurn(renderer, scene, camera);
     expectPixel(renderer, {0,255,0,255}, "Earlier upload callbacks replace later attributes before they are read");
     require(previousUploads == 0 && replacementUploads == 1,
             "Geometry updates upload the current later attribute, not a prefetched pointer");
     require(removedUploads == 0 && addedUploads == 0,
             "Deleted enumeration keys skip and newly added keys wait for the next frame");
-    renderer.render(scene, camera);
+    renderHostTurn(renderer, scene, camera);
     require(addedUploads == 1, "The next geometry update enumerates newly added attributes");
     position->onUpload([&] { reentrant->geometry->setAttribute("color", nullptr); });
     position->needsUpdate = true;
     bool nullRejected = false;
-    try { renderer.render(scene, camera); }
+    try { renderHostTurn(renderer, scene, camera); }
     catch (const JSTypeError&) { nullRejected = true; }
     require(nullRejected, "A callback replacing a later attribute with null preserves upstream TypeError");
     reentrant->geometry->setAttribute("color", replacementColor);
-    renderer.render(scene, camera);
+    renderHostTurn(renderer, scene, camera);
     expectPixel(renderer, {0,255,0,255}, "The renderer recovers after an attribute enumeration callback exception");
     require(renderer.getValidationMessages().empty(), "Attribute type changes and upload reentry preserve Vulkan state");
+}
+
+void geometryObjectProtocolTests(bool validation) {
+    VulkanRenderer renderer({64,64,validation});
+    renderer.srgbOutput = false;
+    OrthographicCamera camera(-1,1,1,-1,.1,20); camera.position.z = 5;
+    Scene scene;
+    auto geometry = std::make_shared<BufferGeometry>();
+    auto position = std::make_shared<Float32BufferAttribute>(
+        std::vector<float>{-.6f,-.6f,0,.6f,-.6f,0,0,.6f,0},3);
+    auto unused = std::make_shared<Float32BufferAttribute>(std::vector<float>{1,2,3},1);
+    geometry->setAttribute("position",position).setAttribute("unused",unused);
+    auto material = std::make_shared<MeshBasicMaterial>(Color(1,0,0));
+    auto first = std::make_shared<Mesh>(geometry,material), second = std::make_shared<Mesh>(geometry,material);
+    first->frustumCulled = second->frustumCulled = false;
+    scene.add(first).add(second);
+    auto reads = JSValue::object(); reads.set("count",0);
+    JSPropertyDescriptor watched; watched.configurable = true;
+    watched.getter = JSValue::function(+[](const JSValue&,const auto&,const auto& captures)->JSValue {
+        auto state = captures[0]; state.set("count",state.get("count").toNumber()+1); return false;
+    },{reads});
+    nativeAttribute(unused).defineProperty("isInterleavedBufferAttribute",watched);
+    renderHostTurn(renderer,scene,camera);
+    require(reads.get("count").strictEquals(1),
+            "Shared geometry raw update reads unused upload fields once without a decode getter pass");
+    require(renderer.getInfo().calls == 2,"Two objects share the module's once-per-frame geometry upload");
+    auto render = renderer.info.get("render"); render.set("frame",std::numeric_limits<double>::quiet_NaN());
+    reads.set("count",0); renderHostTurn(renderer,scene,camera);
+    require(reads.get("count").strictEquals(2) && std::isnan(renderer.getInfo().frame),
+            "NaN frame never equals the cached frame and updates each shared object");
+    render.set("frame","0"); reads.set("count",0); renderHostTurn(renderer,scene,camera);
+    require(reads.get("count").strictEquals(1) && renderer.getInfo().frame == 1,
+            "String frame is cached by strict identity before the renderer numerically increments it");
+    scene.remove(second); material->wireframe = true;
+    auto index = std::make_shared<Uint16BufferAttribute>(std::vector<std::uint16_t>{0,1,2},1);
+    geometry->setIndex(index); index->version = "2";
+    const auto hasLine = [&] {
+        const auto pixels = renderer.readPixels();
+        for (std::size_t i=0;i<pixels.size();i+=4) if (pixels[i]>128) return true;
+        return false;
+    };
+    renderHostTurn(renderer,scene,camera); require(hasLine(),"Managed wireframe indices reach actual Vulkan draws");
+    std::get<Uint16Array>(index->array).assign(3,0); index->version = "10";
+    renderHostTurn(renderer,scene,camera);
+    require(hasLine(),"Wireframe version strings compare lexically and retain the existing typed indices");
+    index->version = 3; renderHostTurn(renderer,scene,camera);
+    require(!hasLine(),"A numeric greater wireframe version replaces the managed index and Vulkan bytes");
+    require(renderer.getInfo().lines == 3,"Generated wireframes use indexed line statistics");
+    require(renderer.getValidationMessages().empty(),"Geometry protocol integration has no Vulkan validation errors");
+
+    auto instance = std::make_shared<InstancedMesh>(geometry,material,1);
+    instance->frustumCulled = false; instance->setMatrixAt(0,Matrix4{});
+    Scene nativeScene; nativeScene.add(instance);
+    auto local = std::make_unique<VulkanRenderer>(VulkanRendererParameters{64,64,validation});
+    renderHostTurn(*local,nativeScene,camera);
+    auto wrapper = nativeObject(instance), listener = wrapper.get("_listeners").get("dispose").get("0");
+    require(listener.isCallable(),"Instance disposal retains the module's managed listener");
+    local.reset();
+    auto event = JSValue::object(); event.set("target",wrapper);
+    listener.call(JSValue::object(),{event});
+    instance->dispose();
+    require(true,"Escaped disposal closures and native forwarders are inert after renderer device retirement");
 }
 
 } // namespace
@@ -1414,8 +1666,11 @@ int main(int argc, char** argv) {
         renderOrderTests(validation);
         attributeRangeSortTests(validation);
         attributeNumberTests(validation);
+        rendererInfoTests(validation);
+        attributeCacheWeakLifetimeTests(validation);
         attributeManagedUploadTests(validation);
         attributeStorageAndReentryTests(validation);
+        geometryObjectProtocolTests(validation);
         VulkanRenderer renderer({64, 64, validation});
         OrthographicCamera camera(-1, 1, 1, -1, 0.1, 20);
         camera.position.set(0, 0, 5);
@@ -1436,87 +1691,87 @@ int main(int argc, char** argv) {
             scene.add(std::make_shared<Mesh>(halfGeometry, halfMaterial));
             int uploads = 0;
             halfColors->onUpload([&] { ++uploads; });
-            renderer.render(scene, camera);
+            renderHostTurn(renderer, scene, camera);
             expectPixel(renderer, {137, 188, 255, 255}, "Half-float positions and colors decode through Vulkan vertex fetch");
             halfColors->normalized = true;
-            renderer.render(scene, camera);
+            renderHostTurn(renderer, scene, camera);
             expectPixel(renderer, {137, 188, 255, 255}, "Half-float GPU vertex fetch ignores the normalized flag");
             auto& raw = std::get<Uint16Array>(halfColors->array);
             for (std::size_t i = 0; i < 4; ++i) {
                 raw[i * 3] = toHalfFloat(1); raw[i * 3 + 1] = 0; raw[i * 3 + 2] = 0;
             }
-            renderer.render(scene, camera);
+            renderHostTurn(renderer, scene, camera);
             expectPixel(renderer, {137, 188, 255, 255}, "Half-float raw array edits remain pending until needsUpdate");
             halfColors->addUpdateRange(0, 12);
             halfColors->needsUpdate = true;
-            renderer.render(scene, camera);
+            renderHostTurn(renderer, scene, camera);
             expectPixel(renderer, {255, 0, 0, 255}, "Half-float updateRanges upload decoded vertex values");
             require(uploads == 2 && halfColors->updateRanges.get("length").strictEquals(0), "Half-float uploads preserve callback and range lifecycle");
             scene.clear();
         }
-        renderer.render(scene, camera);
-        require(renderer.getInfo().attributeBuffers == 0, "Half-float fixture resources are released after owners expire");
+        renderHostTurn(renderer, scene, camera);
+        require(renderer.getInfo().attributeBuffers == 2, "Pinned binding state retains half-float vertex resources after geometry owners expire");
         renderer.setClearColor(Color(0.5, 0.25, 0), 0.75);
         renderer.clear();
         expectPixel(renderer, {188, 137, 0, 191}, "Linear clear color is encoded as sRGB");
         renderer.setClearColor(Color(0, 0, 0));
         auto front = plane(Color(1, 0, 0));
         scene.add(front);
-        renderer.render(scene, camera);
+        renderHostTurn(renderer, scene, camera);
         expectPixel(renderer, {255, 0, 0, 255}, "Front-facing indexed plane reaches the GPU");
         expectPixel(renderer, {0, 0, 0, 255}, "Pixels outside geometry retain clear color", 0, 0);
         require(renderer.getInfo().calls == 1 && renderer.getInfo().triangles == 2,
                 "Draw statistics match indexed plane");
         basic(front)->side = BackSide;
-        renderer.render(scene, camera);
+        renderHostTurn(renderer, scene, camera);
         expectPixel(renderer, {0, 0, 0, 255}, "BackSide culls a front-facing plane");
         basic(front)->side = DoubleSide;
-        renderer.render(scene, camera);
+        renderHostTurn(renderer, scene, camera);
         expectPixel(renderer, {255, 0, 0, 255}, "DoubleSide renders both orientations");
         basic(front)->side = FrontSide;
         front->scale.set(-1, 1, 1);
-        renderer.render(scene, camera);
+        renderHostTurn(renderer, scene, camera);
         expectPixel(renderer, {255, 0, 0, 255},
                     "Mirrored world transforms preserve three.js front-side semantics");
         front->scale.set(1, 1, 1);
         front->position.set(0, 0, 1);
         auto rear = plane(Color(0, 0, 1));
         scene.add(rear);
-        renderer.render(scene, camera);
+        renderHostTurn(renderer, scene, camera);
         expectPixel(renderer, {255, 0, 0, 255},
                     "Depth attachment prevents a later farther draw from replacing the front mesh");
         basic(rear)->depthTest = false;
-        renderer.render(scene, camera);
+        renderHostTurn(renderer, scene, camera);
         expectPixel(renderer, {0, 0, 255, 255}, "depthTest false permits the farther draw");
         basic(rear)->depthTest = true;
         basic(front)->depthWrite = false;
-        renderer.render(scene, camera);
+        renderHostTurn(renderer, scene, camera);
         expectPixel(renderer, {0, 0, 255, 255},
                     "depthWrite false leaves depth available for subsequent geometry");
         basic(front)->depthWrite = true;
         basic(front)->transparent = true;
         basic(front)->opacity = 0.5;
-        renderer.render(scene, camera);
+        renderHostTurn(renderer, scene, camera);
         expectPixel(renderer, {128, 0, 127, 255},
                     "Transparent normal blending follows opaque draws");
         basic(front)->alphaTest = 0.6;
-        renderer.render(scene, camera);
+        renderHostTurn(renderer, scene, camera);
         expectPixel(renderer, {0, 0, 255, 255}, "alphaTest discards fragments before blending");
         basic(front)->alphaTest = 0;
         basic(front)->transparent = false;
         basic(front)->opacity = 1;
         basic(front)->colorWrite = false;
-        renderer.render(scene, camera);
+        renderHostTurn(renderer, scene, camera);
         expectPixel(renderer, {0, 0, 0, 255},
                     "colorWrite false still writes depth and occludes farther color");
         basic(front)->colorWrite = true;
         scene.remove(rear);
         basic(front)->color.set(0.5, 0.5, 0.5);
-        renderer.render(scene, camera);
+        renderHostTurn(renderer, scene, camera);
         expectPixel(renderer, {188, 188, 188, 255},
                     "MeshBasicMaterial linear color is encoded as sRGB");
         renderer.srgbOutput = false;
-        renderer.render(scene, camera);
+        renderHostTurn(renderer, scene, camera);
         expectPixel(renderer, {128, 128, 128, 255}, "Linear output bypasses the sRGB transfer");
         renderer.srgbOutput = true;
         basic(front)->color.set(1, 1, 1);
@@ -1525,19 +1780,19 @@ int main(int argc, char** argv) {
             "color",
             std::make_shared<Uint8BufferAttribute>(
                 std::vector<std::uint8_t>{0, 255, 0, 0, 255, 0, 0, 255, 0, 0, 255, 0}, 3, true));
-        renderer.render(scene, camera);
+        renderHostTurn(renderer, scene, camera);
         expectPixel(renderer, {0, 255, 0, 255},
                     "Normalized integer vertex colors are consumed by the graphics pipeline");
         basic(front)->vertexColors = false;
         basic(front)->color.set(1, 0, 0);
         front->geometry->setDrawRange(0, 0);
-        renderer.render(scene, camera);
+        renderHostTurn(renderer, scene, camera);
         expectPixel(renderer, {0, 0, 0, 255}, "An empty drawRange emits no fragments");
         require(renderer.getInfo().calls == 1 && renderer.getInfo().triangles == 0,
                 "A zero-count drawRange still submits a draw with no triangles");
         front->geometry->setDrawRange(0, 6);
         front->layers.set(1);
-        renderer.render(scene, camera);
+        renderHostTurn(renderer, scene, camera);
         expectPixel(renderer, {0, 0, 0, 255}, "Camera layers filter mesh draws");
         front->layers.set(0);
         auto parent = std::make_shared<Group>();
@@ -1545,18 +1800,18 @@ int main(int argc, char** argv) {
         parent->add(front);
         scene.add(parent);
         parent->visible = false;
-        renderer.render(scene, camera);
+        renderHostTurn(renderer, scene, camera);
         expectPixel(renderer, {0, 0, 0, 255}, "An invisible parent excludes its subtree");
         parent->visible = true;
         parent->layers.set(1);
-        renderer.render(scene, camera);
+        renderHostTurn(renderer, scene, camera);
         expectPixel(renderer, {255, 0, 0, 255},
                     "A parent's unmatched layer still allows matching descendants");
         front->position.set(20, 0, 0);
-        renderer.render(scene, camera);
+        renderHostTurn(renderer, scene, camera);
         require(renderer.getInfo().calls == 0, "Frustum culling removes fully out-of-view meshes");
         front->frustumCulled = false;
-        renderer.render(scene, camera);
+        renderHostTurn(renderer, scene, camera);
         require(renderer.getInfo().calls == 1, "frustumCulled false preserves the draw submission");
         scene.clear();
         {
@@ -1565,14 +1820,14 @@ int main(int argc, char** argv) {
             projective->matrix.makeTranslation(2.5, 0, 0);
             projective->matrix.elements()[15] = 2;
             scene.add(projective);
-            renderer.render(scene, camera);
+            renderHostTurn(renderer, scene, camera);
             require(renderer.getInfo().calls == 1,
                     "Projective world matrices transform the culling sphere with homogeneous division");
             expectPixel(renderer, {255, 0, 0, 255},
                         "Projective geometry remains visible at the right viewport edge", 61, 32);
             const auto culledPixels = renderer.readPixels();
             projective->frustumCulled = false;
-            renderer.render(scene, camera);
+            renderHostTurn(renderer, scene, camera);
             expectPixel(renderer, {255, 0, 0, 255},
                         "The projective geometry also renders with culling disabled", 61, 32);
             require(renderer.readPixels() == culledPixels,
@@ -1582,41 +1837,41 @@ int main(int argc, char** argv) {
         auto fogged = plane(Color(1, 0, 0));
         scene.add(fogged);
         scene.fog = std::make_shared<Fog>(Color(0, 0, 1), 4, 6);
-        renderer.render(scene, camera);
+        renderHostTurn(renderer, scene, camera);
         expectPixel(renderer, {128, 0, 128, 255},
                     "Linear fog interpolates after output color conversion");
         scene.fog = std::make_shared<FogExp2>(Color(0, 0, 1), 0.2);
-        renderer.render(scene, camera);
+        renderHostTurn(renderer, scene, camera);
         expectPixel(renderer, {94, 0, 161, 255},
                     "Exponential squared fog uses interpolated view-space depth");
         auto fogPositionView = std::get<TypedArray<float>>(fogged->geometry->getAttribute("position")->getArray().storage());
         for (std::size_t i = 2; i < fogPositionView.size(); i += 3)
             fogPositionView[i] = 2;
-        renderer.render(scene, camera);
+        renderHostTurn(renderer, scene, camera);
         expectPixel(renderer, {94, 0, 161, 255},
                     "TypedArray alias writes without needsUpdate preserve cached positions used for fog");
         for (std::size_t i = 2; i < fogPositionView.size(); i += 3)
             fogPositionView[i] = 0;
         basic(fogged)->fog = false;
-        renderer.render(scene, camera);
+        renderHostTurn(renderer, scene, camera);
         expectPixel(renderer, {255, 0, 0, 255}, "material.fog false disables scene fog");
         scene.fog.reset();
         basic(fogged)->blending = NoBlending;
         basic(fogged)->opacity = 0.5;
-        renderer.render(scene, camera);
+        renderHostTurn(renderer, scene, camera);
         expectPixel(renderer, {255, 0, 0, 128},
                     "NoBlending preserves opacity without the OPAQUE define");
         basic(fogged)->blending = NormalBlending;
         basic(fogged)->transparent = true;
         basic(fogged)->side = DoubleSide;
         const auto doubleSideVersion = basic(fogged)->version;
-        renderer.render(scene, camera);
+        renderHostTurn(renderer, scene, camera);
         require(renderer.getInfo().calls == 2,
                 "Transparent DoubleSide defaults to back and front draws");
         require(basic(fogged)->version == doubleSideVersion + 2,
                 "Transparent DoubleSide invalidates material state for both side passes");
         basic(fogged)->forceSinglePass = true;
-        renderer.render(scene, camera);
+        renderHostTurn(renderer, scene, camera);
         require(renderer.getInfo().calls == 1,
                 "forceSinglePass disables the transparent DoubleSide second draw");
         require(basic(fogged)->version == doubleSideVersion + 2,
@@ -1624,7 +1879,7 @@ int main(int argc, char** argv) {
         basic(fogged)->transparent = false;
         basic(fogged)->opacity = 1;
         basic(fogged)->wireframe = true;
-        renderer.render(scene, camera);
+        renderHostTurn(renderer, scene, camera);
         require(renderer.getInfo().calls == 1 && renderer.getInfo().lines == 6,
                 "Wireframe expands indexed triangle edges into GPU lines");
         scene.clear();
@@ -1636,11 +1891,11 @@ int main(int argc, char** argv) {
             basic(mesh)->depthWrite = false;
             scene.add(mesh);
         }
-        renderer.render(scene, camera);
+        renderHostTurn(renderer, scene, camera);
         expectPixel(renderer, {128, 0, 64, 255},
                     "Transparent objects sort far to near independently of creation order");
         nearTransparent->renderOrder = -1;
-        renderer.render(scene, camera);
+        renderHostTurn(renderer, scene, camera);
         expectPixel(renderer, {64, 0, 128, 255},
                     "Explicit renderOrder precedes transparent depth sorting");
         scene.clear();
@@ -1668,7 +1923,7 @@ int main(int argc, char** argv) {
                 sortingCamera.updateProjectionMatrix();
                 clipFar->matrix.elements()[15] = reversed ? 4 : 0.25;
                 order.clear();
-                renderer.render(scene, sortingCamera);
+                renderHostTurn(renderer, scene, sortingCamera);
                 require(order == std::vector<std::string>{"red", "blue"},
                         "Transparent sorting uses homogeneous clip z, including reversed depth");
                 expectPixel(renderer, {64, 0, 128, 255},
@@ -1691,7 +1946,7 @@ int main(int argc, char** argv) {
                 sortingCamera.updateProjectionMatrix();
                 clipFar->matrix.elements()[15] = reversed ? 4 : 0.25;
                 order.clear();
-                renderer.render(scene, sortingCamera);
+                renderHostTurn(renderer, scene, sortingCamera);
                 require(order == std::vector<std::string>{"blue", "red"},
                         "Opaque objects sharing a material sort by ascending clip z");
                 expectPixel(renderer, {255, 0, 0, 255},
@@ -1728,7 +1983,7 @@ int main(int argc, char** argv) {
                 order.push_back("object-after");
             };
             scene.add(emptyMesh);
-            renderer.render(scene, camera);
+            renderHostTurn(renderer, scene, camera);
             require(order == std::vector<std::string>{"position-upload", "unused-upload",
                                                       "object-before", "material-before", "object-after"},
                     "Zero position count uploads ordinary attributes before object and material hooks");
@@ -1739,7 +1994,7 @@ int main(int argc, char** argv) {
             emptyIndex->onUpload([&] { order.push_back("index-upload"); });
             emptyGeometry->setIndex(emptyIndex);
             order.clear();
-            renderer.render(scene, camera);
+            renderHostTurn(renderer, scene, camera);
             require(order == std::vector<std::string>{"object-before", "material-before",
                                                       "index-upload", "object-after"},
                     "A zero-count indexed draw uploads its index after the material hook");
@@ -1750,7 +2005,7 @@ int main(int argc, char** argv) {
             emptyGeometry->setDrawRange(1, 0);
             expectedCalls = 0;
             order.clear();
-            renderer.render(scene, camera);
+            renderHostTurn(renderer, scene, camera);
             require(order == std::vector<std::string>{"position-upload", "object-before",
                                                       "material-before", "object-after"},
                     "A negative clipped draw range preserves ordinary upload and hooks but skips index upload");
@@ -1759,14 +2014,14 @@ int main(int argc, char** argv) {
             emptyGeometry->setDrawRange(0, 0);
             expectedCalls = 1;
             order.clear();
-            renderer.render(scene, camera);
+            renderHostTurn(renderer, scene, camera);
             require(order == std::vector<std::string>{"object-before", "material-before",
                                                       "index-upload", "object-after"},
                     "The pending index version uploads when a later zero-count range permits binding");
             emptyMaterial->wireframe = true;
             scene.fog = std::make_shared<Fog>(Color(0, 0, 1), 4, 6);
             order.clear();
-            renderer.render(scene, camera);
+            renderHostTurn(renderer, scene, camera);
             require(order == std::vector<std::string>{"object-before", "material-before", "object-after"},
                     "Empty wireframe rendering preserves hooks without reuploading unchanged attributes");
             require(renderer.getInfo().calls == 1 && renderer.getInfo().lines == 0,
@@ -1786,24 +2041,24 @@ int main(int argc, char** argv) {
             mesh->frustumCulled = false;
             geometry->boundingSphere = Sphere(Vector3(), 2);
             scene.add(mesh);
-            renderer.render(scene, camera);
+            renderHostTurn(renderer, scene, camera);
             expectPixel(renderer, {255, 0, 0, 255},
                         "A fractional position count does not fetch its incomplete trailing row");
             require(std::abs(renderer.getInfo().triangles - (10.0 / 3) / 3) < 1e-12,
                     "Triangle statistics retain the logical fractional draw count");
             geometry->setDrawRange(0, 3);
-            renderer.render(scene, camera);
+            renderHostTurn(renderer, scene, camera);
             expectPixel(renderer, {255, 0, 0, 255},
                         "A drawRange excludes the incomplete position row before CPU validation");
             require(renderer.getInfo().triangles == 1, "Draw ranges clip logical triangle statistics");
             positions->count = 100;
-            renderer.render(scene, camera);
+            renderHostTurn(renderer, scene, camera);
             expectPixel(renderer, {255, 0, 0, 255},
                         "An enlarged position.count permits an in-bounds drawRange");
             require(renderer.getInfo().triangles == 1,
                     "Actual draw-range storage determines safety rather than position.count metadata");
             positions->count = 2.5;
-            renderer.render(scene, camera);
+            renderHostTurn(renderer, scene, camera);
             expectPixel(renderer, {0, 0, 0, 255},
                         "Vulkan receives the integer conversion of a fractional vertex count");
             require(std::abs(renderer.getInfo().triangles - 2.5 / 3) < 1e-12,
@@ -1813,7 +2068,7 @@ int main(int argc, char** argv) {
                 std::vector<std::uint16_t>{0, 1, 2}, 1);
             index->count = 2.5;
             geometry->setIndex(index);
-            renderer.render(scene, camera);
+            renderHostTurn(renderer, scene, camera);
             require(std::abs(renderer.getInfo().triangles - 2.5 / 3) < 1e-12,
                     "Indexed statistics also retain the logical fractional count");
             scene.clear();
@@ -1840,24 +2095,23 @@ int main(int argc, char** argv) {
             mesh->morphTargetInfluences->at(0) = 1;
             scene.add(mesh);
             scene.fog = std::make_shared<Fog>(Color(0, 0, 1), 4, 6);
-            renderer.render(scene, camera);
+            renderHostTurn(renderer, scene, camera);
             expectPixel(renderer, {128, 0, 128, 255},
                         "Fog and morph calculations ignore non-finite vertices outside the draw range");
             auto index = std::make_shared<Uint16BufferAttribute>(
                 std::vector<std::uint16_t>{999, 1, 2, 3, 999}, 1);
             geometry->setIndex(index);
-            renderer.render(scene, camera);
+            renderHostTurn(renderer, scene, camera);
             expectPixel(renderer, {128, 0, 128, 255},
                         "Indexed fog and morph draws inspect only the referenced vertices");
             index->setX(2, 999);
             index->needsUpdate = true;
-            bool invalidFetchRejected = false;
-            try { renderer.render(scene, camera); }
-            catch (const std::invalid_argument&) { invalidFetchRejected = true; }
-            require(invalidFetchRejected, "An actual out-of-bounds GPU vertex fetch is rejected before submission");
+            renderHostTurn(renderer, scene, camera);
+            require(pixel(renderer,32,32)==std::array<int,4>{0,0,0,255} && renderer.getInfo().calls==1,
+                    "An out-of-bounds GPU vertex fetch rejects the draw while preserving info");
             index->setX(2, 2);
             index->needsUpdate = true;
-            renderer.render(scene, camera);
+            renderHostTurn(renderer, scene, camera);
             expectPixel(renderer, {128, 0, 128, 255},
                         "Corrected geometry renders after an out-of-bounds fetch rejection");
             scene.fog.reset();
@@ -1878,26 +2132,26 @@ int main(int argc, char** argv) {
             const auto hasRedLine = [&] {
                 return pixel(renderer, 32, 31)[0] == 255 || pixel(renderer, 32, 32)[0] == 255;
             };
-            renderer.render(scene, camera);
+            renderHostTurn(renderer, scene, camera);
             require(hasRedLine(), "An incomplete indexed triangle still produces its valid wireframe edge");
             require(renderer.getInfo().lines == 3,
                     "Wireframe statistics use all six generated indices including undefined-to-zero entries");
             index->count = 0;
-            renderer.render(scene, camera);
+            renderHostTurn(renderer, scene, camera);
             require(hasRedLine() && renderer.getInfo().lines == 3,
                     "Wireframe generation and clipping use raw index array length instead of index.count");
             geometry->setDrawRange(1, 1);
-            renderer.render(scene, camera);
+            renderHostTurn(renderer, scene, camera);
             require(hasRedLine() && renderer.getInfo().lines == 1,
                     "Wireframe draw ranges are doubled before generated-index clipping");
             geometry->setDrawRange(3, 0);
-            renderer.render(scene, camera);
+            renderHostTurn(renderer, scene, camera);
             require(renderer.getInfo().calls == 1 && renderer.getInfo().lines == 0,
                     "A zero draw at the generated wireframe endpoint still submits");
             geometry->setDrawRange(0, 3);
             index->set(std::vector<std::uint32_t>{65536, 65537});
             index->needsUpdate = true;
-            renderer.render(scene, camera);
+            renderHostTurn(renderer, scene, camera);
             require(hasRedLine() && renderer.getInfo().lines == 3,
                     "Small wireframe geometries truncate source indices to the upstream Uint16 format");
             scene.clear();
@@ -1916,14 +2170,12 @@ int main(int argc, char** argv) {
             auto mesh = std::make_shared<Mesh>(geometry, material);
             mesh->frustumCulled = false;
             scene.add(mesh);
-            bool wideIndexRejected = false;
-            try { renderer.render(scene, camera); }
-            catch (const std::invalid_argument&) { wideIndexRejected = true; }
-            require(wideIndexRejected,
+            renderHostTurn(renderer, scene, camera);
+            require(pixel(renderer,32,32)==std::array<int,4>{0,0,0,255} && renderer.getInfo().calls==1,
                     "The 65535-position threshold preserves Uint32 wireframe indices instead of truncating them");
             positions->count = 65534;
             geometry->dispose();
-            renderer.render(scene, camera);
+            renderHostTurn(renderer, scene, camera);
             require(renderer.getInfo().lines == 3 &&
                         (pixel(renderer, 32, 31)[0] == 255 || pixel(renderer, 32, 32)[0] == 255),
                     "Below the threshold, regenerated wireframe indices use Uint16 conversion");
@@ -1940,13 +2192,11 @@ int main(int argc, char** argv) {
             auto mesh = std::make_shared<Mesh>(geometry, material);
             mesh->frustumCulled = false;
             scene.add(mesh);
-            bool invalidFetchRejected = false;
-            try { renderer.render(scene, camera); }
-            catch (const std::invalid_argument&) { invalidFetchRejected = true; }
-            require(invalidFetchRejected,
+            renderHostTurn(renderer, scene, camera);
+            require(pixel(renderer,32,32)==std::array<int,4>{0,0,0,255} && renderer.getInfo().calls==1,
                     "Non-indexed wireframe generation follows array.length / 3 even with itemSize four");
             geometry->setDrawRange(0, 3);
-            renderer.render(scene, camera);
+            renderHostTurn(renderer, scene, camera);
             require(renderer.getInfo().lines == 3,
                     "Clipping wireframe indices excludes generated vertices outside uploaded storage");
             require(pixel(renderer, 32, 31)[0] == 255 || pixel(renderer, 32, 32)[0] == 255,
@@ -1961,7 +2211,7 @@ int main(int argc, char** argv) {
                                               std::make_shared<MeshBasicMaterial>(Color(1, 0, 0)));
         morphed->morphTargetInfluences->at(0) = 1;
         scene.add(morphed);
-        renderer.render(scene, camera);
+        renderHostTurn(renderer, scene, camera);
         expectPixel(renderer, {0, 0, 0, 255},
                     "Morph target positions move fragments away from the undeformed position");
         expectPixel(renderer, {255, 0, 0, 255},
@@ -1971,13 +2221,13 @@ int main(int argc, char** argv) {
         auto influences = nativeObject(morphed).get("morphTargetInfluences");
         influences.erase("0");
         bool missingRejected = false;
-        try { renderer.render(scene, camera); }
+        try { renderHostTurn(renderer, scene, camera); }
         catch (const std::invalid_argument& error) {
             missingRejected = std::string(error.what()) == "Non-finite geometry position";
         }
         require(missingRejected,"Morph influence holes become NaN instead of silently rendering undeformed positions");
         influences.set("length", 0); missingRejected = false;
-        try { renderer.render(scene, camera); }
+        try { renderHostTurn(renderer, scene, camera); }
         catch (const std::invalid_argument& error) {
             missingRejected = std::string(error.what()).find("retained WebGL uniform state") != std::string::npos;
         }
@@ -1988,17 +2238,17 @@ int main(int argc, char** argv) {
         morphed->onAfterRender=[&](auto&,auto&,auto&,auto*,auto*,auto*){++emptyHooks;};
         std::dynamic_pointer_cast<BufferAttribute>(morphGeometry->getAttribute("position"))->onUpload([&]{++emptyUploads;});
         morphGeometry->getAttribute("position")->setNeedsUpdate(true);
-        renderer.render(scene,camera);
+        renderHostTurn(renderer, scene,camera);
         require(renderer.getInfo().calls==1 && renderer.getInfo().triangles==0 && emptyHooks==2 && emptyUploads==1,
                 "Zero-count draws retain upload and hooks without reading absent morph weights");
         expectPixel(renderer,{0,0,0,255},"Zero-count draws with short morph influences produce no fragments");
         morphed->onBeforeRender=nullptr;morphed->onAfterRender=nullptr;
         std::dynamic_pointer_cast<BufferAttribute>(morphGeometry->getAttribute("position"))->onUpload([]{});
         morphGeometry->setDrawRange(0,INFINITY);
-        influences.set("0", 1);renderer.render(scene, camera);
+        influences.set("0", 1);renderHostTurn(renderer, scene, camera);
         expectPixel(renderer,{255,0,0,255},"Valid morph influences render after missing-influence rejection",57,32);
         morphGeometry->boundingSphere = Sphere(Vector3(30, 0, 0), 0.1);
-        renderer.render(scene, camera);
+        renderHostTurn(renderer, scene, camera);
         require(renderer.getInfo().calls == 0,
                 "An explicit boundingSphere controls frustum culling");
         scene.clear();
@@ -2027,7 +2277,7 @@ int main(int argc, char** argv) {
         scene.onAfterRender = [&](auto&, auto&, auto&, auto*, auto*, auto*) {
             callbackOrder.push_back("scene-after");
         };
-        renderer.render(scene, camera);
+        renderHostTurn(renderer, scene, camera);
         require(callbackOrder == std::vector<std::string>{"scene-before", "object-before",
                                                           "material-before", "object-after",
                                                           "scene-after"},
@@ -2037,7 +2287,7 @@ int main(int argc, char** argv) {
         hooked->onBeforeRender = [&](auto&, auto&, auto&, auto* geometry, auto*, auto*) {
             geometry->setDrawRange(0, 0);
         };
-        renderer.render(scene, camera);
+        renderHostTurn(renderer, scene, camera);
         require(renderer.getInfo().calls == 1 && renderer.getInfo().triangles == 0,
                 "A callback changing drawRange to zero retains the zero-count draw submission");
         scene.onBeforeRender = {};
@@ -2049,7 +2299,7 @@ int main(int argc, char** argv) {
         basic(hooked)->alphaHash = true;
         bool rejected = false;
         try {
-            renderer.render(scene, camera);
+            renderHostTurn(renderer, scene, camera);
         } catch (const std::invalid_argument&) {
             rejected = true;
         }
@@ -2057,7 +2307,7 @@ int main(int argc, char** argv) {
             rejected,
             "Unsupported alphaHash is rejected instead of silently rendering a different material");
         basic(hooked)->alphaHash = false;
-        renderer.render(scene, camera);
+        renderHostTurn(renderer, scene, camera);
         expectPixel(renderer, {0, 255, 0, 255},
                     "Renderer remains usable after unsupported input rejection");
         scene.clear();
@@ -2079,7 +2329,7 @@ int main(int argc, char** argv) {
             };
             scene.add(first);
             scene.add(second);
-            renderer.render(scene, camera);
+            renderHostTurn(renderer, scene, camera);
             expectPixel(renderer, {255, 0, 0, 255}, "The first layer mutation draw remains visible",
                         16, 32);
             expectPixel(renderer, {0, 0, 0, 255},
@@ -2095,12 +2345,12 @@ int main(int argc, char** argv) {
             first->onBeforeRender = [&](auto&, auto&, auto&, auto*, auto*, auto*) {
                 scene.overrideMaterial = laterOverride;
             };
-            renderer.render(scene, camera);
+            renderHostTurn(renderer, scene, camera);
             expectPixel(renderer, {0, 255, 0, 255},
                         "Override material is cached for the current opaque list", 48, 32);
             scene.overrideMaterial = originalOverride;
             basic(second)->transparent = true;
-            renderer.render(scene, camera);
+            renderHostTurn(renderer, scene, camera);
             expectPixel(renderer, {0, 255, 0, 255}, "The opaque list keeps its original override",
                         16, 32);
             expectPixel(renderer, {0, 0, 255, 255},
@@ -2115,11 +2365,11 @@ int main(int argc, char** argv) {
                                                auto*) {
                 activeRenderer.setClearColor(Color(0, 0, 1));
             };
-            renderer.render(scene, camera);
+            renderHostTurn(renderer, scene, camera);
             expectPixel(renderer, {0, 0, 0, 255},
                         "Object hooks change clear color after this frame's background clear", 0,
                         0);
-            renderer.render(scene, camera);
+            renderHostTurn(renderer, scene, camera);
             expectPixel(renderer, {0, 0, 255, 255},
                         "The changed clear color applies to the next frame", 0, 0);
             renderer.setClearColor(Color(0, 0, 0));
@@ -2145,12 +2395,12 @@ int main(int argc, char** argv) {
             };
             scene.add(clearing);
             scene.add(farther);
-            renderer.render(scene, camera);
+            renderHostTurn(renderer, scene, camera);
             expectPixel(renderer, {0, 0, 255, 255},
                         "Callback readback and color clear preserve depth for the next draw");
             renderer.setClearColor(Color(0, 0, 0));
             clearDepth = true;
-            renderer.render(scene, camera);
+            renderHostTurn(renderer, scene, camera);
             expectPixel(renderer, {0, 255, 0, 255},
                         "Callback depth clear allows the following farther draw");
             renderer.setClearColor(Color(0, 0, 0));
@@ -2164,14 +2414,14 @@ int main(int argc, char** argv) {
                 activeRenderer.clear(true, false);
             };
             scene.add(masked);
-            renderer.render(scene, camera);
+            renderHostTurn(renderer, scene, camera);
             expectPixel(renderer, {0, 0, 0, 255},
                         "Manual callback clear respects the last material's colorWrite mask");
             renderer.clear();
             expectPixel(renderer, {0, 0, 0, 255},
                         "Manual clear outside rendering also respects colorWrite");
             scene.clear();
-            renderer.render(scene, camera);
+            renderHostTurn(renderer, scene, camera);
             expectPixel(renderer, {0, 0, 255, 255},
                         "Automatic background clear restores color writes");
             renderer.setClearColor(Color(0, 0, 0));
@@ -2182,7 +2432,7 @@ int main(int argc, char** argv) {
             backgroundClear->onAfterRender = [](auto& activeRenderer, auto&, auto&, auto*, auto*,
                                                 auto*) { activeRenderer.clear(true, false); };
             scene.add(backgroundClear);
-            renderer.render(scene, camera);
+            renderHostTurn(renderer, scene, camera);
             expectPixel(renderer, {0, 0, 255, 255},
                         "Callback clear uses the active scene background clear color");
             require(renderer.getClearColor().equals(Color(0, 0, 0)),
@@ -2192,7 +2442,7 @@ int main(int argc, char** argv) {
                         "Manual clear after rendering retains the active background clear state");
             scene.background.reset();
             scene.clear();
-            renderer.render(scene, camera);
+            renderHostTurn(renderer, scene, camera);
             expectPixel(
                 renderer, {0, 0, 0, 255},
                 "Removing scene background restores the user's clear color on the next frame");
@@ -2203,7 +2453,7 @@ int main(int argc, char** argv) {
             guarded->onBeforeRender = [&](auto& activeRenderer, auto& activeScene,
                                           auto& activeCamera, auto*, auto*, auto*) {
                 try {
-                    activeRenderer.render(activeScene, activeCamera);
+                    renderHostTurn(activeRenderer, activeScene, activeCamera);
                 } catch (const std::logic_error&) {
                     renderRejected = true;
                 }
@@ -2214,7 +2464,7 @@ int main(int argc, char** argv) {
                 }
             };
             scene.add(guarded);
-            renderer.render(scene, camera);
+            renderHostTurn(renderer, scene, camera);
             require(
                 renderRejected && resizeRejected,
                 "Unsafe nested render and resize are explicitly rejected during active callbacks");
@@ -2239,12 +2489,13 @@ int main(int argc, char** argv) {
             };
             scene.add(transient);
         }
-        renderer.render(scene, camera);
+        renderHostTurn(renderer, scene, camera);
         expectPixel(renderer, {255, 0, 0, 255},
                     "A scene-owned mesh detached by onBeforeRender still draws this frame");
+        finishHostTurn();
         require(detachedBefore && detachedAfter && detachedMesh.expired(),
                 "Render item lifetime ends safely after both hooks and the frame");
-        renderer.render(scene, camera);
+        renderHostTurn(renderer, scene, camera);
         require(renderer.getInfo().calls == 0,
                 "A detached scene-owned mesh is absent from the next frame");
         expectPixel(renderer, {0, 0, 0, 255}, "The next frame clears the detached mesh's pixels");
@@ -2289,13 +2540,14 @@ int main(int argc, char** argv) {
             managedScene->add(first);
             managedScene->add(second);
         }
-        renderer.render(*managedScene, *managedCameraPointer);
+        renderHostTurn(renderer, *managedScene, *managedCameraPointer);
         expectPixel(renderer, {255, 0, 0, 255},
                     "Clearing scene ownership during a hook preserves the first queued draw", 16,
                     32);
         expectPixel(renderer, {0, 255, 0, 255},
                     "Clearing scene ownership during a hook preserves subsequent queued draws", 48,
                     32);
+        finishHostTurn();
         require(afterReleasedScene && releasedScene.expired() && releasedCamera.expired() &&
                     releasedFirst.expired() && releasedSecond.expired(),
                 "Managed render objects are released after the frame without ownership cycles");
@@ -2312,7 +2564,7 @@ int main(int argc, char** argv) {
         auto groupedMesh =
             std::make_shared<Mesh>(square, std::vector<std::shared_ptr<Material>>{red, green});
         scene.add(groupedMesh);
-        renderer.render(scene, camera);
+        renderHostTurn(renderer, scene, camera);
         expectPixel(renderer, {255, 0, 0, 255}, "Geometry group zero selects material zero", 48,
                     48);
         expectPixel(renderer, {0, 255, 0, 255}, "Geometry group one selects material one", 16, 16);
@@ -2323,7 +2575,7 @@ int main(int argc, char** argv) {
                 group->count = 0;
             }
         };
-        renderer.render(scene, camera);
+        renderHostTurn(renderer, scene, camera);
         expectPixel(renderer, {0, 0, 0, 255},
                     "Changing the original group count in a hook changes this frame's draw", 48,
                     48);
@@ -2345,14 +2597,14 @@ int main(int argc, char** argv) {
                         "A later callback receives the original group after clearGroups");
             }
         };
-        renderer.render(scene, camera);
+        renderHostTurn(renderer, scene, camera);
         expectPixel(renderer, {255, 0, 0, 255},
                     "Clearing groups in a hook preserves the current queued group draw", 48, 48);
         expectPixel(renderer, {0, 255, 0, 255},
                     "Clearing groups in a hook preserves a later queued group draw", 16, 16);
         require(queuedFirst.expired() && queuedSecond.expired(),
                 "Cleared groups are released when this frame's render items expire");
-        renderer.render(scene, camera);
+        renderHostTurn(renderer, scene, camera);
         require(renderer.getInfo().calls == 0,
                 "Cleared geometry groups are absent from the next frame");
         expectPixel(renderer, {0, 0, 0, 255},
@@ -2362,38 +2614,38 @@ int main(int argc, char** argv) {
         square->addGroup(3, 3, 1);
         square->setIndex(std::make_shared<Uint16BufferAttribute>(
             std::vector<std::uint16_t>{0, 1, 2, 0, 2, 3}, 1, true));
-        renderer.render(scene, camera);
+        renderHostTurn(renderer, scene, camera);
         expectPixel(renderer, {255, 0, 0, 255},
                     "Index fetching ignores the vertex attribute normalized flag", 48, 48);
         square->setIndex(
             std::make_shared<Int32BufferAttribute>(std::vector<std::int32_t>{0, 1, 2, 0, 2, 3}, 1));
         rejected = false;
         try {
-            renderer.render(scene, camera);
+            renderHostTurn(renderer, scene, camera);
         } catch (const std::invalid_argument&) {
             rejected = true;
         }
         require(rejected, "Signed integer index types are rejected instead of silently converted");
         square->setIndex(std::vector<std::uint32_t>{0, 1, 2, 0, 2, 3});
         square->setDrawRange(3, 3);
-        renderer.render(scene, camera);
+        renderHostTurn(renderer, scene, camera);
         expectPixel(renderer, {0, 0, 0, 255}, "drawRange intersects geometry groups", 48, 48);
         expectPixel(renderer, {0, 255, 0, 255}, "The surviving group retains its material", 16, 16);
         scene.overrideMaterial = std::make_shared<MeshBasicMaterial>(Color(0, 0, 1));
-        renderer.render(scene, camera);
+        renderHostTurn(renderer, scene, camera);
         expectPixel(renderer, {0, 0, 255, 255}, "Scene overrideMaterial replaces a group material",
                     16, 16);
         scene.overrideMaterial.reset();
         scene.background = Color(1, 0, 1);
         renderer.autoClear = false;
         scene.clear();
-        renderer.render(scene, camera);
+        renderHostTurn(renderer, scene, camera);
         expectPixel(renderer, {255, 0, 255, 255},
                     "A solid scene background forces color clear with autoClear false");
         scene.background.reset();
         renderer.autoClear = true;
-        renderer.render(scene, camera);
-        const auto attributeBufferBaseline = renderer.getInfo().attributeBuffers;
+        renderHostTurn(renderer, scene, camera);
+        auto attributeBufferBaseline = renderer.getInfo().attributeBuffers;
         std::weak_ptr<BufferGeometry> expiredGeometry;
         std::weak_ptr<BufferAttribute> expiredAttribute;
         {
@@ -2421,7 +2673,7 @@ int main(int argc, char** argv) {
                     updateRangesCleared = colors->updateRanges.get("length").strictEquals(0);
             });
             const auto idBeforeUpload = std::make_shared<Float32BufferAttribute>(std::vector<float>{0}, 1);
-            renderer.render(scene, camera);
+            renderHostTurn(renderer, scene, camera);
             const auto idAfterUpload = std::make_shared<Float32BufferAttribute>(std::vector<float>{0}, 1);
             require(idAfterUpload->id == idBeforeUpload->id + 1,
                     "GPU uploads do not allocate BufferAttribute identities for internal snapshots");
@@ -2438,7 +2690,7 @@ int main(int argc, char** argv) {
                 colorArray[i + 9] = 1;
                 colorArray[i + 10] = 0;
             }
-            renderer.render(scene, camera);
+            renderHostTurn(renderer, scene, camera);
             expectPixel(renderer, {255, 0, 0, 255}, "Array writes without needsUpdate preserve cached GPU color", 48, 48);
             require(positionUploads == 1 && colorUploads == 1 &&
                         renderer.getInfo().attributeBuffers == attributeBufferBaseline + 2,
@@ -2447,22 +2699,22 @@ int main(int argc, char** argv) {
             colors->addUpdateRange(0, 4);
             colors->addUpdateRange(3, 3);
             colors->needsUpdate = true;
-            renderer.render(scene, camera);
+            renderHostTurn(renderer, scene, camera);
             expectPixel(renderer, {0, 0, 255, 255}, "Overlapping unsorted ranges update the selected color components", 48, 48);
             expectPixel(renderer, {0, 255, 0, 255}, "Partial uploads preserve unlisted GPU components", 16, 16);
             require(colorUploads == 2 && updateRangesCleared && colors->updateRanges.get("length").strictEquals(0),
                     "Version updates merge and clear ranges before the upload callback");
             colors->needsUpdate = true;
-            renderer.render(scene, camera);
+            renderHostTurn(renderer, scene, camera);
             expectPixel(renderer, {255, 0, 0, 255}, "An empty updateRanges list uploads the whole changed array", 16, 16);
             require(colorUploads == 3, "Full version updates invoke one upload callback");
             auto& positionArray = std::get<TypedArray<float>>(positions->array);
             for (std::size_t i = 0; i < positionArray.size(); i += 3)
                 positionArray[i] = static_cast<float>(positionArray[i]) + 3;
-            renderer.render(scene, camera);
+            renderHostTurn(renderer, scene, camera);
             expectPixel(renderer, {0, 0, 255, 255}, "Position array writes also require needsUpdate", 48, 48);
             positions->needsUpdate = true;
-            renderer.render(scene, camera);
+            renderHostTurn(renderer, scene, camera);
             expectPixel(renderer, {0, 0, 0, 255}, "Position version changes reach the GPU", 48, 48);
             require(positionUploads == 2, "Position buffers upload only at first use and version changes");
             const auto originalColorArray = colorArray;
@@ -2471,34 +2723,40 @@ int main(int argc, char** argv) {
             colors->array = TypedArray<float>(largerColorArray);
             colors->needsUpdate = true;
             bool resizeRejected = false;
-            try { renderer.render(scene, camera); }
+            try { renderHostTurn(renderer, scene, camera); }
             catch (const std::runtime_error& error) { resizeRejected = std::string(error.what()).find("Resizing buffer attributes is not supported") != std::string::npos; }
             require(resizeRejected, "Uploaded attribute array resizing is rejected like WebGLAttributes");
             colors->array = originalColorArray;
             colors->needsUpdate = true;
-            renderer.render(scene, camera);
+            renderHostTurn(renderer, scene, camera);
             require(colorUploads == 4, "A corrected array remains uploadable after size rejection");
+            const auto rawBeforeColorDispose=renderer.getInfo().attributeUploadBuffers;
             colors->dispose();
             require(renderer.getInfo().attributeBuffers == attributeBufferBaseline + 1,
                     "Attribute dispose releases its actual cached GPU buffer");
-            renderer.render(scene, camera);
-            require(colorUploads == 5 && renderer.getInfo().attributeBuffers == attributeBufferBaseline + 2,
-                    "Reusing a disposed attribute creates a new first upload");
+            renderHostTurn(renderer, scene, camera);
+            require(colorUploads == 5 && renderer.getInfo().attributeUploadBuffers == rawBeforeColorDispose &&
+                    renderer.getInfo().attributeBuffers == attributeBufferBaseline + 1,
+                    "Reusing a disposed attribute uploads raw storage while unchanged VAO identity retains its detached color slot");
             geometry->dispose();
             require(renderer.getInfo().attributeBuffers == attributeBufferBaseline,
                     "Geometry dispose releases the buffers of its current attributes");
-            renderer.render(scene, camera);
+            renderHostTurn(renderer, scene, camera);
             require(positionUploads == 3 && colorUploads == 6,
                     "A disposed geometry registers and uploads again on its next render");
             expiredGeometry = geometry;
             expiredAttribute = positions;
             scene.clear();
         }
+        require(!expiredGeometry.expired() && !expiredAttribute.expired(),
+                "Geometry WeakRef registration retains its target and native graph through the current host job");
+        finishHostTurn();
         require(expiredGeometry.expired() && expiredAttribute.expired(),
                 "Attribute and geometry caches do not retain application ownership");
-        renderer.render(scene, camera);
-        require(renderer.getInfo().attributeBuffers == attributeBufferBaseline,
-                "Expired attribute identities release their GPU buffers on the next render");
+        renderHostTurn(renderer, scene, camera);
+        require(renderer.getInfo().attributeBuffers == attributeBufferBaseline + 2,
+                "Pinned binding caches retain the two uploaded vertex resources after geometry GC");
+        attributeBufferBaseline = renderer.getInfo().attributeBuffers;
         {
             const std::vector<float> originalPositions = {-.4f, -.8f, 0, .4f, -.8f, 0,
                                                          .4f, .8f, 0, -.4f, .8f, 0};
@@ -2528,7 +2786,7 @@ int main(int argc, char** argv) {
             indices->onUpload([&] { ++indexUploads; uploadOrder.push_back("index"); });
             first->onBeforeRender = [&](auto&, auto&, auto&, auto*, auto*, auto*) { uploadOrder.push_back("before"); };
             first->onAfterRender = [&](auto&, auto&, auto&, auto*, auto*, auto*) { uploadOrder.push_back("after"); };
-            renderer.render(scene, camera);
+            renderHostTurn(renderer, scene, camera);
             require(uploadOrder == std::vector<std::string>{"position", "color", "before", "index", "after"},
                     "Ordinary attributes upload before object hooks and indices upload during draw binding");
             require(positionUploads == 1 && colorUploads == 1 && indexUploads == 1 &&
@@ -2540,26 +2798,26 @@ int main(int argc, char** argv) {
             first->onAfterRender = {};
             for (std::size_t i = 0; i < 4; ++i)
                 colors->setXYZ(i, 0, 1, 0);
-            renderer.render(scene, camera);
+            renderHostTurn(renderer, scene, camera);
             expectPixel(renderer, {255, 0, 0, 255}, "Shared color writes stay stale without a version increment", 48, 32);
             colors->needsUpdate = true;
-            renderer.render(scene, camera);
+            renderHostTurn(renderer, scene, camera);
             expectPixel(renderer, {0, 255, 0, 255}, "A shared attribute version updates the first geometry", 16, 32);
             expectPixel(renderer, {0, 255, 0, 255}, "A shared attribute version updates the second geometry", 48, 32);
             require(colorUploads == 2, "A shared version change uploads once across multiple geometries");
             std::get<TypedArray<std::uint16_t>>(indices->array).assign(6, 0);
-            renderer.render(scene, camera);
+            renderHostTurn(renderer, scene, camera);
             expectPixel(renderer, {0, 255, 0, 255}, "Index array writes also preserve cached data without needsUpdate", 16, 32);
             indices->addUpdateRange(0, 3);
             indices->needsUpdate = true;
-            renderer.render(scene, camera);
+            renderHostTurn(renderer, scene, camera);
             expectPixel(renderer, {0, 0, 0, 255}, "Index updateRanges change the selected triangle", 22, 44);
             expectPixel(renderer, {0, 255, 0, 255}, "Index updateRanges retain the unlisted triangle", 10, 20);
             require(indices->updateRanges.get("length").strictEquals(0) && indexUploads == 2,
                     "Partial index updates clear ranges and invoke one callback");
             indices->set(originalIndices);
             indices->needsUpdate = true;
-            renderer.render(scene, camera);
+            renderHostTurn(renderer, scene, camera);
             bool changedIndex = false;
             first->onAfterRender = [&](auto&, auto&, auto&, auto*, auto*, auto*) {
                 if (!changedIndex) {
@@ -2568,7 +2826,7 @@ int main(int argc, char** argv) {
                     changedIndex = true;
                 }
             };
-            renderer.render(scene, camera);
+            renderHostTurn(renderer, scene, camera);
             expectPixel(renderer, {0, 255, 0, 255}, "Later index uploads preserve data referenced by earlier recorded draws", 16, 32);
             expectPixel(renderer, {0, 0, 0, 255}, "A hook's index version change affects the following draw", 48, 32);
             require(indexUploads == 4 && renderer.getInfo().attributeBuffers == attributeBufferBaseline + 3,
@@ -2586,29 +2844,30 @@ int main(int argc, char** argv) {
                     changedPosition = true;
                 }
             };
-            renderer.render(scene, camera);
+            renderHostTurn(renderer, scene, camera);
             expectPixel(renderer, {0, 255, 0, 255}, "Ordinary attribute changes in object hooks wait for the next geometry update", 16, 32);
             expectPixel(renderer, {0, 255, 0, 255}, "A later draw shares the unchanged projected attribute version", 48, 32);
             first->onBeforeRender = {};
-            renderer.render(scene, camera);
+            renderHostTurn(renderer, scene, camera);
             expectPixel(renderer, {0, 0, 0, 255}, "The following frame uploads the pending position version", 48, 32);
             require(positionUploads == 2, "Ordinary shared position updates happen once per projected frame");
             positions->set(originalPositions);
             positions->needsUpdate = true;
-            renderer.render(scene, camera);
+            renderHostTurn(renderer, scene, camera);
             scene.remove(first);
             firstGeometry->dispose();
             require(renderer.getInfo().attributeBuffers == attributeBufferBaseline,
                     "Disposing one geometry removes shared attribute cache entries like WebGLGeometries");
-            renderer.render(scene, camera);
-            expectPixel(renderer, {0, 255, 0, 255}, "A surviving geometry recreates disposed shared buffers", 48, 32);
+            renderHostTurn(renderer, scene, camera);
+            expectPixel(renderer, {0, 0, 0, 255}, "Disposing the other geometry detaches deleted buffers from the surviving current VAO", 48, 32);
             require(positionUploads == 4 && colorUploads == 3 && indexUploads == 6,
                     "Shared buffers receive a new initial upload after geometry disposal");
             scene.clear();
         }
-        renderer.render(scene, camera);
+        renderHostTurn(renderer, scene, camera);
         require(renderer.getInfo().attributeBuffers == attributeBufferBaseline,
-                "Shared attributes expire without ownership cycles");
+                "Deleted shared vertex bindings create no replacement conversion buffers without a pointer refresh");
+        attributeBufferBaseline = renderer.getInfo().attributeBuffers;
         {
             auto geometry = std::make_shared<PlaneGeometry>(1.6, 1.6);
             const auto positions = std::dynamic_pointer_cast<BufferAttribute>(geometry->getAttribute("position"));
@@ -2622,20 +2881,20 @@ int main(int argc, char** argv) {
                 }
             });
             scene.add(std::make_shared<Mesh>(geometry, std::make_shared<MeshBasicMaterial>(Color(1, 0, 0))));
-            renderer.render(scene, camera);
+            renderHostTurn(renderer, scene, camera);
             expectPixel(renderer, {255, 0, 0, 255}, "Upload callbacks run after data is captured for the GPU");
-            renderer.render(scene, camera);
+            renderHostTurn(renderer, scene, camera);
             expectPixel(renderer, {255, 0, 0, 255}, "Cached version is captured after onUploadCallback like upstream");
             require(uploads == 1, "A version increment inside the first upload callback is already cached");
             positions->needsUpdate = true;
-            renderer.render(scene, camera);
+            renderHostTurn(renderer, scene, camera);
             expectPixel(renderer, {0, 0, 0, 255}, "A later explicit version increment uploads callback array changes");
             require(uploads == 2, "Later version changes still invoke onUploadCallback");
             scene.clear();
         }
-        renderer.render(scene, camera);
-        require(renderer.getInfo().attributeBuffers == attributeBufferBaseline,
-                "Upload callback fixtures release their cached resources");
+        renderHostTurn(renderer, scene, camera);
+        require(renderer.getInfo().attributeBuffers == attributeBufferBaseline + 1,
+                "The upload callback fixture leaves one vertex resource in the pinned binding cache");
         {
             Scene uploadScene;
             auto geometry = std::make_shared<PlaneGeometry>(1.6, 1.6);
@@ -2666,11 +2925,11 @@ int main(int argc, char** argv) {
         scene.add(plane(Color(1, 0, 0)));
         camera.coordinateSystem = WebGPUCoordinateSystem;
         camera.updateProjectionMatrix();
-        renderer.render(scene, camera);
+        renderHostTurn(renderer, scene, camera);
         expectPixel(renderer, {255, 0, 0, 255}, "WebGPU zero-to-one projection depth is preserved");
         camera.reversedDepth = true;
         camera.updateProjectionMatrix();
-        renderer.render(scene, camera);
+        renderHostTurn(renderer, scene, camera);
         expectPixel(renderer, {255, 0, 0, 255},
                     "Reversed projection uses reversed depth clear and comparison");
         camera.coordinateSystem = WebGLCoordinateSystem;
@@ -2678,30 +2937,30 @@ int main(int argc, char** argv) {
         auto depthProbe = std::dynamic_pointer_cast<Mesh>(scene.children[0]);
         depthProbe->frustumCulled = false;
         depthProbe->position.set(0, 0, -17);
-        renderer.render(scene, camera);
+        renderHostTurn(renderer, scene, camera);
         expectPixel(
             renderer, {0, 0, 0, 255},
             "Default WebGL reversed projection clips beyond far without an extra depth remap");
         depthProbe->position.set(0, 0, 4.95);
-        renderer.render(scene, camera);
+        renderHostTurn(renderer, scene, camera);
         expectPixel(renderer, {0, 0, 0, 255},
                     "Default WebGL reversed projection clips before near");
         depthProbe->position.set(0, 0, 4.8);
-        renderer.render(scene, camera);
+        renderHostTurn(renderer, scene, camera);
         expectPixel(renderer, {255, 0, 0, 255},
                     "Default WebGL reversed projection preserves geometry just beyond near");
         depthProbe->position.set(0, 0, -14.8);
-        renderer.render(scene, camera);
+        renderHostTurn(renderer, scene, camera);
         expectPixel(renderer, {255, 0, 0, 255},
                     "Default WebGL reversed projection preserves geometry just before far");
         depthProbe->frustumCulled = true;
         depthProbe->position.set(0, 0, -17);
-        renderer.render(scene, camera);
+        renderHostTurn(renderer, scene, camera);
         require(renderer.getInfo().calls == 0,
                 "Default WebGL reversed projection extracts the zero-to-one far frustum plane");
         depthProbe->position.set(0, 0, 0);
         renderer.setSize(32, 48);
-        renderer.render(scene, camera);
+        renderHostTurn(renderer, scene, camera);
         require(renderer.readPixels().size() == 32 * 48 * 4,
                 "Resize recreates color, depth, framebuffer and readback resources");
         expectPixel(renderer, {255, 0, 0, 255}, "Resized framebuffer receives geometry", 16, 24);

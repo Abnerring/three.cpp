@@ -241,7 +241,7 @@ bool NativeEventLoop::unregisterReceiver(Id receiver) {
 NativeEventLoop::RunResult NativeEventLoop::runOneTask() {
     requireOwnerThread();
     RunResult result;
-    if (pumping || isDrainingMicrotasks()) return result;
+    if (pumping || isDrainingMicrotasks() || isDrainingFinalizationJobs()) return result;
     struct Guard {
         State& state;
         explicit Guard(State& state) : state(state) { pumping = true; state.running = true; }
@@ -256,9 +256,26 @@ NativeEventLoop::RunResult NativeEventLoop::runOneTask() {
     Envelope envelope;
     {
         std::lock_guard lock(state_->mailbox->mutex);
-        if (state_->mailbox->ready.empty()) return result;
-        envelope = std::move(state_->mailbox->ready.front()); state_->mailbox->ready.pop_front();
-        state_->mailbox->pending.erase(envelope.task);
+        if (!state_->mailbox->ready.empty()) {
+            envelope = std::move(state_->mailbox->ready.front()); state_->mailbox->ready.pop_front();
+            state_->mailbox->pending.erase(envelope.task);
+        }
+    }
+    if (envelope.task == 0) {
+        // Cleanup is its own host task source, with a checkpoint after the job.
+        // It never runs inline in GC, a property lookup, or a native callback.
+        if (hasPendingFinalizationJobs()) {
+            result.task = NativeEventLoop_detail::takeId(nextId);
+            try {
+                std::vector<FinalizationJobFailure> failures;
+                if (drainFinalizationJobs(1, &failures) == 0) result.task = 0;
+                for (auto& failure : failures)
+                    result.failures.push_back({failure.microtaskCheckpoint ? ErrorPhase::AfterTask : ErrorPhase::Task,
+                                               std::move(failure.error)});
+            }
+            catch (...) { result.failures.push_back({ErrorPhase::Task, std::current_exception()}); }
+        }
+        return result;
     }
     result.task = envelope.task;
     try {
@@ -277,19 +294,20 @@ NativeEventLoop::RunResult NativeEventLoop::runOneTask() {
 }
 bool NativeEventLoop::hasReadyTasks() {
     requireOwnerThread(); state_->promoteTimers();
-    std::lock_guard lock(state_->mailbox->mutex); return !state_->mailbox->ready.empty();
+    const bool finalization = hasPendingFinalizationJobs();
+    std::lock_guard lock(state_->mailbox->mutex); return !state_->mailbox->ready.empty() || finalization;
 }
 bool NativeEventLoop::hasPendingTasks() const {
     requireOwnerThread();
-    if (hasPendingMicrotasks()) return true;
+    if (hasPendingMicrotasks() || hasPendingFinalizationJobs()) return true;
     if (!state_->timers.empty()) return true;
     std::lock_guard lock(state_->mailbox->mutex); return !state_->mailbox->ready.empty();
 }
 bool NativeEventLoop::waitForWork(std::chrono::milliseconds maximumWait) {
     requireOwnerThread();
     if (maximumWait.count() < 0) throw std::invalid_argument("Native wait duration must be nonnegative");
-    if (pumping || isDrainingMicrotasks()) return false;
-    if (hasPendingMicrotasks()) return true;
+    if (pumping || isDrainingMicrotasks() || isDrainingFinalizationJobs()) return false;
+    if (hasPendingMicrotasks() || hasPendingFinalizationJobs()) return true;
     // Snapshot before calling an injected clock. A wake between that read and
     // entering the wait must still trigger a fresh timer promotion.
     std::uint64_t observedWake;
@@ -298,6 +316,7 @@ bool NativeEventLoop::waitForWork(std::chrono::milliseconds maximumWait) {
         observedWake = state_->mailbox->wakeRevision;
     }
     state_->promoteTimers();
+    if (hasPendingMicrotasks() || hasPendingFinalizationJobs()) return true;
     auto duration = std::chrono::duration<double, std::milli>(maximumWait);
     if (!state_->timers.empty()) duration = std::min(duration,
         std::chrono::duration<double, std::milli>(state_->timers.begin()->first.first - *state_->lastTime));
@@ -312,5 +331,5 @@ bool NativeEventLoop::waitForWork(std::chrono::milliseconds maximumWait) {
     }
     state_->promoteTimers();
     std::lock_guard lock(state_->mailbox->mutex);
-    return !state_->mailbox->ready.empty() || hasPendingMicrotasks();
+    return !state_->mailbox->ready.empty() || hasPendingMicrotasks() || hasPendingFinalizationJobs();
 }

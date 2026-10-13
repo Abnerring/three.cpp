@@ -15,6 +15,13 @@ add_executable(THREECPPTests
     unit/src/core/ResourceParity.tests.cpp
     unit/src/core/BufferAttributeRuntime.tests.cpp
     unit/src/core/JSValue.tests.cpp
+    unit/src/core/JSCollections.tests.cpp
+    unit/src/core/JSString.tests.cpp
+    unit/src/core/JSNumber.tests.cpp
+    unit/src/core/JSRuntimeThreadGuards.tests.cpp
+    unit/src/core/JSModuleObject.tests.cpp
+    unit/src/core/ArrayShift.tests.cpp
+    unit/src/core/ArrayFilter.tests.cpp
     unit/src/core/OrderedMap.tests.cpp
     unit/src/core/JSPromise.tests.cpp
     unit/src/core/NativeEventLoop.tests.cpp
@@ -22,11 +29,13 @@ add_executable(THREECPPTests
     unit/src/helpers/Helpers.tests.cpp
     unit/src/loaders/Loaders.tests.cpp
     unit/src/renderers/webgl/WebGLInfo.tests.cpp
+    unit/src/renderers/webgl/WebGLShaderCache.tests.cpp
     unit/src/renderers/webgl/WebGLBufferRenderers.tests.cpp
     unit/src/renderers/webgl/WebGLAttributes.tests.cpp
     unit/src/renderers/webgl/WebGLRenderLists.tests.cpp
     unit/src/core/JSConstruct.tests.cpp
     unit/src/core/Uniforms.tests.cpp
+    unit/src/renderers/shaders/ShaderLibrary.tests.cpp
     unit/src/core/InterleavedBuffer.tests.cpp
     unit/src/core/InterleavedBufferAttribute.tests.cpp
     unit/src/core/JSHost.tests.cpp
@@ -34,6 +43,7 @@ add_executable(THREECPPTests
     unit/src/core/ArraySort.tests.cpp
     unit/src/core/ArrayMethods.tests.cpp
     unit/src/core/NativeObject.tests.cpp
+    unit/src/core/NativeInstancedAttributeProtocol.tests.cpp
     unit/src/core/TypedArray.tests.cpp
     unit/src/extras/core/Curve.tests.cpp
     unit/src/extras/core/CurvePath.tests.cpp unit/src/extras/core/Path.tests.cpp
@@ -49,6 +59,7 @@ add_executable(THREECPPTests
     unit/src/textures/Texture.tests.cpp
     unit/src/lights/Lights.tests.cpp
     unit/src/materials/Materials.tests.cpp
+    unit/src/materials/MaterialClipping.tests.cpp
     unit/src/objects/Skinning.tests.cpp
     unit/src/objects/InstancedMesh.tests.cpp
     unit/src/objects/LOD.tests.cpp
@@ -69,9 +80,110 @@ target_include_directories(THREECPPTests PRIVATE
 )
 target_link_libraries(THREECPPTests PRIVATE threecpp::threecpp)
 add_test(NAME threecpp.unit COMMAND THREECPPTests)
+add_executable(ColorManagementTests unit/src/math/ColorManagement.tests.cpp)
+target_include_directories(ColorManagementTests PRIVATE "${CMAKE_CURRENT_SOURCE_DIR}/unit/utils")
+target_link_libraries(ColorManagementTests PRIVATE threecpp::threecpp)
+add_test(NAME threecpp.color-management-unit COMMAND ColorManagementTests)
+add_executable(ColorManagementNativeLifetimeTests unit/src/math/ColorManagementNativeLifetime.tests.cpp)
+target_include_directories(ColorManagementNativeLifetimeTests PRIVATE "${CMAKE_CURRENT_SOURCE_DIR}/unit/utils")
+target_link_libraries(ColorManagementNativeLifetimeTests PRIVATE threecpp::threecpp)
+# The initial no-realm assertion requires a fresh process.
+add_test(NAME threecpp.color-management-native-lifetime COMMAND ColorManagementNativeLifetimeTests)
+add_executable(LayersUniformsTests unit/three.source.unit.cpp
+    unit/src/core/Layers.tests.cpp unit/src/renderers/shaders/UniformsUtilsExports.tests.cpp)
+target_include_directories(LayersUniformsTests PRIVATE "${CMAKE_CURRENT_SOURCE_DIR}/unit/utils")
+target_link_libraries(LayersUniformsTests PRIVATE threecpp::threecpp)
+add_test(NAME threecpp.layers-uniforms-unit COMMAND LayersUniformsTests)
 add_executable(JSWeakValueTests unit/src/core/JSWeakValue.tests.cpp)
 target_link_libraries(JSWeakValueTests PRIVATE threecpp::threecpp)
 add_test(NAME threecpp.runtime-weak-values COMMAND JSWeakValueTests)
+add_executable(JSWeakLifetimeTests
+    unit/three.source.unit.cpp
+    unit/src/core/JSWeakLifetime.tests.cpp
+    unit/src/core/NativeFinalizationTask.tests.cpp)
+target_include_directories(JSWeakLifetimeTests PRIVATE "${CMAKE_CURRENT_SOURCE_DIR}/unit/utils")
+target_link_libraries(JSWeakLifetimeTests PRIVATE threecpp::threecpp)
+# Keep last-heap checks in a process independent of the main unit fixtures.
+add_test(NAME threecpp.runtime-weak-lifetime COMMAND JSWeakLifetimeTests)
+add_executable(EventDispatcherRuntimeTests
+    unit/three.source.unit.cpp
+    unit/src/core/EventDispatcher.tests.cpp
+    unit/src/core/EventDispatcherRuntime.tests.cpp)
+target_include_directories(EventDispatcherRuntimeTests PRIVATE "${CMAKE_CURRENT_SOURCE_DIR}/unit/utils")
+target_link_libraries(EventDispatcherRuntimeTests PRIVATE threecpp::threecpp)
+# Keep last-heap module-root checks independent of the main unit fixtures.
+add_test(NAME threecpp.event-dispatcher-runtime COMMAND EventDispatcherRuntimeTests)
+add_executable(NativeArrayLifetimeTests unit/src/core/NativeArrayLifetime.tests.cpp)
+target_link_libraries(NativeArrayLifetimeTests PRIVATE threecpp::threecpp)
+# Keep heap teardown independent of other modules' owning TLS roots.
+add_test(NAME threecpp.native-array-lifetime COMMAND NativeArrayLifetimeTests)
+add_executable(NativeObjectLifetimeTests unit/src/core/NativeObjectLifetime.tests.cpp)
+target_link_libraries(NativeObjectLifetimeTests PRIVATE threecpp::threecpp)
+add_test(NAME threecpp.native-object-lifetime COMMAND NativeObjectLifetimeTests)
+add_executable(WebGLBindingStatesTests
+    unit/three.source.unit.cpp
+    unit/src/renderers/webgl/WebGLBindingStates.tests.cpp)
+target_include_directories(WebGLBindingStatesTests PRIVATE "${CMAKE_CURRENT_SOURCE_DIR}/unit/utils")
+target_link_libraries(WebGLBindingStatesTests PRIVATE threecpp::threecpp)
+add_test(NAME threecpp.webgl-binding-states-unit COMMAND WebGLBindingStatesTests)
+add_executable(WebGLUniformsTests
+    unit/three.source.unit.cpp
+    unit/src/renderers/webgl/WebGLUniforms.tests.cpp)
+target_include_directories(WebGLUniformsTests PRIVATE "${CMAKE_CURRENT_SOURCE_DIR}/unit/utils")
+target_link_libraries(WebGLUniformsTests PRIVATE threecpp::threecpp)
+add_test(NAME threecpp.webgl-uniforms-unit COMMAND WebGLUniformsTests)
+add_executable(WebGLClippingTests
+    unit/three.source.unit.cpp
+    unit/src/renderers/webgl/WebGLClipping.tests.cpp)
+target_include_directories(WebGLClippingTests PRIVATE "${CMAKE_CURRENT_SOURCE_DIR}/unit/utils")
+target_link_libraries(WebGLClippingTests PRIVATE threecpp::threecpp)
+add_test(NAME threecpp.webgl-clipping-unit COMMAND WebGLClippingTests)
+add_executable(NativeClippingMathTests
+    unit/three.source.unit.cpp
+    unit/src/renderers/webgl/NativeClippingMath.tests.cpp)
+target_include_directories(NativeClippingMathTests PRIVATE "${CMAKE_CURRENT_SOURCE_DIR}/unit/utils")
+target_link_libraries(NativeClippingMathTests PRIVATE threecpp::threecpp)
+add_test(NAME threecpp.native-clipping-math-unit COMMAND NativeClippingMathTests)
+add_executable(NativeMaterialsMathTests
+    unit/three.source.unit.cpp
+    unit/src/renderers/webgl/NativeMaterialsMath.tests.cpp)
+target_include_directories(NativeMaterialsMathTests PRIVATE "${CMAKE_CURRENT_SOURCE_DIR}/unit/utils")
+target_link_libraries(NativeMaterialsMathTests PRIVATE threecpp::threecpp)
+add_test(NAME threecpp.native-materials-math-unit COMMAND NativeMaterialsMathTests)
+add_executable(WebGLMaterialsTests
+    unit/three.source.unit.cpp
+    unit/src/renderers/webgl/WebGLMaterials.tests.cpp)
+target_include_directories(WebGLMaterialsTests PRIVATE "${CMAKE_CURRENT_SOURCE_DIR}/unit/utils")
+target_link_libraries(WebGLMaterialsTests PRIVATE threecpp::threecpp)
+add_test(NAME threecpp.webgl-materials-unit COMMAND WebGLMaterialsTests)
+add_executable(WebGLCapabilitiesTests
+    unit/three.source.unit.cpp
+    unit/src/renderers/webgl/WebGLCapabilities.tests.cpp
+    unit/src/renderers/webgl/WebGLCapabilitiesRetention.tests.cpp)
+target_include_directories(WebGLCapabilitiesTests PRIVATE "${CMAKE_CURRENT_SOURCE_DIR}/unit/utils")
+target_link_libraries(WebGLCapabilitiesTests PRIVATE threecpp::threecpp)
+add_test(NAME threecpp.webgl-capabilities-unit COMMAND WebGLCapabilitiesTests)
+add_executable(WebGLAnimationTests
+    unit/three.source.unit.cpp
+    unit/src/renderers/webgl/WebGLAnimation.tests.cpp)
+target_include_directories(WebGLAnimationTests PRIVATE "${CMAKE_CURRENT_SOURCE_DIR}/unit/utils")
+target_link_libraries(WebGLAnimationTests PRIVATE threecpp::threecpp)
+add_test(NAME threecpp.webgl-animation-unit COMMAND WebGLAnimationTests)
+add_executable(WebGLGeometryObjectsTests
+    unit/three.source.unit.cpp
+    unit/src/renderers/webgl/WebGLGeometryObjects.tests.cpp
+    unit/src/renderers/webgl/NativeRenderingObjectAudit.tests.cpp)
+target_include_directories(WebGLGeometryObjectsTests PRIVATE "${CMAKE_CURRENT_SOURCE_DIR}/unit/utils")
+target_link_libraries(WebGLGeometryObjectsTests PRIVATE threecpp::threecpp)
+add_test(NAME threecpp.webgl-geometry-objects-unit COMMAND WebGLGeometryObjectsTests)
+add_executable(WebGLLightsTests
+    unit/three.source.unit.cpp
+    unit/src/core/NativeMathProtocols.tests.cpp
+    unit/src/renderers/webgl/WebGLLights.tests.cpp
+    unit/src/renderers/webgl/WebGLRenderStates.tests.cpp)
+target_include_directories(WebGLLightsTests PRIVATE "${CMAKE_CURRENT_SOURCE_DIR}/unit/utils")
+target_link_libraries(WebGLLightsTests PRIVATE threecpp::threecpp)
+add_test(NAME threecpp.webgl-lights-states-unit COMMAND WebGLLightsTests)
 add_executable(JSWeakMapTests
     unit/three.source.unit.cpp
     unit/src/core/JSWeakMap.tests.cpp
@@ -106,11 +218,39 @@ if(THREECPP_BUILD_ADDONS)
     target_link_libraries(ThreeJsVertexHelpersParityProbe PRIVATE threecpp::addons)
 endif()
 if(THREECPP_BUILD_VULKAN)
+    add_executable(VulkanShaderCompilerTests unit/three.source.unit.cpp
+        unit/src/renderers/vulkan/VulkanShaderCompiler.tests.cpp)
+    target_include_directories(VulkanShaderCompilerTests PRIVATE "${CMAKE_CURRENT_SOURCE_DIR}/unit/utils")
+    target_compile_definitions(VulkanShaderCompilerTests PRIVATE
+        THREECPP_GLSLANG_EXECUTABLE="${THREECPP_GLSLANG_VALIDATOR}")
+    target_link_libraries(VulkanShaderCompilerTests PRIVATE threecpp::vulkan)
+    add_test(NAME threecpp.vulkan-shader-compiler COMMAND VulkanShaderCompilerTests)
+    add_executable(LayersVulkanTests unit/src/core/LayersVulkan.tests.cpp)
+    target_link_libraries(LayersVulkanTests PRIVATE threecpp::vulkan)
+    add_test(NAME threecpp.vulkan-layers COMMAND LayersVulkanTests)
+    set_tests_properties(threecpp.vulkan-layers PROPERTIES LABELS "GPU;Vulkan")
     add_executable(VulkanBufferCommandsTests
         unit/three.source.unit.cpp unit/src/renderers/vulkan/VulkanBufferCommands.tests.cpp)
     target_include_directories(VulkanBufferCommandsTests PRIVATE "${CMAKE_CURRENT_SOURCE_DIR}/unit/utils")
     target_link_libraries(VulkanBufferCommandsTests PRIVATE threecpp::vulkan)
     add_test(NAME threecpp.vulkan-buffer-commands-unit COMMAND VulkanBufferCommandsTests)
+    add_executable(VulkanBindingCommandsTests unit/src/renderers/VulkanBindingCommands.tests.cpp)
+    target_link_libraries(VulkanBindingCommandsTests PRIVATE threecpp::vulkan)
+    add_test(NAME threecpp.vulkan-binding-commands-unit COMMAND VulkanBindingCommandsTests)
+    add_executable(VulkanBindingSmoke unit/src/renderers/VulkanBindingSmoke.cpp)
+    target_link_libraries(VulkanBindingSmoke PRIVATE threecpp::vulkan)
+    add_test(NAME threecpp.vulkan-binding-smoke COMMAND VulkanBindingSmoke)
+    set_tests_properties(threecpp.vulkan-binding-smoke PROPERTIES LABELS "GPU;Vulkan")
+    add_executable(VulkanClippingTests unit/src/renderers/VulkanClipping.tests.cpp)
+    target_link_libraries(VulkanClippingTests PRIVATE threecpp::vulkan)
+    add_test(NAME threecpp.vulkan-clipping COMMAND VulkanClippingTests)
+    add_executable(VulkanClippingLifetimeTests unit/src/renderers/VulkanClippingLifetime.tests.cpp)
+    target_link_libraries(VulkanClippingLifetimeTests PRIVATE threecpp::vulkan)
+    add_test(NAME threecpp.vulkan-clipping-lifetime COMMAND VulkanClippingLifetimeTests)
+    add_executable(VulkanClippingParityProbe unit/utils/parity/VulkanClippingParityProbe.cpp)
+    target_link_libraries(VulkanClippingParityProbe PRIVATE threecpp::vulkan)
+    set_tests_properties(threecpp.vulkan-clipping threecpp.vulkan-clipping-lifetime
+        PROPERTIES LABELS "GPU;Vulkan")
     add_executable(VulkanBufferCommandsParityProbe unit/utils/parity/VulkanBufferCommandsParityProbe.cpp)
     target_link_libraries(VulkanBufferCommandsParityProbe PRIVATE threecpp::vulkan)
     add_executable(VulkanRendererTests unit/src/renderers/VulkanRenderer.tests.cpp)
@@ -127,6 +267,8 @@ target_link_libraries(ThreeJsWebGLBufferRenderersParityProbe PRIVATE threecpp::t
 add_executable(ThreeJsNativeEventLoopParityProbe unit/utils/parity/NativeEventLoopParityProbe.cpp)
 target_link_libraries(ThreeJsNativeEventLoopParityProbe PRIVATE threecpp::threecpp)
 add_executable(ThreeJsWeakMapParityProbe unit/utils/parity/JSWeakMapParityProbe.cpp)
+add_executable(ThreeJsWeakLifetimeParityProbe unit/utils/parity/JSWeakLifetimeParityProbe.cpp)
+target_link_libraries(ThreeJsWeakLifetimeParityProbe PRIVATE threecpp::threecpp)
 target_link_libraries(ThreeJsWeakMapParityProbe PRIVATE threecpp::threecpp)
 add_executable(ThreeJsWebGLPropertiesParityProbe unit/utils/parity/WebGLPropertiesParityProbe.cpp)
 target_link_libraries(ThreeJsWebGLPropertiesParityProbe PRIVATE threecpp::threecpp)
@@ -136,10 +278,76 @@ add_executable(ThreeJsNativeBufferAttributeUploadParityProbe unit/utils/parity/N
 target_link_libraries(ThreeJsNativeBufferAttributeUploadParityProbe PRIVATE threecpp::threecpp)
 add_executable(ThreeJsWebGLRenderListsParityProbe unit/utils/parity/WebGLRenderListsParityProbe.cpp)
 target_link_libraries(ThreeJsWebGLRenderListsParityProbe PRIVATE threecpp::threecpp)
+add_executable(ThreeJsWebGLGeometryObjectsParityProbe unit/utils/parity/WebGLGeometryObjectsParityProbe.cpp)
+target_link_libraries(ThreeJsWebGLGeometryObjectsParityProbe PRIVATE threecpp::threecpp)
+add_executable(ThreeJsWebGLLightsParityProbe unit/utils/parity/WebGLLightsParityProbe.cpp)
+target_link_libraries(ThreeJsWebGLLightsParityProbe PRIVATE threecpp::threecpp)
+add_executable(ThreeJsNativeMathProtocolsParityProbe unit/utils/parity/NativeMathProtocolsParityProbe.cpp)
+target_link_libraries(ThreeJsNativeMathProtocolsParityProbe PRIVATE threecpp::threecpp)
+add_executable(ThreeJsWebGLBindingStatesParityProbe unit/utils/parity/WebGLBindingStatesParityProbe.cpp)
+target_link_libraries(ThreeJsWebGLBindingStatesParityProbe PRIVATE threecpp::threecpp)
+add_executable(ThreeJsWebGLUniformsParityProbe unit/utils/parity/WebGLUniformsParityProbe.cpp)
+target_link_libraries(ThreeJsWebGLUniformsParityProbe PRIVATE threecpp::threecpp)
+add_executable(ThreeJsWebGLClippingParityProbe unit/utils/parity/WebGLClippingParityProbe.cpp)
+target_link_libraries(ThreeJsWebGLClippingParityProbe PRIVATE threecpp::threecpp)
+add_executable(ThreeJsNativeClippingMathParityProbe unit/utils/parity/NativeClippingMathParityProbe.cpp)
+target_link_libraries(ThreeJsNativeClippingMathParityProbe PRIVATE threecpp::threecpp)
+add_executable(ThreeJsNativeMaterialsMathParityProbe unit/utils/parity/NativeMaterialsMathParityProbe.cpp)
+target_include_directories(ThreeJsNativeMaterialsMathParityProbe PRIVATE "${CMAKE_CURRENT_SOURCE_DIR}/unit/utils")
+target_link_libraries(ThreeJsNativeMaterialsMathParityProbe PRIVATE threecpp::threecpp)
+add_executable(ThreeJsWebGLMaterialsParityProbe unit/utils/parity/WebGLMaterialsParityProbe.cpp)
+target_include_directories(ThreeJsWebGLMaterialsParityProbe PRIVATE "${CMAKE_CURRENT_SOURCE_DIR}/unit/utils")
+target_link_libraries(ThreeJsWebGLMaterialsParityProbe PRIVATE threecpp::threecpp)
+add_executable(ThreeJsShaderLibraryParityProbe unit/utils/parity/ShaderLibraryParityProbe.cpp)
+target_link_libraries(ThreeJsShaderLibraryParityProbe PRIVATE threecpp::threecpp)
+add_executable(ThreeJsWebGLShaderParityProbe unit/utils/parity/WebGLShaderParityProbe.cpp)
+target_link_libraries(ThreeJsWebGLShaderParityProbe PRIVATE threecpp::threecpp)
+add_executable(WebGLShaderCacheParityProbe unit/utils/parity/WebGLShaderCacheParityProbe.cpp)
+target_include_directories(WebGLShaderCacheParityProbe PRIVATE "${CMAKE_CURRENT_SOURCE_DIR}/unit/utils")
+target_link_libraries(WebGLShaderCacheParityProbe PRIVATE threecpp::threecpp)
+add_executable(WebGLShaderCacheGCProbe unit/utils/parity/WebGLShaderCacheGCProbe.cpp)
+target_include_directories(WebGLShaderCacheGCProbe PRIVATE "${CMAKE_CURRENT_SOURCE_DIR}/unit/utils")
+target_link_libraries(WebGLShaderCacheGCProbe PRIVATE threecpp::threecpp)
+add_executable(ThreeJsWebGLUtilsParityProbe unit/utils/parity/WebGLUtilsParityProbe.cpp)
+target_link_libraries(ThreeJsWebGLUtilsParityProbe PRIVATE threecpp::threecpp)
+add_executable(ThreeJsColorManagementParityProbe unit/utils/parity/ColorManagementParityProbe.cpp)
+target_link_libraries(ThreeJsColorManagementParityProbe PRIVATE threecpp::threecpp)
+add_executable(NativeObjectAssignParityProbe unit/utils/parity/ObjectAssignParityProbe.cpp)
+target_link_libraries(NativeObjectAssignParityProbe PRIVATE threecpp::threecpp)
+add_executable(LayersUniformsParityProbe unit/utils/parity/LayersUniformsParityProbe.cpp)
+target_link_libraries(LayersUniformsParityProbe PRIVATE threecpp::threecpp)
+foreach(number_probe IN ITEMS NumberParityProbe NumberProtocolProbe NumberGCProbe)
+    add_executable(${number_probe} "unit/utils/parity/${number_probe}.cpp")
+    target_link_libraries(${number_probe} PRIVATE threecpp::threecpp)
+endforeach()
+add_executable(ThreeJsWebGLCapabilitiesParityProbe unit/utils/parity/WebGLCapabilitiesParityProbe.cpp)
+target_link_libraries(ThreeJsWebGLCapabilitiesParityProbe PRIVATE threecpp::threecpp)
+add_executable(ThreeJsWebGLCapabilitiesRetentionParityProbe unit/utils/parity/WebGLCapabilitiesRetentionParityProbe.cpp)
+target_link_libraries(ThreeJsWebGLCapabilitiesRetentionParityProbe PRIVATE threecpp::threecpp)
+add_executable(ThreeJsWebGLAnimationParityProbe unit/utils/parity/WebGLAnimationParityProbe.cpp)
+target_link_libraries(ThreeJsWebGLAnimationParityProbe PRIVATE threecpp::threecpp)
+add_executable(ThreeJsWebGLAnimationRetentionParityProbe unit/utils/parity/WebGLAnimationRetentionParityProbe.cpp)
+target_link_libraries(ThreeJsWebGLAnimationRetentionParityProbe PRIVATE threecpp::threecpp)
+add_executable(ThreeJsCollectionsParityProbe unit/utils/parity/JSCollectionsParityProbe.cpp)
+target_link_libraries(ThreeJsCollectionsParityProbe PRIVATE threecpp::threecpp)
+add_executable(ThreeJsSymbolParityProbe unit/utils/parity/JSSymbolParityProbe.cpp)
+target_link_libraries(ThreeJsSymbolParityProbe PRIVATE threecpp::threecpp)
+add_executable(ThreeJsCollectionsGCProbe unit/utils/parity/JSCollectionsGCProbe.cpp)
+target_link_libraries(ThreeJsCollectionsGCProbe PRIVATE threecpp::threecpp)
+add_executable(ThreeJsNativeBindingBridgeParityProbe unit/utils/parity/NativeBindingBridgeParityProbe.cpp)
+target_link_libraries(ThreeJsNativeBindingBridgeParityProbe PRIVATE threecpp::threecpp)
+add_executable(ThreeJsEventDispatcherParityProbe unit/utils/parity/EventDispatcherParityProbe.cpp)
+target_link_libraries(ThreeJsEventDispatcherParityProbe PRIVATE threecpp::threecpp)
 add_executable(ThreeJsGLBufferAttributeParityProbe unit/utils/parity/GLBufferAttributeParityProbe.cpp)
 target_link_libraries(ThreeJsGLBufferAttributeParityProbe PRIVATE threecpp::threecpp)
 add_executable(ThreeJsArrayMethodsParityProbe unit/utils/parity/ArrayMethodsParityProbe.cpp)
 target_link_libraries(ThreeJsArrayMethodsParityProbe PRIVATE threecpp::threecpp)
+add_executable(ThreeJsArrayConcatParityProbe unit/utils/parity/ArrayConcatParityProbe.cpp)
+target_link_libraries(ThreeJsArrayConcatParityProbe PRIVATE threecpp::threecpp)
+add_executable(ThreeJsArrayShiftParityProbe unit/utils/parity/ArrayShiftParityProbe.cpp)
+target_link_libraries(ThreeJsArrayShiftParityProbe PRIVATE threecpp::threecpp)
+add_executable(ThreeJsArrayFilterParityProbe unit/utils/parity/ArrayFilterParityProbe.cpp)
+target_link_libraries(ThreeJsArrayFilterParityProbe PRIVATE threecpp::threecpp)
 target_link_libraries(ThreeJsPromiseParityProbe PRIVATE threecpp::threecpp)
 add_executable(ThreeJsCoreCameraParityProbe unit/utils/parity/CoreCameraParityProbe.cpp)
 target_link_libraries(ThreeJsCoreCameraParityProbe PRIVATE threecpp::threecpp)
@@ -192,6 +400,40 @@ find_program(THREECPP_NODE_EXECUTABLE NAMES node)
 add_executable(ThreeJsArraySortParityProbe unit/utils/parity/ArraySortParityProbe.cpp)
 target_link_libraries(ThreeJsArraySortParityProbe PRIVATE threecpp::threecpp)
 if(THREECPP_NODE_EXECUTABLE)
+    add_test(NAME threecpp.javascript-array-filter-parity
+        COMMAND "${THREECPP_NODE_EXECUTABLE}" --expose-gc "${CMAKE_CURRENT_SOURCE_DIR}/unit/utils/parity/compare-array-filter.mjs"
+        "$<TARGET_FILE:ThreeJsArrayFilterParityProbe>")
+    add_test(NAME threecpp.native-object-assign-parity
+        COMMAND "${THREECPP_NODE_EXECUTABLE}" "${CMAKE_CURRENT_SOURCE_DIR}/unit/utils/parity/compare-object-assign.mjs"
+        "$<TARGET_FILE:NativeObjectAssignParityProbe>")
+    add_test(NAME threecpp.javascript-number-fixed-parity
+        COMMAND "${THREECPP_NODE_EXECUTABLE}" "${CMAKE_CURRENT_SOURCE_DIR}/unit/utils/parity/compare-native-number-fixed.mjs"
+        "$<TARGET_FILE:NumberParityProbe>")
+    add_test(NAME threecpp.javascript-number-protocol-parity
+        COMMAND "${THREECPP_NODE_EXECUTABLE}" "${CMAKE_CURRENT_SOURCE_DIR}/unit/utils/parity/compare-native-number-protocol.mjs"
+        "$<TARGET_FILE:NumberProtocolProbe>")
+    add_test(NAME threecpp.javascript-number-gc-parity
+        COMMAND "${THREECPP_NODE_EXECUTABLE}" --expose-gc "${CMAKE_CURRENT_SOURCE_DIR}/unit/utils/parity/compare-native-number-gc.mjs"
+        "$<TARGET_FILE:NumberGCProbe>")
+    add_test(NAME threecpp.javascript-collections-parity
+        COMMAND "${THREECPP_NODE_EXECUTABLE}" "${CMAKE_CURRENT_SOURCE_DIR}/unit/utils/parity/compare-native-collections.mjs"
+        "$<TARGET_FILE:ThreeJsCollectionsParityProbe>")
+    add_test(NAME threecpp.javascript-symbols-parity
+        COMMAND "${THREECPP_NODE_EXECUTABLE}" "${CMAKE_CURRENT_SOURCE_DIR}/unit/utils/parity/compare-native-symbols.mjs"
+        "$<TARGET_FILE:ThreeJsSymbolParityProbe>")
+    add_test(NAME threecpp.javascript-collections-gc-parity
+        COMMAND "${THREECPP_NODE_EXECUTABLE}" --expose-gc "${CMAKE_CURRENT_SOURCE_DIR}/unit/utils/parity/compare-native-collections-gc.mjs"
+        "$<TARGET_FILE:ThreeJsCollectionsGCProbe>"
+        "${CMAKE_CURRENT_BINARY_DIR}/collections-gc-$<CONFIG>")
+    add_test(NAME threecpp.javascript-array-shift-parity
+        COMMAND "${THREECPP_NODE_EXECUTABLE}" --expose-gc "${CMAKE_CURRENT_SOURCE_DIR}/unit/utils/parity/compare-array-shift.mjs"
+        "$<TARGET_FILE:ThreeJsArrayShiftParityProbe>")
+    add_test(NAME threecpp.javascript-array-concat-parity
+        COMMAND "${THREECPP_NODE_EXECUTABLE}" --expose-gc "${CMAKE_CURRENT_SOURCE_DIR}/unit/utils/parity/compare-array-concat.mjs"
+        "$<TARGET_FILE:ThreeJsArrayConcatParityProbe>")
+    add_test(NAME threecpp.native-weak-lifetime-parity
+        COMMAND "${THREECPP_NODE_EXECUTABLE}" --expose-gc "${CMAKE_CURRENT_SOURCE_DIR}/unit/utils/parity/compare-weak-lifetime.mjs"
+            "$<TARGET_FILE:ThreeJsWeakLifetimeParityProbe>")
     add_test(NAME threecpp.javascript-array-methods-parity
         COMMAND "${THREECPP_NODE_EXECUTABLE}" "${CMAKE_CURRENT_SOURCE_DIR}/unit/utils/parity/compare-array-methods.mjs"
         "$<TARGET_FILE:ThreeJsArrayMethodsParityProbe>")
@@ -202,7 +444,92 @@ if(THREECPP_NODE_EXECUTABLE)
         COMMAND "${THREECPP_NODE_EXECUTABLE}" "${CMAKE_CURRENT_SOURCE_DIR}/unit/utils/parity/compare-native-event-loop.mjs"
         "$<TARGET_FILE:ThreeJsNativeEventLoopParityProbe>")
     if(THREEJS_SOURCE_DIR)
+        add_test(NAME threecpp.threejs-webgl-utils-parity
+            COMMAND "${THREECPP_NODE_EXECUTABLE}" "${CMAKE_CURRENT_SOURCE_DIR}/unit/utils/parity/compare-webgl-utils.mjs"
+            "${THREEJS_SOURCE_DIR}" "$<TARGET_FILE:ThreeJsWebGLUtilsParityProbe>")
+        add_test(NAME threecpp.threejs-color-management-parity
+            COMMAND "${THREECPP_NODE_EXECUTABLE}" "${CMAKE_CURRENT_SOURCE_DIR}/unit/utils/parity/compare-color-management.mjs"
+            "${THREEJS_SOURCE_DIR}" "$<TARGET_FILE:ThreeJsColorManagementParityProbe>")
+        add_test(NAME threecpp.threejs-layers-uniforms-parity
+            COMMAND "${THREECPP_NODE_EXECUTABLE}" "${CMAKE_CURRENT_SOURCE_DIR}/unit/utils/parity/compare-layers-uniforms.mjs"
+            "${THREEJS_SOURCE_DIR}" "$<TARGET_FILE:LayersUniformsParityProbe>")
+        add_test(NAME threecpp.threejs-webgl-shader-cache-parity
+            COMMAND "${THREECPP_NODE_EXECUTABLE}" "${CMAKE_CURRENT_SOURCE_DIR}/unit/utils/parity/compare-webgl-shader-cache.mjs"
+            "${THREEJS_SOURCE_DIR}" "$<TARGET_FILE:WebGLShaderCacheParityProbe>")
+        add_test(NAME threecpp.threejs-webgl-shader-cache-gc-parity
+            COMMAND "${THREECPP_NODE_EXECUTABLE}" "${CMAKE_CURRENT_SOURCE_DIR}/unit/utils/parity/compare-webgl-shader-cache-gc.mjs"
+            "${THREEJS_SOURCE_DIR}" "$<TARGET_FILE:WebGLShaderCacheGCProbe>")
+        add_test(NAME threecpp.threejs-shader-library-parity
+            COMMAND "${THREECPP_NODE_EXECUTABLE}" "${CMAKE_CURRENT_SOURCE_DIR}/unit/utils/parity/compare-shader-library.mjs"
+            "${THREEJS_SOURCE_DIR}" "$<TARGET_FILE:ThreeJsShaderLibraryParityProbe>")
+        add_test(NAME threecpp.threejs-webgl-shader-parity
+            COMMAND "${THREECPP_NODE_EXECUTABLE}" "${CMAKE_CURRENT_SOURCE_DIR}/unit/utils/parity/compare-webgl-shader.mjs"
+            "${THREEJS_SOURCE_DIR}" "$<TARGET_FILE:ThreeJsWebGLShaderParityProbe>")
+        add_test(NAME threecpp.threejs-webgl-animation-parity
+            COMMAND "${THREECPP_NODE_EXECUTABLE}" "${CMAKE_CURRENT_SOURCE_DIR}/unit/utils/parity/compare-webgl-animation.mjs"
+            "${THREEJS_SOURCE_DIR}" "$<TARGET_FILE:ThreeJsWebGLAnimationParityProbe>")
+        add_test(NAME threecpp.threejs-webgl-animation-retention-parity
+            COMMAND "${THREECPP_NODE_EXECUTABLE}" --expose-gc "${CMAKE_CURRENT_SOURCE_DIR}/unit/utils/parity/compare-webgl-animation-retention.mjs"
+            "${THREEJS_SOURCE_DIR}" "$<TARGET_FILE:ThreeJsWebGLAnimationRetentionParityProbe>")
+        add_test(NAME threecpp.threejs-webgl-capabilities-parity
+            COMMAND "${THREECPP_NODE_EXECUTABLE}" "${CMAKE_CURRENT_SOURCE_DIR}/unit/utils/parity/compare-webgl-capabilities.mjs"
+            "${THREEJS_SOURCE_DIR}" "$<TARGET_FILE:ThreeJsWebGLCapabilitiesParityProbe>")
+        add_test(NAME threecpp.threejs-webgl-capabilities-retention-parity
+            COMMAND "${THREECPP_NODE_EXECUTABLE}" --expose-gc "${CMAKE_CURRENT_SOURCE_DIR}/unit/utils/parity/compare-webgl-capabilities-retention.mjs"
+            "${THREEJS_SOURCE_DIR}" "$<TARGET_FILE:ThreeJsWebGLCapabilitiesRetentionParityProbe>")
+        add_test(NAME threecpp.threejs-webgl-materials-parity
+            COMMAND "${THREECPP_NODE_EXECUTABLE}" --expose-gc "${CMAKE_CURRENT_SOURCE_DIR}/unit/utils/parity/compare-webgl-materials.mjs"
+            "${THREEJS_SOURCE_DIR}" "$<TARGET_FILE:ThreeJsWebGLMaterialsParityProbe>")
+        # The complete Debug corpus took 1600 seconds in a matching private build.
+        set_tests_properties(threecpp.threejs-webgl-materials-parity PROPERTIES TIMEOUT 3600)
+        add_test(NAME threecpp.threejs-native-materials-math-parity
+            COMMAND "${THREECPP_NODE_EXECUTABLE}" "${CMAKE_CURRENT_SOURCE_DIR}/unit/utils/parity/compare-native-materials-math.mjs"
+            "${THREEJS_SOURCE_DIR}" "$<TARGET_FILE:ThreeJsNativeMaterialsMathParityProbe>")
+        add_test(NAME threecpp.threejs-webgl-clipping-parity
+            COMMAND "${THREECPP_NODE_EXECUTABLE}" --expose-gc "${CMAKE_CURRENT_SOURCE_DIR}/unit/utils/parity/compare-webgl-clipping.mjs"
+            "${THREEJS_SOURCE_DIR}" "$<TARGET_FILE:ThreeJsWebGLClippingParityProbe>")
+        add_test(NAME threecpp.threejs-native-clipping-math-parity
+            COMMAND "${THREECPP_NODE_EXECUTABLE}" --expose-gc "${CMAKE_CURRENT_SOURCE_DIR}/unit/utils/parity/compare-native-clipping-math.mjs"
+            "${THREEJS_SOURCE_DIR}" "$<TARGET_FILE:ThreeJsNativeClippingMathParityProbe>")
+        add_test(NAME threecpp.threejs-webgl-uniforms-parity
+            COMMAND "${THREECPP_NODE_EXECUTABLE}" --expose-gc "${CMAKE_CURRENT_SOURCE_DIR}/unit/utils/parity/compare-webgl-uniforms.mjs"
+            "${THREEJS_SOURCE_DIR}" "$<TARGET_FILE:ThreeJsWebGLUniformsParityProbe>")
+        add_test(NAME threecpp.threejs-webgl-binding-states-parity
+            COMMAND "${THREECPP_NODE_EXECUTABLE}" --expose-gc "${CMAKE_CURRENT_SOURCE_DIR}/unit/utils/parity/compare-webgl-binding-states.mjs"
+            "${THREEJS_SOURCE_DIR}" "$<TARGET_FILE:ThreeJsWebGLBindingStatesParityProbe>")
+        add_test(NAME threecpp.threejs-native-binding-bridge-parity
+            COMMAND "${THREECPP_NODE_EXECUTABLE}" --expose-gc "${CMAKE_CURRENT_SOURCE_DIR}/unit/utils/parity/compare-native-binding-bridge.mjs"
+            "${THREEJS_SOURCE_DIR}" "$<TARGET_FILE:ThreeJsNativeBindingBridgeParityProbe>")
+        add_test(NAME threecpp.threejs-event-dispatcher-parity
+            COMMAND "${THREECPP_NODE_EXECUTABLE}" "${CMAKE_CURRENT_SOURCE_DIR}/unit/utils/parity/compare-event-dispatcher.mjs"
+            "${THREEJS_SOURCE_DIR}" "$<TARGET_FILE:ThreeJsEventDispatcherParityProbe>")
+        add_test(NAME threecpp.threejs-webgl-geometry-objects-parity
+            COMMAND "${THREECPP_NODE_EXECUTABLE}" --expose-gc "${CMAKE_CURRENT_SOURCE_DIR}/unit/utils/parity/compare-webgl-geometry-objects.mjs"
+            "${THREEJS_SOURCE_DIR}" "$<TARGET_FILE:ThreeJsWebGLGeometryObjectsParityProbe>")
+        add_test(NAME threecpp.threejs-webgl-lights-states-parity
+            COMMAND "${THREECPP_NODE_EXECUTABLE}" "${CMAKE_CURRENT_SOURCE_DIR}/unit/utils/parity/compare-webgl-lights.mjs"
+            "${THREEJS_SOURCE_DIR}" "$<TARGET_FILE:ThreeJsWebGLLightsParityProbe>")
+        add_test(NAME threecpp.threejs-native-math-protocols-parity
+            COMMAND "${THREECPP_NODE_EXECUTABLE}" "${CMAKE_CURRENT_SOURCE_DIR}/unit/utils/parity/compare-native-math-protocols.mjs"
+            "${THREEJS_SOURCE_DIR}" "$<TARGET_FILE:ThreeJsNativeMathProtocolsParityProbe>")
         if(THREECPP_BUILD_VULKAN)
+            add_test(NAME threecpp.threejs-vulkan-clipping-parity
+                COMMAND "${THREECPP_NODE_EXECUTABLE}"
+                "${CMAKE_CURRENT_SOURCE_DIR}/unit/utils/parity/compare-vulkan-clipping.mjs"
+                "$<TARGET_FILE:VulkanClippingParityProbe>" "${THREEJS_SOURCE_DIR}")
+            set_tests_properties(threecpp.threejs-vulkan-clipping-parity PROPERTIES LABELS "GPU;Vulkan")
+            add_test(NAME threecpp.threejs-vulkan-clipping-camera-identity-parity
+                COMMAND "${THREECPP_NODE_EXECUTABLE}"
+                "${CMAKE_CURRENT_SOURCE_DIR}/unit/utils/parity/compare-vulkan-clipping-camera-identity.mjs"
+                "$<TARGET_FILE:VulkanClippingLifetimeTests>" "${THREEJS_SOURCE_DIR}")
+            set_tests_properties(threecpp.threejs-vulkan-clipping-camera-identity-parity
+                PROPERTIES LABELS "GPU;Vulkan")
+            add_test(NAME threecpp.threejs-vulkan-binding-delete-trace
+                COMMAND "${THREECPP_NODE_EXECUTABLE}" "${CMAKE_CURRENT_SOURCE_DIR}/unit/utils/parity/trace-vulkan-binding-delete.mjs"
+                "${THREEJS_SOURCE_DIR}")
+            add_test(NAME threecpp.threejs-vulkan-instanced-index-bounds-trace
+                COMMAND "${THREECPP_NODE_EXECUTABLE}" "${CMAKE_CURRENT_SOURCE_DIR}/unit/utils/parity/trace-vulkan-instanced-index-bounds.mjs"
+                "${THREEJS_SOURCE_DIR}")
             add_test(NAME threecpp.vulkan-buffer-commands-parity
                 COMMAND "${THREECPP_NODE_EXECUTABLE}" "${CMAKE_CURRENT_SOURCE_DIR}/unit/utils/parity/compare-vulkan-buffer-commands.mjs"
                 "${THREEJS_SOURCE_DIR}" "$<TARGET_FILE:VulkanBufferCommandsParityProbe>")
@@ -269,6 +596,9 @@ add_executable(ThreeJsLightsParityProbe unit/utils/parity/LightsParityProbe.cpp)
 target_link_libraries(ThreeJsLightsParityProbe PRIVATE threecpp::threecpp)
 add_executable(ThreeJsMaterialParityProbe unit/utils/parity/MaterialParityProbe.cpp)
 target_link_libraries(ThreeJsMaterialParityProbe PRIVATE threecpp::threecpp)
+add_executable(ThreeJsMaterialClippingParityProbe unit/utils/parity/MaterialClippingParityProbe.cpp)
+target_include_directories(ThreeJsMaterialClippingParityProbe PRIVATE "${CMAKE_CURRENT_SOURCE_DIR}/unit/utils")
+target_link_libraries(ThreeJsMaterialClippingParityProbe PRIVATE threecpp::threecpp)
 add_executable(ThreeJsSkinningParityProbe unit/utils/parity/SkinningParityProbe.cpp)
 target_link_libraries(ThreeJsSkinningParityProbe PRIVATE threecpp::threecpp)
 add_executable(ThreeJsUniformsParityProbe unit/utils/parity/UniformsParityProbe.cpp)
@@ -285,6 +615,9 @@ if(THREECPP_NODE_EXECUTABLE)
         "$<TARGET_FILE:ThreeJsConstructParityProbe>")
 endif()
 if(THREEJS_SOURCE_DIR AND THREECPP_NODE_EXECUTABLE)
+    add_test(NAME threecpp.threejs-material-clipping-parity
+        COMMAND "${THREECPP_NODE_EXECUTABLE}" "${CMAKE_CURRENT_SOURCE_DIR}/unit/utils/parity/compare-material-clipping.mjs"
+        "${THREEJS_SOURCE_DIR}" "$<TARGET_FILE:ThreeJsMaterialClippingParityProbe>")
     add_test(NAME threecpp.threejs-core-camera-parity
         COMMAND "${THREECPP_NODE_EXECUTABLE}" "${CMAKE_CURRENT_SOURCE_DIR}/unit/utils/parity/compare-core-camera.mjs"
         "${THREEJS_SOURCE_DIR}" "$<TARGET_FILE:ThreeJsCoreCameraParityProbe>")

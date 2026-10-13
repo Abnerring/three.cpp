@@ -538,21 +538,6 @@ std::vector<HIGH_PRECISION> &Color::toArray(std::vector<HIGH_PRECISION> &array, 
 }
 std::vector<HIGH_PRECISION> Color::toArray() const { return { this->r, this->g, this->b }; }
 int Color::toJSON() const { return getHex(); }
-Color &ColorManagement::convert(Color &color, const std::string &source, const std::string &target)
-{
-    if (!enabled || source.empty() || target.empty() || source == target) return color;
-    if (source == SRGBColorSpace && target == LinearSRGBColorSpace) return color.convertSRGBToLinear();
-    if (source == LinearSRGBColorSpace && target == SRGBColorSpace) return color.convertLinearToSRGB();
-    throw std::invalid_argument("Unsupported color space conversion");
-}
-Color &ColorManagement::colorSpaceToWorking(Color &color, const std::string &source)
-{
-    return convert(color, source, workingColorSpace);
-}
-Color &ColorManagement::workingToColorSpace(Color &color, const std::string &target)
-{
-    return convert(color, workingColorSpace, target);
-}
 Color &Color::setStyle(const std::string &style, const std::string &colorSpace)
 {
     std::smatch match;

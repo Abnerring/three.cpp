@@ -156,7 +156,10 @@ JSValue typedMethod(const JSValue& self,const Args& args,const Args& captures) {
     });
 }
 JSValue typedBase() {
-    static thread_local auto result=[] {
+    // Intrinsics survive GC within their heap; thread caches must not own it.
+    static thread_local JSWeakValue cached;
+    if(const auto value=cached.lock();value&&value->isObject())return *value;
+    auto result=[] {
         auto value=JSValue::object();
         for(const char* name:{"length","buffer","byteOffset","byteLength"}) {
             JSPropertyDescriptor d;d.getter=JSValue::function(metadata,{name},std::string("get ")+name,0);
@@ -166,22 +169,24 @@ JSValue typedBase() {
             install(value,name,typedMethod,arity,{name});
         auto array=JSValue::array();value.defineProperty("toString",data(array.get("toString")));
         value.defineProperty("join",data(array.get("join")));return value;
-    }();return result;
+    }();
+    result.retainForHeapLifetime();cached=JSWeakValue(result);return result;
 }
 JSValue typedConstructor(std::size_t kind) {
-    static thread_local std::array<JSValue,9> constructors;
-    if(constructors[kind].isUndefined()) {
-        auto constructor=JSValue::constructor(constructTyped,{double(kind)},names[kind],3);
-        auto prototype=constructor.get("prototype");prototype.setPrototype(typedBase());
-        const auto bytes=select(kind,[]<class T>{return double(T::BYTES_PER_ELEMENT);});
-        constructor.defineProperty("BYTES_PER_ELEMENT",data(bytes,false,false,false));
-        prototype.defineProperty("BYTES_PER_ELEMENT",data(bytes,false,false,false));
-        constructors[kind]=constructor;
-    }
-    return constructors[kind];
+    static thread_local std::array<JSWeakValue,9> constructors;
+    if(const auto value=constructors[kind].lock();value&&value->isObject())return *value;
+    auto constructor=JSValue::constructor(constructTyped,{double(kind)},names[kind],3);
+    auto prototype=constructor.get("prototype");prototype.setPrototype(typedBase());
+    const auto bytes=select(kind,[]<class T>{return double(T::BYTES_PER_ELEMENT);});
+    constructor.defineProperty("BYTES_PER_ELEMENT",data(bytes,false,false,false));
+    prototype.defineProperty("BYTES_PER_ELEMENT",data(bytes,false,false,false));
+    constructor.retainForHeapLifetime();constructors[kind]=JSWeakValue(constructor);
+    return constructor;
 }
 JSValue bufferConstructor() {
-    static thread_local auto constructor=[] {
+    static thread_local JSWeakValue cached;
+    if(const auto value=cached.lock();value&&value->isObject())return *value;
+    auto constructor=[] {
         auto result=JSValue::constructor([](const JSValue& receiver,const Args& args,const Args&)->JSValue {
             auto value=nativeArrayBuffer(ArrayBuffer(TypedArray_detail::toIndex(arg(args,0).toNumber())));
             value.setPrototype(receiver.getPrototype());return value;
@@ -197,7 +202,8 @@ JSValue bufferConstructor() {
             if(!constructor.isUndefined()&&!constructor.isObject()) throw JSTypeError("ArrayBuffer constructor must be an object");
             return nativeArrayBuffer(buffer.slice(begin,end));
         },2);return result;
-    }();return constructor;
+    }();
+    constructor.retainForHeapLifetime();cached=JSWeakValue(constructor);return constructor;
 }
 }
 JSValue nativeArrayBuffer(const ArrayBuffer& buffer) {
