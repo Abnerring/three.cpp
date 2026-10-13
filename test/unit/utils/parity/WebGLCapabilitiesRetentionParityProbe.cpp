@@ -1,0 +1,3 @@
+#include "WebGLCapabilitiesRetentionFixture.h"
+#include <iostream>
+int main(){using namespace CapabilitiesRetention;try{auto witness=JSValue::object();std::vector<Kept> held;for(unsigned method=0;method<4;++method)for(bool instance:{false,true})held.push_back(prepare(method,instance));witness.collectGarbage();JsonValue::Array result;for(unsigned i=0;i<held.size();++i)result.push_back(JsonValue::Object{{"method",methods[i/2]},{"mode",i%2?"new-target-prototype":"direct"},{"alive",alive(held[i])}});for(auto& value:held)value.keep={};witness.collectGarbage();for(unsigned i=0;i<held.size();++i)result[i]["afterDrop"]=alive(held[i]);std::cout<<JsonValue(std::move(result)).dump();return 0;}catch(const std::exception& e){std::cerr<<e.what()<<'\n';return 1;}}

@@ -211,7 +211,7 @@ JsonValue utilityMergeCase(int mode) {
     if(mode==5)source=nullptr;
     if(mode==6){source=list({nullptr,"ab",first});}
     if(mode==7){getter(source,"1",JSValue::function([](const JSValue&,const Args&,const Args& c)->JSValue{log(c[0],"second");throw JSTypeError("second");},{trace}));}
-    JSValue result;const auto error=attempt([&]{result=UniformsUtils::merge(source);});return O{{"audit","mergeUniforms"},{"mode",mode},{"error",error},{"result",deepData(result)},{"trace",data(trace)}};
+    JSValue result;const auto error=attempt([&]{result=UniformsUtils.get("merge").call(UniformsUtils.object(), {source});});return O{{"audit","mergeUniforms"},{"mode",mode},{"error",error},{"result",deepData(result)},{"trace",data(trace)}};
 }
 JsonValue utilityGroupsCase(int mode) {
     auto trace=list(),source=list();UniformsGroup group;group.setName("group");group.add(Uniform(1));

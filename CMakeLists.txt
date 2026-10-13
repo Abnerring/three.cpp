@@ -1,5 +1,6 @@
 cmake_minimum_required(VERSION 3.20)
 project(THREECPP VERSION 0.1.0 LANGUAGES CXX)
+include(src/renderers/shaders/ShaderSources.cmake)
 set(CMAKE_CXX_STANDARD 20)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 set(CMAKE_CXX_EXTENSIONS OFF)
@@ -25,7 +26,7 @@ find_package(Threads REQUIRED)
 add_library(threecpp
     src/math/MathUtils.cpp src/math/Vector2.cpp src/math/Vector3.cpp src/math/Vector4.cpp
     src/math/Matrix3.cpp src/math/Matrix4.cpp src/math/Quaternion.cpp src/math/Euler.cpp
-    src/math/Color.cpp src/math/Box3.cpp src/math/Sphere.cpp
+    src/math/Color.cpp src/math/ColorManagement.cpp src/math/Box3.cpp src/math/Sphere.cpp
     src/math/Box2.cpp src/math/Cylindrical.cpp src/math/Spherical.cpp src/math/Matrix2.cpp
     src/math/Plane.cpp src/math/Line3.cpp src/math/Triangle.cpp src/math/Ray.cpp src/math/Frustum.cpp
     src/math/Interpolant.cpp src/math/JSNumberMath.cpp
@@ -33,6 +34,8 @@ add_library(threecpp
     src/math/interpolants/CubicInterpolant.cpp src/math/interpolants/QuaternionLinearInterpolant.cpp
     src/math/interpolants/BezierInterpolant.cpp
     src/core/EventDispatcher.cpp src/core/Object3D.cpp src/core/JSValue.cpp src/core/NativeObject.cpp
+    src/core/NativeRenderingObject.cpp src/core/Layers.cpp src/core/JSObject.cpp src/core/JSNumber.cpp
+    src/core/JSWeakRef.cpp src/core/JSFinalizationRegistry.cpp
     src/core/BufferAttribute.cpp src/core/BufferGeometry.cpp src/core/JSDataSnapshot.cpp
     src/core/Raycaster.cpp
     src/cameras/Camera.cpp src/cameras/PerspectiveCamera.cpp src/cameras/OrthographicCamera.cpp
@@ -83,6 +86,8 @@ target_sources(threecpp PRIVATE
     src/core/JSJobs.cpp src/core/JSPromise.cpp src/core/AbortController.cpp
     src/core/NativeEventLoop.cpp
     src/core/JSWeakMap.cpp
+    src/core/JSMap.cpp src/core/JSSet.cpp src/core/JSIterator.cpp src/core/JSString.cpp
+    src/utils.cpp
     src/core/GLBufferAttribute.cpp
     src/core/UnicodeNormalization.cpp
     src/core/Clock.cpp src/core/Timer.cpp src/core/InstancedBufferGeometry.cpp
@@ -106,10 +111,24 @@ target_sources(threecpp PRIVATE
     src/objects/LOD.cpp
     src/renderers/shaders/UniformsUtils.cpp
     src/renderers/shaders/UniformsLib.cpp
+    ${THREECPP_SHADER_STRING_SOURCES}
+    src/renderers/webgl/WebGLShader.cpp
+    src/renderers/webgl/WebGLShaderCache.cpp src/renderers/webgl/WebGLUtils.cpp
     src/renderers/webgl/WebGLInfo.cpp
+    src/renderers/webgl/WebGLAnimation.cpp
+    src/renderers/webgl/WebGLExtensions.cpp
+    src/renderers/webgl/WebGLCapabilities.cpp
     src/renderers/webgl/WebGLProperties.cpp
     src/renderers/webgl/WebGLAttributes.cpp
+    src/renderers/webgl/WebGLBindingStates.cpp
+    src/renderers/webgl/WebGLClipping.cpp
+    src/renderers/webgl/WebGLMaterials.cpp
+    src/renderers/webgl/WebGLGeometries.cpp
+    src/renderers/webgl/WebGLObjects.cpp
+    src/renderers/webgl/WebGLLights.cpp
+    src/renderers/webgl/WebGLRenderStates.cpp
     src/renderers/webgl/WebGLRenderLists.cpp
+    src/renderers/webgl/WebGLUniforms.cpp
     src/renderers/webgl/WebGLBufferRenderer.cpp
     src/renderers/webgl/WebGLIndexedBufferRenderer.cpp
     src/core/Uniform.cpp
@@ -204,7 +223,9 @@ if(THREECPP_BUILD_VULKAN)
         list(APPEND THREECPP_SHADER_OUTPUTS "${output}")
     endforeach()
     add_custom_target(threecpp_shaders DEPENDS ${THREECPP_SHADER_OUTPUTS})
-    add_library(threecpp_vulkan src/renderers/VulkanRenderer.cpp src/renderers/vulkan/VulkanBufferCommands.cpp)
+    add_library(threecpp_vulkan src/renderers/VulkanRenderer.cpp
+        src/renderers/vulkan/VulkanBufferCommands.cpp src/renderers/vulkan/VulkanBindingCommands.cpp
+        src/renderers/vulkan/VulkanShaderCompiler.cpp)
     add_library(threecpp::vulkan ALIAS threecpp_vulkan)
     target_link_libraries(threecpp_vulkan PUBLIC threecpp::threecpp PRIVATE ${CMAKE_DL_LIBS})
     target_include_directories(threecpp_vulkan PRIVATE "${THREECPP_VULKAN_INCLUDE_DIR}")

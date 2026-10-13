@@ -1,6 +1,7 @@
 #include "renderers/shaders/UniformsUtils.h"
 #include "math/ColorManagement.h"
-#include <iostream>
+#include "utils.h"
+#include "core/JSModuleObject.h"
 #include <unordered_set>
 
 namespace {
@@ -58,19 +59,33 @@ JSValue cloneUniforms(const JSValue& source) {
             const auto entry = object.get(name,source);
             const auto property = entry.isNull() || entry.isUndefined() ? entry.get(key) : enumerableObject(entry).get(key,entry);
             JSValue copy;
+            // Assignment evaluates dst[u] before the clone/slice RHS. The
+            // separate array-of-math cloning loop finishes before its assignment.
+            JSValue target;
             if (isThreeObject(property)) {
                 if (property.get("isRenderTargetTexture").toBoolean()) {
-                    std::cerr << "THREE.UniformsUtils: Textures of render targets cannot be cloned via cloneUniforms() or mergeUniforms().\n";
+                    ThreeUtils::warn({"UniformsUtils: Textures of render targets cannot be cloned via cloneUniforms() or mergeUniforms()."});
+                    target = result.get(name);
                     copy = nullptr;
-                } else copy = cloneValue(property);
+                } else {
+                    target = result.get(name);
+                    copy = cloneValue(property);
+                }
             } else if (property.type() == JSValue::Type::Array) {
                 if (isThreeObject(property.get("0"))) {
                     copy = JSValue::array();
                     const auto length = property.get("length").toNumber();
                     for (double i = 0; i < length; ++i) copy.set(JSValue(i).toString(), cloneValue(property.get(JSValue(i).toString())));
-                } else copy = property.get("slice").call(property);
-            } else copy = property;
-            result.get(name).set(key, copy);
+                    target = result.get(name);
+                } else {
+                    target = result.get(name);
+                    copy = property.get("slice").call(property);
+                }
+            } else {
+                target = result.get(name);
+                copy = property;
+            }
+            target.set(key, copy);
         }
     }
     return result;
@@ -96,5 +111,66 @@ JSValue getUnlitUniformColorSpace(const JSValue& renderer) {
     const auto target = renderer.get("getRenderTarget").call(renderer);
     if (target.isNull()) return renderer.get("outputColorSpace");
     if (target.get("isXRRenderTarget").strictEquals(true)) return target.get("texture").get("colorSpace");
-    return ColorManagement::workingColorSpace;
+    return nativeColorManagement().get("workingColorSpace");
+}
+
+
+namespace {
+using Args = std::vector<JSValue>;
+const JSValue& argument(const Args& args, std::size_t index) {
+    static const JSValue undefined;
+    return index < args.size() ? args[index] : undefined;
+}
+JSValue exportedFunction(const JSValue&, const Args& args, const Args& captures) {
+    const auto& name = captures[1].string();
+    if (name == "cloneUniforms")
+        return cloneUniforms(argument(args, 0));
+    if (name == "mergeUniforms")
+        return mergeUniforms(argument(args, 0));
+    if (name == "cloneUniformsGroups")
+        return cloneUniformsGroups(argument(args, 0));
+    return getUnlitUniformColorSpace(argument(args, 0));
+}
+JSPropertyDescriptor literal(JSValue value) {
+    JSPropertyDescriptor descriptor;
+    descriptor.value = std::move(value);
+    descriptor.writable = descriptor.enumerable = descriptor.configurable = true;
+    return descriptor;
+}
+JSValue exports() {
+    static thread_local JSWeakValue cached;
+    if (const auto value = cached.lock(); value && value->isObject())
+        return *value;
+    auto environment = JSValue::object(nullptr);
+    for (const auto* name :
+         {"cloneUniforms", "mergeUniforms", "cloneUniformsGroups", "getUnlitUniformColorSpace"}) {
+        const auto fn = JSValue::constructor(exportedFunction, {environment, name}, name, 1,
+                                             JSValue::ConstructorKind::Callable);
+        environment.defineProperty(name, literal(fn));
+    }
+    auto legacy = JSValue::object();
+    // The source export is a literal: inherited setters do not receive its
+    // initial clone/merge fields. Later ordinary assignments are observable.
+    legacy.defineProperty("clone", literal(environment.get("cloneUniforms")));
+    legacy.defineProperty("merge", literal(environment.get("mergeUniforms")));
+    environment.defineProperty("UniformsUtils", literal(legacy));
+    environment.retainForHeapLifetime();
+    cached = JSWeakValue(environment);
+    return environment;
+}
+} // namespace
+JSValue nativeUniformsUtils() {
+    return exports().get("UniformsUtils");
+}
+JSValue nativeCloneUniforms() {
+    return exports().get("cloneUniforms");
+}
+JSValue nativeMergeUniforms() {
+    return exports().get("mergeUniforms");
+}
+JSValue nativeCloneUniformsGroups() {
+    return exports().get("cloneUniformsGroups");
+}
+JSValue nativeGetUnlitUniformColorSpace() {
+    return exports().get("getUnlitUniformColorSpace");
 }

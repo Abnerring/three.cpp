@@ -25,9 +25,14 @@
 
 当前 `JsonValue` 覆盖 JSON 数据，不支持 JavaScript 的函数、undefined、循环引用或任意动态原型。堆上共享对象的 `toNonIndexed()` 无索引分支返回自身；栈对象使用此分支会遇到 C++ shared_from_this 的所有权约束。C++ 关键字 `static` 属性对应 `isStatic`，JSON 仍为 `static`。
 
-`JSValue` 是独立的运行时基础：支持 undefined/null、binary64 数值、UTF-16 字符串语义、对象身份、赋值别名、键顺序、稀疏数组、原生函数及接收者/显式捕获、原型链、属性描述符/访问器、SameValue、Reflect.set、基础强制转换及受管理的循环回收。GC 追踪原型、函数捕获、访问器和转换回调；回调重入保留调用对象与描述符快照。`trace()` 明确记录类型、负零、非有限值、属性顺序和图身份；`toJSON()` 支持 getter、toJSON 回调及 lone-surrogate 转义。@@toPrimitive 使用受管理的内部适配钩子，未实现 Symbol 属性。Symbol/BigInt/Proxy、super/bind/跨 realm 构造、完整装箱对象与内建库、跨线程堆引用仍待实现；原生函数能力不执行 JS 源码。现有全部类的动态属性和 TypedArray 尚未统一接入此对象图，不能据此宣称完整库语义已完成。
+`JSValue` 是独立的运行时基础：支持 undefined/null、binary64 数值、UTF-16 字符串语义、对象身份、赋值别名、键顺序、稀疏数组、原生函数及接收者/显式捕获、原型链、属性描述符/访问器、SameValue、Reflect.set、基础强制转换及受管理的循环回收。GC 追踪原型、函数捕获、访问器和转换回调；回调重入保留调用对象与描述符快照。`trace()` 明确记录类型、负零、非有限值、属性顺序和图身份；`toJSON()` 支持 getter、toJSON 回调及 lone-surrogate 转义。Symbol 已作为独立基础值与真实属性键接入，保留身份、描述符、枚举顺序、@@toPrimitive、@@toStringTag 及 GC 图边；旧受管理转换钩子仍用于原生适配。BigInt/Proxy、super/bind/跨 realm 构造、完整 Symbol 工厂/注册表/装箱、完整内建库与跨线程堆引用仍待实现；原生函数能力不执行 JS 源码。现有全部类的动态属性和 TypedArray 尚未统一接入此对象图，不能据此宣称完整库语义已完成。
 
-动画依赖的 Array push/pop/slice/indexOf/splice、Function.call、Object 原型基础方法及运行时 EventDispatcher 已接入；差分验证 holes、继承索引、访问器、强制转换、只读属性的部分修改、监听器快照、抛错和重入。slice/splice 观察 constructor 读取及其异常；Symbol/custom species、Array 方法对基础值 receiver 的完整装箱仍待实现。回收目前通过 collectGarbage 显式触发，尚无自动调度策略。原生 payload 分阶段析构：全部别名缓存先退役，保留 JS 记录供析构函数读取或保存普通字段，重新标记后才清除不可达记录；已经开始析构的 C++ 对象不能复活。每个 owner 析构后重新标记，性能仍需优化。
+
+Map/Set 提供 SameValueZero 键、插入顺序、动态构造 adder、live iterator、forEach、delete/clear/reinsert、品牌与方法元数据。同步 Iterator Record 保留 next 快照和动态 return 查找，构造输入或 adder 失败按源顺序关闭迭代器。Array keys/values/entries 使用实时 length；String iterator 按 UTF-16 码点推进。可达 iterator 保留集合的共享存储及活条目，不额外保留集合包装；耗尽后释放存储。原生 clear 会比当前 Node/V8 更早释放旧表条目，这是 GC 时机边界；迭代结果、顺序和新增条目仍严格比较。Map.groupBy/getOrInsert、Set 集合运算、Iterator helpers、异步迭代以及弱集合的 Symbol/iterator 接入仍待实现。
+
+StringData 提供 UTF-16 索引只读描述符、valueOf/toString、通用 startsWith 和真实 Symbol.match 检查。字符串基础值属性查找保留原始 receiver。完整 String 构造器、字符串方法与 RegExp 内部槽仍待实现。集合、Symbol、迭代器和字符串原型使用每个 heap 的内在根与弱缓存，不增加 owning TLS 根。
+
+动画依赖的 Array push/pop/shift/slice/indexOf/splice、Function.call、Object 原型基础方法及运行时 EventDispatcher 已接入；差分验证 holes、继承索引、访问器、强制转换、只读属性的部分修改、监听器快照、抛错和重入。filter、map、slice、splice、concat 通过 ArraySpeciesCreate 保留 constructor/@@species 查找、任意构造结果及失败的部分写入。filter 保留 length 快照、逐项 Has/Get、callback 与 ToBoolean；完整基础值装箱和跨 realm 构造仍待实现。concat 按各输入的长度快照、HasProperty/Get 和自有数据属性创建顺序复制，保留 holes、继承索引、getter 修改后续输入、异常和重入；展开仍仅识别当前运行时 Array，Symbol.isConcatSpreadable 仍待实现。回收目前通过 collectGarbage 显式触发，尚无自动调度策略。原生 payload 分阶段析构：全部别名缓存先退役，保留 JS 记录供析构函数读取或保存普通字段，重新标记后才清除不可达记录；已经开始析构的 C++ 对象不能复活。每个 owner 析构后重新标记，性能仍需优化。
 
 `ArrayBuffer` 与 `TypedArray` 已支持共享字节、独立视图身份、只读 length/byteLength/byteOffset/buffer、subarray 与 slice、重叠 set、整数模转换、Uint8Clamped 饱和/偶数舍入、Float32 溢出，以及同类型 set 的原始 NaN 位保留。BufferAttribute 直接接收 TypedArray 时保留视图身份；带类型子类、copy 与 clone 分配独立存储。TypedArray.get 的越界结果是 undefined；普通 BufferAttribute 数值读取越界仍用 NaN 表示其参与数值运算的结果。跨 itemSize 的组件读取按原数组地址计算。ArrayBuffer 的 detach/resize、DataView、原生 Float16Array、BigInt 数组及其运行时对象图接入仍待完成。
 
@@ -53,7 +58,7 @@ TextureSource/Texture 与 Data、Array、3D、Cube、Depth、Framebuffer、Compr
 
 传统材质已包含 Material、MeshBasic/Lambert/Phong/Standard/Physical/Toon/Matcap/Depth/Distance/Normal、LineBasic/Dashed、Points、Sprite、Shadow、Shader/RawShader。实时字段注册统一 copy、参数更新与序列化，Physical 功能开关按跨零边界递增 version，reflectivity 映射 ior；Shader uniforms 保留 clone 回调、浅复制与纹理资源缓存语义。普通未声明属性保存在唯一的 extraProperties 图。原生包装可访问活颜色/向量/矩阵和各类纹理字段；needsUpdate 仍是只写属性，setValues 因读取到 undefined 而忽略它。
 
-材质包装尚未覆盖全部方法、EventDispatcher 继承及任意属性类型替换/删除。嵌入式颜色与向量不能直接替换身份，clippingPlanes 的动态数组访问仍待实现；userData 的 JsonValue 包装只支持当前 JSON 值域，不能代替完整 JSValue 对象图。矩阵 elements 可按索引修改但仍保持固定长度。GPU 仍只支持已列出的 MeshBasicMaterial 路径，其余材质明确报错。
+材质包装尚未覆盖全部方法、EventDispatcher 继承及任意属性类型替换/删除。嵌入式颜色与向量不能直接替换身份。clippingPlanes 已采用共享 Plane 数组，原生与管理访问保留同一存储及替换后的旧引用；普通 JS 数组、任意元素、索引访问器及稀疏数组的 copy/JSON 行为仍待迁移；userData 的 JsonValue 包装只支持当前 JSON 值域，不能代替完整 JSValue 对象图。矩阵 elements 可按索引修改但仍保持固定长度。GPU 仍只支持已列出的 MeshBasicMaterial 路径，其余材质明确报错。
 
 灯光 CPU 类包括 Ambient、Directional、Point、Spot、Hemisphere、RectArea、LightProbe、IESSpot、Projector 及对应 Shadow，SphericalHarmonics3 按原算法实现。shadow 的 camera/map/mapPass、复制与 dispose 按引用和回调顺序处理；copy 不会复制源 map/mapPass 等上游未复制字段。固定版本 PointLightShadow.updateMatrices 继承通用实现，对缺少 target 的 PointLight 会在写入相机位置后抛错；保留此版本行为，未混入旧版六面阴影算法。GPU 灯光和阴影尚未接入。
 
@@ -67,11 +72,11 @@ AnimationUtils、KeyframeTrack、六种轨道及 AnimationClip 已实现基础�
 
 Uniform、UniformsGroup 已使用管理对象实现 value 克隆、嵌套数组、动态方法、事件与共享引用；ShaderMaterial.uniformsGroups 可直接接收组句柄。UniformsUtils 按上游目录导出 cloneUniforms、mergeUniforms、cloneUniformsGroups 和 getUnlitUniformColorSpace，材质复用相同实现。UniformsLib 的 16 组默认定义由固定源码语法树生成，逐项构建独立数学对象、数组和字段，保留模块内共享与后续可变属性；原生线程对应独立运行时域。GPU UBO、完整着色器库与材质管线仍待实现。
 
-JSValue 新增独立的 constructor/construct(args, newTarget) 和可构造性检查，区分只能构造的类与显式声明可普通调用的构造器；保留构造原型、返回值、描述符、接收者、捕获、异常与 GC。Object/Array 内建接入该入口。Array.map 保留长度快照、holes、继承索引、回调 thisArg 与第三参数、构造器读取及部分失败；完整 Symbol/species、super、Proxy/bind、跨 realm 和基础值专用包装原型仍待实现，现有所有原生类的 constructor/clone 也需逐项迁移。
+JSValue 新增独立的 constructor/construct(args, newTarget) 和可构造性检查，区分只能构造的类与显式声明可普通调用的构造器；保留构造原型、返回值、描述符、接收者、捕获、异常与 GC。Object/Array 内建接入该入口。Array.map 保留长度快照、holes、继承索引、回调 thisArg 与第三参数、构造器读取及部分失败；完整 species、super、Proxy/bind、跨 realm 和基础值专用包装原型仍待实现，现有所有原生类的 constructor/clone 也需逐项迁移。
 
 InterleavedBuffer/InstancedInterleavedBuffer 使用活管理字段保留数组/视图身份、stride/count、version、updateRanges、严格 true 更新、copyAt 重叠、上传回调及 clone/toJSON 元数据缓存。NativeArray 将原生 View/ArrayBuffer 与管理对象连接，提供 buffer/byteOffset/byteLength/constructor/slice/subarray/set 等该路径所需行为；原生存储父字段纳入所有权图，避免把仅在不可达环中持有的数组误判为外部根。Symbol.iterator/species、detach/resize、SharedArrayBuffer、Float16/BigInt 数组与完整 TypedArray 方法仍待实现。
 
-BufferAttribute 与 InterleavedBufferAttribute 分别实现 C++ 的 VertexAttribute 协议，避免把交错属性伪装成 BufferAttribute。Geometry 的 attributes、morphAttributes 与 getAttribute 返回共享协议句柄，index 仍是 BufferAttribute。交错属性的 data/array/offset/itemSize/normalized 使用活管理字段，保留 getter、转换、矩阵变换、clone/JSON 元数据共享及去交错行为；CPU 几何、拾取、包围体与蒙皮读取已迁移。原生矩阵参数在调用期间实时读取，返回或异常后，回调保留的矩阵包装转为安全快照。交错顶点 GPU 上传仍明确拒绝，完整动态属性与构造边界仍需验收。
+BufferAttribute 与 InterleavedBufferAttribute 分别实现 C++ 的 VertexAttribute 协议，避免把交错属性伪装成 BufferAttribute。Geometry 的 attributes、morphAttributes 与 getAttribute 返回共享协议句柄，index 仍是 BufferAttribute。交错属性的 data/array/offset/itemSize/normalized 使用活管理字段，保留 getter、转换、矩阵变换、clone/JSON 元数据共享及去交错行为；CPU 几何、拾取、包围体与蒙皮读取已迁移。原生矩阵参数在调用期间实时读取，返回或异常后，回调保留的矩阵包装转为安全快照。交错顶点上传与绑定已接入当前 MeshBasic 路径；完整动态属性、构造边界和其他 shader 路径仍需验收。
 
 资源序列化仍有系统边界：JsonValue 不能完整保留活对象图。Geometry 与 detached InterleavedBufferAttribute 的结构快照已保留 -0、NaN 和 Infinity，不提前调用 JSON.stringify 或嵌套 toJSON；groups 按上游单独经过 stringify 归一化。Texture.userData getter 当前提前执行；Object3D 子对象与缓存提取、动画资源转 JsonValue、原生几何数组的共享身份仍需迁移为权威 JSValue 图，然后仅在最终 JSON 输出时生成快照。现有数值及 JSON 内容差分不能证明这些对象身份/回调时序完全等价。
 
@@ -99,23 +104,44 @@ Quaternion、QuaternionLinearInterpolant 和 PropertyMixer 的 sin/acos 使用�
 
 InstancedMesh 使用真实 Vulkan instanceCount 绘制，通过 storage buffer 读取实例矩阵和 RGB 颜色，并按实例位置计算雾深度。矩阵/颜色复用属性缓存、局部上传和 dispose；同一帧先更新几何，再更新实例矩阵及回调之后的当前颜色。绑定按属性身份缓存，保留同一属性修改 divisor 后仍使用旧布局的规则；矩阵四列分别转换 meshPerAttribute，转换回调内 dispose 仍保留当前 draw 的资源。geometry.instanceMatrix/instanceColor 优先于对象字段。GPU 实例数量执行整数转换，统计保留原逻辑数量，严格数值零和字符串零分别处理。
 
-实例 morph 使用 morphTexture 的版本缓存、gl_InstanceIndex 对应纹理行及按目标数量更新的几何缓存；矩阵 divisor 不改变 morph 行号。未上传的纹理及纹理范围外的权重读取为零，着色器显式检查范围，避免 Vulkan 越界读取。该路径仅支持当前基础材质、16 分量矩阵与 3 分量实例颜色，交错或任意 instanced 顶点属性、完整 WebGL 错误队列/绑定状态、光照和蒙皮仍待实现。超出上传属性存储或 Vulkan 设备范围的读取显式拒绝，完整图像差分与性能尚未验收。
+实例 morph 使用 morphTexture 的版本缓存、gl_InstanceIndex 对应纹理行及按目标数量更新的几何缓存；矩阵 divisor 不改变 morph 行号。未上传的纹理及纹理范围外的权重读取为零，着色器显式检查范围，避免 Vulkan 越界读取。该路径仅支持当前基础材质；交错 position/color/uv、实例矩阵与颜色已接入绑定模块。任意 shader 输入、交错 morph 目标、完整 WebGL 命令集、光照和蒙皮仍待实现。当前路径对超出属性存储的读取记录 draw error 并跳过提交；完整图像差分与性能尚未验收。
 
 线、点和 Sprite 进入持有 Object3D 的渲染列表，按可见性、视锥、材质组和提交前 layers 过滤；实际提交时，在 before 回调后明确报告 GPU 未实现。尚未支持的这些图元暂不执行投影阶段的 GPU 属性上传，其上传回调时序仍待接入。
 
-当前顶点缓存转换为 float32，索引转换为 uint32；雾深度和 morph influence 派生数据仍按 draw 生成。排序已采用 Vector4 clip-z；零数量几何保留属性/index 上传、对象/材质回调与零数量 draw，负裁剪范围才提前退出。TypedArray 快照独立复制字节，避免 CPU 别名修改提前影响 GPU 缓存。属性局部上传按 [WebGL2 bufferSubData](https://registry.khronos.org/webgl/specs/latest/2.0/#3.7.3) 的独立字节/元素偏移转换，零 count 上传剩余元素；合并修改原范围对象，先更新 GPU 再清空范围并调用回调。范围越界仍显式报错，未适配 WebGL 错误队列；含 NaN 的范围排序固定为上述 V8 调用顺序。完整原生存储类型、device-local staging 与 usage 策略仍待实现。
+当前顶点缓存转换为 float32，索引转换为 uint32；雾深度和 morph influence 派生数据仍按 draw 生成。排序已采用 Vector4 clip-z；零数量几何保留属性/index 上传、对象/材质回调与零数量 draw，负裁剪范围才提前退出。TypedArray 快照独立复制字节，避免 CPU 别名修改提前影响 GPU 缓存。属性局部上传按 [WebGL2 bufferSubData](https://registry.khronos.org/webgl/specs/latest/2.0/#3.7.3) 的独立字节/元素偏移转换，零 count 上传剩余元素；合并修改原范围对象，先更新 GPU 再清空范围并调用回调。无效字节范围由 VulkanBufferCommands 记录错误并继续上层流程，转换异常仍抛出；含 NaN 的范围排序固定为上述 V8 调用顺序。完整 WebGL 错误队列、原生存储类型、device-local staging 与 usage 策略仍待实现。
 
 同一属性的数组替换为相同字节数的其他类型时，保留首次上传的 type/bytesPerElement 和独立原始字节快照；版本更新后按当前源数组字节写入旧缓存，局部更新按首次缓存元素大小覆盖转换后的 GPU 组件。几何更新快照属性名，上传每项前重新读取当前字段，保留较早上传回调替换/删除后续属性的时机；新增属性到下次更新才上传。显式 null 属性按上游读取时抛 TypeError。完整受管理几何 attributes 对象图仍待迁移。
 
-WebGLInfo、WebGLBufferRenderer 与 WebGLIndexedBufferRenderer 已按原模块移植为受管理 C++ 对象。Info 保留捕获的 render 身份、动态常量/访问器、统计数值和 reset 顺序；字面量字段使用自有可写/可枚举/可配置数据属性。两个绘制模块保留动态调用接收者、模式/索引缓存、多次绘制和异常/重入顺序，闭包内部状态隔离 Object 原型。GL 参数是原生管理调用接口，未引入 OpenGL 或浏览器；尚未代替 VulkanRenderer 的命令提交与统计实现。
+WebGLInfo、WebGLBufferRenderer 与 WebGLIndexedBufferRenderer 已按原模块移植为受管理 C++ 对象。Info 保留捕获的 render 身份、动态常量/访问器、统计数值和 reset 顺序；字面量字段使用自有可写/可枚举/可配置数据属性。VulkanRenderer 已使用 Info 的活管理对象统计绘制、帧及逻辑资源数量，支持动态替换 reset/update；几何数量由 WebGLGeometries 管理，共享纹理按 source 配置分配计数。两个绘制模块保留动态调用接收者、模式/索引缓存、多次绘制和异常/重入顺序，闭包内部状态隔离 Object 原型；其命令提交仍待完整接入 Vulkan。GL 参数是原生管理调用接口，未引入 OpenGL 或浏览器。
+
+WebGLGeometries/WebGLObjects 的管理对象已接入 VulkanRenderer，统一几何注册、帧更新、属性上传、线框缓存和 dispose 顺序。原始属性上传完成后再从缓存生成派生绘制数据，不重复执行上传或读取 array getter；生命周期 facade 只退役派生绑定和形变存储，renderer 销毁前关闭逃逸闭包的原生访问。WeakRef 读取会保留目标至当前宿主任务结束，生产 render/prune 不代替宿主推进任务或 GC；资源释放测试在显式任务边界后验证回收。WebGLLights/WebGLRenderStates 已接入 CPU 主构建和上游差分，实际 Vulkan 光照及阴影路径仍待实现。
+
+
+WebGLExtensions/WebGLCapabilities 已接入 CPU 主库，保留普通对象缓存、扩展查询顺序、precision 降级及警告、惰性 anisotropy、格式/类型短路和动态调用。四个能力查询函数共同保留 gl、extensions、utils 与 anisotropy 缓存，不保留仅构造时使用的 parameters；直接函数和 newTarget.prototype.constructor 间接持有均有实际 Node GC 对照。它们尚未接入 Vulkan 设备能力查询，isWebGL2 保留上游字段含义，不代表已提供这些 GPU 能力。utils.js 当前移植 warn/warnOnce 所需逻辑，共享普通警告缓存，读取实时 String/Array/iterator 方法；现有 WebGLInfo console callback 的 owning TLS 仍待迁移。
+
+WebGLBindingStates 已接入 CPU 主构建，保留 VAO 身份、几何/对象/程序分层缓存、属性启停、divisor、浮点/整数 pointer、默认属性、索引和释放逻辑。动态枚举预取初始原型链的候选键，再检查当前属性是否仍存在；getter 新增继承键在下一轮生效，该边界对照固定 Node 引擎。C++ 入口验证所属线程，跨线程共享包装不受支持。完整 Symbol 内建、Proxy、基本类型包装原型仍待完成；注入命令差分只证明已覆盖的 CPU 行为。
+
+VulkanRenderer 的 MeshBasic 路径已调用实际 WebGLBindingStates.setup，通过 VulkanBindingCommands 捕获交错布局、步长、偏移、divisor、启停、默认属性与索引状态，再由 storage buffer 顶点着色器取值。缓冲名称删除与 VAO 持有存储分离：删除时解绑当前 VAO，其余 VAO 保留存储至最后引用解除。内部状态隔离 Object/Array 原型，buffer 与 vertex 命令共享错误标记。浮点 shader 接收整数 pointer、无有效缓冲或顶点越界时记录 draw error，不提交图元，保留上层回调与逻辑统计。完整 WebGLPrograms、整数 ShaderMaterial、普通 morph 的 GPU 路径及其与实例位置 divisor 的组合仍待实现；该组合明确拒绝。通用 WebIDL iterator/Symbol 输入转换仍未完成。
+
+WebGLUniforms 已接入 CPU 主构建，包含上游全部 35 种 uniform 枚举、结构与数组解析、setter/cache、共享 Float32 临时数组、纹理单元分配和阴影采样器优先排序。seq/map、方法、getter、异常和回调重入按实际源代码执行，shadow 序列调用运行时 concat；源码中 i !== n 的非终止输入未改写为人为异常。默认纹理使用真实原生类型，DepthTexture.compareFunction 与子类型标志接入现有纹理包装；这些字段仍受原生 double/bool 类型限制。模块使用弱缓存与 heap 内在根，同一 heap 内保留共享 setter 和默认纹理状态，显式 C++ 入口在复制前拒绝异线程句柄。NativeArray 的九种 TypedArray、共享基础原型及 ArrayBuffer 构造缓存已改为弱 TLS 加 heap 内在根，同一 heap 的修改保持可见，最后应用根释放后允许整个 heap 退出；NativeObject 的方法、数学、矩阵、Skeleton、BufferAttribute、Material、Texture 缓存也已迁移；AnimationRuntime、UniformsLib 等其他 owning 根及 Symbol/自定义迭代器、完整纹理动态字段仍待迁移。原生 payload 的管理字段回边仍需显式 GC，不能把缓存修复视为自动回收；独立 canonical 方法缓存保留旧原生身份策略，完整类原型迁移时还需验证删除方法后的可达性。注入 GL 协议不代表 Vulkan uniforms、采样器及 GPU 光照已接入。
+
+WebGLClipping 已接入 CPU 主构建，保留全局与局部平面、材质缓存、阴影阶段、交集计数、uniform 身份和 needsUpdate，以及动态 getter、异常、方法替换和重入顺序。所需 Matrix3、Vector3、Plane 管理方法通过活字段执行；共享临时对象按字面量创建自有属性，避免额外触发继承 setter。nativePlane 与 nativePlanePrototype 复用真实原生包装和原型。Material.clippingPlanes 已接入共享原生 Plane 数组；完整 Plane 管理类、任意动态数组和模块导入初始化顺序仍待实现。
 
 CPU 派生雾和 morph 数据仅处理当前 draw 实际引用的顶点；drawRange 外的 NaN、尾部残余组件和未引用索引不会提前中止合法绘制，实际 GPU 存储越界仍显式拒绝。线框按原数组生成边索引，保留尾部缺失索引写零与 Uint16/32 转换，再按生成后索引数量裁剪。渲染统计使用上游逻辑 double drawCount，独立于 Vulkan 调用必须使用的整数数量。Mesh CPU 拾取读取 morph influence 空位或缺失值时保留 undefined 转 NaN，JSON 输出空位为 null，clone 保留空位。Vulkan 非有限形变仍显式拒绝；缩短 influence 数组所需的 WebGL program uniform 尾部状态保留尚未移植，非零绘制时明确报错，零数量绘制仍保留上传、回调与统计。
 
 CPU 库禁止浮点融合与重排，以保留 JavaScript binary64 的逐步求值顺序。数值差分仍使用明确容差，不能声称不同数学运行库或 GPU 着色器输出逐位相同。
 
+材质 uniform 所需 Matrix4.makeRotationFromEuler、Matrix3 的复制/乘法/UV 变换、Vector2.negate、Color.getRGB 和 Texture.updateMatrix 已按活字段与动态调用顺序接入。纹理 matrix/elements 与真实原生存储保持别名，所有权追踪保留纹理及包装扩展并回收不可达交叉环。sin/cos 使用固定 Node/V8 的 fdlibm 算法；ColorManagement 全部 11 个源方法与默认两种空间使用同一管理对象，支持活 spaces、传递函数、矩阵、共享数组、访问器和自定义空间；原生 Color 读取同一状态。所有输入的 pow 位级一致性、GPU 颜色转换和完整模块导入初始化顺序仍未证明。
+
+WebGLMaterials 已保留固定上游全部材质和雾的 uniform 刷新分支，包括 Physical 的 sheen、clearcoat、dispersion、retroreflectivity、iridescence、transmission 与 anisotropy。动态读取、赋值引用捕获、转换、方法链返回值、抛错后的部分写入和回调重入按源码执行；两个导出闭包共享构造参数保活，模块矩阵临时对象保留共享身份。该 CPU 模块不代表实际 Vulkan 材质程序、uniform 上传、纹理采样器绑定、光照和阴影已经接入；原生字段任意替换及模块初始化语义仍受上述边界限制。
+
+当前 MeshBasic Vulkan 路径已接入全局/局部裁剪、union/intersection、实例与形变后的视空间位置。投影状态使用 WebGLClipping，准备绘制时保留 Float32 平面快照，后续上传回调不改写已准备的绘制。共享相机使用真实管理身份；栈相机只提供本次 render 内有效的矩阵借用视图，退出后访问明确报错。正常完成重置相机/材质缓存，异常保留；dispose 的动态 WeakMap 删除及重入需保持上游部分状态。阴影裁剪 pass、alphaToCoverage、自定义 shader、现代渲染和嵌套 render 状态栈仍待实现。
+
+异常后保留的相机缓存同时检查原生地址与不可变 id；销毁栈相机并在相同地址构造新相机时重新投影。此身份校验不延长栈对象寿命，回调保留的借用矩阵仍在 render 退出后退役。
+
 ## 完整工作范围
 
-Clock/Timer 保留启动、停止、时间缩放、重置与可见性回调顺序；默认时间源是 steady_clock，可注入 NativeTimeSource，窗口可见性由 NativeVisibilitySource 适配。ArrayCamera、StereoCamera、FrustumArray、InstancedBufferGeometry 与 ClippingGroup 已补 CPU 行为；相机 clone 保留上游忽略 recursive 参数的规则。StereoCamera 共享临时眼矩阵，Matrix4.invert 按固定上游表达式顺序计算，包括正负零。多视图、实例几何和裁剪组 GPU 路径仍待接入。
+Clock/Timer 保留启动、停止、时间缩放、重置与可见性回调顺序；默认时间源是 steady_clock，可注入 NativeTimeSource，窗口可见性由 NativeVisibilitySource 适配。ArrayCamera、StereoCamera、FrustumArray、InstancedBufferGeometry 与 ClippingGroup 已补 CPU 行为；相机 clone 保留上游忽略 recursive 参数的规则。StereoCamera 共享临时眼矩阵，Matrix4.invert 按固定上游表达式顺序计算，包括正负零。InstancedBufferGeometry 已接入现有 MeshBasic 顶点绑定与实例数量路径；完整实例 shader、多视图和裁剪组 GPU 路径仍待接入。
 
 新增 13 个 helpers，保留几何/颜色更新、源对象矩阵共享、clone 异常和 dispose 顺序。Matrix4 显式 alias 保留原 source.matrixWorld 的身份，即使 helper.source 字段后来被替换；NativeObject 的所有权图追踪该原 owner。CameraHelper.pointMap、颜色值及骨骼/相机/平面数组接入管理对象。入口的任意动态类型、方法替换及 JS import 时的全局 ID 初始化顺序尚未全部覆盖；纯 shared_ptr 强环仍须由 C++ 显式断开。线段辅助对象的实际 GPU 绘制仍未实现。
 
@@ -135,13 +161,19 @@ JSWeakMap 单独实现原生弱键表：键为不拥有对象的记录 ID，值�
 
 原生模块根通过 retainForHeapLifetime 保留当前 heap 内的对象与可达图，本身不增加 heap 的共享所有权。WeakMap 和 GLBufferAttribute 的构造器在同一 heap 的 GC 之间保持身份和已修改原型；仅含管理图边时，最后一个应用根释放后模块根随 heap 销毁。原生 payload 中的 owning JSValue 仍可能保留 heap，完整 native 图的运行时关闭策略尚待实现。弱缓存用于定位仍存在的模块对象，不替代模块存活规则。其余使用静态强句柄的模块尚需逐项迁移和验收。
 
-Array.sort/unshift 已接入运行时：sort 保留 holes、undefined、UTF-16 默认比较、固定 V8 比较器调用顺序、长度快照及写回/删除的部分失败；unshift 按原方向逐项读取和移动，再写入参数及 length。比较器修改属性、原型或长度时保留动态行为。原生算法不执行 JS 源码；基础值的完整包装原型及 Symbol/Proxy 等边界仍未完成。
+Array.sort/unshift 已接入运行时：sort 保留 holes、undefined、UTF-16 默认比较、固定 V8 比较器调用顺序、长度快照及写回/删除的部分失败；unshift 按原方向逐项读取和移动，再写入参数及 length。比较器修改属性、原型或长度时保留动态行为。原生算法不执行 JS 源码；基础值的完整包装原型、完整 Symbol 内建及 Proxy 等边界仍未完成。
 
 GLBufferAttribute 使用独立的管理对象表示 opaque GPU buffer，保留构造字段、任意值、共享身份、严格 true 更新和动态方法。它不继承 CPU BufferAttribute，也不虚构 array 存储。WebGLAttributes 保留 WeakMap 属性身份、交错 data 共享、首次上传类型/大小、版本比较、范围原地合并、回调及移除顺序；注入的 GL 调用接口由 C++ 管理。普通 BufferAttribute 的该上传算法已通过 VulkanBufferCommands 接入实际 VkBuffer。原生 Float16Array、Symbol.hasInstance、GLBufferAttribute 原生资源导入及完整交错绘制仍待完成。
 
 BufferAttribute 原生 handle 与数据 Storage 分开拥有；唯一管理 wrapper 只强持 Storage 和弱持 handle。应用释放原生对象后 weak_ptr 立即失效；仍存活的 wrapper 可重建同 id、同数据、同管理身份及原 Typed/Float16/Instanced 类型的 handle。数组、name、itemSize/count/normalized 仍受现有 C++ 类型适配限制，任意动态替换与完整构造器/子类语义仍待补齐。原生 EventDispatcher/dispose 属于当前 C++ 扩展，监听器随原 handle 退役，不自动转移到重建 handle，也尚未与管理事件接口完整互通。std::function 的不透明 C++ 捕获不自动追踪，管理环需要显式 JSValue captures。
 
-VulkanBufferCommands 只实现属性管理器需要的六个原生命令和两种 buffer target，不创建 OpenGL 上下文。真实 branded TypedArray 的视图偏移、长度和元素宽度用于上传；公开可遮蔽字段仍按上层原版读取。每次有效写立即提交 Vulkan memory，后续转换抛错不会回滚前次写。上层唯一 WeakMap 缓存负责类型/大小/version/ranges/callback；派生 float/uint32 绘制缓冲只按完成写入的 revision 转换，实际数据从 Vulkan memory 读回，保留已录制绘制的旧资源。当前仍存在额外原始上传和转换缓冲、CPU 读回及转换成本；直接绑定全部原生格式尚待实现。 上传回调删除当前缓存时，Vulkan 仍显式报错；上游缺失顶点缓存的跳过绑定行为尚待接入。原始 allocation 单列 attributeUploadBuffers，旧 attributeBuffers 继续统计派生绘制缓冲。设备销毁前 shutdown 退役全部原始存储；缓存退役前摘除 listener/迭代器，避免动态 getter 的 dispose 重入。
+InstancedBufferAttribute 包装补入普通可修改的类型标志，以及与 Storage 共用的 meshPerAttribute。管理赋值、描述符、访问器、删除和不可扩展规则按管理对象执行；数据值仅由 Storage 持有，两个描述符容器只保留元数据，避免原生赋值后旧值残留。直接 C++ JSValue& 写入仍绕过 readonly/frozen 描述符，直接读取也不执行管理访问器；需要动态语义时应访问 nativeAttribute 包装。子类的完整构造器、原型和 copy 表面仍待移植。
+
+EventDispatcher 管理原型使用 heap 内模块根与弱缓存，保留同 heap 的用户修改，并在最后应用根释放后随 heap 销毁；构造器支持 new/newTarget，直接调用抛 TypeError。runtimeObject 直接引用规范原型，不读取可变的 prototype.constructor。现有原生事件列表和管理事件列表的全类互通仍待完成。
+
+JSWeakRef/JSFinalizationRegistry 已实现原生弱槽、任务保活、heldValue 与 callback 图边、弱 unregister token，以及 GC 后排队的 cleanup；NativeEventLoop 每轮最多执行一个 registry cleanup，随后运行微任务检查点。cleanup 内直接请求检查点不会提前清除当前任务的弱目标，异常分别记录任务和检查点阶段，待执行队列恢复不分配内存。Symbol 目标、完整多 realm 和自动平台宿主驱动仍待实现。
+
+VulkanBufferCommands 只实现属性管理器需要的六个原生命令和两种 buffer target，不创建 OpenGL 上下文。真实 branded TypedArray 的视图偏移、长度和元素宽度用于上传；公开可遮蔽字段仍按上层原版读取。每次有效写立即提交 Vulkan memory，后续转换抛错不会回滚前次写。上层唯一 WeakMap 缓存负责类型/大小/version/ranges/callback；派生 float/uint32 绘制缓冲只按完成写入的 revision 转换，实际数据从 Vulkan memory 读回，保留已录制绘制的旧资源。当前仍存在额外原始上传和转换缓冲、CPU 读回及转换成本；直接绑定全部原生格式尚待实现。 上传回调删除缓存后的绑定由 WebGLBindingStates 决定；缺失属性缓存跳过相应绑定，最终无有效输入时记录 draw error，不提交图元。原始 allocation 单列 attributeUploadBuffers，旧 attributeBuffers 继续统计派生绘制缓冲。设备销毁前 shutdown 退役全部原始存储；缓存退役前摘除 listener/迭代器，避免动态 getter 的 dispose 重入。
 
 WebGLRenderList/WebGLRenderLists 保留 opaque/transmissive/transparent 数组身份、池化 RenderItem、push 的 reversedDepth、分类读取、稳定排序、finish 清引用、场景弱键与嵌套深度缓存。公开数组替换不改变已捕获数组；默认排序函数属于模块根，任意自有字段和原型修改跨同 heap 的 GC 保留。传统 webgl 模块返回的普通函数保留 call/new/newTarget；类方法和箭头比较器仍不可构造。当前实现 CPU 排序与缓存，完整 VulkanRenderer 投影、排序及 GPU 提交接入仍待完成。
 
@@ -180,3 +212,15 @@ ctest --test-dir build/native -C Debug --output-on-failure
 ```
 
 源代码和构建配置不保存机器的绝对工具路径。Vulkan SDK 未安装到默认目录时显式传入 THREECPP_VULKAN_INCLUDE_DIR、THREECPP_GLSLANG_VALIDATOR。
+
+ShaderChunk/ShaderLib 的全部 127 个 GLSL 模块已按对应路径生成 C++ 字符串模块，保留 145 个字符串导出、聚合对象的 141 个键及其顺序、18 组 shader 定义与 uniform 的 clone/共享身份。生成器解析固定上游的模板字符串，差分独立导入实际上游并比较完整文本。源字符串的原有空白保留。WebGLShader 保留 createShader → shaderSource → compileShader 的动态调用顺序、原句柄返回及普通构造函数行为；这些 CPU 模块尚未接入完整 Vulkan 程序生成、GLSL 转换、SPIR-V 编译、绑定和管线。
+
+UniformsLib/ShaderChunk/ShaderLib 的公共对象是无 owning heap 的解析器；JSValue 转换持有当前 heap 的共享导出，复制解析器本身不保活。模块图使用 heap 内在根和弱缓存，最后应用根释放后回收，新 heap 重新初始化。源码入口导出位于 Three.h。原生惰性初始化重入明确抛 JSModuleInitializationError，失败后可重试；完整 ESM 导入顺序、TDZ/live binding 及失败缓存仍待实现。UniformsUtils.cloneUniforms 的 clone/slice 赋值在 RHS 前捕获目标对象，保留回调替换属性后原目标的写入。
+
+WebGLAnimation 保留 start/stop 的严格状态判断、下一帧请求先于 loop 回调、opaque requestId、context/loop 动态替换、异常后的部分状态与重入。四个方法共同保留调度环境；方法与管理图使用普通 C++ 原生函数，不执行 JavaScript。context 由原生宿主注入 requestAnimationFrame/cancelAnimationFrame 方法，平台显示刷新驱动及 VulkanRenderer.setAnimationLoop 尚待接入。
+
+NumberData 原生装箱与 Number.prototype 的 valueOf、十进制 toString、toFixed 已接入数值属性查询。toFixed 直接按 binary64 分解和整数 limb 舍入，支持 0..100 位，与 Node 精确字符串比较。完整 Number 构造器、有限值非十进制输出、toExponential/toPrecision/toLocaleString 仍待实现。JSValue string get 与 call 在持有副本前拒绝外线程引用。
+
+Layers 管理对象是 mask 的唯一来源，保留任意值、描述符、位移、共享身份、copy 的目标捕获与渲染 getter 重入。原生 Object3D 字段仍为访问器桥接，JSON 返回值仍为 JsonValue；完整数据描述符和延迟序列化未完成。UniformsUtils 的 clone/merge 对象导出与四个独立导出函数保留身份；颜色空间实时读取同一 ColorManagement。
+
+WebGLShaderCache 使用真实原生 Map/Set，保留代码键身份、usedTimes 转换与重新读取、动态方法、IteratorClose、模块共享 ID 和释放行为。它仅提供 CPU 缓存。VulkanShaderCompiler 提供原生 glslang 编译与链接、诊断、临时资源管理和 SPIR-V 基本结构检查；完整 WebGLProgram、GPU 反射绑定和管线管理正在实现。

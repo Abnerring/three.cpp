@@ -12,6 +12,11 @@
 class JSHeap;
 class JSWeakValue;
 class JSWeakMap;
+class JSMap;
+class JSSet;
+class JSIterator;
+class JSWeakRef;
+class JSFinalizationRegistry;
 struct JSPropertyDescriptor;
 struct JSHostObjectHooks;
 struct JSHostPropertyResult;
@@ -29,7 +34,7 @@ class JSRangeError : public std::out_of_range {
 class JSValue {
   public:
     struct Undefined { bool operator==(const Undefined&) const = default; };
-    enum class Type { Undefined, Null, Boolean, Number, String, Object, Array, Function };
+    enum class Type { Undefined, Null, Boolean, Number, String, Object, Array, Function, Symbol };
     enum class PreferredType { Default, Number, String };
     enum class ConstructorKind { Class, Callable };
     using PropertyDescriptor = JSPropertyDescriptor;
@@ -51,9 +56,17 @@ class JSValue {
     JSValue& operator=(JSValue&& other) noexcept;
     ~JSValue();
 
+    // Stable intrinsic binding, independent of mutable Object.prototype.constructor.
+    static JSValue intrinsicObjectConstructor();
+    // Non-allocating test for an existing native realm keeper.
+    static bool hasActiveHeap();
     static JSValue object();
     static JSValue object(const JSValue& prototype);
     static JSValue array(std::uint32_t length = 0);
+    static JSValue symbol(const std::optional<std::string>& description = std::nullopt);
+    static JSValue wellKnownSymbol(const std::string& name);
+    std::optional<std::string> symbolDescription() const;
+    JSValue toPropertyKey() const;
     // Native hosts share the normal property/prototype graph. The cache is weak:
     // only reachable JS handles/graph edges retain a host record and its payload.
     // Store managed edges in host slots, or explicitly describe native JSValue
@@ -84,6 +97,7 @@ class JSValue {
     Type type() const;
     bool isUndefined() const { return type() == Type::Undefined; }
     bool isNull() const { return type() == Type::Null; }
+    bool isSymbol() const { return type() == Type::Symbol; }
     bool isObject() const { return type() == Type::Object || type() == Type::Array || isCallable(); }
     bool isCallable() const { return type() == Type::Function; }
     bool isConstructible() const;
@@ -113,12 +127,35 @@ class JSValue {
     std::optional<PropertyDescriptor> getOwnPropertyDescriptor(const std::string& key) const;
     bool defineOwnProperty(const std::string& key, const PropertyDescriptor& descriptor);
     void defineProperty(const std::string& key, const PropertyDescriptor& descriptor);
+    // Real Symbol keys share ordinary descriptor/prototype semantics. String
+    // overloads remain the native host hook boundary and retain source compatibility.
+    JSValue get(const JSValue& key) const;
+    JSValue get(const JSValue& key, const JSValue& receiver) const;
+    void set(const JSValue& key, const JSValue& value);
+    bool reflectSet(const JSValue& key, const JSValue& value, const JSValue& receiver) const;
+    bool hasOwn(const JSValue& key) const;
+    bool has(const JSValue& key) const;
+    bool erase(const JSValue& key);
+    std::optional<PropertyDescriptor> getOwnPropertyDescriptor(const JSValue& key) const;
+    bool defineOwnProperty(const JSValue& key, const PropertyDescriptor& descriptor);
+    void defineProperty(const JSValue& key, const PropertyDescriptor& descriptor);
+    std::vector<JSValue> ownPropertySymbols() const;
+    std::vector<JSValue> ownPropertyKeys() const;
+    JSValue get(const char* key) const { return get(std::string(key)); }
+    JSValue get(const char* key, const JSValue& receiver) const { return get(std::string(key),receiver); }
+    void set(const char* key, const JSValue& value) { set(std::string(key),value); }
+    bool reflectSet(const char* key, const JSValue& value, const JSValue& receiver) const { return reflectSet(std::string(key),value,receiver); }
+    bool hasOwn(const char* key) const { return hasOwn(std::string(key)); }
+    bool has(const char* key) const { return has(std::string(key)); }
+    bool erase(const char* key) { return erase(std::string(key)); }
+    std::optional<PropertyDescriptor> getOwnPropertyDescriptor(const char* key) const;
+    bool defineOwnProperty(const char* key, const PropertyDescriptor& descriptor) { return defineOwnProperty(std::string(key),descriptor); }
+    void defineProperty(const char* key, const PropertyDescriptor& descriptor) { defineProperty(std::string(key),descriptor); }
     JSValue getPrototype() const;
     bool setPrototype(const JSValue& prototype);
     void preventExtensions();
     bool isExtensible() const;
-    // Managed adapter for the @@toPrimitive internal hook. Symbol-valued keys
-    // remain outside the currently supported value types.
+    // Convenience adapter for an own real Symbol.toPrimitive data property.
     void setPrimitiveConverter(const JSValue& converter);
     std::uint32_t length() const;
 
@@ -150,15 +187,42 @@ class JSValue {
     void release();
     // Heap-owned ephemeron storage. Only the native WeakMap adapter may create
     // or access these internal slots; entries are never ordinary strong roots.
+    static JSValue createCollectionData(const JSValue& prototype,unsigned brand);
+    bool hasCollectionData(unsigned brand) const;
+    std::size_t collectionSize(unsigned brand) const;
+    bool collectionHas(const JSValue& key,unsigned brand) const;
+    JSValue collectionGet(const JSValue& key,unsigned brand) const;
+    void collectionSet(const JSValue& key,const JSValue& value,unsigned brand);
+    bool collectionErase(const JSValue& key,unsigned brand);
+    void collectionClear(unsigned brand);
+    void collectionForEach(const JSValue& callback,const JSValue& thisArg,unsigned brand) const;
+    static JSValue createIteratorData(const JSValue& prototype,const JSValue& receiver,unsigned brand,unsigned kind);
+    JSValue iteratorNext(unsigned brand) const;
     static JSValue createWeakMapData(const JSValue& prototype);
     bool hasWeakMapData() const;
     JSValue weakMapGet(const JSValue& key) const;
     bool weakMapHas(const JSValue& key) const;
     bool weakMapErase(const JSValue& key);
     void weakMapSet(const JSValue& key, const JSValue& value);
+    static JSValue createWeakRefData(const JSValue& prototype, const JSValue& target);
+    bool hasWeakRefData() const;
+    JSValue weakRefDeref() const;
+    static JSValue createFinalizationRegistryData(const JSValue& prototype, const JSValue& callback);
+    bool hasFinalizationRegistryData() const;
+    void finalizationRegistryRegister(const JSValue& target, const JSValue& heldValue,
+                                      const JSValue& token);
+    bool finalizationRegistryUnregister(const JSValue& token);
+    void finalizationRegistryCleanup();
+    static void clearKeptObjects();
     friend class JSHeap;
     friend class JSWeakValue;
     friend class JSWeakMap;
+    friend class JSMap;
+    friend class JSSet;
+    friend class JSIterator;
+    friend class JSWeakRef;
+    friend class JSFinalizationRegistry;
+    friend void endJSJob();
 };
 
 // Cache-only runtime handle. Reference values retain neither their heap nor

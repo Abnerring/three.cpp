@@ -16,7 +16,7 @@
 // Extracted from Node.js v26.5.0 / V8 14.6.202.34-node.24.
 // https://github.com/nodejs/node/blob/v26.5.0/deps/v8/src/base/ieee754.cc
 // Original file SHA-256: badd30a2643ed785dcfbbce42f95c2522ccea3605cd39e2933467688aae1de14
-// Retains the full sin range reduction and acos algorithms. Adaptations only:
+// Retains the full sin/cos range reduction and acos algorithms. Adaptations only:
 // namespace, standard bit_cast, helper names, compiler annotations, and explicit
 // narrowing casts. Node Windows uses this fdlibm path (no libm-trig flag).
 
@@ -869,6 +869,36 @@ double sin(double x) {
   }
 }
 
+
+double cos(double x) {
+  double y[2], z = 0.0;
+  int32_t n, ix;
+
+  /* High word of x. */
+  GET_HIGH_WORD(ix, x);
+
+  /* |x| ~< pi/4 */
+  ix &= 0x7FFFFFFF;
+  if (ix <= 0x3FE921FB) {
+    return kernelCos(x, z);
+  } else if (ix >= 0x7FF00000) {
+    /* cos(Inf or NaN) is NaN */
+    return x - x;
+  } else {
+    /* argument reduction needed */
+    n = remPio2(x, y);
+    switch (n & 3) {
+      case 0:
+        return kernelCos(y[0], y[1]);
+      case 1:
+        return -kernelSin(y[0], y[1], 1);
+      case 2:
+        return -kernelCos(y[0], y[1]);
+      default:
+        return kernelSin(y[0], y[1], 1);
+    }
+  }
+}
 
 } // namespace JSNumberMath
 

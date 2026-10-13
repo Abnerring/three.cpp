@@ -28,8 +28,11 @@ class VulkanBufferCommands {
     using Factory = std::function<std::shared_ptr<Storage>()>;
     explicit VulkanBufferCommands(Factory factory);
     JSValue object() const;
+    // VAO attachment commands retain storage after public buffer deletion.
+    JSValue bindingInterface() const;
     std::uint64_t revision(const JSValue& buffer) const;
     std::vector<std::byte> read(const JSValue& buffer) const;
+    bool hasStorage(const JSValue& buffer) const;
     void shutdown();
   private:
     JSValue state_, object_;

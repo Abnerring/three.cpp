@@ -491,7 +491,7 @@ JsonValue Object3D::toJSON(Object3DJSONContext* meta) const {
                                          {"matrixAutoUpdate", matrixAutoUpdate}};
     if (userData.size() > 0)
         object["userData"] = userData.sharedCopy();
-    object["layers"] = layers.mask;
+    if (const auto value = layers.mask.value().toJSON()) object["layers"] = *value;
     JsonValue::Array matrixArray;
     for (const auto element : matrix.elements())
         matrixArray.emplace_back(element);

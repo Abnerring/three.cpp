@@ -91,14 +91,17 @@ class NativeEventLoop {
     // Errors are returned in phase order, including when a task and checkpoint
     // both fail. Other queued tasks remain runnable. JSJobs currently reports
     // only the first error within any one microtask checkpoint.
-    // Nested pumping, including from standalone microtask checkpoints, returns an
-    // empty result on this thread, across loop objects.
+    // With no native task ready, one thread-wide FinalizationRegistry cleanup job
+    // runs as a separate host task followed by its own microtask checkpoint.
+    // Nested pumping from microtask or cleanup jobs returns an empty result on
+    // this thread, across loop objects.
     RunResult runOneTask();
-    // Only this loop's native tasks; thread-wide microtasks are not included.
+    // This loop's native tasks and thread-wide cleanup jobs; not microtasks.
     bool hasReadyTasks();
     // This loop's tasks/timers plus the thread-wide shared JSJobs queue.
     bool hasPendingTasks() const;
-    // Returns immediately for shared pending microtasks, without executing them.
+    // Returns immediately for shared pending microtasks or cleanup jobs without
+    // executing them.
     // A wake can return false before the timeout. Real waiting is bounded;
     // fake clocks advance explicitly.
     bool waitForWork(std::chrono::milliseconds maximumWait);
