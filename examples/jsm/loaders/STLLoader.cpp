@@ -150,8 +150,7 @@ Pending& pending(){static thread_local Pending value;return value;}
 JSValue loadedCallback(const JSValue&,const Args& args,const Args&){
     auto& slot=pending();
     try {
-        STLLoader loader=STLLoader::fromObject(slot.manager.isUndefined()?JSValue{}:JSValue{});
-        (void)loader;
+
         const auto bytes=args.empty()?std::string{}:args[0].toString();
         std::vector<std::uint8_t> data;
         data.reserve(bytes.size());
