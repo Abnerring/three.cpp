@@ -51,7 +51,14 @@ const scenarios=[
     {eye:[0,0,5], near:0.1, far:2000, aspect:NaN, estimate:true, corners:[[-1,-1,0],[1,-1,0],[-1,1,0]]},
     {eye:[NaN,0,5], near:0.1, far:2000, aspect:1, estimate:false, corners:[[-1,-1,0],[1,-1,0],[-1,1,0]]},
     {eye:[0,0,5], near:0.1, far:2000, aspect:1, estimate:true, corners:[[NaN,-1,0],[1,-1,0],[-1,1,0]]},
-    {eye:[0,0,5], near:0.1, far:2000, aspect:1, estimate:false, corners:[[-Infinity,-1,0],[Infinity,-1,0],[-1,1,0]]}
+    {eye:[0,0,5], near:0.1, far:2000, aspect:1, estimate:false, corners:[[-Infinity,-1,0],[Infinity,-1,0],[-1,1,0]]},
+    // Signed zero in the corners and the eye: the cross products and the dot products that build
+    // the quaternion and the edges then carry -0, and the projection divides by differences of
+    // them, so a signed-zero difference shows up as a mirrored off-axis matrix.
+    {eye:[0,0,5], near:0.1, far:2000, aspect:1, estimate:false, corners:[[-0,-0,0],[0,-0,0],[-0,0,0]]},
+    {eye:[-0,-0,5], near:0.1, far:2000, aspect:1, estimate:true, corners:[[-1,-0,0],[1,0,0],[0,1,-0]]},
+    {eye:[0,0,5], near:0.1, far:2000, aspect:-0, estimate:true, corners:[[-1,-1,0],[1,-1,0],[-1,1,0]]},
+    {eye:[0,0,5], near:-0, far:2000, aspect:1, estimate:false, corners:[[-1,-1,0],[1,-1,0],[-1,1,0]]}
 ];
 const lines=scenarios.map(s=>`F ${s.eye.map(token).join(' ')} ${token(s.near)} ${token(s.far)} ${token(s.aspect)} `
     +`${s.corners.flat().map(token).join(' ')} ${s.estimate?1:0}`);
