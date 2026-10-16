@@ -1,5 +1,6 @@
 #include "XYZLoader.h"
 #include "core/BufferAttribute.h"
+#include "loaders/FileLoader.h"
 #include "math/Color.h"
 #include <cctype>
 #include <cmath>
@@ -68,7 +69,7 @@ double parseFloatJS(const std::string& text) {
     catch(...) { return std::numeric_limits<double>::quiet_NaN(); }
 }
 }
-std::shared_ptr<BufferGeometry> XYZLoader::parseText(const std::string& text) {
+std::shared_ptr<BufferGeometry> parseXYZText(const std::string& text) {
     std::vector<double> vertices,colors;
     Color color;
     std::size_t index=0;
@@ -103,7 +104,8 @@ std::shared_ptr<BufferGeometry> XYZLoader::parseText(const std::string& text) {
     }
     return geometry;
 }
-JSValue XYZLoader::parse(JSValue text){return nativeGeometry(parseText(text.toString()));}
+std::shared_ptr<BufferGeometry> XYZLoader::parseText(const std::string& text){return parseXYZText(text);}
+JSValue XYZLoader::parse(JSValue text){return nativeGeometry(parseXYZText(text.toString()));}
 XYZLoader::XYZLoader(JSValue manager):Loader(JSValue::object(prototype()),Existing{}){initialize(object_,manager);}
 JSValue XYZLoader::prototype() {
     static thread_local auto value=[] {
@@ -127,6 +129,39 @@ JSValue XYZLoader::prototype() {
     }();
     return value;
 }
+namespace {
+// The completion callback has to be a plain function because JSValue::NativeFunction is not a
+// std::function. The native transport answers synchronously, so the callbacks for the load in
+// flight are parked here for the duration of that call.
+struct Pending {
+    JSValue onLoad{},onError{},manager{},url{};
+};
+Pending& pending(){static thread_local Pending value;return value;}
+JSValue loadedCallback(const JSValue&,const Args& args,const Args&){
+    auto& slot=pending();
+    try {
+        const auto geometry=nativeGeometry(parseXYZText(args.empty()?std::string{}:args[0].toString()));
+        if(!slot.onLoad.isUndefined())slot.onLoad.call(JSValue{}, {geometry});
+    } catch(const std::exception& error) {
+        // Upstream logs to the console when no onError is supplied; there is no console natively,
+        // which is the same approximation FileLoader records for its status 0 warning.
+        if(!slot.onError.isUndefined())slot.onError.call(JSValue{}, {JSValue(error.what())});
+        if(!slot.manager.isUndefined())slot.manager.get("itemError").call(slot.manager, {slot.url});
+    }
+    return {};
+}
+}
 JSValue XYZLoader::load(JSValue url,JSValue onLoad,JSValue onProgress,JSValue onError){
-    throw JSTypeError("XYZLoader.load is not implemented natively yet");
+    auto& slot=pending();
+    slot.onLoad=onLoad;slot.onError=onError;slot.url=url;
+    slot.manager=object_.get("manager");
+    FileLoader fileLoader(slot.manager);
+    const auto call=[&](const char* name,const JSValue& value){const auto method=fileLoader.object().get(name);if(!method.isUndefined())method.call(fileLoader.object(),{value});};
+    call("setPath",object_.get("path"));
+    call("setRequestHeader",object_.get("requestHeader"));
+    call("setWithCredentials",object_.get("withCredentials"));
+    fileLoader.setResponseType("text");
+    const auto result=fileLoader.load(url,JSValue::function(loadedCallback,{}, "onLoad", 1),onProgress,onError);
+    slot= Pending{};
+    return result;
 }
