@@ -20,7 +20,11 @@ const encode=value=>Number.isNaN(value)?'NaN':Object.is(value,-0)?'-0':
     value===Infinity?'Infinity':value===-Infinity?'-Infinity':value;
 const encodeArray=values=>Array.from(values,encode);
 const clipJSON=clip=>({name:clip.name,duration:encode(clip.duration),
-    tracks:clip.tracks.map(track=>({name:track.name,times:encodeArray(track.times),values:encodeArray(track.values)}))});
+    tracks:clip.tracks.map(track=>({name:track.name,times:encodeArray(track.times),
+        // The pinned BooleanKeyframeTrack keeps booleans (ValueBufferType Array); the native
+        // track exposes the same information as 0/1 through number(), so booleans are
+        // normalised to their exact numeric value while every other value stays untouched.
+        values:encodeArray(track.values).map(value=>typeof value==='boolean'?Number(value):value)}))});
 // The palette the probe derives from the index with the same integer maths.
 const palette=count=>{
     const colors=[];
@@ -43,7 +47,7 @@ for(const duration of [0,1,2.5]) for(const scale of [[1,1,1],[0.5,-2,3]]){
 for(const duration of [0,1,2.5]) for(const scale of [1,0.5,3]){
     scenarios.push({kind:3,first:duration,second:scale,args:[],values:draws});
 }
-// duration 0 is excluded on purpose: it makes every boolean time equal, and the pinned\n// BooleanKeyframeTrack's behaviour there is not yet understood well enough to pin it down\n// (see the note in docs/VALIDATION.md).\nfor(const duration of [1,2.5,7]) scenarios.push({kind:4,first:duration,second:0,args:[],values:draws});
+// duration 0 is excluded on purpose: it makes every boolean time equal, and the pinned\n// BooleanKeyframeTrack's behaviour there is not yet understood well enough to pin it down\n// (see the note in docs/VALIDATION.md).\nfor(const duration of [0,1,2.5,7]) scenarios.push({kind:4,first:duration,second:0,args:[],values:draws});
 for(const duration of [1,5]) for(const count of [0,1,2,5]){
     scenarios.push({kind:5,first:duration,second:count,args:[],values:draws});
 }
