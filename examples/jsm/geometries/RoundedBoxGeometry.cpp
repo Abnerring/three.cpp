@@ -1,6 +1,9 @@
 #include "geometries/RoundedBoxGeometry.h"
+#include "math/MathUtils.h"
 #include "core/BufferAttribute.h"
+#include "math/MathUtils.h"
 #include "math/JSNumberMath.h"
+#include "math/MathUtils.h"
 #include <cmath>
 #include <cstddef>
 #include <vector>
@@ -28,7 +31,7 @@ double getUv(const Vector3& faceDirVector, const Vector3& normal, int uvAxis, in
              double radius, double sideLength) {
     const double totArcLength = 2 * PI * radius / 4;
     // length of the planes between the arcs on each axis
-    const double centerLength = std::max(sideLength - 2 * radius, 0.);
+    const double centerLength = MathUtils::max(sideLength - 2 * radius, 0.);
     const double halfArc = PI / 4;
     // Get the vector projected onto the Y plane
     tempNormal.copy(normal);
@@ -53,7 +56,7 @@ RoundedBoxGeometry::RoundedBoxGeometry(double width, double height, double depth
     // ensure it's odd so that we have a plane connecting the rounded corners
     const double totalSegments = segments * 2 + 1;
     // ensure radius isn't bigger than shortest side
-    radius = std::min(std::min(width / 2, height / 2), std::min(depth / 2, radius));
+    radius = MathUtils::min(MathUtils::min(width / 2, height / 2), MathUtils::min(depth / 2, radius));
     type = "RoundedBoxGeometry";
     parameters = {width, height, depth, segments, radius};
     // if totalSegments is 1, no rounding is needed - return regular box
