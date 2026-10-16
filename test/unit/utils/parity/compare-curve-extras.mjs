@@ -48,6 +48,16 @@ for(const value of [0,-0,1,-1,1e-8,-1e-8,1e8,Math.PI,-Math.PI,1e300,900719925474
     scenarios.push({line:`N ${token(value)}`,expected:{value:encode(Math.sin(value))}});
     scenarios.push({line:`O ${token(value)}`,expected:{value:encode(Math.cos(value))}});
 }
+// Argument reduction is where a hand-written sin/cos most plausibly parts ways with Math.sin/cos,
+// so the grid adds huge, tiny and near-multiple-of-pi/2 arguments next to the subnormal and
+// signed-zero boundaries.
+for(const value of [5e-324,-5e-324,1e-320,1e-300,1e-16,-1e-16,0.5,-0.5,Math.PI/2,-Math.PI/2,3*Math.PI/2,
+    Math.PI/4,-Math.PI/4,2*Math.PI,-2*Math.PI,1e15,1e16,-1e16,1e100,-1e100,1e308,-1e308,
+    1.5707963267948966,1.5707963267948968,-1.5707963267948968,6.283185307179586,3.141592653589793,
+    4294967296,9007199254740991,-9007199254740991,1e21,-1e21,1e22,2**53+2,2**60,2**70]){
+    scenarios.push({line:`N ${token(value)}`,expected:{value:encode(Math.sin(value))}});
+    scenarios.push({line:`O ${token(value)}`,expected:{value:encode(Math.cos(value))}});
+}
 
 // Curve coverage: every exported class, default construction plus an explicit scale, and a
 // parameter list that spans the domain and beyond it.
@@ -89,4 +99,4 @@ for(let index=0;index<scenarios.length;++index){
     compared+=1;
 }
 console.log(`CurveExtras parity: ${compared} scenarios (${curveScenarios} curve constructions, `
-    +`${powCases.length} Math.pow, 212 Math.sin/Math.cos inputs) from the pinned checkout; ${process.version}`);
+    +`${powCases.length} Math.pow, 284 Math.sin/Math.cos inputs) from the pinned checkout; ${process.version}`);
