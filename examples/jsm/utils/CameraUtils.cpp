@@ -1,4 +1,4 @@
-﻿#include "utils/CameraUtils.h"
+#include "utils/CameraUtils.h"
 #include "math/JSNumberMath.h"
 #include "math/MathUtils.h"
 #include <algorithm>
@@ -42,7 +42,7 @@ void CameraUtils::frameCorners(PerspectiveCamera& camera, const Vector3& bottomL
     if (estimateViewFrustum) {
         // Set fieldOfView to a conservative estimate
         // to make frustum tall/wide enough to encompass it
-        camera.fov = RAD2DEG / std::min(1.0, camera.aspect) *
+        camera.fov = RAD2DEG / MathUtils::min(1.0, camera.aspect) *
             JSNumberMath::atan((vec.copy(pb).sub(pa).length() + (vec.copy(pc).sub(pa).length())) / va.length());
     }
 }

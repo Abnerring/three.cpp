@@ -43,7 +43,15 @@ const scenarios=[
     {eye:[0,0,5], near:0.1, far:2000, aspect:0, estimate:true, corners:[[-1,-1,0],[1,-1,0],[-1,1,0]]},
     {eye:[0,0,5], near:0.1, far:2000, aspect:1e6, estimate:true, corners:[[-1,-1,0],[1,-1,0],[-1,1,0]]},
     {eye:[0,0,5], near:0.1, far:2000, aspect:-2, estimate:true, corners:[[-1,-1,0],[1,-1,0],[-1,1,0]]},
-    {eye:[0,0,5], near:0, far:2000, aspect:1, estimate:false, corners:[[-1,-1,0],[1,-1,0],[-1,1,0]]}
+    {eye:[0,0,5], near:0, far:2000, aspect:1, estimate:false, corners:[[-1,-1,0],[1,-1,0],[-1,1,0]]},
+    // Non-finite parameters and corners: frameCorners never validates them, so NaN and Infinity
+    // reach the quaternion, the projection matrix and the fov estimate.
+    {eye:[0,0,5], near:NaN, far:2000, aspect:1, estimate:true, corners:[[-1,-1,0],[1,-1,0],[-1,1,0]]},
+    {eye:[0,0,5], near:0.1, far:Infinity, aspect:1, estimate:true, corners:[[-1,-1,0],[1,-1,0],[-1,1,0]]},
+    {eye:[0,0,5], near:0.1, far:2000, aspect:NaN, estimate:true, corners:[[-1,-1,0],[1,-1,0],[-1,1,0]]},
+    {eye:[NaN,0,5], near:0.1, far:2000, aspect:1, estimate:false, corners:[[-1,-1,0],[1,-1,0],[-1,1,0]]},
+    {eye:[0,0,5], near:0.1, far:2000, aspect:1, estimate:true, corners:[[NaN,-1,0],[1,-1,0],[-1,1,0]]},
+    {eye:[0,0,5], near:0.1, far:2000, aspect:1, estimate:false, corners:[[-Infinity,-1,0],[Infinity,-1,0],[-1,1,0]]}
 ];
 const lines=scenarios.map(s=>`F ${s.eye.map(token).join(' ')} ${token(s.near)} ${token(s.far)} ${token(s.aspect)} `
     +`${s.corners.flat().map(token).join(' ')} ${s.estimate?1:0}`);
