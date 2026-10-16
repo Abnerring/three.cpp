@@ -1,5 +1,17 @@
 # 验证记录
 
+## 当前追加验证：NURBS 全家族差分与 surface/volume，2026-10-17
+
+本轮在上一轮 CPU 组合（`THREECPP_BUILD_VULKAN=OFF`，本机无 Vulkan SDK 头与 glslangValidator）基础上补齐 NURBS 家族：
+
+- 新增 `NURBSSurface`、`NURBSVolume`（按固定源码复制 `knots.length - degree - 1` 的控制点块并重建 Vector4，缺失控制点抛上游 TypeError）。C++ 单测合并为 13 cases / 179 assertions 全部通过。
+- 新增 NURBS 差分探针与 `compare-nurbs.mjs`：直接导入固定 checkout 的 `NURBSUtils.js`、`NURBSCurve.js`、`NURBSSurface.js`、`NURBSVolume.js`，同一场景在两侧执行后逐字段比较。**98 个场景全部一致**：findSpan（含域外与 p=1/2/3）、calcBasisFunctions、B-Spline 点、基函数导数矩阵、B-Spline/有理/NURBS 导数、calcKoverI、曲面与体点、曲线采样与切线、曲线 JSON 字段、clone 的 arcLengthDivisions 与独立性，以及缺失控制点的 TypeError。上一轮只登记为 partial-unverified 的 NURBSUtils/NURBSCurve 由此获得实际差分证据。
+- 探针协议按“场景文本由 mjs 生成、C++ 只回显结果”实现，避免两侧各自构造输入造成假一致；过程中修正了探针网格解析把扁平点表当成行列表的问题（该错误由差分直接暴露，未进入源码）。
+- 注册 CTest：`threecpp.threejs-nurbs-parity` 通过；`addons-unit`、`threejs-sort-utils-parity`、`threejs-controls-parity`、`port-audit` 同步通过（5/5，合计 6.67 秒）。
+- 审计重新生成：1,251 个模块，partial-unverified 203（+2）、missing 738（−2）、vulkan-port-pending 290、dependency-unverified 20；Acorn 8.11.2 解析错误 0。
+
+这些结果仍未接入任何几何体或渲染路径，NURBS 家族只具备 CPU 行为证据。
+
 ## 当前追加验证：addons 排序/Controls/NURBS 与审计刷新，2026-10-17
 
 本轮所有结果来自 `THREECPP_BUILD_VULKAN=OFF` 的 CPU 组合（本机仅存在 Vulkan 运行时 DLL，`VULKAN_SDK` 指向的目录已不存在，SDK 头与 glslangValidator 均缺失，因此 Vulkan 目标未参与构建与测试）。完整 CTest 终态 **148/150**：`threecpp.threejs-webgl-lights-states-parity` 在 1,500.12 秒超时（既有已知项），`threecpp.port-audit` 因新增模块后清单过期而失败；重新运行 `node utils/port-audit.mjs ../three.js` 后该测试 5/5 通过。

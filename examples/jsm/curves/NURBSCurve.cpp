@@ -1,18 +1,8 @@
-#include "curves/NURBSCurve.h"
+﻿#include "curves/NURBSCurve.h"
 #include "core/JSValue.h"
 #include <cmath>
 #include <cstddef>
 #include <limits>
-
-namespace {
-// `knots[ index ]` for a JavaScript array: a non-integral or out-of-range index is
-// `undefined`, which the linear mapping and the point lookup carry as NaN.
-double knotAt(const std::vector<double>& knots, double index) {
-    if (!std::isfinite(index) || index < 0 || std::trunc(index) != index || index >= double(knots.size()))
-        return std::numeric_limits<double>::quiet_NaN();
-    return knots[std::size_t(index)];
-}
-}
 
 NURBSCurve::NURBSCurve(double degree, std::vector<double> knots, std::vector<Vector4> controlPoints,
                        JSValue startKnot, JSValue endKnot)
@@ -28,8 +18,8 @@ NURBSCurve::NURBSCurve(double degree, std::vector<double> knots, std::vector<Vec
 Vector3& NURBSCurve::getPoint(double t, Vector3& optionalTarget) {
     Vector3& point = optionalTarget;
     // linear mapping t -> u
-    const double start = knotAt(knots, startKnot);
-    const double end = knotAt(knots, endKnot);
+    const double start = NURBSUtils::knotValue(knots, startKnot);
+    const double end = NURBSUtils::knotValue(knots, endKnot);
     const double u = start + t * (end - start);
     // following results in ( wx, wy, wz, w ) homogeneous point
     Vector4 hpoint = NURBSUtils::calcBSplinePoint(degree, knots, controlPoints, u);
@@ -39,8 +29,8 @@ Vector3& NURBSCurve::getPoint(double t, Vector3& optionalTarget) {
 
 Vector3& NURBSCurve::getTangent(double t, Vector3& optionalTarget) {
     Vector3& tangent = optionalTarget;
-    const double first = knotAt(knots, 0);
-    const double last = knotAt(knots, double(knots.size()) - 1);
+    const double first = NURBSUtils::knotValue(knots, 0);
+    const double last = NURBSUtils::knotValue(knots, double(knots.size()) - 1);
     const double u = first + t * (last - first);
     const std::vector<Vector3> ders = NURBSUtils::calcNURBSDerivatives(degree, knots, controlPoints, u, 1);
     if (ders.size() < 2) throw JSTypeError("NURBSCurve.getTangent: derivative entry is undefined");

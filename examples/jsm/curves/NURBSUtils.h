@@ -18,6 +18,10 @@ using ControlPoints = std::vector<Vector4>;
 using ControlGrid = std::vector<ControlPoints>;
 using ControlVolume = std::vector<ControlGrid>;
 
+// JavaScript array read shared by the addon ports: an integral index inside the array
+// yields a value, every other index is `undefined`, which arithmetic carries as NaN.
+double knotValue(const KnotVector& U, double index);
+
 // Finds the knot vector span.
 double findSpan(double p, double u, const KnotVector& U);
 // Calculates basis functions: The NURBS Book, page 70, algorithm A2.2.

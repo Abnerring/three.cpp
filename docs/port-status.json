@@ -185,8 +185,8 @@
     "note": "Accepted port scope is src and examples/jsm, including tracked third-party dependencies. Editor/manual web applications are excluded from native application rewrites. Native host behavior, packaging and all three platforms require separate implementation and verification evidence."
   },
   "counts": {
-    "partial-unverified": 201,
-    "missing": 740,
+    "partial-unverified": 203,
+    "missing": 738,
     "vulkan-port-pending": 290,
     "dependency-unverified": 20
   },
@@ -202,8 +202,8 @@
     "examples/jsm": {
       "modules": 496,
       "counts": {
-        "missing": 471,
-        "partial-unverified": 5,
+        "missing": 469,
+        "partial-unverified": 7,
         "dependency-unverified": 20
       }
     }
@@ -248,7 +248,7 @@
       "path": "examples/jsm/curves",
       "upstreamFiles": 5,
       "moduleCount": 5,
-      "modulesWithCppFiles": 2,
+      "modulesWithCppFiles": 4,
       "verifiedComplete": 0
     },
     {
@@ -22621,11 +22621,11 @@
       "scope": "examples/jsm",
       "kind": "addon",
       "upstreamSha256": "2b72f099a7607253249fe9a9b0276152ae34706e6503fa6e56dd2e42b5d32f15",
-      "header": null,
-      "implementation": null,
+      "header": "examples/jsm/curves/NURBSSurface.h",
+      "implementation": "examples/jsm/curves/NURBSSurface.cpp",
       "expectedHeader": "examples/jsm/curves/NURBSSurface.h",
       "expectedImplementation": "examples/jsm/curves/NURBSSurface.cpp",
-      "status": "missing",
+      "status": "partial-unverified",
       "verifiedComplete": false,
       "apiExtraction": "static-only",
       "verification": {
@@ -22634,7 +22634,9 @@
           "pointer": "/modules/776"
         },
         "upstreamUnitTests": [],
-        "cppUnitTests": [],
+        "cppUnitTests": [
+          "test/unit/addons/curves/NURBSSurface.tests.cpp"
+        ],
         "reviewedImplementation": [],
         "differentialResults": [],
         "renderingResults": [],
@@ -22677,11 +22679,11 @@
       "scope": "examples/jsm",
       "kind": "addon",
       "upstreamSha256": "bfd3ec64a7914abc69d26296360d795e5966bf9ade77f63669cef90de70d541d",
-      "header": null,
-      "implementation": null,
+      "header": "examples/jsm/curves/NURBSVolume.h",
+      "implementation": "examples/jsm/curves/NURBSVolume.cpp",
       "expectedHeader": "examples/jsm/curves/NURBSVolume.h",
       "expectedImplementation": "examples/jsm/curves/NURBSVolume.cpp",
-      "status": "missing",
+      "status": "partial-unverified",
       "verifiedComplete": false,
       "apiExtraction": "static-only",
       "verification": {
@@ -22690,7 +22692,9 @@
           "pointer": "/modules/778"
         },
         "upstreamUnitTests": [],
-        "cppUnitTests": [],
+        "cppUnitTests": [
+          "test/unit/addons/curves/NURBSVolume.tests.cpp"
+        ],
         "reviewedImplementation": [],
         "differentialResults": [],
         "renderingResults": [],

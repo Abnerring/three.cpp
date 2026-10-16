@@ -252,6 +252,6 @@ Cache 与 DefaultLoadingManager 的模块导出使用 constinit 非拥有 facade
 
 `src/extras/Controls` 提供控制类基类的 object/domElement/enabled/state/keys/mouseButtons/touches 默认值与 connect/disconnect/dispose/update 钩子；connect 保留严格的 `!== null` 判断，undefined 也会先触发断开。单测 5 cases / 40 assertions；差分在构造默认值、8 步 connect 序列（含 undefined/null 与 disconnect 调用计数）及 EventDispatcher 继承关系上一致。派生控制类的 DOM 事件接线、原生窗口输入与平台事件源仍待逐项实现。
 
-`examples/jsm/curves/NURBSUtils` 与 `NURBSCurve` 按固定源码实现 findSpan、基函数及其导数、B-Spline 点与导数、有理曲线导数、曲面/体点，以及曲线的 getPoint/getTangent/copy/clone/JSON。节点向量与控制点的求值顺序保持 binary64；越界控制点按上游 TypeError 显式抛错，非收敛节点向量显式报错而不静默改写，`startKnot`/`endKnot` 保留 `||` 真值回退。单测 9 cases / 139 assertions，参考值由固定 Node oracle 实际运行上游模块生成。独立差分探针尚未建立，这两个模块只登记为 partial-unverified。
+`examples/jsm/curves/NURBSUtils`、`NURBSCurve`、`NURBSSurface` 与 `NURBSVolume` 按固定源码实现 findSpan、基函数及其导数、B-Spline 点与导数、有理曲线导数、曲面/体点，以及曲线的 getPoint/getTangent/copy/clone/JSON 和曲面/体的构造裁剪与 getPoint。节点向量与控制点的求值顺序保持 binary64；越界控制点按上游 TypeError 显式抛错（曲面/体构造只复制 `knots.length - degree - 1` 的块，缺失项同样抛错），非收敛节点向量显式报错而不静默改写，`startKnot`/`endKnot` 保留 `||` 真值回退。单测 13 cases / 179 assertions；差分直接导入固定 checkout 的四个模块，98 个场景逐字段一致，覆盖 3 种次数、非单位权重、域外参数、曲面/体点、曲线采样与切线、JSON 字段、clone 独立性与上游 TypeError。这些是 CPU 侧结果，尚不代表任何几何体/渲染路径已接入。
 
 本机 MSVC 为中文界面时，CMake 检测到的 `/showIncludes` 前缀是乱码（缓存值为 `娉ㄦ剰: 鍖呭惈鏂囦欢:`），Ninja 因此无法建立头文件依赖，修改头文件不会触发重编；本轮以显式重编受影响对象规避，并把前缀固定为 ASCII 值。该限制属于构建工具链环境问题，与源码一致性无关。

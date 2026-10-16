@@ -29,6 +29,10 @@ std::size_t count(double value) {
 
 namespace NURBSUtils {
 
+double knotValue(const KnotVector& U, double index) {
+    return knotAt(U, index);
+}
+
 double findSpan(double p, double u, const KnotVector& U) {
     const double n = double(U.size()) - p - 1;
     if (u >= knotAt(U, n)) return n - 1;
