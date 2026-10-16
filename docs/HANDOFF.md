@@ -25,6 +25,10 @@
 4. **验证缺口（已关闭）**：`JSNumberMath::acos` 目前**只有间接覆盖** —— `compare-math-core-trig.mjs` 通过 `Vector3.angleTo`、`Spherical.setFromVector3`、`Vector4.setAxisAngleFromQuaternion` 走到它，`compare-property-mixer.mjs` 只是在 JS 侧用 `Math.acos` 当 oracle；**没有直接的输入网格**（对比：`pow` 27,654 个输入、`sin/cos` 284 个、`tan/asin/atan/atan2` 2,491 个场景、`exp/log/log2` 2,869 个场景）。而 fdlibm 的 `acos` 有 `|x| > 0.5` 的分支切换，正是需要网格才能钉住的地方。补法：在 `MathTrigParityProbe` 里加一类 `acos <x>` 场景（或复用 `compare-curve-extras.mjs` 的 `N`/`O` 形式加一个 `A <x>` 并同步扩 C++ 探针），网格取 `±1`、`±1∓ulp`（`0.9999999999999999`/`1.0000000000000002`）、`±0.5`、`±0.5∓ulp`、`±0`、`±1e-8`、次正规、`|x| > 1`（NaN 路径）、NaN/±Infinity。
 
 5. **已修复并已覆盖（历史记录）**
+9. **加固差分前先分辨探针是"单侧"还是"两侧配对"**：
+   - 单侧（只改 JS 侧即可加固）：摘要统计、场景列表、注入序列等都在 .mjs 里，C++ 探针按既有协议被动接收。例：`compare-camera-utils.mjs`、`compare-loft-decal.mjs`、`compare-mesh-surface-sampler.mjs`、`compare-animation-clip-creator.mjs`、`compare-curve-extras.mjs`、以及 `compare-animation-runtime.mjs` 的摘要统计（第 50 轮只加了比较值计数）。
+   - 两侧配对（必须同时改 C++ 探针与脚本，再重编）：`compare-runtime.mjs` 用 `const expected = {}` 加 `emit(name, value)` 收集具名 trace，C++ 探针必须产出**同名的每一项**，否则 `compare` 会报缺失 —— 因此加固它是"C++ 加发射 + JS 加 emit + 重编 + 验证"的完整闭环，不是多写几行。
+   - 判断方法：打开 .mjs 看它是否有 `emit` / 固定具名键集合；若 `expected` 的键由脚本枚举而探针只是逐行应答，则通常属单侧（但仍需确认协议）。
 8. **流程纪律（本轮踩到，务必遵守）**：
    - 验证命令失败时**不要提交**，即使怀疑失败原因是自己调用姿势不对 —— 先看清输出、再用正确方式复跑一次，通过后才提交。本轮我曾把脚本与 git commit 放在同一条命令里，脚本因我传错了探针二进制名（ENOENT）而失败，我却仍然提交了；事后用注册的 ctest 复跑确认改动本身没问题，但操作顺序是错的。
    - **过滤输出时不要连错误一起滤掉**：同一轮我用只匹配 files changed 的过滤器查看提交结果，恰好把失败信息挡在视野之外。凡是用 Select-String / grep 收窄输出，都要同时保留 error / Error / FAILED / Exception 等模式。
