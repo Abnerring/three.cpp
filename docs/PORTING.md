@@ -266,4 +266,10 @@ Cache 与 DefaultLoadingManager 的模块导出使用 constinit 非拥有 facade
 
 `examples/jsm/geometries` 的 ParametricFunctions、ParametricGeometry、BoxLineGeometry 与 RoundedBoxGeometry 已移植。ParametricGeometry 的上游回调映射为 std::function（`parameters.func` 无法进入 JSON，序列化只写 slices/stacks，与 JSON.stringify 丢弃函数值的结果一致）；RoundedBoxGeometry 保留 `Math.sign` 的 ±0 语义、面积/UV 弧长比例、半径夹取与 `totalSegments === 1` 的提前返回，并按 `new this.constructor().copy( this )` 实现 clone（因此克隆实例保持默认 parameters，与本类不覆写 copy 的上游行为一致）；BoxLineGeometry 不设置 type/parameters，与上游相同。差分 111 个场景 / 34,168 个属性分量逐位一致；单测 13 cases / 1,015 assertions。
 
+`examples/jsm/math/ColorSpaces` 按固定源码导出四个色彩空间名与四个实现对象，模块级对象按 UniformsLib 的同一约定构建（每 realm 一个模块对象 + 弱缓存）。`transfer` 复用原生 ColorManagement 表示传递函数的同一取值，`toXYZ`/`fromXYZ` 是真实 Matrix3 包装并按模块生命周期保留，`ExtendedSRGBColorSpaceImpl` 按对象展开语义复制当前 sRGB 空间的自有可枚举字段（引用同一对象，身份保持）后替换输出配置。差分比较的不只是数值表，还包括这些身份关系：Display P3 用 sRGB 传递函数、线性变体用线性传递函数、扩展 sRGB 与 sRGB 空间共享全部展开字段而输出配置是独立对象。差分过程中发现两处属于**验证脚本**的问题并修正：上游模块 import 的是 `three` 包（打包产物），比较脚本必须读取同一模块实例，否则 `ColorManagement.spaces` 是另一份；ES 模块命名空间的导出顺序按规范是字典序，比较时应按集合而非源顺序。
+
+`examples/jsm/math/SimplexNoise` 的构造器保留 `r.random()` 填充置换表的行为，C++ 侧以 `std::function<double()>` 注入随机源（默认使用原生实现，可传入确定性序列）；`grad3`/`grad4`/`p`/`perm`/`simplex` 表与 `noise`/`noise3d`/`noise4d` 的算术顺序按源码保留。差分用两侧相同的伪随机序列构造实例，比较 5 组实例表与三个方法各 1,955 个输入，共 1,960 个场景逐位一致；单测 4 cases / 15,454 assertions。
+
+`examples/jsm/math/ConvexHull` 与 `examples/jsm/geometries/ConvexGeometry` 已移植（Face/HalfEdge/VertexNode/VertexList 与全部私有算法）。C++ 没有 GC，节点由每个 hull 的 arena 拥有、链接保持裸指针，`makeEmpty()` 与 `_reindexFaces()` 只替换容器，因此仍被引用的对象保持有效；`intersectRay` 的 min/max 使用 `MathUtils::min/max` 以保留 NaN 与符号零语义；退化点云按固定版本的 V8 消息显式抛错。差分 358 个场景逐位一致（含 18 组 hull 状态、180 次 intersectRay 与 55 组抛错点云）；单测 14 cases / 1,152 assertions。`setFromObject` 依赖 Mesh/Line/Points/Sprite 图，只有原生单测覆盖。
+
 本机 MSVC 为中文界面时，CMake 检测到的 `/showIncludes` 前缀是乱码（缓存值为 `娉ㄦ剰: 鍖呭惈鏂囦欢:`），Ninja 因此无法建立头文件依赖，修改头文件不会触发重编；本轮以显式重编受影响对象规避，并把前缀固定为 ASCII 值。该限制属于构建工具链环境问题，与源码一致性无关。

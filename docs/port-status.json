@@ -194,8 +194,8 @@
     "note": "Accepted port scope is src and examples/jsm, including tracked third-party dependencies. Editor/manual web applications are excluded from native application rewrites. Native host behavior, packaging and all three platforms require separate implementation and verification evidence."
   },
   "counts": {
-    "partial-unverified": 214,
-    "missing": 727,
+    "partial-unverified": 218,
+    "missing": 723,
     "vulkan-port-pending": 290,
     "dependency-unverified": 20
   },
@@ -211,8 +211,8 @@
     "examples/jsm": {
       "modules": 496,
       "counts": {
-        "missing": 458,
-        "partial-unverified": 18,
+        "missing": 454,
+        "partial-unverified": 22,
         "dependency-unverified": 20
       }
     }
@@ -299,7 +299,7 @@
       "path": "examples/jsm/geometries",
       "upstreamFiles": 9,
       "moduleCount": 9,
-      "modulesWithCppFiles": 4,
+      "modulesWithCppFiles": 5,
       "verifiedComplete": 0
     },
     {
@@ -495,7 +495,7 @@
       "path": "examples/jsm/math",
       "upstreamFiles": 10,
       "moduleCount": 10,
-      "modulesWithCppFiles": 4,
+      "modulesWithCppFiles": 7,
       "verifiedComplete": 0
     },
     {
@@ -23614,11 +23614,11 @@
       "scope": "examples/jsm",
       "kind": "addon",
       "upstreamSha256": "24f3196c5494217a04df83eb2f7677eadac93e4efca39afb6269f76e680b0fac",
-      "header": null,
-      "implementation": null,
+      "header": "examples/jsm/geometries/ConvexGeometry.h",
+      "implementation": "examples/jsm/geometries/ConvexGeometry.cpp",
       "expectedHeader": "examples/jsm/geometries/ConvexGeometry.h",
       "expectedImplementation": "examples/jsm/geometries/ConvexGeometry.cpp",
-      "status": "missing",
+      "status": "partial-unverified",
       "verifiedComplete": false,
       "apiExtraction": "static-only",
       "verification": {
@@ -23627,7 +23627,9 @@
           "pointer": "/modules/812"
         },
         "upstreamUnitTests": [],
-        "cppUnitTests": [],
+        "cppUnitTests": [
+          "test/unit/addons/geometries/ConvexGeometry.tests.cpp"
+        ],
         "reviewedImplementation": [],
         "differentialResults": [],
         "renderingResults": [],
@@ -28859,11 +28861,11 @@
       "scope": "examples/jsm",
       "kind": "addon",
       "upstreamSha256": "12e39192f0151e264ca06f5525fd8219db28a57839b6b8c4a036424c5029a1d7",
-      "header": null,
-      "implementation": null,
+      "header": "examples/jsm/math/ColorSpaces.h",
+      "implementation": "examples/jsm/math/ColorSpaces.cpp",
       "expectedHeader": "examples/jsm/math/ColorSpaces.h",
       "expectedImplementation": "examples/jsm/math/ColorSpaces.cpp",
-      "status": "missing",
+      "status": "partial-unverified",
       "verifiedComplete": false,
       "apiExtraction": "partial-static",
       "verification": {
@@ -28874,7 +28876,9 @@
         "upstreamUnitTests": [
           "test/unit/addons/math/ColorSpaces.tests.js"
         ],
-        "cppUnitTests": [],
+        "cppUnitTests": [
+          "test/unit/addons/math/ColorSpaces.tests.cpp"
+        ],
         "reviewedImplementation": [],
         "differentialResults": [],
         "renderingResults": [],
@@ -28888,11 +28892,11 @@
       "scope": "examples/jsm",
       "kind": "addon",
       "upstreamSha256": "756925f9dc1334e8c3e2e5f9f7cde4bdfdeb36e5d7c94791302252348464b77d",
-      "header": null,
-      "implementation": null,
+      "header": "examples/jsm/math/ConvexHull.h",
+      "implementation": "examples/jsm/math/ConvexHull.cpp",
       "expectedHeader": "examples/jsm/math/ConvexHull.h",
       "expectedImplementation": "examples/jsm/math/ConvexHull.cpp",
-      "status": "missing",
+      "status": "partial-unverified",
       "verifiedComplete": false,
       "apiExtraction": "static-only",
       "verification": {
@@ -28901,7 +28905,9 @@
           "pointer": "/modules/1006"
         },
         "upstreamUnitTests": [],
-        "cppUnitTests": [],
+        "cppUnitTests": [
+          "test/unit/addons/math/ConvexHull.tests.cpp"
+        ],
         "reviewedImplementation": [],
         "differentialResults": [],
         "renderingResults": [],
@@ -29056,11 +29062,11 @@
       "scope": "examples/jsm",
       "kind": "addon",
       "upstreamSha256": "d069ffe5799739537b69a57de89315def52ffee0908cbb97b04c64bc72a3207f",
-      "header": null,
-      "implementation": null,
+      "header": "examples/jsm/math/SimplexNoise.h",
+      "implementation": "examples/jsm/math/SimplexNoise.cpp",
       "expectedHeader": "examples/jsm/math/SimplexNoise.h",
       "expectedImplementation": "examples/jsm/math/SimplexNoise.cpp",
-      "status": "missing",
+      "status": "partial-unverified",
       "verifiedComplete": false,
       "apiExtraction": "static-only",
       "verification": {
@@ -29069,7 +29075,9 @@
           "pointer": "/modules/1012"
         },
         "upstreamUnitTests": [],
-        "cppUnitTests": [],
+        "cppUnitTests": [
+          "test/unit/addons/math/SimplexNoise.tests.cpp"
+        ],
         "reviewedImplementation": [],
         "differentialResults": [],
         "renderingResults": [],

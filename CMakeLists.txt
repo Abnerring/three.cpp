@@ -199,8 +199,10 @@ if(THREECPP_BUILD_ADDONS)
         examples/jsm/utils/BufferGeometryUtils.cpp
         examples/jsm/math/ImprovedNoise.cpp
         examples/jsm/math/ColorConverter.cpp
+        examples/jsm/math/ColorSpaces.cpp
         examples/jsm/math/Capsule.cpp
         examples/jsm/math/OBB.cpp
+        examples/jsm/math/SimplexNoise.cpp
         examples/jsm/curves/NURBSUtils.cpp
         examples/jsm/curves/NURBSCurve.cpp
         examples/jsm/curves/NURBSSurface.cpp
@@ -209,7 +211,9 @@ if(THREECPP_BUILD_ADDONS)
         examples/jsm/geometries/ParametricFunctions.cpp
         examples/jsm/geometries/ParametricGeometry.cpp
         examples/jsm/geometries/BoxLineGeometry.cpp
-        examples/jsm/geometries/RoundedBoxGeometry.cpp)
+        examples/jsm/geometries/RoundedBoxGeometry.cpp
+        examples/jsm/math/ConvexHull.cpp
+        examples/jsm/geometries/ConvexGeometry.cpp)
     add_library(threecpp::addons ALIAS threecpp_addons)
     target_link_libraries(threecpp_addons PUBLIC threecpp::threecpp)
     target_include_directories(threecpp_addons PUBLIC

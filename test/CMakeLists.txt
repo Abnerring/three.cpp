@@ -278,12 +278,16 @@ if(THREECPP_BUILD_ADDONS)
         unit/addons/utils/BufferGeometryUtils.tests.cpp
         unit/addons/math/ImprovedNoise.tests.cpp
         unit/addons/math/ColorConverter.tests.cpp
+        unit/addons/math/ColorSpaces.tests.cpp
         unit/addons/math/Capsule.tests.cpp
         unit/addons/math/OBB.tests.cpp
+        unit/addons/math/SimplexNoise.tests.cpp
         unit/addons/geometries/ParametricFunctions.tests.cpp
         unit/addons/geometries/ParametricGeometry.tests.cpp
         unit/addons/geometries/BoxLineGeometry.tests.cpp
         unit/addons/geometries/RoundedBoxGeometry.tests.cpp
+        unit/addons/math/ConvexHull.tests.cpp
+        unit/addons/geometries/ConvexGeometry.tests.cpp
         unit/addons/curves/NURBSUtils.tests.cpp
         unit/addons/curves/NURBSCurve.tests.cpp
         unit/addons/curves/NURBSSurface.tests.cpp
@@ -306,8 +310,14 @@ if(THREECPP_BUILD_ADDONS)
     target_link_libraries(ThreeJsBufferGeometryUtilsParityProbe PRIVATE threecpp::addons)
     add_executable(ThreeJsAddonMathParityProbe unit/utils/parity/AddonMathParityProbe.cpp)
     target_link_libraries(ThreeJsAddonMathParityProbe PRIVATE threecpp::addons)
+    add_executable(ThreeJsColorSpacesParityProbe unit/utils/parity/ColorSpacesParityProbe.cpp)
+    target_link_libraries(ThreeJsColorSpacesParityProbe PRIVATE threecpp::addons)
+    add_executable(ThreeJsSimplexNoiseParityProbe unit/utils/parity/SimplexNoiseParityProbe.cpp)
+    target_link_libraries(ThreeJsSimplexNoiseParityProbe PRIVATE threecpp::addons)
     add_executable(ThreeJsGeometryExtrasParityProbe unit/utils/parity/GeometryExtrasParityProbe.cpp)
     target_link_libraries(ThreeJsGeometryExtrasParityProbe PRIVATE threecpp::addons)
+    add_executable(ThreeJsConvexHullParityProbe unit/utils/parity/ConvexHullParityProbe.cpp)
+    target_link_libraries(ThreeJsConvexHullParityProbe PRIVATE threecpp::addons)
 endif()
 if(THREECPP_BUILD_VULKAN)
     add_executable(VulkanShaderCompilerTests unit/three.source.unit.cpp
@@ -766,9 +776,18 @@ if(THREECPP_NODE_EXECUTABLE)
             add_test(NAME threecpp.threejs-addon-math-parity
                 COMMAND "${THREECPP_NODE_EXECUTABLE}" "${CMAKE_CURRENT_SOURCE_DIR}/unit/utils/parity/compare-addon-math.mjs"
                 "${THREEJS_SOURCE_DIR}" "$<TARGET_FILE:ThreeJsAddonMathParityProbe>")
+            add_test(NAME threecpp.threejs-color-spaces-parity
+                COMMAND "${THREECPP_NODE_EXECUTABLE}" "${CMAKE_CURRENT_SOURCE_DIR}/unit/utils/parity/compare-color-spaces.mjs"
+                "${THREEJS_SOURCE_DIR}" "$<TARGET_FILE:ThreeJsColorSpacesParityProbe>")
+            add_test(NAME threecpp.threejs-simplex-noise-parity
+                COMMAND "${THREECPP_NODE_EXECUTABLE}" "${CMAKE_CURRENT_SOURCE_DIR}/unit/utils/parity/compare-simplex-noise.mjs"
+                "${THREEJS_SOURCE_DIR}" "$<TARGET_FILE:ThreeJsSimplexNoiseParityProbe>")
             add_test(NAME threecpp.threejs-jsm-geometries-parity
                 COMMAND "${THREECPP_NODE_EXECUTABLE}" "${CMAKE_CURRENT_SOURCE_DIR}/unit/utils/parity/compare-jsm-geometries.mjs"
                 "${THREEJS_SOURCE_DIR}" "$<TARGET_FILE:ThreeJsGeometryExtrasParityProbe>")
+            add_test(NAME threecpp.threejs-convex-hull-parity
+                COMMAND "${THREECPP_NODE_EXECUTABLE}" "${CMAKE_CURRENT_SOURCE_DIR}/unit/utils/parity/compare-convex-hull.mjs"
+                "${THREEJS_SOURCE_DIR}" "$<TARGET_FILE:ThreeJsConvexHullParityProbe>")
         endif()
         add_test(NAME threecpp.threejs-webgl-info-parity
             COMMAND "${THREECPP_NODE_EXECUTABLE}" "${CMAKE_CURRENT_SOURCE_DIR}/unit/utils/parity/compare-webgl-info.mjs"

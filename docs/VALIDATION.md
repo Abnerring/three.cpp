@@ -1,5 +1,14 @@
 # 验证记录
 
+## 当前追加验证：ColorSpaces、SimplexNoise、ConvexHull/ConvexGeometry，2026-10-17
+
+- 新增 4 个模块。`ColorSpaces` 与 `SimplexNoise` 之外的 ConvexHull/ConvexGeometry 由子代理实现、主会话独立复核（强制重编、跑单测与差分、检查改动范围与适配说明）；`ColorSpaces` 由主会话实现。全部差分脚本导入固定 checkout 的上游模块并用 `assert.deepEqual` 比较，无容差。
+- `threecpp.threejs-color-spaces-parity`：模块导出、四个实现对象、传递函数身份与扩展 sRGB 的展开身份全部一致。该差分暴露了两处**验证脚本**缺陷并修正：上游模块 import 的是 `three` 包（bundle），脚本必须读取同一模块实例，否则读到的是另一份 `ColorManagement.spaces`；ES 模块命名空间导出顺序按规范为字典序，比较改为按集合。另有自实现单测的一处错误：把 Matrix3 的存储当作行主序（实际列主序，`elements[1]` 是 n21），已按源码修正期望值。
+- `threecpp.threejs-simplex-noise-parity`：**1,960 个场景逐位一致**（5 组实例表 + `noise`/`noise3d`/`noise4d` 各 1,955 个输入），两侧注入相同伪随机序列；单测 4 cases / 15,454 assertions。
+- `threecpp.threejs-convex-hull-parity`：**358 个场景逐位一致**（18 组 hull 状态、14 组初始 hull、18 组 makeEmpty、18 组重复 setFromPoints、18 组 containsPoint、18 组 Face.distanceToPoint、180 次 intersectRay、18 组 ConvexGeometry、1 个空 hull、55 组抛错退化点云）；单测 14 cases / 1,152 assertions。
+- addons 全套 **113 cases / 22,297 assertions** 全部通过。审计重新生成：1,251 个模块，partial-unverified 218（+4）、missing 723（−4）、vulkan-port-pending 290、dependency-unverified 20；Acorn 解析错误 0。
+- 过程记录：ConvexHull 子代理期间报告“全套 3 处失败均在并发写入的 SimplexNoise.tests.cpp”，该失败随后由其作者修复，最终全套通过；另有一次构建失败是并发编辑造成的竞态，重试即通过（非源码问题）。
+
 ## 当前追加验证：addons math 与 geometries 两个集群，2026-10-17
 
 - 新增 `examples/jsm/math` 四模块（ImprovedNoise、ColorConverter、Capsule、OBB；实现由子代理完成，主会话复核并重新构建验证）与 `examples/jsm/geometries` 四模块（ParametricFunctions、ParametricGeometry、BoxLineGeometry、RoundedBoxGeometry；主会话自行实现）。两个集群各自一个差分探针，均直接导入固定 checkout 的上游模块并用 `assert.deepEqual` 比较，无容差。
