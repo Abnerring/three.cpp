@@ -87,7 +87,13 @@ const loftCases=[
     {sections:[[new Vector3(0,0,0),new Vector3(1,0,0),new Vector3(0,1,0)],[new Vector3(0,0,Infinity),new Vector3(1,0,1),new Vector3(0,1,1)]],options:{}},
     {sections:[[new Vector3(Infinity,0,0),new Vector3(-Infinity,0,0),new Vector3(0,1,0)],[new Vector3(0,0,1),new Vector3(1,0,1),new Vector3(0,1,1)]],options:{capStart:true,capEnd:true}},
     {sections:[[new Vector3(NaN,NaN,NaN)],[new Vector3(NaN,NaN,NaN)]],options:{}},
-    {sections:[[new Vector3(0,0,0),new Vector3(1,0,0),new Vector3(0,1,0)],[new Vector3(0,0,1),new Vector3(1,0,1),new Vector3(NaN,NaN,NaN)]],options:{capEnd:true}}
+    {sections:[[new Vector3(0,0,0),new Vector3(1,0,0),new Vector3(0,1,0)],[new Vector3(0,0,1),new Vector3(1,0,1),new Vector3(NaN,NaN,NaN)]],options:{capEnd:true}},
+    // Signed zero in the cap path: a section made only of negative zeros gives a contour whose
+    // bounding box difference is -0 on both axes, which the epsilon floor then has to clamp the
+    // same way Math.max does, and the mixed +/-0 section pins the min/max reductions themselves.
+    {sections:[[new Vector3(-0,-0,0),new Vector3(-0,-0,0),new Vector3(-0,-0,0)],[new Vector3(0,0,1),new Vector3(1,0,1),new Vector3(0,1,1)]],options:{capStart:true}},
+    {sections:[[new Vector3(0,-0,0),new Vector3(-0,0,0),new Vector3(0,0,0)],[new Vector3(0,0,1),new Vector3(1,0,1),new Vector3(0,1,1)]],options:{capStart:true,capEnd:true}},
+    {sections:[[new Vector3(0,0,-0),new Vector3(0,0,-0)],[new Vector3(0,0,1),new Vector3(1,0,1)]],options:{capStart:true}}
 ];
 // A construction that the pinned module itself rejects is compared as the error name and
 // message, so the degenerate contour crash is part of the contract.
