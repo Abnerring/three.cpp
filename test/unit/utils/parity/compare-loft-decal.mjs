@@ -69,7 +69,18 @@ const loftCases=[
     {sections:[ring(0,1,4),ring(1,1,4)],options:{closed:false,capStart:true,capEnd:true}},
     {sections:[ring(0,1,4)],options:{}},                       // single section: console.error path
     {sections:[ring(0,1,4),ring(1,1,3)],options:{}},           // mismatched columns: console.error path
-    {sections:[],options:{}}
+    {sections:[],options:{}},
+    // Degenerate section shapes: a single point per section (closed sections then repeat it, so
+    // every edge has zero length and the arc-length uvs divide by the total), a two-point section
+    // with caps (the contour triangulation gets a line), and sections whose consecutive points
+    // coincide so the per-point distances are zero.
+    {sections:[[new Vector3(0,0,0)],[new Vector3(0,0,1)]],options:{}},
+    {sections:[[new Vector3(0,0,0)],[new Vector3(0,0,1)]],options:{capStart:true,capEnd:true}},
+    {sections:[[new Vector3(0,0,0)],[new Vector3(0,0,1)]],options:{closed:false}},
+    {sections:[[new Vector3(1,0,0),new Vector3(0,1,0)],[new Vector3(1,0,1),new Vector3(0,1,1)]],
+        options:{capStart:true,capEnd:true}},
+    {sections:[[new Vector3(0,0,0),new Vector3(0,0,0)],[new Vector3(0,0,1),new Vector3(0,0,1)]],options:{}},
+    {sections:[ring(0,1,4),ring(0,1,4),ring(1,1,4)],options:{capStart:true}}
 ];
 // A construction that the pinned module itself rejects is compared as the error name and
 // message, so the degenerate contour crash is part of the contract.
