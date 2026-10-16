@@ -69,6 +69,20 @@ for(const meshKind of meshKinds){
     }
 }
 scenarios.push({meshKind:5,weightAttribute:'-',sampleCount:2,values:draws});
+// Boundary and degenerate draws: an exact 0 and an exact 1 draw (the pinned binary search then
+// walks off the end of the distribution), a draw sequence of a single value, and draws above 1
+// as well as a negative draw. These pin the search's edge behaviour instead of the happy path.
+for(const meshKind of [0,4]){
+    for(const values of [[0],[1],[0.5],[-1],[2],[1e-320],[0.9999999999999999,0,-1,2]]){
+        scenarios.push({meshKind,weightAttribute:'-',sampleCount:3,values});
+        scenarios.push({meshKind,weightAttribute:'color',sampleCount:3,values});
+    }
+}
+// A weight attribute whose total is zero: every cumulative entry is 0, so the search compares
+// against 0 for any draw and the face index comes from the boundary branch.
+for(const meshKind of [2,3]){
+    scenarios.push({meshKind,weightAttribute:'color',sampleCount:4,values:[0,0.5,1,-1],zeroWeights:true});
+}
 
 const lines=scenarios.map(({meshKind,weightAttribute,sampleCount,values})=>
     `M ${meshKind} ${weightAttribute} ${sampleCount} ${values.map(token).join(' ')}`);
