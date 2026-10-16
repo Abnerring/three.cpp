@@ -194,8 +194,8 @@
     "note": "Accepted port scope is src and examples/jsm, including tracked third-party dependencies. Editor/manual web applications are excluded from native application rewrites. Native host behavior, packaging and all three platforms require separate implementation and verification evidence."
   },
   "counts": {
-    "partial-unverified": 279,
-    "missing": 662,
+    "partial-unverified": 280,
+    "missing": 661,
     "vulkan-port-pending": 290,
     "dependency-unverified": 20
   },
@@ -211,8 +211,8 @@
     "examples/jsm": {
       "modules": 496,
       "counts": {
-        "missing": 394,
-        "partial-unverified": 82,
+        "missing": 393,
+        "partial-unverified": 83,
         "dependency-unverified": 20
       }
     }
@@ -439,7 +439,7 @@
       "path": "examples/jsm/loaders",
       "upstreamFiles": 52,
       "moduleCount": 52,
-      "modulesWithCppFiles": 0,
+      "modulesWithCppFiles": 1,
       "verifiedComplete": 0
     },
     {
@@ -28165,11 +28165,11 @@
       "scope": "examples/jsm",
       "kind": "addon",
       "upstreamSha256": "9cf83117695679311bf114615b520d2bec00a5354cc227213d32c541c92217c2",
-      "header": null,
-      "implementation": null,
+      "header": "examples/jsm/loaders/XYZLoader.h",
+      "implementation": "examples/jsm/loaders/XYZLoader.cpp",
       "expectedHeader": "examples/jsm/loaders/XYZLoader.h",
       "expectedImplementation": "examples/jsm/loaders/XYZLoader.cpp",
-      "status": "missing",
+      "status": "partial-unverified",
       "verifiedComplete": false,
       "apiExtraction": "static-only",
       "verification": {
