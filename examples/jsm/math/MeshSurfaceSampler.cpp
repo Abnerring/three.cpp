@@ -152,7 +152,13 @@ MeshSurfaceSampler& MeshSurfaceSampler::sampleFace(double faceIndex, Vector3& ta
         // Negative indices read `undefined` from the attributes upstream, so every requested
         // target becomes NaN; nothing is thrown and no memory outside the attributes is touched.
         targetPosition.set(std::nan(""), std::nan(""), std::nan(""));
-        if (targetNormal != nullptr) targetNormal->set(std::nan(""), std::nan(""), std::nan(""));
+        if (targetNormal != nullptr) {
+            // With a normal attribute the components come from undefined attribute entries, so
+            // they are NaN; without one the pinned path calls Triangle.getNormal, whose
+            // length-squared guard is false for NaN and therefore falls back to the zero vector.
+            if (normalAttribute != nullptr) targetNormal->set(std::nan(""), std::nan(""), std::nan(""));
+            else targetNormal->set(0, 0, 0);
+        }
         if (targetColor != nullptr && colorAttribute != nullptr) {
             targetColor->r = std::nan("");
             targetColor->g = std::nan("");

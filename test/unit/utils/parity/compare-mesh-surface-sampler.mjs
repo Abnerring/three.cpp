@@ -41,6 +41,10 @@ function buildMesh(kind){
         geometry=new BoxGeometry(1,1,1).toNonIndexed();
         if(kind===3) addColor(geometry);
         if(kind===7) addZeroColor(geometry);
+    }else if(kind===8){
+        // Two vertices: count / 3 is 0.67, so the distribution is shorter than the build loops.
+        geometry=new BufferGeometry();
+        geometry.setAttribute('position',new Float32BufferAttribute(new Float32Array([0,0,0,1,1,1]),3));
     }else if(kind===4){
         geometry=new SphereGeometry(1,8,6);
     }else{
@@ -76,6 +80,8 @@ for(const meshKind of meshKinds){
     }
 }
 scenarios.push({meshKind:5,weightAttribute:'-',sampleCount:2,values:draws});
+scenarios.push({meshKind:8,weightAttribute:'-',sampleCount:3,values:draws});
+scenarios.push({meshKind:8,weightAttribute:'color',sampleCount:2,values:[0,0.5,1]});
 // Boundary and degenerate draws: an exact 0 and an exact 1 draw (the pinned binary search then
 // walks off the end of the distribution), a draw sequence of a single value, and draws above 1
 // as well as a negative draw. These pin the search's edge behaviour instead of the happy path.

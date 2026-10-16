@@ -78,6 +78,12 @@ std::shared_ptr<Mesh> buildMesh(double kind) {
         geometry = std::make_shared<BoxGeometry>(1, 1, 1)->toNonIndexed();
         if (kind == 3) addColor(geometry);
         if (kind == 7) addZeroColor(geometry);
+    } else if (kind == 8) {
+        // Two vertices: position.count / 3 is 0.67, so the face total is not a whole number and
+        // the pinned sampler walks a distribution shorter than its own loops.
+        std::vector<double> values{0, 0, 0, 1, 1, 1};
+        geometry = std::make_shared<BufferGeometry>();
+        geometry->setAttribute("position", std::make_shared<Float32BufferAttribute>(values, 3));
     } else if (kind == 4) {
         geometry = std::make_shared<SphereGeometry>(1, 8, 6);
     } else {
