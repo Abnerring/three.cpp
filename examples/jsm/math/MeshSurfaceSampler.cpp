@@ -11,6 +11,24 @@ namespace {
 thread_local Triangle face;
 thread_local Vector3 color;
 thread_local Vector2 uva, uvb, uvc;
+// A JavaScript typed array yields undefined for an index outside [ 0, count ), and
+// Vector3.fromBufferAttribute stores that undefined, so the components become NaN. Reading an
+// out-of-range vertex index is therefore NaN, not a memory access, and the native port has to
+// reproduce that: a position count that is not a multiple of three reaches exactly this case.
+template <class Target> void readInto(Target& target, const VertexAttribute& attribute, double index) {
+    if (!(index >= 0) || index >= attribute.getCount()) {
+        target.set(std::nan(""), std::nan(""), std::nan(""));
+        return;
+    }
+    target.fromBufferAttribute(attribute, index);
+}
+void readInto(Vector2& target, const VertexAttribute& attribute, double index) {
+    if (!(index >= 0) || index >= attribute.getCount()) {
+        target.set(std::nan(""), std::nan(""));
+        return;
+    }
+    target.fromBufferAttribute(attribute, index);
+}
 }
 
 MeshSurfaceSampler::MeshSurfaceSampler(const std::shared_ptr<Mesh>& mesh)
@@ -61,9 +79,9 @@ MeshSurfaceSampler& MeshSurfaceSampler::build() {
         if (weight)
             faceWeight = weight->getX(i0) + weight->getX(i1) + weight->getX(i2);
         if (!position) throw JSTypeError("Cannot read properties of undefined (reading 'getX')");
-        face.a.fromBufferAttribute(*position, i0);
-        face.b.fromBufferAttribute(*position, i1);
-        face.c.fromBufferAttribute(*position, i2);
+        readInto(face.a, *position, i0);
+        readInto(face.b, *position, i1);
+        readInto(face.c, *position, i2);
         faceWeight *= face.getArea();
         if (std::size_t(i) < faceWeights.size()) faceWeights[std::size_t(i)] = float(faceWeight);
     }
@@ -151,18 +169,18 @@ MeshSurfaceSampler& MeshSurfaceSampler::sampleFace(double faceIndex, Vector3& ta
     }
     if (!positionAttribute)
         throw JSTypeError("Cannot read properties of null (reading 'getX')");
-    face.a.fromBufferAttribute(*positionAttribute, i0);
-    face.b.fromBufferAttribute(*positionAttribute, i1);
-    face.c.fromBufferAttribute(*positionAttribute, i2);
+    readInto(face.a, *positionAttribute, i0);
+    readInto(face.b, *positionAttribute, i1);
+    readInto(face.c, *positionAttribute, i2);
     targetPosition.set(0, 0, 0)
         .addScaledVector(face.a, u)
         .addScaledVector(face.b, v)
         .addScaledVector(face.c, 1 - (u + v));
     if (targetNormal != nullptr) {
         if (normalAttribute != nullptr) {
-            face.a.fromBufferAttribute(*normalAttribute, i0);
-            face.b.fromBufferAttribute(*normalAttribute, i1);
-            face.c.fromBufferAttribute(*normalAttribute, i2);
+            readInto(face.a, *normalAttribute, i0);
+            readInto(face.b, *normalAttribute, i1);
+            readInto(face.c, *normalAttribute, i2);
             targetNormal->set(0, 0, 0)
                 .addScaledVector(face.a, u)
                 .addScaledVector(face.b, v)
@@ -173,9 +191,9 @@ MeshSurfaceSampler& MeshSurfaceSampler::sampleFace(double faceIndex, Vector3& ta
         }
     }
     if (targetColor != nullptr && colorAttribute != nullptr) {
-        face.a.fromBufferAttribute(*colorAttribute, i0);
-        face.b.fromBufferAttribute(*colorAttribute, i1);
-        face.c.fromBufferAttribute(*colorAttribute, i2);
+        readInto(face.a, *colorAttribute, i0);
+        readInto(face.b, *colorAttribute, i1);
+        readInto(face.c, *colorAttribute, i2);
         color.set(0, 0, 0)
             .addScaledVector(face.a, u)
             .addScaledVector(face.b, v)
@@ -185,9 +203,9 @@ MeshSurfaceSampler& MeshSurfaceSampler::sampleFace(double faceIndex, Vector3& ta
         targetColor->b = color.z;
     }
     if (targetUV != nullptr && uvAttribute != nullptr) {
-        uva.fromBufferAttribute(*uvAttribute, i0);
-        uvb.fromBufferAttribute(*uvAttribute, i1);
-        uvc.fromBufferAttribute(*uvAttribute, i2);
+        readInto(uva, *uvAttribute, i0);
+        readInto(uvb, *uvAttribute, i1);
+        readInto(uvc, *uvAttribute, i2);
         targetUV->set(0, 0)
             .addScaledVector(uva, u)
             .addScaledVector(uvb, v)
