@@ -1,4 +1,4 @@
-﻿// Differential check for the native Color sRGB conversions and the MathUtils helpers that
+// Differential check for the native Color sRGB conversions and the MathUtils helpers that
 // the pinned modules implement with Math.pow/exp/log/log2.
 //
 // The pinned classes are imported from the checkout, the same scenarios are replayed, and
@@ -23,7 +23,8 @@ const encodeArray=values=>Array.from(values,encode);
 
 const scenarios=[];
 const add=(line,expected)=>scenarios.push({line,expected});
-const channels=[0,-0,1e-8,-1e-8,0.0001,0.04045,0.0031308,0.5,1,2,-0.5,3.5,1e6,-1e6,1e300];
+// The grid is shared by every conversion kind, so the non-finite entries below make the sRGB transfer functions face NaN and +/-Infinity as well: the pinned branches compare against the 0.04045 / 0.0031308 thresholds, and a NaN comparison is false, so NaN takes the power branch and stays NaN.
+const channels=[0,-0,1e-8,-1e-8,0.0001,0.04045,0.0031308,0.5,1,2,-0.5,3.5,1e6,-1e6,1e300,NaN,Infinity,-Infinity];
 // Color sRGB conversions: copySRGBToLinear / copyLinearToSRGB / convertSRGBToLinear /
 // convertLinearToSRGB. The pinned r187 Color has no gamma-factor variants.
 const kinds=[
