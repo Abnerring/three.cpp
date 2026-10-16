@@ -1,4 +1,4 @@
-#include "math/Matrix4.h"
+﻿#include "math/Matrix4.h"
 #include "math/Matrix3.h"
 #include "math/Vector3.h"
 #include "math/Euler.h"
@@ -8,6 +8,7 @@
 #include <stdexcept>
 #include "constants.h"
 #include "math/MathUtils.h"
+#include "math/JSNumberMath.h"
 
 Matrix4::Matrix4(
     HIGH_PRECISION n11, HIGH_PRECISION n12, HIGH_PRECISION n13, HIGH_PRECISION n14,
@@ -487,7 +488,7 @@ Matrix4 &Matrix4::makeTranslation(const Vector3 &v)
 
 Matrix4 &Matrix4::makeRotationX(HIGH_PRECISION theta)
 {
-    auto c = std::cos(theta), s = std::sin(theta);
+    auto c = JSNumberMath::cos(theta), s = JSNumberMath::sin(theta);
 
     set(
 
@@ -502,7 +503,7 @@ Matrix4 &Matrix4::makeRotationX(HIGH_PRECISION theta)
 
 Matrix4 &Matrix4::makeRotationY(HIGH_PRECISION theta)
 {
-    auto c = std::cos(theta), s = std::sin(theta);
+    auto c = JSNumberMath::cos(theta), s = JSNumberMath::sin(theta);
 
     set(
 
@@ -517,7 +518,7 @@ Matrix4 &Matrix4::makeRotationY(HIGH_PRECISION theta)
 
 Matrix4 &Matrix4::makeRotationZ(HIGH_PRECISION theta)
 {
-    auto c = std::cos(theta), s = std::sin(theta);
+    auto c = JSNumberMath::cos(theta), s = JSNumberMath::sin(theta);
 
     set(
 
@@ -534,8 +535,8 @@ Matrix4 &Matrix4::makeRotationAxis(const Vector3 &axis, HIGH_PRECISION angle)
 {
     // Based on http://www.gamedev.net/reference/articles/article1199.asp
 
-    auto c = std::cos(angle);
-    auto s = std::sin(angle);
+    auto c = JSNumberMath::cos(angle);
+    auto s = JSNumberMath::sin(angle);
     auto t = 1 - c;
     auto x = axis.x, y = axis.y, z = axis.z;
     auto tx = t * x, ty = t * y;
@@ -579,9 +580,9 @@ Matrix4 &Matrix4::makeRotationFromEuler(const Euler &euler)
 auto te = elements();
 
 		const auto x = euler.x, y = euler.y, z = euler.z;
-		const auto a = std::cos( x ), b = std::sin( x );
-		const auto c = std::cos( y ), d = std::sin( y );
-		const auto e = std::cos( z ), f = std::sin( z );
+		const auto a = JSNumberMath::cos( x ), b = JSNumberMath::sin( x );
+		const auto c = JSNumberMath::cos( y ), d = JSNumberMath::sin( y );
+		const auto e = JSNumberMath::cos( z ), f = JSNumberMath::sin( z );
 
 		if ( euler.order == EulerOrder::XYZ ) {
 

@@ -272,4 +272,8 @@ Cache 与 DefaultLoadingManager 的模块导出使用 constinit 非拥有 facade
 
 `examples/jsm/math/ConvexHull` 与 `examples/jsm/geometries/ConvexGeometry` 已移植（Face/HalfEdge/VertexNode/VertexList 与全部私有算法）。C++ 没有 GC，节点由每个 hull 的 arena 拥有、链接保持裸指针，`makeEmpty()` 与 `_reindexFaces()` 只替换容器，因此仍被引用的对象保持有效；`intersectRay` 的 min/max 使用 `MathUtils::min/max` 以保留 NaN 与符号零语义；退化点云按固定版本的 V8 消息显式抛错。差分 358 个场景逐位一致（含 18 组 hull 状态、180 次 intersectRay 与 55 组抛错点云）；单测 14 cases / 1,152 assertions。`setFromObject` 依赖 Mesh/Line/Points/Sprite 图，只有原生单测覆盖。
 
+`examples/jsm/geometries/LoftGeometry` 与 `DecalGeometry` 已移植。LoftGeometry 保留 `console.error` 早退（section 少于两个或列数不一致时不产生任何属性）、按弧长生成 uv 的两种回退、`capStart`/`capEnd` 的严格布尔判断与 Newell 法向量/质心/逆时针校验（复用已移植的 ShapeUtils），闭截面重复首点的接缝法线在 `computeVertexNormals` 之后取平均；上游在退化截面（首尾点相同且开启封盖）时会因 `triangulateShape` 原地删除重复端点而读取 `undefined`，本移植以同文本的 JSTypeError 显式复现。DecalGeometry 连同导出的 DecalVertex 一并移植：世界/投影器空间变换、法线矩阵、六面裁剪的落穿分支、`normal` 缺失时不写法线属性、空几何早退与投影器外的空结果都按源码顺序执行。差分 23 个场景 / 4,348 个属性分量逐位一致（含 tube/taper/封盖/开闭/错误路径与 box/平移 box/无法线的三角面片）。单测 6 cases / 161 assertions；TeapotGeometry 另有 84 个场景 / 262,656 个属性分量与 121,512 个索引项逐位一致、单测 7 cases / 228 assertions。
+
+移植 DecalGeometry 时差分暴露了核心 `src/math/Matrix4.cpp` 的末位缺陷：`makeRotationX/Y/Z`、`makeRotationAxis` 与 `makeRotationFromEuler` 使用 `std::sin/std::cos`，而固定上游使用 `Math.sin/Math.cos`（V8 fdlibm）。对 `Euler( 0.3, 0.2, 0.1 )` 这类非轴向旋转，旋转矩阵多项相差 1 ulp，进而使平移+旋转组合下的顶点与 uv 出现末位差异。已把该文件 14 处三角函数改为 `JSNumberMath::sin/cos`；完整差分网络（122 个 parity 测试）与数学/几何/动画回归全部通过。其余仍使用 `std::sin/std::cos` 的位置（MathUtils 8、Vector3 8、Quaternion 5、Matrix3 4、Vector2 2）尚未逐项对齐，属于已知边界。
+
 本机 MSVC 为中文界面时，CMake 检测到的 `/showIncludes` 前缀是乱码（缓存值为 `娉ㄦ剰: 鍖呭惈鏂囦欢:`），Ninja 因此无法建立头文件依赖，修改头文件不会触发重编；本轮以显式重编受影响对象规避，并把前缀固定为 ASCII 值。该限制属于构建工具链环境问题，与源码一致性无关。

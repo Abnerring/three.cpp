@@ -288,6 +288,9 @@ if(THREECPP_BUILD_ADDONS)
         unit/addons/geometries/RoundedBoxGeometry.tests.cpp
         unit/addons/math/ConvexHull.tests.cpp
         unit/addons/geometries/ConvexGeometry.tests.cpp
+        unit/addons/geometries/LoftGeometry.tests.cpp
+        unit/addons/geometries/DecalGeometry.tests.cpp
+        unit/addons/geometries/TeapotGeometry.tests.cpp
         unit/addons/curves/NURBSUtils.tests.cpp
         unit/addons/curves/NURBSCurve.tests.cpp
         unit/addons/curves/NURBSSurface.tests.cpp
@@ -318,6 +321,10 @@ if(THREECPP_BUILD_ADDONS)
     target_link_libraries(ThreeJsGeometryExtrasParityProbe PRIVATE threecpp::addons)
     add_executable(ThreeJsConvexHullParityProbe unit/utils/parity/ConvexHullParityProbe.cpp)
     target_link_libraries(ThreeJsConvexHullParityProbe PRIVATE threecpp::addons)
+    add_executable(ThreeJsTeapotGeometryParityProbe unit/utils/parity/TeapotGeometryParityProbe.cpp)
+    target_link_libraries(ThreeJsTeapotGeometryParityProbe PRIVATE threecpp::addons)
+    add_executable(ThreeJsLoftDecalParityProbe unit/utils/parity/LoftDecalParityProbe.cpp)
+    target_link_libraries(ThreeJsLoftDecalParityProbe PRIVATE threecpp::addons)
 endif()
 if(THREECPP_BUILD_VULKAN)
     add_executable(VulkanShaderCompilerTests unit/three.source.unit.cpp
@@ -788,6 +795,12 @@ if(THREECPP_NODE_EXECUTABLE)
             add_test(NAME threecpp.threejs-convex-hull-parity
                 COMMAND "${THREECPP_NODE_EXECUTABLE}" "${CMAKE_CURRENT_SOURCE_DIR}/unit/utils/parity/compare-convex-hull.mjs"
                 "${THREEJS_SOURCE_DIR}" "$<TARGET_FILE:ThreeJsConvexHullParityProbe>")
+            add_test(NAME threecpp.threejs-teapot-geometry-parity
+                COMMAND "${THREECPP_NODE_EXECUTABLE}" "${CMAKE_CURRENT_SOURCE_DIR}/unit/utils/parity/compare-teapot-geometry.mjs"
+                "${THREEJS_SOURCE_DIR}" "$<TARGET_FILE:ThreeJsTeapotGeometryParityProbe>")
+            add_test(NAME threecpp.threejs-loft-decal-parity
+                COMMAND "${THREECPP_NODE_EXECUTABLE}" "${CMAKE_CURRENT_SOURCE_DIR}/unit/utils/parity/compare-loft-decal.mjs"
+                "${THREEJS_SOURCE_DIR}" "$<TARGET_FILE:ThreeJsLoftDecalParityProbe>")
         endif()
         add_test(NAME threecpp.threejs-webgl-info-parity
             COMMAND "${THREECPP_NODE_EXECUTABLE}" "${CMAKE_CURRENT_SOURCE_DIR}/unit/utils/parity/compare-webgl-info.mjs"

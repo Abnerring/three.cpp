@@ -1,5 +1,15 @@
 # 验证记录
 
+## 当前追加验证：LoftGeometry/DecalGeometry/TeapotGeometry 与核心 Matrix4 三角函数修正，2026-10-17
+
+- 新增 3 个几何模块。`LoftGeometry`、`DecalGeometry`（含导出的 DecalVertex）由主会话实现，`TeapotGeometry` 由子代理实现、主会话复核（强制重编、跑单测与差分、检查改动范围）。
+- `threecpp.threejs-loft-decal-parity`：**23 个场景 / 4,348 个属性分量逐位一致**（tube、taper、封盖、开/闭截面、`console.error` 早退路径，以及 box / 平移 box / 无法线三角面片三种贴花源）；单测 6 cases / 161 assertions。
+- `threecpp.threejs-teapot-geometry-parity`：**84 个场景 / 262,656 个属性分量 / 121,512 个索引项逐位一致**（全部 32 组 bottom/lid/body/fitLid/blinn 组合、segments 含 2.9/0/−5/NaN、size 含 0/负值/1e±8），单测 7 cases / 228 assertions。子代理同时纠正了任务书中错误的构造签名（固定版本是 `size`，不含 width/height/depth）并给出源码依据。
+- **核心缺陷修正**：DecalGeometry 的差分暴露出 `src/math/Matrix4.cpp` 的 `makeRotationX/Y/Z`、`makeRotationAxis`、`makeRotationFromEuler` 共 14 处使用 `std::sin/std::cos`，而固定上游使用 `Math.sin/Math.cos`（V8 fdlibm）。以 `Euler( 0.3, 0.2, 0.1 )` 为例旋转矩阵多项相差 1 ulp，只在“旋转+平移”组合下显形（单独旋转或单独平移均一致），正好解释贴花差分中 25 个末位差异。修正后该差分通过，且 **122/122 parity 测试全部通过**，数学/几何/动画回归 34/34，无任何回归。
+- 修正核心文件后重跑 addons 全套：**126 cases / 22,686 assertions** 全部通过。
+- 记录在案的边界：MathUtils(8)、Vector3(8)、Quaternion(5)、Matrix3(4)、Vector2(2) 仍在用 `std::sin/std::cos`，尚未逐项对齐 fdlibm；`BufferGeometry::toJSON` 与上游的参数布局差异（payload 位于 `data` 下）是库级既存差异，TeapotGeometry 探针因此只比较参数字段与 type，未削弱数值比较。
+- 审计重新生成：1,251 个模块，partial-unverified 221（+3）、missing 720（−3）、vulkan-port-pending 290、dependency-unverified 20；Acorn 解析错误 0。
+
 ## 当前追加验证：ColorSpaces、SimplexNoise、ConvexHull/ConvexGeometry，2026-10-17
 
 - 新增 4 个模块。`ColorSpaces` 与 `SimplexNoise` 之外的 ConvexHull/ConvexGeometry 由子代理实现、主会话独立复核（强制重编、跑单测与差分、检查改动范围与适配说明）；`ColorSpaces` 由主会话实现。全部差分脚本导入固定 checkout 的上游模块并用 `assert.deepEqual` 比较，无容差。

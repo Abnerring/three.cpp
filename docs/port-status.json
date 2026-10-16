@@ -194,8 +194,8 @@
     "note": "Accepted port scope is src and examples/jsm, including tracked third-party dependencies. Editor/manual web applications are excluded from native application rewrites. Native host behavior, packaging and all three platforms require separate implementation and verification evidence."
   },
   "counts": {
-    "partial-unverified": 218,
-    "missing": 723,
+    "partial-unverified": 221,
+    "missing": 720,
     "vulkan-port-pending": 290,
     "dependency-unverified": 20
   },
@@ -211,8 +211,8 @@
     "examples/jsm": {
       "modules": 496,
       "counts": {
-        "missing": 454,
-        "partial-unverified": 22,
+        "missing": 451,
+        "partial-unverified": 25,
         "dependency-unverified": 20
       }
     }
@@ -299,7 +299,7 @@
       "path": "examples/jsm/geometries",
       "upstreamFiles": 9,
       "moduleCount": 9,
-      "modulesWithCppFiles": 5,
+      "modulesWithCppFiles": 8,
       "verifiedComplete": 0
     },
     {
@@ -23643,11 +23643,11 @@
       "scope": "examples/jsm",
       "kind": "addon",
       "upstreamSha256": "c9f8a4eeb7cf361e61a2e6f610c65e9360610777beba384b8921370d84e8daa1",
-      "header": null,
-      "implementation": null,
+      "header": "examples/jsm/geometries/DecalGeometry.h",
+      "implementation": "examples/jsm/geometries/DecalGeometry.cpp",
       "expectedHeader": "examples/jsm/geometries/DecalGeometry.h",
       "expectedImplementation": "examples/jsm/geometries/DecalGeometry.cpp",
-      "status": "missing",
+      "status": "partial-unverified",
       "verifiedComplete": false,
       "apiExtraction": "static-only",
       "verification": {
@@ -23656,7 +23656,9 @@
           "pointer": "/modules/813"
         },
         "upstreamUnitTests": [],
-        "cppUnitTests": [],
+        "cppUnitTests": [
+          "test/unit/addons/geometries/DecalGeometry.tests.cpp"
+        ],
         "reviewedImplementation": [],
         "differentialResults": [],
         "renderingResults": [],
@@ -23670,11 +23672,11 @@
       "scope": "examples/jsm",
       "kind": "addon",
       "upstreamSha256": "ea3dfa8788ddd16e20185ccfcbd52d45816bbbf097897524b7b8fc981bad353d",
-      "header": null,
-      "implementation": null,
+      "header": "examples/jsm/geometries/LoftGeometry.h",
+      "implementation": "examples/jsm/geometries/LoftGeometry.cpp",
       "expectedHeader": "examples/jsm/geometries/LoftGeometry.h",
       "expectedImplementation": "examples/jsm/geometries/LoftGeometry.cpp",
-      "status": "missing",
+      "status": "partial-unverified",
       "verifiedComplete": false,
       "apiExtraction": "partial-static",
       "verification": {
@@ -23683,7 +23685,9 @@
           "pointer": "/modules/814"
         },
         "upstreamUnitTests": [],
-        "cppUnitTests": [],
+        "cppUnitTests": [
+          "test/unit/addons/geometries/LoftGeometry.tests.cpp"
+        ],
         "reviewedImplementation": [],
         "differentialResults": [],
         "renderingResults": [],
@@ -23784,11 +23788,11 @@
       "scope": "examples/jsm",
       "kind": "addon",
       "upstreamSha256": "bffd8bf8e9aa0447430c710bad445fc4171ea478ba3e272dfb3fe237a808d661",
-      "header": null,
-      "implementation": null,
+      "header": "examples/jsm/geometries/TeapotGeometry.h",
+      "implementation": "examples/jsm/geometries/TeapotGeometry.cpp",
       "expectedHeader": "examples/jsm/geometries/TeapotGeometry.h",
       "expectedImplementation": "examples/jsm/geometries/TeapotGeometry.cpp",
-      "status": "missing",
+      "status": "partial-unverified",
       "verifiedComplete": false,
       "apiExtraction": "static-only",
       "verification": {
@@ -23797,7 +23801,9 @@
           "pointer": "/modules/818"
         },
         "upstreamUnitTests": [],
-        "cppUnitTests": [],
+        "cppUnitTests": [
+          "test/unit/addons/geometries/TeapotGeometry.tests.cpp"
+        ],
         "reviewedImplementation": [],
         "differentialResults": [],
         "renderingResults": [],

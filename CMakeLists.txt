@@ -213,7 +213,10 @@ if(THREECPP_BUILD_ADDONS)
         examples/jsm/geometries/BoxLineGeometry.cpp
         examples/jsm/geometries/RoundedBoxGeometry.cpp
         examples/jsm/math/ConvexHull.cpp
-        examples/jsm/geometries/ConvexGeometry.cpp)
+        examples/jsm/geometries/ConvexGeometry.cpp
+        examples/jsm/geometries/LoftGeometry.cpp
+        examples/jsm/geometries/DecalGeometry.cpp
+        examples/jsm/geometries/TeapotGeometry.cpp)
     add_library(threecpp::addons ALIAS threecpp_addons)
     target_link_libraries(threecpp_addons PUBLIC threecpp::threecpp)
     target_include_directories(threecpp_addons PUBLIC
