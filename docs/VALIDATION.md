@@ -1,8 +1,92 @@
 # 验证记录
 
-## 当前实施批次：颜色管理、图层、shader 缓存与编译基础，2026-10-13
+## 当前追加验证：addons 排序/Controls/NURBS 与审计刷新，2026-10-17
 
-固定上游不变。已合入 ColorManagement/WebGLUtils/Object.assign、管理 Layers 与 UniformsUtils 导出、WebGLShaderCache、Number.toFixed/NumberData、Array.filter/ArraySpeciesCreate、get/call 线程检查和 VulkanShaderCompiler。上一批三个失败项的 realm/首次初始化修复亦已合入。1,119 个生产、测试、工具、示例、构建与审计文件已冻结；两种配置的主库编译已完成，首次完整构建均终态失败：ShaderCache 两个 probe 缺少 fixture 搜索路径。原失败日志及冻结清单保留，仅修复 test/CMakeLists.txt 的两个 target include 目录，生产与原测试不变；已重新冻结 1,119 文件，等待修复后完整构建。CTest 登记 131 项，尚无本批完整 CTest 成功结论。当前审计仍为 1,251 模块（196 partial、745 missing、290 Vulkan pending、20 dependency pending），347 个模块存在 C++ 文件。
+本轮所有结果来自 `THREECPP_BUILD_VULKAN=OFF` 的 CPU 组合（本机仅存在 Vulkan 运行时 DLL，`VULKAN_SDK` 指向的目录已不存在，SDK 头与 glslangValidator 均缺失，因此 Vulkan 目标未参与构建与测试）。完整 CTest 终态 **148/150**：`threecpp.threejs-webgl-lights-states-parity` 在 1,500.12 秒超时（既有已知项），`threecpp.port-audit` 因新增模块后清单过期而失败；重新运行 `node utils/port-audit.mjs ../three.js` 后该测试 5/5 通过。
+
+- `examples/jsm/utils/SortUtils`（radixSort）按固定源码实现；C++ 单测 8 cases / 1,943 assertions 通过。差分直接导入固定 checkout 的 `examples/jsm/utils/SortUtils.js`，748 个场景、178,302 个元素、7 种 getter、reversed 与调用方 aux/内部 aux 组合逐项一致，并比较排序结果最终落在 `arr` 还是 `aux`。移植中发现一处 C++ 求值顺序缺陷：`a[ i ] = a[ -- i ]` 在 JavaScript 中先求目标索引、C++17 先求右操作数，按原语义显式改写后差分才通过；原失败组合保留在上述场景中。
+- `src/extras/Controls` 单测 5 cases / 40 assertions 通过；与实际 three.js 类差分构造默认值（含 keys/mouseButtons/touches）、8 步 connect 序列（undefined/null、覆盖 disconnect 的调用计数）及 EventDispatcher 继承关系一致。
+- `examples/jsm/curves/NURBSUtils` 与 `NURBSCurve` 单测 9 cases / 139 assertions 通过，参考值由固定 Node oracle 实际运行上游两个模块生成，覆盖 findSpan、基函数与导数、B-Spline 点/导数、有理导数、曲面/体点、曲线 getPoint/getTangent 与 copy/clone/JSON；越界控制点保留上游 TypeError。独立差分探针尚未建立，不登记为完成模块。
+- `utils/port-audit.mjs` 重新生成：1,251 个模块，partial-unverified 201（+4）、missing 740（−4）、vulkan-port-pending 290、dependency-unverified 20；Acorn 8.11.2 解析错误 0。文件存在仍只构成存在证据。
+
+构建环境：本机 MSVC 为中文界面，CMake 检测得到的 `/showIncludes` 前缀是乱码（缓存值 `娉ㄦ剰: 鍖呭惈鏂囦欢:`），Ninja 无法建立头文件依赖记录，修改头文件后 `cmake --build` 会报告 `ninja: no work to do` 并沿用旧对象；本轮以显式删除受影响对象强制重编规避，并把前缀固定为 ASCII 值。该限制属工具链环境问题，与源码一致性无关，但会影响后续增量构建的可信度。
+
+## 当前追加验证：uniform 编码与原生对象接入，2026-10-14
+
+batch19 最终组合的 Debug/Release 全目标构建均已成功。Release 完整 CTest 终态为 **151/152**，耗时 1,746.63 秒；`threecpp.threejs-webgl-lights-states-parity` 在 1,500.12 秒超时。Debug 完整 CTest 终态为 **150/152**，耗时 5,795.20 秒；`threecpp.threejs-webgl-programs-parity` 与 `threecpp.threejs-webgl-lights-states-parity` 分别在 1,500.12 / 1,500.11 秒超时，材质差分则在 1,822.71 秒通过。此轮未修改超时配置、场景或断言，完整回归尚未通过；源冻结清单保持 1,189 文件，原终态日志保存在项目外。
+
+以下工作先在项目外完成专项验证，现已合入根项目（81 个生产/测试/依赖与构建文件）；这些专项结果仍不替代组合回归。原生编译选项开启后的根 Debug/Release 配置已成功，完整源依赖正在重建，组合测试待执行：
+
+- `WebGLUniformsGroups` 按原源码实现 std140 布局、上传命令顺序、每帧缓存、动态 getter/方法、重入与 dispose。Debug/Release 各 136 场景、22,944 项实际上游比较通过。后续窄修移除函数源码换行规范化，五条可见函数文本与固定 checkout 的原 CRLF/注释逐字一致；初版证据保留。
+- `VulkanUniformBuffer` 基于反射布局编码数组、结构、非方阵、row-major、64 位标量及显式运行时数组长度；输入转换在上层完成。补齐每一维 ArrayStride，真实有效 SPIR-V 的外层显式 padding 也保留。双配置原反射回归与新增检查共 10 cases / 216 assertions 通过；SPIR-V 由匹配 Vulkan 1.1 目标的静态验证器检查。
+- 外部 Renderer 使用反射块模板编码已求值的纹理/实例 uniform 快照，上传长度与 descriptor range 来自反射存储，替代 C++ struct 的内存布局。所有 Vulkan 对象以新增 `Array.strides` 头重新编译，不混用旧 ABI。两种配置原四项 GPU 回归各 664 assertions、59/38/76 checks 通过；固定 MeshBasic 路径、RTX 3070 Laptop、validation=0，尚非全部材质接入。
+- 真实 `UniformsGroup`、`Uniform`、Vector2/3/4、Color、Matrix3/4 的组合暴露出缺失 `equals` 和构造器 owning TLS 缓存。候选补齐六种严格比较及读取/短路次序，并使构造器与 ID 计数归属当前 realm。原基线三项退出/ID 检查失败，修复后两配置各 10 cases / 73 assertions 通过；真实对象上传/更新/dispose 对照各 9 场景 / 20,214 比较，借用 receiver/getter/NaN/负零/GC/源码元数据对照各 78 场景 / 1,018 比较通过。复制原主单测全部 87 个翻译单元，另合入已复核的 GC fixture keeper 顺序修正，Debug/Release 聚合终态各 657 cases / 205,135 assertions 全部通过；原聚合联编缺少 fixture 头的失败日志保留，补齐原文件后才登记结果。
+
+- 原生 ESSL 编译库候选使用固定并校验完整源树的 glslang / SPIRV-Tools / SPIRV-Headers，保留原语言解析、链接与 AST 转换，所有结果独立拥有数据。项目外生产 CTest 两配置各 4/4 通过，68 份 SPIR-V 与冻结原型逐字节一致；25 个材质源码对编译成功，RawShaderMaterial 原默认无效输入仍失败。新增映射比较 674 项，原二进制/布局检查 19,961 项通过。完整 Program 命令绑定与生产 Renderer 接入仍待完成。
+- `VulkanProgramUniforms` 从两个阶段的完整反射块建立独立存储，应用 uniform 与 draw 私有字段分开访问，矩阵/结构/数组使用实际偏移与步长，sampler 保存纹理单元赋值。候选两配置各 7 cases / 50 assertions 通过。原 GPU 夹具 13 个场景保留，改用真实原生 ESSL 编译与反射存储上传；两配置与重新执行的原 ESSL OpenGL 对照各 17,280 通道、最大差 0。这里只验证开发场景上传，未证明全部材质像素、真实 sampler 描述符或 Renderer 接入。
+- 原生 heap 安全点候选保留逐 hook 调用、立即 owner 保活与字段快照，减少无 JS 字段数学对象的图构建。两配置与原实现对照各 77 cases / 614 assertions；Release 注入可恢复分配失败及重试 49/37，Debug 排除已确认 MSVC noexcept 容器代理分配后为 78/64。最终完整灯光差分 98 场景 / 47,607 比较通过，耗时 2,010.77 秒，仍超原 1,500 秒配置，不能作为超时已修复的证据。原未过滤 Debug 终止与主动停止的旧候选记录保留。
+
+- `WebGLState` 及必要的 String.indexOf、共享 ReversedDepthFuncs、Vector4/Color 管理方法已另合入根项目。最初项目外双配置各 947 场景 / 360,358 比较、realm 3 cases / 9 assertions、原 7 个测试翻译单元 52 cases / 328 assertions 通过。独立复核发现 Vector4.fromArray 的 Symbol 偏移提前抛错，以及 Color.set 的借用 receiver 空操作分支误取 native payload；独立窄修保留原失败，两配置扩充至 954 场景 / 362,525 比较通过，realm 和原 7 TU 亦通过。原包三项原文件发生仅物理 LF/CRLF 转换，已核对 normalized 哈希一致并单独登记实际字节，未改写原 manifest。完整 Vulkan 状态命令适配仍待实现。
+
+这些改动均不引入 CEF 或 JS 运行时桥接；Node/OpenGL 仅用于开发阶段对照。模块全量一致性、生成 ESSL 的生产渲染接入及 Linux/macOS 验收仍未完成。
+
+本轮根组合初始源码冻结 1,271 文件。Debug 的核心库与 Vulkan 库均构建成功，新增所有 Vulkan CPP 使用更新后的反射头重新编译；Release 核心库成功，但其 Vulkan 依赖构建在 SPIRV-Tools 的 265 字符 MSBuild .lastbuildstate 路径处报 MSB3501。原日志完整保留，未把该配置登记成功；后续改用更短的项目外构建目录重建。两配置匹配初始组合的核心库已独立复制并登记哈希，供后续候选验证使用。
+
+已另合入原生编译器窄追加：真实单 shader 的 validateESSLStage，以及带 attribute binding 的链接入口；原 pair 入口仍转发空绑定。项目外 Debug/Release 各 15 项 API 检查通过，各 68 份原 SPIR-V 与 377 个原 JSON 字段完全一致。此结果不代表 Program 命令层或所有 active uniform/attribute 行为已对齐；新根组合仍待重建。
+
+追加根组合 build02（State 954 场景与编译器窄追加，尚不含后续数组/回调候选）：Debug、Release 全目标构建均成功，Release 短构建路径修复了上述 MSB3501。真实根库的原生 ESSL、SPIR-V 反射、uniform 编码及两个 GPU 对照专项各 9/9 通过，分别耗时 11.76 / 6.80 秒。测试后冻结清单 1,273 个文件哈希全部一致，终态与 LastTest 已另存项目外。完整组合回归尚未执行。
+
+之后追加合入数学属性键/默认回调修复，共 8 个已核对前置链与候选哈希的文件；候选双配置各 1,018 场景 / 382,660 比较、realm 4 cases / 20 assertions、原 7 TU 52 cases / 328 assertions 通过。发现并保留先包装后原生注册和旧 callback 快照的两处互通失败，后续修复继续独立验证。本次仅清理已识别的单个 Python 生成 pyc 和其空目录，记录原哈希；生成器已阻止此缓存再产生，源码元数据 --check 通过。
+
+新增 TextureUtils 上层完整接口及 15 个实现/测试/生成文件，另登记 CMake 和 Three.Core.h。项目外候选 Debug/Release 各字节数 7,060 输入 / 35,454 比较、变换与元数据 6,130 场景 / 272,835 比较、模块 realm 2 cases / 17 assertions 全部通过。变换检查保留 image 重复 getter、aspect 转换、属性目标替换、只读/抛错后的部分写入、GC 和递归重入；九条可见函数/类文本逐字比较。独立只读复核未发现现有 JSValue 类型范围内的额外缺陷。新根组合尚未重建；真实 nativeTexture 缺 image/source 等桥接，未标记 TextureUtils 全量完成。
+
+另合入 SPIR-V 矩阵数组窄修及四项新矩阵检查：按实际 OpMemberDecorate / OpGroupMemberDecorate 读取 MatrixStride 和主序；底层 SPIRV-Reflect 不支持的分组注解只在私有反射副本展开，应用原 SPIR-V 保持不变。独立复核发现合法空组误报，第二补丁将其保留为 no-op。原三组反射/uniform 测试与新增 ESSL mat2[2]、行/列主序非方阵数组、嵌套结构数组内 64 位矩阵、合法空组共 21 cases / 580 assertions 双配置通过；所有输入先经 Vulkan 1.1 验证，检查实际物理字节，未放宽 Buffer 拒绝规则。两个补丁前置链及全部记录哈希已核对，新根组合验收待执行。
+
+第五版回调互通 13 个文件已核对基线与候选哈希后合入：Property 注册记录、独立快照与弱观察器修复先包装后注册和旧函数跟随新注册的问题。独立复核补充 setter 抛错/嵌套注册条件恢复，以及 observer 的 std::function 复制须在提交前进行。最终源两配置专项各 40 cases / 310 assertions、realm 4/20、原 7 TU 52/328 通过；完整 1,054 场景 / 394,098 比较属于 observer-copy 前置前的已冻结源，最终根组合将另行运行，不冒充同一哈希的完整验收。早期共享输入被重写导致长度失败、旧探针占用导致重链失败均保留，后续已冻结独立输入。完整纯 C++ owner 保活动态管理回调仍有已测缺口，后续独立实现继续推进。
+
+根组合 COMBINED03 冻结 1,292 个文件，650 个根 CPP 已在不修改内容的前提下强制重新编译，避免 MSBuild 沿用旧头文件 ABI 的对象。Debug/Release 全目标构建终态均为 0；Release 完整 CTest 已通过 172/172，耗时 2,330.96 秒，结束后 1,292 个文件哈希全部一致。Lights 差分耗时 2,050.27 秒；Debug 完整 CTest 仍在运行，尚无双配置完整组合通过结论。9,000 秒为本轮正确性观察窗口，部分项目保留显式超时；原 1,500 秒性能门槛仍未通过，不以延长观察窗口替代优化。
+
+项目外 WebGLMorphtargets 候选按固定原源码生成三个静态 C++ 函数；最终源经 clean-first 实际重编，Debug/Release 各 493 场景（含 170 个 getter、部分写入、异常和回调重入场景）与实际 three.js 输出一致，函数文本逐字比较。额外使用实际 Node --expose-gc 验证三个所有权边界、33 个对象活性字段，两配置均一致。两处原失败完整保留：整调用 frame 额外保留未捕获的 object/program/uniforms/influences，以及函数声明 id 被误判为引用导致 update 函数多保活。修复将活动调用 frame 与保留的共享闭包变量分开，保留回调之间的实时赋值。一次仅修改生成 .inc 而 MSBuild 复用旧对象的结果未登记为新源验收，后续均强制重编两个翻译单元。生成器 --check 与从固定 checkout 重新抽取的 Acorn AST 均逐字复现产物。
+
+此形变候选尚未合入根项目：当前差分使用明确的开发纹理导入夹具，验证的是上层协议；真实原生 DataArrayTexture 桥、公共 Vector2/Vector4 构造器接入及 Vulkan 形变纹理/采样仍待完成。不得据此标记模块全量完成。
+
+另建真实 BufferGeometry 形变字段候选。旧库在 Debug/Release 各实际复现四项不一致：map/array 身份及 C++ 与包装对象两个方向的修改可见性。首版候选完整重编 Debug 核心库后，24 个字段与实际 Node 一致；两个 GC 边界、8 个活性字段也一致。该首版源码、库和探针单独封存，未将其当作后续源码通过证据。
+
+后续形变字段描述符、任意 morphTargetsRelative 值与消费逻辑候选的完整 Debug 重编成功，53 个旧用例实际为 26 通过、27 失败，独立探针退出 1。错误为普通内部对象调用仅供 native host 使用的槽接口，全部原源码、二进制与日志保留。修复正在项目外继续验证；还发现并修正准备中的 for-in/自身键枚举区别、空数组丢键、数组 push 和 clone/toJSON 动态调用顺序、删除重建字段顺序。新候选尚无通过结论。独立 for-in 枚举器在 Debug/Release 各 37 个实际 Node 场景与 GC 保活/释放检查通过，其语言层证据不替代新的 Geometry ABI 联合验收。
+
+## 当前实施批次：程序生成、正则表达式与 Vulkan 接口，2026-10-14
+
+在 batch18 双配置 130/131 的失败基线上，已按依赖顺序合入 Unicode 默认大写、callable builtin 构造钩子、String/RegExp、WebGLProgram、WebGLPrograms、SPIR-V 接口反射、VulkanPipelineLayout 与 Cache 无 owning TLS facade。全部窄补丁与文件哈希核对完成；String 候选携带的旧 JSValue 全文件未覆盖根，原 ArraySpeciesCreate/filter 及 intrinsic species getter 保持。测试与生产源已登记 CMake，第三方来源/哈希/许可证登记 upstream.json，审计重新生成，AST 错误为 0。
+
+初始联编清单冻结 1,172 文件，Windows Debug/Release 全目标构建均终态成功，日志前缀 implementation19-initial。新增专项 CTest 两配置均终态 14/15，分别耗时 1,015.09 秒和 95.19 秒；唯一失败为 WebGLProgram 原真实 Texture 退出检查（6 cases / 34 assertions 中各失败 1）。原主单测两配置各 649 cases / 205,001 assertions，保留 8 个生命周期失败（原 5 个加 Cache 的 3 个检查）。此阶段尚含 DefaultLoadingManager 的旧 owning TLS，以及真实 Texture/native payload→JSValue→heap 的退出环。全部 1,172 个冻结哈希及文件集合再次核对一致，未改写失败断言或结果。
+
+后续已合入 DefaultLoadingManager/Loader 弱原型缓存、AbortSignal/AbortController 弱原型缓存、真实材质 shaderSource 对照及 VulkanShaderModules，并登记 CMake。Manager 候选以原主单测全部 84 个源文件加 Cache/Manager/Abort 新检查在同一进程双配置通过 657 cases / 205,135 assertions；实际 Node 421 场景 / 11,781 比较加 4 个 GC 快照，既有 Loader foundation 14,904 / 15,324 和 parsers 103 / 4,350 亦双配置通过。这些是集成前候选证据。根项目后续清单冻结 1,183 文件，匹配联编的四项集成专项两配置均终态 4/4，耗时 Debug 128.86 秒、Release 7.98 秒；主单测 657 / 205,135、Manager 421 / 11,781、真实 shaderSource 26 / 3,835 / 52 份源码和 ShaderModules 4 / 90 全部通过。测试后 1,183 个哈希及文件集合核对一致，详细 LastTest 日志单独保留。通用堆退出候选尚在项目外验证，完整集成回归尚未执行。
+
+VulkanShaderModules 在 borrowed device 上拥有选定 entry point 的 shader 句柄、接口副本和入口字符串；先完成全部反射/容器准备，再创建 GPU 资源，失败只逆序释放成功句柄。移动与 reset、错误输出句柄和实际并发创建/销毁检查双配置各 4 cases / 90 assertions。现有 VulkanRenderer 改由该所有权对象提供 pipeline stage 描述；匹配根依赖的外部 Renderer 副本双配置分别通过原 GPU 664 assertions、裁剪 59 checks、裁剪生命周期 38 checks、顶点绑定 76 checks。同行只读复核未发现新增事实缺陷。此变更仍使用原固定 MeshBasic SPIR-V，尚未将 WebGLProgram 生成源码接入 GPU。
+
+现有固定 MeshBasic Renderer 的布局也已改为以 ShaderModules 接口、实际物理设备限额及一个颜色附件创建 VulkanPipelineLayout，替代手工的 12 项绑定与 push constant 声明；descriptor 写入、uniform ABI 和 shader 源保持。该一文件窄补丁的匹配外部 Renderer 双配置均实际通过原四项 GPU 回归（664 assertions、59/38/76 checks）。首轮启动脚本将目录与文件名作为独立参数，测试未执行；该 harness 失败另存记录，修正路径后才登记成功。该改动已根集成，完整根回归待最终组合重建。
+
+真实材质源码夹具调用原生 WebGLPrograms→WebGLProgram 及实际 ShaderLib/ShaderChunk，与固定上游 Node 双配置各比较 26 场景 / 3,835 项 / 52 份完整源码；包含 __VERSION__/GL_ES 自定义分支。fixture 显式设置 customProgramCacheKey，不能据此证明默认 onBeforeCompile.toString 元数据或 ESSL→Vulkan 语义转换完成。根项目新差分输出目录在构建树中，不写入源码树。
+
+后续根组合又合入原生 heap 安全点、两阶段 realm 退出与 native ownership 图固定点检查。每个 ownership hook 返回后立即保活描述的 owner 并捕获非拥有字段快照，trace、析构或后一 hook 重分配容器后不再读取旧字段地址；collector 临时 owner 不计作应用根。最终图增量及独立复核在项目外双配置通过 28 个退出/图变更用例，Program 6 cases / 34 assertions、WeakValue 11 / 483、NativeArray 131 checks 和 11 个原生模块退出检查。专项 NativeGC 聚合与原 baseline 仍同有 59 != 53 的一个失败，未改断言；这些候选证据不代替最终根组合回归。
+
+同一组合通过独立窄补丁修复 Material.onBeforeCompile/customProgramCacheKey 的 name 与已知原源码文本。源码元数据存于函数内部 record，原 Function.prototype.toString 和动态 getter/call 保持；仅两方法提供元数据。项目外双配置各 4 cases / 26 assertions，并与锁定 Material 的实际 Node 场景比较 26 个字段；原 5 个不一致字段记录保留。根 CMake 已登记两组独立单测及差分，完整 Debug/Release 重建和 CTest 尚待终态。
+
+集成前各配置：Unicode 大写对所有 1,114,112 个码点和 10,012 个 UTF-16 字符串精确对照 Node/Unicode 17；RegExp 93,707 场景中 93,003 精确支持、704 明确未实现，协议 1,800、GC 6；String/RegExp 新单测 11 cases / 136 assertions。有效未支持的正则语法/flags 不作为语法错误或已支持功能登记。
+
+WebGLProgram 各配置实际源码主语料 1,084 / 176,024 比较、追加语料 288 / 65,069、GC 3 / 24，全部通过；单测保留 5/6 cases、33/34 assertions 的原 Texture 退出失败。WebGLPrograms 最终匹配 RegExp 35A 依赖，各配置 2,620 / 482,804 比较、7 cases / 278 assertions；方法独立保活 14 / 168。CPU 命令协议调用真实 nativeWebGLProgramConstructor，未以 fake Program 替代。
+
+SPIR-V 接口拥有选定 entry point、descriptor/block、输入输出和 push constant 的独立副本，各配置 4 cases / 105 assertions。固定 Khronos SPIRV-Reflect 563dc9a16d0e86145e12a66bb61f0695ca4a14b9，源文件/许可原样保留。Vulkan 布局各配置 5 cases / 96 assertions，RTX 3070 Laptop GPU 实际创建/销毁 97 个布局、2 个 shader modules 与空布局，覆盖并发与所有创建失败边界；补齐 framebuffer 附件的 fragment resource 限额计数。GPU fixture 已按 advertised extensions 支持 portability enumeration/subset；仅 Windows 运行，未启用 Khronos validation layer。
+
+尚未因本批完成的内容包括：原 ESSL 300 语义到 Vulkan SPIR-V 的通用转换、GL active uniforms/attributes 元数据与实际 GPU 程序绑定、完整 graphics/compute pipeline、传统 Renderer 和现代 nodes/TSL 全量接入，以及 Linux/macOS 验收。原生 glslang CLI 编译目前接收 Vulkan GLSL；直接改写 #version 会改变用户 __VERSION__/GL_ES 行为，不能视为通用实现。
+
+## 上一实施批次：颜色管理、图层、shader 缓存与编译基础，2026-10-13
+
+固定上游不变。已合入 ColorManagement/WebGLUtils/Object.assign、管理 Layers 与 UniformsUtils 导出、WebGLShaderCache、Number.toFixed/NumberData、Array.filter/ArraySpeciesCreate、get/call 线程检查和 VulkanShaderCompiler。上一批三个失败项的 realm/首次初始化修复亦已合入。首次完整构建均因 ShaderCache 两个 probe 缺少 fixture 搜索路径失败；仅修复 test/CMakeLists.txt 的两个 target include 目录，原失败日志保留。
+
+修复后 Windows x64 Debug、Release 完整构建均成功；完整 CTest 均终态 **130/131**，分别耗时 **1,356.45 秒、133.97 秒**。主单测 643 cases 中 638 通过，204,961 assertions 中 204,956 通过；五处失败为 Number 原型、模块首次 realm/跨线程、Array species getter 及 ShaderLibrary 的生命周期检查。真实库独立复现确认 Cache 与 DefaultLoadingManager 的 owning TLS 在新线程入口提前创建并持有 realm；修复候选尚未合入。本批未获全绿，原断言未弱化。Layers/UniformsUtils 的 4,253 个场景及此前失败的灯光检查均已在完整回归通过。
+
+2026-10-14 再次核对 repair1 冻结清单，全部 1,119 个文件哈希一致。构建、测试日志与冻结清单保留在项目外，前缀 implementation18-repair1。当前审计为 1,251 模块（196 partial、745 missing、290 Vulkan pending、20 dependency pending），347 个模块存在 C++ 文件。下一批候选单独集成验收，不改写本批失败结果。
 
 集成前 Debug、Release 各自专项通过：颜色管理 399、WebGLUtils 1,685、Object.assign 65 个实际 Node 场景；Layers/UniformsUtils 4,021 场景 / 35,122 比较，新加共享颜色管理联动 232 场景等待集成后验证；ShaderCache 7,930 场景 / 1,575,920 比较及 11 个 GC 快照；Number 37,850 精确字符串场景、1,343 协议场景及 6 个 GC 快照；filter/species 905 场景 / 28,690 比较、4 cases / 26 assertions。有效非十进制 Number 格式的 36 个未实现边界单列，不计作支持。
 

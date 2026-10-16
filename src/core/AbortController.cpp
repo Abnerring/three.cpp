@@ -107,7 +107,9 @@ JSValue signalMethod(const JSValue& receiver,const Args& args,const Args& captur
     return {};
 }
 JSValue signalPrototype() {
-    static thread_local auto value=[] {
+    static thread_local JSWeakValue cached;
+    if(const auto value=cached.lock();value&&value->isObject())return *value;
+    auto value=[] {
         auto result=JSValue::object();
         for(const char* name:{"aborted","reason","onabort"}) {
             JSPropertyDescriptor descriptor;descriptor.configurable=descriptor.enumerable=true;
@@ -120,12 +122,14 @@ JSValue signalPrototype() {
             descriptor.value=JSValue::function(signalMethod,{name},name,arity);result.defineProperty(name,descriptor);
         }
         return result;
-    }();return value;
+    }();value.retainForHeapLifetime();cached=JSWeakValue(value);return value;
 }
 }
 JSValue createNativeAbortController() {
     auto controller=makeHost(controllerTag);controller.setHostSlot("signal",createSignal());
-    static thread_local auto prototype=[] {
+    static thread_local JSWeakValue cached;
+    auto alive=cached.lock();auto prototype=alive?*alive:JSValue{};
+    if(!prototype.isObject()){prototype=[] {
         auto result=JSValue::object();JSPropertyDescriptor signal;signal.configurable=signal.enumerable=true;
         signal.getter=JSValue::function([](const JSValue& self,const Args&,const Args&)->JSValue {
             if(!self.isHostObject(controllerTag))throw JSTypeError("Expected AbortController");return self.getHostSlot("signal");
@@ -134,7 +138,7 @@ JSValue createNativeAbortController() {
         abort.value=JSValue::function([](const JSValue& self,const Args& args,const Args&)->JSValue {
             if(!self.isHostObject(controllerTag))throw JSTypeError("Expected AbortController");abortSignal(self.getHostSlot("signal"),arg(args,0));return {};
         },{},"abort",0);result.defineProperty("abort",abort);return result;
-    }();controller.setPrototype(prototype);return controller;
+    }();prototype.retainForHeapLifetime();cached=JSWeakValue(prototype);}controller.setPrototype(prototype);return controller;
 }
 JSValue createNativeAbortSignalAny(JSValue signals) {
     auto result=createSignal();std::vector<JSValue> sources;

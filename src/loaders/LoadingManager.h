@@ -1,5 +1,6 @@
 #pragma once
 #include "core/JSMember.h"
+#include "core/JSModuleObject.h"
 
 class LoadingManager {
   public:
@@ -29,4 +30,28 @@ class LoadingManager {
     static void initialize(JSValue self,JSValue onLoad,JSValue onProgress,JSValue onError);
     JSValue object_;
 };
-extern thread_local LoadingManager DefaultLoadingManager;
+JSValue nativeDefaultLoadingManager();
+
+// The ESM singleton is a managed heap export. This view contributes no hidden
+// heap root; hold an explicit JSValue to configure or use it across calls.
+class DefaultLoadingManagerFacade {
+  public:
+    constexpr DefaultLoadingManagerFacade() = default;
+    constexpr DefaultLoadingManagerFacade(const DefaultLoadingManagerFacade&) = default;
+    DefaultLoadingManagerFacade& operator=(const DefaultLoadingManagerFacade&) = delete;
+    JSModuleMember onStart{nativeDefaultLoadingManager,"onStart"},onLoad{nativeDefaultLoadingManager,"onLoad"};
+    JSModuleMember onProgress{nativeDefaultLoadingManager,"onProgress"},onError{nativeDefaultLoadingManager,"onError"};
+    JSModuleMember _abortController{nativeDefaultLoadingManager,"_abortController"},abortController{nativeDefaultLoadingManager,"abortController"};
+    JSValue object() const{return nativeDefaultLoadingManager();}
+    operator JSValue() const{return object();}
+    void itemStart(const JSValue& url);
+    void itemEnd(const JSValue& url);
+    void itemError(const JSValue& url);
+    JSValue resolveURL(const JSValue& url);
+    DefaultLoadingManagerFacade& setURLModifier(const JSValue& transform);
+    DefaultLoadingManagerFacade& addHandler(const JSValue& regex,const JSValue& loader);
+    DefaultLoadingManagerFacade& removeHandler(const JSValue& regex);
+    JSValue getHandler(const JSValue& file);
+    DefaultLoadingManagerFacade& abort();
+};
+extern DefaultLoadingManagerFacade DefaultLoadingManager;

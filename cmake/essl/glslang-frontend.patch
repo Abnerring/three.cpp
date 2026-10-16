@@ -1,0 +1,107 @@
+--- a/glslang/MachineIndependent/SymbolTable.h
++++ b/glslang/MachineIndependent/SymbolTable.h
+@@ -739,7 +739,7 @@
+     //
+     // Returns false if the was a name collision.
+     //
+-    bool insert(TSymbol& symbol)
++    bool insert(TSymbol& symbol, bool inactiveExtensionFunctionName = false)
+     {
+         symbol.setUniqueId(++uniqueId);
+ 
+@@ -748,7 +748,7 @@
+             return false;
+ 
+         // check for not overloading or redefining a built-in function
+-        if (noBuiltInRedeclarations) {
++        if (noBuiltInRedeclarations && !inactiveExtensionFunctionName) {
+             if (atGlobalLevel() && currentLevel() > 0) {
+                 if (table[0]->hasFunctionName(symbol.getName()))
+                     return false;
+@@ -921,6 +921,12 @@
+         } while (level >= 0);
+     }
+ 
++    void findBuiltInFunctionNameList(const TString& name, TVector<const TFunction*>& list)
++    {
++        for (int level = std::min(currentLevel(), builtinLevel); level >= 0; --level)
++            table[level]->findFunctionNameList(name, list);
++    }
++
+     void relateToOperator(const char* name, TOperator op)
+     {
+         for (unsigned int level = 0; level < table.size(); ++level)
+--- a/glslang/MachineIndependent/ParseHelper.cpp
++++ b/glslang/MachineIndependent/ParseHelper.cpp
+@@ -1242,6 +1242,26 @@
+     //
+     bool builtIn;
+     TSymbol* symbol = symbolTable.find(function.getMangledName(), &builtIn);
++    // Extension-only names are not built-ins in the input language until their
++    // required extension is enabled. Preserve the ES prohibition for core and
++    // active extension functions, without reserving every vendor extension name.
++    auto inactiveExtension = [this](const TSymbol* candidate) {
++        if (candidate->getNumExtensions() == 0)
++            return false;
++        for (int i = 0; i < candidate->getNumExtensions(); ++i)
++            if (extensionTurnedOn(candidate->getExtensions()[i]))
++                return false;
++        return true;
++    };
++    if (symbol && builtIn && inactiveExtension(symbol)) {
++        symbol = nullptr;
++        builtIn = false;
++    }
++    TVector<const TFunction*> sameNameBuiltIns;
++    if (!symbolTable.atBuiltInLevel())
++        symbolTable.findBuiltInFunctionNameList(function.getMangledName(), sameNameBuiltIns);
++    const bool inactiveExtensionFunctionName = !sameNameBuiltIns.empty() &&
++        std::all_of(sameNameBuiltIns.begin(), sameNameBuiltIns.end(), inactiveExtension);
+     if (symbol && symbol->getAsFunction() && builtIn)
+         requireProfile(loc, ~EEsProfile, "redefinition of built-in function");
+     // Check the validity of using spirv_literal qualifier
+@@ -1301,7 +1321,7 @@
+ 
+     // This insert won't actually insert it if it's a duplicate signature, but it will still check for
+     // other forms of name collisions.
+-    if (! symbolTable.insert(function))
++    if (! symbolTable.insert(function, inactiveExtensionFunctionName))
+         error(loc, "function name is redeclaration of existing name", function.getName().c_str(), "");
+ 
+     //
+--- a/glslang/MachineIndependent/Initialize.cpp
++++ b/glslang/MachineIndependent/Initialize.cpp
+@@ -9213,6 +9213,17 @@
+     //    for a built-in used in many stages needs to be once for the fragment stage and once for
+     //    the vertex stage
+ 
++    if (language == EShLangVertex || (profile == EEsProfile && language == EShLangFragment)) {
++        symbolTable.setFunctionExtensions("countLeadingZeros",  1, &E_GL_INTEL_shader_integer_functions2);
++        symbolTable.setFunctionExtensions("countTrailingZeros", 1, &E_GL_INTEL_shader_integer_functions2);
++        symbolTable.setFunctionExtensions("absoluteDifference", 1, &E_GL_INTEL_shader_integer_functions2);
++        symbolTable.setFunctionExtensions("addSaturate",        1, &E_GL_INTEL_shader_integer_functions2);
++        symbolTable.setFunctionExtensions("subtractSaturate",   1, &E_GL_INTEL_shader_integer_functions2);
++        symbolTable.setFunctionExtensions("average",            1, &E_GL_INTEL_shader_integer_functions2);
++        symbolTable.setFunctionExtensions("averageRounded",     1, &E_GL_INTEL_shader_integer_functions2);
++        symbolTable.setFunctionExtensions("multiply32x16",      1, &E_GL_INTEL_shader_integer_functions2);
++    }
++
+     switch(language) {
+     case EShLangVertex:
+         if (spvVersion.vulkan > 0) {
+@@ -9318,15 +9329,6 @@
+             symbolTable.setFunctionExtensions("fragmentMaskFetchAMD", 1, &E_GL_AMD_shader_fragment_mask);
+             symbolTable.setFunctionExtensions("fragmentFetchAMD",     1, &E_GL_AMD_shader_fragment_mask);
+         }
+-
+-        symbolTable.setFunctionExtensions("countLeadingZeros",  1, &E_GL_INTEL_shader_integer_functions2);
+-        symbolTable.setFunctionExtensions("countTrailingZeros", 1, &E_GL_INTEL_shader_integer_functions2);
+-        symbolTable.setFunctionExtensions("absoluteDifference", 1, &E_GL_INTEL_shader_integer_functions2);
+-        symbolTable.setFunctionExtensions("addSaturate",        1, &E_GL_INTEL_shader_integer_functions2);
+-        symbolTable.setFunctionExtensions("subtractSaturate",   1, &E_GL_INTEL_shader_integer_functions2);
+-        symbolTable.setFunctionExtensions("average",            1, &E_GL_INTEL_shader_integer_functions2);
+-        symbolTable.setFunctionExtensions("averageRounded",     1, &E_GL_INTEL_shader_integer_functions2);
+-        symbolTable.setFunctionExtensions("multiply32x16",      1, &E_GL_INTEL_shader_integer_functions2);
+ 
+         symbolTable.setFunctionExtensions("textureFootprintNV",          1, &E_GL_NV_shader_texture_footprint);
+         symbolTable.setFunctionExtensions("textureFootprintClampNV",     1, &E_GL_NV_shader_texture_footprint);

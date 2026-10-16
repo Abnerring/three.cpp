@@ -15,6 +15,9 @@
 #include "renderers/webgl/WebGLProperties.h"
 #include "renderers/vulkan/VulkanBindingCommands.h"
 #include "renderers/vulkan/VulkanBufferCommands.h"
+#include "renderers/vulkan/VulkanShaderModules.h"
+#include "renderers/vulkan/VulkanPipelineLayout.h"
+#include "renderers/vulkan/VulkanUniformBuffer.h"
 #include "materials/MeshBasicMaterial.h"
 #include "math/Frustum.h"
 #include "math/Matrix4.h"
@@ -320,7 +323,9 @@ struct VulkanRenderer::Impl {
     VkFormat depthFormat = VK_FORMAT_UNDEFINED;
     VkRenderPass renderPass = VK_NULL_HANDLE;
     VkPipelineLayout pipelineLayout = VK_NULL_HANDLE;
-    VkShaderModule vertexShader = VK_NULL_HANDLE, fragmentShader = VK_NULL_HANDLE;
+    std::unique_ptr<VulkanShaderModules> shaderModules;
+    std::unique_ptr<VulkanPipelineLayout> reflectedLayout;
+    std::unique_ptr<VulkanUniformBuffer> textureUniformTemplate;
     VkCommandPool commandPool = VK_NULL_HANDLE;
     VkCommandBuffer commandBuffer = VK_NULL_HANDLE;
     VkFence fence = VK_NULL_HANDLE;
@@ -469,6 +474,27 @@ struct VulkanRenderer::Impl {
         std::uint32_t inputLayout[4][4]{};
         std::uint32_t matrixEnabled[4]{1,1,1,1};
     };
+    VulkanUniformBuffer encodeTextureUniforms(const TextureUniforms& snapshot) const {
+        auto encoded = *textureUniformTemplate;
+        const auto matrix = [](const float* padded) {
+            std::array<float, 9> packed{};
+            for (unsigned column = 0; column < 3; ++column)
+                for (unsigned row = 0; row < 3; ++row)
+                    packed[column * 3 + row] = padded[column * 4 + row];
+            return packed;
+        };
+        const auto map = matrix(snapshot.mapTransform), alpha = matrix(snapshot.alphaTransform);
+        encoded.write("mapTransform", std::span<const float>(map));
+        encoded.write("alphaTransform", std::span<const float>(alpha));
+        encoded.write("modelView", std::span<const float>(snapshot.modelView));
+        encoded.write("instance", std::span<const std::uint32_t>(snapshot.instance));
+        encoded.write("instanceLayout", std::span<const std::uint32_t>(snapshot.instanceLayout));
+        encoded.write("matrixDivisors", std::span<const std::uint32_t>(snapshot.matrixDivisors));
+        encoded.writeRaw("inputLayout", VulkanUniformBuffer::Scalar::UnsignedInteger, 32,
+                         std::as_bytes(std::span(snapshot.inputLayout)));
+        encoded.write("matrixEnabled", std::span<const std::uint32_t>(snapshot.matrixEnabled));
+        return encoded;
+    }
     struct AttributeSnapshot {
         BufferAttribute::Array array;
         double itemSize, count;
@@ -731,37 +757,32 @@ struct VulkanRenderer::Impl {
         check(api.vkAllocateCommandBuffers(device, &commandAllocate, &textureCommandBuffer),
               "vkAllocateCommandBuffers(texture)");
         check(api.vkCreateFence(device, &fenceCreate, nullptr, &textureFence), "vkCreateFence(texture)");
-        const VkDescriptorSetLayoutBinding textureBindings[] = {
-            {0, VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, 1, VK_SHADER_STAGE_FRAGMENT_BIT, nullptr},
-            {1, VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, 1, VK_SHADER_STAGE_FRAGMENT_BIT, nullptr},
-            {2, VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, 1, VK_SHADER_STAGE_VERTEX_BIT, nullptr},
-            {3, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, 1, VK_SHADER_STAGE_VERTEX_BIT, nullptr},
-            {4, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, 1, VK_SHADER_STAGE_VERTEX_BIT, nullptr},
-            {5, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, 1, VK_SHADER_STAGE_VERTEX_BIT, nullptr},
-            {6, VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, 1, VK_SHADER_STAGE_VERTEX_BIT, nullptr},
-            {7, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, 1, VK_SHADER_STAGE_VERTEX_BIT, nullptr},
-            {8, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, 1, VK_SHADER_STAGE_VERTEX_BIT, nullptr},
-            {9, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, 1, VK_SHADER_STAGE_VERTEX_BIT, nullptr},
-            {10, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, 1, VK_SHADER_STAGE_VERTEX_BIT, nullptr},
-            {11, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, 1, VK_SHADER_STAGE_FRAGMENT_BIT, nullptr}};
-        VkDescriptorSetLayoutCreateInfo textureLayoutCreate{VK_STRUCTURE_TYPE_DESCRIPTOR_SET_LAYOUT_CREATE_INFO};
-        textureLayoutCreate.bindingCount = 12;
-        textureLayoutCreate.pBindings = textureBindings;
-        check(api.vkCreateDescriptorSetLayout(device, &textureLayoutCreate, nullptr, &textureLayout),
-              "vkCreateDescriptorSetLayout");
+        const auto vertexWords = readShader("basic.vert.spv");
+        const auto fragmentWords = readShader("basic.frag.spv");
+        const std::array<VulkanShaderModules::Stage, 2> compiledStages{{{vertexWords}, {fragmentWords}}};
+        shaderModules = std::make_unique<VulkanShaderModules>(device,
+            VulkanShaderModules::Dispatch{api.vkCreateShaderModule, api.vkDestroyShaderModule}, compiledStages);
+        VkPhysicalDeviceProperties shaderProperties{};
+        api.vkGetPhysicalDeviceProperties(physicalDevice, &shaderProperties);
+        const auto& vertexInterface = shaderModules->interfaces().front();
+        const auto transforms = std::find_if(vertexInterface.descriptors.begin(), vertexInterface.descriptors.end(),
+            [](const auto& descriptor) { return descriptor.set == 0 && descriptor.binding == 2; });
+        if (transforms == vertexInterface.descriptors.end() ||
+            transforms->type != VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER || transforms->count != 1)
+            throw std::runtime_error("MeshBasic shader requires one reflected texture uniform block");
+        textureUniformTemplate = std::make_unique<VulkanUniformBuffer>(transforms->block);
+        if (textureUniformTemplate->bytes().empty() ||
+            textureUniformTemplate->bytes().size() > shaderProperties.limits.maxUniformBufferRange)
+            throw std::runtime_error("Texture uniform block exceeds Vulkan device range limits");
+        reflectedLayout = std::make_unique<VulkanPipelineLayout>(device,
+            VulkanPipelineLayout::Dispatch{api.vkCreateDescriptorSetLayout, api.vkDestroyDescriptorSetLayout,
+                api.vkCreatePipelineLayout, api.vkDestroyPipelineLayout},
+            shaderModules->interfaces(), shaderProperties.limits, VulkanPipelineLayout::DescriptorCounts{}, 1);
+        if (reflectedLayout->setLayouts().size() != 1)
+            throw std::runtime_error("MeshBasic shader requires one descriptor set");
+        textureLayout = reflectedLayout->setLayouts()[0];
+        pipelineLayout = reflectedLayout->handle();
         createRenderPass();
-        VkPushConstantRange range{};
-        range.stageFlags = VK_SHADER_STAGE_VERTEX_BIT | VK_SHADER_STAGE_FRAGMENT_BIT;
-        range.size = sizeof(PushConstants);
-        VkPipelineLayoutCreateInfo layout{VK_STRUCTURE_TYPE_PIPELINE_LAYOUT_CREATE_INFO};
-        layout.setLayoutCount = 1;
-        layout.pSetLayouts = &textureLayout;
-        layout.pushConstantRangeCount = 1;
-        layout.pPushConstantRanges = &range;
-        check(api.vkCreatePipelineLayout(device, &layout, nullptr, &pipelineLayout),
-              "vkCreatePipelineLayout");
-        vertexShader = createShader("basic.vert.spv");
-        fragmentShader = createShader("basic.frag.spv");
         resize(parameters.width, parameters.height);
         attributeCommands = std::make_unique<VulkanBufferCommands>([this] {
             return std::make_shared<AttributeStorage>(*this);
@@ -873,7 +894,6 @@ struct VulkanRenderer::Impl {
             emptyTexture.reset();
             zeroUv.reset();
             for (const auto pool : descriptorPools) api.vkDestroyDescriptorPool(device, pool, nullptr);
-            if (textureLayout) api.vkDestroyDescriptorSetLayout(device, textureLayout, nullptr);
             if (textureFence) api.vkDestroyFence(device, textureFence, nullptr);
             whiteColor.reset();
             noFog.reset();
@@ -881,12 +901,8 @@ struct VulkanRenderer::Impl {
             destroyTargets();
             for (const auto& entry : pipelines)
                 api.vkDestroyPipeline(device, entry.second, nullptr);
-            if (pipelineLayout)
-                api.vkDestroyPipelineLayout(device, pipelineLayout, nullptr);
-            if (vertexShader)
-                api.vkDestroyShaderModule(device, vertexShader, nullptr);
-            if (fragmentShader)
-                api.vkDestroyShaderModule(device, fragmentShader, nullptr);
+            reflectedLayout.reset();
+            shaderModules.reset();
             if (renderPass)
                 api.vkDestroyRenderPass(device, renderPass, nullptr);
             if (fence)
@@ -1614,7 +1630,7 @@ struct VulkanRenderer::Impl {
         VkDescriptorImageInfo images[] = {{map->sampler, map->image.view, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL},
                                            {alpha->sampler, alpha->image.view, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL},
                                            {weights->sampler, weights->image.view, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL}};
-        VkDescriptorBufferInfo buffers[] = {{uniforms->buffer, 0, sizeof(TextureUniforms)},
+        VkDescriptorBufferInfo buffers[] = {{uniforms->buffer, 0, uniforms->size},
             {matrices->buffer, 0, matrices->size}, {colors->buffer, 0, colors->size}, {morph->buffer, 0, morph->size},
             {positions->buffer, 0, positions->size}, {vertexColors->buffer, 0, vertexColors->size},
             {mapUv->buffer, 0, mapUv->size}, {alphaUv->buffer, 0, alphaUv->size},
@@ -2020,15 +2036,6 @@ struct VulkanRenderer::Impl {
         create.pDependencies = &dependency;
         check(api.vkCreateRenderPass(device, &create, nullptr, &renderPass), "vkCreateRenderPass");
     }
-    VkShaderModule createShader(const char* filename) {
-        const auto words = readShader(filename);
-        VkShaderModuleCreateInfo create{VK_STRUCTURE_TYPE_SHADER_MODULE_CREATE_INFO};
-        create.codeSize = words.size() * 4;
-        create.pCode = words.data();
-        VkShaderModule shader;
-        check(api.vkCreateShaderModule(device, &create, nullptr, &shader), "vkCreateShaderModule");
-        return shader;
-    }
 
     VkPipeline pipeline(const MeshBasicMaterial& material, int side, bool mirrored, bool reverse,
                         std::uint32_t positionStride, std::uint32_t colorSize, bool colors,
@@ -2056,15 +2063,7 @@ struct VulkanRenderer::Impl {
             std::to_string(alphaSize) + ":" + std::to_string(mapUv) + ":" + std::to_string(alphaUv);
         if (auto found = pipelines.find(key); found != pipelines.end())
             return found->second;
-        VkPipelineShaderStageCreateInfo stages[2]{};
-        for (auto& stage : stages) {
-            stage.sType = VK_STRUCTURE_TYPE_PIPELINE_SHADER_STAGE_CREATE_INFO;
-            stage.pName = "main";
-        }
-        stages[0].stage = VK_SHADER_STAGE_VERTEX_BIT;
-        stages[0].module = vertexShader;
-        stages[1].stage = VK_SHADER_STAGE_FRAGMENT_BIT;
-        stages[1].module = fragmentShader;
+        const auto stages = shaderModules->pipelineStages();
         // Vertex pulling consumes the binding module's explicit byte-layout
         // snapshot. It supports all integer divisors without device extensions.
         VkPipelineVertexInputStateCreateInfo vertex{VK_STRUCTURE_TYPE_PIPELINE_VERTEX_INPUT_STATE_CREATE_INFO};
@@ -2140,7 +2139,7 @@ struct VulkanRenderer::Impl {
         dynamic.pDynamicStates = dynamicStates;
         VkGraphicsPipelineCreateInfo create{VK_STRUCTURE_TYPE_GRAPHICS_PIPELINE_CREATE_INFO};
         create.stageCount = 2;
-        create.pStages = stages;
+        create.pStages = stages.data();
         create.pVertexInputState = &vertex;
         create.pInputAssemblyState = &assembly;
         create.pViewportState = &viewport;
@@ -3053,7 +3052,9 @@ void VulkanRenderer::render(Scene& scene, Camera& camera) {
             for(unsigned c=0;c<4;++c)textureUniforms.matrixEnabled[c]=bindings.attributes[5+c].enabled;
             if(instanced && !bindings.attributes[9].enabled)textureUniforms.instanceLayout[1]=0;
             for(int i=0;i<16;++i)textureUniforms.modelView[i]=float(modelView.elements()[i]);
-            draw.textureUniforms = impl->sharedBuffer(sizeof(textureUniforms), VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT, &textureUniforms);
+            const auto encodedTextureUniforms = impl->encodeTextureUniforms(textureUniforms);
+            draw.textureUniforms = impl->sharedBuffer(encodedTextureUniforms.bytes().size(),
+                VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT, encodedTextureUniforms.bytes().data());
             draw.clippingPlanes = impl->sharedBuffer(clippingData.size(), VK_BUFFER_USAGE_STORAGE_BUFFER_BIT, clippingData.data());
             draw.descriptor = impl->textureDescriptor(draw.map, draw.alpha, draw.textureUniforms,
                 draw.instanceMatrices, draw.instanceColors, draw.morphPositions, draw.morphWeights,

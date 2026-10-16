@@ -1,5 +1,6 @@
 #include "core/JSValue.h"
 #include "core/JSNumber.h"
+#include "core/JSRegExp.h"
 #include "core/JSJobs.h"
 #include "core/JSIterator.h"
 #include "core/JSString.h"
@@ -249,6 +250,7 @@ JSValue objectToString(const JSValue& receiver, const std::vector<JSValue>&, con
     if(custom.type()==JSValue::Type::String)return "[object "+custom.string()+"]";
     if(isNativeStringObject(receiver))return "[object String]";
     if(isNativeNumberObject(receiver))return "[object Number]";
+    if(isNativeRegExpObject(receiver))return "[object RegExp]";
     switch(receiver.type()){
     case JSValue::Type::Array:return "[object Array]";
     case JSValue::Type::Function:return "[object Function]";
@@ -663,7 +665,7 @@ class JSHeap : public std::enable_shared_from_this<JSHeap> {
     };
 
     struct Record {
-        enum class ConstructMode { None, Class, Callable, Object, Array, Builtin };
+        enum class ConstructMode { None, Class, Callable, Object, Array, Builtin, CallableBuiltin };
         OrderedMap<Property> properties;
         OrderedMap<JSValue> hostSlots;
         struct SymbolProperty { JSValue key; Property property; };
@@ -697,8 +699,10 @@ class JSHeap : public std::enable_shared_from_this<JSHeap> {
         };
         std::unique_ptr<FinalizationData> finalization;
         JSValue::NativeFunction callback = nullptr;
+        JSValue::NativeBuiltinFunction builtinCallback = nullptr;
         ConstructMode constructMode = ConstructMode::None;
         std::string nativeName;
+        std::optional<std::string> functionSourceText;
         std::uint32_t length = 0;
         std::size_t roots = 0;
         bool lengthWritable = true, extensible = true, intrinsic = false;
@@ -721,7 +725,148 @@ class JSHeap : public std::enable_shared_from_this<JSHeap> {
     std::uint64_t nextId = 0;
     std::unordered_set<std::uint64_t> keptObjects;
     JSValue objectPrototype, arrayPrototype, functionPrototype, intrinsicObject;
-    bool initialized = false, collecting = false;
+    bool initialized = false, collecting = false, initializing = false;
+    std::size_t totalRoots = 0, nativeOwnershipRecords = 0, executionDepth = 0;
+    struct ExecutionScope {
+        JSHeap& heap;
+        explicit ExecutionScope(JSHeap& heap) : heap(heap) { ++heap.executionDepth; }
+        ~ExecutionScope() { --heap.executionDepth; }
+    };
+    struct NativeRoot {
+        JSValue edge;
+        bool owning;
+        NativeRoot(JSValue edge, bool owning) : edge(std::move(edge)), owning(owning) {}
+        NativeRoot(NativeRoot&&) = default;
+        NativeRoot& operator=(NativeRoot&&) = default;
+        NativeRoot(const NativeRoot&) = delete;
+        NativeRoot& operator=(const NativeRoot&) = delete;
+    };
+    NativeRoot snapshotNativeRoot(const JSValue& value) {
+        validateEdge(value);
+        return {value.graphEdge(), bool(value.owner_)};
+    }
+    bool hasNativeApplicationRoots() {
+        // Only described native fields can disguise an owning handle as an
+        // internal heap edge. Audit the host identity index, not every ordinary
+        // record, and compare exact root counts after all temporary hook roots
+        // have gone away. A negative result is rechecked by full collection.
+        collecting = true;
+        struct Reset { bool& value; ~Reset() { value = false; } } reset{collecting};
+        using Owner = std::weak_ptr<void>;
+        struct Node {
+            std::shared_ptr<void> storage;
+            std::map<const JSValue*, NativeRoot> roots;
+            std::map<const void*, Owner> edges;
+            std::size_t internalOwners = 0;
+        };
+        struct Snapshot {
+            Owner owner;
+            std::vector<std::pair<const JSValue*, NativeRoot>> roots;
+            std::vector<JSNativeOwnerEdge> edges;
+        };
+        // Preserve the existing exactly-one pin count and owner-ordered release
+        // even while later hooks run or an application root ends this audit.
+        std::map<Owner, std::shared_ptr<void>, std::owner_less<Owner>> pins;
+        std::vector<Snapshot> snapshots;
+        const auto beforeAllocation = nextId;
+        std::vector<std::uint64_t> hostIds;
+        hostIds.reserve(hosts.size());
+        for (const auto& [key, id] : hosts) hostIds.push_back(id);
+        for (const auto id : hostIds) {
+            const auto found = records.find(id);
+            if (found == records.end()) continue;
+            const auto& value = *found->second;
+            const auto hooks = value.hostHooks;
+            if (!value.hostPayload || !hooks || !hooks->nativeOwnership) continue;
+            const JSValue self(shared_from_this(), id, value.hostType);
+            for (const auto& description : hooks->nativeOwnership(self)) {
+                auto storage = description.owner.lock();
+                if (storage.use_count() == 0) continue;
+                pins.try_emplace(description.owner, std::move(storage));
+                Snapshot snapshot{description.owner, {}, {}};
+                snapshot.roots.reserve(description.roots.size());
+                for (const auto* root : description.roots)
+                    if (root) snapshot.roots.emplace_back(root, snapshotNativeRoot(*root));
+                snapshot.edges.reserve(description.edges.size());
+                for (const auto& link : description.edges)
+                    if (!link.owner.expired()) snapshot.edges.push_back(link);
+                snapshots.push_back(std::move(snapshot));
+            }
+        }
+        // Every hook has run and each returned field has already been copied.
+        // Most native mathematical wrappers describe no JS fields. Avoid
+        // constructing their ownership graph when exact JS root accounting
+        // already proves that this realm still has an application root.
+        using Roots = std::map<const JSValue*, NativeRoot>;
+        std::map<Owner, Roots, std::owner_less<Owner>> rootsByOwner;
+        for (auto& snapshot : snapshots) {
+            if (snapshot.roots.empty()) continue;
+            auto& roots = rootsByOwner[snapshot.owner];
+            for (auto& [address, root] : snapshot.roots)
+                roots.insert_or_assign(address, std::move(root));
+        }
+        std::unordered_set<const JSValue*> roots;
+        std::size_t internalRootCount = 0;
+        for (const auto& [owner, fields] : rootsByOwner)
+            for (const auto& [address, value] : fields)
+                if (roots.insert(address).second && (value.edge.isObject() || value.edge.isSymbol()))
+                    if (value.owning) ++internalRootCount;
+        if (nextId != beforeAllocation || totalRoots > internalRootCount || !keptObjects.empty()) return true;
+        std::map<Owner, Node, std::owner_less<Owner>> native;
+        for (const auto& [owner, storage] : pins) native.try_emplace(owner);
+        for (auto& snapshot : snapshots) {
+            auto& node = native[snapshot.owner];
+            for (const auto& link : snapshot.edges) node.edges[link.slot] = link.owner;
+        }
+        for (auto& [owner, fields] : rootsByOwner) native.at(owner).roots = std::move(fields);
+        std::vector<Owner> children;
+        for (const auto& [owner, node] : native)
+            for (const auto& [slot, child] : node.edges) children.push_back(child);
+        for (const auto& child : children) native.try_emplace(child);
+        for (const auto id : hostIds) {
+            const auto record = records.find(id);
+            if (record == records.end() || !record->second->hostPayload) continue;
+            const auto node = native.find(Owner(record->second->hostPayload));
+            if (node != native.end()) ++node->second.internalOwners;
+        }
+        std::unordered_set<const void*> slots;
+        for (const auto& [owner, node] : native)
+            for (const auto& [slot, child] : node.edges)
+                if (slots.insert(slot).second) {
+                    const auto found = native.find(child);
+                    if (found != native.end()) ++found->second.internalOwners;
+                }
+        std::map<Owner, std::size_t, std::owner_less<Owner>> incoming;
+        for (const auto& [owner, node] : native) incoming.emplace(owner, 0);
+        for (const auto& [owner, node] : native)
+            for (const auto& [slot, child] : node.edges)
+                if (const auto found = incoming.find(child); found != incoming.end()) ++found->second;
+        std::vector<Owner> leaves;
+        for (const auto& [owner, count] : incoming) if (count == 0) leaves.push_back(owner);
+        while (!leaves.empty()) {
+            const auto owner = leaves.back(); leaves.pop_back();
+            for (const auto& [slot, child] : native.at(owner).edges)
+                if (const auto found = incoming.find(child); found != incoming.end() && --found->second == 0)
+                    leaves.push_back(child);
+        }
+        // Finish every allocating graph operation while the original
+        // owner-ordered map still holds all strong pins. Allocation failure
+        // must not split payload release between two partially built maps.
+        for (auto& [owner, storage] : pins) native.at(owner).storage = std::move(storage);
+        snapshots.clear(); rootsByOwner.clear(); pins.clear(); children.clear();
+        for (const auto& [owner, node] : native)
+            if (owner.use_count() > static_cast<long>(node.internalOwners + (node.storage.use_count() != 0)) || incoming.at(owner) != 0)
+                return true;
+        return false;
+    }
+    std::size_t safepoint() {
+        if (collecting || initializing || executionDepth != 0) return 0;
+        // Without described native fields every owning handle is an application
+        // root. This exact fast path does not inspect shared_ptr::use_count().
+        if (nativeOwnershipRecords == 0 && totalRoots != 0) return 0;
+        if (nativeOwnershipRecords != 0 && hasNativeApplicationRoots()) return 0;
+        return collect(true);
+    }
     static std::weak_ptr<JSHeap>& currentHeapStorage() {
         static thread_local std::weak_ptr<JSHeap> heap;
         return heap;
@@ -729,6 +874,10 @@ class JSHeap : public std::enable_shared_from_this<JSHeap> {
     static std::shared_ptr<JSHeap> current() {
         auto& currentHeap = currentHeapStorage();
         auto heap = currentHeap.lock();
+        if (heap) {
+            heap->safepoint();
+            if (heap->records.empty()) heap.reset();
+        }
         if (!heap) { heap = std::make_shared<JSHeap>(); currentHeap = heap; }
         heap->initialize();
         return heap;
@@ -759,6 +908,8 @@ class JSHeap : public std::enable_shared_from_this<JSHeap> {
     }
     void initialize() {
         if (initialized) return;
+        initializing = true;
+        struct InitializationReset { bool& value; ~InitializationReset() { value = false; } } reset{initializing};
         initialized = true;
         auto object = allocate(JSValue::Type::Object);
         auto function = allocate(JSValue::Type::Function);
@@ -825,7 +976,7 @@ class JSHeap : public std::enable_shared_from_this<JSHeap> {
             static_cast<void>(JSValue::wellKnownSymbol(name));
         initializeNativeIteration(array);
     }
-    std::size_t collect() {
+    std::size_t collect(bool retireRealm = false) {
         // Native destructors may read JS fields, retain them externally, or ask
         // for another collection. Keep records readable during finalization and
         // re-mark after each owner; nested collection cannot start a second sweep.
@@ -834,24 +985,38 @@ class JSHeap : public std::enable_shared_from_this<JSHeap> {
         struct Reset { bool& value; ~Reset() { value = false; } } reset{collecting};
         const auto keepHeap = shared_from_this();
         std::vector<std::uint64_t> finalizePayloads;
-        auto mark = [&] {
-        finalizePayloads.clear();
+        bool retirementStarted = false, abortRetirement = false, intrinsicCommit = false, latestApplicationRoots = false;
         using Owner = std::weak_ptr<void>;
         struct NativeNode {
-            std::unordered_set<const JSValue*> roots;
+            // A trace hook may replace the last native edge to a described
+            // child. Keep its owner alive for this mark; this
+            // collector reference is excluded from external-owner counts.
+            std::shared_ptr<void> storage;
+            std::map<const JSValue*, NativeRoot> roots;
             std::map<const void*, Owner> edges;
             std::size_t internalOwners = 0;
             std::vector<std::uint64_t> hosts;
         };
+        using NativeGraph = std::map<Owner, NativeNode, std::owner_less<Owner>>;
+        auto readNativeGraph = [&] {
         std::map<Owner, NativeNode, std::owner_less<Owner>> native;
-        for (const auto& [id, value] : records) {
-            const auto hooks = value->hostHooks;
-            if (value->hostPayload && hooks && hooks->nativeOwnership) {
-                const JSValue self(shared_from_this(), id, value->hostType);
+        std::vector<std::uint64_t> recordIds;
+        recordIds.reserve(records.size());
+        for (const auto& [id, value] : records) recordIds.push_back(id);
+        for (const auto id : recordIds) {
+            const auto found = records.find(id);
+            if (found == records.end()) continue;
+            const auto& value = *found->second;
+            const auto hooks = value.hostHooks;
+            if (value.hostPayload && hooks && hooks->nativeOwnership) {
+                const JSValue self(shared_from_this(), id, value.hostType);
                 for (const auto& description : hooks->nativeOwnership(self)) {
-                    if (description.owner.expired()) continue;
+                    auto storage = description.owner.lock();
+                    if (storage.use_count() == 0) continue;
                     auto& node = native[description.owner];
-                    for (const auto* root : description.roots) if (root) node.roots.insert(root);
+                    if (node.storage.use_count() == 0) node.storage = std::move(storage);
+                    for (const auto* root : description.roots)
+                        if (root) node.roots.insert_or_assign(root, snapshotNativeRoot(*root));
                     for (const auto& link : description.edges) if (!link.owner.expired()) node.edges[link.slot] = link.owner;
                 }
             }
@@ -865,10 +1030,8 @@ class JSHeap : public std::enable_shared_from_this<JSHeap> {
         for (const auto& owner : referencedOwners) native.try_emplace(owner);
         // Every host payload is an internal owner, including aliasing payloads
         // with a different host tag but the same shared_ptr control block.
-        std::map<Owner, std::vector<std::uint64_t>, std::owner_less<Owner>> payloadGroups;
         for (const auto& [id, value] : records) {
             if (value->hostPayload) {
-                payloadGroups[Owner(value->hostPayload)].push_back(id);
                 auto found = native.find(Owner(value->hostPayload));
                 if (found != native.end()) {
                     ++found->second.internalOwners;
@@ -877,19 +1040,73 @@ class JSHeap : public std::enable_shared_from_this<JSHeap> {
             }
         }
         std::unordered_set<const void*> countedSlots;
+        for (const auto& [owner, node] : native)
+            for (const auto& [slot, child] : node.edges)
+                if (countedSlots.insert(slot).second)
+                    if (const auto found = native.find(child); found != native.end())
+                        ++found->second.internalOwners;
+        return native;
+        };
+        struct RootIdentity {
+            std::uint64_t id = 0;
+            bool reference = false, owning = false;
+            bool operator==(const RootIdentity&) const = default;
+        };
+        struct AuditNode {
+            std::map<const JSValue*, RootIdentity> roots;
+            std::map<const void*, Owner> edges;
+            std::vector<std::uint64_t> hosts;
+            long strongOwners = 0;
+        };
+        using NativeAudit = std::map<Owner, AuditNode, std::owner_less<Owner>>;
+        auto auditGraph = [&](const NativeGraph& native) {
+            NativeAudit audit;
+            for (const auto& [owner, node] : native) {
+                auto& copy = audit[owner];
+                copy.edges = node.edges;
+                copy.hosts = node.hosts;
+                std::sort(copy.hosts.begin(), copy.hosts.end());
+                copy.strongOwners = owner.use_count() - static_cast<long>(node.storage.use_count() != 0);
+                for (const auto& [address, root] : node.roots) {
+                    auto& identity = copy.roots[address];
+                    if (root.edge.isObject() || root.edge.isSymbol()) {
+                        identity.reference = true;
+                        identity.id = std::get<JSValue::Reference>(root.edge.value_).id;
+                        identity.owning = root.owning;
+                    }
+                }
+            }
+            return audit;
+        };
+        auto sameAudit = [&](const NativeAudit& left, const NativeAudit& right) {
+            const std::owner_less<Owner> less;
+            auto sameOwner = [&](const Owner& a, const Owner& b) { return !less(a,b) && !less(b,a); };
+            if (left.size() != right.size()) return false;
+            auto a = left.begin(), b = right.begin();
+            for (; a != left.end(); ++a, ++b) {
+                if (!sameOwner(a->first,b->first) || a->second.roots != b->second.roots ||
+                    a->second.hosts != b->second.hosts || a->second.strongOwners != b->second.strongOwners ||
+                    a->second.edges.size() != b->second.edges.size()) return false;
+                auto ae = a->second.edges.begin(), be = b->second.edges.begin();
+                for (; ae != a->second.edges.end(); ++ae, ++be)
+                    if (ae->first != be->first || !sameOwner(ae->second,be->second)) return false;
+            }
+            return true;
+        };
+        NativeAudit beforeNative;
+        auto mark = [&] {
+        finalizePayloads.clear();
+        auto native = readNativeGraph();
+        beforeNative = auditGraph(native);
+        std::map<Owner, std::vector<std::uint64_t>, std::owner_less<Owner>> payloadGroups;
+        for (const auto& [id, value] : records)
+            if (value->hostPayload) payloadGroups[Owner(value->hostPayload)].push_back(id);
         std::unordered_set<const JSValue*> countedRoots;
         std::unordered_map<std::uint64_t, std::size_t> internalRoots;
         for (const auto& [owner, node] : native) {
-            for (const auto& [slot, child] : node.edges) {
-                if (countedSlots.insert(slot).second) {
-                    auto found = native.find(child);
-                    if (found != native.end()) ++found->second.internalOwners;
-                }
-            }
-            for (const auto* value : node.roots) {
-                if (countedRoots.insert(value).second && (value->isObject() || value->isSymbol())) {
-                    validateEdge(*value);
-                    if (value->owner_) ++internalRoots[std::get<JSValue::Reference>(value->value_).id];
+            for (const auto& [address, value] : node.roots) {
+                if (countedRoots.insert(address).second && (value.edge.isObject() || value.edge.isSymbol())) {
+                    if (value.owning) ++internalRoots[std::get<JSValue::Reference>(value.edge.value_).id];
                 }
             }
         }
@@ -900,7 +1117,7 @@ class JSHeap : public std::enable_shared_from_this<JSHeap> {
         // This index is rebuilt after every native finalizer's graph mutation.
         std::unordered_map<std::uint64_t, std::vector<std::uint64_t>> ephemeronWaiting;
         for (const auto& [id, value] : records) {
-            if (value->roots > internalRoots[id] || value->intrinsic) pending.push_back(id);
+            if (value->roots > internalRoots[id] || (!retireRealm && value->intrinsic)) pending.push_back(id);
         }
         pending.insert(pending.end(), keptObjects.begin(), keptObjects.end());
         auto edge = [&](const JSValue& value) {
@@ -931,9 +1148,22 @@ class JSHeap : public std::enable_shared_from_this<JSHeap> {
             }
         }
         for (const auto& [owner, node] : native) {
-            if (owner.use_count() > static_cast<long>(node.internalOwners) || incoming.at(owner) != 0)
+            if (owner.use_count() > static_cast<long>(node.internalOwners + (node.storage.use_count() != 0)) || incoming.at(owner) != 0)
                 nativePending.push_back(owner);
         }
+        const bool hasApplicationRoots = !pending.empty() || !nativePending.empty();
+        latestApplicationRoots = hasApplicationRoots;
+        if (retireRealm && !retirementStarted && hasApplicationRoots) {
+            abortRetirement = true;
+            return marked;
+        }
+        retirementStarted = retirementStarted || retireRealm;
+        // Each native finalizer can publish JS handles, native owners, or a new
+        // pure C++ cycle. Rebuild the graph above and restore intrinsic roots
+        // if retirement has been interrupted by that escape.
+        if (retireRealm && (hasApplicationRoots || !intrinsicCommit))
+            for (const auto& [id, value] : records)
+                if (value->intrinsic) pending.push_back(id);
         while (!pending.empty() || !nativePending.empty()) {
             while (!nativePending.empty()) {
                 const auto owner = nativePending.back(); nativePending.pop_back();
@@ -941,7 +1171,7 @@ class JSHeap : public std::enable_shared_from_this<JSHeap> {
                 const auto found = native.find(owner);
                 if (found == native.end()) continue;
                 for (const auto host : found->second.hosts) pending.push_back(host);
-                for (const auto* root : found->second.roots) edge(*root);
+                for (const auto& [address, root] : found->second.roots) edge(root.edge);
                 for (const auto& [slot, child] : found->second.edges) nativePending.push_back(child);
             }
             if (pending.empty()) continue;
@@ -1000,12 +1230,49 @@ class JSHeap : public std::enable_shared_from_this<JSHeap> {
         }
         return marked;
         };
-        auto marked = mark();
-        while (!finalizePayloads.empty()) {
+        auto stableMark = [&] {
+            for (;;) {
+                const auto beforeAllocation = nextId;
+                std::unordered_map<std::uint64_t, std::size_t> beforeRoots;
+                for (const auto& [id, value] : records) beforeRoots.emplace(id, value->roots);
+                auto result = mark();
+                if (abortRetirement) return result;
+                // A trace/ownership hook can replace an already-existing
+                // native edge or graph field without changing JS root counts.
+                // Re-read the described live graph before committing a sweep.
+                const auto afterNative = auditGraph(readNativeGraph());
+                const bool nativeChanged = !sameAudit(beforeNative, afterNative);
+                // Hooks can allocate/re-hash storage or publish a new owning
+                // handle. Temporary hook roots have been released here. Rebuild
+                // the complete native graph before retiring any payload/sweeping.
+                bool changed = nativeChanged || nextId != beforeAllocation || beforeRoots.size() != records.size();
+                if (!changed)
+                    for (const auto& [id, value] : records)
+                        if (const auto found = beforeRoots.find(id); found == beforeRoots.end() || found->second != value->roots) {
+                            changed = true; break;
+                        }
+                if (!changed) return result;
+            }
+        };
+        auto marked = stableMark();
+        if (abortRetirement) return 0;
+        for (;;) {
+            if (finalizePayloads.empty()) {
+                if (retireRealm && !latestApplicationRoots && !intrinsicCommit) {
+                    // Keep the complete intrinsic graph while unrelated native
+                    // finalizers still have a chance to publish application
+                    // roots. Only after these owners are gone can realm exit
+                    // commit to finalizing intrinsic-owned payloads.
+                    intrinsicCommit = true;
+                    marked = stableMark();
+                }
+                if (finalizePayloads.empty()) break;
+            }
             std::vector<std::shared_ptr<void>> payloads;
             for (const auto id : finalizePayloads) {
                 auto& record = *records.at(id);
                 payloads.push_back(std::move(record.hostPayload));
+                if (record.hostHooks && record.hostHooks->nativeOwnership) --nativeOwnershipRecords;
                 record.hostHooks.reset();
                 for (auto entry = hosts.begin(); entry != hosts.end();) {
                     if (entry->second == id) entry = hosts.erase(entry); else ++entry;
@@ -1015,7 +1282,7 @@ class JSHeap : public std::enable_shared_from_this<JSHeap> {
             // is released. An allocation in a destructor cannot reuse a retired
             // wrapper if its native address is reused.
             payloads.clear();
-            marked = mark();
+            marked = stableMark();
         }
         // Finalizers above can resurrect ordinary JS records or change weak
         // entries. Prune only after the final re-mark, before detached records
@@ -1043,6 +1310,8 @@ class JSHeap : public std::enable_shared_from_this<JSHeap> {
         std::vector<std::unique_ptr<Record>> garbage;
         for (auto entry = records.begin(); entry != records.end();) {
             if (!marked.contains(entry->first)) {
+                if (entry->second->hostHooks && entry->second->hostHooks->nativeOwnership) --nativeOwnershipRecords;
+                totalRoots -= entry->second->roots;
                 garbage.push_back(std::move(entry->second));
                 entry = records.erase(entry);
             }
@@ -1360,6 +1629,7 @@ bool JSWeakValue::expired() const {
     if (!std::holds_alternative<JSValue::Reference>(value_)) return false;
     checkThread();
     const auto heap = heap_.lock();
+    if (heap) heap->safepoint();
     return !heap || !heap->records.contains(std::get<JSValue::Reference>(value_).id);
 }
 std::optional<JSValue> JSWeakValue::lock() const {
@@ -1371,20 +1641,21 @@ std::optional<JSValue> JSWeakValue::lock() const {
     checkThread();
     const auto heap = heap_.lock();
     const auto reference = std::get<JSValue::Reference>(value_);
+    if (heap) heap->safepoint();
     if (!heap || !heap->records.contains(reference.id)) return std::nullopt;
     return JSValue(heap, reference.id, reference.type);
 }
 
 JSValue::JSValue(std::shared_ptr<JSHeap> heap, std::uint64_t id, Type type)
-    : value_(Reference{id, type}), owner_(std::move(heap)), heap_(owner_.get()) { ++heap_->record(*this).roots; }
-void JSValue::retain() { if (heap_) { owner_ = heap_->shared_from_this(); ++heap_->record(*this).roots; } }
+    : value_(Reference{id, type}), owner_(std::move(heap)), heap_(owner_.get()) { ++heap_->record(*this).roots; ++heap_->totalRoots; }
+void JSValue::retain() { if (heap_) { owner_ = heap_->shared_from_this(); ++heap_->record(*this).roots; ++heap_->totalRoots; } }
 void JSValue::release() {
     if (owner_) {
         const auto id = std::get<Reference>(value_).id;
         const auto found = heap_->records.find(id);
         // Owned native fields can be destroyed after their unreachable JS graph
         // has been detached from the heap during the current sweep.
-        if (found != heap_->records.end()) --found->second->roots;
+        if (found != heap_->records.end()) { --found->second->roots; --heap_->totalRoots; }
     }
     owner_.reset(); heap_ = nullptr;
 }
@@ -1447,7 +1718,14 @@ JSValue JSValue::toPropertyKey() const {
 JSValue JSValue::intrinsicObjectConstructor() {
     auto heap=JSHeap::current();return JSValue(heap->intrinsicObject);
 }
-bool JSValue::hasActiveHeap() {return !JSHeap::currentHeapStorage().expired();}
+std::size_t JSValue::nativeSafepoint() {
+    const auto heap = JSHeap::currentHeapStorage().lock();
+    return heap ? heap->safepoint() : 0;
+}
+bool JSValue::hasActiveHeap() {
+    static_cast<void>(nativeSafepoint());
+    return !JSHeap::currentHeapStorage().expired();
+}
 JSValue JSValue::object() {
     auto heap = JSHeap::current(); auto value = heap->allocate(Type::Object);
     heap->record(value).prototype = heap->objectPrototype.graphEdge(); return value;
@@ -1485,7 +1763,12 @@ std::shared_ptr<void> JSValue::hostPayload(const std::string& expectedTag) const
 }
 void JSValue::setHostHooks(std::shared_ptr<const JSHostObjectHooks> hooks) {
     if (!isObject() || !heap_->record(*this).hostPayload) throw JSTypeError("Expected native host");
-    heap_->record(*this).hostHooks = std::move(hooks);
+    auto& record = heap_->record(*this);
+    const bool hadOwnership = record.hostHooks && record.hostHooks->nativeOwnership;
+    const bool hasOwnership = hooks && hooks->nativeOwnership;
+    if (!hadOwnership && hasOwnership) ++heap_->nativeOwnershipRecords;
+    if (hadOwnership && !hasOwnership) --heap_->nativeOwnershipRecords;
+    record.hostHooks = std::move(hooks);
 }
 void JSValue::setHostSlot(const std::string& key, const JSValue& value) {
     if (!isObject() || !heap_->record(*this).hostPayload) throw JSTypeError("Expected native host");
@@ -1524,6 +1807,16 @@ JSValue JSValue::builtinConstructor(NativeFunction callback, const std::vector<J
                                    const std::string& name, std::size_t arity) {
     auto value = constructor(callback, captures, name, arity);
     value.heap_->record(value).constructMode = JSHeap::Record::ConstructMode::Builtin;
+    return value;
+}
+JSValue JSValue::callableBuiltinConstructor(NativeBuiltinFunction callback,
+                                           const std::vector<JSValue>& captures,
+                                           const std::string& name, std::size_t arity) {
+    if (!callback) throw JSTypeError("Intrinsic constructor requires a callback");
+    auto value = constructor(emptyFunction, captures, name, arity);
+    auto& record = value.heap_->record(value);
+    record.constructMode = JSHeap::Record::ConstructMode::CallableBuiltin;
+    record.builtinCallback = callback;
     return value;
 }
 bool JSValue::isConstructible() const {
@@ -1609,6 +1902,7 @@ JSValue JSValue::call(const JSValue& receiver, const std::vector<JSValue>& args)
     if (!isCallable()) throw JSTypeError("Value is not callable");
     // Root everything before user code detaches properties or runs collection.
     const JSValue function = *this, rootedReceiver = receiver;
+    JSHeap::ExecutionScope execution(*heap_);
     const std::vector<JSValue> rootedArgs = args;
     const auto& record = heap_->record(function);
     if (record.constructMode == JSHeap::Record::ConstructMode::Class ||
@@ -1616,6 +1910,8 @@ JSValue JSValue::call(const JSValue& receiver, const std::vector<JSValue>& args)
         throw JSTypeError("Class constructor cannot be invoked without new");
     const std::vector<JSValue> captures = record.captures;
     const auto callback = record.callback;
+    if (record.constructMode == JSHeap::Record::ConstructMode::CallableBuiltin)
+        return record.builtinCallback(rootedReceiver, JSValue{}, rootedArgs, captures);
     return callback(rootedReceiver, rootedArgs, captures);
 }
 JSValue JSValue::construct(const std::vector<JSValue>& args) const { return construct(args, *this); }
@@ -1625,6 +1921,7 @@ JSValue JSValue::construct(const std::vector<JSValue>& args, const JSValue& newT
     // Prototype access can invoke user code, detach the constructor and its
     // arguments, collect garbage, or reenter construction. Root them first.
     const JSValue function = *this, rootedNewTarget = newTarget;
+    JSHeap::ExecutionScope execution(*heap_);
     const std::vector<JSValue> rootedArgs = args;
     heap_->validateEdge(rootedNewTarget);
     for (const auto& argument : rootedArgs) heap_->validateEdge(argument);
@@ -1634,6 +1931,11 @@ JSValue JSValue::construct(const std::vector<JSValue>& args, const JSValue& newT
     const std::vector<JSValue> captures = record.captures;
     if (mode == JSHeap::Record::ConstructMode::Object && rootedNewTarget.sameValue(function))
         return callback(JSValue{}, rootedArgs, captures);
+    if (mode == JSHeap::Record::ConstructMode::CallableBuiltin) {
+        auto result = record.builtinCallback(JSValue{}, rootedNewTarget, rootedArgs, captures);
+        if (!result.isObject()) throw JSTypeError("Intrinsic constructor must return an object");
+        return result;
+    }
     if (mode == JSHeap::Record::ConstructMode::Builtin) {
         auto result = callback(rootedNewTarget, rootedArgs, captures);
         if (!result.isObject()) throw JSTypeError("Intrinsic constructor must return an object");
@@ -1649,8 +1951,17 @@ JSValue JSValue::construct(const std::vector<JSValue>& args, const JSValue& newT
     return result.isObject() ? result : receiver;
 }
 std::string JSValue::nativeFunctionSource() const {
+    static_cast<void>(JSWeakValue(*this));
     if (!isCallable()) throw JSTypeError("Function.prototype.toString requires a function");
-    return "function " + heap_->record(*this).nativeName + "() { [native code] }";
+    const auto& function = heap_->record(*this);
+    if (function.functionSourceText) return *function.functionSourceText;
+    return "function " + function.nativeName + "() { [native code] }";
+}
+void JSValue::setFunctionSourceText(const std::string& source) {
+    static_cast<void>(JSWeakValue(*this));
+    if (!isCallable()) throw JSTypeError("Function source metadata requires a function");
+    auto normalized = normalizeString(source);
+    heap_->record(*this).functionSourceText = std::move(normalized);
 }
 std::optional<JSValue::PropertyDescriptor> JSValue::getOwnPropertyDescriptor(const std::string& rawKey) const {
     const auto key = normalizeString(rawKey);

@@ -1,0 +1,6 @@
+constexpr const char* source_equals_Vector2 = "equals( v ) {\r\n\r\n\t\treturn ( ( v.x === this.x ) && ( v.y === this.y ) );\r\n\r\n\t}";
+constexpr const char* source_equals_Vector3 = "equals( v ) {\r\n\r\n\t\treturn ( ( v.x === this.x ) && ( v.y === this.y ) && ( v.z === this.z ) );\r\n\r\n\t}";
+constexpr const char* source_equals_Vector4 = "equals( v ) {\r\n\r\n\t\treturn ( ( v.x === this.x ) && ( v.y === this.y ) && ( v.z === this.z ) && ( v.w === this.w ) );\r\n\r\n\t}";
+constexpr const char* source_equals_Color = "equals( c ) {\r\n\r\n\t\treturn ( c.r === this.r ) && ( c.g === this.g ) && ( c.b === this.b );\r\n\r\n\t}";
+constexpr const char* source_equals_Matrix3 = "equals( matrix ) {\r\n\r\n\t\tconst te = this.elements;\r\n\t\tconst me = matrix.elements;\r\n\r\n\t\tfor ( let i = 0; i < 9; i ++ ) {\r\n\r\n\t\t\tif ( te[ i ] !== me[ i ] ) return false;\r\n\r\n\t\t}\r\n\r\n\t\treturn true;\r\n\r\n\t}";
+constexpr const char* source_equals_Matrix4 = "equals( matrix ) {\r\n\r\n\t\tconst te = this.elements;\r\n\t\tconst me = matrix.elements;\r\n\r\n\t\tfor ( let i = 0; i < 16; i ++ ) {\r\n\r\n\t\t\tif ( te[ i ] !== me[ i ] ) return false;\r\n\r\n\t\t}\r\n\r\n\t\treturn true;\r\n\r\n\t}";

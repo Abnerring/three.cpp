@@ -144,8 +144,9 @@ TEST_CASE("All alias identities retire before a native finalizer reuses their ad
     outputs={};witness.collectGarbage();REQUIRE(witness.heapObjectCount()==before);
 }
 TEST_CASE("Runtime events preserve native callback owners during collection then release their cycle", "[runtime-native]") {
+    auto witness=JSValue::object();
     EventDispatcher::runtimePrototype();
-    auto witness=JSValue::object();witness.collectGarbage();const auto before=witness.heapObjectCount();std::weak_ptr<NativeOwner> weak;
+    witness.collectGarbage();const auto before=witness.heapObjectCount();std::weak_ptr<NativeOwner> weak;
     {auto owner=std::make_shared<NativeOwner>();weak=owner;auto host=wrap(owner);host.set("answer",37);
         auto dispatcher=EventDispatcher::runtimeObject();owner->field=dispatcher;
         auto callback=JSValue::function([](const JSValue&receiver,const std::vector<JSValue>&args,const std::vector<JSValue>&captures){

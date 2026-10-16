@@ -1,0 +1,180 @@
+[
+  {
+    "name": "MeshDepthMaterial-default",
+    "material": "MeshDepthMaterial"
+  },
+  {
+    "name": "MeshDistanceMaterial-default",
+    "material": "MeshDistanceMaterial"
+  },
+  {
+    "name": "MeshNormalMaterial-default",
+    "material": "MeshNormalMaterial"
+  },
+  {
+    "name": "MeshBasicMaterial-default",
+    "material": "MeshBasicMaterial"
+  },
+  {
+    "name": "MeshLambertMaterial-default",
+    "material": "MeshLambertMaterial"
+  },
+  {
+    "name": "MeshPhongMaterial-default",
+    "material": "MeshPhongMaterial"
+  },
+  {
+    "name": "MeshToonMaterial-default",
+    "material": "MeshToonMaterial"
+  },
+  {
+    "name": "MeshStandardMaterial-default",
+    "material": "MeshStandardMaterial"
+  },
+  {
+    "name": "MeshPhysicalMaterial-default",
+    "material": "MeshPhysicalMaterial"
+  },
+  {
+    "name": "MeshMatcapMaterial-default",
+    "material": "MeshMatcapMaterial"
+  },
+  {
+    "name": "LineBasicMaterial-default",
+    "material": "LineBasicMaterial"
+  },
+  {
+    "name": "LineDashedMaterial-default",
+    "material": "LineDashedMaterial"
+  },
+  {
+    "name": "PointsMaterial-default",
+    "material": "PointsMaterial"
+  },
+  {
+    "name": "ShadowMaterial-default",
+    "material": "ShadowMaterial"
+  },
+  {
+    "name": "SpriteMaterial-default",
+    "material": "SpriteMaterial"
+  },
+  {
+    "name": "ShaderMaterial-default",
+    "material": "ShaderMaterial"
+  },
+  {
+    "name": "RawShaderMaterial-default",
+    "material": "RawShaderMaterial"
+  },
+  {
+    "name": "basic-map-fog-clipping",
+    "material": "MeshBasicMaterial",
+    "maps": {
+      "map": 0,
+      "alphaMap": 1
+    },
+    "clip": true,
+    "fog": true,
+    "tone": true,
+    "props": {
+      "alphaTest": 0.25
+    }
+  },
+  {
+    "name": "standard-maps-lights",
+    "material": "MeshStandardMaterial",
+    "maps": {
+      "map": 0,
+      "normalMap": 0,
+      "roughnessMap": 1,
+      "metalnessMap": 1
+    },
+    "lights": true,
+    "shadows": true,
+    "tone": true,
+    "props": {
+      "roughness": 0.4,
+      "metalness": 0.6
+    }
+  },
+  {
+    "name": "physical-features",
+    "material": "MeshPhysicalMaterial",
+    "maps": {
+      "map": 0,
+      "normalMap": 0,
+      "clearcoatMap": 1,
+      "transmissionMap": 0,
+      "iridescenceMap": 1,
+      "anisotropyMap": 0
+    },
+    "lights": true,
+    "clip": true,
+    "tone": true,
+    "props": {
+      "clearcoat": 1,
+      "transmission": 0.5,
+      "iridescence": 1,
+      "anisotropy": 0.5,
+      "dispersion": 0.1
+    }
+  },
+  {
+    "name": "basic-log-depth",
+    "material": "MeshBasicMaterial",
+    "logDepth": true
+  },
+  {
+    "name": "basic-reversed",
+    "material": "MeshBasicMaterial",
+    "reversed": true
+  },
+  {
+    "name": "shader-user-input",
+    "material": "ShaderMaterial",
+    "props": {
+      "defines": {
+        "FIXTURE_SCALE": 2
+      },
+      "vertexShader": "#include <common>\nvoid main() { gl_Position = projectionMatrix * modelViewMatrix * vec4( position * float( FIXTURE_SCALE ), 1.0 ); }",
+      "fragmentShader": "#include <common>\nvoid main() { gl_FragColor = vec4( 0.25, 0.5, 0.75, 1.0 ); }"
+    }
+  },
+  {
+    "name": "raw-user-input",
+    "material": "RawShaderMaterial",
+    "props": {
+      "glslVersion": "300 es",
+      "vertexShader": "precision highp float;\nin vec3 position;\nuniform mat4 mvp;\nvoid main() { gl_Position = mvp * vec4( position, 1.0 ); }",
+      "fragmentShader": "precision highp float;\nout vec4 outputColor;\nvoid main() { outputColor = vec4( 0.25, 0.5, 0.75, 1.0 ); }"
+    }
+  },
+  {
+    "name": "shader-version-environment-uniform-varying",
+    "material": "ShaderMaterial",
+    "props": {
+      "uniforms": {
+        "fixtureGain": {
+          "value": 0.75
+        }
+      },
+      "vertexShader": "#if __VERSION__ == 300\n#define FIXTURE_VERSION_SCALE 0.3\n#else\n#define FIXTURE_VERSION_SCALE 0.9\n#endif\n#ifdef GL_ES\n#define FIXTURE_ENV_SCALE 1.0\n#else\n#define FIXTURE_ENV_SCALE 2.0\n#endif\nuniform float fixtureGain;\nvarying vec3 fixtureVarying;\nvoid main() { fixtureVarying = position * FIXTURE_VERSION_SCALE; gl_Position = projectionMatrix * modelViewMatrix * vec4( position * fixtureGain * FIXTURE_ENV_SCALE, 1.0 ); }",
+      "fragmentShader": "#if __VERSION__ == 300 && defined( GL_ES )\n#define FIXTURE_COLOR_SCALE 0.5\n#else\n#define FIXTURE_COLOR_SCALE 1.0\n#endif\nuniform float fixtureGain;\nvarying vec3 fixtureVarying;\nvoid main() { gl_FragColor = vec4( abs( fixtureVarying ) * fixtureGain * FIXTURE_COLOR_SCALE, 1.0 ); }"
+    }
+  },
+  {
+    "name": "raw-version-environment-uniform-varying",
+    "material": "RawShaderMaterial",
+    "props": {
+      "glslVersion": "300 es",
+      "uniforms": {
+        "fixtureGain": {
+          "value": 0.75
+        }
+      },
+      "vertexShader": "precision highp float;\n#if defined( GL_ES ) && __VERSION__ == 300\n#define FIXTURE_ENV_SCALE 1.0\n#else\n#define FIXTURE_ENV_SCALE 2.0\n#endif\nin vec3 position;\nout vec3 fixtureVarying;\nuniform mat4 fixtureTransform;\nuniform float fixtureGain;\nvoid main() { fixtureVarying = position; gl_Position = fixtureTransform * vec4( position * fixtureGain * FIXTURE_ENV_SCALE, 1.0 ); }",
+      "fragmentShader": "precision highp float;\n#if __VERSION__ == 300\n#define FIXTURE_VERSION_SCALE 0.3\n#else\n#define FIXTURE_VERSION_SCALE 0.9\n#endif\n#ifdef GL_ES\n#define FIXTURE_COLOR_SCALE 0.5\n#else\n#define FIXTURE_COLOR_SCALE 1.0\n#endif\nin vec3 fixtureVarying;\nuniform float fixtureGain;\nout vec4 fixtureOutput;\nvoid main() { fixtureOutput = vec4( abs( fixtureVarying ) * fixtureGain * FIXTURE_COLOR_SCALE * FIXTURE_VERSION_SCALE, 1.0 ); }"
+    }
+  }
+]

@@ -42,6 +42,12 @@ class JSValue {
     // noncapturing lambdas, without hiding owning JSValue handles in a closure.
     using NativeFunction = JSValue (*)(const JSValue& receiver, const std::vector<JSValue>& args,
                                       const std::vector<JSValue>& captures);
+    // A callable intrinsic gets the original call receiver and undefined
+    // newTarget for [[Call]], or undefined receiver and the real newTarget for
+    // [[Construct]]. Captures remain explicit, heap-traced edges.
+    using NativeBuiltinFunction = JSValue (*)(const JSValue& receiver, const JSValue& newTarget,
+                                             const std::vector<JSValue>& args,
+                                             const std::vector<JSValue>& captures);
     JSValue() = default;
     JSValue(std::nullptr_t) : value_(nullptr) {}
     JSValue(bool value) : value_(value) {}
@@ -93,6 +99,9 @@ class JSValue {
     // The callback receives newTarget as its receiver and must return an object.
     static JSValue builtinConstructor(NativeFunction callback, const std::vector<JSValue>& captures = {},
                                       const std::string& name = "", std::size_t arity = 0);
+    static JSValue callableBuiltinConstructor(NativeBuiltinFunction callback,
+                                             const std::vector<JSValue>& captures = {},
+                                             const std::string& name = "", std::size_t arity = 0);
     static JSValue fromJSON(const JsonValue& value);
     Type type() const;
     bool isUndefined() const { return type() == Type::Undefined; }
@@ -112,6 +121,9 @@ class JSValue {
     JSValue construct(const std::vector<JSValue>& args = {}) const;
     JSValue construct(const std::vector<JSValue>& args, const JSValue& newTarget) const;
     std::string nativeFunctionSource() const;
+    // Exact known source text for transplanted source functions, stored in the
+    // function record; Function.prototype.toString stays a live prototype method.
+    void setFunctionSourceText(const std::string& source);
     double number() const { return std::get<double>(value_); }
     const std::string& string() const { return std::get<std::string>(value_); }
 
@@ -173,6 +185,11 @@ class JSValue {
     // exists. This root adds no shared ownership of the heap. Native payloads
     // can still contain owning handles and require their own lifetime policy.
     void retainForHeapLifetime() const;
+    // Owning-thread native host checkpoint. Retires per-heap intrinsic graphs
+    // only when no application JS handles, kept job targets, external native
+    // owners or unreclaimable C++ ownership cycles remain. shared_ptr reset
+    // itself is unobservable; weak-cache access/new heap use also check here.
+    static std::size_t nativeSafepoint();
 
   private:
     struct Reference { std::uint64_t id; Type type; };
@@ -269,6 +286,9 @@ struct JSNativeOwnerEdge {
     std::weak_ptr<void> owner;
 };
 struct JSNativeOwnerNode {
+    // Roots and slots must name valid storage when the description is returned.
+    // Roots are copied as non-owning edges before calling the next hook; later
+    // changes to field storage are re-audited before sweeping.
     std::weak_ptr<void> owner;
     std::vector<const JSValue*> roots;
     std::vector<JSNativeOwnerEdge> edges;
@@ -283,6 +303,7 @@ struct JSHostObjectHooks {
                                     const JSValue&, const JSValue&) = nullptr;
     // Enumerate cached wrappers referenced by current native fields. This must
     // not invoke user getters or allocate new host wrappers.
+    // Graph changes are re-audited before sweeping and must eventually settle.
     std::vector<JSValue> (*trace)(const JSValue&) = nullptr;
     // Describe existing native storage without invoking getters, copying JSValue
     // fields, retaining extra shared_ptr owners, or mutating the graph.

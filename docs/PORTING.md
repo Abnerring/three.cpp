@@ -30,7 +30,7 @@
 
 Map/Set 提供 SameValueZero 键、插入顺序、动态构造 adder、live iterator、forEach、delete/clear/reinsert、品牌与方法元数据。同步 Iterator Record 保留 next 快照和动态 return 查找，构造输入或 adder 失败按源顺序关闭迭代器。Array keys/values/entries 使用实时 length；String iterator 按 UTF-16 码点推进。可达 iterator 保留集合的共享存储及活条目，不额外保留集合包装；耗尽后释放存储。原生 clear 会比当前 Node/V8 更早释放旧表条目，这是 GC 时机边界；迭代结果、顺序和新增条目仍严格比较。Map.groupBy/getOrInsert、Set 集合运算、Iterator helpers、异步迭代以及弱集合的 Symbol/iterator 接入仍待实现。
 
-StringData 提供 UTF-16 索引只读描述符、valueOf/toString、通用 startsWith 和真实 Symbol.match 检查。字符串基础值属性查找保留原始 receiver。完整 String 构造器、字符串方法与 RegExp 内部槽仍待实现。集合、Symbol、迭代器和字符串原型使用每个 heap 的内在根与弱缓存，不增加 owning TLS 根。
+StringData 提供 UTF-16 索引只读描述符、valueOf/toString、通用 startsWith 和真实 Symbol.match 检查。字符串基础值属性查找保留原始 receiver。已接入 String 的普通调用/构造钩子、replace/split/trim/toUpperCase，以及受管理 RegExp 的 exec/test 与 Symbol 协议。UTF-16/WTF-8 和 Unicode 17 默认大写由 C++ 实现；完整 String 静态 API、全部正则语法和 Unicode 模式仍待完成，当前未支持的有效模式显式抛 JSRegExpUnsupported。集合、Symbol、迭代器和字符串原型使用每个 heap 的内在根与弱缓存，不增加 owning TLS 根。
 
 动画依赖的 Array push/pop/shift/slice/indexOf/splice、Function.call、Object 原型基础方法及运行时 EventDispatcher 已接入；差分验证 holes、继承索引、访问器、强制转换、只读属性的部分修改、监听器快照、抛错和重入。filter、map、slice、splice、concat 通过 ArraySpeciesCreate 保留 constructor/@@species 查找、任意构造结果及失败的部分写入。filter 保留 length 快照、逐项 Has/Get、callback 与 ToBoolean；完整基础值装箱和跨 realm 构造仍待实现。concat 按各输入的长度快照、HasProperty/Get 和自有数据属性创建顺序复制，保留 holes、继承索引、getter 修改后续输入、异常和重入；展开仍仅识别当前运行时 Array，Symbol.isConcatSpreadable 仍待实现。回收目前通过 collectGarbage 显式触发，尚无自动调度策略。原生 payload 分阶段析构：全部别名缓存先退役，保留 JS 记录供析构函数读取或保存普通字段，重新标记后才清除不可达记录；已经开始析构的 C++ 对象不能复活。每个 owner 析构后重新标记，性能仍需优化。
 
@@ -224,3 +224,34 @@ NumberData 原生装箱与 Number.prototype 的 valueOf、十进制 toString、t
 Layers 管理对象是 mask 的唯一来源，保留任意值、描述符、位移、共享身份、copy 的目标捕获与渲染 getter 重入。原生 Object3D 字段仍为访问器桥接，JSON 返回值仍为 JsonValue；完整数据描述符和延迟序列化未完成。UniformsUtils 的 clone/merge 对象导出与四个独立导出函数保留身份；颜色空间实时读取同一 ColorManagement。
 
 WebGLShaderCache 使用真实原生 Map/Set，保留代码键身份、usedTimes 转换与重新读取、动态方法、IteratorClose、模块共享 ID 和释放行为。它仅提供 CPU 缓存。VulkanShaderCompiler 提供原生 glslang 编译与链接、诊断、临时资源管理和 SPIR-V 基本结构检查；完整 WebGLProgram、GPU 反射绑定和管线管理正在实现。
+
+
+WebGLProgram/WebGLPrograms 保留源码的程序参数、prefix/include/unroll、shader cache 与 program 引用计数、ready/destroy、动态日志/getter/回调重入逻辑，使用注入的原生命令协议。真实 ShaderLib 材质的完整 shaderSource 已有实际 Node 对照；当前 CPU 差分不是实际 Vulkan Program 接入证据。VulkanShaderInterface 与 VulkanPipelineLayout 负责独立 SPIR-V 反射、核心资源限额及布局资源所有权；VulkanShaderModules 拥有 GPU shader 句柄及入口信息，已接入现有 Renderer 的固定 MeshBasic shader 路径。该路径的 descriptor set/push constant 布局改由实际 SPIR-V 反射及设备限额生成，布局与 shader 资源在设备销毁前释放；当前仍使用原固定 shader 与 uniform 上传 ABI。descriptor 分配/上传、通用原 ESSL 编译、GL 元数据和 graphics/compute pipeline 仍在接入中。
+
+Cache 与 DefaultLoadingManager 的模块导出使用 constinit 非拥有 facade，活跃 heap 中保留单一管理对象与配置，拒绝无应用 keeper 的持久写入。LoadingManager、Loader、AbortController、AbortSignal 的原型缓存使用弱线程引用和 heap 内在根，避免提前创建或永久持有线程堆；普通实例布局与字段协议保持。含原生管理回边的 heap 已接入安全点、两阶段退出和 ownership 图变化检查，字段快照覆盖回调重分配容器的边界；最终组合仍需完整回归。其余已审计的 owning TLS 仍在逐项修复，不能据此宣称完整自动生命周期管理已完成。
+
+## 原生 ESSL 与 uniform 接入，2026-10-14
+
+`WebGLUniformsGroups` 已按固定源码接入上层 std140 布局、缓存、上传命令、动态访问与 dispose。真实 Uniform/UniformsGroup 的构造器和 ID 状态归属当前 heap；Vector2/3/4、Color、Matrix3/4 补齐 equals 的严格比较及读取次序。上层命令协议仍需与实际 Vulkan uniform group 资源连接。
+
+`VulkanUniformBuffer` 根据完整 SPIR-V 反射块持有编码字节，包括每一维数组 stride、结构与矩阵布局。固定 MeshBasic 路径已用反射存储替代纹理/实例 uniform 的 C++ struct 布局；输入来自已求值快照，不重复触发 getter。`VulkanProgramUniforms` 进一步拥有已链接 ESSL 程序的跨阶段块和 sampler 单元赋值，draw 私有字段使用独立入口。应用原始活跃 location 筛选、完整 Program 命令桥接、真实纹理描述符及全部材质像素仍待完成。
+
+`THREECPP_NATIVE_ESSL=ON` 从锁定源码构建 glslang 前端 fork 与 SPIRV-Tools 验证器，提供原始 ESSL 解析/链接、AST 转换、SPIR-V 输出与独立拥有的接口元数据。固定依赖、所有补丁及原始许可登记在 upstream.json 和 cmake/essl/dependency-lock.json。ESSL 编译入口目前为可选功能，已有 Vulkan GLSL 编译入口保留；通用 ShaderMaterial、用户 UBO、points/扩展及所有平台尚未完成。前端活跃反射不等同驱动完整优化后的 active uniform/attribute 查询结果。
+
+原生安全点优化保留全部动态 ownership hook 的逐次调用与即时快照。它降低图构建常数，但完整灯光差分仍超过既有超时；不能据此宣称性能问题解决。
+
+`WebGLState` 已移植固定上游 32 个公开方法与 19 个 color/depth/stencil buffer 方法，保留普通对象缓存、WeakMap 身份、动态转换、reset 顺序及重入。ReversedDepthFuncs 为 utils 中共享可变对象，String.indexOf 按 UTF-16 实现。当前仍通过原生命令对象执行上层状态逻辑，完整 Vulkan raster/blend/depth/stencil/framebuffer 状态转换待接入。
+
+数学数组转换继续按实际属性键执行：toArray 的 Symbol 偏移保留首个写入，后续 offset + 1 才抛错；Quaternion/Euler 方法根据定义该方法的类型决定元素数量，动态读取 _onChangeCallback。原型默认回调为空方法，原生注册在包装实例上建立自有函数；先包装后注册会同步该属性，已提取的旧函数保留其旧回调快照。原生操作通过弱观察器查找当前管理属性，保留删除/覆盖和回调重入。若最后管理根释放后包装图被回收，但纯 C++ owner 仍存在，当前实现会回退最后原生快照，丢失该图中的动态替换；完整原生属性保活与回收图仍在补齐，未登记全量完成。
+
+`TextureUtils` 的 contain、cover、fill、getByteLength、四个独立函数导出及静态类已移植上层逻辑，保留重复 image/aspect 求值、赋值目标捕获、部分失败、递归重入、构造/方法区别及原源码文本。模块使用当前 heap 的根和弱缓存。现有 nativeTexture 尚缺 image/source 等完整桥接字段，真实 C++ 纹理对象的全部工具/上传行为仍待接入；普通管理对象的差分通过不能替代此原生对象验收。
+
+## addons：排序、控制基类与 NURBS，2026-10-17
+
+`examples/jsm/utils/SortUtils` 的 radixSort 按固定源码实现混合基数排序：POWER/BIN 常量、`>>> 0` 键转换、reversed 的双向累加与递归、insertion/radix 块划分以及 `nd + 1` 式越界写入都保持原样；模块级计数桶是共享存储，每次调用复用同一缓冲。差分直接导入固定 checkout 的该模块，748 个场景（长度 0..2048、7 种 getter、reversed、调用方 aux 与内部 aux）共 178,302 个元素逐项一致，并同时比较最终结果落在 arr 还是 aux。移植中修复一处 C++ 求值顺序缺陷：`a[ i ] = a[ -- i ]` 在 JavaScript 中先求目标索引，C++17 先求右操作数，按原语义改写为显式下标后才与上游一致。C++ 单测 8 cases / 1,943 assertions。
+
+`src/extras/Controls` 提供控制类基类的 object/domElement/enabled/state/keys/mouseButtons/touches 默认值与 connect/disconnect/dispose/update 钩子；connect 保留严格的 `!== null` 判断，undefined 也会先触发断开。单测 5 cases / 40 assertions；差分在构造默认值、8 步 connect 序列（含 undefined/null 与 disconnect 调用计数）及 EventDispatcher 继承关系上一致。派生控制类的 DOM 事件接线、原生窗口输入与平台事件源仍待逐项实现。
+
+`examples/jsm/curves/NURBSUtils` 与 `NURBSCurve` 按固定源码实现 findSpan、基函数及其导数、B-Spline 点与导数、有理曲线导数、曲面/体点，以及曲线的 getPoint/getTangent/copy/clone/JSON。节点向量与控制点的求值顺序保持 binary64；越界控制点按上游 TypeError 显式抛错，非收敛节点向量显式报错而不静默改写，`startKnot`/`endKnot` 保留 `||` 真值回退。单测 9 cases / 139 assertions，参考值由固定 Node oracle 实际运行上游模块生成。独立差分探针尚未建立，这两个模块只登记为 partial-unverified。
+
+本机 MSVC 为中文界面时，CMake 检测到的 `/showIncludes` 前缀是乱码（缓存值为 `娉ㄦ剰: 鍖呭惈鏂囦欢:`），Ninja 因此无法建立头文件依赖，修改头文件不会触发重编；本轮以显式重编受影响对象规避，并把前缀固定为 ASCII 值。该限制属于构建工具链环境问题，与源码一致性无关。

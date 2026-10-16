@@ -1,0 +1,5 @@
+#version 300 es
+precision highp float;precision highp int;
+in highp float vVertex;flat in highp int vInstance;
+layout(location=0)out highp vec4 color;
+void main(){color=vec4(dFdx(gl_FragCoord.x),dFdy(gl_FragCoord.y),fwidth(gl_FragCoord.y),dFdy(vVertex));}

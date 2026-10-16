@@ -1,6 +1,47 @@
 #pragma once
 #include "core/JSValue.h"
 
+// A field view of a resolved module export. No object or heap is owned by this
+// view. Mutations require an already-live keeper, so a primitive assignment
+// cannot silently configure an export in a temporary realm that immediately dies.
+class JSModuleMember {
+    using Resolver = JSValue (*)();
+    Resolver resolve_;
+    const char* key_;
+    static void validate(const JSValue& value) { static_cast<void>(JSWeakValue(value)); }
+    static void requireRealm() {
+        if (!JSValue::hasActiveHeap())
+            throw JSTypeError("Module field mutation requires a live JSValue realm or module handle");
+    }
+  public:
+    constexpr JSModuleMember(Resolver resolve, const char* key) : resolve_(resolve), key_(key) {}
+    JSValue value() const { return resolve_().get(key_); }
+    operator JSValue() const { return value(); }
+    JSModuleMember& operator=(const JSValue& value) {
+        validate(value);
+        requireRealm();
+        resolve_().set(key_, value);
+        return *this;
+    }
+    JSModuleMember& operator=(const JSModuleMember& other) { return *this = other.value(); }
+    double toNumber() const { return value().toNumber(); }
+    bool toBoolean() const { return value().toBoolean(); }
+    std::string toString() const { return value().toString(); }
+    bool isUndefined() const { return value().isUndefined(); }
+    bool isNull() const { return value().isNull(); }
+    bool strictEquals(const JSValue& other) const {
+        validate(other);
+        return value().strictEquals(other);
+    }
+    JSValue get(const std::string& key) const { return value().get(key); }
+    void set(const std::string& key, const JSValue& data) {
+        validate(data);
+        requireRealm();
+        auto object = value();
+        object.set(key, data);
+    }
+};
+
 // Native lazy-module reentry is diagnosed instead of returning an incomplete
 // export or recursing. This is a host initialization contract, not an ESM loader
 // or a complete implementation of ECMAScript live bindings / temporal dead zones.

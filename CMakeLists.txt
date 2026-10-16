@@ -75,7 +75,8 @@ add_library(threecpp
     src/extras/core/Curve.cpp
     src/extras/core/Interpolations.cpp src/extras/core/CurvePath.cpp
     src/extras/core/Path.cpp src/extras/core/Shape.cpp src/extras/core/ShapePath.cpp
-    src/extras/ShapeUtils.cpp src/extras/DataUtils.cpp src/extras/lib/earcut.cpp
+    src/extras/ShapeUtils.cpp src/extras/DataUtils.cpp src/extras/TextureUtils.cpp src/extras/lib/earcut.cpp
+    src/extras/Controls.cpp
     src/extras/curves/LineCurve.cpp src/extras/curves/LineCurve3.cpp
     src/extras/curves/QuadraticBezierCurve.cpp src/extras/curves/QuadraticBezierCurve3.cpp
     src/extras/curves/CubicBezierCurve.cpp src/extras/curves/CubicBezierCurve3.cpp
@@ -87,6 +88,7 @@ target_sources(threecpp PRIVATE
     src/core/NativeEventLoop.cpp
     src/core/JSWeakMap.cpp
     src/core/JSMap.cpp src/core/JSSet.cpp src/core/JSIterator.cpp src/core/JSString.cpp
+    src/core/JSRegExp.cpp src/core/JSStringEncoding.cpp src/core/UnicodeCase.cpp
     src/utils.cpp
     src/core/GLBufferAttribute.cpp
     src/core/UnicodeNormalization.cpp
@@ -114,6 +116,7 @@ target_sources(threecpp PRIVATE
     ${THREECPP_SHADER_STRING_SOURCES}
     src/renderers/webgl/WebGLShader.cpp
     src/renderers/webgl/WebGLShaderCache.cpp src/renderers/webgl/WebGLUtils.cpp
+    src/renderers/webgl/WebGLProgram.cpp src/renderers/webgl/WebGLPrograms.cpp
     src/renderers/webgl/WebGLInfo.cpp
     src/renderers/webgl/WebGLAnimation.cpp
     src/renderers/webgl/WebGLExtensions.cpp
@@ -129,6 +132,8 @@ target_sources(threecpp PRIVATE
     src/renderers/webgl/WebGLRenderStates.cpp
     src/renderers/webgl/WebGLRenderLists.cpp
     src/renderers/webgl/WebGLUniforms.cpp
+    src/renderers/webgl/WebGLUniformsGroups.cpp
+    src/renderers/webgl/WebGLState.cpp
     src/renderers/webgl/WebGLBufferRenderer.cpp
     src/renderers/webgl/WebGLIndexedBufferRenderer.cpp
     src/core/Uniform.cpp
@@ -188,7 +193,10 @@ endif()
 if(THREECPP_BUILD_ADDONS)
     add_library(threecpp_addons
         examples/jsm/helpers/VertexNormalsHelper.cpp
-        examples/jsm/helpers/VertexTangentsHelper.cpp)
+        examples/jsm/helpers/VertexTangentsHelper.cpp
+        examples/jsm/utils/SortUtils.cpp
+        examples/jsm/curves/NURBSUtils.cpp
+        examples/jsm/curves/NURBSCurve.cpp)
     add_library(threecpp::addons ALIAS threecpp_addons)
     target_link_libraries(threecpp_addons PUBLIC threecpp::threecpp)
     target_include_directories(threecpp_addons PUBLIC
@@ -223,15 +231,30 @@ if(THREECPP_BUILD_VULKAN)
         list(APPEND THREECPP_SHADER_OUTPUTS "${output}")
     endforeach()
     add_custom_target(threecpp_shaders DEPENDS ${THREECPP_SHADER_OUTPUTS})
+    add_library(threecpp_spirv_reflect STATIC src/renderers/vulkan/lib/spirv_reflect/spirv_reflect.cpp)
+    target_include_directories(threecpp_spirv_reflect PUBLIC
+        "${CMAKE_CURRENT_SOURCE_DIR}/src/renderers/vulkan/lib/spirv_reflect")
+    set_target_properties(threecpp_spirv_reflect PROPERTIES POSITION_INDEPENDENT_CODE ON)
     add_library(threecpp_vulkan src/renderers/VulkanRenderer.cpp
         src/renderers/vulkan/VulkanBufferCommands.cpp src/renderers/vulkan/VulkanBindingCommands.cpp
-        src/renderers/vulkan/VulkanShaderCompiler.cpp)
+        src/renderers/vulkan/VulkanShaderCompiler.cpp
+        src/renderers/vulkan/VulkanShaderInterface.cpp src/renderers/vulkan/VulkanPipelineLayout.cpp
+        src/renderers/vulkan/VulkanShaderModules.cpp src/renderers/vulkan/VulkanUniformBuffer.cpp
+        src/renderers/vulkan/VulkanProgramUniforms.cpp)
     add_library(threecpp::vulkan ALIAS threecpp_vulkan)
-    target_link_libraries(threecpp_vulkan PUBLIC threecpp::threecpp PRIVATE ${CMAKE_DL_LIBS})
+    target_link_libraries(threecpp_vulkan PUBLIC threecpp::threecpp
+        PRIVATE threecpp_spirv_reflect ${CMAKE_DL_LIBS})
     target_include_directories(threecpp_vulkan PRIVATE "${THREECPP_VULKAN_INCLUDE_DIR}")
     target_compile_definitions(threecpp_vulkan PRIVATE THREECPP_SHADER_DIRECTORY="${CMAKE_CURRENT_BINARY_DIR}/shaders")
     target_compile_definitions(threecpp_vulkan PUBLIC THREECPP_HAS_VULKAN=1)
     add_dependencies(threecpp_vulkan threecpp_shaders)
+    option(THREECPP_NATIVE_ESSL "Build the pinned native ESSL AST compiler candidate" OFF)
+    if(THREECPP_NATIVE_ESSL)
+        include(cmake/essl/NativeEssl.cmake)
+        target_sources(threecpp_vulkan PRIVATE src/renderers/vulkan/VulkanShaderCompilerESSL.cpp)
+        target_link_libraries(threecpp_vulkan PRIVATE threecpp_essl_native)
+        target_compile_definitions(threecpp_vulkan PUBLIC THREECPP_HAS_NATIVE_ESSL=1)
+    endif()
     add_executable(vulkan_basic examples/vulkan_basic.cpp)
     target_link_libraries(vulkan_basic PRIVATE threecpp::vulkan)
 endif()

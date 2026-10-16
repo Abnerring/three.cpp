@@ -1,0 +1,93 @@
+{
+  "dependencies": [
+    {
+      "file": "dependency/glslang-2fbed.zip",
+      "bytes": 6742057,
+      "sha256": "6c241ca6d3b88ac602e572401f95de1c247110d900d1bbb3e302c4f3714515cc",
+      "commit": "2fbed5e1fb43a1c480fe020e3bb686a31010989a",
+      "url": "https://codeload.github.com/KhronosGroup/glslang/zip/2fbed5e1fb43a1c480fe020e3bb686a31010989a"
+    },
+    {
+      "file": "dependency/spirv-tools-ef96ed.zip",
+      "bytes": 5105419,
+      "sha256": "2a7666cfaec2818516019fccb8101a6e57c589417bef83a3c61d19ed63de1c1f",
+      "commit": "ef96ed763b43b59b33b31b362f09a02b729fa1c9",
+      "url": "https://codeload.github.com/KhronosGroup/SPIRV-Tools/zip/ef96ed763b43b59b33b31b362f09a02b729fa1c9"
+    },
+    {
+      "file": "dependency/spirv-headers-496543.zip",
+      "bytes": 698613,
+      "sha256": "b33782a6ccd124e6e02634f6382456b0aba2242c6ec5b68d07be20ee77a5b6bc",
+      "commit": "496543121ce6419f23d6fa5d7194ba66c36212d2",
+      "url": "https://codeload.github.com/KhronosGroup/SPIRV-Headers/zip/496543121ce6419f23d6fa5d7194ba66c36212d2"
+    }
+  ],
+  "patchedDependencyFiles": [
+    {
+      "file": "dependency/glslang-2fbed5e1fb43a1c480fe020e3bb686a31010989a/glslang/MachineIndependent/SymbolTable.h",
+      "beforeSHA256": "7602f165e605277be2efa868937561a4f259fb83ad31c0e0a43a05eca147a66c",
+      "afterSHA256": "c91e8db72a5f56b03b19cea4f2b258c7dc7d64fc01c372a42b41d445dc60ff86"
+    },
+    {
+      "file": "dependency/glslang-2fbed5e1fb43a1c480fe020e3bb686a31010989a/glslang/MachineIndependent/ParseHelper.cpp",
+      "beforeSHA256": "4da7ca67bfe96596d210e3ec96bb09ace95b53061cb8ffbd95a7a61f5111706d",
+      "afterSHA256": "851253991b89e853b23512f148a7f5137ce687a4a644b869ce8d14406f1f1d20"
+    },
+    {
+      "file": "dependency/glslang-2fbed5e1fb43a1c480fe020e3bb686a31010989a/glslang/MachineIndependent/Initialize.cpp",
+      "beforeSHA256": "65003403f1663e9da7f6b97261e92bfde48a7b0da755a3601d28cef471c7a14f",
+      "afterSHA256": "281f15b4b6bbc0f62ef7a88d0eec7d2d67f28595f4c0437b61f4c26f5a464272"
+    }
+  ],
+  "licenses": [
+    {
+      "file": "licenses/essl/glslang-LICENSE.txt",
+      "bytes": 54615,
+      "sha256": "17e70c676e1521ff3e4686f04a2053d93a7e28a33be8de7ec37ab0ff72feb677"
+    },
+    {
+      "file": "licenses/essl/SPIRV-Headers-LICENSE",
+      "bytes": 23503,
+      "sha256": "ea43b1de38a6f90c488800d66dec1ed671e68cda530266bc96951fb5b6307613"
+    },
+    {
+      "file": "licenses/essl/SPIRV-Tools-LICENSE",
+      "bytes": 11358,
+      "sha256": "cfc7749b96f63bd31c3c42b5c471bf756814053e847c10f3eb003417bc523d30"
+    }
+  ],
+  "frontendPatchSHA256": "70569849421b9d28eb9ac103712adda3188c51c2cf6341fa5730062c419a8f48",
+  "sourceTrees": [
+    {
+      "name": "2fbed5e1fb43a1c480fe020e3bb686a31010989a",
+      "beforeSHA256": "1afa688a99251960a4f0afd6b81b9bfed7d383bbe5ab2d545f12e204617e8b65",
+      "afterSHA256": "0d129e7cc44bab95e121a169e66d635e8606a5335c26df73943b62bfdfb21d7e"
+    },
+    {
+      "name": "ef96ed763b43b59b33b31b362f09a02b729fa1c9",
+      "beforeSHA256": "d2f26c8d6326bebea03cc6be7661dc8d1faa75ae09be8a1f581b52fd6cd8f7b3",
+      "afterSHA256": "2a508472686203c6f783ad21a1addb3bc100ed45db4df74a4321ab94c485fe9c"
+    },
+    {
+      "name": "496543121ce6419f23d6fa5d7194ba66c36212d2",
+      "beforeSHA256": "bade0837b69264c81c6378e683ab241f70203171f6a59a5c978e4a37072bb068",
+      "afterSHA256": "bade0837b69264c81c6378e683ab241f70203171f6a59a5c978e4a37072bb068"
+    }
+  ],
+  "toolsBuildScriptPatch": {
+    "file": "spirv-tools-codegen-cache.patch",
+    "sha256": "62c2ca53a097dd8bda61240f3acf4d1a5bdca0d549985c9f5d0f33b3f3ea8983",
+    "files": [
+      {
+        "file": "CMakeLists.txt",
+        "beforeSHA256": "131cec6c419d333531d280e82e3097bfc3ba721c1891d5c8e0092388f400be71",
+        "afterSHA256": "384168c3032ecb89159696bc724487c181993f882ba060cad693e55661f62b50"
+      },
+      {
+        "file": "source/CMakeLists.txt",
+        "beforeSHA256": "1729aba5f39b0d188eef1a55b0caed116ac89c7cb96cfccafe0eafa3a5709a90",
+        "afterSHA256": "8d8ed7db438481b8dbce8f8c30dba603d6e9d7e65e9a2cdb3a4a3d229b68bca3"
+      }
+    ]
+  }
+}

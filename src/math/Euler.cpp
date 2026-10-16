@@ -175,7 +175,7 @@ bool Euler::operator==(const Euler &euler) const { return equals(euler); }
 
 Euler &Euler::_onChange(std::function<void()> callback)
 {
-    m_onChangeCallback = makeChangeCallback(std::move(callback));
+    registerPropertyChangeCallback(m_onChangeCallback,std::move(callback));
     return *this;
 }
 Euler &Euler::setFromVector3(const Vector3 &v, std::optional<EulerOrder> order)

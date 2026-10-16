@@ -1,10 +1,10 @@
 #include "core/UniformsGroup.h"
+#include "core/JSModuleObject.h"
 #include "core/EventDispatcher.h"
 #include "constants.h"
 
 namespace {
 using Args = std::vector<JSValue>;
-double nextId = 0;
 JSValue argument(const Args& args, std::size_t index) { return index < args.size() ? args[index] : JSValue(); }
 JSValue call(JSValue receiver, const char* key, const Args& args = {}) {
     const auto method = receiver.get(key); return method.call(receiver, args);
@@ -61,12 +61,20 @@ void method(JSValue object, const char* name, JSValue::NativeFunction function, 
 }
 
 JSValue UniformsGroup::constructor() {
-    static thread_local auto value = [] {
-        auto ctor = JSValue::constructor([](const JSValue& receiver, const Args&, const Args&) -> JSValue {
+    static thread_local JSWeakValue cached;
+    if (const auto value = cached.lock(); value && value->isObject()) return *value;
+    static thread_local bool initializing = false;
+    JSModuleInitializationScope scope(initializing, "UniformsGroup constructor");
+    auto value = [] {
+        auto state = JSValue::object(nullptr);
+        state.set("nextId", 0);
+        auto ctor = JSValue::constructor([](const JSValue& receiver, const Args&, const Args& captures) -> JSValue {
             auto self = receiver; self.set("isUniformsGroup", true);
-            JSPropertyDescriptor descriptor; descriptor.value = nextId++; self.defineProperty("id", descriptor);
+            auto state = captures[0]; const auto id = state.get("nextId").number();
+            state.set("nextId", id + 1);
+            JSPropertyDescriptor descriptor; descriptor.value = id; self.defineProperty("id", descriptor);
             self.set("name", ""); self.set("usage", StaticDrawUsage); self.set("uniforms", JSValue::array()); return {};
-        }, {}, "UniformsGroup", 0);
+        }, {state}, "UniformsGroup", 0);
         ctor.setPrototype(EventDispatcher::runtimePrototype().get("constructor"));
         auto p = ctor.get("prototype"); p.setPrototype(EventDispatcher::runtimePrototype());
         method(p, "add", groupAdd, 1); method(p, "remove", groupRemove, 1);
@@ -74,6 +82,8 @@ JSValue UniformsGroup::constructor() {
         method(p, "dispose", groupDispose, 0); method(p, "copy", groupCopy, 1); method(p, "clone", groupClone, 0);
         return ctor;
     }();
+    value.retainForHeapLifetime();
+    cached = JSWeakValue(value);
     return value;
 }
 JSValue UniformsGroup::prototype() { return constructor().get("prototype"); }

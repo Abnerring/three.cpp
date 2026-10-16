@@ -1,18 +1,18 @@
 #pragma once
-#include "core/JSMember.h"
+#include "core/JSModuleObject.h"
+
+JSValue nativeCache();
 
 class CacheStore {
   public:
-    CacheStore();
-    CacheStore(const CacheStore&)=delete;
-    CacheStore& operator=(const CacheStore&)=delete;
-    JSMember enabled{&object_,"enabled"},files{&object_,"files"};
-    JSValue object() const {return object_;}
-    void add(JSValue key,JSValue file);
-    JSValue get(JSValue key) const;
-    void remove(JSValue key);
+    constexpr CacheStore() = default;
+    CacheStore(const CacheStore&) = delete;
+    CacheStore& operator=(const CacheStore&) = delete;
+    JSModuleMember enabled{nativeCache, "enabled"}, files{nativeCache, "files"};
+    JSValue object() const { return nativeCache(); }
+    void add(const JSValue& key, const JSValue& file);
+    JSValue get(const JSValue& key) const;
+    void remove(const JSValue& key);
     void clear();
-  private:
-    JSValue object_;
 };
-extern thread_local CacheStore Cache;
+extern CacheStore Cache;

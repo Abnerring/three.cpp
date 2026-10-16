@@ -35,13 +35,24 @@ JSValue method(const JSValue& receiver,const Args& args,const Args& captures) {
     return files.get(property);
 }
 }
-CacheStore::CacheStore():object_(JSValue::object()) {
-    object_.set("enabled",false);object_.set("files",JSValue::object());
+JSValue nativeCache() {
+    static thread_local JSWeakValue cached;
+    if(const auto value=cached.lock();value&&value->isObject())return *value;
+    static thread_local bool initializing=false;
+    JSModuleInitializationScope scope(initializing,"Cache");
+    auto object=JSValue::object();
+    const auto define=[&](const char* name,const JSValue& value){JSPropertyDescriptor d;d.value=value;d.writable=d.enumerable=d.configurable=true;object.defineProperty(name,d);};
+    define("enabled",false);define("files",JSValue::object());
     for(const auto& [name,arity]:std::initializer_list<std::pair<const char*,unsigned>>{{"add",2},{"get",1},{"remove",1},{"clear",0}})
-        object_.set(name,JSValue::function(method,{name},name,arity));
+        define(name,JSValue::function(method,{name},name,arity));
+    object.retainForHeapLifetime();cached=JSWeakValue(object);return object;
 }
-void CacheStore::add(JSValue key,JSValue file){object_.get("add").call(object_,{key,file});}
-JSValue CacheStore::get(JSValue key) const{return object_.get("get").call(object_,{key});}
-void CacheStore::remove(JSValue key){object_.get("remove").call(object_,{key});}
-void CacheStore::clear(){object_.get("clear").call(object_);}
-thread_local CacheStore Cache;
+namespace {
+void validate(const JSValue& value){static_cast<void>(JSWeakValue(value));}
+void requireRealm(){if(!JSValue::hasActiveHeap())throw JSTypeError("Cache mutation requires a live JSValue realm or module handle");}
+}
+void CacheStore::add(const JSValue& key,const JSValue& file){validate(key);validate(file);requireRealm();const auto cache=object();cache.get("add").call(cache,{key,file});}
+JSValue CacheStore::get(const JSValue& key) const{validate(key);const auto cache=object();return cache.get("get").call(cache,{key});}
+void CacheStore::remove(const JSValue& key){validate(key);requireRealm();const auto cache=object();cache.get("remove").call(cache,{key});}
+void CacheStore::clear(){requireRealm();const auto cache=object();cache.get("clear").call(cache);}
+constinit CacheStore Cache;

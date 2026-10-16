@@ -31,7 +31,7 @@ TEST_CASE("LoadingManager callbacks preserve closure identity reentry and thrown
     manager.onProgress=nullptr;REQUIRE_THROWS_AS(manager.itemEnd("a"),JSTypeError);
 }
 TEST_CASE("Cache keys and enabled use JS strict boolean and object identity", "[loaders]") {
-    Cache.clear();auto payload=JSValue::object();Cache.enabled=false;Cache.add("file:a",payload);REQUIRE(Cache.get("file:a").isUndefined());
+    auto payload=JSValue::object();Cache.clear();Cache.enabled=false;Cache.add("file:a",payload);REQUIRE(Cache.get("file:a").isUndefined());
     Cache.enabled=0;Cache.add("file:a",payload);REQUIRE(Cache.get("file:a").sameValue(payload));Cache.add("file:blob:a",payload);REQUIRE(Cache.get("file:blob:a").isUndefined());
     auto oldFiles=Cache.files.value();Cache.clear();REQUIRE_FALSE(Cache.files.value().sameValue(oldFiles));REQUIRE(oldFiles.get("file:a").sameValue(payload));Cache.enabled=false;
 }

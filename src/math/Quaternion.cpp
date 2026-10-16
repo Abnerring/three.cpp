@@ -391,7 +391,7 @@ Quaternion &Quaternion::divideScalar(HIGH_PRECISION s)
 
 Quaternion &Quaternion::_onChange(std::function<void()> callback)
 {
-    m_onChangeCallback = makeChangeCallback(std::move(callback));
+    registerPropertyChangeCallback(m_onChangeCallback,std::move(callback));
     return *this;
 }
 HIGH_PRECISION Quaternion::angleTo(const Quaternion &q) const

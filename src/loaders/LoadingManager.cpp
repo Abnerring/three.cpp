@@ -54,16 +54,20 @@ void LoadingManager::initialize(JSValue self,JSValue onLoad,JSValue onProgress,J
     self.set("onStart",{});self.set("onLoad",onLoad);self.set("onProgress",onProgress);self.set("onError",onError);self.set("_abortController",nullptr);
     auto state=JSValue::object();state.set("isLoading",false);state.set("itemsLoaded",0);state.set("itemsTotal",0);state.set("urlModifier",{});state.set("handlers",JSValue::array());
     for(const auto& [name,arity]:std::initializer_list<std::pair<const char*,unsigned>>{{"itemStart",1},{"itemEnd",1},{"itemError",1},{"resolveURL",1},{"setURLModifier",1},{"addHandler",2},{"removeHandler",1},{"getHandler",1},{"abort",0}})
-        self.set(name,JSValue::function(method,{self,state,name},name,arity));
+        self.set(name,JSValue::function(method,{self,state,name},"",arity));
 }
 JSValue LoadingManager::prototype() {
-    static thread_local auto value=[] {
+    static thread_local JSWeakValue cached;
+    if(const auto value=cached.lock();value&&value->isObject())return *value;
+    static thread_local bool initializing=false;
+    JSModuleInitializationScope scope(initializing,"LoadingManager prototype");
+    auto value=[] {
         auto constructor=JSValue::constructor([](const JSValue& self,const Args& args,const Args&)->JSValue{initialize(self,arg(args,0),arg(args,1),arg(args,2));return {};},{},"LoadingManager",3);
         auto prototype=constructor.get("prototype");JSPropertyDescriptor descriptor;descriptor.configurable=true;
         descriptor.getter=JSValue::function([](const JSValue& receiver,const Args&,const Args&)->JSValue {
             auto self=receiver;if(!self.get("_abortController").toBoolean())self.set("_abortController",createNativeAbortController());return self.get("_abortController");
-        },{},"get abortController");prototype.defineProperty("abortController",descriptor);return prototype;
-    }();return value;
+        },{},"get abortController");prototype.defineProperty("abortController",descriptor);constructor.retainForHeapLifetime();return prototype;
+    }();cached=JSWeakValue(value);return value;
 }
 LoadingManager::LoadingManager(JSValue onLoad,JSValue onProgress,JSValue onError):object_(JSValue::object(prototype())){initialize(object_,onLoad,onProgress,onError);}
 void LoadingManager::itemStart(JSValue url){object_.get("itemStart").call(object_,{url});}
@@ -75,4 +79,25 @@ LoadingManager& LoadingManager::addHandler(JSValue regex,JSValue loader){object_
 LoadingManager& LoadingManager::removeHandler(JSValue regex){object_.get("removeHandler").call(object_,{regex});return *this;}
 JSValue LoadingManager::getHandler(JSValue file){return object_.get("getHandler").call(object_,{file});}
 LoadingManager& LoadingManager::abort(){object_.get("abort").call(object_);return *this;}
-thread_local LoadingManager DefaultLoadingManager;
+JSValue nativeDefaultLoadingManager() {
+    static thread_local JSWeakValue cached;
+    if(const auto value=cached.lock();value&&value->isObject())return *value;
+    static thread_local bool initializing=false;
+    JSModuleInitializationScope scope(initializing,"DefaultLoadingManager");
+    auto value=LoadingManager{}.object();value.retainForHeapLifetime();cached=JSWeakValue(value);return value;
+}
+namespace {
+void validateDefaultArgument(const JSValue& value){static_cast<void>(JSWeakValue(value));}
+void requireDefaultRealm(){if(!JSValue::hasActiveHeap())throw JSTypeError("DefaultLoadingManager mutation requires a live JSValue realm or module handle");}
+JSValue defaultCall(const char* name,const Args& args={}){const auto object=nativeDefaultLoadingManager();return object.get(name).call(object,args);}
+}
+void DefaultLoadingManagerFacade::itemStart(const JSValue& value){validateDefaultArgument(value);requireDefaultRealm();defaultCall("itemStart",{value});}
+void DefaultLoadingManagerFacade::itemEnd(const JSValue& value){validateDefaultArgument(value);requireDefaultRealm();defaultCall("itemEnd",{value});}
+void DefaultLoadingManagerFacade::itemError(const JSValue& value){validateDefaultArgument(value);requireDefaultRealm();defaultCall("itemError",{value});}
+JSValue DefaultLoadingManagerFacade::resolveURL(const JSValue& value){validateDefaultArgument(value);return defaultCall("resolveURL",{value});}
+DefaultLoadingManagerFacade& DefaultLoadingManagerFacade::setURLModifier(const JSValue& value){validateDefaultArgument(value);requireDefaultRealm();defaultCall("setURLModifier",{value});return *this;}
+DefaultLoadingManagerFacade& DefaultLoadingManagerFacade::addHandler(const JSValue& regex,const JSValue& loader){validateDefaultArgument(regex);validateDefaultArgument(loader);requireDefaultRealm();defaultCall("addHandler",{regex,loader});return *this;}
+DefaultLoadingManagerFacade& DefaultLoadingManagerFacade::removeHandler(const JSValue& value){validateDefaultArgument(value);requireDefaultRealm();defaultCall("removeHandler",{value});return *this;}
+JSValue DefaultLoadingManagerFacade::getHandler(const JSValue& value){validateDefaultArgument(value);return defaultCall("getHandler",{value});}
+DefaultLoadingManagerFacade& DefaultLoadingManagerFacade::abort(){requireDefaultRealm();defaultCall("abort");return *this;}
+constinit DefaultLoadingManagerFacade DefaultLoadingManager;

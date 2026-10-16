@@ -33,6 +33,8 @@
 #include "extras/core/Interpolations.h"
 #include "extras/ShapeUtils.h"
 #include "extras/DataUtils.h"
+#include "extras/TextureUtils.h"
+#include "extras/Controls.h"
 #include "extras/curves/Curves.h"
 #include "extras/curves/LineCurve.h"
 #include "extras/curves/LineCurve3.h"

@@ -1,4 +1,5 @@
 #include "core/Uniform.h"
+#include "core/JSModuleObject.h"
 
 namespace {
 using Args = std::vector<JSValue>;
@@ -14,7 +15,11 @@ JSValue cloneUniform(const JSValue& receiver, const Args&, const Args&) {
     return Uniform(value).object();
 }
 JSValue uniformConstructor() {
-    static thread_local auto value = [] {
+    static thread_local JSWeakValue cached;
+    if (const auto value = cached.lock(); value && value->isObject()) return *value;
+    static thread_local bool initializing = false;
+    JSModuleInitializationScope scope(initializing, "Uniform constructor");
+    auto value = [] {
         auto ctor = JSValue::constructor([](const JSValue& receiver, const Args& args, const Args&) -> JSValue {
             auto self = receiver; self.set("value", args.empty() ? JSValue() : args[0]); return {};
         }, {}, "Uniform", 1);
@@ -23,6 +28,8 @@ JSValue uniformConstructor() {
         clone.writable = true; clone.configurable = true; p.defineProperty("clone", clone);
         return ctor;
     }();
+    value.retainForHeapLifetime();
+    cached = JSWeakValue(value);
     return value;
 }
 }

@@ -1,5 +1,6 @@
 // Ported warning/console protocol from three.js utils.js; see THREEJS-LICENSE.
 #include "utils.h"
+#include "constants.h"
 #include "core/JSIterator.h"
 #include "renderers/webgl/WebGLInfo.h"
 #include <iostream>
@@ -28,7 +29,7 @@ Args spread(const JSValue& value){
     while(const auto next=stepJSIterator(iterator))result.push_back(*next);
     return result;
 }
-void warnArray(JSValue params){
+void logArray(JSValue params,const char* level){
     const auto first=params.get("0");
     if(first.type()==JSValue::Type::String&&first.get("startsWith").call(first,{"TSL:"}).toBoolean()){
         const auto stack=params.get("1");
@@ -42,7 +43,7 @@ void warnArray(JSValue params){
     const auto message=plus("THREE.",shift.call(params));
     if(ThreeUtils::getConsoleFunction().toBoolean()){
         const auto callback=ThreeUtils::getConsoleFunction();
-        Args args{"warn",message};const auto remaining=spread(params);args.insert(args.end(),remaining.begin(),remaining.end());
+        Args args{level,message};const auto remaining=spread(params);args.insert(args.end(),remaining.begin(),remaining.end());
         callback.call({},args);
     }else{
         const auto stack=params.get("0");
@@ -55,9 +56,23 @@ void warnArray(JSValue params){
     }
 }
 }
+JSValue ThreeUtils::nativeReversedDepthFuncs(){
+    static thread_local JSWeakValue weak;
+    static thread_local bool initializing=false;
+    if(const auto cached=weak.lock();cached&&cached->isObject())return *cached;
+    JSModuleInitializationScope scope(initializing,"ReversedDepthFuncs");
+    auto result=JSValue::object();
+    for(const auto& [a,b]:std::initializer_list<std::pair<int,int>>{
+        {NeverDepth,AlwaysDepth},{LessDepth,GreaterDepth},{EqualDepth,NotEqualDepth},{LessEqualDepth,GreaterEqualDepth},
+        {AlwaysDepth,NeverDepth},{GreaterDepth,LessDepth},{NotEqualDepth,EqualDepth},{GreaterEqualDepth,LessEqualDepth}}){
+        JSPropertyDescriptor d;d.value=b;d.writable=d.enumerable=d.configurable=true;result.defineProperty(JSValue(a).toString(),d);
+    }
+    result.retainForHeapLifetime();weak=JSWeakValue(result);return result;
+}
 void ThreeUtils::setConsoleFunction(const JSValue& callback){static_cast<void>(JSWeakValue(callback));WebGLInfo::setConsoleFunction(callback);}
 JSValue ThreeUtils::getConsoleFunction(){return WebGLInfo::getConsoleFunction();}
-void ThreeUtils::warn(const Args& params){for(const auto& value:params)static_cast<void>(JSWeakValue(value));warnArray(rest(params));}
+void ThreeUtils::warn(const Args& params){for(const auto& value:params)static_cast<void>(JSWeakValue(value));logArray(rest(params),"warn");}
+void ThreeUtils::error(const Args& params){for(const auto& value:params)static_cast<void>(JSWeakValue(value));logArray(rest(params),"error");}
 void ThreeUtils::warnOnce(const Args& params){
     for(const auto& value:params)static_cast<void>(JSWeakValue(value));
     auto values=rest(params);

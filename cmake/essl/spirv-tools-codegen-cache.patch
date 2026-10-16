@@ -1,0 +1,76 @@
+--- a/CMakeLists.txt
++++ b/CMakeLists.txt
+@@ -256,7 +256,7 @@
+ 
+ # Run Python unit tests
+ add_custom_target(spirv-tools-check-python-tests
+-	COMMAND Python3::Interpreter -m unittest discover -v -p "*test.py"
++	COMMAND Python3::Interpreter -B -X "pycache_prefix=${CMAKE_BINARY_DIR}/threecpp-python-cache" -m unittest discover -v -p "*test.py"
+ 	WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}/utils
+ )
+ 
+@@ -267,7 +267,7 @@
+   macro(spvtools_check_symbol_exports TARGET)
+     if (NOT "${SPIRV_SKIP_TESTS}")
+       add_test(NAME spirv-tools-symbol-exports-${TARGET}
+-               COMMAND Python3::Interpreter
++               COMMAND Python3::Interpreter -B -X "pycache_prefix=${CMAKE_BINARY_DIR}/threecpp-python-cache"
+                ${spirv-tools_SOURCE_DIR}/utils/check_symbol_exports.py "$<TARGET_FILE:${TARGET}>")
+     endif()
+   endmacro()
+@@ -373,7 +373,7 @@
+ 
+ if (NOT "${SPIRV_SKIP_TESTS}")
+   add_test(NAME spirv-tools-copyrights
+-           COMMAND Python3::Interpreter utils/check_copyright.py
++           COMMAND Python3::Interpreter -B -X "pycache_prefix=${CMAKE_BINARY_DIR}/threecpp-python-cache" utils/check_copyright.py
+            WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR})
+ endif()
+ 
+--- a/source/CMakeLists.txt
++++ b/source/CMakeLists.txt
+@@ -40,7 +40,7 @@
+ set(CORE_TABLES_BODY_INC_FILE ${spirv-tools_BINARY_DIR}/core_tables_body.inc)
+ set(CORE_TABLES_HEADER_INC_FILE ${spirv-tools_BINARY_DIR}/core_tables_header.inc)
+ add_custom_command(OUTPUT ${CORE_TABLES_BODY_INC_FILE} ${CORE_TABLES_HEADER_INC_FILE}
+-    COMMAND Python3::Interpreter ${GGT_SCRIPT}
++    COMMAND Python3::Interpreter -B -X "pycache_prefix=${CMAKE_BINARY_DIR}/threecpp-python-cache" ${GGT_SCRIPT}
+       --core-tables-body-output=${CORE_TABLES_BODY_INC_FILE}
+       --core-tables-header-output=${CORE_TABLES_HEADER_INC_FILE}
+       --spirv-core-grammar=${SPIRV_CORE_GRAMMAR_JSON_FILE}
+@@ -87,7 +87,7 @@
+   set(OPENCL_GRAMMAR_JSON_FILE "${SPIRV_HEADER_INCLUDE_DIR}/spirv/${CONFIG_VERSION}/extinst.opencl.std.100.grammar.json")
+   set(VIMSYNTAX_FILE "${spirv-tools_BINARY_DIR}/spvasm.vim")
+   add_custom_command(OUTPUT ${VIMSYNTAX_FILE}
+-      COMMAND Python3::Interpreter ${VIMSYNTAX_PROCESSING_SCRIPT}
++      COMMAND Python3::Interpreter -B -X "pycache_prefix=${CMAKE_BINARY_DIR}/threecpp-python-cache" ${VIMSYNTAX_PROCESSING_SCRIPT}
+       --spirv-core-grammar=${GRAMMAR_JSON_FILE}
+       --extinst-debuginfo-grammar=${EI_debuginfo}
+       --extinst-glsl-grammar=${GLSL_GRAMMAR_JSON_FILE}
+@@ -101,7 +101,7 @@
+ macro(spvtools_extinst_lang_headers NAME GRAMMAR_FILE)
+   set(OUT_H ${spirv-tools_BINARY_DIR}/${NAME}.h)
+   add_custom_command(OUTPUT ${OUT_H}
+-    COMMAND Python3::Interpreter ${LANG_HEADER_PROCESSING_SCRIPT}
++    COMMAND Python3::Interpreter -B -X "pycache_prefix=${CMAKE_BINARY_DIR}/threecpp-python-cache" ${LANG_HEADER_PROCESSING_SCRIPT}
+       --extinst-grammar=${GRAMMAR_FILE}
+       --extinst-output-path=${OUT_H}
+     DEPENDS ${LANG_HEADER_PROCESSING_SCRIPT} ${GRAMMAR_FILE}
+@@ -122,7 +122,7 @@
+ set(GENERATOR_INC_FILE ${spirv-tools_BINARY_DIR}/generators.inc)
+ set(SPIRV_XML_REGISTRY_FILE ${SPIRV_HEADER_INCLUDE_DIR}/spirv/spir-v.xml)
+ add_custom_command(OUTPUT ${GENERATOR_INC_FILE}
+-  COMMAND Python3::Interpreter ${XML_REGISTRY_PROCESSING_SCRIPT}
++  COMMAND Python3::Interpreter -B -X "pycache_prefix=${CMAKE_BINARY_DIR}/threecpp-python-cache" ${XML_REGISTRY_PROCESSING_SCRIPT}
+     --xml=${SPIRV_XML_REGISTRY_FILE}
+     --generator-output=${GENERATOR_INC_FILE}
+   DEPENDS ${XML_REGISTRY_PROCESSING_SCRIPT} ${SPIRV_XML_REGISTRY_FILE}
+@@ -151,7 +151,7 @@
+ set(SPIRV_TOOLS_CHANGES_FILE
+   ${spirv-tools_SOURCE_DIR}/CHANGES)
+ add_custom_command(OUTPUT ${SPIRV_TOOLS_BUILD_VERSION_INC}
+-   COMMAND Python3::Interpreter
++   COMMAND Python3::Interpreter -B -X "pycache_prefix=${CMAKE_BINARY_DIR}/threecpp-python-cache"
+            ${SPIRV_TOOLS_BUILD_VERSION_INC_GENERATOR}
+            ${SPIRV_TOOLS_CHANGES_FILE} ${SPIRV_TOOLS_BUILD_VERSION_INC}
+    DEPENDS ${SPIRV_TOOLS_BUILD_VERSION_INC_GENERATOR}

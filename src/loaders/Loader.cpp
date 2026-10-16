@@ -22,14 +22,18 @@ void Loader::initialize(JSValue self,JSValue manager) {
     self.set("path","");self.set("resourcePath","");self.set("requestHeader",JSValue::object());
 }
 JSValue Loader::prototype() {
-    static thread_local auto value=[] {
+    static thread_local JSWeakValue cached;
+    if(const auto value=cached.lock();value&&value->isObject())return *value;
+    static thread_local bool initializing=false;
+    JSModuleInitializationScope scope(initializing,"Loader prototype");
+    auto value=[] {
         auto constructor=JSValue::constructor([](const JSValue& self,const Args& args,const Args&)->JSValue{initialize(self,arg(args,0));return {};},{},"Loader",1);
         constructor.set("DEFAULT_MATERIAL_NAME",DEFAULT_MATERIAL_NAME);auto result=constructor.get("prototype");
         for(const auto& [name,arity]:std::initializer_list<std::pair<const char*,unsigned>>{{"load",0},{"parse",0},{"loadAsync",2},{"setCrossOrigin",1},{"setWithCredentials",1},{"setPath",1},{"setResourcePath",1},{"setRequestHeader",1},{"abort",0}}) {
             JSPropertyDescriptor descriptor;descriptor.configurable=descriptor.writable=true;descriptor.value=JSValue::function(method,{name},name,arity);result.defineProperty(name,descriptor);
         }
-        return result;
-    }();return value;
+        constructor.retainForHeapLifetime();return result;
+    }();cached=JSWeakValue(value);return value;
 }
 Loader::Loader(JSValue manager):object_(JSValue::object(prototype())){initialize(object_,manager);}
 JSValue Loader::load(JSValue url,JSValue onLoad,JSValue onProgress,JSValue onError){return object_.get("load").call(object_,{url,onLoad,onProgress,onError});}

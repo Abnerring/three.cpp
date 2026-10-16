@@ -58,6 +58,7 @@ struct NativeObjectAccess {
         (i == 0 ? q.m_x : i == 1 ? q.m_y : i == 2 ? q.m_z : q.m_w) = value;
     }
     static void notify(Quaternion& q) { notifyPropertyChange(q.m_onChangeCallback); }
+    static std::shared_ptr<PropertyChangeRecord> callbackRecord(Quaternion& q) { return propertyChangeRecord(q.m_onChangeCallback); }
     static double euler(const Euler& e, int i) { return i == 0 ? e.m_x : i == 1 ? e.m_y : e.m_z; }
     static void euler(Euler& e, int i, double value) { (i == 0 ? e.m_x : i == 1 ? e.m_y : e.m_z) = value; }
     static void order(Euler& e, const std::string& value) {
@@ -70,6 +71,7 @@ struct NativeObjectAccess {
         else throw JSTypeError("Native Euler order must name a supported rotation order");
     }
     static void notify(Euler& e) { notifyPropertyChange(e.m_onChangeCallback); }
+    static std::shared_ptr<PropertyChangeRecord> callbackRecord(Euler& e) { return propertyChangeRecord(e.m_onChangeCallback); }
 };
 
 namespace {
@@ -96,10 +98,15 @@ template <class Factory> JSValue cachedModuleValue(JSWeakValue& cached, Factory 
     cached = JSWeakValue(value);
     return value;
 }
-void method(JSValue object, const char* name, JSValue::NativeFunction callback, const char* tag = "") {
+void method(JSValue object, const char* name, JSValue::NativeFunction callback, const char* tag = "",
+            const char* sourceText = nullptr) {
     static thread_local std::map<std::string, JSWeakValue> functions;
     const auto key = std::string(tag) + ":" + name;
-    const auto function = cachedModuleValue(functions[key], [&] { return JSValue::function(callback, {JSValue(name)}); });
+    const auto function = cachedModuleValue(functions[key], [&] {
+        auto value = JSValue::function(callback, {JSValue(name)}, sourceText ? name : "");
+        if (sourceText) value.setFunctionSourceText(sourceText);
+        return value;
+    });
     JSPropertyDescriptor d;
     d.value = function;
     d.writable = true; d.configurable = true; d.enumerable = false;
@@ -332,24 +339,24 @@ JSValue mathArray(const JSValue& self, const Args& args, const Args& capture) {
     auto array = argument(args, 0);
     if (read && array.isUndefined()) array = JSValue::array();
     auto offset = argument(args, 1); if (offset.isUndefined()) offset = 0;
-    const bool quaternion = self.isHostObject("three.Quaternion"), euler = self.isHostObject("three.Euler");
+    const auto tag=capture[1].string();
+    const bool quaternion = tag=="three.Quaternion", euler = tag=="three.Euler";
     if (euler && !read) offset = 0; // Euler.fromArray has no offset argument.
-    const bool color = self.isHostObject("three.Color");
-    const int count = self.isHostObject("three.Vector2") ? 2 : quaternion || euler || self.isHostObject("three.Vector4") ? 4 : 3;
+    const bool color = tag=="three.Color";
+    const int count = tag=="three.Vector2" ? 2 : quaternion || euler || tag=="three.Vector4" ? 4 : 3;
     for (int i = 0; i < count; ++i) {
         const auto index = i == 0 ? offset : Interpolant_detail::add(offset, JSValue(i));
         std::string component = euler && i == 3 ? "order" : std::string(1, (color ? "rgb" : "xyzw")[i]);
         if (quaternion || euler) component.insert(component.begin(), '_');
-        if (read) { const auto value = self.get(component); array.set(index.toString(), value); }
+        if (read) { const auto value = self.get(component); array.set(index, value); }
         else {
-            const auto value = array.get(index.toString());
+            const auto value = array.get(index);
             if (euler && i == 3) {
                 if (!value.isUndefined()) target.set(component, array.get("3"));
             } else target.set(component, value);
         }
     }
-    if (!read && quaternion) NativeObjectAccess::notify(*payload<Quaternion>(self, "three.Quaternion"));
-    if (!read && euler) NativeObjectAccess::notify(*payload<Euler>(self, "three.Euler"));
+    if (!read && (quaternion || euler)) self.get("_onChangeCallback").call(self,{});
     return read ? array : self;
 }
 JSValue mathClone(const JSValue& self, const Args&, const Args&) {
@@ -396,8 +403,14 @@ JSValue mathCall(const JSValue& self,const char* name,const Args& args={}) {retu
 JSValue lightingMath(const JSValue& self,const Args& args,const Args& captures) {
     const auto name=captures[0].string(),tag=captures[1].string();auto result=self;
     const auto source=argument(args,0),scalar=argument(args,1);
-    const char* components=tag=="three.Color"?"rgb":tag=="three.Vector2"?"xy":"xyz";
-    if(name=="copy") {for(const char* c=components;*c;++c){const std::string field(1,*c);result.set(field,source.get(field));}return self;}
+    const char* components=tag=="three.Color"?"rgb":tag=="three.Vector2"?"xy":tag=="three.Vector4"?"xyzw":"xyz";
+    if(name=="copy") {
+        for(const char* c=components;*c;++c){const std::string field(1,*c);
+            if(tag=="three.Vector4"&&*c=='w') {
+                const auto checked=source.get("w");result.set("w",checked.isUndefined()?JSValue(1):source.get("w"));
+            } else result.set(field,source.get(field));
+        }return self;
+    }
     if(name=="negate") {for(const char* c=components;*c;++c){const std::string field(1,*c);result.set(field,-self.get(field).toNumber());}return self;}
     if(name=="fromArray"||name=="toArray") {
         auto array=source;if(name=="toArray"&&array.isUndefined())array=JSValue::array();
@@ -405,17 +418,19 @@ JSValue lightingMath(const JSValue& self,const Args& args,const Args& captures) 
         for(int i=0;components[i];++i) {
             const auto index=i?mathAdd(offset,i):offset;const std::string field(1,components[i]);
             if(name=="fromArray") {
-                const auto key=index.toPrimitive(JSValue::PreferredType::String).toString();result.set(field,array.get(key));
+                result.set(field,array.get(index));
             } else {
                 const auto value=self.get(field);
-                const auto key=index.toPrimitive(JSValue::PreferredType::String).toString();array.set(key,value);
+                array.set(index,value);
             }
         }
         return name=="fromArray"?self:array;
     }
     if(name=="set") {
         auto z=argument(args,2);if(tag=="three.Vector3"&&z.isUndefined())z=self.get("z");
-        result.set("x",source);result.set("y",scalar);if(tag=="three.Vector3")result.set("z",z);return self;
+        result.set("x",source);result.set("y",scalar);
+        if(tag=="three.Vector3"||tag=="three.Vector4")result.set("z",z);
+        if(tag=="three.Vector4")result.set("w",argument(args,3));return self;
     }
     if(name=="multiplyScalar"||name=="multiply"||name=="sub"||name=="addScaledVector") {
         for(const char* c=components;*c;++c) {
@@ -469,6 +484,28 @@ void lightingMethod(JSValue object,const char* name,JSValue::NativeFunction call
 }
 JSValue materialsColor(const JSValue&,const Args&,const Args&);
 JSValue colorScratch();
+#include "NativeMathEqualsSource.inc"
+#include "NativeMathStateSource.inc"
+JSValue mathEquals(const JSValue& self,const Args& args,const Args& captures) {
+    const auto other=argument(args,0);
+    const auto& tag=captures[1].string();
+    const char* components=tag=="three.Color"?"rgb":tag=="three.Vector2"?"xy":tag=="three.Vector4"?"xyzw":"xyz";
+    for(const char* component=components;*component;++component) {
+        const std::string key(1,*component);
+        const auto left=other.get(key);const auto right=self.get(key);
+        if(!left.strictEquals(right))return false;
+    }
+    return true;
+}
+JSValue matrixEquals(const JSValue& self,const Args& args,const Args& captures) {
+    const auto te=self.get("elements");const auto me=argument(args,0).get("elements");
+    const unsigned size=captures[1].strictEquals("three.Matrix4")?16:9;
+    for(unsigned i=0;i<size;++i) {
+        const auto left=te.get(JSValue(i));const auto right=me.get(JSValue(i));
+        if(!left.strictEquals(right))return false;
+    }
+    return true;
+}
 JSValue mathPrototype(const char* tag,const char* components,const char* flag,bool privateComponents) {
     static thread_local std::map<std::string, JSWeakValue> prototypes;
     return cachedModuleValue(prototypes[tag], [&] {
@@ -481,22 +518,65 @@ JSValue mathPrototype(const char* tag,const char* components,const char* flag,bo
                 if (std::string(tag) == "three.Euler") accessor(p,"order",mathRead,mathWrite,false);
             }
             method(p, "fromArray", mathArray, tag); method(p, "toArray", mathArray, tag);
+            if(std::string(tag)=="three.Quaternion"||std::string(tag)=="three.Euler") {
+                const bool quaternion=std::string(tag)=="three.Quaternion";
+                lightingMethod(p,"_onChangeCallback",[](const JSValue&,const Args&,const Args&) {return JSValue{};},tag,0);
+                p.get("_onChangeCallback").setFunctionSourceText(quaternion?NativeMathStateSource::Quaternion__onChangeCallback:NativeMathStateSource::Euler__onChangeCallback);
+                lightingMethod(p,"_onChange",[](const JSValue& self,const Args& args,const Args&) {
+                    auto target=self;target.set("_onChangeCallback",argument(args,0));return self;
+                },tag,1);
+                p.get("_onChange").setFunctionSourceText(quaternion?NativeMathStateSource::Quaternion__onChange:NativeMathStateSource::Euler__onChange);
+                lightingMethod(p,"fromArray",mathArray,tag,1);
+                lightingMethod(p,"toArray",mathArray,tag,0);
+                p.get("fromArray").setFunctionSourceText(quaternion?NativeMathStateSource::Quaternion_fromArray:NativeMathStateSource::Euler_fromArray);
+                p.get("toArray").setFunctionSourceText(quaternion?NativeMathStateSource::Quaternion_toArray:NativeMathStateSource::Euler_toArray);
+            }
             method(p, "clone", mathClone, tag);
             method(p, "copy", mathCopy, tag);
-            if (std::string(tag) == "three.Color") method(p,"set",[](const JSValue& self,const Args& args,const Args&) {
+            if (std::string(tag)=="three.Vector2" || std::string(tag)=="three.Vector3" ||
+                std::string(tag)=="three.Vector4" || std::string(tag)=="three.Color") {
+                lightingMethod(p,"equals",mathEquals,tag,1);
+                p.get("equals").setFunctionSourceText(std::string(tag)=="three.Vector2"?source_equals_Vector2:
+                    std::string(tag)=="three.Vector3"?source_equals_Vector3:
+                    std::string(tag)=="three.Vector4"?source_equals_Vector4:source_equals_Color);
+            }
+            if (std::string(tag) == "three.Color") lightingMethod(p,"set",[](const JSValue& self,const Args& args,const Args&) {
+                if(!argument(args,1).isUndefined()||!argument(args,2).isUndefined()) {
+                    const auto method=self.get("setRGB");
+                    method.call(self,{argument(args,0),argument(args,1),argument(args,2)});return self;
+                }
                 const auto value = argument(args,0);
-                if (value.toBoolean() && value.get("isColor").toBoolean()) return mathCopy(self,args,{});
-                auto c = payload<Color>(self,"three.Color");
-                if (value.type() == JSValue::Type::Number) c->setHex(value.number());
-                else if (value.type() == JSValue::Type::String) c->setStyle(value.string());
+                if (value.toBoolean() && value.get("isColor").toBoolean()) {
+                    self.get("copy").call(self,{value});return self;
+                }
+                if (value.type() == JSValue::Type::Number) payload<Color>(self,"three.Color")->setHex(value.number());
+                else if (value.type() == JSValue::Type::String) payload<Color>(self,"three.Color")->setStyle(value.string());
                 return self;
-            },tag);
+            },tag,3);
             if (std::string(tag) == "three.Color") {
+                p.get("set").setFunctionSourceText(NativeMathStateSource::Color_set);
+                lightingMethod(p,"setRGB",[](const JSValue& self,const Args& args,const Args&) {
+                    auto target=self;auto colorSpace=argument(args,3);
+                    if(colorSpace.isUndefined())colorSpace=nativeColorManagement().get("workingColorSpace");
+                    target.set("r",argument(args,0));target.set("g",argument(args,1));target.set("b",argument(args,2));
+                    const auto management=nativeColorManagement();const auto fn=management.get("colorSpaceToWorking");
+                    fn.call(management,{self,colorSpace});return self;
+                },tag,3);
+                p.get("setRGB").setFunctionSourceText(NativeMathStateSource::Color_setRGB);
                 method(p, "getHex", [](const JSValue& self, const Args& args, const Args&) {
                     return JSValue(payload<Color>(self,"three.Color")->getHex(argument(args,0).isUndefined() ? SRGBColorSpace : argument(args,0).toString()));
                 }, tag);
                 lightingMethod(p,"getRGB",materialsColor,tag,1);
                 lightingMethod(p,"applyMatrix3",lightingMath,tag,1);
+            }
+            if (std::string(tag)=="three.Vector4") {
+                for(const auto* name:{"copy","fromArray"})lightingMethod(p,name,lightingMath,tag,1);
+                lightingMethod(p,"set",lightingMath,tag,4);
+                lightingMethod(p,"toArray",lightingMath,tag,0);
+                p.get("set").setFunctionSourceText(NativeMathStateSource::Vector4_set);
+                p.get("copy").setFunctionSourceText(NativeMathStateSource::Vector4_copy);
+                p.get("fromArray").setFunctionSourceText(NativeMathStateSource::Vector4_fromArray);
+                p.get("toArray").setFunctionSourceText(NativeMathStateSource::Vector4_toArray);
             }
             if (std::string(tag)=="three.Color"||std::string(tag)=="three.Vector2"||std::string(tag)=="three.Vector3") {
                 for(const auto* name:{"copy","fromArray"})lightingMethod(p,name,lightingMath,tag,1);
@@ -536,6 +616,14 @@ JSValue materialsColor(const JSValue& self,const Args& args,const Args&) {
     for(const auto* field:{"r","g","b"})target.set(field,scratch.get(field));return target;
 }
 
+JSValue nativePropertyCallback(const JSValue& owner,const PropertyChangeSnapshot& snapshot) {
+    auto token=JSValue::hostObject(snapshot,snapshot.get(),"three.PropertyChangeSnapshot");
+    return JSValue::function([](const JSValue&,const Args&,const Args& captures) {
+        const auto callback=std::static_pointer_cast<std::function<void()>>(captures[1].hostPayload("three.PropertyChangeSnapshot"));
+        (*callback)();return JSValue{};
+    },{owner,token});
+}
+
 template <class T> JSValue wrapMath(std::shared_ptr<T> value, const char* tag, const char* components,
                                    const char* flag, bool privateComponents = false) {
     if (!value) return nullptr;
@@ -552,6 +640,21 @@ template <class T> JSValue wrapMath(std::shared_ptr<T> value, const char* tag, c
             accessor(result,key.c_str(),mathRead,mathWrite);
         }
         if (std::string(tag) == "three.Euler") accessor(result,"_order",mathRead,mathWrite);
+        if constexpr(std::is_same_v<T,Quaternion>||std::is_same_v<T,Euler>) {
+            const auto record=NativeObjectAccess::callbackRecord(*value);
+            const JSWeakValue weak(result);
+            record->managedNotify=[weak] {
+                if(auto owner=weak.lock()) {
+                    const auto callback=owner->get("_onChangeCallback");
+                    callback.call(*owner,{});return true;
+                }
+                return false;
+            };
+            record->managedRegister=[weak](const PropertyChangeSnapshot& snapshot) {
+                if(auto owner=weak.lock())owner->set("_onChangeCallback",nativePropertyCallback(*owner,snapshot));
+            };
+            if(record->registered)result.set("_onChangeCallback",nativePropertyCallback(result,record->callback));
+        }
     }
     return result;
 }
@@ -806,6 +909,8 @@ JSValue matrixPrototype(bool matrix4) {
         auto p=JSValue::object();
         p.set(matrix4?"isMatrix4":"isMatrix3",true);
         for (const char* name : {"fromArray","toArray","clone"}) method(p,name,matrixMethod,tag);
+        lightingMethod(p,"equals",matrixEquals,tag,1);
+        p.get("equals").setFunctionSourceText(matrix4?source_equals_Matrix4:source_equals_Matrix3);
         if(matrix4) {
             lightingMethod(p,"set",lightingMatrix,tag,16);lightingMethod(p,"multiplyMatrices",lightingMatrix,tag,2);
             for(const auto* name:{"copy","multiply","premultiply","extractRotation"})lightingMethod(p,name,lightingMatrix,tag,1);
@@ -2231,8 +2336,8 @@ JSValue nativeMaterial(const std::shared_ptr<Material>& material) {
             method(p,"setValues",materialSetValues,"three.Material");
             method(p,"clone",[](const JSValue& self,const Args&,const Args&){ return nativeMaterial(payload<Material>(self,materialTag)->clone()); },"three.Material");
             method(p,"toJSON",[](const JSValue& self,const Args&,const Args&){ return JSValue::fromJSON(payload<Material>(self,materialTag)->toJSON()); },"three.Material");
-            method(p,"onBeforeCompile",[](const JSValue&,const Args&,const Args&){ return JSValue(); },"three.Material");
-            method(p,"customProgramCacheKey",[](const JSValue& self,const Args&,const Args&){ const auto callback = self.get("onBeforeCompile"); return callback.get("toString").call(callback); },"three.Material");
+            method(p,"onBeforeCompile",[](const JSValue&,const Args&,const Args&){ return JSValue(); },"three.Material","onBeforeCompile( /* shaderobject, renderer */ ) {}");
+            method(p,"customProgramCacheKey",[](const JSValue& self,const Args&,const Args&){ const auto callback = self.get("onBeforeCompile"); return callback.get("toString").call(callback); },"three.Material","customProgramCacheKey() {\r\n\r\n\t\treturn this.onBeforeCompile.toString();\r\n\r\n\t}");
             return p;
         });
         result.setPrototype(prototype);

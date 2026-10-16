@@ -64,6 +64,104 @@
         "implementation": "src/core/ArraySort.h",
         "license": "V8 BSD-3-Clause and Python license chain, retained in src/core/ArraySort.LICENSE",
         "purpose": "Native stable sorting with the pinned oracle comparator order, including NaN and inconsistent comparators; no JavaScript engine"
+      },
+      {
+        "name": "Unicode default uppercase data",
+        "revision": "Unicode 17.0.0",
+        "sources": [
+          {
+            "source": "https://www.unicode.org/Public/17.0.0/ucd/UnicodeData.txt",
+            "sourceSHA256": "2e1efc1dcb59c575eedf5ccae60f95229f706ee6d031835247d843c11d96470c"
+          },
+          {
+            "source": "https://www.unicode.org/Public/17.0.0/ucd/SpecialCasing.txt",
+            "sourceSHA256": "efc25faf19de21b92c1194c111c932e03d2a5eaf18194e33f1156e96de4c9588"
+          }
+        ],
+        "implementation": "src/core/UnicodeCase.cpp",
+        "generatedData": "src/core/UnicodeCaseData.h",
+        "generator": "utils/generate-unicode-case.py",
+        "license": "src/core/Unicode-LICENSE.txt",
+        "purpose": "Native default full uppercase conversion of UTF-16 strings, preserving lone surrogates; no JavaScript engine"
+      },
+      {
+        "name": "Khronos SPIRV-Reflect",
+        "revision": "563dc9a16d0e86145e12a66bb61f0695ca4a14b9",
+        "sources": [
+          {
+            "source": "https://raw.githubusercontent.com/KhronosGroup/SPIRV-Reflect/563dc9a16d0e86145e12a66bb61f0695ca4a14b9/spirv_reflect.h",
+            "sourceSHA256": "38b7fb3a91d4f8725636d01dc6e0eec4e58b5a6d12d7dbaf5ad92f8cf5f2f25b",
+            "localPath": "src/renderers/vulkan/lib/spirv_reflect/spirv_reflect.h"
+          },
+          {
+            "source": "https://raw.githubusercontent.com/KhronosGroup/SPIRV-Reflect/563dc9a16d0e86145e12a66bb61f0695ca4a14b9/spirv_reflect.c",
+            "sourceSHA256": "36b20aa01aa3a5cd5511565ca0f174f483d61a0f7931fc27d965d450b4f33614",
+            "localPath": "src/renderers/vulkan/lib/spirv_reflect/spirv_reflect.c"
+          },
+          {
+            "source": "https://raw.githubusercontent.com/KhronosGroup/SPIRV-Reflect/563dc9a16d0e86145e12a66bb61f0695ca4a14b9/spirv_reflect.cpp",
+            "sourceSHA256": "498198cef8a9a84b8cf38bf9bed6f24d835483210b2e5856263d4db5bf28410d",
+            "localPath": "src/renderers/vulkan/lib/spirv_reflect/spirv_reflect.cpp"
+          },
+          {
+            "source": "https://raw.githubusercontent.com/KhronosGroup/SPIRV-Reflect/563dc9a16d0e86145e12a66bb61f0695ca4a14b9/include/spirv/unified1/spirv.h",
+            "sourceSHA256": "4b8d9ce80915feecf75a7d0a3a9527693a091f340ea5b7f70c89353254b7c2ca",
+            "localPath": "src/renderers/vulkan/lib/spirv_reflect/include/spirv/unified1/spirv.h"
+          },
+          {
+            "source": "https://raw.githubusercontent.com/KhronosGroup/SPIRV-Reflect/563dc9a16d0e86145e12a66bb61f0695ca4a14b9/LICENSE",
+            "sourceSHA256": "c71d239df91726fc519c6eb72d318ec65820627232b2f796219e87dcf35d0ab4",
+            "localPath": "src/renderers/vulkan/lib/spirv_reflect/LICENSE"
+          }
+        ],
+        "implementation": "src/renderers/vulkan/VulkanShaderInterface.cpp",
+        "license": "src/renderers/vulkan/lib/spirv_reflect/LICENSE",
+        "purpose": "Owned native SPIR-V entry-point interface and descriptor reflection; no JavaScript engine"
+      },
+      {
+        "name": "Khronos glslang native ESSL frontend fork",
+        "revision": "2fbed5e1fb43a1c480fe020e3bb686a31010989a",
+        "sources": [
+          {
+            "source": "https://codeload.github.com/KhronosGroup/glslang/zip/2fbed5e1fb43a1c480fe020e3bb686a31010989a",
+            "sourceSHA256": "6c241ca6d3b88ac602e572401f95de1c247110d900d1bbb3e302c4f3714515cc"
+          }
+        ],
+        "implementation": "src/renderers/vulkan/essl",
+        "dependencyLock": "cmake/essl/dependency-lock.json",
+        "license": "licenses/essl/glslang-LICENSE.txt",
+        "licenseSHA256": "17e70c676e1521ff3e4686f04a2053d93a7e28a33be8de7ec37ab0ff72feb677",
+        "purpose": "Original ESSL parse/link and native AST-to-SPIR-V compilation; three-file frontend fork disclosed in dependency lock"
+      },
+      {
+        "name": "Khronos SPIRV-Tools validator",
+        "revision": "ef96ed763b43b59b33b31b362f09a02b729fa1c9",
+        "sources": [
+          {
+            "source": "https://codeload.github.com/KhronosGroup/SPIRV-Tools/zip/ef96ed763b43b59b33b31b362f09a02b729fa1c9",
+            "sourceSHA256": "2a7666cfaec2818516019fccb8101a6e57c589417bef83a3c61d19ed63de1c1f"
+          }
+        ],
+        "implementation": "src/renderers/vulkan/essl",
+        "dependencyLock": "cmake/essl/dependency-lock.json",
+        "license": "licenses/essl/SPIRV-Tools-LICENSE",
+        "licenseSHA256": "cfc7749b96f63bd31c3c42b5c471bf756814053e847c10f3eb003417bc523d30",
+        "purpose": "Independent validation of native ESSL SPIR-V; two-file CMake-only patch keeps generated Python caches outside source trees"
+      },
+      {
+        "name": "Khronos SPIRV-Headers",
+        "revision": "496543121ce6419f23d6fa5d7194ba66c36212d2",
+        "sources": [
+          {
+            "source": "https://codeload.github.com/KhronosGroup/SPIRV-Headers/zip/496543121ce6419f23d6fa5d7194ba66c36212d2",
+            "sourceSHA256": "b33782a6ccd124e6e02634f6382456b0aba2242c6ec5b68d07be20ee77a5b6bc"
+          }
+        ],
+        "implementation": "src/renderers/vulkan/essl",
+        "dependencyLock": "cmake/essl/dependency-lock.json",
+        "license": "licenses/essl/SPIRV-Headers-LICENSE",
+        "licenseSHA256": "ea43b1de38a6f90c488800d66dec1ed671e68cda530266bc96951fb5b6307613",
+        "purpose": "Pinned SPIR-V definitions used to source-build the validator"
       }
     ],
     "auditedCommit": "11738a9d55e502fb484cefffcea3a66dc44e9fe9",
