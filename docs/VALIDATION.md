@@ -2,11 +2,11 @@
 
 ## 当前追加验证：AnimationClipCreator 差分落地，2026-10-17
 
-- 差分补齐：threecpp.threejs-animation-clip-creator-parity **47 个场景 / 40 条轨道 / 860 个时间与数值条目**逐位一致，另有 **7 条与上游一致的抛错路径**（duration 0 使 times 为空，上游 KeyframeTrack 抛 THREE.KeyframeTrack: no keyframes…，原生核心抛同一文本）。两个随机工厂在 JS 侧打桩 Math.random、在 C++ 侧注入同一序列。
+- 差分补齐：threecpp.threejs-animation-clip-creator-parity **51 个场景 / 44 条轨道 / 884 个时间与数值条目**逐位一致，另有 **7 条与上游一致的抛错路径**（duration 0 使 times 为空，上游 KeyframeTrack 抛 THREE.KeyframeTrack: no keyframes…，原生核心抛同一文本）。两个随机工厂在 JS 侧打桩 Math.random、在 C++ 侧注入同一序列。
 
-- 该差分抓到我的移植里一个真实缺陷（比上一轮那个更隐蔽）：CreateShakeAnimation 里 	emporary.set( random()*2-1, random()*2-1, random()*2-1 ) 三次抽取被写成同一表达式，**C++ 不规定函数实参求值顺序**（MSVC 从右向左），而固定源码按 x、y、z 顺序抽取。已改为显式分三次求值并加注释说明；这与本项目此前记录过的 [i] = a[--i] 属同一类陷阱。
+- 该差分抓到我的移植里一个真实缺陷（比上一轮那个更隐蔽）：CreateShakeAnimation 里 `temporary.set( random()*2-1, random()*2-1, random()*2-1 )` 三次抽取被写成同一表达式，**C++ 不规定函数实参求值顺序**（MSVC 从右向左），而固定源码按 x、y、z 顺序抽取。已改为显式分三次求值并加注释说明；这与本项目此前记录过的 `a[i] = a[--i]` 属同一类陷阱。
 
-- 明确的范围界定（不是静默放宽）：CreateVisibilityAnimation 的 **duration 0** 场景被排除在比较之外 —— 此时三个时间为 0，上游 BooleanKeyframeTrack 的行为尚未弄清到可以固定下来的程度；脚本内与该条目旁均有注释指向本条记录，后续应单独查清后补回。
+- 随后发现并修掉一个**验证覆盖漏洞**（比数值差异更值得记录）：kind 4 的生成语句原本紧跟在同一行的 `//` 注释之后，整条语句因此被当作注释吞掉，**四个 CreateVisibilityAnimation 场景从未被比较过**。修正后场景数由 47 升到 51、条目 860 升到 884，全部逐位一致。此前记录的“duration 0 被排除”随之作废：查清原因是**表示差异**而非数值差异 —— 上游 BooleanKeyframeTrack 的 ValueBufferType 是 Array（`[true,false,true]`），原生轨道通过 `number()` 暴露 `[1,0,1]`，比较脚本已加入仅对 boolean 生效的精确归一化，duration 0 场景现已纳入并通过。
 
 ## 当前追加验证：CameraUtils（上一轮主动收敛后补完），2026-10-17
 

@@ -47,7 +47,10 @@ for(const duration of [0,1,2.5]) for(const scale of [[1,1,1],[0.5,-2,3]]){
 for(const duration of [0,1,2.5]) for(const scale of [1,0.5,3]){
     scenarios.push({kind:3,first:duration,second:scale,args:[],values:draws});
 }
-// duration 0 is excluded on purpose: it makes every boolean time equal, and the pinned\n// BooleanKeyframeTrack's behaviour there is not yet understood well enough to pin it down\n// (see the note in docs/VALIDATION.md).\nfor(const duration of [0,1,2.5,7]) scenarios.push({kind:4,first:duration,second:0,args:[],values:draws});
+// The pinned BooleanKeyframeTrack keeps booleans and the native track exposes the same values
+// as 0/1; clipJSON normalises exactly that representation difference. duration 0 stays in: all
+// three times collapse to 0 there, which is worth pinning down rather than skipping.
+for(const duration of [0,1,2.5,7]) scenarios.push({kind:4,first:duration,second:0,args:[],values:draws});
 for(const duration of [1,5]) for(const count of [0,1,2,5]){
     scenarios.push({kind:5,first:duration,second:count,args:[],values:draws});
 }
