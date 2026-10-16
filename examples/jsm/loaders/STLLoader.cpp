@@ -2,11 +2,98 @@
 #include "core/BufferAttribute.h"
 #include "loaders/FileLoader.h"
 #include "math/Color.h"
+#include <cmath>
 #include <cstring>
+#include <limits>
+#include <string>
 #include <vector>
 
 namespace {
 using Args = std::vector<JSValue>;
+bool isSpaceChar(char ch){return ch==' '||ch=='\t'||ch=='\n'||ch=='\r'||ch=='\v'||ch=='\f';}
+// JS parseFloat: the longest prefix that forms a decimal literal, NaN when there is none.
+double parseFloatJS(const std::string& text) {
+    std::size_t index=0;
+    while(index<text.size()&&isSpaceChar(text[index]))index+=1;
+    const std::size_t start=index;
+    const bool negative=index<text.size()&&text[index]=='-';
+    if(index<text.size()&&(text[index]=='+'||text[index]=='-'))index+=1;
+    if(text.compare(index,8,"Infinity")==0)return negative?-HUGE_VAL:HUGE_VAL;
+    bool digits=false,point=false,exponent=false;
+    std::size_t exponentMark=std::string::npos;
+    std::size_t cursor=index;
+    while(cursor<text.size()) {
+        const char ch=text[cursor];
+        if(ch>='0'&&ch<='9'){digits=true;cursor+=1;continue;}
+        if(ch=='.'&&!point&&!exponent){point=true;cursor+=1;continue;}
+        if((ch=='e'||ch=='E')&&!exponent&&digits){
+            exponent=true;exponentMark=cursor;cursor+=1;
+            if(cursor<text.size()&&(text[cursor]=='+'||text[cursor]=='-'))cursor+=1;
+            continue;
+        }
+        break;
+    }
+    std::size_t end=cursor;
+    if(exponent) {
+        std::size_t probe=exponentMark+1;
+        if(probe<text.size()&&(text[probe]=='+'||text[probe]=='-'))probe+=1;
+        if(probe>=text.size()||text[probe]<'0'||text[probe]>'9')end=exponentMark;
+    }
+    if(!digits)return std::numeric_limits<double>::quiet_NaN();
+    try { return std::stod(text.substr(start,end-start)); }
+    catch(...) { return std::numeric_limits<double>::quiet_NaN(); }
+}
+// The pinned ASCII path drives four fixed regular expressions, matched by hand rather than through a
+// general engine because what matters is the behaviour of these patterns: a lazy capture between two
+// literals, a line bounded name, and a float capture whose every part is optional, so a vertex line
+// with nothing after the keyword still matches with an empty capture and parseFloat gives NaN.
+std::pair<std::string,std::size_t> matchFloatAt(const std::string& text,std::size_t pos) {
+    const std::size_t start=pos;
+    std::size_t cursor=pos;
+    if(cursor<text.size()&&(text[cursor]=='+'||text[cursor]=='-'))cursor+=1;
+    while(cursor<text.size()&&text[cursor]>='0'&&text[cursor]<='9')cursor+=1;
+    if(cursor<text.size()&&text[cursor]=='.') {
+        cursor+=1;
+        while(cursor<text.size()&&text[cursor]>='0'&&text[cursor]<='9')cursor+=1;
+    }
+    if(cursor<text.size()&&(text[cursor]=='e'||text[cursor]=='E')) {
+        std::size_t probe=cursor+1;
+        if(probe<text.size()&&(text[probe]=='+'||text[probe]=='-'))probe+=1;
+        if(probe<text.size()&&text[probe]>='0'&&text[probe]<='9') {
+            probe+=1;
+            while(probe<text.size()&&text[probe]>='0'&&text[probe]<='9')probe+=1;
+            cursor=probe;
+        }
+    }
+    return {text.substr(start,cursor-start),cursor};
+}
+bool matchTriple(const std::string& text,const std::string& keyword,std::size_t from,double out[3],std::size_t& next) {
+    const auto found=text.find(keyword,from);
+    if(found==std::string::npos)return false;
+    std::size_t cursor=found+keyword.size();
+    double values[3]={0,0,0};
+    for(int index=0;index<3;index+=1) {
+        if(cursor>=text.size()||!isSpaceChar(text[cursor]))return false;
+        while(cursor<text.size()&&isSpaceChar(text[cursor]))cursor+=1;
+        const auto [literal,nextCursor]=matchFloatAt(text,cursor);
+        values[index]=parseFloatJS(literal);
+        cursor=nextCursor;
+    }
+    out[0]=values[0];out[1]=values[1];out[2]=values[2];next=cursor;
+    return true;
+}
+bool matchSolidName(const std::string& solid,std::string& name) {
+    const auto found=solid.find("solid");
+    if(found==std::string::npos)return false;
+    std::size_t cursor=found+5;
+    if(cursor>=solid.size()||!isSpaceChar(solid[cursor]))return false;
+    cursor+=1;
+    const auto end=solid.find('\n',cursor);
+    const std::string rest=solid.substr(cursor,end==std::string::npos?std::string::npos:end-cursor);
+    if(rest.empty())return false;
+    name=rest;
+    return true;
+}
 JSValue arg(const Args& args,std::size_t index){return index<args.size()?args[index]:JSValue{};}
 std::uint32_t readUint32(const std::vector<std::uint8_t>& data,std::size_t offset,bool littleEndian) {
     if(offset+4>data.size())return 0;
