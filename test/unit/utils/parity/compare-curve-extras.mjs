@@ -31,6 +31,12 @@ for(const x of [0,-0,1,-1,2,-2,0.5,-0.5,3,-3,1.000093339211477,0.999999999999999
 for(let i=0;i<120;++i){
     const value=Math.sin(i*0.37)*Math.cos(i*1.11);
     powCases.push([Math.abs(value),3],[1+value*1e-3,2],[-Math.abs(value),4],[1+value*1e-9,5]);
+// Extreme but finite operands for the special cases of Math.pow: a subnormal base, huge and
+// tiny bases, bases just around 1, negative bases with integer and non-integer exponents, and
+// exponents that overflow or underflow the result.
+for(const x of [5e-324,1e-320,1e-308,0.9999999999999999,1.0000000000000002,1.0000000001,1,-1,2,-2,123.456,1e300,-1e300,1e308])
+    for(const y of [-1074,-1024,-3,-2,-1.5,-1,-0.5,0,0.5,1,1.5,2,3,1024,1074,1e6])
+        powCases.push([x,y]);
 }
 for(const [x,y] of powCases) scenarios.push({line:`W ${token(x)} ${token(y)}`,expected:{value:encode(Math.pow(x,y))}});
 for(let i=0;i<200;++i){
