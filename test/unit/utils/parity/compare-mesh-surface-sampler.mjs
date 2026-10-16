@@ -33,12 +33,14 @@ function addColor(geometry){
 function buildMesh(kind){
     if(kind===5) return new Mesh(); // empty geometry: no position attribute
     let geometry;
-    if(kind===0||kind===2){
+    if(kind===0||kind===2||kind===6){
         geometry=new BoxGeometry(1,1,1);
         if(kind===2) addColor(geometry);
-    }else if(kind===1||kind===3){
+        if(kind===6) addZeroColor(geometry);
+    }else if(kind===1||kind===3||kind===7){
         geometry=new BoxGeometry(1,1,1).toNonIndexed();
         if(kind===3) addColor(geometry);
+        if(kind===7) addZeroColor(geometry);
     }else if(kind===4){
         geometry=new SphereGeometry(1,8,6);
     }else{
@@ -47,6 +49,11 @@ function buildMesh(kind){
     const mesh=new Mesh(geometry);
     mesh.updateMatrixWorld(true);
     return mesh;
+}
+// Kinds 6 and 7 carry an all-zero colour attribute so a zero-total weight distribution runs.
+function addZeroColor(geometry){
+    const count=geometry.getAttribute('position').count;
+    geometry.setAttribute('color',new Float32BufferAttribute(new Array(count*3).fill(0),3));
 }
 
 // A fixed pseudo-random pull (LCG) reused for every scenario, plus a few edge values.
@@ -80,8 +87,8 @@ for(const meshKind of [0,4]){
 }
 // A weight attribute whose total is zero: every cumulative entry is 0, so the search compares
 // against 0 for any draw and the face index comes from the boundary branch.
-for(const meshKind of [2,3]){
-    scenarios.push({meshKind,weightAttribute:'color',sampleCount:4,values:[0,0.5,1,-1],zeroWeights:true});
+for(const meshKind of [6,7]){
+    scenarios.push({meshKind,weightAttribute:'color',sampleCount:4,values:[0,0.5,1,-1]});
 }
 
 const lines=scenarios.map(({meshKind,weightAttribute,sampleCount,values})=>

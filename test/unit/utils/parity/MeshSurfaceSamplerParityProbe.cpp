@@ -60,15 +60,24 @@ void addColor(std::shared_ptr<BufferGeometry>& geometry) {
     }
     geometry->setAttribute("color", std::make_shared<Float32BufferAttribute>(values, 3));
 }
+// Kinds 6 and 7 are the box in indexed and non-indexed form with an all-zero colour attribute,
+// so a weight attribute whose total is zero can be exercised.
+void addZeroColor(std::shared_ptr<BufferGeometry>& geometry) {
+    const double count = geometry->getAttribute("position")->getCount();
+    std::vector<double> values(std::size_t(count) * 3, 0.);
+    geometry->setAttribute("color", std::make_shared<Float32BufferAttribute>(values, 3));
+}
 std::shared_ptr<Mesh> buildMesh(double kind) {
     if (kind == 5) return std::make_shared<Mesh>(); // empty geometry: no position attribute
     std::shared_ptr<BufferGeometry> geometry;
-    if (kind == 0 || kind == 2) {
+    if (kind == 0 || kind == 2 || kind == 6) {
         geometry = std::make_shared<BoxGeometry>(1, 1, 1);
         if (kind == 2) addColor(geometry);
-    } else if (kind == 1 || kind == 3) {
+        if (kind == 6) addZeroColor(geometry);
+    } else if (kind == 1 || kind == 3 || kind == 7) {
         geometry = std::make_shared<BoxGeometry>(1, 1, 1)->toNonIndexed();
         if (kind == 3) addColor(geometry);
+        if (kind == 7) addZeroColor(geometry);
     } else if (kind == 4) {
         geometry = std::make_shared<SphereGeometry>(1, 8, 6);
     } else {
