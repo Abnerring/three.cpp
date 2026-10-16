@@ -340,6 +340,8 @@ if(THREECPP_BUILD_ADDONS)
     target_link_libraries(ThreeJsFileLoaderParityProbe PRIVATE threecpp::threecpp)
     add_executable(ThreeJsXYZLoaderParityProbe unit/utils/parity/XYZLoaderParityProbe.cpp)
     target_link_libraries(ThreeJsXYZLoaderParityProbe PRIVATE threecpp::addons)
+    add_executable(ThreeJsSTLLoaderParityProbe unit/utils/parity/STLLoaderParityProbe.cpp)
+    target_link_libraries(ThreeJsSTLLoaderParityProbe PRIVATE threecpp::addons)
     add_executable(ThreeJsAnimationClipCreatorParityProbe unit/utils/parity/AnimationClipCreatorParityProbe.cpp)
     target_link_libraries(ThreeJsAnimationClipCreatorParityProbe PRIVATE threecpp::addons)
     add_executable(ThreeJsColorSpacesParityProbe unit/utils/parity/ColorSpacesParityProbe.cpp)
@@ -840,6 +842,9 @@ if(THREECPP_NODE_EXECUTABLE)
             add_test(NAME threecpp.threejs-xyz-loader-parity
                 COMMAND "${THREECPP_NODE_EXECUTABLE}" "${CMAKE_CURRENT_SOURCE_DIR}/unit/utils/parity/compare-xyz-loader.mjs"
                 "${THREEJS_SOURCE_DIR}" "$<TARGET_FILE:ThreeJsXYZLoaderParityProbe>")
+            add_test(NAME threecpp.threejs-stl-loader-parity
+                COMMAND "${THREECPP_NODE_EXECUTABLE}" "${CMAKE_CURRENT_SOURCE_DIR}/unit/utils/parity/compare-stl-loader.mjs"
+                "${THREEJS_SOURCE_DIR}" "$<TARGET_FILE:ThreeJsSTLLoaderParityProbe>")
             add_test(NAME threecpp.threejs-mesh-surface-sampler-parity
                 COMMAND "${THREECPP_NODE_EXECUTABLE}" "${CMAKE_CURRENT_SOURCE_DIR}/unit/utils/parity/compare-mesh-surface-sampler.mjs"
                 "${THREEJS_SOURCE_DIR}" "$<TARGET_FILE:ThreeJsMeshSurfaceSamplerParityProbe>")
