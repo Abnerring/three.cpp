@@ -194,8 +194,8 @@
     "note": "Accepted port scope is src and examples/jsm, including tracked third-party dependencies. Editor/manual web applications are excluded from native application rewrites. Native host behavior, packaging and all three platforms require separate implementation and verification evidence."
   },
   "counts": {
-    "partial-unverified": 280,
-    "missing": 661,
+    "partial-unverified": 281,
+    "missing": 660,
     "vulkan-port-pending": 290,
     "dependency-unverified": 20
   },
@@ -211,8 +211,8 @@
     "examples/jsm": {
       "modules": 496,
       "counts": {
-        "missing": 393,
-        "partial-unverified": 83,
+        "missing": 392,
+        "partial-unverified": 84,
         "dependency-unverified": 20
       }
     }
@@ -439,7 +439,7 @@
       "path": "examples/jsm/loaders",
       "upstreamFiles": 52,
       "moduleCount": 52,
-      "modulesWithCppFiles": 1,
+      "modulesWithCppFiles": 2,
       "verifiedComplete": 0
     },
     {
@@ -27839,11 +27839,11 @@
       "scope": "examples/jsm",
       "kind": "addon",
       "upstreamSha256": "84e4aea717944bb0645f3eb8809d44b685c3a1ad571fd802369a8cac789b1125",
-      "header": null,
-      "implementation": null,
+      "header": "examples/jsm/loaders/STLLoader.h",
+      "implementation": "examples/jsm/loaders/STLLoader.cpp",
       "expectedHeader": "examples/jsm/loaders/STLLoader.h",
       "expectedImplementation": "examples/jsm/loaders/STLLoader.cpp",
-      "status": "missing",
+      "status": "partial-unverified",
       "verifiedComplete": false,
       "apiExtraction": "static-only",
       "verification": {
@@ -28178,7 +28178,9 @@
           "pointer": "/modules/979"
         },
         "upstreamUnitTests": [],
-        "cppUnitTests": [],
+        "cppUnitTests": [
+          "test/unit/addons/loaders/XYZLoader.tests.cpp"
+        ],
         "reviewedImplementation": [],
         "differentialResults": [],
         "renderingResults": [],
