@@ -276,6 +276,7 @@ if(THREECPP_BUILD_ADDONS)
         unit/addons/helpers/NativeObjectExtension.tests.cpp
         unit/addons/utils/SortUtils.tests.cpp
   unit/addons/loaders/XYZLoader.tests.cpp
+  unit/addons/loaders/STLLoader.tests.cpp
   unit/addons/loaders/XYZLoaderLoad.tests.cpp
         unit/addons/utils/SkeletonUtils.tests.cpp
         unit/addons/utils/BufferGeometryUtils.tests.cpp
