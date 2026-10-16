@@ -27,7 +27,7 @@ namespace MathUtils
 
     static const HIGH_PRECISION DEG2RAD = MATH_PI / 180.0;
     static const HIGH_PRECISION RAD2DEG = 180.0 / MATH_PI;
-    static const HIGH_PRECISION LN2 = 0.6931471805599453;  // std::log(2.0)
+    static const HIGH_PRECISION LN2 = 0.6931471805599453;  // JSNumberMath::log(2.0)
 
     // http://stackoverflow.com/questions/105034/how-to-create-a-guid-uuid-in-javascript/21963136#21963136
     std::string generateUUID()
@@ -108,7 +108,7 @@ namespace MathUtils
     // http://www.rorydriscoll.com/2016/03/07/frame-rate-independent-damping-using-lerp/
     HIGH_PRECISION damp(HIGH_PRECISION x, HIGH_PRECISION y, HIGH_PRECISION lambda, HIGH_PRECISION dt)
     {
-        return lerp(x, y, 1 - std::exp(-lambda * dt));
+        return lerp(x, y, 1 - JSNumberMath::exp(-lambda * dt));
     }
 
     // https://www.desmos.com/calculator/vcsjnyz7x4
@@ -183,17 +183,17 @@ namespace MathUtils
 
     bool isPowerOfTwo(HIGH_PRECISION value)
     {
-        return std::isfinite(value) && value > 0 && std::floor(value) == value && std::pow(2.0, MathUtils::round(std::log2(value))) == value;
+        return std::isfinite(value) && value > 0 && std::floor(value) == value && JSNumberMath::pow(2.0, MathUtils::round(JSNumberMath::log2(value))) == value;
     }
 
     HIGH_PRECISION ceilPowerOfTwo(HIGH_PRECISION value)
     {
-        return std::pow(2, std::ceil(std::log(value) / LN2));
+        return JSNumberMath::pow(2, std::ceil(JSNumberMath::log(value) / LN2));
     }
 
     HIGH_PRECISION floorPowerOfTwo(HIGH_PRECISION value)
     {
-        return std::pow(2, std::floor(std::log(value) / LN2));
+        return JSNumberMath::pow(2, std::floor(JSNumberMath::log(value) / LN2));
     }
 
     HIGH_PRECISION round(HIGH_PRECISION value)

@@ -283,6 +283,7 @@ if(THREECPP_BUILD_ADDONS)
         unit/addons/math/OBB.tests.cpp
         unit/addons/math/SimplexNoise.tests.cpp
         unit/addons/math/JSNumberMathTrig.tests.cpp
+        unit/addons/math/JSNumberMathExpLog.tests.cpp
         unit/addons/geometries/ParametricFunctions.tests.cpp
         unit/addons/geometries/ParametricGeometry.tests.cpp
         unit/addons/geometries/BoxLineGeometry.tests.cpp
@@ -316,8 +317,12 @@ if(THREECPP_BUILD_ADDONS)
     target_link_libraries(ThreeJsAddonMathParityProbe PRIVATE threecpp::addons)
     add_executable(ThreeJsMathTrigParityProbe unit/utils/parity/MathTrigParityProbe.cpp)
     target_link_libraries(ThreeJsMathTrigParityProbe PRIVATE threecpp::addons)
+    add_executable(ThreeJsMathExpLogParityProbe unit/utils/parity/MathExpLogParityProbe.cpp)
+    target_link_libraries(ThreeJsMathExpLogParityProbe PRIVATE threecpp::addons)
     add_executable(ThreeJsMathCoreTrigParityProbe unit/utils/parity/MathCoreTrigParityProbe.cpp)
     target_link_libraries(ThreeJsMathCoreTrigParityProbe PRIVATE threecpp::threecpp)
+    add_executable(ThreeJsColorMathParityProbe unit/utils/parity/ColorMathParityProbe.cpp)
+    target_link_libraries(ThreeJsColorMathParityProbe PRIVATE threecpp::threecpp)
     add_executable(ThreeJsColorSpacesParityProbe unit/utils/parity/ColorSpacesParityProbe.cpp)
     target_link_libraries(ThreeJsColorSpacesParityProbe PRIVATE threecpp::addons)
     add_executable(ThreeJsSimplexNoiseParityProbe unit/utils/parity/SimplexNoiseParityProbe.cpp)
@@ -791,9 +796,15 @@ if(THREECPP_NODE_EXECUTABLE)
             add_test(NAME threecpp.threejs-math-trig-parity
                 COMMAND "${THREECPP_NODE_EXECUTABLE}" "${CMAKE_CURRENT_SOURCE_DIR}/unit/utils/parity/compare-math-trig.mjs"
                 "${THREEJS_SOURCE_DIR}" "$<TARGET_FILE:ThreeJsMathTrigParityProbe>")
+            add_test(NAME threecpp.threejs-math-exp-log-parity
+                COMMAND "${THREECPP_NODE_EXECUTABLE}" "${CMAKE_CURRENT_SOURCE_DIR}/unit/utils/parity/compare-math-exp-log.mjs"
+                "${THREEJS_SOURCE_DIR}" "$<TARGET_FILE:ThreeJsMathExpLogParityProbe>")
             add_test(NAME threecpp.threejs-math-core-trig-parity
                 COMMAND "${THREECPP_NODE_EXECUTABLE}" "${CMAKE_CURRENT_SOURCE_DIR}/unit/utils/parity/compare-math-core-trig.mjs"
                 "${THREEJS_SOURCE_DIR}" "$<TARGET_FILE:ThreeJsMathCoreTrigParityProbe>")
+            add_test(NAME threecpp.threejs-color-math-parity
+                COMMAND "${THREECPP_NODE_EXECUTABLE}" "${CMAKE_CURRENT_SOURCE_DIR}/unit/utils/parity/compare-color-math.mjs"
+                "${THREEJS_SOURCE_DIR}" "$<TARGET_FILE:ThreeJsColorMathParityProbe>")
             add_test(NAME threecpp.threejs-color-spaces-parity
                 COMMAND "${THREECPP_NODE_EXECUTABLE}" "${CMAKE_CURRENT_SOURCE_DIR}/unit/utils/parity/compare-color-spaces.mjs"
                 "${THREEJS_SOURCE_DIR}" "$<TARGET_FILE:ThreeJsColorSpacesParityProbe>")

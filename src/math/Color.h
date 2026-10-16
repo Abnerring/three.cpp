@@ -266,35 +266,9 @@ public:
      */
     Color &offsetHSL(HIGH_PRECISION h, HIGH_PRECISION s, HIGH_PRECISION l);
 
-    /**
-     * @brief 从颜色复制并进行 gamma 校正
-     * @param color 源颜色
-     * @param gammaFactor gamma 因子，默认 2.0
-     * @return Color& 自身引用
-     */
-    Color &copyGammaToLinear(const Color &color, HIGH_PRECISION gammaFactor = 2.0f);
-
-    /**
-     * @brief 从颜色复制并进行逆 gamma 校正
-     * @param color 源颜色
-     * @param gammaFactor gamma 因子，默认 2.0
-     * @return Color& 自身引用
-     */
-    Color &copyLinearToGamma(const Color &color, HIGH_PRECISION gammaFactor = 2.0f);
-
-    /**
-     * @brief gamma 校正（原地）
-     * @param gammaFactor gamma 因子，默认 2.0
-     * @return Color& 自身引用
-     */
-    Color &convertGammaToLinear(HIGH_PRECISION gammaFactor = 2.0f);
-
-    /**
-     * @brief 逆 gamma 校正（原地）
-     * @param gammaFactor gamma 因子，默认 2.0
-     * @return Color& 自身引用
-     */
-    Color &convertLinearToGamma(HIGH_PRECISION gammaFactor = 2.0f);
+    // The gamma-factor conversions of older three.js releases are intentionally absent: the
+    // pinned r187 Color exposes only copySRGBToLinear / copyLinearToSRGB /
+    // convertSRGBToLinear / convertLinearToSRGB below.
 
 public:
     /** @brief 加法运算符 @return 新颜色 */

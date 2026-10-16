@@ -1,10 +1,16 @@
-// Ported from three.js ColorManagement.js; see THREEJS-LICENSE.
+﻿// Ported from three.js ColorManagement.js; see THREEJS-LICENSE.
 #include "math/ColorManagement.h"
+#include "math/JSNumberMath.h"
 #include "math/Color.h"
+#include "math/JSNumberMath.h"
 #include "math/Matrix3.h"
+#include "math/JSNumberMath.h"
 #include "core/NativeObject.h"
+#include "math/JSNumberMath.h"
 #include "core/JSModuleObject.h"
+#include "math/JSNumberMath.h"
 #include "constants.h"
+#include "math/JSNumberMath.h"
 namespace {
 using Args=std::vector<JSValue>;
 JSValue arg(const Args& args,std::size_t i){return i<args.size()?args[i]:JSValue();}
@@ -13,9 +19,9 @@ void literal(JSValue object,const char* key,JSValue value){object.defineProperty
 JSValue lookup(const JSValue& self,const JSValue& space){auto spaces=self.get("spaces");return spaces.get(space);}
 double transfer(const JSValue& value,bool toSRGB) {
     const auto comparison=value.toNumber();
-    if(toSRGB){if(comparison<.0031308)return value.toNumber()*12.92;return 1.055*std::pow(value.toNumber(),.41666)-.055;}
+    if(toSRGB){if(comparison<.0031308)return value.toNumber()*12.92;return 1.055*JSNumberMath::pow(value.toNumber(),.41666)-.055;}
     if(comparison<.04045)return value.toNumber()*.0773993808;
-    return std::pow(value.toNumber()*.9478672986+.0521327014,2.4);
+    return JSNumberMath::pow(value.toNumber()*.9478672986+.0521327014,2.4);
 }
 JSValue convert(const JSValue& self,const Args& args,const Args&) {
     auto color=arg(args,0);const auto source=arg(args,1),target=arg(args,2);

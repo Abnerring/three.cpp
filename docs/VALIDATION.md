@@ -1,5 +1,15 @@
 # 验证记录
 
+## 当前追加验证：exp/log/log2 与色彩/MathUtils 对齐，2026-10-17
+
+- 承接上一轮登记的非三角函数边界，`JSNumberMath` 新增 `exp`/`log`/`log2`（子代理实现、主会话复核），逐行取自同一份固定 `ieee754.cc`；`log2` 保留上游的 `ivln2hi`/`ivln2lo` 硬编码拆分与 Dekker 拆分/`spadd`，`k_log1p` 按约定改为文件局部 `kernelLog1p`。
+- 新函数差分：`threecpp.threejs-math-exp-log-parity` **2,869 个场景**（971 exp、948 log、948 log2），与固定 Node v26.5.0 全局 `Math` **逐位一致，0 处不符**；覆盖 0/±0/±1/subnormal/±1e300/1e308/±Infinity/NaN、各分支边界（`o_threshold`/`u_threshold`、`2^-20` 快速路径、`sqrt(2)` 抵消位、次正规缩放）与 356 个伪随机输入。子代理另做了**灵敏度反向对照**：同一比较接受 `exp(1)`、拒绝其 ±1 ulp 邻居、拒绝 `"-0"` 与 `0` 混同，证明“0 处不符”是真实的位级结论。单测 3 cases / 47 assertions。
+- 调用点差分：新增 `threecpp.threejs-color-math-parity`，**146 个场景逐位一致**（60 个 `Color` sRGB 转换场景 + `damp` + `isPowerOfTwo`/`floorPowerOfTwo`/`ceilPowerOfTwo`），并复用既有 `threecpp.threejs-color-management-parity` 验证 sRGB 传递函数。
+- 该差分立刻抓到一处探针缺陷：`D NaN 1 1 1` 场景下 MSVC 的 `operator>>` 不接受 `"NaN"` 拼写，导致四个参数静默保持 0；改为统一走 `parse()` 后通过（属验证脚本问题，非实现问题）。
+- 按上游 r187 移除 `Color` 的四个历史 gamma API（`copyGammaToLinear`/`copyLinearToGamma`/`convertGammaToLinear`/`convertLinearToGamma`），仓库内无其他调用点。
+- 回归：核心单测 **662 cases / 205,175 assertions** 通过；addons 全套 **133 cases / 22,776 assertions** 通过；差分网络 **126/126 通过**；port-audit 无模块状态变化。
+- 过程中的一处操作失误已修复并记录教训：用 PowerShell 文本往返改写 `docs/PORTING.md` 时引入了 BOM 并损坏了内容（278 行丢失），已从 git 恢复并改用 edit 工具重新应用；同时确认 `MathUtils.cpp`/`ColorManagement.cpp`/`VulkanRenderer.cpp` 的 BOM 是仓库既有状态，非本次引入。
+
 ## 当前追加验证：核心三角函数全面对齐 V8 fdlibm，2026-10-17
 
 - 承接上一轮 Matrix4 的发现，把 `src/` 内全部三角函数调用对齐固定上游：`JSNumberMath` 新增 `tan`/`asin`/`atan`/`atan2`（子代理实现，主会话复核），随后 **117 处调用点（29 个文件）** 改为 `JSNumberMath`，`src/` 内不再有 `std::sin/cos/tan/asin/acos/atan/atan2`。

@@ -1,8 +1,13 @@
 #include "math/Color.h"
+#include "math/JSNumberMath.h"
 #include "core/BufferAttribute.h"
+#include "math/JSNumberMath.h"
 #include "math/Vector3.h"
+#include "math/JSNumberMath.h"
 #include "math/Vector4.h"
+#include "math/JSNumberMath.h"
 #include "math/MathUtils.h"
+#include "math/JSNumberMath.h"
 #include <algorithm>
 #include <cmath>
 #include <sstream>
@@ -445,33 +450,9 @@ Color &Color::offsetHSL(HIGH_PRECISION h, HIGH_PRECISION s, HIGH_PRECISION l)
     return *this;
 }
 
-Color &Color::copyGammaToLinear(const Color &color, HIGH_PRECISION gammaFactor)
-{
-    this->r = std::pow(color.r, gammaFactor);
-    this->g = std::pow(color.g, gammaFactor);
-    this->b = std::pow(color.b, gammaFactor);
-    return *this;
-}
-
-Color &Color::copyLinearToGamma(const Color &color, HIGH_PRECISION gammaFactor)
-{
-    auto inverseGamma = 1.0f / gammaFactor;
-    return copyGammaToLinear(color, inverseGamma);
-}
-
-Color &Color::convertGammaToLinear(HIGH_PRECISION gammaFactor)
-{
-    this->r = std::pow(this->r, gammaFactor);
-    this->g = std::pow(this->g, gammaFactor);
-    this->b = std::pow(this->b, gammaFactor);
-    return *this;
-}
-
-Color &Color::convertLinearToGamma(HIGH_PRECISION gammaFactor)
-{
-    auto inverseGamma = 1.0f / gammaFactor;
-    return convertGammaToLinear(inverseGamma);
-}
+// The gamma-factor conversions ( copyGammaToLinear / copyLinearToGamma / convertGammaToLinear /
+// convertLinearToGamma ) are intentionally absent: the pinned r187 Color exposes only the
+// sRGB variants, which route through ColorManagement's SRGBToLinear / LinearToSRGB.
 
 // Operators
 Color Color::operator+(const Color &c) const { return clone().add(c); }

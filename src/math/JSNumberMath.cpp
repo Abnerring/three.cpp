@@ -16,7 +16,8 @@
 // Extracted from Node.js v26.5.0 / V8 14.6.202.34-node.24.
 // https://github.com/nodejs/node/blob/v26.5.0/deps/v8/src/base/ieee754.cc
 // Original file SHA-256: badd30a2643ed785dcfbbce42f95c2522ccea3605cd39e2933467688aae1de14
-// Retains the full sin/cos/tan range reduction and the acos/asin/atan/atan2 algorithms.
+// Retains the full sin/cos/tan range reduction, the acos/asin/atan/atan2 algorithms, and the
+// exp/log/log2 entry points with the kernelLog1p helper and its Lg1..Lg7 coefficients.
 // Adaptations only: namespace, standard bit_cast, helper names, compiler annotations, and
 // explicit narrowing casts. Node Windows uses this fdlibm path (no libm-trig flag).
 
@@ -1417,6 +1418,467 @@ double atan2(double y, double x) {
     default:                   /* case 3 */
       return (z - pi_lo) - pi; /* atan(-,-) */
   }
+}
+
+/* exp(x)
+ * Returns the exponential of x.
+ *
+ * Method
+ *   1. Argument reduction:
+ *      Reduce x to an r so that |r| <= 0.5*ln2 ~ 0.34658.
+ *      Given x, find r and integer k such that
+ *
+ *               x = k*ln2 + r,  |r| <= 0.5*ln2.
+ *
+ *      Here r will be represented as r = hi-lo for better
+ *      accuracy.
+ *
+ *   2. Approximation of exp(r) by a special rational function on
+ *      the interval [0,0.34658]:
+ *      Write
+ *          R(r**2) = r*(exp(r)+1)/(exp(r)-1) = 2 + r*r/6 - r**4/360 + ...
+ *      We use a special Remes algorithm on [0,0.34658] to generate
+ *      a polynomial of degree 5 to approximate R. The maximum error
+ *      of this polynomial approximation is bounded by 2**-59. In
+ *      other words,
+ *          R(z) ~ 2.0 + P1*z + P2*z**2 + P3*z**3 + P4*z**4 + P5*z**5
+ *      (where z=r*r, and the values of P1 to P5 are listed below)
+ *      and
+ *          |                  5          |     -59
+ *          | 2.0+P1*z+...+P5*z   -  R(z) | <= 2
+ *          |                             |
+ *      The computation of exp(r) thus becomes
+ *                             2*r
+ *              exp(r) = 1 + -------
+ *                            R - r
+ *                                 r*R1(r)
+ *                     = 1 + r + ----------- (for better accuracy)
+ *                                2 - R1(r)
+ *      where
+ *                               2       4             10
+ *              R1(r) = r - (P1*r  + P2*r  + ... + P5*r   ).
+ *
+ *   3. Scale back to obtain exp(x):
+ *      From step 1, we have
+ *         exp(x) = 2^k * exp(r)
+ *
+ * Special cases:
+ *      exp(INF) is INF, exp(NaN) is NaN;
+ *      exp(-INF) is 0, and
+ *      for finite argument, only exp(0)=1 is exact.
+ *
+ * Accuracy:
+ *      according to an error analysis, the error is always less than
+ *      1 ulp (unit in the last place).
+ *
+ * Misc. info.
+ *      For IEEE double
+ *          if x >  7.09782712893383973096e+02 then exp(x) overflow
+ *          if x < -7.45133219101941108420e+02 then exp(x) underflow
+ *
+ * Constants:
+ * The hexadecimal values are the intended ones for the following
+ * constants. The decimal values may be used, provided that the
+ * compiler will convert from decimal to binary accurately enough
+ * to produce the hexadecimal values shown.
+ */
+double exp(double x) {
+  static const double
+      one = 1.0,
+      halF[2] = {0.5, -0.5},
+      o_threshold = 7.09782712893383973096e+02,  /* 0x40862E42, 0xFEFA39EF */
+      u_threshold = -7.45133219101941108420e+02, /* 0xC0874910, 0xD52D3051 */
+      ln2HI[2] = {6.93147180369123816490e-01,    /* 0x3FE62E42, 0xFEE00000 */
+                  -6.93147180369123816490e-01},  /* 0xBFE62E42, 0xFEE00000 */
+      ln2LO[2] = {1.90821492927058770002e-10,    /* 0x3DEA39EF, 0x35793C76 */
+                  -1.90821492927058770002e-10},  /* 0xBDEA39EF, 0x35793C76 */
+      invln2 = 1.44269504088896338700e+00,       /* 0x3FF71547, 0x652B82FE */
+      P1 = 1.66666666666666019037e-01,           /* 0x3FC55555, 0x5555553E */
+      P2 = -2.77777777770155933842e-03,          /* 0xBF66C16C, 0x16BEBD93 */
+      P3 = 6.61375632143793436117e-05,           /* 0x3F11566A, 0xAF25DE2C */
+      P4 = -1.65339022054652515390e-06,          /* 0xBEBBBD41, 0xC5D26BF1 */
+      P5 = 4.13813679705723846039e-08,           /* 0x3E663769, 0x72BEA4D0 */
+      E = 2.718281828459045;                     /* 0x4005BF0A, 0x8B145769 */
+
+  static volatile double
+      huge = 1.0e+300,
+      twom1000 = 9.33263618503218878990e-302, /* 2**-1000=0x01700000,0*/
+      two1023 = 8.988465674311579539e307;     /* 0x1p1023 */
+
+  double y, hi = 0.0, lo = 0.0, c, t, twopk;
+  int32_t k = 0, xsb;
+  uint32_t hx;
+
+  GET_HIGH_WORD(hx, x);
+  xsb = static_cast<int32_t>((hx >> 31) & 1); /* sign bit of x */
+  hx &= 0x7FFFFFFF;                           /* high word of |x| */
+
+  /* filter out non-finite argument */
+  if (hx >= 0x40862E42) { /* if |x|>=709.78... */
+    if (hx >= 0x7FF00000) {
+      uint32_t lx;
+      GET_LOW_WORD(lx, x);
+      if (((hx & 0xFFFFF) | lx) != 0)
+        return x + x; /* NaN */
+      else
+        return (xsb == 0) ? x : 0.0; /* exp(+-inf)={inf,0} */
+    }
+    if (x > o_threshold) return huge * huge;         /* overflow */
+    if (x < u_threshold) return twom1000 * twom1000; /* underflow */
+  }
+
+  /* argument reduction */
+  if (hx > 0x3FD62E42) {   /* if  |x| > 0.5 ln2 */
+    if (hx < 0x3FF0A2B2) { /* and |x| < 1.5 ln2 */
+      /* TODO(rtoy): We special case exp(1) here to return the correct
+       * value of E, as the computation below would get the last bit
+       * wrong. We should probably fix the algorithm instead.
+       */
+      if (x == 1.0) return E;
+      hi = x - ln2HI[xsb];
+      lo = ln2LO[xsb];
+      k = 1 - xsb - xsb;
+    } else {
+      k = static_cast<int>(invln2 * x + halF[xsb]);
+      t = k;
+      hi = x - t * ln2HI[0]; /* t*ln2HI is exact here */
+      lo = t * ln2LO[0];
+    }
+    x = hi - lo;
+  } else if (hx < 0x3E300000) {         /* when |x|<2**-28 */
+    if (huge + x > one) return one + x; /* trigger inexact */
+  } else {
+    k = 0;
+  }
+
+  /* x is now in primary range */
+  t = x * x;
+  if (k >= -1021) {
+    INSERT_WORDS(
+        twopk,
+        0x3FF00000 + static_cast<int32_t>(static_cast<uint32_t>(k) << 20), 0);
+  } else {
+    INSERT_WORDS(twopk, 0x3FF00000 + (static_cast<uint32_t>(k + 1000) << 20),
+                 0);
+  }
+  c = x - t * (P1 + t * (P2 + t * (P3 + t * (P4 + t * P5))));
+  if (k == 0) {
+    return one - ((x * c) / (c - 2.0) - x);
+  } else {
+    y = one - ((lo - (x * c) / (2.0 - c)) - hi);
+  }
+  if (k >= -1021) {
+    if (k == 1024) return y * 2.0 * two1023;
+    return y * twopk;
+  } else {
+    return y * twopk * twom1000;
+  }
+}
+
+/* log(x)
+ * Return the logrithm of x
+ *
+ * Method :
+ *   1. Argument Reduction: find k and f such that
+ *     x = 2^k * (1+f),
+ *     where  sqrt(2)/2 < 1+f < sqrt(2) .
+ *
+ *   2. Approximation of log(1+f).
+ *  Let s = f/(2+f) ; based on log(1+f) = log(1+s) - log(1-s)
+ *     = 2s + 2/3 s**3 + 2/5 s**5 + .....,
+ *         = 2s + s*R
+ *      We use a special Reme algorithm on [0,0.1716] to generate
+ *  a polynomial of degree 14 to approximate R The maximum error
+ *  of this polynomial approximation is bounded by 2**-58.45. In
+ *  other words,
+ *            2      4      6      8      10      12      14
+ *      R(z) ~ Lg1*s +Lg2*s +Lg3*s +Lg4*s +Lg5*s  +Lg6*s  +Lg7*s
+ *    (the values of Lg1 to Lg7 are listed in the program)
+ *  and
+ *      |      2          14          |     -58.45
+ *      | Lg1*s +...+Lg7*s    -  R(z) | <= 2
+ *      |                             |
+ *  Note that 2s = f - s*f = f - hfsq + s*hfsq, where hfsq = f*f/2.
+ *  In order to guarantee error in log below 1ulp, we compute log
+ *  by
+ *    log(1+f) = f - s*(f - R)  (if f is not too large)
+ *    log(1+f) = f - (hfsq - s*(hfsq+R)). (better accuracy)
+ *
+ *  3. Finally,  log(x) = k*ln2 + log(1+f).
+ *          = k*ln2_hi+(f-(hfsq-(s*(hfsq+R)+k*ln2_lo)))
+ *     Here ln2 is split into two floating point number:
+ *      ln2_hi + ln2_lo,
+ *     where n*ln2_hi is always exact for |n| < 2000.
+ *
+ * Special cases:
+ *  log(x) is NaN with signal if x < 0 (including -INF) ;
+ *  log(+INF) is +INF; log(0) is -INF with signal;
+ *  log(NaN) is that NaN with no signal.
+ *
+ * Accuracy:
+ *  according to an error analysis, the error is always less than
+ *  1 ulp (unit in the last place).
+ *
+ * Constants:
+ * The hexadecimal values are the intended ones for the following
+ * constants. The decimal values may be used, provided that the
+ * compiler will convert from decimal to binary accurately enough
+ * to produce the hexadecimal values shown.
+ */
+double log(double x) {
+  static const double                      /* -- */
+      ln2_hi = 6.93147180369123816490e-01, /* 3fe62e42 fee00000 */
+      ln2_lo = 1.90821492927058770002e-10, /* 3dea39ef 35793c76 */
+      two54 = 1.80143985094819840000e+16,  /* 43500000 00000000 */
+      Lg1 = 6.666666666666735130e-01,      /* 3FE55555 55555593 */
+      Lg2 = 3.999999999940941908e-01,      /* 3FD99999 9997FA04 */
+      Lg3 = 2.857142874366239149e-01,      /* 3FD24924 94229359 */
+      Lg4 = 2.222219843214978396e-01,      /* 3FCC71C5 1D8E78AF */
+      Lg5 = 1.818357216161805012e-01,      /* 3FC74664 96CB03DE */
+      Lg6 = 1.531383769920937332e-01,      /* 3FC39A09 D078C69F */
+      Lg7 = 1.479819860511658591e-01;      /* 3FC2F112 DF3E5244 */
+
+  static const double zero = 0.0;
+
+  double hfsq, f, s, z, R, w, t1, t2, dk;
+  int32_t k, hx, i, j;
+  uint32_t lx;
+
+  EXTRACT_WORDS(hx, lx, x);
+
+  k = 0;
+  if (hx < 0x00100000) { /* x < 2**-1022  */
+    if (((hx & 0x7FFFFFFF) | lx) == 0) {
+      return -std::numeric_limits<double>::infinity(); /* log(+-0)=-inf */
+    }
+    if (hx < 0) {
+      return std::numeric_limits<double>::signaling_NaN(); /* log(-#) = NaN */
+    }
+    k -= 54;
+    x *= two54; /* subnormal number, scale up x */
+    GET_HIGH_WORD(hx, x);
+  }
+  if (hx >= 0x7FF00000) return x + x;
+  k += (hx >> 20) - 1023;
+  hx &= 0x000FFFFF;
+  i = (hx + 0x95F64) & 0x100000;
+  SET_HIGH_WORD(x, hx | (i ^ 0x3FF00000)); /* normalize x or x/2 */
+  k += (i >> 20);
+  f = x - 1.0;
+  if ((0x000FFFFF & (2 + hx)) < 3) { /* -2**-20 <= f < 2**-20 */
+    if (f == zero) {
+      if (k == 0) {
+        return zero;
+      } else {
+        dk = static_cast<double>(k);
+        return dk * ln2_hi + dk * ln2_lo;
+      }
+    }
+    R = f * f * (0.5 - 0.33333333333333333 * f);
+    if (k == 0) {
+      return f - R;
+    } else {
+      dk = static_cast<double>(k);
+      return dk * ln2_hi - ((R - dk * ln2_lo) - f);
+    }
+  }
+  s = f / (2.0 + f);
+  dk = static_cast<double>(k);
+  z = s * s;
+  i = hx - 0x6147A;
+  w = z * z;
+  j = 0x6B851 - hx;
+  t1 = w * (Lg2 + w * (Lg4 + w * Lg6));
+  t2 = z * (Lg1 + w * (Lg3 + w * (Lg5 + w * Lg7)));
+  i |= j;
+  R = t2 + t1;
+  if (i > 0) {
+    hfsq = 0.5 * f * f;
+    if (k == 0)
+      return f - (hfsq - s * (hfsq + R));
+    else
+      return dk * ln2_hi - ((hfsq - (s * (hfsq + R) + dk * ln2_lo)) - f);
+  } else {
+    if (k == 0)
+      return f - s * (f - R);
+    else
+      return dk * ln2_hi - ((s * (f - R) - dk * ln2_lo) - f);
+  }
+}
+
+namespace {
+
+/*
+ * kernelLog1p(f):
+ * Return log(1+f) - f for 1+f in ~[sqrt(2)/2, sqrt(2)].
+ *
+ * The following describes the overall strategy for computing
+ * logarithms in base e.  The argument reduction and adding the final
+ * term of the polynomial are done by the caller for increased accuracy
+ * when different bases are used.
+ *
+ * Method :
+ *   1. Argument Reduction: find k and f such that
+ *         x = 2^k * (1+f),
+ *         where  sqrt(2)/2 < 1+f < sqrt(2) .
+ *
+ *   2. Approximation of log(1+f).
+ *      Let s = f/(2+f) ; based on log(1+f) = log(1+s) - log(1-s)
+ *            = 2s + 2/3 s**3 + 2/5 s**5 + .....,
+ *            = 2s + s*R
+ *      We use a special Reme algorithm on [0,0.1716] to generate
+ *      a polynomial of degree 14 to approximate R The maximum error
+ *      of this polynomial approximation is bounded by 2**-58.45. In
+ *      other words,
+ *          2      4      6      8      10      12      14
+ *          R(z) ~ Lg1*s +Lg2*s +Lg3*s +Lg4*s +Lg5*s  +Lg6*s  +Lg7*s
+ *      (the values of Lg1 to Lg7 are listed in the program)
+ *      and
+ *          |      2          14          |     -58.45
+ *          | Lg1*s +...+Lg7*s    -  R(z) | <= 2
+ *          |                             |
+ *      Note that 2s = f - s*f = f - hfsq + s*hfsq, where hfsq = f*f/2.
+ *      In order to guarantee error in log below 1ulp, we compute log
+ *      by
+ *          log(1+f) = f - s*(f - R)            (if f is not too large)
+ *          log(1+f) = f - (hfsq - s*(hfsq+R)). (better accuracy)
+ *
+ *   3. Finally,  log(x) = k*ln2 + log(1+f).
+ *          = k*ln2_hi+(f-(hfsq-(s*(hfsq+R)+k*ln2_lo)))
+ *      Here ln2 is split into two floating point number:
+ *          ln2_hi + ln2_lo,
+ *      where n*ln2_hi is always exact for |n| < 2000.
+ *
+ * Special cases:
+ *      log(x) is NaN with signal if x < 0 (including -INF) ;
+ *      log(+INF) is +INF; log(0) is -INF with signal;
+ *      log(NaN) is that NaN with no signal.
+ *
+ * Accuracy:
+ *      according to an error analysis, the error is always less than
+ *      1 ulp (unit in the last place).
+ *
+ * Constants:
+ * The hexadecimal values are the intended ones for the following
+ * constants. The decimal values may be used, provided that the
+ * compiler will convert from decimal to binary accurately enough
+ * to produce the hexadecimal values shown.
+ */
+
+static const double Lg1 = 6.666666666666735130e-01, /* 3FE55555 55555593 */
+    Lg2 = 3.999999999940941908e-01,                 /* 3FD99999 9997FA04 */
+    Lg3 = 2.857142874366239149e-01,                 /* 3FD24924 94229359 */
+    Lg4 = 2.222219843214978396e-01,                 /* 3FCC71C5 1D8E78AF */
+    Lg5 = 1.818357216161805012e-01,                 /* 3FC74664 96CB03DE */
+    Lg6 = 1.531383769920937332e-01,                 /* 3FC39A09 D078C69F */
+    Lg7 = 1.479819860511658591e-01;                 /* 3FC2F112 DF3E5244 */
+
+/*
+ * We always inline kernelLog1p(), since doing so produces a
+ * substantial performance improvement (~40% on amd64).
+ */
+double kernelLog1p(double f) {
+  double hfsq, s, z, R, w, t1, t2;
+
+  s = f / (2.0 + f);
+  z = s * s;
+  w = z * z;
+  t1 = w * (Lg2 + w * (Lg4 + w * Lg6));
+  t2 = z * (Lg1 + w * (Lg3 + w * (Lg5 + w * Lg7)));
+  R = t2 + t1;
+  hfsq = 0.5 * f * f;
+  return s * (hfsq + R);
+}
+
+} // namespace
+
+/*
+ * Return the base 2 logarithm of x.  See e_log.c and k_log.h for most
+ * comments.
+ *
+ * This reduces x to {k, 1+f} exactly as in e_log.c, then calls the kernel,
+ * then does the combining and scaling steps
+ *    log2(x) = (f - 0.5*f*f + k_log1p(f)) / ln2 + k
+ * in not-quite-routine extra precision.
+ */
+double log2(double x) {
+  static const double
+      two54 = 1.80143985094819840000e+16,   /* 0x43500000, 0x00000000 */
+      ivln2hi = 1.44269504072144627571e+00, /* 0x3FF71547, 0x65200000 */
+      ivln2lo = 1.67517131648865118353e-10; /* 0x3DE705FC, 0x2EEFA200 */
+
+  double f, hfsq, hi, lo, r, val_hi, val_lo, w, y;
+  int32_t i, k, hx;
+  uint32_t lx;
+
+  EXTRACT_WORDS(hx, lx, x);
+
+  k = 0;
+  if (hx < 0x00100000) { /* x < 2**-1022  */
+    if (((hx & 0x7FFFFFFF) | lx) == 0) {
+      return -std::numeric_limits<double>::infinity(); /* log(+-0)=-inf */
+    }
+    if (hx < 0) {
+      return std::numeric_limits<double>::signaling_NaN(); /* log(-#) = NaN */
+    }
+    k -= 54;
+    x *= two54; /* subnormal number, scale up x */
+    GET_HIGH_WORD(hx, x);
+  }
+  if (hx >= 0x7FF00000) return x + x;
+  if (hx == 0x3FF00000 && lx == 0) return 0.0; /* log(1) = +0 */
+  k += (hx >> 20) - 1023;
+  hx &= 0x000FFFFF;
+  i = (hx + 0x95F64) & 0x100000;
+  SET_HIGH_WORD(x, hx | (i ^ 0x3FF00000)); /* normalize x or x/2 */
+  k += (i >> 20);
+  y = static_cast<double>(k);
+  f = x - 1.0;
+  hfsq = 0.5 * f * f;
+  r = kernelLog1p(f);
+
+  /*
+   * f-hfsq must (for args near 1) be evaluated in extra precision
+   * to avoid a large cancellation when x is near sqrt(2) or 1/sqrt(2).
+   * This is fairly efficient since f-hfsq only depends on f, so can
+   * be evaluated in parallel with R.  Not combining hfsq with R also
+   * keeps R small (though not as small as a true `lo' term would be),
+   * so that extra precision is not needed for terms involving R.
+   *
+   * Compiler bugs involving extra precision used to break Dekker's
+   * theorem for spitting f-hfsq as hi+lo, unless double_t was used
+   * or the multi-precision calculations were avoided when double_t
+   * has extra precision.  These problems are now automatically
+   * avoided as a side effect of the optimization of combining the
+   * Dekker splitting step with the clear-low-bits step.
+   *
+   * y must (for args near sqrt(2) and 1/sqrt(2)) be added in extra
+   * precision to avoid a very large cancellation when x is very near
+   * these values.  Unlike the above cancellations, this problem is
+   * specific to base 2.  It is strange that adding +-1 is so much
+   * harder than adding +-ln2 or +-log10_2.
+   *
+   * This uses Dekker's theorem to normalize y+val_hi, so the
+   * compiler bugs are back in some configurations, sigh.  And I
+   * don't want to used double_t to avoid them, since that gives a
+   * pessimization and the support for avoiding the pessimization
+   * is not yet available.
+   *
+   * The multi-precision calculations for the multiplications are
+   * routine.
+   */
+  hi = f - hfsq;
+  SET_LOW_WORD(hi, 0);
+  lo = (f - hi) - hfsq + r;
+  val_hi = hi * ivln2hi;
+  val_lo = (lo + hi) * ivln2lo + lo * ivln2hi;
+
+  /* spadd(val_hi, val_lo, y), except for not using double_t: */
+  w = y + val_hi;
+  val_lo += (y - w) + val_hi;
+  val_hi = w;
+
+  return val_lo + val_hi;
 }
 
 // Math.pow of the pinned Node release. Node.js v26.5.0 enables V8's
