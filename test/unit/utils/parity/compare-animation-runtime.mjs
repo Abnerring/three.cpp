@@ -54,4 +54,9 @@ for(const kind of ['interpolate','copy','interval','settings','throwInterval','g
     expected[`hook:${kind}`]={samples,identities,trace,cached:value._cachedIndex};
 }
 const actual=JSON.parse(execFileSync(path.resolve(process.argv[3]),[],{encoding:'utf8'}));assert.deepEqual(actual,expected);
-console.log(`Animation runtime parity: ${Object.keys(expected).length} scenarios; live fields, prototypes, buffers and identity match ${lock.commit}`);
+// The probe output is compared as one JSON blob, so the strength of this test is the number of
+// scalar values inside it, not the number of top-level scenarios; report both.
+const leaves = value => value !== null && typeof value === 'object'
+    ? Object.values(value).reduce((sum, entry) => sum + leaves(entry), 0)
+    : 1;
+console.log(`Animation runtime parity: ${Object.keys(expected).length} scenarios / ${leaves(expected)} compared values; live fields, prototypes, buffers and identity match ${lock.commit}`);
