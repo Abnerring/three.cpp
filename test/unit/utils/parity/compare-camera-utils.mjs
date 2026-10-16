@@ -27,7 +27,14 @@ const scenarios=[
     {eye:[0.5,0.25,4], near:0.5, far:100, aspect:0.75, estimate:true, corners:[[-2,-1,0.5],[2,-1,0.5],[-2,3,1.5]]},
     {eye:[-3,2,7], near:0.01, far:5000, aspect:2, estimate:false, corners:[[0,0,0],[4,0,1],[0,3,-1]]},
     {eye:[1,1,1], near:1, far:2, aspect:1, estimate:true, corners:[[0,0,0],[1,0,0],[0,1,0]]},
-    {eye:[0,0,0], near:0.1, far:10, aspect:1, estimate:false, corners:[[-1,-1,-5],[1,-1,-5],[-1,1,-5]]}
+    {eye:[0,0,0], near:0.1, far:10, aspect:1, estimate:false, corners:[[-1,-1,-5],[1,-1,-5],[-1,1,-5]]},
+    // Degenerate and extreme corners: a collapsed corner pair, corners behind the eye, a tiny
+    // and a huge screen, and an eye exactly on the corner plane (d = 0), which divides by zero.
+    {eye:[0,0,5], near:0.1, far:2000, aspect:1, estimate:true, corners:[[1,-1,0],[1,-1,0],[-1,1,0]]},
+    {eye:[0,0,5], near:0.1, far:2000, aspect:1, estimate:false, corners:[[-1,-1,6],[1,-1,6],[-1,1,6]]},
+    {eye:[0,0,0], near:0.1, far:10, aspect:1, estimate:true, corners:[[-1e-8,-1e-8,0],[1e-8,-1e-8,0],[-1e-8,1e-8,0]]},
+    {eye:[0,0,5], near:0.1, far:2000, aspect:1, estimate:true, corners:[[-1e6,-1e6,0],[1e6,-1e6,0],[-1e6,1e6,0]]},
+    {eye:[1,1,0], near:0.5, far:100, aspect:1, estimate:true, corners:[[-1,-1,0],[1,-1,0],[-1,1,0]]}
 ];
 const lines=scenarios.map(s=>`F ${s.eye.map(token).join(' ')} ${token(s.near)} ${token(s.far)} ${token(s.aspect)} `
     +`${s.corners.flat().map(token).join(' ')} ${s.estimate?1:0}`);
