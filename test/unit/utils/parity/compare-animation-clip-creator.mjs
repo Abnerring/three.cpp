@@ -51,6 +51,16 @@ for(const duration of [0,1,2.5]) for(const scale of [1,0.5,3]){
 // as 0/1; clipJSON normalises exactly that representation difference. duration 0 stays in: all
 // three times collapse to 0 there, which is worth pinning down rather than skipping.
 for(const duration of [0,1,2.5,7]) scenarios.push({kind:4,first:duration,second:0,args:[],values:draws});
+// Non-finite and negative periods/durations: they flow straight into the times and value arrays
+// and into AnimationClip's duration, and the pinned KeyframeTrack only rejects an EMPTY times
+// array, so NaN and Infinity times are accepted and must be reproduced exactly.
+for(const first of [NaN,Infinity,-Infinity,-1,-0]){
+    scenarios.push({kind:0,first,second:0,args:[],values:draws});
+    scenarios.push({kind:1,first,second:1,args:[],values:draws});
+    scenarios.push({kind:4,first,second:0,args:[],values:draws});
+}
+scenarios.push({kind:5,first:NaN,second:3,args:[],values:draws});
+scenarios.push({kind:5,first:Infinity,second:1,args:[],values:draws});
 for(const duration of [1,5]) for(const count of [0,1,2,5]){
     scenarios.push({kind:5,first:duration,second:count,args:[],values:draws});
 }
