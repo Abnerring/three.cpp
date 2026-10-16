@@ -1,5 +1,14 @@
 # 验证记录
 
+## 当前追加验证：addons math 与 geometries 两个集群，2026-10-17
+
+- 新增 `examples/jsm/math` 四模块（ImprovedNoise、ColorConverter、Capsule、OBB；实现由子代理完成，主会话复核并重新构建验证）与 `examples/jsm/geometries` 四模块（ParametricFunctions、ParametricGeometry、BoxLineGeometry、RoundedBoxGeometry；主会话自行实现）。两个集群各自一个差分探针，均直接导入固定 checkout 的上游模块并用 `assert.deepEqual` 比较，无容差。
+- `threecpp.threejs-addon-math-parity`：**5,316 个场景逐位一致**（ImprovedNoise 717、ColorConverter/Color 1741、Capsule 151、OBB 2707）；单测 14 cases / 2,007 assertions。
+- `threecpp.threejs-jsm-geometries-parity`：**111 个场景 / 34,168 个属性分量逐位一致**；单测 13 cases / 1,015 assertions。addons 全套 92 cases / 5,648 assertions 通过。
+- 该差分暴露并修正了核心 `src/math/Color.cpp` 的 `setHSL` 末位缺陷：上游为 `p + ( q - p ) * 6 * ( 2 / 3 - t )`，C++ 原实现把 `( 2 / 3 - t )` 先乘，产生 1 ulp 偏差。修正后 `color-management-unit`、`color-management-native-lifetime`、`threejs-color-management-parity` 均通过，确认无回归。这是本轮唯一的核心文件改动，由主会话审阅后保留。
+- 复核中发现并修正了自实现测试的两处问题：把 oracle 输出的 float32 属性值当作 double 期望值（改为按公式重算的 binary64 值），以及 RoundedBoxGeometry 缺少 `clone()` 覆写（上游 `new this.constructor().copy( this )` 会返回同类实例；C++ 基类 clone 只能返回 BufferGeometry）。两处均先由单测失败暴露，修正后差分与单测同时通过。
+- 审计重新生成：1,251 个模块，partial-unverified 214（+8）、missing 727（−8）、vulkan-port-pending 290、dependency-unverified 20；Acorn 解析错误 0。
+
 ## 当前追加验证：BufferGeometryUtils，2026-10-17
 
 - 新增 `examples/jsm/utils/BufferGeometryUtils`（14 个导出；`computeMikkTSpaceTangents` 因缺少第三方 MikkTSpace 依赖而显式抛错，不伪造结果）。实现由子代理完成，主会话另行复核并重新构建验证。

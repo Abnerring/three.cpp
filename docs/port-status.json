@@ -194,8 +194,8 @@
     "note": "Accepted port scope is src and examples/jsm, including tracked third-party dependencies. Editor/manual web applications are excluded from native application rewrites. Native host behavior, packaging and all three platforms require separate implementation and verification evidence."
   },
   "counts": {
-    "partial-unverified": 206,
-    "missing": 735,
+    "partial-unverified": 214,
+    "missing": 727,
     "vulkan-port-pending": 290,
     "dependency-unverified": 20
   },
@@ -211,8 +211,8 @@
     "examples/jsm": {
       "modules": 496,
       "counts": {
-        "missing": 466,
-        "partial-unverified": 10,
+        "missing": 458,
+        "partial-unverified": 18,
         "dependency-unverified": 20
       }
     }
@@ -299,7 +299,7 @@
       "path": "examples/jsm/geometries",
       "upstreamFiles": 9,
       "moduleCount": 9,
-      "modulesWithCppFiles": 0,
+      "modulesWithCppFiles": 4,
       "verifiedComplete": 0
     },
     {
@@ -495,7 +495,7 @@
       "path": "examples/jsm/math",
       "upstreamFiles": 10,
       "moduleCount": 10,
-      "modulesWithCppFiles": 0,
+      "modulesWithCppFiles": 4,
       "verifiedComplete": 0
     },
     {
@@ -23585,11 +23585,11 @@
       "scope": "examples/jsm",
       "kind": "addon",
       "upstreamSha256": "d29ec8ee1552a3f260f120a06659d9cc2df03c08009cbe81c8e857933f0c3fbd",
-      "header": null,
-      "implementation": null,
+      "header": "examples/jsm/geometries/BoxLineGeometry.h",
+      "implementation": "examples/jsm/geometries/BoxLineGeometry.cpp",
       "expectedHeader": "examples/jsm/geometries/BoxLineGeometry.h",
       "expectedImplementation": "examples/jsm/geometries/BoxLineGeometry.cpp",
-      "status": "missing",
+      "status": "partial-unverified",
       "verifiedComplete": false,
       "apiExtraction": "static-only",
       "verification": {
@@ -23598,7 +23598,9 @@
           "pointer": "/modules/811"
         },
         "upstreamUnitTests": [],
-        "cppUnitTests": [],
+        "cppUnitTests": [
+          "test/unit/addons/geometries/BoxLineGeometry.tests.cpp"
+        ],
         "reviewedImplementation": [],
         "differentialResults": [],
         "renderingResults": [],
@@ -23693,11 +23695,11 @@
       "scope": "examples/jsm",
       "kind": "addon",
       "upstreamSha256": "ec355434d1551efa7b667f38cd4c952800533f8e62d39934ef3b49da5e7aa20c",
-      "header": null,
-      "implementation": null,
+      "header": "examples/jsm/geometries/ParametricFunctions.h",
+      "implementation": "examples/jsm/geometries/ParametricFunctions.cpp",
       "expectedHeader": "examples/jsm/geometries/ParametricFunctions.h",
       "expectedImplementation": "examples/jsm/geometries/ParametricFunctions.cpp",
-      "status": "missing",
+      "status": "partial-unverified",
       "verifiedComplete": false,
       "apiExtraction": "static-only",
       "verification": {
@@ -23706,7 +23708,9 @@
           "pointer": "/modules/815"
         },
         "upstreamUnitTests": [],
-        "cppUnitTests": [],
+        "cppUnitTests": [
+          "test/unit/addons/geometries/ParametricFunctions.tests.cpp"
+        ],
         "reviewedImplementation": [],
         "differentialResults": [],
         "renderingResults": [],
@@ -23720,11 +23724,11 @@
       "scope": "examples/jsm",
       "kind": "addon",
       "upstreamSha256": "18b89f73cf04b60d251afbc65b5ee180b28b3b8fafd083b68d1c1c976e2b5680",
-      "header": null,
-      "implementation": null,
+      "header": "examples/jsm/geometries/ParametricGeometry.h",
+      "implementation": "examples/jsm/geometries/ParametricGeometry.cpp",
       "expectedHeader": "examples/jsm/geometries/ParametricGeometry.h",
       "expectedImplementation": "examples/jsm/geometries/ParametricGeometry.cpp",
-      "status": "missing",
+      "status": "partial-unverified",
       "verifiedComplete": false,
       "apiExtraction": "partial-static",
       "verification": {
@@ -23733,7 +23737,9 @@
           "pointer": "/modules/816"
         },
         "upstreamUnitTests": [],
-        "cppUnitTests": [],
+        "cppUnitTests": [
+          "test/unit/addons/geometries/ParametricGeometry.tests.cpp"
+        ],
         "reviewedImplementation": [],
         "differentialResults": [],
         "renderingResults": [],
@@ -23747,11 +23753,11 @@
       "scope": "examples/jsm",
       "kind": "addon",
       "upstreamSha256": "7a2c22bf84f41bac40effbb2ca6c239179089abf804cafac7a7ac8007a9d7fab",
-      "header": null,
-      "implementation": null,
+      "header": "examples/jsm/geometries/RoundedBoxGeometry.h",
+      "implementation": "examples/jsm/geometries/RoundedBoxGeometry.cpp",
       "expectedHeader": "examples/jsm/geometries/RoundedBoxGeometry.h",
       "expectedImplementation": "examples/jsm/geometries/RoundedBoxGeometry.cpp",
-      "status": "missing",
+      "status": "partial-unverified",
       "verifiedComplete": false,
       "apiExtraction": "static-only",
       "verification": {
@@ -23760,7 +23766,9 @@
           "pointer": "/modules/817"
         },
         "upstreamUnitTests": [],
-        "cppUnitTests": [],
+        "cppUnitTests": [
+          "test/unit/addons/geometries/RoundedBoxGeometry.tests.cpp"
+        ],
         "reviewedImplementation": [],
         "differentialResults": [],
         "renderingResults": [],
@@ -28791,11 +28799,11 @@
       "scope": "examples/jsm",
       "kind": "addon",
       "upstreamSha256": "f045c98ffcf83060c482e04704b469b384883a37c5be4dc18456ec747bd126cc",
-      "header": null,
-      "implementation": null,
+      "header": "examples/jsm/math/Capsule.h",
+      "implementation": "examples/jsm/math/Capsule.cpp",
       "expectedHeader": "examples/jsm/math/Capsule.h",
       "expectedImplementation": "examples/jsm/math/Capsule.cpp",
-      "status": "missing",
+      "status": "partial-unverified",
       "verifiedComplete": false,
       "apiExtraction": "static-only",
       "verification": {
@@ -28804,7 +28812,9 @@
           "pointer": "/modules/1003"
         },
         "upstreamUnitTests": [],
-        "cppUnitTests": [],
+        "cppUnitTests": [
+          "test/unit/addons/math/Capsule.tests.cpp"
+        ],
         "reviewedImplementation": [],
         "differentialResults": [],
         "renderingResults": [],
@@ -28818,11 +28828,11 @@
       "scope": "examples/jsm",
       "kind": "addon",
       "upstreamSha256": "dd1ff0134415380d782c8844e19db3c469e7381936fd8ed2a91a5837c80e0d29",
-      "header": null,
-      "implementation": null,
+      "header": "examples/jsm/math/ColorConverter.h",
+      "implementation": "examples/jsm/math/ColorConverter.cpp",
       "expectedHeader": "examples/jsm/math/ColorConverter.h",
       "expectedImplementation": "examples/jsm/math/ColorConverter.cpp",
-      "status": "missing",
+      "status": "partial-unverified",
       "verifiedComplete": false,
       "apiExtraction": "static-only",
       "verification": {
@@ -28833,7 +28843,9 @@
         "upstreamUnitTests": [
           "test/unit/addons/math/ColorConverter.tests.js"
         ],
-        "cppUnitTests": [],
+        "cppUnitTests": [
+          "test/unit/addons/math/ColorConverter.tests.cpp"
+        ],
         "reviewedImplementation": [],
         "differentialResults": [],
         "renderingResults": [],
@@ -28903,11 +28915,11 @@
       "scope": "examples/jsm",
       "kind": "addon",
       "upstreamSha256": "9d201588e680f21c64b1e90ff10e88c05aa8f32b3e185ec477a8c5f60c1fb069",
-      "header": null,
-      "implementation": null,
+      "header": "examples/jsm/math/ImprovedNoise.h",
+      "implementation": "examples/jsm/math/ImprovedNoise.cpp",
       "expectedHeader": "examples/jsm/math/ImprovedNoise.h",
       "expectedImplementation": "examples/jsm/math/ImprovedNoise.cpp",
-      "status": "missing",
+      "status": "partial-unverified",
       "verifiedComplete": false,
       "apiExtraction": "static-only",
       "verification": {
@@ -28916,7 +28928,9 @@
           "pointer": "/modules/1007"
         },
         "upstreamUnitTests": [],
-        "cppUnitTests": [],
+        "cppUnitTests": [
+          "test/unit/addons/math/ImprovedNoise.tests.cpp"
+        ],
         "reviewedImplementation": [],
         "differentialResults": [],
         "renderingResults": [],
@@ -28984,11 +28998,11 @@
       "scope": "examples/jsm",
       "kind": "addon",
       "upstreamSha256": "35399b00a997c4e7004057c421fca1a268aac2282a4f5acc54ee196a77ce31bd",
-      "header": null,
-      "implementation": null,
+      "header": "examples/jsm/math/OBB.h",
+      "implementation": "examples/jsm/math/OBB.cpp",
       "expectedHeader": "examples/jsm/math/OBB.h",
       "expectedImplementation": "examples/jsm/math/OBB.cpp",
-      "status": "missing",
+      "status": "partial-unverified",
       "verifiedComplete": false,
       "apiExtraction": "static-only",
       "verification": {
@@ -28997,7 +29011,9 @@
           "pointer": "/modules/1010"
         },
         "upstreamUnitTests": [],
-        "cppUnitTests": [],
+        "cppUnitTests": [
+          "test/unit/addons/math/OBB.tests.cpp"
+        ],
         "reviewedImplementation": [],
         "differentialResults": [],
         "renderingResults": [],

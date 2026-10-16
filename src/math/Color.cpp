@@ -71,7 +71,9 @@ Color &Color::setHSL(HIGH_PRECISION h, HIGH_PRECISION s, HIGH_PRECISION l, const
             if (t > 1.0) t -= 1.0;
             if (t < 1.0 / 6.0) return p + (q - p) * 6.0 * t;
             if (t < 1.0 / 2.0) return q;
-            if (t < 2.0 / 3.0) return p + (q - p) * (2.0 / 3.0 - t) * 6.0;
+            // The factor order of `p + ( q - p ) * 6 * ( 2 / 3 - t )` is part of the result:
+            // multiplying by ( 2 / 3 - t ) first rounds one ulp away from the source.
+            if (t < 2.0 / 3.0) return p + (q - p) * 6.0 * (2.0 / 3.0 - t);
             return p;
         };
 
