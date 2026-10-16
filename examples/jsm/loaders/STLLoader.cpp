@@ -1,5 +1,6 @@
 #include "loaders/STLLoader.h"
 #include "core/BufferAttribute.h"
+#include "loaders/FileLoader.h"
 #include "math/Color.h"
 #include <cstring>
 #include <vector>
@@ -139,6 +140,43 @@ JSValue STLLoader::prototype() {
     }();
     return value;
 }
+namespace {
+// As in XYZLoader the completion callback has to be a plain function, so the callbacks for the
+// load in flight wait in a thread local slot; the injected transport answers synchronously.
+struct Pending {
+    JSValue onLoad{},onError{},manager{},url{};
+};
+Pending& pending(){static thread_local Pending value;return value;}
+JSValue loadedCallback(const JSValue&,const Args& args,const Args&){
+    auto& slot=pending();
+    try {
+        STLLoader loader=STLLoader::fromObject(slot.manager.isUndefined()?JSValue{}:JSValue{});
+        (void)loader;
+        const auto bytes=args.empty()?std::string{}:args[0].toString();
+        std::vector<std::uint8_t> data;
+        data.reserve(bytes.size());
+        for(char ch:bytes)data.push_back(std::uint8_t(std::uint8_t(ch)&0xff));
+        STLLoader parser;
+        const auto geometry=nativeGeometry(parser.parseBytes(data));
+        if(!slot.onLoad.isUndefined())slot.onLoad.call(JSValue{}, {geometry});
+    } catch(const std::exception& error) {
+        // Upstream logs when no onError is supplied; there is no console natively.
+        if(!slot.onError.isUndefined())slot.onError.call(JSValue{}, {JSValue(error.what())});
+        if(!slot.manager.isUndefined())slot.manager.get("itemError").call(slot.manager, {slot.url});
+    }
+    return {};
+}
+}
 JSValue STLLoader::load(JSValue url,JSValue onLoad,JSValue onProgress,JSValue onError){
-    throw JSTypeError("STLLoader.load is not implemented natively yet");
+    auto& slot=pending();
+    slot.onLoad=onLoad;slot.onError=onError;slot.url=url;
+    slot.manager=object_.get("manager");
+    FileLoader fileLoader(slot.manager);
+    const auto call=[&](const char* name,const JSValue& value){const auto method=fileLoader.object().get(name);if(!method.isUndefined())method.call(fileLoader.object(),{value});};
+    call("setPath",object_.get("path"));
+    call("setRequestHeader",object_.get("requestHeader"));
+    call("setWithCredentials",object_.get("withCredentials"));
+    const auto result=fileLoader.setResponseType("arraybuffer").load(url,JSValue::function(loadedCallback,{}, "onLoad", 1),onProgress,onError);
+    slot= Pending{};
+    return result;
 }
