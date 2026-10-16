@@ -285,6 +285,7 @@ if(THREECPP_BUILD_ADDONS)
         unit/addons/math/JSNumberMathTrig.tests.cpp
         unit/addons/math/JSNumberMathExpLog.tests.cpp
         unit/addons/math/MeshSurfaceSampler.tests.cpp
+        unit/addons/utils/CameraUtils.tests.cpp
         unit/addons/geometries/ParametricFunctions.tests.cpp
         unit/addons/geometries/ParametricGeometry.tests.cpp
         unit/addons/geometries/BoxLineGeometry.tests.cpp
@@ -328,6 +329,8 @@ if(THREECPP_BUILD_ADDONS)
     target_link_libraries(ThreeJsColorMathParityProbe PRIVATE threecpp::threecpp)
     add_executable(ThreeJsMeshSurfaceSamplerParityProbe unit/utils/parity/MeshSurfaceSamplerParityProbe.cpp)
     target_link_libraries(ThreeJsMeshSurfaceSamplerParityProbe PRIVATE threecpp::addons)
+    add_executable(ThreeJsCameraUtilsParityProbe unit/utils/parity/CameraUtilsParityProbe.cpp)
+    target_link_libraries(ThreeJsCameraUtilsParityProbe PRIVATE threecpp::addons)
     add_executable(ThreeJsColorSpacesParityProbe unit/utils/parity/ColorSpacesParityProbe.cpp)
     target_link_libraries(ThreeJsColorSpacesParityProbe PRIVATE threecpp::addons)
     add_executable(ThreeJsSimplexNoiseParityProbe unit/utils/parity/SimplexNoiseParityProbe.cpp)
@@ -814,6 +817,9 @@ if(THREECPP_NODE_EXECUTABLE)
             add_test(NAME threecpp.threejs-color-math-parity
                 COMMAND "${THREECPP_NODE_EXECUTABLE}" "${CMAKE_CURRENT_SOURCE_DIR}/unit/utils/parity/compare-color-math.mjs"
                 "${THREEJS_SOURCE_DIR}" "$<TARGET_FILE:ThreeJsColorMathParityProbe>")
+            add_test(NAME threecpp.threejs-camera-utils-parity
+                COMMAND "${THREECPP_NODE_EXECUTABLE}" "${CMAKE_CURRENT_SOURCE_DIR}/unit/utils/parity/compare-camera-utils.mjs"
+                "${THREEJS_SOURCE_DIR}" "$<TARGET_FILE:ThreeJsCameraUtilsParityProbe>")
             add_test(NAME threecpp.threejs-mesh-surface-sampler-parity
                 COMMAND "${THREECPP_NODE_EXECUTABLE}" "${CMAKE_CURRENT_SOURCE_DIR}/unit/utils/parity/compare-mesh-surface-sampler.mjs"
                 "${THREEJS_SOURCE_DIR}" "$<TARGET_FILE:ThreeJsMeshSurfaceSamplerParityProbe>")

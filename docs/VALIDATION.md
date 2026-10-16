@@ -1,5 +1,12 @@
 # 验证记录
 
+## 当前追加验证：CameraUtils（上一轮主动收敛后补完），2026-10-17
+
+- 新增 `examples/jsm/utils/CameraUtils`。签名适配只有一处并写入头文件：固定版本通过 JS 鸭子类型读取 `camera.near/far/fov/aspect`，C++ 中这些属性属于 `PerspectiveCamera`，因此原生端口接受具体类型；`MathUtils.RAD2DEG` 以同一字面量（`180.0 / MATH_PI`）在文件内定义，`Math.atan` 走 `JSNumberMath::atan`，模块级临时对象为 thread_local。
+- 差分：`threecpp.threejs-camera-utils-parity` **6 个场景逐位一致**（fov、四元数、离轴投影矩阵与其逆矩阵），覆盖 `estimateViewFrustum` 开关、非 1 的 aspect、不同 near/far 与倾斜角点。单测 1 case / 22 assertions（fov 不被改写、四元数单位长度、矩阵末行 `(0,0,-1,0)`、逆矩阵乘回单位阵、估计分支改变 fov）。
+- 该差分立刻抓到探针自身的一处错误：我把 `PerspectiveCamera` 的构造参数写成 `(near, aspect, far, 2000)`，而固定版本是 `(fov, aspect, near, far)`；修正后 6 个场景全部一致。
+- 审计：1,251 个模块，partial-unverified **277**（+1）、missing **664**（−1）、vulkan-port-pending 290、dependency-unverified 20；Acorn 解析错误 0。
+
 ## 当前追加验证：RectAreaLight 数据表簇，2026-10-17
 
 - 新增 2 个模块：`examples/jsm/lights/RectAreaLightTexturesLib`（314 KB，几乎全是内嵌数据表）与 `RectAreaLightUniformsLib`（子代理实现、主会话复核）。

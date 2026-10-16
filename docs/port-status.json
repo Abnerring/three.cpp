@@ -194,8 +194,8 @@
     "note": "Accepted port scope is src and examples/jsm, including tracked third-party dependencies. Editor/manual web applications are excluded from native application rewrites. Native host behavior, packaging and all three platforms require separate implementation and verification evidence."
   },
   "counts": {
-    "partial-unverified": 276,
-    "missing": 665,
+    "partial-unverified": 277,
+    "missing": 664,
     "vulkan-port-pending": 290,
     "dependency-unverified": 20
   },
@@ -211,8 +211,8 @@
     "examples/jsm": {
       "modules": 496,
       "counts": {
-        "missing": 396,
-        "partial-unverified": 80,
+        "missing": 395,
+        "partial-unverified": 81,
         "dependency-unverified": 20
       }
     }
@@ -621,7 +621,7 @@
       "path": "examples/jsm/utils",
       "upstreamFiles": 17,
       "moduleCount": 17,
-      "modulesWithCppFiles": 3,
+      "modulesWithCppFiles": 4,
       "verifiedComplete": 0
     },
     {
@@ -34752,11 +34752,11 @@
       "scope": "examples/jsm",
       "kind": "addon",
       "upstreamSha256": "8ac7bb045983b50698a76f5f5f66a92d7ea1c20dec4db060dd604e948de31917",
-      "header": null,
-      "implementation": null,
+      "header": "examples/jsm/utils/CameraUtils.h",
+      "implementation": "examples/jsm/utils/CameraUtils.cpp",
       "expectedHeader": "examples/jsm/utils/CameraUtils.h",
       "expectedImplementation": "examples/jsm/utils/CameraUtils.cpp",
-      "status": "missing",
+      "status": "partial-unverified",
       "verifiedComplete": false,
       "apiExtraction": "static-only",
       "verification": {
@@ -34765,7 +34765,9 @@
           "pointer": "/modules/1222"
         },
         "upstreamUnitTests": [],
-        "cppUnitTests": [],
+        "cppUnitTests": [
+          "test/unit/addons/utils/CameraUtils.tests.cpp"
+        ],
         "reviewedImplementation": [],
         "differentialResults": [],
         "renderingResults": [],

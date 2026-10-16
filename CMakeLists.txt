@@ -204,6 +204,7 @@ if(THREECPP_BUILD_ADDONS)
         examples/jsm/math/OBB.cpp
         examples/jsm/math/SimplexNoise.cpp
         examples/jsm/math/MeshSurfaceSampler.cpp
+        examples/jsm/utils/CameraUtils.cpp
         examples/jsm/lights/RectAreaLightTexturesLib.cpp
         examples/jsm/lights/RectAreaLightUniformsLib.cpp
         examples/jsm/curves/NURBSUtils.cpp
