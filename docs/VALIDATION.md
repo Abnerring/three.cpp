@@ -1,5 +1,14 @@
 # 验证记录
 
+## 当前追加验证：BufferGeometryUtils，2026-10-17
+
+- 新增 `examples/jsm/utils/BufferGeometryUtils`（14 个导出；`computeMikkTSpaceTangents` 因缺少第三方 MikkTSpace 依赖而显式抛错，不伪造结果）。实现由子代理完成，主会话另行复核并重新构建验证。
+- 强制重编受影响的三个对象（本机 ninja 不跟踪头文件依赖）后：`THREECPPAddonTests.exe "[buffergeometryutils]"` **20 cases / 189 assertions** 通过；addons 全套 **65 cases / 2,626 assertions** 通过，无回归。
+- 差分 `compare-buffer-geometry-utils.mjs`：直接导入固定 checkout 的该模块（类来自同一 checkout 的 `build/three.module.js`），**110 个场景 / 15 个操作逐字段一致**：computeMikkTSpaceTangents、computeMorphedAttributes、deepCloneAttribute、deinterleaveAttribute、deinterleaveGeometry、estimateBytesUsed、interleaveAttributes、mergeAttributes、mergeGeometries、mergeGroups、mergeVertices、remapAttribute(s)、toCreasedNormals、toTrianglesDrawMode。探针把 `std::cerr` 重定向后连同结果一起输出，脚本拦截 `console.error`/`console.warn`，因此每条失败路径的**文本**也参与比较；比较为 `assert.deepEqual`，无容差。注册为 `threecpp.threejs-buffer-geometry-utils-parity`（CTest 通过）。
+- 复核确认的关键语义：mergeVertices 的 `max(tolerance, EPSILON)`/`log10`/`pow` 哈希与 `trunc(v*multiplier+additive)+","` 文本、先 `clone()` 再对全部属性与形变属性用同一 buffers 缓存执行 remapAttribute、最后 setIndex；toTrianglesDrawMode 的三条失败路径与 `clearGroups()`；computeMorphedAttributes 的 material 数组判定与 `influence === 0` 跳过；deinterleaveGeometry 的按身份去重；mergeGroups 的稳定排序。另核实固定版本**没有** InstancedInterleavedBufferAttribute 类，因此实例化分支不可达（该结论与实现说明一致）。
+- 记录在案的边界：mergeVertices 在既无 index 又无 position 时与上游一样抛 TypeError（不是返回 null，任务书描述有误，实测以上游为准）；`remapAttribute` 的 buffers 缓存跨调用保留数值、对象身份会重建；`toCreasedNormals` 对上游无法终止的 `tableSize <<= 1` 循环显式抛 JSRangeError；computeMorphedAttributes 的蒙皮路径只有单测覆盖。
+- 审计重新生成：1,251 个模块，partial-unverified 206（+1）、missing 735（−1）、vulkan-port-pending 290、dependency-unverified 20；Acorn 解析错误 0。
+
 ## 当前追加验证：SkeletonUtils，2026-10-17
 
 - 新增 `examples/jsm/utils/SkeletonUtils`（clone / retarget / retargetClip）。单测 4 cases / 53 assertions 通过。

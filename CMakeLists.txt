@@ -196,6 +196,7 @@ if(THREECPP_BUILD_ADDONS)
         examples/jsm/helpers/VertexTangentsHelper.cpp
         examples/jsm/utils/SortUtils.cpp
         examples/jsm/utils/SkeletonUtils.cpp
+        examples/jsm/utils/BufferGeometryUtils.cpp
         examples/jsm/curves/NURBSUtils.cpp
         examples/jsm/curves/NURBSCurve.cpp
         examples/jsm/curves/NURBSSurface.cpp

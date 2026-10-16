@@ -275,6 +275,7 @@ if(THREECPP_BUILD_ADDONS)
         unit/addons/helpers/NativeObjectExtension.tests.cpp
         unit/addons/utils/SortUtils.tests.cpp
         unit/addons/utils/SkeletonUtils.tests.cpp
+        unit/addons/utils/BufferGeometryUtils.tests.cpp
         unit/addons/curves/NURBSUtils.tests.cpp
         unit/addons/curves/NURBSCurve.tests.cpp
         unit/addons/curves/NURBSSurface.tests.cpp
@@ -293,6 +294,8 @@ if(THREECPP_BUILD_ADDONS)
     target_link_libraries(ThreeJsCurveExtrasParityProbe PRIVATE threecpp::addons)
     add_executable(ThreeJsSkeletonUtilsParityProbe unit/utils/parity/SkeletonUtilsParityProbe.cpp)
     target_link_libraries(ThreeJsSkeletonUtilsParityProbe PRIVATE threecpp::addons)
+    add_executable(ThreeJsBufferGeometryUtilsParityProbe unit/utils/parity/BufferGeometryUtilsParityProbe.cpp)
+    target_link_libraries(ThreeJsBufferGeometryUtilsParityProbe PRIVATE threecpp::addons)
 endif()
 if(THREECPP_BUILD_VULKAN)
     add_executable(VulkanShaderCompilerTests unit/three.source.unit.cpp
@@ -745,6 +748,9 @@ if(THREECPP_NODE_EXECUTABLE)
             add_test(NAME threecpp.threejs-skeleton-utils-parity
                 COMMAND "${THREECPP_NODE_EXECUTABLE}" "${CMAKE_CURRENT_SOURCE_DIR}/unit/utils/parity/compare-skeleton-utils.mjs"
                 "${THREEJS_SOURCE_DIR}" "$<TARGET_FILE:ThreeJsSkeletonUtilsParityProbe>")
+            add_test(NAME threecpp.threejs-buffer-geometry-utils-parity
+                COMMAND "${THREECPP_NODE_EXECUTABLE}" "${CMAKE_CURRENT_SOURCE_DIR}/unit/utils/parity/compare-buffer-geometry-utils.mjs"
+                "${THREEJS_SOURCE_DIR}" "$<TARGET_FILE:ThreeJsBufferGeometryUtilsParityProbe>")
         endif()
         add_test(NAME threecpp.threejs-webgl-info-parity
             COMMAND "${THREECPP_NODE_EXECUTABLE}" "${CMAKE_CURRENT_SOURCE_DIR}/unit/utils/parity/compare-webgl-info.mjs"
