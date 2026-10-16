@@ -18,6 +18,8 @@
    - 现有基础设施均为 JSValue 图风格：`src/loaders/Loader.{h,cpp}`（`static JSValue prototype()`、`JSValue object()`、`JSMember` 访问器、`JSValue::constructor` + `defineProperty` + `retainForHeapLifetime`）、`Cache`、`LoadingManager` 已移植。
    - 传输层需注入：上游用 `fetch`/`Request`/`Response`/`ReadableStream`/`AbortController`/`ProgressEvent`/`DOMParser`/`TextDecoder`，C++ 无这些宿主对象。建议契约：注入函数接收请求描述、返回响应对象（`status`/`statusText`/`url`/`headers.get(name)`/分块 body），逐块触发 ProgressEvent 形状的回调；`document`（DOMParser）与 `blob` 显式报"未实现"错误而不是假装成功（符合 PORTING.md 的"未实现能力必须显式报错"）。
    - 可差分覆盖：缓存命中、重复请求（loading map 共享回调）、responseType（arraybuffer/text/json）、HTTP 非 200、网络错误、abort、进度事件计数与 `manager.itemStart/itemEnd/itemError` 顺序。JS 侧用桩替换 `globalThis.fetch`（必要时补 `ProgressEvent` 垫片）。
+   - **该模式本项目已有先例**：WebGL 相关差分（`compare-webgl-binding-states.mjs`、`compare-webgl-uniforms.mjs`）用一套 "CPU recording transport" 顶替真实 GPU/宿主调用并录制调用序列。FileLoader 的注入式 `fetch` 应沿用同一设计：宿主能力缺失时注入可录制/可重放的传输层，而不是在核心逻辑里分支判断"有没有网络"。先读这两个脚本再动手。
+   - 同目录已有 `compare-loader-foundation.mjs`（`Loader.resolveURL`/`Cache` 的 URL 与缓存键边界，含 `blob:`/`data:`/大小写/`\n`/`\u2028`/空串/非字符串）与 `compare-cache-realm.mjs`，写 FileLoader 差分时应复用其 URL/键的边界用例集，不要另起一套。
 2. `examples/jsm/postprocessing`（30 个模块）**暂不可做**：需要 renderer 的 `setRenderTarget`/`getDrawingBufferSize` 等 API 面，目前只有 `VulkanRenderer`（`clear`/`render`），没有 `WebGLRenderer` 形状的基类。
 3. 其他候选：`examples/jsm/utils/SceneUtils`（9 KB，对象图操作）、`examples/jsm/utils/GeometryCompressionUtils`（13.5 KB，属性打包/解包，纯 CPU）。
 
