@@ -34,7 +34,16 @@ const scenarios=[
     {eye:[0,0,5], near:0.1, far:2000, aspect:1, estimate:false, corners:[[-1,-1,6],[1,-1,6],[-1,1,6]]},
     {eye:[0,0,0], near:0.1, far:10, aspect:1, estimate:true, corners:[[-1e-8,-1e-8,0],[1e-8,-1e-8,0],[-1e-8,1e-8,0]]},
     {eye:[0,0,5], near:0.1, far:2000, aspect:1, estimate:true, corners:[[-1e6,-1e6,0],[1e6,-1e6,0],[-1e6,1e6,0]]},
-    {eye:[1,1,0], near:0.5, far:100, aspect:1, estimate:true, corners:[[-1,-1,0],[1,-1,0],[-1,1,0]]}
+    {eye:[1,1,0], near:0.5, far:100, aspect:1, estimate:true, corners:[[-1,-1,0],[1,-1,0],[-1,1,0]]},
+    // Pathological camera parameters: far closer than near (n - f changes sign), a negative near,
+    // a zero and a huge aspect (the fov estimate divides by min( 1, aspect )) and an aspect that
+    // makes the estimate divide by zero.
+    {eye:[0,0,5], near:100, far:0.5, aspect:1, estimate:true, corners:[[-1,-1,0],[1,-1,0],[-1,1,0]]},
+    {eye:[0,0,5], near:-0.1, far:2000, aspect:1, estimate:true, corners:[[-1,-1,0],[1,-1,0],[-1,1,0]]},
+    {eye:[0,0,5], near:0.1, far:2000, aspect:0, estimate:true, corners:[[-1,-1,0],[1,-1,0],[-1,1,0]]},
+    {eye:[0,0,5], near:0.1, far:2000, aspect:1e6, estimate:true, corners:[[-1,-1,0],[1,-1,0],[-1,1,0]]},
+    {eye:[0,0,5], near:0.1, far:2000, aspect:-2, estimate:true, corners:[[-1,-1,0],[1,-1,0],[-1,1,0]]},
+    {eye:[0,0,5], near:0, far:2000, aspect:1, estimate:false, corners:[[-1,-1,0],[1,-1,0],[-1,1,0]]}
 ];
 const lines=scenarios.map(s=>`F ${s.eye.map(token).join(' ')} ${token(s.near)} ${token(s.far)} ${token(s.aspect)} `
     +`${s.corners.flat().map(token).join(' ')} ${s.estimate?1:0}`);
