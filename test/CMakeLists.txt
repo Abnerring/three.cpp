@@ -299,7 +299,8 @@ if(THREECPP_BUILD_ADDONS)
         unit/addons/curves/NURBSSurface.tests.cpp
         unit/addons/curves/NURBSVolume.tests.cpp
         unit/addons/curves/CurveExtras.tests.cpp
-        unit/addons/shaders/JsmShaders.tests.cpp)
+        unit/addons/shaders/JsmShaders.tests.cpp
+        unit/addons/lights/RectAreaLightUniformsLib.tests.cpp)
     target_include_directories(THREECPPAddonTests PRIVATE "${CMAKE_CURRENT_SOURCE_DIR}/unit/utils")
     target_link_libraries(THREECPPAddonTests PRIVATE threecpp::addons)
     add_test(NAME threecpp.addons-unit COMMAND THREECPPAddonTests)
@@ -341,6 +342,8 @@ if(THREECPP_BUILD_ADDONS)
     target_link_libraries(ThreeJsLoftDecalParityProbe PRIVATE threecpp::addons)
     add_executable(ThreeJsJsmShadersParityProbe unit/utils/parity/JsmShadersParityProbe.cpp)
     target_link_libraries(ThreeJsJsmShadersParityProbe PRIVATE threecpp::addons)
+    add_executable(ThreeJsRectAreaLightParityProbe unit/utils/parity/RectAreaLightParityProbe.cpp)
+    target_link_libraries(ThreeJsRectAreaLightParityProbe PRIVATE threecpp::addons)
 endif()
 if(THREECPP_BUILD_VULKAN)
     add_executable(VulkanShaderCompilerTests unit/three.source.unit.cpp
@@ -835,6 +838,9 @@ if(THREECPP_NODE_EXECUTABLE)
             add_test(NAME threecpp.threejs-jsm-shaders-parity
                 COMMAND "${THREECPP_NODE_EXECUTABLE}" "${CMAKE_CURRENT_SOURCE_DIR}/unit/utils/parity/compare-jsm-shaders.mjs"
                 "${THREEJS_SOURCE_DIR}" "$<TARGET_FILE:ThreeJsJsmShadersParityProbe>")
+            add_test(NAME threecpp.threejs-rect-area-light-parity
+                COMMAND "${THREECPP_NODE_EXECUTABLE}" "${CMAKE_CURRENT_SOURCE_DIR}/unit/utils/parity/compare-rect-area-light.mjs"
+                "${THREEJS_SOURCE_DIR}" "$<TARGET_FILE:ThreeJsRectAreaLightParityProbe>")
         endif()
         add_test(NAME threecpp.threejs-webgl-info-parity
             COMMAND "${THREECPP_NODE_EXECUTABLE}" "${CMAKE_CURRENT_SOURCE_DIR}/unit/utils/parity/compare-webgl-info.mjs"

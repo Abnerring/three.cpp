@@ -288,4 +288,6 @@ Cache 与 DefaultLoadingManager 的模块导出使用 constinit 非拥有 facade
 
 验证约定（对后续所有 addon 差分脚本都重要）：`examples/jsm/**` 里的模块以裸说明符 `import ... from 'three'` 引用核心，在固定 checkout 中该说明符会解析到**预构建产物** `build/three.cjs`，而该产物的部分字符串（例如 `ShaderChunk.meshphong_vert` 的空行被剥离）与 `src/` 并不一致。要对照"源码语义"验证时，应把该说明符改写到 `<checkout>/src/Three.js` 再导入（`compare-jsm-shaders.mjs` 用 base64 `data:` URL 完成改写，checkout 本身不被修改）；若要复现 addon 模块**自身**所见的实例（例如 `ColorSpaces` 读取 `ColorManagement.spaces` 的身份关系），则应让两侧都读取同一实例。
 
+`examples/jsm/lights` 的 RectAreaLight 支持已移植：`RectAreaLightTexturesLib` 的 32,768 个数字字面量以 `constexpr double` 数组逐字保留（上游 `- 0.11134` 这类写法去掉空格后是同一字面量），四张 `DataTexture` 的维度、格式/类型、包裹与过滤参数、数据构造顺序（`Float32Array` 转换与逐元素 `toHalfFloat`）与 `needsUpdate` 全部照源码；`RectAreaLightUniformsLib.init()` 每次调用重建纹理并写入 `UniformsLib` 的四个 `LTC_*` 键。`UniformsLib` 本身无需改动——固定版本的 `src/renderers/shaders/UniformsLib.js` 只有小写 `ltc_1`/`ltc_2`，大写键是运行时写入的。差分 65,717 项比较（含 65,536 个像素值与半精度原始位）逐位一致。
+
 本机 MSVC 为中文界面时，CMake 检测到的 `/showIncludes` 前缀是乱码（缓存值为 `娉ㄦ剰: 鍖呭惈鏂囦欢:`），Ninja 因此无法建立头文件依赖，修改头文件不会触发重编；本轮以显式重编受影响对象规避，并把前缀固定为 ASCII 值。该限制属于构建工具链环境问题，与源码一致性无关。

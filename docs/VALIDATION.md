@@ -1,5 +1,15 @@
 # 验证记录
 
+## 当前追加验证：RectAreaLight 数据表簇，2026-10-17
+
+- 新增 2 个模块：`examples/jsm/lights/RectAreaLightTexturesLib`（314 KB，几乎全是内嵌数据表）与 `RectAreaLightUniformsLib`（子代理实现、主会话复核）。
+- 大表表示：`constexpr double LTC_MAT_1[16384]` / `LTC_MAT_2[16384]`（各 64·64·4），逐字保留上游数字字面量（上游写作 `- 0.11134` 的空格已去除，属同一字面量，文件头有说明）。抽取脚本对每个 token 做了格式校验、条目数断言，并用 V8 求值逐项 `Object.is` 比对（0 处不符）。纹理构造完全按上游：`Float32Array` 转换、`DataUtils::toHalfFloat` 逐元素、`DataTexture(64,64,RGBA,Float|HalfFloat,UVMapping,ClampToEdge,ClampToEdge,Linear,Nearest,1)` 与 `needsUpdate = true`。
+- 差分：`threecpp.threejs-rect-area-light-parity` **39 个描述字段 / 65,536 个像素值（4 张纹理 × 16384）/ 65,717 项比较**全部一致（含 Uint16 半精度原始位、`-0`/NaN/±Inf 编码，无容差）。比较还覆盖类对象形状（typeof/name/length/自有键顺序/普通调用抛 TypeError/`new` 实例键）、每张纹理的全部字段与完整数据数组，以及 `UniformsLib` 前后键的变化、四个键的插入顺序与 `UniformsLib.LTC_x === RectAreaLightTexturesLib.LTC_x` 身份关系、二次 `init()` 的重建语义。单测 3 cases / 155 assertions。
+- 子代理另做了**反向对照**：把期望值中某个像素改成 0 后脚本立即以 `15360 !== 0` 失败，证明该比较不是空转；主会话独立重跑得到完全相同的比较数（65,717）。
+- `UniformsLib` 无需改动：固定版本的 `src/renderers/shaders/UniformsLib.js` 只有小写 `ltc_1`/`ltc_2`，四个 `LTC_*` 键是该 addon 在运行时写入的，原生对象接受这一写入，因此本轮未触碰 `src/**`。
+- 审计：1,251 个模块，partial-unverified **276**（+2）、missing **665**（−2）、vulkan-port-pending 290、dependency-unverified 20；Acorn 解析错误 0。
+- 本轮另有一次主动收敛：我在上下文预算不足时开始移植 `examples/jsm/utils/CameraUtils`，发现固定版本的 `CameraUtils.frameCorners` 通过 JS 鸭子类型读取 `camera.near/far/fov/aspect`，而 C++ 中这些属性属于 `PerspectiveCamera`（需要一处有据可查的签名适配），评估后**删除未完成的文件、保持工作树干净**，留待下一轮连同差分一起完成，而不是提交半成品。
+
 ## 当前追加验证：jsm/shaders 全簇（52 个模块）与 MeshSurfaceSampler，2026-10-17
 
 - 新增 53 个模块：`examples/jsm/shaders` 全部 52 个（子代理实现、主会话复核）与 `examples/jsm/math/MeshSurfaceSampler`（主会话实现）。

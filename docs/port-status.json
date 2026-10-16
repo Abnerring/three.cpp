@@ -194,8 +194,8 @@
     "note": "Accepted port scope is src and examples/jsm, including tracked third-party dependencies. Editor/manual web applications are excluded from native application rewrites. Native host behavior, packaging and all three platforms require separate implementation and verification evidence."
   },
   "counts": {
-    "partial-unverified": 274,
-    "missing": 667,
+    "partial-unverified": 276,
+    "missing": 665,
     "vulkan-port-pending": 290,
     "dependency-unverified": 20
   },
@@ -211,8 +211,8 @@
     "examples/jsm": {
       "modules": 496,
       "counts": {
-        "missing": 398,
-        "partial-unverified": 78,
+        "missing": 396,
+        "partial-unverified": 80,
         "dependency-unverified": 20
       }
     }
@@ -418,7 +418,7 @@
       "path": "examples/jsm/lights",
       "upstreamFiles": 7,
       "moduleCount": 7,
-      "modulesWithCppFiles": 0,
+      "modulesWithCppFiles": 2,
       "verifiedComplete": 0
     },
     {
@@ -26332,11 +26332,11 @@
       "scope": "examples/jsm",
       "kind": "addon",
       "upstreamSha256": "5c54cbb4177594b468b59fc8889c700a35a49793091d517ebac4ecf5954844df",
-      "header": null,
-      "implementation": null,
+      "header": "examples/jsm/lights/RectAreaLightTexturesLib.h",
+      "implementation": "examples/jsm/lights/RectAreaLightTexturesLib.cpp",
       "expectedHeader": "examples/jsm/lights/RectAreaLightTexturesLib.h",
       "expectedImplementation": "examples/jsm/lights/RectAreaLightTexturesLib.cpp",
-      "status": "missing",
+      "status": "partial-unverified",
       "verifiedComplete": false,
       "apiExtraction": "static-only",
       "verification": {
@@ -26359,11 +26359,11 @@
       "scope": "examples/jsm",
       "kind": "addon",
       "upstreamSha256": "248bdb5ce771e1f2b1f786fc59910c24dc02089352aceca55083a58ab886ee14",
-      "header": null,
-      "implementation": null,
+      "header": "examples/jsm/lights/RectAreaLightUniformsLib.h",
+      "implementation": "examples/jsm/lights/RectAreaLightUniformsLib.cpp",
       "expectedHeader": "examples/jsm/lights/RectAreaLightUniformsLib.h",
       "expectedImplementation": "examples/jsm/lights/RectAreaLightUniformsLib.cpp",
-      "status": "missing",
+      "status": "partial-unverified",
       "verifiedComplete": false,
       "apiExtraction": "static-only",
       "verification": {
@@ -26372,7 +26372,9 @@
           "pointer": "/modules/913"
         },
         "upstreamUnitTests": [],
-        "cppUnitTests": [],
+        "cppUnitTests": [
+          "test/unit/addons/lights/RectAreaLightUniformsLib.tests.cpp"
+        ],
         "reviewedImplementation": [],
         "differentialResults": [],
         "renderingResults": [],
