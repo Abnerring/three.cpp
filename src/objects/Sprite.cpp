@@ -1,11 +1,19 @@
-#include "objects/Sprite.h"
+﻿#include "objects/Sprite.h"
+#include "math/JSNumberMath.h"
 #include "core/InterleavedBuffer.h"
+#include "math/JSNumberMath.h"
 #include "core/InterleavedBufferAttribute.h"
+#include "math/JSNumberMath.h"
 #include "core/NativeObject.h"
+#include "math/JSNumberMath.h"
 #include "core/Raycaster.h"
+#include "math/JSNumberMath.h"
 #include "cameras/PerspectiveCamera.h"
+#include "math/JSNumberMath.h"
 #include "math/Triangle.h"
+#include "math/JSNumberMath.h"
 #include "math/Frustum.h"
+#include "math/JSNumberMath.h"
 #include <cmath>
 #include <iostream>
 
@@ -55,7 +63,7 @@ bool Sprite::raycast(const Raycaster& raycaster,std::vector<Intersection>& inter
         worldScale.multiplyScalar(-mvPosition.z);
     const auto rotation=nativeMaterial(material).get("rotation");
     std::optional<double> sin,cos;
-    if(!rotation.strictEquals(JSValue(0))) { cos=std::cos(rotation.toNumber());sin=std::sin(rotation.toNumber()); }
+    if(!rotation.strictEquals(JSValue(0))) { cos=JSNumberMath::cos(rotation.toNumber());sin=JSNumberMath::sin(rotation.toNumber()); }
     transformVertex(vA.set(-.5,-.5,0),center,sin,cos);
     transformVertex(vB.set(.5,-.5,0),center,sin,cos);
     transformVertex(vC.set(.5,.5,0),center,sin,cos);

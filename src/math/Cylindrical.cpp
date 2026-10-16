@@ -1,4 +1,5 @@
-#include "math/Cylindrical.h"
+﻿#include "math/Cylindrical.h"
+#include "math/JSNumberMath.h"
 #include <cmath>
 
 Cylindrical::Cylindrical(double radius, double theta, double y)
@@ -17,7 +18,7 @@ Cylindrical& Cylindrical::setFromVector3(const Vector3& vector) {
 }
 Cylindrical& Cylindrical::setFromCartesianCoords(double x, double y, double z) {
     radius = std::sqrt(x * x + z * z);
-    theta = std::atan2(x, z);
+    theta = JSNumberMath::atan2(x, z);
     this->y = y;
     return *this;
 }

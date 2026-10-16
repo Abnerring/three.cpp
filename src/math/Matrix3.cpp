@@ -1,9 +1,13 @@
-#include "math/Matrix3.h"
+﻿#include "math/Matrix3.h"
+#include "math/JSNumberMath.h"
 #include "math/Vector2.h"
+#include "math/JSNumberMath.h"
 #include <stdexcept>
 #include <string>
 #include "math/Matrix4.h"
+#include "math/JSNumberMath.h"
 #include "math/Vector3.h"
+#include "math/JSNumberMath.h"
 
 Matrix3::Matrix3(
     HIGH_PRECISION n11, HIGH_PRECISION n12, HIGH_PRECISION n13,
@@ -202,8 +206,8 @@ Matrix3 &Matrix3::transposeIntoArray(std::array<HIGH_PRECISION, 9> &r)
 
 Matrix3 &Matrix3::setUvTransform(HIGH_PRECISION tx, HIGH_PRECISION ty, HIGH_PRECISION sx, HIGH_PRECISION sy, HIGH_PRECISION rotation, HIGH_PRECISION cx, HIGH_PRECISION cy)
 {
-    auto c = std::cos(rotation);
-    auto s = std::sin(rotation);
+    auto c = JSNumberMath::cos(rotation);
+    auto s = JSNumberMath::sin(rotation);
 
     this->set(sx * c, sx * s,
               -sx * (c * cx + s * cy) + cx + tx,
@@ -255,8 +259,8 @@ Matrix3 &Matrix3::makeTranslation(HIGH_PRECISION x, HIGH_PRECISION y)
 Matrix3 &Matrix3::makeRotation(HIGH_PRECISION theta)
 {
     // counterclockwise
-    auto c = std::cos(theta);
-    auto s = std::sin(theta);
+    auto c = JSNumberMath::cos(theta);
+    auto s = JSNumberMath::sin(theta);
 
     this->set(c, -s, 0,
               s, c, 0,

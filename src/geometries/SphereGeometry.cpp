@@ -1,5 +1,7 @@
-#include "geometries/SphereGeometry.h"
+﻿#include "geometries/SphereGeometry.h"
+#include "math/JSNumberMath.h"
 #include "math/MathUtils.h"
+#include "math/JSNumberMath.h"
 #include <algorithm>
 #include <cmath>
 #include <limits>
@@ -45,7 +47,7 @@ SphereGeometry::SphereGeometry(double radius, double widthSegments, double heigh
         std::vector<double> row;
         const double v = iy / heightSegments;
         const double theta = thetaStart + v * thetaLength;
-        const double y = radius * std::cos(theta);
+        const double y = radius * JSNumberMath::cos(theta);
         const double ringRadius = std::sqrt(radius * radius - y * y);
         double uOffset = 0;
         if (iy == 0 && thetaStart == 0) uOffset = 0.5 / widthSegments;
@@ -53,7 +55,7 @@ SphereGeometry::SphereGeometry(double radius, double widthSegments, double heigh
         for (double ix = 0; ix <= widthSegments; ++ix) {
             const double u = ix / widthSegments;
             const double phi = phiStart + u * phiLength;
-            vertex.set(-ringRadius * std::cos(phi), y, ringRadius * std::sin(phi));
+            vertex.set(-ringRadius * JSNumberMath::cos(phi), y, ringRadius * JSNumberMath::sin(phi));
             vertices.insert(vertices.end(), {vertex.x, vertex.y, vertex.z});
             normal.copy(vertex).normalize();
             normals.insert(normals.end(), {normal.x, normal.y, normal.z});

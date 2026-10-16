@@ -1,5 +1,7 @@
-#include "math/Spherical.h"
+﻿#include "math/Spherical.h"
+#include "math/JSNumberMath.h"
 #include "math/MathUtils.h"
+#include "math/JSNumberMath.h"
 #include <cmath>
 
 Spherical::Spherical(double radius, double phi, double theta)
@@ -26,8 +28,8 @@ Spherical& Spherical::setFromCartesianCoords(double x, double y, double z) {
         theta = 0;
         phi = 0;
     } else {
-        theta = std::atan2(x, z);
-        phi = std::acos(MathUtils::clamp(y / radius, -1, 1));
+        theta = JSNumberMath::atan2(x, z);
+        phi = JSNumberMath::acos(MathUtils::clamp(y / radius, -1, 1));
     }
     return *this;
 }

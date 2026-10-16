@@ -1,7 +1,9 @@
-#include "math/MathUtils.h"
+﻿#include "math/MathUtils.h"
+#include "math/JSNumberMath.h"
 #include <vector>
 #include <cstdint>
 #include "math/Quaternion.h"
+#include "math/JSNumberMath.h"
 
 namespace MathUtils
 {
@@ -236,17 +238,17 @@ namespace MathUtils
 
 
 
-	const auto c2 = std::cos( b / 2 );
-	const auto s2 = std::sin( b / 2 );
+	const auto c2 = JSNumberMath::cos( b / 2 );
+	const auto s2 = JSNumberMath::sin( b / 2 );
 
-	const auto c13 = std::cos( ( a + c ) / 2 );
-	const auto s13 = std::sin( ( a + c ) / 2 );
+	const auto c13 = JSNumberMath::cos( ( a + c ) / 2 );
+	const auto s13 = JSNumberMath::sin( ( a + c ) / 2 );
 
-	const auto c1_3 = std::cos( ( a - c ) / 2 );
-	const auto s1_3 = std::sin( ( a - c ) / 2 );
+	const auto c1_3 = JSNumberMath::cos( ( a - c ) / 2 );
+	const auto s1_3 = JSNumberMath::sin( ( a - c ) / 2 );
 
-	const auto c3_1 = std::cos( ( c - a ) / 2 );
-	const auto s3_1 = std::sin( ( c - a ) / 2 );
+	const auto c3_1 = JSNumberMath::cos( ( c - a ) / 2 );
+	const auto s3_1 = JSNumberMath::sin( ( c - a ) / 2 );
 
 	        if (order == "XYX") { q.set( c2 * s13, s2 * c1_3, s2 * s1_3, c2 * c13 ); }
         else if (order == "YZY") { q.set( s2 * s1_3, c2 * s13, s2 * c1_3, c2 * c13 ); }

@@ -1,8 +1,13 @@
-#include "geometries/TubeGeometry.h"
+﻿#include "geometries/TubeGeometry.h"
+#include "math/JSNumberMath.h"
 #include "extras/curves/QuadraticBezierCurve3.h"
+#include "math/JSNumberMath.h"
 #include "extras/curves/LineCurve3.h"
+#include "math/JSNumberMath.h"
 #include "extras/curves/CubicBezierCurve3.h"
+#include "math/JSNumberMath.h"
 #include "extras/curves/CatmullRomCurve3.h"
+#include "math/JSNumberMath.h"
 #include <numbers>
 
 std::shared_ptr<Curve<Vector3>> TubeGeometry::defaultPath() {
@@ -23,7 +28,7 @@ TubeGeometry::TubeGeometry(std::shared_ptr<Curve<Vector3>> path, double tubularS
         position.copy(path->getPointAt(i / tubularSegments, position));
         for (double j = 0; j <= radialSegments; ++j) {
             const auto v = j / radialSegments * std::numbers::pi * 2;
-            const auto sine = std::sin(v), cosine = -std::cos(v);
+            const auto sine = JSNumberMath::sin(v), cosine = -JSNumberMath::cos(v);
             if (!(i >= 0 && i < double(frames.normals.size()) && std::trunc(i) == i))
                 throw JSTypeError("TubeGeometry segment Frenet normal is undefined");
             if (radialSegments == INFINITY)

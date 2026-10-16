@@ -1,6 +1,9 @@
-#include "geometries/EdgesGeometry.h"
+﻿#include "geometries/EdgesGeometry.h"
+#include "math/JSNumberMath.h"
 #include "math/MathUtils.h"
+#include "math/JSNumberMath.h"
 #include "math/Triangle.h"
+#include "math/JSNumberMath.h"
 #include <unordered_map>
 #include <numbers>
 
@@ -11,7 +14,7 @@ EdgesGeometry::EdgesGeometry(std::shared_ptr<BufferGeometry> geometry, double th
     const auto index = geometry->getIndex(); const auto position = geometry->getAttribute("position");
     if (!position) throw JSTypeError("EdgesGeometry position attribute is undefined");
     const auto count = index ? index->count : position->getCount();
-    const auto threshold = std::cos((std::numbers::pi / 180) * thresholdAngle);
+    const auto threshold = JSNumberMath::cos((std::numbers::pi / 180) * thresholdAngle);
     struct Edge { double index0, index1; Vector3 normal; };
     std::unordered_map<std::string, std::size_t> keys;
     std::vector<std::optional<Edge>> edges;

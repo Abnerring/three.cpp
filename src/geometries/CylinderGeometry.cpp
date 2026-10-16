@@ -1,5 +1,7 @@
-#include "geometries/CylinderGeometry.h"
+﻿#include "geometries/CylinderGeometry.h"
+#include "math/JSNumberMath.h"
 #include "math/MathUtils.h"
+#include "math/JSNumberMath.h"
 #include <algorithm>
 #include <cmath>
 #include <limits>
@@ -52,7 +54,7 @@ CylinderGeometry::CylinderGeometry(double radiusTop, double radiusBottom, double
         for (double x = 0; x <= radialSegments; ++x) {
             const double u = x / radialSegments;
             const double theta = u * thetaLength + thetaStart;
-            const double sinTheta = std::sin(theta), cosTheta = std::cos(theta);
+            const double sinTheta = JSNumberMath::sin(theta), cosTheta = JSNumberMath::cos(theta);
             vertex.set(radius * sinTheta, -v * height + halfHeight, radius * cosTheta);
             vertices.insert(vertices.end(), {vertex.x, vertex.y, vertex.z});
             normal.set(sinTheta, slope, cosTheta).normalize();
@@ -93,7 +95,7 @@ CylinderGeometry::CylinderGeometry(double radiusTop, double radiusBottom, double
         for (double x = 0; x <= radialSegments; ++x) {
             const double u = x / radialSegments;
             const double theta = u * thetaLength + thetaStart;
-            const double cosTheta = std::cos(theta), sinTheta = std::sin(theta);
+            const double cosTheta = JSNumberMath::cos(theta), sinTheta = JSNumberMath::sin(theta);
             vertex.set(radius * sinTheta, halfHeight * sign, radius * cosTheta);
             vertices.insert(vertices.end(), {vertex.x, vertex.y, vertex.z});
             normals.insert(normals.end(), {0, sign, 0});

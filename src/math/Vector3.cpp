@@ -1,14 +1,25 @@
-#include "math/Vector3.h"
+﻿#include "math/Vector3.h"
+#include "math/JSNumberMath.h"
 #include "cameras/Camera.h"
+#include "math/JSNumberMath.h"
 #include "core/VertexAttribute.h"
+#include "math/JSNumberMath.h"
 #include "math/Color.h"
+#include "math/JSNumberMath.h"
 #include "math/Cylindrical.h"
+#include "math/JSNumberMath.h"
 #include "math/Euler.h"
+#include "math/JSNumberMath.h"
 #include "math/MathUtils.h"
+#include "math/JSNumberMath.h"
 #include "math/Matrix3.h"
+#include "math/JSNumberMath.h"
 #include "math/Matrix4.h"
+#include "math/JSNumberMath.h"
 #include "math/Quaternion.h"
+#include "math/JSNumberMath.h"
 #include "math/Spherical.h"
+#include "math/JSNumberMath.h"
 #include <algorithm>
 #include <stdexcept>
 #include <string>
@@ -406,7 +417,7 @@ HIGH_PRECISION Vector3::angleTo(const Vector3& v) const {
 
     // clamp, to handle numerical problems
 
-    return std::acos(MathUtils::clamp(theta, -1, 1));
+    return JSNumberMath::acos(MathUtils::clamp(theta, -1, 1));
 }
 
 HIGH_PRECISION Vector3::distanceTo(const Vector3& v) const {
@@ -425,19 +436,19 @@ HIGH_PRECISION Vector3::manhattanDistanceTo(const Vector3& v) const {
 
 Vector3& Vector3::setFromSphericalCoords(HIGH_PRECISION radius, HIGH_PRECISION phi,
                                          HIGH_PRECISION theta) {
-    auto sinPhiRadius = std::sin(phi) * radius;
+    auto sinPhiRadius = JSNumberMath::sin(phi) * radius;
 
-    this->x = sinPhiRadius * std::sin(theta);
-    this->y = std::cos(phi) * radius;
-    this->z = sinPhiRadius * std::cos(theta);
+    this->x = sinPhiRadius * JSNumberMath::sin(theta);
+    this->y = JSNumberMath::cos(phi) * radius;
+    this->z = sinPhiRadius * JSNumberMath::cos(theta);
     return *this;
 }
 
 Vector3& Vector3::setFromCylindricalCoords(HIGH_PRECISION radius, HIGH_PRECISION theta,
                                            HIGH_PRECISION y) {
-    this->x = radius * std::sin(theta);
+    this->x = radius * JSNumberMath::sin(theta);
     this->y = y;
-    this->z = radius * std::cos(theta);
+    this->z = radius * JSNumberMath::cos(theta);
     return *this;
 }
 
@@ -491,9 +502,9 @@ Vector3& Vector3::randomDirection() {
     auto u = DIST_DOUBLE(RANDOM_ENGINE) * 2 - 1;
     auto c = std::sqrt(1 - u * u);
 
-    this->x = c * std::cos(theta);
+    this->x = c * JSNumberMath::cos(theta);
     this->y = u;
-    this->z = c * std::sin(theta);
+    this->z = c * JSNumberMath::sin(theta);
     return *this;
 }
 

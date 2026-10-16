@@ -1,12 +1,14 @@
-#include "geometries/PolyhedronGeometry.h"
+﻿#include "geometries/PolyhedronGeometry.h"
+#include "math/JSNumberMath.h"
 #include "math/MathUtils.h"
+#include "math/JSNumberMath.h"
 #include <numbers>
 
 namespace {
 double read(const std::vector<double>& values, double i) {
     return i >= 0 && i < values.size() && std::trunc(i) == i ? values[std::size_t(i)] : NAN;
 }
-double azimuth(const Vector3& v) { return std::atan2(v.z, -v.x); }
+double azimuth(const Vector3& v) { return JSNumberMath::atan2(v.z, -v.x); }
 double jsonNumber(const JsonValue& data, const char* key, double fallback) {
     return data.contains(key) ? (data.at(key).isNull() ? 0 : data.at(key).get<double>()) : fallback;
 }
@@ -58,7 +60,7 @@ PolyhedronGeometry::PolyhedronGeometry(NumbersPtr vertices, NumbersPtr indices, 
     for (std::size_t i = 0; i < vertexBuffer.size(); i += 3) {
         Vector3 v(vertexBuffer[i], vertexBuffer[i + 1], vertexBuffer[i + 2]);
         const auto u = azimuth(v) / 2 / std::numbers::pi + .5;
-        const auto inclination = std::atan2(-v.y, std::sqrt(v.x * v.x + v.z * v.z));
+        const auto inclination = JSNumberMath::atan2(-v.y, std::sqrt(v.x * v.x + v.z * v.z));
         uvBuffer.insert(uvBuffer.end(), {u, 1 - (inclination / std::numbers::pi + .5)});
     }
     for (std::size_t i = 0, j = 0; i < vertexBuffer.size(); i += 9, j += 6) {

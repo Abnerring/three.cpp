@@ -1,5 +1,7 @@
-#include "geometries/TorusGeometry.h"
+﻿#include "geometries/TorusGeometry.h"
+#include "math/JSNumberMath.h"
 #include "math/MathUtils.h"
+#include "math/JSNumberMath.h"
 #include <algorithm>
 #include <cmath>
 #include <limits>
@@ -42,11 +44,11 @@ TorusGeometry::TorusGeometry(double radius, double tube, double radialSegments, 
         const double v = thetaStart + (j / radialSegments) * thetaLength;
         for (double i = 0; i <= tubularSegments; ++i) {
             const double u = i / tubularSegments * arc;
-            vertex.set((radius + tube * std::cos(v)) * std::cos(u),
-                       (radius + tube * std::cos(v)) * std::sin(u), tube * std::sin(v));
+            vertex.set((radius + tube * JSNumberMath::cos(v)) * JSNumberMath::cos(u),
+                       (radius + tube * JSNumberMath::cos(v)) * JSNumberMath::sin(u), tube * JSNumberMath::sin(v));
             vertices.insert(vertices.end(), {vertex.x, vertex.y, vertex.z});
-            center.x = radius * std::cos(u);
-            center.y = radius * std::sin(u);
+            center.x = radius * JSNumberMath::cos(u);
+            center.y = radius * JSNumberMath::sin(u);
             normal.subVectors(vertex, center).normalize();
             normals.insert(normals.end(), {normal.x, normal.y, normal.z});
             uvs.insert(uvs.end(), {i / tubularSegments, j / radialSegments});

@@ -1,4 +1,4 @@
-#include "math/JSNumberMath.h"
+﻿#include "math/JSNumberMath.h"
 #include "math/Quaternion.h"
 #include "core/BufferAttribute.h"
 #include "math/Vector3.h"
@@ -69,9 +69,9 @@ Quaternion &Quaternion::setFromEuler(const Euler &euler, bool update)
     HIGH_PRECISION z = euler.z;
     EulerOrder order = euler.order;
 
-    auto c1 = std::cos(x / 2.0f);
-    auto c2 = std::cos(y / 2.0f);
-    auto c3 = std::cos(z / 2.0f);
+    auto c1 = JSNumberMath::cos(x / 2.0f);
+    auto c2 = JSNumberMath::cos(y / 2.0f);
+    auto c3 = JSNumberMath::cos(z / 2.0f);
 
     auto s1 = JSNumberMath::sin(x / 2.0f);
     auto s2 = JSNumberMath::sin(y / 2.0f);
@@ -128,7 +128,7 @@ Quaternion &Quaternion::setFromAxisAngle(const Vector3 &axis, HIGH_PRECISION ang
 {
     const auto halfAngle = angle / 2;
     const auto s = JSNumberMath::sin(halfAngle);
-    m_x = axis.x * s; m_y = axis.y * s; m_z = axis.z * s; m_w = std::cos(halfAngle);
+    m_x = axis.x * s; m_y = axis.y * s; m_z = axis.z * s; m_w = JSNumberMath::cos(halfAngle);
     notifyPropertyChange(m_onChangeCallback);
     return *this;
 }
@@ -414,7 +414,7 @@ Quaternion &Quaternion::random()
     const auto theta2 = 2 * MATH_PI * DIST_DOUBLE(RANDOM_ENGINE);
     const auto x0 = DIST_DOUBLE(RANDOM_ENGINE);
     const auto r1 = std::sqrt(1 - x0), r2 = std::sqrt(x0);
-    return set(r1 * JSNumberMath::sin(theta1), r1 * std::cos(theta1), r2 * JSNumberMath::sin(theta2), r2 * std::cos(theta2));
+    return set(r1 * JSNumberMath::sin(theta1), r1 * JSNumberMath::cos(theta1), r2 * JSNumberMath::sin(theta2), r2 * JSNumberMath::cos(theta2));
 }
 std::vector<HIGH_PRECISION> Quaternion::toArray() const
 {

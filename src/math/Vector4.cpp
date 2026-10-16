@@ -1,9 +1,15 @@
-#include "math/Vector4.h"
+﻿#include "math/Vector4.h"
+#include "math/JSNumberMath.h"
 #include "core/VertexAttribute.h"
+#include "math/JSNumberMath.h"
 #include "math/Matrix4.h"
+#include "math/JSNumberMath.h"
 #include "math/Vector3.h"
+#include "math/JSNumberMath.h"
 #include "math/Quaternion.h"
+#include "math/JSNumberMath.h"
 #include "math/MathUtils.h"
+#include "math/JSNumberMath.h"
 #include <algorithm>
 #include <cmath>
 #include <stdexcept>
@@ -410,7 +416,7 @@ Vector4 &Vector4::setAxisAngleFromQuaternion(const Quaternion &q)
 
 		// q is assumed to be normalized
 
-		this->w = 2 * std::acos( q.w );
+		this->w = 2 * JSNumberMath::acos( q.w );
 
 		const auto s = std::sqrt( 1 - q.w * q.w );
 
@@ -558,7 +564,7 @@ Vector4 &Vector4::setAxisAngleFromRotationMatrix(const Matrix4 &m)
 		this->x = ( m32 - m23 ) / s;
 		this->y = ( m13 - m31 ) / s;
 		this->z = ( m21 - m12 ) / s;
-		this->w = std::acos( ( m11 + m22 + m33 - 1 ) / 2 );
+		this->w = JSNumberMath::acos( ( m11 + m22 + m33 - 1 ) / 2 );
 
 		return *this;
 

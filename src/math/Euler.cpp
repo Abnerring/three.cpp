@@ -1,9 +1,15 @@
-#include "math/Euler.h"
+﻿#include "math/Euler.h"
+#include "math/JSNumberMath.h"
 #include "math/Vector3.h"
+#include "math/JSNumberMath.h"
 #include "math/Quaternion.h"
+#include "math/JSNumberMath.h"
 #include "math/Matrix3.h"
+#include "math/JSNumberMath.h"
 #include "math/Matrix4.h"
+#include "math/JSNumberMath.h"
 #include "math/MathUtils.h"
+#include "math/JSNumberMath.h"
 #include <algorithm>
 #include <cmath>
 #include <sstream>
@@ -87,34 +93,34 @@ Euler &Euler::setFromRotationMatrix(const Matrix4 &m, std::optional<EulerOrder> 
     switch (order)
     {
     case EulerOrder::XYZ:
-        m_y = std::asin(MathUtils::clamp(m13, -1, 1));
-        if (std::abs(m13) < 0.9999999) { m_x = std::atan2(-m23, m33); m_z = std::atan2(-m12, m11); }
-        else { m_x = std::atan2(m32, m22); m_z = 0; }
+        m_y = JSNumberMath::asin(MathUtils::clamp(m13, -1, 1));
+        if (std::abs(m13) < 0.9999999) { m_x = JSNumberMath::atan2(-m23, m33); m_z = JSNumberMath::atan2(-m12, m11); }
+        else { m_x = JSNumberMath::atan2(m32, m22); m_z = 0; }
         break;
     case EulerOrder::YXZ:
-        m_x = std::asin(-MathUtils::clamp(m23, -1, 1));
-        if (std::abs(m23) < 0.9999999) { m_y = std::atan2(m13, m33); m_z = std::atan2(m21, m22); }
-        else { m_y = std::atan2(-m31, m11); m_z = 0; }
+        m_x = JSNumberMath::asin(-MathUtils::clamp(m23, -1, 1));
+        if (std::abs(m23) < 0.9999999) { m_y = JSNumberMath::atan2(m13, m33); m_z = JSNumberMath::atan2(m21, m22); }
+        else { m_y = JSNumberMath::atan2(-m31, m11); m_z = 0; }
         break;
     case EulerOrder::ZXY:
-        m_x = std::asin(MathUtils::clamp(m32, -1, 1));
-        if (std::abs(m32) < 0.9999999) { m_y = std::atan2(-m31, m33); m_z = std::atan2(-m12, m22); }
-        else { m_y = 0; m_z = std::atan2(m21, m11); }
+        m_x = JSNumberMath::asin(MathUtils::clamp(m32, -1, 1));
+        if (std::abs(m32) < 0.9999999) { m_y = JSNumberMath::atan2(-m31, m33); m_z = JSNumberMath::atan2(-m12, m22); }
+        else { m_y = 0; m_z = JSNumberMath::atan2(m21, m11); }
         break;
     case EulerOrder::ZYX:
-        m_y = std::asin(-MathUtils::clamp(m31, -1, 1));
-        if (std::abs(m31) < 0.9999999) { m_x = std::atan2(m32, m33); m_z = std::atan2(m21, m11); }
-        else { m_x = 0; m_z = std::atan2(-m12, m22); }
+        m_y = JSNumberMath::asin(-MathUtils::clamp(m31, -1, 1));
+        if (std::abs(m31) < 0.9999999) { m_x = JSNumberMath::atan2(m32, m33); m_z = JSNumberMath::atan2(m21, m11); }
+        else { m_x = 0; m_z = JSNumberMath::atan2(-m12, m22); }
         break;
     case EulerOrder::YZX:
-        m_z = std::asin(MathUtils::clamp(m21, -1, 1));
-        if (std::abs(m21) < 0.9999999) { m_x = std::atan2(-m23, m22); m_y = std::atan2(-m31, m11); }
-        else { m_x = 0; m_y = std::atan2(m13, m33); }
+        m_z = JSNumberMath::asin(MathUtils::clamp(m21, -1, 1));
+        if (std::abs(m21) < 0.9999999) { m_x = JSNumberMath::atan2(-m23, m22); m_y = JSNumberMath::atan2(-m31, m11); }
+        else { m_x = 0; m_y = JSNumberMath::atan2(m13, m33); }
         break;
     case EulerOrder::XZY:
-        m_z = std::asin(-MathUtils::clamp(m12, -1, 1));
-        if (std::abs(m12) < 0.9999999) { m_x = std::atan2(m32, m22); m_y = std::atan2(m13, m11); }
-        else { m_x = std::atan2(-m23, m33); m_y = 0; }
+        m_z = JSNumberMath::asin(-MathUtils::clamp(m12, -1, 1));
+        if (std::abs(m12) < 0.9999999) { m_x = JSNumberMath::atan2(m32, m22); m_y = JSNumberMath::atan2(m13, m11); }
+        else { m_x = JSNumberMath::atan2(-m23, m33); m_y = 0; }
         break;
     }
     m_order = order;

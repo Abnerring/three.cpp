@@ -1,5 +1,7 @@
-#include "geometries/RingGeometry.h"
+﻿#include "geometries/RingGeometry.h"
+#include "math/JSNumberMath.h"
 #include "math/MathUtils.h"
+#include "math/JSNumberMath.h"
 #include <algorithm>
 #include <cmath>
 #include <limits>
@@ -43,8 +45,8 @@ RingGeometry::RingGeometry(double innerRadius, double outerRadius, double thetaS
     for (double j = 0; j <= phiSegments; ++j) {
         for (double i = 0; i <= thetaSegments; ++i) {
             const double segment = thetaStart + i / thetaSegments * thetaLength;
-            vertex.x = radius * std::cos(segment);
-            vertex.y = radius * std::sin(segment);
+            vertex.x = radius * JSNumberMath::cos(segment);
+            vertex.y = radius * JSNumberMath::sin(segment);
             vertices.insert(vertices.end(), {vertex.x, vertex.y, vertex.z});
             normals.insert(normals.end(), {0, 0, 1});
             uvs.insert(uvs.end(), {(vertex.x / outerRadius + 1) / 2, (vertex.y / outerRadius + 1) / 2});

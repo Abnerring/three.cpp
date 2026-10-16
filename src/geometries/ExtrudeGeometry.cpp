@@ -1,10 +1,17 @@
-#include "geometries/ExtrudeGeometry.h"
+﻿#include "geometries/ExtrudeGeometry.h"
+#include "math/JSNumberMath.h"
 #include "extras/ShapeUtils.h"
+#include "math/JSNumberMath.h"
 #include "extras/curves/LineCurve3.h"
+#include "math/JSNumberMath.h"
 #include "extras/curves/QuadraticBezierCurve3.h"
+#include "math/JSNumberMath.h"
 #include "extras/curves/CubicBezierCurve3.h"
+#include "math/JSNumberMath.h"
 #include "extras/curves/CatmullRomCurve3.h"
+#include "math/JSNumberMath.h"
 #include "math/MathUtils.h"
+#include "math/JSNumberMath.h"
 #include <numbers>
 
 namespace {
@@ -201,8 +208,8 @@ ExtrudeGeometry::ExtrudeGeometry(Shapes shapes, OptionsPtr options) : parameters
             Points contracted; std::vector<Points> expanded;
             for (double b = 0; b < subdivision(bevelSegments); ++b) {
                 const auto t = b / bevelSegments.toNumber();
-                const auto z = bevelThickness.toNumber() * std::cos(t * std::numbers::pi / 2);
-                const auto bs = add(bevelSize.toNumber() * std::sin(t * std::numbers::pi / 2), bevelOffset);
+                const auto z = bevelThickness.toNumber() * JSNumberMath::cos(t * std::numbers::pi / 2);
+                const auto bs = add(bevelSize.toNumber() * JSNumberMath::sin(t * std::numbers::pi / 2), bevelOffset);
                 for (std::size_t i = 0; i < contour.size(); ++i) {
                     const auto v = scalePoint(contour[i], contourMovements[i], bs); push(v.x, v.y, -z);
                     if (t == 0) contracted.push_back(std::make_shared<Vector2>(v));
@@ -238,8 +245,8 @@ ExtrudeGeometry::ExtrudeGeometry(Shapes shapes, OptionsPtr options) : parameters
         }
         for (double b = subdivision(bevelSegments) - 1; b >= 0; --b) {
             const auto t = b / bevelSegments.toNumber();
-            const auto z = bevelThickness.toNumber() * std::cos(t * std::numbers::pi / 2);
-            const auto bs = add(bevelSize.toNumber() * std::sin(t * std::numbers::pi / 2), bevelOffset);
+            const auto z = bevelThickness.toNumber() * JSNumberMath::cos(t * std::numbers::pi / 2);
+            const auto bs = add(bevelSize.toNumber() * JSNumberMath::sin(t * std::numbers::pi / 2), bevelOffset);
             for (std::size_t i = 0; i < contour.size(); ++i) {
                 const auto v = scalePoint(contour[i], contourMovements[i], bs); push(v.x, v.y, add(depth, z));
             }

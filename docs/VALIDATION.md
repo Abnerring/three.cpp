@@ -1,5 +1,14 @@
 # 验证记录
 
+## 当前追加验证：核心三角函数全面对齐 V8 fdlibm，2026-10-17
+
+- 承接上一轮 Matrix4 的发现，把 `src/` 内全部三角函数调用对齐固定上游：`JSNumberMath` 新增 `tan`/`asin`/`atan`/`atan2`（子代理实现，主会话复核），随后 **117 处调用点（29 个文件）** 改为 `JSNumberMath`，`src/` 内不再有 `std::sin/cos/tan/asin/acos/atan/atan2`。
+- 四个新函数的差分：`threecpp.threejs-math-trig-parity` **2,491 个场景**（360 tan、834 asin、348 atan、948 atan2）与固定 Node v26.5.0 的全局 `Math` **逐位一致，0 处不符**；子代理另跑 50 万个随机位型输入同样 0 处不符；单测 4 cases / 43 assertions。
+- 调用点的差分：新增 `threecpp.threejs-math-core-trig-parity`，**921 个场景逐位一致**（六种 Euler order 的 `setFromEuler`、`setFromAxisAngle`、`slerpQuaternions`、`setFromRotationMatrix`、`Euler.setFromRotationMatrix`、`Matrix3.makeRotation`、`Matrix4.makeRotationX/Y/Z/Axis/FromEuler`、`setFromSphericalCoords`/`setFromCylindricalCoords`、`Vector3.angleTo`、`Vector2.angle`、`Spherical`/`Cylindrical.setFromVector3`、`Vector4.setAxisAngleFromQuaternion`）。
+- 回归：核心单测 **662 cases / 205,175 assertions** 全部通过（未出现因末位变化而失效的固化期望）；addons 全套 **130 cases / 22,729 assertions** 通过；差分网络 **124/124 通过**（含两个新测试）；port-audit 未变更即通过（本轮不新增模块）。
+- 过程中确认的一处上游事实：固定 r187 的 `Vector2` 没有 `setAngle`（只有 `angle`/`angleTo`/`setLength`/`rotateAround`），C++ 端同样没有，探针据此删除了该场景而不是补一个上游不存在的 API。
+- 仍属已知边界的非三角函数：`Color.cpp`、`ColorManagement.cpp` 与 `MathUtils.cpp` 的 `std::pow/exp/log/log2`（上游为 `Math.*`）尚未对齐，已列为下一轮目标；`Math.sqrt` 与 `Math.sqrt` 同为正确舍入，无需替换。
+
 ## 当前追加验证：LoftGeometry/DecalGeometry/TeapotGeometry 与核心 Matrix4 三角函数修正，2026-10-17
 
 - 新增 3 个几何模块。`LoftGeometry`、`DecalGeometry`（含导出的 DecalVertex）由主会话实现，`TeapotGeometry` 由子代理实现、主会话复核（强制重编、跑单测与差分、检查改动范围）。

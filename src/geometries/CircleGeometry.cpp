@@ -1,5 +1,7 @@
-#include "geometries/CircleGeometry.h"
+﻿#include "geometries/CircleGeometry.h"
+#include "math/JSNumberMath.h"
 #include "math/MathUtils.h"
+#include "math/JSNumberMath.h"
 #include <algorithm>
 #include <cmath>
 #include <limits>
@@ -38,8 +40,8 @@ CircleGeometry::CircleGeometry(double radius, double segments, double thetaStart
     Vector3 vertex;
     for (double s = 0; s <= segments; ++s) {
         const double segment = thetaStart + s / segments * thetaLength;
-        vertex.x = radius * std::cos(segment);
-        vertex.y = radius * std::sin(segment);
+        vertex.x = radius * JSNumberMath::cos(segment);
+        vertex.y = radius * JSNumberMath::sin(segment);
         vertices.insert(vertices.end(), {vertex.x, vertex.y, vertex.z});
         normals.insert(normals.end(), {0, 0, 1});
         uvs.insert(uvs.end(), {(vertex.x / radius + 1) / 2, (vertex.y / radius + 1) / 2});

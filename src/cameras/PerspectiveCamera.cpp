@@ -1,4 +1,5 @@
-#include "cameras/PerspectiveCamera.h"
+﻿#include "cameras/PerspectiveCamera.h"
+#include "math/JSNumberMath.h"
 #include <algorithm>
 #include <cmath>
 #include <stdexcept>
@@ -53,16 +54,16 @@ std::shared_ptr<Object3D> PerspectiveCamera::clone(bool) const {
 }
 void PerspectiveCamera::setFocalLength(HIGH_PRECISION focalLength) {
     const auto vExtentSlope = HIGH_PRECISION(0.5) * getFilmHeight() / focalLength;
-    fov = 180 / MATH_PI * 2 * std::atan(vExtentSlope);
+    fov = 180 / MATH_PI * 2 * JSNumberMath::atan(vExtentSlope);
     updateProjectionMatrix();
 }
 HIGH_PRECISION PerspectiveCamera::getFocalLength() const {
     return HIGH_PRECISION(0.5) * getFilmHeight() /
-           std::tan(MATH_PI / 180 * HIGH_PRECISION(0.5) * fov);
+           JSNumberMath::tan(MATH_PI / 180 * HIGH_PRECISION(0.5) * fov);
 }
 HIGH_PRECISION PerspectiveCamera::getEffectiveFOV() const {
     return 180 / MATH_PI * 2 *
-           std::atan(std::tan(MATH_PI / 180 * HIGH_PRECISION(0.5) * fov) / zoom);
+           JSNumberMath::atan(JSNumberMath::tan(MATH_PI / 180 * HIGH_PRECISION(0.5) * fov) / zoom);
 }
 HIGH_PRECISION PerspectiveCamera::getFilmWidth() const {
     return filmGauge * std::min(aspect, HIGH_PRECISION(1));
@@ -100,7 +101,7 @@ void PerspectiveCamera::clearViewOffset() {
     updateProjectionMatrix();
 }
 void PerspectiveCamera::updateProjectionMatrix() {
-    auto top = near * std::tan(MATH_PI / 180 * HIGH_PRECISION(0.5) * fov) / zoom;
+    auto top = near * JSNumberMath::tan(MATH_PI / 180 * HIGH_PRECISION(0.5) * fov) / zoom;
     auto height = 2 * top;
     auto width = aspect * height;
     auto left = HIGH_PRECISION(-0.5) * width;

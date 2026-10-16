@@ -1,5 +1,7 @@
-#include "geometries/CapsuleGeometry.h"
+﻿#include "geometries/CapsuleGeometry.h"
+#include "math/JSNumberMath.h"
 #include "math/MathUtils.h"
+#include "math/JSNumberMath.h"
 #include <algorithm>
 #include <cmath>
 #include <limits>
@@ -52,9 +54,9 @@ CapsuleGeometry::CapsuleGeometry(double radius, double height, double capSegment
         if (iy <= capSegments) {
             const double progress = iy / capSegments;
             const double angle = (progress * pi) / 2;
-            profileY = -halfHeight - radius * std::cos(angle);
-            profileRadius = radius * std::sin(angle);
-            normalYComponent = -radius * std::cos(angle);
+            profileY = -halfHeight - radius * JSNumberMath::cos(angle);
+            profileRadius = radius * JSNumberMath::sin(angle);
+            normalYComponent = -radius * JSNumberMath::cos(angle);
             currentArcLength = progress * capArcLength;
         } else if (iy <= capSegments + heightSegments) {
             const double progress = (iy - capSegments) / heightSegments;
@@ -65,9 +67,9 @@ CapsuleGeometry::CapsuleGeometry(double radius, double height, double capSegment
         } else {
             const double progress = (iy - capSegments - heightSegments) / capSegments;
             const double angle = (progress * pi) / 2;
-            profileY = halfHeight + radius * std::sin(angle);
-            profileRadius = radius * std::cos(angle);
-            normalYComponent = radius * std::sin(angle);
+            profileY = halfHeight + radius * JSNumberMath::sin(angle);
+            profileRadius = radius * JSNumberMath::cos(angle);
+            normalYComponent = radius * JSNumberMath::sin(angle);
             currentArcLength = capArcLength + cylinderPartLength + progress * capArcLength;
         }
         const double v = MathUtils::max(0, MathUtils::min(1, currentArcLength / totalArcLength));
@@ -77,7 +79,7 @@ CapsuleGeometry::CapsuleGeometry(double radius, double height, double capSegment
         for (double ix = 0; ix <= radialSegments; ++ix) {
             const double u = ix / radialSegments;
             const double theta = u * pi * 2;
-            const double sinTheta = std::sin(theta), cosTheta = std::cos(theta);
+            const double sinTheta = JSNumberMath::sin(theta), cosTheta = JSNumberMath::cos(theta);
             vertex.set(-profileRadius * cosTheta, profileY, profileRadius * sinTheta);
             vertices.insert(vertices.end(), {vertex.x, vertex.y, vertex.z});
             normal.set(-profileRadius * cosTheta, normalYComponent, profileRadius * sinTheta).normalize();

@@ -1,7 +1,11 @@
-#include "math/Vector2.h"
+﻿#include "math/Vector2.h"
+#include "math/JSNumberMath.h"
 #include "core/VertexAttribute.h"
+#include "math/JSNumberMath.h"
 #include "math/Matrix3.h"
+#include "math/JSNumberMath.h"
 #include "math/MathUtils.h"
+#include "math/JSNumberMath.h"
 #include <algorithm>
 #include <cmath>
 #include <stdexcept>
@@ -278,7 +282,7 @@ Vector2 Vector2::getNormal() const
 HIGH_PRECISION Vector2::angle() const
 {
     // computes the angle in radians with respect to the positive x-axis
-    auto angle = std::atan2(-this->y, -this->x) + MATH_PI;
+    auto angle = JSNumberMath::atan2(-this->y, -this->x) + MATH_PI;
     return angle;
 }
 
@@ -292,7 +296,7 @@ HIGH_PRECISION Vector2::angleTo(const Vector2 &v) const
     auto theta = this->dot(v) / denominator;
 
     // clamp, to handle numerical problems
-    return std::acos(MathUtils::clamp(theta, -1, 1));
+    return JSNumberMath::acos(MathUtils::clamp(theta, -1, 1));
 }
 
 HIGH_PRECISION Vector2::distanceTo(const Vector2 &v) const
@@ -354,8 +358,8 @@ std::vector<HIGH_PRECISION> &Vector2::toArray(std::vector<HIGH_PRECISION> &array
 
 Vector2 &Vector2::rotateAround(const Vector2 &center, HIGH_PRECISION angle)
 {
-    auto c = std::cos(angle);
-    auto s = std::sin(angle);
+    auto c = JSNumberMath::cos(angle);
+    auto s = JSNumberMath::sin(angle);
 
     auto x = this->x - center.x;
     auto y = this->y - center.y;

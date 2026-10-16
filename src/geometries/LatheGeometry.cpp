@@ -1,5 +1,7 @@
-#include "geometries/LatheGeometry.h"
+﻿#include "geometries/LatheGeometry.h"
+#include "math/JSNumberMath.h"
 #include "math/MathUtils.h"
+#include "math/JSNumberMath.h"
 #include <algorithm>
 #include <cmath>
 #include <limits>
@@ -70,7 +72,7 @@ LatheGeometry::LatheGeometry(PointsPtr points, double segments, double phiStart,
     }
     for (double i = 0; i <= segments; ++i) {
         const double phi = phiStart + i * inverseSegments * phiLength;
-        const double sin = std::sin(phi), cos = std::cos(phi);
+        const double sin = JSNumberMath::sin(phi), cos = JSNumberMath::cos(phi);
         for (std::size_t j = 0; j < points->size(); ++j) {
             vertex.set(point(j).x * sin, point(j).y, point(j).x * cos);
             vertices.insert(vertices.end(), {vertex.x, vertex.y, vertex.z});

@@ -1,5 +1,7 @@
-#include "geometries/TorusKnotGeometry.h"
+﻿#include "geometries/TorusKnotGeometry.h"
+#include "math/JSNumberMath.h"
 #include "math/MathUtils.h"
+#include "math/JSNumberMath.h"
 #include <algorithm>
 #include <cmath>
 #include <limits>
@@ -39,12 +41,12 @@ TorusKnotGeometry::TorusKnotGeometry(double radius, double tube, double tubularS
     std::vector<double> indices, vertices, normals, uvs;
     Vector3 vertex, normal, P1, P2, B, T, N;
     const auto calculatePositionOnCurve = [&](double u, Vector3& position) {
-        const double cu = std::cos(u), su = std::sin(u);
+        const double cu = JSNumberMath::cos(u), su = JSNumberMath::sin(u);
         const double quOverP = q / p * u;
-        const double cs = std::cos(quOverP);
+        const double cs = JSNumberMath::cos(quOverP);
         position.x = radius * (2 + cs) * 0.5 * cu;
         position.y = radius * (2 + cs) * su * 0.5;
-        position.z = radius * std::sin(quOverP) * 0.5;
+        position.z = radius * JSNumberMath::sin(quOverP) * 0.5;
     };
     for (double i = 0; i <= tubularSegments; ++i) {
         const double u = i / tubularSegments * p * pi * 2;
@@ -58,7 +60,7 @@ TorusKnotGeometry::TorusKnotGeometry(double radius, double tube, double tubularS
         N.normalize();
         for (double j = 0; j <= radialSegments; ++j) {
             const double v = j / radialSegments * pi * 2;
-            const double cx = -tube * std::cos(v), cy = tube * std::sin(v);
+            const double cx = -tube * JSNumberMath::cos(v), cy = tube * JSNumberMath::sin(v);
             vertex.x = P1.x + (cx * N.x + cy * B.x);
             vertex.y = P1.y + (cx * N.y + cy * B.y);
             vertex.z = P1.z + (cx * N.z + cy * B.z);

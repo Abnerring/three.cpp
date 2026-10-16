@@ -1,5 +1,7 @@
-#include "cameras/StereoCamera.h"
+﻿#include "cameras/StereoCamera.h"
+#include "math/JSNumberMath.h"
 #include "math/MathUtils.h"
+#include "math/JSNumberMath.h"
 #include <cmath>
 
 namespace {
@@ -24,7 +26,7 @@ void StereoCamera::update(const PerspectiveCamera& camera) {
         projectionMatrix.copy(camera.projectionMatrix);
         const auto eyeSepHalf = cache.eyeSep.toNumber() / 2;
         const auto eyeSepOnProjection = eyeSepHalf * cache.near.toNumber() / cache.focus.toNumber();
-        const auto ymax = (cache.near.toNumber() * std::tan((MATH_PI / 180) * cache.fov.toNumber() * .5)) / cache.zoom.toNumber();
+        const auto ymax = (cache.near.toNumber() * JSNumberMath::tan((MATH_PI / 180) * cache.fov.toNumber() * .5)) / cache.zoom.toNumber();
         eyeLeft.elements()[12] = -eyeSepHalf;
         eyeRight.elements()[12] = eyeSepHalf;
         auto xmin = -ymax * cache.aspect.toNumber() + eyeSepOnProjection;
