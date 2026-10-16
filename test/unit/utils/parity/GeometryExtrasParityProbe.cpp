@@ -20,13 +20,21 @@
 #include "geometries/RoundedBoxGeometry.h"
 #include "math/Vector3.h"
 #include <charconv>
+#include <variant>
 #include <cmath>
+#include <variant>
 #include <cstddef>
+#include <variant>
 #include <iostream>
+#include <variant>
 #include <limits>
+#include <variant>
 #include <memory>
+#include <variant>
 #include <sstream>
+#include <variant>
 #include <string>
+#include <variant>
 
 namespace {
 JsonValue number(double value) {
@@ -55,7 +63,16 @@ JsonValue geometryJSON(const BufferGeometry& geometry, const std::vector<std::st
     const JsonValue json = geometry.toJSON();
     JsonValue fields = JsonValue::Object{};
     for (const auto& name : {"slices", "stacks", "width", "height", "depth", "segments", "radius"})
-        if (json.contains(name)) fields[name] = json.at(name);
+        if (json.contains(name)) {
+            // Parameter values go through the shared non-finite encoding: the JSON container turns
+            // a NaN into null, while the pinned module hands the harness an actual NaN.
+            const JsonValue& value = json.at(name);
+            try {
+                fields[name] = number(value.get<double>());
+            } catch (const std::bad_variant_access&) {
+                fields[name] = value;
+            }
+        }
     fields["type"] = json.at("type");
     result["json"] = std::move(fields);
     return result;

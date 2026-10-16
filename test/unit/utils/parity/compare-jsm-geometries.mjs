@@ -73,7 +73,7 @@ for(const [w,h,d,ws,hs,ds] of [[1,1,1,1,1,1],[2,3,4,2,1,3],[1,1,1,0,1,1],[1.5,2.
         expected:geometryJSON(geometry,['position'])});
 }
 // RoundedBoxGeometry, including the no-rounding case and a radius clamped by the smallest side.
-for(const [w,h,d,segments,radius] of [[1,1,1,2,0.1],[2,1,3,1,0.25],[1,1,1,0,0.1],[2,2,2,2,2],[1,1,1,3,0.05]]){
+for(const [w,h,d,segments,radius] of [[1,1,1,2,0.1],[2,1,3,1,0.25],[1,1,1,0,0.1],[2,2,2,2,2],[1,1,1,3,0.05],[1,1,1,2,NaN],[NaN,1,1,2,0.1],[1,1,1,NaN,0.1],[1,1,1,2,Infinity],[1,1,1,2,-1]]){
     const geometry=new RoundedBoxGeometry(w,h,d,segments,radius);
     scenarios.push({line:`R ${token(w)} ${token(h)} ${token(d)} ${token(segments)} ${token(radius)}`,
         expected:geometryJSON(geometry,['position','normal','uv'])});
