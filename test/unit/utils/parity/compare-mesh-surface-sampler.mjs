@@ -82,6 +82,13 @@ for(const meshKind of meshKinds){
 scenarios.push({meshKind:5,weightAttribute:'-',sampleCount:2,values:draws});
 scenarios.push({meshKind:8,weightAttribute:'-',sampleCount:3,values:draws});
 scenarios.push({meshKind:8,weightAttribute:'color',sampleCount:2,values:[0,0.5,1]});
+// Non-finite draws: the product with the cumulative total is NaN, the binary search then returns
+// -1 and the sample comes from the degenerate face path, which must stay NaN on both sides.
+for(const meshKind of [0,4,8]){
+    for(const values of [[NaN],[Infinity],[-Infinity],[NaN,0.5],[Infinity,-Infinity,0.25]]){
+        scenarios.push({meshKind,weightAttribute:'-',sampleCount:2,values});
+    }
+}
 // Boundary and degenerate draws: an exact 0 and an exact 1 draw (the pinned binary search then
 // walks off the end of the distribution), a draw sequence of a single value, and draws above 1
 // as well as a negative draw. These pin the search's edge behaviour instead of the happy path.
