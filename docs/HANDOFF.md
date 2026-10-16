@@ -24,6 +24,8 @@
 3. 其他候选：`examples/jsm/utils/SceneUtils`（9 KB，对象图操作）、`examples/jsm/utils/GeometryCompressionUtils`（13.5 KB，属性打包/解包，纯 CPU）。
 4. **验证缺口（已关闭）**：`JSNumberMath::acos` 目前**只有间接覆盖** —— `compare-math-core-trig.mjs` 通过 `Vector3.angleTo`、`Spherical.setFromVector3`、`Vector4.setAxisAngleFromQuaternion` 走到它，`compare-property-mixer.mjs` 只是在 JS 侧用 `Math.acos` 当 oracle；**没有直接的输入网格**（对比：`pow` 27,654 个输入、`sin/cos` 284 个、`tan/asin/atan/atan2` 2,491 个场景、`exp/log/log2` 2,869 个场景）。而 fdlibm 的 `acos` 有 `|x| > 0.5` 的分支切换，正是需要网格才能钉住的地方。补法：在 `MathTrigParityProbe` 里加一类 `acos <x>` 场景（或复用 `compare-curve-extras.mjs` 的 `N`/`O` 形式加一个 `A <x>` 并同步扩 C++ 探针），网格取 `±1`、`±1∓ulp`（`0.9999999999999999`/`1.0000000000000002`）、`±0.5`、`±0.5∓ulp`、`±0`、`±1e-8`、次正规、`|x| > 1`（NaN 路径）、NaN/±Infinity。
 
+5. **待修的真实缺陷（本轮推理发现，尚未修复）**：`examples/jsm/math/MeshSurfaceSampler` 在"顶点数不是 3 的倍数"的几何上会**越界读写**，而上游不会。复现：一个只有 2 个顶点的 position 属性（`count/3 = 0.67`）。上游 `new Float32Array(0.67)` 经 ToIndex 得长度 0，`build()` 的 `for (i < 0.67)` 仍跑一次，对长度 0 的数组写 `faceWeights[0]` 被**静默忽略**，于是 `distribution` 为空；`_sampleFaceIndex` 读到 `distribution[-1]` 得 `undefined`，`random() * undefined = NaN`，`_binarySearch(NaN)` 因 `start <= end`（0 <= -1）不成立而返回 -1，最后 `_sampleFace(-1)` 用负下标读属性得到 `undefined` → 采样结果是 NaN —— **全程不抛错**。C++ 侧两处不同：`std::vector<float> faceWeights(static_cast<std::size_t>(0.67))` 长度为 0 却仍写 `faceWeights[0]`（**越界写**），且我的 `sampleFaceIndex` 对空分布显式抛 `JSTypeError`（上游此处不抛）。修法：按 ToIndex 语义定长并让越界写被忽略（或先判定 `i < size`），`sampleFaceIndex` 去掉抛错、让 NaN 走到 `binarySearch` 返回 -1，`sampleFace` 对负下标按 JS 的 `undefined` 语义产出 NaN 而不是读内存。补测需要给探针加一个"2 顶点几何"的网格类型。
+
 ## 三、已完结的近期工作（勿重复）
 
 - 数学对齐：`src/` 内三角函数与非三角初等函数（`pow/exp/log/log2`）全部走 `JSNumberMath`（fdlibm 适配），差分 2,491 + 921 + 2,869 + 146 场景逐位一致；`Math.sqrt` 与 `Math.sqrt` 同为正确舍入，无需替换。
