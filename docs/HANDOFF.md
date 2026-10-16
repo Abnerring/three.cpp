@@ -14,7 +14,10 @@
 
 ## 二、下一步优先级
 
-1. **`src/loaders/FileLoader`**（8.2 KB，可解锁 72 个 jsm 加载器）
+1. **FileLoader 已落地并闭环（本条原为待办计划）**：`src/loaders/FileLoader.{h,cpp}` 已实现并注册进核心库，配套单测 3 个用例与差分 `threecpp.threejs-file-loader-parity`（6 个场景）均已通过，差分网络因此从 131 增至 132。宿主边界被收窄为模块级可注入传输，契约冻结在本文件第 10 条。
+   - 差分抓到一个真缺陷：上游非 200 错误里报告的是 `response.url` 而非请求的 url（重定向后应指向落点），实现已改为读取传输响应的 `url` 字段并在缺失时回退。这个问题读源码没有发现。
+   - 两处有意保留的近似（写在头文件里）：原生传输一次性交付整个 body，因此只触发一个进度事件而非每块一次；`status === 0` 时不输出上游的 console 警告。`blob`/`document` 与非常用 charset 显式报未实现。
+   - 后续加载器（`TextureLoader`/`ObjectLoader`/jsm 下的 OBJ、STL、PLY、MTL 等）都应复用这条传输契约，而不要再造宿主边界。
    - 现有基础设施均为 JSValue 图风格：`src/loaders/Loader.{h,cpp}`（`static JSValue prototype()`、`JSValue object()`、`JSMember` 访问器、`JSValue::constructor` + `defineProperty` + `retainForHeapLifetime`）、`Cache`、`LoadingManager` 已移植。
    - 传输层需注入：上游用 `fetch`/`Request`/`Response`/`ReadableStream`/`AbortController`/`ProgressEvent`/`DOMParser`/`TextDecoder`，C++ 无这些宿主对象。建议契约：注入函数接收请求描述、返回响应对象（`status`/`statusText`/`url`/`headers.get(name)`/分块 body），逐块触发 ProgressEvent 形状的回调；`document`（DOMParser）与 `blob` 显式报"未实现"错误而不是假装成功（符合 PORTING.md 的"未实现能力必须显式报错"）。
    - 可差分覆盖：缓存命中、重复请求（loading map 共享回调）、responseType（arraybuffer/text/json）、HTTP 非 200、网络错误、abort、进度事件计数与 `manager.itemStart/itemEnd/itemError` 顺序。JS 侧用桩替换 `globalThis.fetch`（必要时补 `ProgressEvent` 垫片）。
@@ -25,6 +28,8 @@
 4. **验证缺口（已关闭）**：`JSNumberMath::acos` 目前**只有间接覆盖** —— `compare-math-core-trig.mjs` 通过 `Vector3.angleTo`、`Spherical.setFromVector3`、`Vector4.setAxisAngleFromQuaternion` 走到它，`compare-property-mixer.mjs` 只是在 JS 侧用 `Math.acos` 当 oracle；**没有直接的输入网格**（对比：`pow` 27,654 个输入、`sin/cos` 284 个、`tan/asin/atan/atan2` 2,491 个场景、`exp/log/log2` 2,869 个场景）。而 fdlibm 的 `acos` 有 `|x| > 0.5` 的分支切换，正是需要网格才能钉住的地方。补法：在 `MathTrigParityProbe` 里加一类 `acos <x>` 场景（或复用 `compare-curve-extras.mjs` 的 `N`/`O` 形式加一个 `A <x>` 并同步扩 C++ 探针），网格取 `±1`、`±1∓ulp`（`0.9999999999999999`/`1.0000000000000002`）、`±0.5`、`±0.5∓ulp`、`±0`、`±1e-8`、次正规、`|x| > 1`（NaN 路径）、NaN/±Infinity。
 
 5. **已修复并已覆盖（历史记录）**
+11. **先核对工具产物，再判断被测对象**：FileLoader 差分前后失败七次，其中实现层真缺陷只有一个（即第 1 条的 `response.url`），其余全是脚手架问题——相对 URL 被 `Request` 拒绝、空格分隔协议无法承载含空格的 body（字段整体错位、加载次数解析成 0）、realm 句柄必须整进程存活（否则 `Cache` 变更抛错）、写入的源码与意图不符、以及 `add_test` 插入把既有测试劈成两半导致 CMake 配置失败。**每次都是"先打印、再判断"当轮推进一层，"先推理"则浪费一轮。**
+12. **构建可能根本没发生（本轮最贵的教训）**：CMake 配置自一次错误的插入起持续失败，但失败信息被我自己的输出过滤器挡掉，于是构建图从未更新、构建"成功"却什么都没重编，连续数轮跑的都是旧的探针可执行文件。三条纪律由此确立：**写完文件立刻回读关键行**；**配置与构建的错误输出不得过滤**；**改动探针源文件后删除其可执行文件**（与删 `.obj` 同等对待，本文件开头已记录 MSVC 中文界面 `/showIncludes` 乱码导致 ninja 不跟踪依赖）。
 10. **FileLoader 传输契约（冻结，实现时照此写，不要再设计）**：上游用 fetch / Request / Response / ReadableStream / AbortController / ProgressEvent / DOMParser / TextDecoder，原生侧没有这些宿主对象，因此把**只有一处**的宿主边界收窄成一个注入函数，其余逻辑照源码逐行移植。
    - 注入方式：模块级 `FileLoader::setTransport(JSValue)`，等价于 `globalThis.fetch`；未注入时 `load()` 显式抛错（说明未配置传输），不静默失败。
    - 传输入参：一个 JSValue 对象，字段 `url`（字符串，已过 `path` 与 `manager.resolveURL`）、`method`（恒为 GET）、`headers`（普通对象，来自 `requestHeader`）、`credentials`（`include` 或 `same-origin`，取自 `withCredentials`）、`signal`（对象，含布尔字段 `aborted`，由 `abort()` 置位）。
