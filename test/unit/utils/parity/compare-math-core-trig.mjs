@@ -112,7 +112,12 @@ for(const [x,y,z] of [[1,0,0],[0,1,0],[0,0,1],[1,2,3],[-1,-2,-3],[0,0,0],[1e-8,1
     const cylindrical=new Cylindrical().setFromVector3(new Vector3(x,y,z));
     add(`CY ${t(x)} ${t(y)} ${t(z)}`,{value:encodeArray([cylindrical.radius,cylindrical.theta,cylindrical.y])});
 }
-for(const [x,y,z,w] of [[0,0,0,1],[0.1,0.2,0.3,0.9],[-0.5,0.5,-0.5,0.5],[0,0,0,-1],[1,0,0,0]]){
+for(const [x,y,z,w] of [[0,0,0,1],[0.1,0.2,0.3,0.9],[-0.5,0.5,-0.5,0.5],[0,0,0,-1],[1,0,0,0],
+    // setAxisAngleFromQuaternion computes 2 * acos( w ), so these w values pin both branches of
+    // fdlibm's acos (it switches at |x| > 0.5) plus the |w| = 1 and w = 0 boundaries.
+    [0,0,0,0.5],[0,0,0,-0.5],[0,0,0,0.5000000000000001],[0,0,0,0.49999999999999994],
+    [0,0,0,0.9999999999999999],[0,0,0,-0.9999999999999999],[0,0,0,1e-8],[0,0,0,-1e-8],[0,0,0,0],
+    [0,0,0,5e-324],[0,0,0,-5e-324],[0,0,0,0.75],[0,0,0,-0.75],[0,0,0,0.25],[0,0,0,-0.25]]){
     const v=new Vector4().setAxisAngleFromQuaternion(new Quaternion(x,y,z,w));
     add(`V4Q ${[x,y,z,w].map(t).join(' ')}`,{value:encodeArray([v.x,v.y,v.z,v.w])});
 }
