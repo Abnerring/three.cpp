@@ -90,8 +90,12 @@ MeshSurfaceSampler& MeshSurfaceSampler::build() {
     distribution.assign(std::size_t(totalFaces), 0.f);
     double cumulativeTotal = 0;
     for (double i = 0; i < totalFaces; i += 1) {
-        cumulativeTotal += faceWeights[std::size_t(i)];
-        distribution[std::size_t(i)] = float(cumulativeTotal);
+        // The same ToIndex rule applies here: a JS read past the end of the weight array is
+        // undefined, so the running total becomes NaN and the write into the distribution is
+        // ignored - it must not read or write outside the native storage either.
+        const bool inWeights = std::size_t(i) < faceWeights.size();
+        cumulativeTotal += inWeights ? double(faceWeights[std::size_t(i)]) : std::nan("");
+        if (std::size_t(i) < distribution.size()) distribution[std::size_t(i)] = float(cumulativeTotal);
     }
     return *this;
 }
