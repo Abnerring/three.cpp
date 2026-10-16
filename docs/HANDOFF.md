@@ -25,6 +25,10 @@
 4. **验证缺口（已关闭）**：`JSNumberMath::acos` 目前**只有间接覆盖** —— `compare-math-core-trig.mjs` 通过 `Vector3.angleTo`、`Spherical.setFromVector3`、`Vector4.setAxisAngleFromQuaternion` 走到它，`compare-property-mixer.mjs` 只是在 JS 侧用 `Math.acos` 当 oracle；**没有直接的输入网格**（对比：`pow` 27,654 个输入、`sin/cos` 284 个、`tan/asin/atan/atan2` 2,491 个场景、`exp/log/log2` 2,869 个场景）。而 fdlibm 的 `acos` 有 `|x| > 0.5` 的分支切换，正是需要网格才能钉住的地方。补法：在 `MathTrigParityProbe` 里加一类 `acos <x>` 场景（或复用 `compare-curve-extras.mjs` 的 `N`/`O` 形式加一个 `A <x>` 并同步扩 C++ 探针），网格取 `±1`、`±1∓ulp`（`0.9999999999999999`/`1.0000000000000002`）、`±0.5`、`±0.5∓ulp`、`±0`、`±1e-8`、次正规、`|x| > 1`（NaN 路径）、NaN/±Infinity。
 
 5. **已修复并已覆盖（历史记录）**
+8. **流程纪律（本轮踩到，务必遵守）**：
+   - 验证命令失败时**不要提交**，即使怀疑失败原因是自己调用姿势不对 —— 先看清输出、再用正确方式复跑一次，通过后才提交。本轮我曾把脚本与 git commit 放在同一条命令里，脚本因我传错了探针二进制名（ENOENT）而失败，我却仍然提交了；事后用注册的 ctest 复跑确认改动本身没问题，但操作顺序是错的。
+   - **过滤输出时不要连错误一起滤掉**：同一轮我用只匹配 files changed 的过滤器查看提交结果，恰好把失败信息挡在视野之外。凡是用 Select-String / grep 收窄输出，都要同时保留 error / Error / FAILED / Exception 等模式。
+   - 探针二进制名不要凭记忆拼：`build/bin/` 下的可执行名与脚本名并不一一对应（例如动画运行时探针并非 compare-animation-runtime 对应的同名文件）。最可靠的做法是**直接用 ctest 跑注册好的用例**（它自带正确路径），或在 test/CMakeLists.txt 里查 $<TARGET_FILE:...> 的名字。
 7. **差分网络的运行时覆盖清单与判断方法（采集于本轮）**：判断"某模块有没有差分覆盖"**不能 grep 导入语句** —— 这个仓库的加载方式至少有三种（字面量 url 调用、为把 three 说明符指向 src/Three.js 而使用的 base64 data URL、以及目录枚举加动态循环），静态扫描必然漏报（曾据此得出"59 个模块无覆盖"的错误结论）。可靠做法：运行 ctest --test-dir build -R parity -E webgl-lights-states -V -j 4，然后采集各探针自报的摘要行。
    - 当前规模（131 个测试全绿，无空转探针）：V8 array sort 1272 cases / 1738420 comparator calls；Addon math 5316 场景；CurveExtras 28176；RectAreaLight 65717 项比较；Advanced geometry 103833 值/身份；JSM shaders 52 模块 / 8029 项；Convex hull 358 场景；SortUtils 748 场景 / 178302 元素；MeshSurfaceSampler 73 场景；BufferGeometryUtils 110 场景 / 15 操作；Teapot 84 场景 / 262656 分量。
    - 加固候选（**按比较量而非场景数排序** —— 场景数不等于覆盖强度，这一条同样适用于本清单本身）：Runtime parity 仅 674 次比较，数量级明显低于同类；Animation runtime parity 15 个场景且**不自报比较数**，强度无法判断，应先让它自报或补足场景。先前按场景数把 Storage parity（35）、InterleavedBuffer parity（43）、Interleaved attribute parity（46）也列为偏薄是**误判**：场景少不等于比较少，例如 Extended runtime parity 只有 7 个场景却做了 15345 次转换，DataUtils parity 只有 24 个场景却覆盖全部 65536 个半精度编码。
