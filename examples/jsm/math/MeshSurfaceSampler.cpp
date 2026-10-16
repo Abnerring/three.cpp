@@ -95,9 +95,9 @@ MeshSurfaceSampler& MeshSurfaceSampler::sample(Vector3& targetPosition, Vector3*
 
 // private
 double MeshSurfaceSampler::sampleFaceIndex() {
-    if (distribution.empty())
-        throw JSTypeError("Cannot read properties of undefined (reading 'length')");
-    const double cumulativeTotal = distribution[distribution.size() - 1];
+    // `distribution[ distribution.length - 1 ]` on an empty typed array is undefined, so the
+    // product is NaN and the search returns -1; the pinned class never throws on this path.
+    const double cumulativeTotal = distribution.empty() ? std::nan("") : double(distribution[distribution.size() - 1]);
     return binarySearch(random() * cumulativeTotal);
 }
 
@@ -125,6 +125,19 @@ MeshSurfaceSampler& MeshSurfaceSampler::sampleFace(double faceIndex, Vector3& ta
     if (u + v > 1) {
         u = 1 - u;
         v = 1 - v;
+    }
+    if (faceIndex < 0) {
+        // Negative indices read `undefined` from the attributes upstream, so every requested
+        // target becomes NaN; nothing is thrown and no memory outside the attributes is touched.
+        targetPosition.set(std::nan(""), std::nan(""), std::nan(""));
+        if (targetNormal != nullptr) targetNormal->set(std::nan(""), std::nan(""), std::nan(""));
+        if (targetColor != nullptr && colorAttribute != nullptr) {
+            targetColor->r = std::nan("");
+            targetColor->g = std::nan("");
+            targetColor->b = std::nan("");
+        }
+        if (targetUV != nullptr && uvAttribute != nullptr) targetUV->set(std::nan(""), std::nan(""));
+        return *this;
     }
     // get the vertex attribute indices
     const auto index = indexAttribute;
