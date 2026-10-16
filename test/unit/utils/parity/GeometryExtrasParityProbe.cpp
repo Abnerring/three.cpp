@@ -111,12 +111,26 @@ int main() {
                 output = geometryJSON(geometry, {"position", "normal", "uv"});
             } else if (kind == "B") {
                 double width = 0, height = 0, depth = 0, ws = 0, hs = 0, ds = 0;
-                stream >> width >> height >> depth >> ws >> hs >> ds;
+                {
+                    double* targets[] = {&width, &height, &depth, &ws, &hs, &ds};
+                    for (auto* target : targets) {
+                        stream >> token;
+                        *target = parse(token);
+                    }
+                }
                 BoxLineGeometry geometry(width, height, depth, ws, hs, ds);
                 output = geometryJSON(geometry, {"position"});
             } else if (kind == "R") {
                 double width = 0, height = 0, depth = 0, segments = 0, radius = 0;
-                stream >> width >> height >> depth >> segments >> radius;
+                {
+                    // Tokens go through parse() so "NaN", "Infinity" and "-0" survive; the MSVC
+                    // stream extractor does not accept those spellings and would leave zeros.
+                    double* targets[] = {&width, &height, &depth, &segments, &radius};
+                    for (auto* target : targets) {
+                        stream >> token;
+                        *target = parse(token);
+                    }
+                }
                 RoundedBoxGeometry geometry(width, height, depth, segments, radius);
                 output = geometryJSON(geometry, {"position", "normal", "uv"});
             } else {
