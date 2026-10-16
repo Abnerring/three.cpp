@@ -80,7 +80,14 @@ const loftCases=[
     {sections:[[new Vector3(1,0,0),new Vector3(0,1,0)],[new Vector3(1,0,1),new Vector3(0,1,1)]],
         options:{capStart:true,capEnd:true}},
     {sections:[[new Vector3(0,0,0),new Vector3(0,0,0)],[new Vector3(0,0,1),new Vector3(0,0,1)]],options:{}},
-    {sections:[ring(0,1,4),ring(0,1,4),ring(1,1,4)],options:{capStart:true}}
+    {sections:[ring(0,1,4),ring(0,1,4),ring(1,1,4)],options:{capStart:true}},
+    // Non-finite coordinates: the pinned class does not validate them, so NaN and Infinity flow
+    // into the arc-length uvs, the cap normals and the computed vertex normals.
+    {sections:[[new Vector3(0,0,0),new Vector3(1,0,0),new Vector3(0,NaN,0)],[new Vector3(0,0,1),new Vector3(1,0,1),new Vector3(0,1,1)]],options:{}},
+    {sections:[[new Vector3(0,0,0),new Vector3(1,0,0),new Vector3(0,1,0)],[new Vector3(0,0,Infinity),new Vector3(1,0,1),new Vector3(0,1,1)]],options:{}},
+    {sections:[[new Vector3(Infinity,0,0),new Vector3(-Infinity,0,0),new Vector3(0,1,0)],[new Vector3(0,0,1),new Vector3(1,0,1),new Vector3(0,1,1)]],options:{capStart:true,capEnd:true}},
+    {sections:[[new Vector3(NaN,NaN,NaN)],[new Vector3(NaN,NaN,NaN)]],options:{}},
+    {sections:[[new Vector3(0,0,0),new Vector3(1,0,0),new Vector3(0,1,0)],[new Vector3(0,0,1),new Vector3(1,0,1),new Vector3(NaN,NaN,NaN)]],options:{capEnd:true}}
 ];
 // A construction that the pinned module itself rejects is compared as the error name and
 // message, so the degenerate contour crash is part of the contract.
