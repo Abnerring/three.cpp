@@ -40,13 +40,13 @@ std::shared_ptr<AnimationClip> AnimationClipCreator::CreateScaleAxisAnimation(do
     return clip(period, std::make_shared<NumberKeyframeTrack>(trackName, times, values));
 }
 
-std::shared_ptr<AnimationClip> AnimationClipCreator::CreateShakeAnimation(double duration, double shakeScale) {
+std::shared_ptr<AnimationClip> AnimationClipCreator::CreateShakeAnimation(double duration, const Vector3& shakeScale) {
     std::vector<double> times, values;
     Vector3 temporary;
     for (double i = 0; i < duration * 10; i += 1) {
         times.push_back(i / 10);
         temporary.set(random() * 2.0 - 1.0, random() * 2.0 - 1.0, random() * 2.0 - 1.0)
-            .multiplyScalar(shakeScale)
+            .multiply(shakeScale)
             .toArray(values, values.size());
     }
     return clip(duration, std::make_shared<VectorKeyframeTrack>(".position", times, values));

@@ -286,6 +286,7 @@ if(THREECPP_BUILD_ADDONS)
         unit/addons/math/JSNumberMathExpLog.tests.cpp
         unit/addons/math/MeshSurfaceSampler.tests.cpp
         unit/addons/utils/CameraUtils.tests.cpp
+        unit/addons/animation/AnimationClipCreator.tests.cpp
         unit/addons/geometries/ParametricFunctions.tests.cpp
         unit/addons/geometries/ParametricGeometry.tests.cpp
         unit/addons/geometries/BoxLineGeometry.tests.cpp

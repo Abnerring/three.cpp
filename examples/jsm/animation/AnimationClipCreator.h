@@ -1,6 +1,7 @@
-﻿#pragma once
+#pragma once
 #include "animation/AnimationClip.h"
 #include "math/Color.h"
+#include "math/Vector3.h"
 #include <functional>
 #include <memory>
 #include <string>
@@ -21,7 +22,7 @@ class AnimationClipCreator {
 
     static std::shared_ptr<AnimationClip> CreateRotationAnimation(double period, const std::string& axis = "x");
     static std::shared_ptr<AnimationClip> CreateScaleAxisAnimation(double period, const std::string& axis = "x");
-    static std::shared_ptr<AnimationClip> CreateShakeAnimation(double duration, double shakeScale);
+    static std::shared_ptr<AnimationClip> CreateShakeAnimation(double duration, const Vector3& shakeScale);
     static std::shared_ptr<AnimationClip> CreatePulsationAnimation(double duration, double pulseScale);
     static std::shared_ptr<AnimationClip> CreateVisibilityAnimation(double duration);
     static std::shared_ptr<AnimationClip> CreateMaterialColorAnimation(double duration, const std::vector<Color>& colors);

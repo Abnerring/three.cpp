@@ -22099,7 +22099,9 @@
           "pointer": "/modules/756"
         },
         "upstreamUnitTests": [],
-        "cppUnitTests": [],
+        "cppUnitTests": [
+          "test/unit/addons/animation/AnimationClipCreator.tests.cpp"
+        ],
         "reviewedImplementation": [],
         "differentialResults": [],
         "renderingResults": [],
