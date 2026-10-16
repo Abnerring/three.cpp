@@ -41,7 +41,12 @@ MeshSurfaceSampler& MeshSurfaceSampler::build() {
     // TypeError; C++ must not dereference the empty handle.
     if (!index && !position) throw JSTypeError("Cannot read properties of undefined (reading 'count')");
     const double totalFaces = index ? (index->getCount() / 3.) : (position->getCount() / 3.);
-    std::vector<float> faceWeights(static_cast<std::size_t>(totalFaces));
+    // `new Float32Array( totalFaces )` applies ToIndex: the length is the floored value, so a
+    // position count that is not a multiple of three leaves a shorter array than the loop below
+    // walks. A typed array silently ignores an out-of-range write, and the native port reproduces
+    // that instead of writing past the end of the vector.
+    const std::size_t weightCount = totalFaces > 0 ? std::size_t(totalFaces) : 0;
+    std::vector<float> faceWeights(weightCount);
     // Accumulate weights for each mesh face.
     for (double i = 0; i < totalFaces; i += 1) {
         double faceWeight = 1;
@@ -60,7 +65,7 @@ MeshSurfaceSampler& MeshSurfaceSampler::build() {
         face.b.fromBufferAttribute(*position, i1);
         face.c.fromBufferAttribute(*position, i2);
         faceWeight *= face.getArea();
-        faceWeights[std::size_t(i)] = float(faceWeight);
+        if (std::size_t(i) < faceWeights.size()) faceWeights[std::size_t(i)] = float(faceWeight);
     }
     // Store cumulative total face weights in an array, where weight index
     // corresponds to face index. The accumulator stays binary64 like the JS number.
