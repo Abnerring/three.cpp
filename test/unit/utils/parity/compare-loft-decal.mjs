@@ -96,7 +96,16 @@ const decalCases=[
     ['T',0.25,0.5,-0.25, 0.25,0.5,-0.25, 0.3,0.2,0.1, 1,1,1],
     ['T',1,0,0, 0.4,0.4,0.4, 0,0,0, 1.6,1.6,1.6],
     ['E',0,0,0, 0,0,0, 1,1,1],
-    ['E',0,0,0.2, 0,0,0, 0.5,0.5,0.5]
+    ['E',0,0,0.2, 0,0,0, 0.5,0.5,0.5],
+    // Degenerate and extreme projector sizes: a zero size divides by zero in the uv step, a
+    // negative size flips the uv orientation and a huge size engulfs the whole mesh.
+    ['D',0,0,0, 0,0,0, 0,1,1],
+    ['D',0,0,0, 0,0,0, 1,0,1],
+    ['D',0,0,0, 0,0,0, 1,1,0],
+    ['D',0,0,0, 0.3,0.2,0.1, -1,1,1],
+    ['D',0,0,0, 0,0,0, 1e6,1e6,1e6],
+    ['E',0,0,0.2, 0,0,0, 0,0.5,0.5],
+    ['T',0.25,0.5,-0.25, 0.25,0.5,-0.25, 0.3,0.2,0.1, 0,1,1]
 ];
 for(const [kind,...values] of decalCases){
     let mesh;
