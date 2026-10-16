@@ -1,5 +1,13 @@
 # 验证记录
 
+## 当前追加验证：CurveExtras 与 JSNumberMath.pow，2026-10-17
+
+- 新增 `examples/jsm/curves/CurveExtras`（14 个装饰曲线）。单测 5 cases / 77 assertions 通过；差分导入固定 checkout 的 `CurveExtras.js`，**1,224 个场景逐位一致**：28 次构造（默认与显式 scale）的采样点、切线、`arcLengthDivisions` 8/200 的弧长与 `type` 字符串，外加 774 组 `Math.pow` 与 212 个 `Math.sin`/`Math.cos` 输入。注册为 `threecpp.threejs-curve-extras-parity`。
+- 差分前先做了独立判定实验：58,050 组 `(x, y)` 上 `std::pow` 与 Node `Math.pow` 有 **3 处位级不一致**（`Math.pow(1.000093339211477, 2)`、`Math.pow(±1.7976931348623157e308, 0.5)`、`Math.pow(0.9999999999999999, 0.5)`），因此直接使用 `std::pow` 会破坏公式一致性。
+- 追溯固定 Node 源码后确认：`--use-std-math-pow` 在 Node v26.5.0 中默认为开，`v8::internal::math::pow` 只补 ECMAScript 特例与 `y === 2`/`y === 0.5` 两个编译器捷径，其余委托 `std::pow`；据此在 `src/math/JSNumberMath` 中按该包装实现 `pow`，未移植 `base::ieee754::legacy::pow`。来源 `deps/v8/src/numbers/ieee754.cc`（SHA-256 `0582ca75…`）已登记 `upstream.json`。
+- 边界：通用分支与固定 Windows oracle 位级一致；其他平台的 libm 属另一份末位契约。`Math.pow` 的成功对照同时为既有的 sRGB/颜色传输等 `pow` 使用点提供了可复用实现，但这些模块自身的位级验收仍未执行。
+- 审计重新生成：1,251 个模块，partial-unverified 204（+1）、missing 737（−1）、vulkan-port-pending 290、dependency-unverified 20；Acorn 解析错误 0。`addons-unit`、`nurbs-parity`、`curve-extras-parity`、`port-audit` 5/5（`-R` 筛选中 4/4）通过。
+
 ## 当前追加验证：NURBS 全家族差分与 surface/volume，2026-10-17
 
 本轮在上一轮 CPU 组合（`THREECPP_BUILD_VULKAN=OFF`，本机无 Vulkan SDK 头与 glslangValidator）基础上补齐 NURBS 家族：

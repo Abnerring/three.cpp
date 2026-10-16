@@ -57,6 +57,15 @@
         "purpose": "Native binary64 arithmetic for quaternion interpolation and observable animation callbacks; no JavaScript engine"
       },
       {
+        "name": "V8 Math.pow entry point",
+        "source": "https://github.com/nodejs/node/blob/v26.5.0/deps/v8/src/numbers/ieee754.cc",
+        "revision": "Node.js v26.5.0 / V8 14.6.202.34-node.24",
+        "sourceSHA256": "0582ca75d4d3e8c58b784734ef7ddf891e5154bf8e35c4d550ea2263265859fc",
+        "implementation": "src/math/JSNumberMath.cpp",
+        "license": "V8 BSD-3-Clause, retained in implementation",
+        "purpose": "Native Math.pow semantics for addon curve formulas: the pinned Node release enables V8's --use-std-math-pow default, so ECMAScript NaN/infinity cases, y === 2 as x * x and y === 0.5 as sqrt( x + 0 ) are explicit and every other input reaches the platform std::pow; no JavaScript engine"
+      },
+      {
         "name": "V8 TimSort",
         "source": "https://github.com/nodejs/node/blob/v26.5.0/deps/v8/third_party/v8/builtins/array-sort.tq",
         "revision": "Node.js v26.5.0 / V8 14.6.202.34-node.24",
@@ -185,8 +194,8 @@
     "note": "Accepted port scope is src and examples/jsm, including tracked third-party dependencies. Editor/manual web applications are excluded from native application rewrites. Native host behavior, packaging and all three platforms require separate implementation and verification evidence."
   },
   "counts": {
-    "partial-unverified": 203,
-    "missing": 738,
+    "partial-unverified": 204,
+    "missing": 737,
     "vulkan-port-pending": 290,
     "dependency-unverified": 20
   },
@@ -202,8 +211,8 @@
     "examples/jsm": {
       "modules": 496,
       "counts": {
-        "missing": 469,
-        "partial-unverified": 7,
+        "missing": 468,
+        "partial-unverified": 8,
         "dependency-unverified": 20
       }
     }
@@ -248,7 +257,7 @@
       "path": "examples/jsm/curves",
       "upstreamFiles": 5,
       "moduleCount": 5,
-      "modulesWithCppFiles": 4,
+      "modulesWithCppFiles": 5,
       "verifiedComplete": 0
     },
     {
@@ -22563,11 +22572,11 @@
       "scope": "examples/jsm",
       "kind": "addon",
       "upstreamSha256": "17162cccc82ae0281712e06699490a6350d40c36e57c0177a0d65ba583df3759",
-      "header": null,
-      "implementation": null,
+      "header": "examples/jsm/curves/CurveExtras.h",
+      "implementation": "examples/jsm/curves/CurveExtras.cpp",
       "expectedHeader": "examples/jsm/curves/CurveExtras.h",
       "expectedImplementation": "examples/jsm/curves/CurveExtras.cpp",
-      "status": "missing",
+      "status": "partial-unverified",
       "verifiedComplete": false,
       "apiExtraction": "static-only",
       "verification": {
@@ -22576,7 +22585,9 @@
           "pointer": "/modules/774"
         },
         "upstreamUnitTests": [],
-        "cppUnitTests": [],
+        "cppUnitTests": [
+          "test/unit/addons/curves/CurveExtras.tests.cpp"
+        ],
         "reviewedImplementation": [],
         "differentialResults": [],
         "renderingResults": [],

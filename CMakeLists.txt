@@ -198,7 +198,8 @@ if(THREECPP_BUILD_ADDONS)
         examples/jsm/curves/NURBSUtils.cpp
         examples/jsm/curves/NURBSCurve.cpp
         examples/jsm/curves/NURBSSurface.cpp
-        examples/jsm/curves/NURBSVolume.cpp)
+        examples/jsm/curves/NURBSVolume.cpp
+        examples/jsm/curves/CurveExtras.cpp)
     add_library(threecpp::addons ALIAS threecpp_addons)
     target_link_libraries(threecpp_addons PUBLIC threecpp::threecpp)
     target_include_directories(threecpp_addons PUBLIC

@@ -254,4 +254,8 @@ Cache 与 DefaultLoadingManager 的模块导出使用 constinit 非拥有 facade
 
 `examples/jsm/curves/NURBSUtils`、`NURBSCurve`、`NURBSSurface` 与 `NURBSVolume` 按固定源码实现 findSpan、基函数及其导数、B-Spline 点与导数、有理曲线导数、曲面/体点，以及曲线的 getPoint/getTangent/copy/clone/JSON 和曲面/体的构造裁剪与 getPoint。节点向量与控制点的求值顺序保持 binary64；越界控制点按上游 TypeError 显式抛错（曲面/体构造只复制 `knots.length - degree - 1` 的块，缺失项同样抛错），非收敛节点向量显式报错而不静默改写，`startKnot`/`endKnot` 保留 `||` 真值回退。单测 13 cases / 179 assertions；差分直接导入固定 checkout 的四个模块，98 个场景逐字段一致，覆盖 3 种次数、非单位权重、域外参数、曲面/体点、曲线采样与切线、JSON 字段、clone 独立性与上游 TypeError。这些是 CPU 侧结果，尚不代表任何几何体/渲染路径已接入。
 
+`examples/jsm/curves/CurveExtras` 的 14 个装饰曲线（GrannyKnot、HeartCurve、VivianiCurve、KnotCurve、HelixCurve、TrefoilKnot、TorusKnot、CinquefoilKnot、TrefoilPolynomialKnot、FigureEightPolynomialKnot 与四个 DecoratedTorusKnot）按固定公式实现，保留各自的默认 scale（5/70/10/1/40）、`scaleTo(-4, 4, t)` 与所有乘法顺序；上游没有定义 `is*` 类型标志，本移植也不添加。差分导入固定 checkout 的模块，1,224 个场景逐位一致：28 次构造（默认与显式 scale）的采样点、切线、`arcLengthDivisions` 8 与 200 的弧长、`type` 字符串，以及 774 组 `Math.pow` 与 212 个 `Math.sin`/`Math.cos` 输入。
+
+为支持上述公式，`src/math/JSNumberMath` 新增 `pow`：固定 Node 版本默认开启 V8 的 `--use-std-math-pow`，因此 `v8::internal::math::pow` 只做 ECMAScript 特例（NaN 指数、`|base|=1` 且指数为 ±Infinity）、`y === 2` 取 `x * x`、`y === 0.5` 取 `sqrt( x + 0 )`，其余交给平台 `std::pow`。实测 58,050 组输入中 `std::pow` 与 `Math.pow` 有 3 处不一致（含平方与 `x ** 0.5`），因此不能直接用 `std::pow`。该包装的来源、哈希与许可见 `upstream.json`；通用分支的位级一致只对固定 Windows oracle 成立，其他平台的 libm 是另一份末位契约。
+
 本机 MSVC 为中文界面时，CMake 检测到的 `/showIncludes` 前缀是乱码（缓存值为 `娉ㄦ剰: 鍖呭惈鏂囦欢:`），Ninja 因此无法建立头文件依赖，修改头文件不会触发重编；本轮以显式重编受影响对象规避，并把前缀固定为 ASCII 值。该限制属于构建工具链环境问题，与源码一致性无关。

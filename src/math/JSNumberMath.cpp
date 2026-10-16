@@ -900,6 +900,49 @@ double cos(double x) {
   }
 }
 
+// Math.pow of the pinned Node release. Node.js v26.5.0 enables V8's
+// `--use-std-math-pow` by default, so `v8::internal::math::pow`
+// (deps/v8/src/numbers/ieee754.cc, SHA-256
+// 0582ca75d4d3e8c58b784734ef7ddf891e5154bf8e35c4d550ea2263265859fc) applies the
+// ECMAScript special cases and the two optimizing-compiler shortcuts before delegating
+// the general case to `std::pow`; `base::ieee754::legacy::pow` is not reached.
+// Adaptations only: namespace and standard library spellings.
+double pow(double x, double y) {
+  if (std::isnan(y)) {
+    // 1. If exponent is NaN, return NaN.
+    return std::numeric_limits<double>::quiet_NaN();
+  }
+  if (std::isinf(y) && (x == 1 || x == -1)) {
+    // 9. If exponent is +Inf, then
+    //   b. If abs(base) = 1, return NaN.
+    // and
+    // 10. If exponent is -Inf, then
+    //   b. If abs(base) = 1, return NaN.
+    return std::numeric_limits<double>::quiet_NaN();
+  }
+  if (std::isnan(x)) {
+    // std::pow distinguishes between quiet and signaling NaN; JS doesn't.
+    x = std::numeric_limits<double>::quiet_NaN();
+  }
+
+  // The following special cases just exist to match the optimizing compilers'
+  // behavior, which avoid calls to `pow` in those cases.
+  if (y == 2) {
+    // x ** 2   ==>   x * x
+    return x * x;
+  } else if (y == 0.5) {
+    // x ** 0.5   ==>  sqrt(x), except if x is -Infinity
+    if (std::isinf(x)) {
+      return std::numeric_limits<double>::infinity();
+    } else {
+      // Note the +0 so that we get +0 for -0**0.5 rather than -0.
+      return std::sqrt(x + 0);
+    }
+  }
+
+  return std::pow(x, y);
+}
+
 } // namespace JSNumberMath
 
 #if defined(_MSC_VER)

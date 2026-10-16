@@ -277,7 +277,8 @@ if(THREECPP_BUILD_ADDONS)
         unit/addons/curves/NURBSUtils.tests.cpp
         unit/addons/curves/NURBSCurve.tests.cpp
         unit/addons/curves/NURBSSurface.tests.cpp
-        unit/addons/curves/NURBSVolume.tests.cpp)
+        unit/addons/curves/NURBSVolume.tests.cpp
+        unit/addons/curves/CurveExtras.tests.cpp)
     target_include_directories(THREECPPAddonTests PRIVATE "${CMAKE_CURRENT_SOURCE_DIR}/unit/utils")
     target_link_libraries(THREECPPAddonTests PRIVATE threecpp::addons)
     add_test(NAME threecpp.addons-unit COMMAND THREECPPAddonTests)
@@ -287,6 +288,8 @@ if(THREECPP_BUILD_ADDONS)
     target_link_libraries(ThreeJsSortUtilsParityProbe PRIVATE threecpp::addons)
     add_executable(ThreeJsNURBSParityProbe unit/utils/parity/NURBSParityProbe.cpp)
     target_link_libraries(ThreeJsNURBSParityProbe PRIVATE threecpp::addons)
+    add_executable(ThreeJsCurveExtrasParityProbe unit/utils/parity/CurveExtrasParityProbe.cpp)
+    target_link_libraries(ThreeJsCurveExtrasParityProbe PRIVATE threecpp::addons)
 endif()
 if(THREECPP_BUILD_VULKAN)
     add_executable(VulkanShaderCompilerTests unit/three.source.unit.cpp
@@ -733,6 +736,9 @@ if(THREECPP_NODE_EXECUTABLE)
             add_test(NAME threecpp.threejs-nurbs-parity
                 COMMAND "${THREECPP_NODE_EXECUTABLE}" "${CMAKE_CURRENT_SOURCE_DIR}/unit/utils/parity/compare-nurbs.mjs"
                 "${THREEJS_SOURCE_DIR}" "$<TARGET_FILE:ThreeJsNURBSParityProbe>")
+            add_test(NAME threecpp.threejs-curve-extras-parity
+                COMMAND "${THREECPP_NODE_EXECUTABLE}" "${CMAKE_CURRENT_SOURCE_DIR}/unit/utils/parity/compare-curve-extras.mjs"
+                "${THREEJS_SOURCE_DIR}" "$<TARGET_FILE:ThreeJsCurveExtrasParityProbe>")
         endif()
         add_test(NAME threecpp.threejs-webgl-info-parity
             COMMAND "${THREECPP_NODE_EXECUTABLE}" "${CMAKE_CURRENT_SOURCE_DIR}/unit/utils/parity/compare-webgl-info.mjs"
