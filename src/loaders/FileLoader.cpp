@@ -1,4 +1,4 @@
-﻿#include "loaders/FileLoader.h"
+#include "loaders/FileLoader.h"
 #include "loaders/Cache.h"
 #include "loaders/LoadingManager.h"
 #include "core/JSValue.h"
@@ -79,7 +79,11 @@ JSValue fileLoad(const JSValue& selfValue,const Args& args){
     if(status!=200&&status!=0){
         loading.set(urlText,JSValue{});
         manager.itemError(url);
-        throw JSTypeError("fetch for \""+urlText+"\" responded with "+std::to_string(int(status))+": "+response.get("statusText").toString());
+        // Upstream reports response.url rather than the requested url, so a redirected response
+        // names its final location in the message.
+        const auto responseUrl = response.get("url");
+        const std::string reportedUrl = responseUrl.isUndefined() ? urlText : responseUrl.toString();
+        throw JSTypeError("fetch for \""+reportedUrl+"\" responded with "+std::to_string(int(status))+": "+response.get("statusText").toString());
     }
     // A status of 0 is treated as success like upstream; the upstream console warning for it is
     // deliberately not reproduced because no console exists natively (see the header note).
