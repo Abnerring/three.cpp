@@ -94,7 +94,7 @@ NativeObject 将现有场景、数学值、材质、纹理与数组接入 JSValu
 
 原生桥接仍未覆盖全部类/字段与任意 JavaScript 类型：数值/对象容器的元素域、数组访问器、Euler 任意 order、内嵌成员替换、完整类原型和原生几何属性数组图均需继续迁移。Geometry.morphAttributes 目前仍为快照；morphTargetDictionary 仅支持原生数值索引，不能支持的描述符显式拒绝。原生 clip/track vector 的扩容空项目前是 null，不具备稀疏数组 holes 语义；删除现有索引显式拒绝，不能报告成功却保留原值。直接 C++ 数组操作尚不观察包装上的 preventExtensions。NativeArray 已统一当前属性、纹理图片、骨骼矩阵、轨道和插值器的 View/ArrayBuffer 身份及真实原生所有权，未接入的类型仍需逐项登记。PropertyBinding 的非终止数组长度、自定义 replace/RegExp 宿主等动态边界未全量支持。新增桥接不能代替完整运行时一致性验收。
 
-Quaternion、QuaternionLinearInterpolant 和 PropertyMixer 的 sin/acos 使用纯 C++ 的 V8 fdlibm 算法适配：固定来源为 Node v26.5.0，源文件 SHA-256 与许可记录在 upstream.json 和 src/math/JSNumberMath.cpp。这是为保留插值末位及由严格比较触发的回调次数；其他数学函数尚未统一为该运行库，不能据此宣称所有计算逐位等价。没有引入 V8 引擎或 JS 运行时。
+Quaternion、QuaternionLinearInterpolant 和 PropertyMixer 的 sin/acos 使用纯 C++ 的 V8 fdlibm 算法适配：固定来源为 Node v26.5.0，源文件 SHA-256 与许可记录在 upstream.json 和 src/math/JSNumberMath.cpp。这是为保留插值末位及由严格比较触发的回调次数；其他数学函数尚未统一为该运行库，不能据此宣称所有计算逐位等价。没有引入 V8 引擎或 JS 运行时。（**已扩展**：后续轮次把 `sin`/`cos`/`tan`/`asin`/`acos`/`atan`/`atan2` 与 `pow`/`exp`/`log`/`log2` 全部补入 `JSNumberMath`，`src/` 内的三角函数与非三角初等函数调用点已统一到该适配库，不再有 `std::sin/cos/tan/asin/acos/atan/atan2/pow/exp/log/log2`；详见本文件末尾的相关段落。`Math.sqrt` 与 `Math.sqrt` 同为正确舍入，无需替换。）
 
 数组数值排序使用独立 C++ TimSort，固定 Node v26.5.0 / V8 14.6.202.34-node.24 的比较调用顺序。AnimationUtils、earcut、ShapePath、Raycaster 和 Vulkan 渲染列表/上传范围接入此算法。NaN 比较结果按零处理，同时保留算法对非传递比较器的实际调用与结果；这不是对其他 JS 引擎排序顺序的保证。通用 helper 处理稠密原生值；holes、undefined、属性访问和写回描述符仍由调用层负责。源哈希及完整许可证记录在 upstream.json、src/core/ArraySort.LICENSE。
 
