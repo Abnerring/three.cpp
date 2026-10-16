@@ -222,6 +222,7 @@ if(THREECPP_BUILD_ADDONS)
         examples/jsm/geometries/LoftGeometry.cpp
         examples/jsm/geometries/DecalGeometry.cpp
         examples/jsm/geometries/TeapotGeometry.cpp
+    examples/jsm/loaders/XYZLoader.cpp
         examples/jsm/shaders/ACESFilmicToneMappingShader.cpp
         examples/jsm/shaders/AfterimageShader.cpp
         examples/jsm/shaders/BasicShader.cpp
