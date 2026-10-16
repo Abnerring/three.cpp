@@ -194,8 +194,8 @@
     "note": "Accepted port scope is src and examples/jsm, including tracked third-party dependencies. Editor/manual web applications are excluded from native application rewrites. Native host behavior, packaging and all three platforms require separate implementation and verification evidence."
   },
   "counts": {
-    "partial-unverified": 277,
-    "missing": 664,
+    "partial-unverified": 278,
+    "missing": 663,
     "vulkan-port-pending": 290,
     "dependency-unverified": 20
   },
@@ -211,8 +211,8 @@
     "examples/jsm": {
       "modules": 496,
       "counts": {
-        "missing": 395,
-        "partial-unverified": 81,
+        "missing": 394,
+        "partial-unverified": 82,
         "dependency-unverified": 20
       }
     }
@@ -229,7 +229,7 @@
       "path": "examples/jsm/animation",
       "upstreamFiles": 2,
       "moduleCount": 2,
-      "modulesWithCppFiles": 0,
+      "modulesWithCppFiles": 1,
       "verifiedComplete": 0
     },
     {
@@ -22086,11 +22086,11 @@
       "scope": "examples/jsm",
       "kind": "addon",
       "upstreamSha256": "169f054405376da1ccd7d8e877a4f915dbe6a17de78126e9da91b461151e0afe",
-      "header": null,
-      "implementation": null,
+      "header": "examples/jsm/animation/AnimationClipCreator.h",
+      "implementation": "examples/jsm/animation/AnimationClipCreator.cpp",
       "expectedHeader": "examples/jsm/animation/AnimationClipCreator.h",
       "expectedImplementation": "examples/jsm/animation/AnimationClipCreator.cpp",
-      "status": "missing",
+      "status": "partial-unverified",
       "verifiedComplete": false,
       "apiExtraction": "static-only",
       "verification": {
