@@ -25,6 +25,14 @@
 4. **验证缺口（已关闭）**：`JSNumberMath::acos` 目前**只有间接覆盖** —— `compare-math-core-trig.mjs` 通过 `Vector3.angleTo`、`Spherical.setFromVector3`、`Vector4.setAxisAngleFromQuaternion` 走到它，`compare-property-mixer.mjs` 只是在 JS 侧用 `Math.acos` 当 oracle；**没有直接的输入网格**（对比：`pow` 27,654 个输入、`sin/cos` 284 个、`tan/asin/atan/atan2` 2,491 个场景、`exp/log/log2` 2,869 个场景）。而 fdlibm 的 `acos` 有 `|x| > 0.5` 的分支切换，正是需要网格才能钉住的地方。补法：在 `MathTrigParityProbe` 里加一类 `acos <x>` 场景（或复用 `compare-curve-extras.mjs` 的 `N`/`O` 形式加一个 `A <x>` 并同步扩 C++ 探针），网格取 `±1`、`±1∓ulp`（`0.9999999999999999`/`1.0000000000000002`）、`±0.5`、`±0.5∓ulp`、`±0`、`±1e-8`、次正规、`|x| > 1`（NaN 路径）、NaN/±Infinity。
 
 5. **已修复并已覆盖（历史记录）**
+10. **FileLoader 传输契约（冻结，实现时照此写，不要再设计）**：上游用 fetch / Request / Response / ReadableStream / AbortController / ProgressEvent / DOMParser / TextDecoder，原生侧没有这些宿主对象，因此把**只有一处**的宿主边界收窄成一个注入函数，其余逻辑照源码逐行移植。
+   - 注入方式：模块级 `FileLoader::setTransport(JSValue)`，等价于 `globalThis.fetch`；未注入时 `load()` 显式抛错（说明未配置传输），不静默失败。
+   - 传输入参：一个 JSValue 对象，字段 `url`（字符串，已过 `path` 与 `manager.resolveURL`）、`method`（恒为 GET）、`headers`（普通对象，来自 `requestHeader`）、`credentials`（`include` 或 `same-origin`，取自 `withCredentials`）、`signal`（对象，含布尔字段 `aborted`，由 `abort()` 置位）。
+   - 传输返回：一个 JSValue 对象，字段 `status`（数值，0 与 200 视为成功，0 时按上游输出 `FileLoader: HTTP Status 0 received.` 警告）、`statusText`、`url`、`headers`（对象，含方法 `get(name)`，用于 `X-File-Size` 与 `Content-Length`）、`chunks`（**有序数组**，每项为 Uint8Array 形状的字节序列；分块按序投递以复现上游逐块读取的行为）。
+   - 进度事件：每投递一块后，向上游注册的每个 `onProgress` 回调传入 `{type: progress, lengthComputable, loaded, total}`，其中 `total` 取 `X-File-Size` 优先、否则 `Content-Length`、再否则 0，`lengthComputable` 为 total 非 0，`loaded` 为累计字节数；这与上游 ReadableStream 包装的时序一一对应。
+   - responseType：`arraybuffer` 合并各块为一个字节缓冲；`text` 按 UTF-8 解码（`mimeType` 含 charset 时只接受 utf-8，其它标签显式报未实现）；`json` 解码后解析；`blob` 与 `document` 显式抛未实现错误（DOMParser 与 Blob 在原生侧不存在），不得伪造结果。
+   - 其余状态机照源码：缓存键为 `file:` 前缀加 url、命中缓存时经 setTimeout 等价的零延迟投递并在其间调用 `manager.itemStart`；重复请求复用 `loading[url]` 回调列表；成功后只在此处写缓存并回调所有等待者；失败时若回调列表已被删除则只 `manager.itemError` 并重抛，否则回调每个 `onError` 再 `itemError`；最后无条件 `manager.itemEnd`。
+   - 参数生效时机：`mimeType` 与 `responseType` 在发起请求时各取一次快照，之后修改不影响进行中的请求。
 9. **加固差分前先分辨探针是"单侧"还是"两侧配对"**：
    - 单侧（只改 JS 侧即可加固）：摘要统计、场景列表、注入序列等都在 .mjs 里，C++ 探针按既有协议被动接收。例：`compare-camera-utils.mjs`、`compare-loft-decal.mjs`、`compare-mesh-surface-sampler.mjs`、`compare-animation-clip-creator.mjs`、`compare-curve-extras.mjs`、以及 `compare-animation-runtime.mjs` 的摘要统计（第 50 轮只加了比较值计数）。
    - 两侧配对（必须同时改 C++ 探针与脚本，再重编）：`compare-runtime.mjs` 用 `const expected = {}` 加 `emit(name, value)` 收集具名 trace，C++ 探针必须产出**同名的每一项**，否则 `compare` 会报缺失 —— 因此加固它是"C++ 加发射 + JS 加 emit + 重编 + 验证"的完整闭环，不是多写几行。
