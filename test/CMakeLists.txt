@@ -275,6 +275,7 @@ if(THREECPP_BUILD_ADDONS)
         unit/addons/helpers/VertexTangentsHelper.tests.cpp
         unit/addons/helpers/NativeObjectExtension.tests.cpp
         unit/addons/utils/SortUtils.tests.cpp
+  unit/addons/loaders/XYZLoader.tests.cpp
         unit/addons/utils/SkeletonUtils.tests.cpp
         unit/addons/utils/BufferGeometryUtils.tests.cpp
         unit/addons/math/ImprovedNoise.tests.cpp
