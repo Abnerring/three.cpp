@@ -99,6 +99,13 @@ std::shared_ptr<BufferGeometry> STLLoader::parseBytes(const std::vector<std::uin
     if(hasColors)geometry->setAttribute("color",std::make_shared<Float32BufferAttribute>(colors,3));
     if(hasColorsOut)*hasColorsOut=hasColors;
     if(alphaOut)*alphaOut=alpha;
+    if(hasColors) {
+        // Upstream marks the geometry itself rather than the caller's copy, so the flag travels
+        // with the geometry: it is set here, where the pinned parseBinary sets it, not in load.
+        auto object=nativeGeometry(geometry);
+        object.set("hasColors",true);
+        object.set("alpha",alpha);
+    }
     return geometry;
 }
 JSValue STLLoader::parse(JSValue data) {
@@ -107,17 +114,7 @@ JSValue STLLoader::parse(JSValue data) {
     std::vector<std::uint8_t> bytes;
     bytes.reserve(text.size());
     for(char ch:text) bytes.push_back(std::uint8_t(std::uint8_t(ch)&0xff));
-    bool hasColors=false;
-    double alpha=0;
-    const auto geometry=parseBytes(bytes,&hasColors,&alpha);
-    auto result=nativeGeometry(geometry);
-    if(hasColors) {
-        // Upstream marks the geometry and carries the header alpha onto it alongside the colour
-        // attribute, which is what a consumer checks before using per face colours.
-        result.set("hasColors",true);
-        result.set("alpha",alpha);
-    }
-    return result;
+    return nativeGeometry(parseBytes(bytes));
 }
 STLLoader::STLLoader(JSValue manager):Loader(JSValue::object(prototype()),Existing{}){initialize(object_,manager);}
 JSValue STLLoader::prototype() {
