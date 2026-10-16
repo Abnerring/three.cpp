@@ -358,6 +358,13 @@ scenario({kind:'mergeVertices',geometry:{attributes:{position:buffer('Float32Arr
     index:{kind:'buffer',type:'Uint16Array',itemSize:1,values:[0,1,2,3,4,5]}}});
 scenario({kind:'mergeVertices',geometry:{attributes:{position:buffer('Float32Array',3,
     [0,0,0, 0.00004,0,0, 0,1,0])}},tolerance:1e-5});
+// The tolerance floor is Math.max( tolerance, Number.EPSILON ) upstream, so a negative zero has
+// to behave like the epsilon and a NaN tolerance has to propagate: with NaN the hash comparison
+// makes every vertex look equal and the whole geometry welds into one vertex.
+scenario({kind:'mergeVertices',geometry:{attributes:{position:buffer('Float32Array',3,
+    [0,0,0, 0.00004,0,0, 0,1,0])}},tolerance:-0});
+scenario({kind:'mergeVertices',geometry:{attributes:{position:buffer('Float32Array',3,
+    [0,0,0, 0.00004,0,0, 0,1,0])}},tolerance:NaN});
 scenario({kind:'mergeVertices',geometry:{attributes:{position:buffer('Float32Array',3,
     [0,0,0, 1,0,0, 0,1,0, 0,0,0, 1,0,0, 0,1,0]),normal:buffer('Int8Array',3,
     [0,0,127,0,0,127,0,0,127,0,0,127,0,0,127,0,0,127],{normalized:true,name:'normal',usage:35048})},
