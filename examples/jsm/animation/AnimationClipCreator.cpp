@@ -45,9 +45,12 @@ std::shared_ptr<AnimationClip> AnimationClipCreator::CreateShakeAnimation(double
     Vector3 temporary;
     for (double i = 0; i < duration * 10; i += 1) {
         times.push_back(i / 10);
-        temporary.set(random() * 2.0 - 1.0, random() * 2.0 - 1.0, random() * 2.0 - 1.0)
-            .multiply(shakeScale)
-            .toArray(values, values.size());
+        // The three draws are sequenced explicitly: C++ leaves the evaluation order of function
+        // arguments unspecified (MSVC goes right to left) while the pinned source draws x, y, z.
+        const double x = random() * 2.0 - 1.0;
+        const double y = random() * 2.0 - 1.0;
+        const double z = random() * 2.0 - 1.0;
+        temporary.set(x, y, z).multiply(shakeScale).toArray(values, values.size());
     }
     return clip(duration, std::make_shared<VectorKeyframeTrack>(".position", times, values));
 }

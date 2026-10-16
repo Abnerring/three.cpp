@@ -1,5 +1,13 @@
 # 验证记录
 
+## 当前追加验证：AnimationClipCreator 差分落地，2026-10-17
+
+- 差分补齐：threecpp.threejs-animation-clip-creator-parity **47 个场景 / 40 条轨道 / 860 个时间与数值条目**逐位一致，另有 **7 条与上游一致的抛错路径**（duration 0 使 times 为空，上游 KeyframeTrack 抛 THREE.KeyframeTrack: no keyframes…，原生核心抛同一文本）。两个随机工厂在 JS 侧打桩 Math.random、在 C++ 侧注入同一序列。
+
+- 该差分抓到我的移植里一个真实缺陷（比上一轮那个更隐蔽）：CreateShakeAnimation 里 	emporary.set( random()*2-1, random()*2-1, random()*2-1 ) 三次抽取被写成同一表达式，**C++ 不规定函数实参求值顺序**（MSVC 从右向左），而固定源码按 x、y、z 顺序抽取。已改为显式分三次求值并加注释说明；这与本项目此前记录过的 [i] = a[--i] 属同一类陷阱。
+
+- 明确的范围界定（不是静默放宽）：CreateVisibilityAnimation 的 **duration 0** 场景被排除在比较之外 —— 此时三个时间为 0，上游 BooleanKeyframeTrack 的行为尚未弄清到可以固定下来的程度；脚本内与该条目旁均有注释指向本条记录，后续应单独查清后补回。
+
 ## 当前追加验证：CameraUtils（上一轮主动收敛后补完），2026-10-17
 
 - 新增 `examples/jsm/utils/CameraUtils`。签名适配只有一处并写入头文件：固定版本通过 JS 鸭子类型读取 `camera.near/far/fov/aspect`，C++ 中这些属性属于 `PerspectiveCamera`，因此原生端口接受具体类型；`MathUtils.RAD2DEG` 以同一字面量（`180.0 / MATH_PI`）在文件内定义，`Math.atan` 走 `JSNumberMath::atan`，模块级临时对象为 thread_local。

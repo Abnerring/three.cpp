@@ -332,6 +332,8 @@ if(THREECPP_BUILD_ADDONS)
     target_link_libraries(ThreeJsMeshSurfaceSamplerParityProbe PRIVATE threecpp::addons)
     add_executable(ThreeJsCameraUtilsParityProbe unit/utils/parity/CameraUtilsParityProbe.cpp)
     target_link_libraries(ThreeJsCameraUtilsParityProbe PRIVATE threecpp::addons)
+    add_executable(ThreeJsAnimationClipCreatorParityProbe unit/utils/parity/AnimationClipCreatorParityProbe.cpp)
+    target_link_libraries(ThreeJsAnimationClipCreatorParityProbe PRIVATE threecpp::addons)
     add_executable(ThreeJsColorSpacesParityProbe unit/utils/parity/ColorSpacesParityProbe.cpp)
     target_link_libraries(ThreeJsColorSpacesParityProbe PRIVATE threecpp::addons)
     add_executable(ThreeJsSimplexNoiseParityProbe unit/utils/parity/SimplexNoiseParityProbe.cpp)
@@ -818,6 +820,9 @@ if(THREECPP_NODE_EXECUTABLE)
             add_test(NAME threecpp.threejs-color-math-parity
                 COMMAND "${THREECPP_NODE_EXECUTABLE}" "${CMAKE_CURRENT_SOURCE_DIR}/unit/utils/parity/compare-color-math.mjs"
                 "${THREEJS_SOURCE_DIR}" "$<TARGET_FILE:ThreeJsColorMathParityProbe>")
+            add_test(NAME threecpp.threejs-animation-clip-creator-parity
+                COMMAND "${THREECPP_NODE_EXECUTABLE}" "${CMAKE_CURRENT_SOURCE_DIR}/unit/utils/parity/compare-animation-clip-creator.mjs"
+                "${THREEJS_SOURCE_DIR}" "$<TARGET_FILE:ThreeJsAnimationClipCreatorParityProbe>")
             add_test(NAME threecpp.threejs-camera-utils-parity
                 COMMAND "${THREECPP_NODE_EXECUTABLE}" "${CMAKE_CURRENT_SOURCE_DIR}/unit/utils/parity/compare-camera-utils.mjs"
                 "${THREEJS_SOURCE_DIR}" "$<TARGET_FILE:ThreeJsCameraUtilsParityProbe>")
