@@ -5,19 +5,33 @@
 // order of the arithmetic, the ordering of the merged output, the messages written on the
 // failure paths and the `null`/`undefined` results are all kept as written upstream.
 #include "utils/BufferGeometryUtils.h"
+#include "math/MathUtils.h"
 #include "core/InstancedBufferAttribute.h"
+#include "math/MathUtils.h"
 #include "core/InstancedInterleavedBuffer.h"
+#include "math/MathUtils.h"
 #include "core/InterleavedBuffer.h"
+#include "math/MathUtils.h"
 #include "core/InterleavedBufferAttribute.h"
+#include "math/MathUtils.h"
 #include "core/NativeObject.h"
+#include "math/MathUtils.h"
 #include "core/Object3D.h"
+#include "math/MathUtils.h"
 #include "core/SharedArray.h"
+#include "math/MathUtils.h"
 #include "math/Vector3.h"
+#include "math/MathUtils.h"
 #include "objects/Line.h"
+#include "math/MathUtils.h"
 #include "objects/Mesh.h"
+#include "math/MathUtils.h"
 #include "objects/Points.h"
+#include "math/MathUtils.h"
 #include "objects/SkinnedMesh.h"
+#include "math/MathUtils.h"
 #include "objects/Sprite.h"
+#include "math/MathUtils.h"
 #include <algorithm>
 #include <cmath>
 #include <cstdint>
@@ -791,7 +805,7 @@ double estimateBytesUsed(const BufferGeometry& geometry) {
 GeometryPtr mergeVertices(const GeometryPtr& geometry, double tolerance) {
     if (!geometry) throw JSTypeError("Cannot read properties of undefined (reading 'getIndex')");
 
-    tolerance = std::max(tolerance, std::numeric_limits<double>::epsilon());
+    tolerance = MathUtils::max(tolerance, std::numeric_limits<double>::epsilon());
 
     // Generate an index buffer if the geometry doesn't have one, or optimize it if it's already
     // available.
@@ -1053,8 +1067,8 @@ MorphedAttributes computeMorphedAttributes(const std::shared_ptr<Object3D>& obje
             for (i = 0, il = double(groups.size()); i < il; i++) {
                 const auto& group = groups[std::size_t(i)];
 
-                start = std::max(group.start, geometry->drawRange.start);
-                end = std::min(group.start + group.count,
+                start = MathUtils::max(group.start, geometry->drawRange.start);
+                end = MathUtils::min(group.start + group.count,
                                geometry->drawRange.start + geometry->drawRange.count);
 
                 for (j = start, jl = end; j < jl; j += 3) {
@@ -1067,8 +1081,8 @@ MorphedAttributes computeMorphedAttributes(const std::shared_ptr<Object3D>& obje
                 }
             }
         } else {
-            start = std::max(0., geometry->drawRange.start);
-            end = std::min(index->count, geometry->drawRange.start + geometry->drawRange.count);
+            start = MathUtils::max(0., geometry->drawRange.start);
+            end = MathUtils::min(index->count, geometry->drawRange.start + geometry->drawRange.count);
 
             for (i = start, il = end; i < il; i += 3) {
                 const double a = index->getX(i);
@@ -1088,8 +1102,8 @@ MorphedAttributes computeMorphedAttributes(const std::shared_ptr<Object3D>& obje
             for (i = 0, il = double(groups.size()); i < il; i++) {
                 const auto& group = groups[std::size_t(i)];
 
-                start = std::max(group.start, geometry->drawRange.start);
-                end = std::min(group.start + group.count,
+                start = MathUtils::max(group.start, geometry->drawRange.start);
+                end = MathUtils::min(group.start + group.count,
                                geometry->drawRange.start + geometry->drawRange.count);
 
                 for (j = start, jl = end; j < jl; j += 3) {
@@ -1102,8 +1116,8 @@ MorphedAttributes computeMorphedAttributes(const std::shared_ptr<Object3D>& obje
                 }
             }
         } else {
-            start = std::max(0., geometry->drawRange.start);
-            end = std::min(positionAttribute->getCount(),
+            start = MathUtils::max(0., geometry->drawRange.start);
+            end = MathUtils::min(positionAttribute->getCount(),
                            geometry->drawRange.start + geometry->drawRange.count);
 
             for (i = start, il = end; i < il; i += 3) {

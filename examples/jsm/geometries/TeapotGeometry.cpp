@@ -1,8 +1,13 @@
 #include "geometries/TeapotGeometry.h"
+#include "math/MathUtils.h"
 #include "core/BufferAttribute.h"
+#include "math/MathUtils.h"
 #include "math/Matrix4.h"
+#include "math/MathUtils.h"
 #include "math/Vector3.h"
+#include "math/MathUtils.h"
 #include "math/Vector4.h"
+#include "math/MathUtils.h"
 #include <algorithm>
 #include <array>
 #include <cmath>
@@ -345,7 +350,7 @@ constexpr double TEAPOT_VERTICES[870] = {
 // Math.max( 2, Math.floor( segments ) ): the upstream Math.max propagates NaN, std::max does not.
 double segmentCountPerPatch(double segments) {
     const double floored = std::floor(segments);
-    return std::isnan(floored) ? floored : std::max(2., floored);
+    return std::isnan(floored) ? floored : MathUtils::max(2., floored);
 }
 
 } // namespace

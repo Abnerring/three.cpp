@@ -1,14 +1,25 @@
 #include "utils/SkeletonUtils.h"
+#include "math/MathUtils.h"
 #include "animation/AnimationMixer.h"
+#include "math/MathUtils.h"
 #include "animation/AnimationRuntime.h"
+#include "math/MathUtils.h"
 #include "animation/tracks/QuaternionKeyframeTrack.h"
+#include "math/MathUtils.h"
 #include "animation/tracks/VectorKeyframeTrack.h"
+#include "math/MathUtils.h"
 #include "core/NativeObject.h"
+#include "math/MathUtils.h"
 #include "core/Object3D.h"
+#include "math/MathUtils.h"
 #include "core/TypedArray.h"
+#include "math/MathUtils.h"
 #include "objects/Bone.h"
+#include "math/MathUtils.h"
 #include "objects/Skeleton.h"
+#include "math/MathUtils.h"
 #include "objects/SkinnedMesh.h"
+#include "math/MathUtils.h"
 #include <cmath>
 #include <limits>
 
@@ -164,7 +175,7 @@ std::shared_ptr<AnimationClip> retargetClipImpl(SkinnedMesh& target, const std::
     // unless fps is already provided.
     if (!options.fps) {
         double mostFrames = -std::numeric_limits<double>::infinity();
-        for (const auto& track : *clip->tracks) mostFrames = std::max(mostFrames, double(track->times.size()));
+        for (const auto& track : *clip->tracks) mostFrames = MathUtils::max(mostFrames, double(track->times.size()));
         options.fps = mostFrames / clip->duration;
     }
 
@@ -191,7 +202,7 @@ std::shared_ptr<AnimationClip> retargetClipImpl(SkinnedMesh& target, const std::
     double start = 0, end = numFrames;
     if (options.trim) {
         start = std::round(options.trim->first * *options.fps);
-        end = std::min(std::round(options.trim->second * *options.fps), numFrames) - start;
+        end = MathUtils::min(std::round(options.trim->second * *options.fps), numFrames) - start;
         mixer.update(JSValue(options.trim->first));
     } else {
         mixer.update(JSValue(0.));

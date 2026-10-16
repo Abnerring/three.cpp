@@ -1,7 +1,11 @@
 #include "geometries/LoftGeometry.h"
+#include "math/MathUtils.h"
 #include "core/BufferAttribute.h"
+#include "math/MathUtils.h"
 #include "extras/ShapeUtils.h"
+#include "math/MathUtils.h"
 #include "math/Vector2.h"
+#include "math/MathUtils.h"
 #include <algorithm>
 #include <cmath>
 #include <cstdint>
@@ -160,8 +164,8 @@ void LoftGeometry::generateCap(double sectionIndex, double rows, double columns,
         min.min(contour[std::size_t(i)]);
         max.max(contour[std::size_t(i)]);
     }
-    const double width = std::max(max.x - min.x, EPSILON);
-    const double height = std::max(max.y - min.y, EPSILON);
+    const double width = MathUtils::max(max.x - min.x, EPSILON);
+    const double height = MathUtils::max(max.y - min.y, EPSILON);
     // generate vertices, uvs and indices; cap vertices are not shared
     // with the wall so the cap is flat shaded with a hard edge
     const double indexOffset = double(vertices.size()) / 3;
