@@ -53,7 +53,7 @@
 - 调用点的差分：新增 `threecpp.threejs-math-core-trig-parity`，**921 个场景逐位一致**（六种 Euler order 的 `setFromEuler`、`setFromAxisAngle`、`slerpQuaternions`、`setFromRotationMatrix`、`Euler.setFromRotationMatrix`、`Matrix3.makeRotation`、`Matrix4.makeRotationX/Y/Z/Axis/FromEuler`、`setFromSphericalCoords`/`setFromCylindricalCoords`、`Vector3.angleTo`、`Vector2.angle`、`Spherical`/`Cylindrical.setFromVector3`、`Vector4.setAxisAngleFromQuaternion`）。
 - 回归：核心单测 **662 cases / 205,175 assertions** 全部通过（未出现因末位变化而失效的固化期望）；addons 全套 **130 cases / 22,729 assertions** 通过；差分网络 **124/124 通过**（含两个新测试）；port-audit 未变更即通过（本轮不新增模块）。
 - 过程中确认的一处上游事实：固定 r187 的 `Vector2` 没有 `setAngle`（只有 `angle`/`angleTo`/`setLength`/`rotateAround`），C++ 端同样没有，探针据此删除了该场景而不是补一个上游不存在的 API。
-- 仍属已知边界的非三角函数：`Color.cpp`、`ColorManagement.cpp` 与 `MathUtils.cpp` 的 `std::pow/exp/log/log2`（上游为 `Math.*`）尚未对齐，已列为下一轮目标；`Math.sqrt` 与 `Math.sqrt` 同为正确舍入，无需替换。
+- 仍属已知边界的非三角函数：`Color.cpp`、`ColorManagement.cpp` 与 `MathUtils.cpp` 的 `std::pow/exp/log/log2`（上游为 `Math.*`）尚未对齐，已列为下一轮目标；`Math.sqrt` 与 `Math.sqrt` 同为正确舍入，无需替换。（**已作废**：这三处已在后续轮次全部对齐到 `JSNumberMath`，见本文件更晚的段落与 `PORTING.md`；此条保留为当时状态的历史记录。）
 
 ## 当前追加验证：LoftGeometry/DecalGeometry/TeapotGeometry 与核心 Matrix4 三角函数修正，2026-10-17
 
@@ -62,7 +62,7 @@
 - `threecpp.threejs-teapot-geometry-parity`：**84 个场景 / 262,656 个属性分量 / 121,512 个索引项逐位一致**（全部 32 组 bottom/lid/body/fitLid/blinn 组合、segments 含 2.9/0/−5/NaN、size 含 0/负值/1e±8），单测 7 cases / 228 assertions。子代理同时纠正了任务书中错误的构造签名（固定版本是 `size`，不含 width/height/depth）并给出源码依据。
 - **核心缺陷修正**：DecalGeometry 的差分暴露出 `src/math/Matrix4.cpp` 的 `makeRotationX/Y/Z`、`makeRotationAxis`、`makeRotationFromEuler` 共 14 处使用 `std::sin/std::cos`，而固定上游使用 `Math.sin/Math.cos`（V8 fdlibm）。以 `Euler( 0.3, 0.2, 0.1 )` 为例旋转矩阵多项相差 1 ulp，只在“旋转+平移”组合下显形（单独旋转或单独平移均一致），正好解释贴花差分中 25 个末位差异。修正后该差分通过，且 **122/122 parity 测试全部通过**，数学/几何/动画回归 34/34，无任何回归。
 - 修正核心文件后重跑 addons 全套：**126 cases / 22,686 assertions** 全部通过。
-- 记录在案的边界：MathUtils(8)、Vector3(8)、Quaternion(5)、Matrix3(4)、Vector2(2) 仍在用 `std::sin/std::cos`，尚未逐项对齐 fdlibm；`BufferGeometry::toJSON` 与上游的参数布局差异（payload 位于 `data` 下）是库级既存差异，TeapotGeometry 探针因此只比较参数字段与 type，未削弱数值比较。
+- 记录在案的边界：MathUtils(8)、Vector3(8)、Quaternion(5)、Matrix3(4)、Vector2(2) 仍在用 `std::sin/std::cos`，尚未逐项对齐 fdlibm（**已作废**：下一位轮次已把这 117 处调用点全部改为 `JSNumberMath`，`src/` 内已无 `std::sin/cos/tan/asin/acos/atan/atan2`，见更晚段落）；`BufferGeometry::toJSON` 与上游的参数布局差异（payload 位于 `data` 下）是库级既存差异，TeapotGeometry 探针因此只比较参数字段与 type，未削弱数值比较。
 - 审计重新生成：1,251 个模块，partial-unverified 221（+3）、missing 720（−3）、vulkan-port-pending 290、dependency-unverified 20；Acorn 解析错误 0。
 
 ## 当前追加验证：ColorSpaces、SimplexNoise、ConvexHull/ConvexGeometry，2026-10-17
