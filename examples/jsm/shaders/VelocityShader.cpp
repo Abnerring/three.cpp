@@ -1,0 +1,159 @@
+// Native port of the pinned examples/jsm/shaders/VelocityShader.js (see upstream.json).
+// The GLSL and defines strings are the byte-exact template literal values of that
+// revision; the exported objects keep the upstream field order.
+#include "shaders/VelocityShader.h"
+#include "core/NativeObject.h"
+#include "math/Matrix4.h"
+#include "renderers/shaders/UniformsLib.h"
+#include "renderers/shaders/UniformsUtils.h"
+#include <initializer_list>
+#include <string>
+#include <string_view>
+#include <utility>
+
+namespace {
+JSValue object(std::initializer_list<std::pair<const char*,JSValue>> fields) {
+    auto result=JSValue::object();
+    for(const auto& [key,value]:fields){JSPropertyDescriptor d;d.value=value;d.writable=d.enumerable=d.configurable=true;result.defineProperty(key,d);}
+    return result;
+}
+JSValue array(std::initializer_list<JSValue> values) {
+    auto result=JSValue::array();std::size_t index=0;
+    for(const auto& value:values){JSPropertyDescriptor d;d.value=value;d.writable=d.enumerable=d.configurable=true;result.defineProperty(std::to_string(index++),d);}
+    return result;
+}
+} // namespace
+
+namespace VelocityShader {
+namespace {
+
+// Byte-exact upstream strings.
+constexpr std::string_view VelocityShader_VelocityShader_vertexShader = R"jsm1(
+#define NORMAL
+
+#if defined( FLAT_SHADED ) || defined( USE_BUMPMAP ) || defined( USE_NORMALMAP_TANGENTSPACE )
+
+	varying vec3 vViewPosition;
+
+#endif
+
+#include <common>
+#include <packing>
+#include <uv_pars_vertex>
+#include <displacementmap_pars_vertex>
+#include <normal_pars_vertex>
+#include <morphtarget_pars_vertex>
+#include <skinning_pars_vertex>
+#include <logdepthbuf_pars_vertex>
+#include <clipping_planes_pars_vertex>
+
+uniform mat4 previousProjectionViewMatrix;
+uniform mat4 currentProjectionViewMatrix;
+
+uniform mat4 modelMatrixPrev;
+
+varying vec4 clipPositionCurrent;
+varying vec4 clipPositionPrevious;
+
+void main() {
+
+
+	#include <uv_vertex>
+
+	#include <beginnormal_vertex>
+	#include <morphnormal_vertex>
+	#include <skinbase_vertex>
+	#include <skinnormal_vertex>
+	#include <defaultnormal_vertex>
+	#include <normal_vertex>
+
+	#include <begin_vertex>
+	#include <morphtarget_vertex>
+	#include <displacementmap_vertex>
+	#include <morphtarget_vertex>
+	#include <skinning_vertex>
+
+#ifdef USE_SKINNING
+
+	vec4 mvPosition = modelViewMatrix * skinned;
+	clipPositionCurrent  = currentProjectionViewMatrix * modelMatrix * skinned;
+	clipPositionPrevious = previousProjectionViewMatrix * modelMatrixPrev * skinned;
+
+#else
+
+	vec4 mvPosition = modelViewMatrix * vec4( transformed, 1.0 );
+	clipPositionCurrent  = currentProjectionViewMatrix * modelMatrix * vec4( transformed, 1.0 );
+	clipPositionPrevious = previousProjectionViewMatrix * modelMatrixPrev * vec4( transformed, 1.0 );
+
+#endif
+
+	gl_Position = projectionMatrix * mvPosition;
+
+	#include <logdepthbuf_vertex>
+	#include <clipping_planes_vertex>
+}
+)jsm1";
+constexpr std::string_view VelocityShader_VelocityShader_fragmentShader = R"jsm2(
+#define NORMAL
+
+uniform float opacity;
+
+#include <packing>
+#include <uv_pars_fragment>
+#include <map_pars_fragment>
+#include <alphamap_pars_fragment>
+#include <alphatest_pars_fragment>
+#include <logdepthbuf_pars_fragment>
+#include <clipping_planes_pars_fragment>
+
+varying vec4 clipPositionCurrent;
+varying vec4 clipPositionPrevious;
+
+void main() {
+
+	vec4 diffuseColor = vec4( 1.0 );
+	diffuseColor.a = opacity;
+
+	#include <map_fragment>
+	#include <alphamap_fragment>
+	#include <alphatest_fragment>
+
+	vec2 ndcPositionCurrent  = clipPositionCurrent.xy/clipPositionCurrent.w;
+	vec2 ndcPositionPrevious = clipPositionPrevious.xy/clipPositionPrevious.w;
+	vec2 vel = ( ndcPositionCurrent - ndcPositionPrevious ) * 0.5;
+	vel = vel * 0.5 + 0.5;
+	vec2 v1 = packDepthToRG(vel.x);
+	vec2 v2 = packDepthToRG(vel.y);
+	gl_FragColor = vec4(v1.x, v1.y, v2.x, v2.y);
+
+	#include <logdepthbuf_fragment>
+
+}
+
+)jsm2";
+} // namespace
+
+JSValue nativeVelocityShader() {
+    static thread_local JSWeakValue cache;
+    if (const auto existing = cache.lock(); existing && existing->isObject()) return *existing;
+    static thread_local bool initializing = false;
+    JSModuleInitializationScope initialization(initializing, "VelocityShader");
+    JSValue result = object({
+        {"VelocityShader", object({
+            {"name", "VelocityShader"},
+            {"uniforms", mergeUniforms(array({
+        UniformsLib.get("common"),
+        UniformsLib.get("displacementmap"),
+        object({
+            {"modelMatrixPrev", object({{"value", nativeMatrix(std::make_shared<Matrix4>())}})},
+            {"currentProjectionViewMatrix", object({{"value", nativeMatrix(std::make_shared<Matrix4>())}})},
+            {"previousProjectionViewMatrix", object({{"value", nativeMatrix(std::make_shared<Matrix4>())}})}
+        })
+    }))},
+            {"vertexShader", std::string(VelocityShader_VelocityShader_vertexShader)},
+            {"fragmentShader", std::string(VelocityShader_VelocityShader_fragmentShader)}
+        })}
+    });
+    result.retainForHeapLifetime();cache=JSWeakValue(result);return result;
+}
+} // namespace VelocityShader

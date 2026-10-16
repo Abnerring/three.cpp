@@ -1,5 +1,16 @@
 # 验证记录
 
+## 当前追加验证：jsm/shaders 全簇（52 个模块）与 MeshSurfaceSampler，2026-10-17
+
+- 新增 53 个模块：`examples/jsm/shaders` 全部 52 个（子代理实现、主会话复核）与 `examples/jsm/math/MeshSurfaceSampler`（主会话实现）。
+- shaders 簇差分：`threecpp.threejs-jsm-shaders-parity` **52 个模块 / 67 个导出 / 269 个字段 / 373 个 uniform / 128 段 GLSL 字符串（132,235 字符）、8,029 项比较**全部一致（字段顺序按有序数组比较，字符串逐字符 `\uXXXX` 转义以保证逐字节）；单测 3 cases / 912 assertions。覆盖含 `SubsurfaceScatteringShader`（组合 `ShaderChunk` 的 head/body 拆分与 `replaceAll`）与 `VelocityShader`（组合 `UniformsLib` 组）这类组合型模块。
+- MeshSurfaceSampler 差分：`threecpp.threejs-mesh-surface-sampler-parity` **41 个场景 / 1,024 个 float32 分布项 / 210 个采样点**逐位一致；单测 3 cases / 46 assertions。
+- 该差分过程中确认了一处上游怪癖并写进单测：`SphereGeometry(1,8,6)` 在给定抽样序列下的第三个样本连**上游本身**也返回 NaN（退化面的法线插值），本移植逐位复现；我最初的单测期望"所有样本法线单位长度"因此是错的，已按 oracle 修正为"该样本为 NaN，其余样本单位长度"。
+- 另一处单测缺陷同样由 oracle 修正：箱体第一个样本的 `uv.y` 恰为 1（角点），我原先写成严格小于 1。
+- 重要的验证约定（子代理发现，已写入 PORTING.md）：`examples/jsm/**` 用裸说明符 `'three'` 导入核心，在固定 checkout 中解析到**预构建产物** `build/three.cjs`，其字符串（如 `ShaderChunk.meshphong_vert` 的空行）与 `src/` 不一致；对照源码语义时应把说明符改写到 `<checkout>/src/Three.js`（用 base64 `data:` URL 导入，checkout 不被修改），而复现模块自身所见的实例身份时应让两侧读同一实例。
+- 回归：addons 全套 **139 cases / 23,734 assertions** 通过；差分网络 **128/128 通过**。审计：1,251 个模块，partial-unverified **274**（+53）、missing **667**（−53）、vulkan-port-pending 290、dependency-unverified 20；Acorn 解析错误 0。
+- 过程记录：子代理先登记 CMake 再创建文件，期间 `cmake -S . -B build` 数次因 "Cannot find source file" 失败，属并发中间态；等待其落地后配置与构建均正常。`MeshSurfaceSampler` 自身还修掉一个真实缺陷：空几何路径原本会解引用空属性句柄（访问冲突），现按上游文本抛 JSTypeError。
+
 ## 当前追加验证：exp/log/log2 与色彩/MathUtils 对齐，2026-10-17
 
 - 承接上一轮登记的非三角函数边界，`JSNumberMath` 新增 `exp`/`log`/`log2`（子代理实现、主会话复核），逐行取自同一份固定 `ieee754.cc`；`log2` 保留上游的 `ivln2hi`/`ivln2lo` 硬编码拆分与 Dekker 拆分/`spadd`，`k_log1p` 按约定改为文件局部 `kernelLog1p`。

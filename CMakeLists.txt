@@ -203,6 +203,7 @@ if(THREECPP_BUILD_ADDONS)
         examples/jsm/math/Capsule.cpp
         examples/jsm/math/OBB.cpp
         examples/jsm/math/SimplexNoise.cpp
+        examples/jsm/math/MeshSurfaceSampler.cpp
         examples/jsm/curves/NURBSUtils.cpp
         examples/jsm/curves/NURBSCurve.cpp
         examples/jsm/curves/NURBSSurface.cpp
@@ -216,7 +217,59 @@ if(THREECPP_BUILD_ADDONS)
         examples/jsm/geometries/ConvexGeometry.cpp
         examples/jsm/geometries/LoftGeometry.cpp
         examples/jsm/geometries/DecalGeometry.cpp
-        examples/jsm/geometries/TeapotGeometry.cpp)
+        examples/jsm/geometries/TeapotGeometry.cpp
+        examples/jsm/shaders/ACESFilmicToneMappingShader.cpp
+        examples/jsm/shaders/AfterimageShader.cpp
+        examples/jsm/shaders/BasicShader.cpp
+        examples/jsm/shaders/BleachBypassShader.cpp
+        examples/jsm/shaders/BlendShader.cpp
+        examples/jsm/shaders/BokehShader.cpp
+        examples/jsm/shaders/BokehShader2.cpp
+        examples/jsm/shaders/BrightnessContrastShader.cpp
+        examples/jsm/shaders/ColorCorrectionShader.cpp
+        examples/jsm/shaders/ColorifyShader.cpp
+        examples/jsm/shaders/ConvolutionShader.cpp
+        examples/jsm/shaders/CopyShader.cpp
+        examples/jsm/shaders/DOFMipMapShader.cpp
+        examples/jsm/shaders/DepthLimitedBlurShader.cpp
+        examples/jsm/shaders/DigitalGlitch.cpp
+        examples/jsm/shaders/DotScreenShader.cpp
+        examples/jsm/shaders/ExposureShader.cpp
+        examples/jsm/shaders/FXAAShader.cpp
+        examples/jsm/shaders/FilmShader.cpp
+        examples/jsm/shaders/FocusShader.cpp
+        examples/jsm/shaders/FreiChenShader.cpp
+        examples/jsm/shaders/GTAOShader.cpp
+        examples/jsm/shaders/GammaCorrectionShader.cpp
+        examples/jsm/shaders/HalftoneShader.cpp
+        examples/jsm/shaders/HorizontalBlurShader.cpp
+        examples/jsm/shaders/HorizontalTiltShiftShader.cpp
+        examples/jsm/shaders/HueSaturationShader.cpp
+        examples/jsm/shaders/KaleidoShader.cpp
+        examples/jsm/shaders/LuminosityHighPassShader.cpp
+        examples/jsm/shaders/LuminosityShader.cpp
+        examples/jsm/shaders/MirrorShader.cpp
+        examples/jsm/shaders/NormalMapShader.cpp
+        examples/jsm/shaders/OutputShader.cpp
+        examples/jsm/shaders/PoissonDenoiseShader.cpp
+        examples/jsm/shaders/RGBShiftShader.cpp
+        examples/jsm/shaders/SAOShader.cpp
+        examples/jsm/shaders/SMAAShader.cpp
+        examples/jsm/shaders/SSAOShader.cpp
+        examples/jsm/shaders/SSRShader.cpp
+        examples/jsm/shaders/SepiaShader.cpp
+        examples/jsm/shaders/SobelOperatorShader.cpp
+        examples/jsm/shaders/SubsurfaceScatteringShader.cpp
+        examples/jsm/shaders/TechnicolorShader.cpp
+        examples/jsm/shaders/ToonShader.cpp
+        examples/jsm/shaders/TriangleBlurShader.cpp
+        examples/jsm/shaders/UnpackDepthRGBAShader.cpp
+        examples/jsm/shaders/VelocityShader.cpp
+        examples/jsm/shaders/VolumeShader.cpp
+        examples/jsm/shaders/VerticalBlurShader.cpp
+        examples/jsm/shaders/VerticalTiltShiftShader.cpp
+        examples/jsm/shaders/VignetteShader.cpp
+        examples/jsm/shaders/WaterRefractionShader.cpp)
     add_library(threecpp::addons ALIAS threecpp_addons)
     target_link_libraries(threecpp_addons PUBLIC threecpp::threecpp)
     target_include_directories(threecpp_addons PUBLIC

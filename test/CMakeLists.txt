@@ -284,6 +284,7 @@ if(THREECPP_BUILD_ADDONS)
         unit/addons/math/SimplexNoise.tests.cpp
         unit/addons/math/JSNumberMathTrig.tests.cpp
         unit/addons/math/JSNumberMathExpLog.tests.cpp
+        unit/addons/math/MeshSurfaceSampler.tests.cpp
         unit/addons/geometries/ParametricFunctions.tests.cpp
         unit/addons/geometries/ParametricGeometry.tests.cpp
         unit/addons/geometries/BoxLineGeometry.tests.cpp
@@ -297,7 +298,8 @@ if(THREECPP_BUILD_ADDONS)
         unit/addons/curves/NURBSCurve.tests.cpp
         unit/addons/curves/NURBSSurface.tests.cpp
         unit/addons/curves/NURBSVolume.tests.cpp
-        unit/addons/curves/CurveExtras.tests.cpp)
+        unit/addons/curves/CurveExtras.tests.cpp
+        unit/addons/shaders/JsmShaders.tests.cpp)
     target_include_directories(THREECPPAddonTests PRIVATE "${CMAKE_CURRENT_SOURCE_DIR}/unit/utils")
     target_link_libraries(THREECPPAddonTests PRIVATE threecpp::addons)
     add_test(NAME threecpp.addons-unit COMMAND THREECPPAddonTests)
@@ -323,6 +325,8 @@ if(THREECPP_BUILD_ADDONS)
     target_link_libraries(ThreeJsMathCoreTrigParityProbe PRIVATE threecpp::threecpp)
     add_executable(ThreeJsColorMathParityProbe unit/utils/parity/ColorMathParityProbe.cpp)
     target_link_libraries(ThreeJsColorMathParityProbe PRIVATE threecpp::threecpp)
+    add_executable(ThreeJsMeshSurfaceSamplerParityProbe unit/utils/parity/MeshSurfaceSamplerParityProbe.cpp)
+    target_link_libraries(ThreeJsMeshSurfaceSamplerParityProbe PRIVATE threecpp::addons)
     add_executable(ThreeJsColorSpacesParityProbe unit/utils/parity/ColorSpacesParityProbe.cpp)
     target_link_libraries(ThreeJsColorSpacesParityProbe PRIVATE threecpp::addons)
     add_executable(ThreeJsSimplexNoiseParityProbe unit/utils/parity/SimplexNoiseParityProbe.cpp)
@@ -335,6 +339,8 @@ if(THREECPP_BUILD_ADDONS)
     target_link_libraries(ThreeJsTeapotGeometryParityProbe PRIVATE threecpp::addons)
     add_executable(ThreeJsLoftDecalParityProbe unit/utils/parity/LoftDecalParityProbe.cpp)
     target_link_libraries(ThreeJsLoftDecalParityProbe PRIVATE threecpp::addons)
+    add_executable(ThreeJsJsmShadersParityProbe unit/utils/parity/JsmShadersParityProbe.cpp)
+    target_link_libraries(ThreeJsJsmShadersParityProbe PRIVATE threecpp::addons)
 endif()
 if(THREECPP_BUILD_VULKAN)
     add_executable(VulkanShaderCompilerTests unit/three.source.unit.cpp
@@ -805,6 +811,9 @@ if(THREECPP_NODE_EXECUTABLE)
             add_test(NAME threecpp.threejs-color-math-parity
                 COMMAND "${THREECPP_NODE_EXECUTABLE}" "${CMAKE_CURRENT_SOURCE_DIR}/unit/utils/parity/compare-color-math.mjs"
                 "${THREEJS_SOURCE_DIR}" "$<TARGET_FILE:ThreeJsColorMathParityProbe>")
+            add_test(NAME threecpp.threejs-mesh-surface-sampler-parity
+                COMMAND "${THREECPP_NODE_EXECUTABLE}" "${CMAKE_CURRENT_SOURCE_DIR}/unit/utils/parity/compare-mesh-surface-sampler.mjs"
+                "${THREEJS_SOURCE_DIR}" "$<TARGET_FILE:ThreeJsMeshSurfaceSamplerParityProbe>")
             add_test(NAME threecpp.threejs-color-spaces-parity
                 COMMAND "${THREECPP_NODE_EXECUTABLE}" "${CMAKE_CURRENT_SOURCE_DIR}/unit/utils/parity/compare-color-spaces.mjs"
                 "${THREEJS_SOURCE_DIR}" "$<TARGET_FILE:ThreeJsColorSpacesParityProbe>")
@@ -823,6 +832,9 @@ if(THREECPP_NODE_EXECUTABLE)
             add_test(NAME threecpp.threejs-loft-decal-parity
                 COMMAND "${THREECPP_NODE_EXECUTABLE}" "${CMAKE_CURRENT_SOURCE_DIR}/unit/utils/parity/compare-loft-decal.mjs"
                 "${THREEJS_SOURCE_DIR}" "$<TARGET_FILE:ThreeJsLoftDecalParityProbe>")
+            add_test(NAME threecpp.threejs-jsm-shaders-parity
+                COMMAND "${THREECPP_NODE_EXECUTABLE}" "${CMAKE_CURRENT_SOURCE_DIR}/unit/utils/parity/compare-jsm-shaders.mjs"
+                "${THREEJS_SOURCE_DIR}" "$<TARGET_FILE:ThreeJsJsmShadersParityProbe>")
         endif()
         add_test(NAME threecpp.threejs-webgl-info-parity
             COMMAND "${THREECPP_NODE_EXECUTABLE}" "${CMAKE_CURRENT_SOURCE_DIR}/unit/utils/parity/compare-webgl-info.mjs"
