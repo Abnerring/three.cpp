@@ -194,8 +194,8 @@
     "note": "Accepted port scope is src and examples/jsm, including tracked third-party dependencies. Editor/manual web applications are excluded from native application rewrites. Native host behavior, packaging and all three platforms require separate implementation and verification evidence."
   },
   "counts": {
-    "partial-unverified": 204,
-    "missing": 737,
+    "partial-unverified": 205,
+    "missing": 736,
     "vulkan-port-pending": 290,
     "dependency-unverified": 20
   },
@@ -211,8 +211,8 @@
     "examples/jsm": {
       "modules": 496,
       "counts": {
-        "missing": 468,
-        "partial-unverified": 8,
+        "missing": 467,
+        "partial-unverified": 9,
         "dependency-unverified": 20
       }
     }
@@ -621,7 +621,7 @@
       "path": "examples/jsm/utils",
       "upstreamFiles": 17,
       "moduleCount": 17,
-      "modulesWithCppFiles": 1,
+      "modulesWithCppFiles": 2,
       "verifiedComplete": 0
     },
     {
@@ -34990,11 +34990,11 @@
       "scope": "examples/jsm",
       "kind": "addon",
       "upstreamSha256": "219f89d236e63a7df9ec32cf45bb61652c8a86191b6a460430985b52699b5b20",
-      "header": null,
-      "implementation": null,
+      "header": "examples/jsm/utils/SkeletonUtils.h",
+      "implementation": "examples/jsm/utils/SkeletonUtils.cpp",
       "expectedHeader": "examples/jsm/utils/SkeletonUtils.h",
       "expectedImplementation": "examples/jsm/utils/SkeletonUtils.cpp",
-      "status": "missing",
+      "status": "partial-unverified",
       "verifiedComplete": false,
       "apiExtraction": "static-only",
       "verification": {
@@ -35003,7 +35003,9 @@
           "pointer": "/modules/1232"
         },
         "upstreamUnitTests": [],
-        "cppUnitTests": [],
+        "cppUnitTests": [
+          "test/unit/addons/utils/SkeletonUtils.tests.cpp"
+        ],
         "reviewedImplementation": [],
         "differentialResults": [],
         "renderingResults": [],

@@ -1,5 +1,13 @@
 # 验证记录
 
+## 当前追加验证：SkeletonUtils，2026-10-17
+
+- 新增 `examples/jsm/utils/SkeletonUtils`（clone / retarget / retargetClip）。单测 4 cases / 53 assertions 通过。
+- 差分探针在 C++ 与 Node 两侧用同一组字面量骨架运行同一操作，字面量漂移只会导致比较失败而不会静默通过：**3 个模式逐位一致** —— clone（层级、每个 SkinnedMesh 的重绑、骨架与骨骼的独立性、bindMatrix、源骨架未被改动）；retarget（目标骨骼 position/quaternion/scale、写回的默认值，另有 hip=spine、scale=2、hipInfluence=(1,0.5,0.25)、hipPosition、preserveBonePositions=false 的组合）；retargetClip（产出片段名、时长、4 条转换轨道的 times/values、fps=3、采样后的目标骨骼，以及 Skeleton 源形式的轨道名与时长）。注册为 `threecpp.threejs-skeleton-utils-parity`。
+- 差分抓到一处真实缺陷：retargetClip 的骨骼查找误用了未回退的候选名，而上游是 `getBoneName( bone, options ) || bone.name`；修正后 3 个模式全部通过。
+- 适配记录：裸骨架源在上游经 SkeletonHelper 携带 `skeleton` 供 `.bones[name]` 绑定解析，本移植改用持有同一骨架的空 SkinnedMesh；options 为值类型并把解析后的默认值写回，与上游可观察行为一致。
+- 审计重新生成：1,251 个模块，partial-unverified 205（+1）、missing 736（−1）、vulkan-port-pending 290、dependency-unverified 20；Acorn 解析错误 0。相关 CTest 7/7 通过。
+
 ## 当前追加验证：CurveExtras 与 JSNumberMath.pow，2026-10-17
 
 - 新增 `examples/jsm/curves/CurveExtras`（14 个装饰曲线）。单测 5 cases / 77 assertions 通过；差分导入固定 checkout 的 `CurveExtras.js`，**1,224 个场景逐位一致**：28 次构造（默认与显式 scale）的采样点、切线、`arcLengthDivisions` 8/200 的弧长与 `type` 字符串，外加 774 组 `Math.pow` 与 212 个 `Math.sin`/`Math.cos` 输入。注册为 `threecpp.threejs-curve-extras-parity`。
