@@ -364,6 +364,8 @@ if(THREECPP_BUILD_ADDONS)
     target_link_libraries(ThreeJsVector3ParityProbe PRIVATE threecpp::threecpp)
     add_executable(ThreeJsQuaternionParityProbe unit/utils/parity/QuaternionParityProbe.cpp)
     target_link_libraries(ThreeJsQuaternionParityProbe PRIVATE threecpp::threecpp)
+    add_executable(ThreeJsMatrix4ParityProbe unit/utils/parity/Matrix4ParityProbe.cpp)
+    target_link_libraries(ThreeJsMatrix4ParityProbe PRIVATE threecpp::threecpp)
     target_link_libraries(ThreeJsXYZLoaderParityProbe PRIVATE threecpp::addons)
     add_executable(ThreeJsSTLLoaderParityProbe unit/utils/parity/STLLoaderParityProbe.cpp)
     target_link_libraries(ThreeJsSTLLoaderParityProbe PRIVATE threecpp::addons)
@@ -900,6 +902,9 @@ if(THREECPP_NODE_EXECUTABLE)
             add_test(NAME threecpp.threejs-quaternion-parity
                 COMMAND "${THREECPP_NODE_EXECUTABLE}" "${CMAKE_CURRENT_SOURCE_DIR}/unit/utils/parity/compare-quaternion.mjs"
                 "${THREEJS_SOURCE_DIR}" "$<TARGET_FILE:ThreeJsQuaternionParityProbe>")
+            add_test(NAME threecpp.threejs-matrix4-parity
+                COMMAND "${THREECPP_NODE_EXECUTABLE}" "${CMAKE_CURRENT_SOURCE_DIR}/unit/utils/parity/compare-matrix4.mjs"
+                "${THREEJS_SOURCE_DIR}" "$<TARGET_FILE:ThreeJsMatrix4ParityProbe>")
             add_test(NAME threecpp.threejs-stl-loader-parity
                 COMMAND "${THREECPP_NODE_EXECUTABLE}" "${CMAKE_CURRENT_SOURCE_DIR}/unit/utils/parity/compare-stl-loader.mjs"
                 "${THREEJS_SOURCE_DIR}" "$<TARGET_FILE:ThreeJsSTLLoaderParityProbe>")
