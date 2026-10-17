@@ -13,6 +13,8 @@
 #include "cameras/PerspectiveCamera.h"
 #include "objects/InstancedMesh.h"
 #include "objects/Sprite.h"
+#include "scenes/Fog.h"
+#include "scenes/FogExp2.h"
 #include "scenes/Scene.h"
 #include <memory>
 #include <stdexcept>
@@ -177,4 +179,48 @@ TEST_CASE("ObjectLoader builds both cameras") {
     REQUIRE(orthographic->top == 3.0);
     REQUIRE(orthographic->bottom == -3.0);
     REQUIRE(orthographic->zoom == 4.0);
+}
+// The remaining scene fields: both fog types and the background and environment numbers and eulers.
+TEST_CASE("ObjectLoader builds the scene fog and background fields") {
+    const auto realm = JSValue::object();
+    static_cast<void>(realm);
+    const auto json = Animation_detail::parseJSON(R"({
+        "object": {"type": "Scene", "uuid": "scene", "background": 255,
+            "backgroundBlurriness": 0.5, "backgroundIntensity": 2, "environmentIntensity": 3,
+            "backgroundRotation": [1, 2, 3], "environmentRotation": [4, 5, 6],
+            "fog": {"type": "Fog", "color": 16777215, "near": 1, "far": 100}}
+    })");
+    ObjectLoader loader;
+    const auto result = loader.parse(json);
+    const auto scene = std::dynamic_pointer_cast<Scene>(result.object);
+    REQUIRE(scene);
+    REQUIRE(scene->background.has_value());
+    REQUIRE(scene->backgroundBlurriness == 0.5);
+    REQUIRE(scene->backgroundIntensity == 2.0);
+    REQUIRE(scene->environmentIntensity == 3.0);
+    REQUIRE(scene->backgroundRotation.x == 1.0);
+    REQUIRE(scene->environmentRotation.z == 6.0);
+    const auto fog = std::dynamic_pointer_cast<Fog>(scene->fog);
+    REQUIRE(fog);
+    REQUIRE(fog->near == 1.0);
+    REQUIRE(fog->far == 100.0);
+}
+
+TEST_CASE("ObjectLoader builds an exponential fog and refuses a texture environment") {
+    const auto realm = JSValue::object();
+    static_cast<void>(realm);
+    const auto json = Animation_detail::parseJSON(R"({
+        "object": {"type": "Scene", "uuid": "scene",
+            "fog": {"type": "FogExp2", "color": 255, "density": 0.5}}
+    })");
+    ObjectLoader loader;
+    const auto result = loader.parse(json);
+    const auto scene = std::dynamic_pointer_cast<Scene>(result.object);
+    const auto fog = std::dynamic_pointer_cast<FogExp2>(scene->fog);
+    REQUIRE(fog);
+    REQUIRE(fog->density == 0.5);
+
+    const auto texture = Animation_detail::parseJSON(R"({"object": {"type": "Scene", "environment": "env"}})");
+    ObjectLoader other;
+    REQUIRE_THROWS_AS(other.parse(texture), std::runtime_error);
 }

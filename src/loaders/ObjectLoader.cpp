@@ -24,6 +24,7 @@
 #include "objects/Mesh.h"
 #include "objects/Points.h"
 #include "objects/Sprite.h"
+#include "scenes/FogExp2.h"
 #include "scenes/Scene.h"
 #include <cctype>
 #include <stdexcept>
@@ -109,7 +110,26 @@ std::shared_ptr<Object3D> ObjectLoader::parseObject(const JSValue& data) {
             if (!numeric) throw std::runtime_error("ObjectLoader: texture backgrounds are not ported yet");
             scene->background = Color(background.toNumber());
         }
-        object = scene;
+        if (!data.get("environment").isUndefined())
+            throw std::runtime_error("ObjectLoader: texture environments are not ported yet");
+        // Upstream builds one of the two fog types from the record and only copies a non-empty name.
+        const auto fog = data.get("fog");
+        if (!fog.isUndefined()) {
+            const auto fogType = fog.get("type").toString();
+            if (fogType == "Fog")
+                scene->fog = std::make_shared<Fog>(static_cast<int>(fog.get("color").toNumber()),
+                    optionalNumber(fog, "near", 1.0), optionalNumber(fog, "far", 1000.0));
+            else if (fogType == "FogExp2")
+                scene->fog = std::make_shared<FogExp2>(static_cast<int>(fog.get("color").toNumber()),
+                    optionalNumber(fog, "density", 0.00025));
+            else
+                throw std::runtime_error("ObjectLoader: unknown fog type \"" + fogType + "\"");
+        }
+        if (!data.get("backgroundBlurriness").isUndefined()) scene->backgroundBlurriness = data.get("backgroundBlurriness").toNumber();
+        if (!data.get("backgroundIntensity").isUndefined()) scene->backgroundIntensity = data.get("backgroundIntensity").toNumber();
+        if (!data.get("backgroundRotation").isUndefined()) scene->backgroundRotation.fromArray(numbers(data.get("backgroundRotation")));
+        if (!data.get("environmentIntensity").isUndefined()) scene->environmentIntensity = data.get("environmentIntensity").toNumber();
+        if (!data.get("environmentRotation").isUndefined()) scene->environmentRotation.fromArray(numbers(data.get("environmentRotation")));        object = scene;
     } else if (type == "Group") object = std::make_shared<Group>();
     else if (type == "Mesh") {
         const auto mesh = std::make_shared<Mesh>();
