@@ -584,6 +584,8 @@ target_link_libraries(ThreeJsLoaderParsersParityProbe PRIVATE threecpp::threecpp
     target_link_libraries(ThreeJsFrustumParityProbe PRIVATE threecpp::threecpp)
     add_executable(ThreeJsVector24ParityProbe unit/utils/parity/Vector24ParityProbe.cpp)
     target_link_libraries(ThreeJsVector24ParityProbe PRIVATE threecpp::threecpp)
+    add_executable(ThreeJsMatrix3ParityProbe unit/utils/parity/Matrix3ParityProbe.cpp)
+    target_link_libraries(ThreeJsMatrix3ParityProbe PRIVATE threecpp::threecpp)
 add_executable(ThreeJsInterleavedAttributeParityProbe unit/utils/parity/InterleavedAttributeParityProbe.cpp)
 target_link_libraries(ThreeJsInterleavedAttributeParityProbe PRIVATE threecpp::threecpp)
 add_executable(ThreeJsLODParityProbe unit/utils/parity/LODParityProbe.cpp)
@@ -923,6 +925,9 @@ if(THREECPP_NODE_EXECUTABLE)
             add_test(NAME threecpp.threejs-vector24-parity
                 COMMAND "${THREECPP_NODE_EXECUTABLE}" "${CMAKE_CURRENT_SOURCE_DIR}/unit/utils/parity/compare-vector24.mjs"
                 "${THREEJS_SOURCE_DIR}" "$<TARGET_FILE:ThreeJsVector24ParityProbe>")
+            add_test(NAME threecpp.threejs-matrix3-parity
+                COMMAND "${THREECPP_NODE_EXECUTABLE}" "${CMAKE_CURRENT_SOURCE_DIR}/unit/utils/parity/compare-matrix3.mjs"
+                "${THREEJS_SOURCE_DIR}" "$<TARGET_FILE:ThreeJsMatrix3ParityProbe>")
             add_test(NAME threecpp.threejs-math-utils-parity
                 COMMAND "${THREECPP_NODE_EXECUTABLE}" "${CMAKE_CURRENT_SOURCE_DIR}/unit/utils/parity/compare-math-utils.mjs"
                 "${THREEJS_SOURCE_DIR}" "$<TARGET_FILE:ThreeJsMathUtilsParityProbe>")
