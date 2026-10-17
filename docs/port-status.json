@@ -4771,7 +4771,9 @@
         "upstreamUnitTests": [
           "test/unit/src/loaders/AnimationLoader.tests.js"
         ],
-        "cppUnitTests": [],
+        "cppUnitTests": [
+          "test/unit/src/loaders/AnimationLoader.tests.cpp"
+        ],
         "reviewedImplementation": [],
         "differentialResults": [],
         "renderingResults": [],
