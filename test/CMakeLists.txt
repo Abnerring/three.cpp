@@ -8,6 +8,7 @@ add_executable(THREECPPTests
         unit/src/loaders/CubeTextureLoader.tests.cpp
         unit/src/extras/ImageUtils.tests.cpp
         unit/src/loaders/DataTextureLoader.tests.cpp
+        unit/src/loaders/CompressedTextureLoader.tests.cpp
     unit/src/math/Vector3.tests.cpp
     unit/src/math/Vector4.tests.cpp
     unit/src/math/MathUtils.tests.cpp

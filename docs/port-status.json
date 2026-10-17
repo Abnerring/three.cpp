@@ -194,8 +194,8 @@
     "note": "Accepted port scope is src and examples/jsm, including tracked third-party dependencies. Editor/manual web applications are excluded from native application rewrites. Native host behavior, packaging and all three platforms require separate implementation and verification evidence."
   },
   "counts": {
-    "partial-unverified": 286,
-    "missing": 655,
+    "partial-unverified": 287,
+    "missing": 654,
     "vulkan-port-pending": 290,
     "dependency-unverified": 20
   },
@@ -203,8 +203,8 @@
     "src": {
       "modules": 755,
       "counts": {
-        "partial-unverified": 202,
-        "missing": 263,
+        "partial-unverified": 203,
+        "missing": 262,
         "vulkan-port-pending": 290
       }
     },
@@ -733,7 +733,7 @@
       "path": "src/loaders",
       "upstreamFiles": 16,
       "moduleCount": 16,
-      "modulesWithCppFiles": 12,
+      "modulesWithCppFiles": 13,
       "verifiedComplete": 0
     },
     {
@@ -4876,11 +4876,11 @@
       "scope": "src",
       "kind": "core",
       "upstreamSha256": "733de102b62c7d1794c01c60b1dd06cfab53ce45bf6efbeca45ed2a464b4c812",
-      "header": null,
-      "implementation": null,
+      "header": "src/loaders/CompressedTextureLoader.h",
+      "implementation": "src/loaders/CompressedTextureLoader.cpp",
       "expectedHeader": "src/loaders/CompressedTextureLoader.h",
       "expectedImplementation": "src/loaders/CompressedTextureLoader.cpp",
-      "status": "missing",
+      "status": "partial-unverified",
       "verifiedComplete": false,
       "apiExtraction": "static-only",
       "verification": {
@@ -4891,7 +4891,9 @@
         "upstreamUnitTests": [
           "test/unit/src/loaders/CompressedTextureLoader.tests.js"
         ],
-        "cppUnitTests": [],
+        "cppUnitTests": [
+          "test/unit/src/loaders/CompressedTextureLoader.tests.cpp"
+        ],
         "reviewedImplementation": [],
         "differentialResults": [],
         "renderingResults": [],
