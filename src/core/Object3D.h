@@ -28,6 +28,7 @@ struct Intersection;
 
 // One context per document, explicitly shared with descendants like three.js' meta argument.
 // Custom object serializers can register resources without serializing an existing UUID twice.
+class Frustum;
 class Object3DJSONContext : public TextureJSONContext {
   public:
     OrderedMap<JsonValue> geometries, materials, shapes, skeletons, animations,

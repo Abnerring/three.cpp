@@ -56,6 +56,9 @@ class BufferGeometry : public EventDispatcher, public std::enable_shared_from_th
     void clearGroups();
     void setDrawRange(double start, double count);
     BufferGeometry& applyMatrix4(const Matrix4& matrix);
+    // Upstream routes this through a scratch Object3D: lookAt orients it, updateMatrix composes, and the
+    // geometry is transformed by that matrix.
+    BufferGeometry& lookAt(const Vector3& vector);
     BufferGeometry& applyQuaternion(const Quaternion& quaternion);
     BufferGeometry& rotateX(double angle);
     BufferGeometry& rotateY(double angle);

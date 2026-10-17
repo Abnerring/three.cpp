@@ -1,4 +1,5 @@
 #include "core/BufferGeometry.h"
+#include "core/Object3D.h"
 #include "core/JSDataSnapshot.h"
 #include "core/NativeObject.h"
 #include "math/MathUtils.h"
@@ -334,4 +335,13 @@ JsonValue BufferGeometry::toJSON() const {
         {"center",JsonValue::Array{boundingSphere->center.x,boundingSphere->center.y,boundingSphere->center.z}}}));
     result["data"] = *snapshotData(data);
     return result;
+}
+
+BufferGeometry& BufferGeometry::lookAt(const Vector3& vector) {
+    // Upstream uses a scratch object at the origin: lookAt gives it the rotation, updateMatrix composes it
+    // with that origin, and the geometry is transformed by the result.
+    Object3D scratch;
+    scratch.lookAt(vector);
+    scratch.updateMatrix();
+    return applyMatrix4(scratch.matrix);
 }

@@ -28,6 +28,8 @@ class Box2 {
     Vector2& clampPoint(const Vector2& point, Vector2& target) const;
     double distanceToPoint(const Vector2& point) const;
     Box2& intersect(const Box2& box);
+    // Upstream calls this union; a method cannot be named that in C++, because union is a keyword, so the
+    // port keeps unionWith and this comment records the forced rename.
     Box2& unionWith(const Box2& box);
     Box2& translate(const Vector2& offset);
     bool equals(const Box2& box) const;
