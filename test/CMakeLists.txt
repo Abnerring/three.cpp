@@ -596,6 +596,8 @@ target_link_libraries(ThreeJsLoaderParsersParityProbe PRIVATE threecpp::threecpp
     target_link_libraries(ThreeJsFogExternalParityProbe PRIVATE threecpp::threecpp)
     add_executable(ThreeJsLightShadowsParityProbe unit/utils/parity/LightShadowsParityProbe.cpp)
     target_link_libraries(ThreeJsLightShadowsParityProbe PRIVATE threecpp::threecpp)
+    add_executable(ThreeJsObjectLoaderParityProbe unit/utils/parity/ObjectLoaderParityProbe.cpp)
+    target_link_libraries(ThreeJsObjectLoaderParityProbe PRIVATE threecpp::threecpp)
 add_executable(ThreeJsInterleavedAttributeParityProbe unit/utils/parity/InterleavedAttributeParityProbe.cpp)
 target_link_libraries(ThreeJsInterleavedAttributeParityProbe PRIVATE threecpp::threecpp)
 add_executable(ThreeJsLODParityProbe unit/utils/parity/LODParityProbe.cpp)
@@ -950,6 +952,9 @@ if(THREECPP_NODE_EXECUTABLE)
             add_test(NAME threecpp.threejs-light-shadows-parity
                 COMMAND "${THREECPP_NODE_EXECUTABLE}" "${CMAKE_CURRENT_SOURCE_DIR}/unit/utils/parity/compare-light-shadows.mjs"
                 "${THREEJS_SOURCE_DIR}" "$<TARGET_FILE:ThreeJsLightShadowsParityProbe>")
+            add_test(NAME threecpp.threejs-object-loader-parity
+                COMMAND "${THREECPP_NODE_EXECUTABLE}" "${CMAKE_CURRENT_SOURCE_DIR}/unit/utils/parity/compare-object-loader.mjs"
+                "${THREEJS_SOURCE_DIR}" "$<TARGET_FILE:ThreeJsObjectLoaderParityProbe>")
             add_test(NAME threecpp.threejs-math-utils-parity
                 COMMAND "${THREECPP_NODE_EXECUTABLE}" "${CMAKE_CURRENT_SOURCE_DIR}/unit/utils/parity/compare-math-utils.mjs"
                 "${THREEJS_SOURCE_DIR}" "$<TARGET_FILE:ThreeJsMathUtilsParityProbe>")
