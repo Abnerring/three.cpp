@@ -61,6 +61,13 @@
    - **断言里出现奇怪的大整数，先当作位模式看**：`position->getZ(0) == 3` 失败时报的是 `1077936128`，那正是 `3.0f` 的 IEEE-754 位模式（`0x40400000`）。原因是我把 `arrayBuffers` 里的 uint32 词**复制**进了 `float` 向量，而不是按字节**重解释**（`memcpy`）。见到这种数字不必再猜层次，直接检查是不是把位模式当数值用了。
    - **同一对象要共享，就必须用同一个句柄、一次构造**：测试要求两个交错属性的 `data` 满足 `sameValue`，而 `sameValue` 对对象比较的是 `(heap_, id)`（见 `JSValue.cpp:1829`）。我原本先用缓冲对象构造一个临时属性、再从它取 `object()` 构造正式属性，中间那次拷贝使两个属性拿到**不同句柄**；改为**直接用 `buffer->object()` 一次构造**后通过。教训是：传递共享对象时不要经过中间包装，否则身份会丢。
    - 附带一条排错顺序：先打印**指针/键**（一次构建+一次运行即可，第 208 轮用它把三种可能收到一种），再打印**id**；指针相同而 `sameValue` 为假，就说明"拷贝出了一个新对象"，此时应回到自己的构造代码里找中间步骤，而不是继续怀疑基类。
+22. **图像加载族：先冻结解码契约，再实现 `ImageLoader` 与它的三个薄封装**。本仓库**没有** `src/loaders/ImageLoader.*` ✗，而 `TextureLoader`(74 行)、`CubeTextureLoader`(103 行)、`ImageBitmapLoader`、`CompressedTextureLoader` 全都依赖它 ✓。上游 `ImageLoader` 直接使用 DOM：`new Image()`、`image.src`、`crossOrigin`、`document.createElementNS(...SVG...)` ✗ —— 这些在原生侧不存在 ✓，所以它与 `FileLoader` 的情形**同构** ✓：把宿主边界收窄成一个注入函数，其余逐行转写 ✓。
+   - **建议契约**（模块级、可注入，与第 10 条同样风格）：`ImageLoader::setDecoder(JSValue)`，入参 `{url, crossOrigin, body}`（`body` 是已取到的字节或 `undefined`，让解码器自己决定是否走网络），返回 `{width, height, data}`，其中 `data` 是 **RGBA8 的字节序列**（8 位/通道，行主序，左上原点）。`Texture` 的 `image` 就用这个三元组表示 ✓。未注入解码器时**显式抛错** ✓。
+   - **需要显式报未实现的**：`document.createElementNS` 的 SVG 路径 ✗、`ImageBitmap` 的 `createImageBitmap` + `ImageBitmapLoader` ✗、`blob:` 与 `data:` 的浏览器专有分支 ✗。这些都要抛错而不是静默返回空纹理 ✓。
+   - **`ImageLoader` 其余部分照源码转写**：`Cache.add` 与 `manager.itemStart/itemEnd/itemError` 的时序 ✓、`crossOrigin` 的三种取值 ✓、`loading[url]` 去重 ✓、`onLoad/onError` 的挂接顺序 ✓ —— 这些模式在 `FileLoader`/`AnimationLoader`/`BufferGeometryLoader` 里已经验证过 ✓。
+   - **三个薄封装的语义**：`TextureLoader.load` 造 `Texture` ✓ 并设 `image` 与 `needsUpdate` ✓；`CubeTextureLoader.load` 取 6 张图 ✓，顺序必须是 `px, nx, py, ny, pz, nz` ✓，再交给 `CubeTexture` ✓。
+   - **差分方式**：上游侧在脚本里**垫一个最小 `Image`**（就像 `file-loader` 差分里垫 `ProgressEvent` ✓），让 `ImageLoader` 的图片解码走我们提供的像素；比较 `texture.image` 的宽、高与前若干像素的**原始字节** ✓。这样两侧语义一致 ✓，且不需要浏览器 ✓。
+   - **验收**：注入式解码器的单测（成功 ✓、解码器抛错 ✓、未注入时抛错 ✓、`Cache` 命中 ✓）+ 差分（`TextureLoader` 与 `CubeTextureLoader` 各一组 ✓）。
 10. **FileLoader 传输契约（冻结，实现时照此写，不要再设计）**：上游用 fetch / Request / Response / ReadableStream / AbortController / ProgressEvent / DOMParser / TextDecoder，原生侧没有这些宿主对象，因此把**只有一处**的宿主边界收窄成一个注入函数，其余逻辑照源码逐行移植。
    - 注入方式：模块级 `FileLoader::setTransport(JSValue)`，等价于 `globalThis.fetch`；未注入时 `load()` 显式抛错（说明未配置传输），不静默失败。
    - 传输入参：一个 JSValue 对象，字段 `url`（字符串，已过 `path` 与 `manager.resolveURL`）、`method`（恒为 GET）、`headers`（普通对象，来自 `requestHeader`）、`credentials`（`include` 或 `same-origin`，取自 `withCredentials`）、`signal`（对象，含布尔字段 `aborted`，由 `abort()` 置位）。
