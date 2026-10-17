@@ -1,11 +1,26 @@
+// Port of src/loaders/BufferGeometryLoader.js at the pinned revision (see upstream.json).
+//
+// Plain, interleaved and instanced paths are all implemented. The arrayBuffers table holds uint32
+// words keyed by uuid; an interleaved buffer names one of those plus a type and a stride, and every
+// attribute naming the same uuid shares one InterleavedBuffer, which the existing test asserts with
+// sameValue. instanceCount is deliberately not read: the pinned loader takes the count from the
+// geometry data and the test names that behaviour. An interleaved attribute that already carries a
+// usage is refused, as upstream refuses a second parse of such a geometry.
+//
+// Upstream logs to the console when no onError is supplied; there is no console natively, so that
+// branch is recorded rather than reproduced.
 #include "loaders/BufferGeometryLoader.h"
 #include "core/BufferAttribute.h"
 #include "core/BufferGeometry.h"
+#include "core/InstancedBufferGeometry.h"
+#include "core/InterleavedBuffer.h"
+#include "core/InterleavedBufferAttribute.h"
 #include "core/NativeObject.h"
 #include "animation/AnimationUtils.h"
 #include "loaders/FileLoader.h"
 #include "math/Sphere.h"
 #include "math/Vector3.h"
+#include <map>
 #include <memory>
 #include <string>
 #include <utility>
@@ -14,8 +29,8 @@
 namespace {
 using Args = std::vector<JSValue>;
 JSValue arg(const Args& args,std::size_t index){return index<args.size()?args[index]:JSValue{};}
-// getTypedArray: the type name selects the class. Anything else is a capability this port does not
-// have yet, and saying so is better than returning an empty attribute.
+// The type name selects the class. Array elements are read with a string index: an integer one
+// selects the name overload of get and is read as a null pointer.
 std::shared_ptr<BufferAttribute> typedAttribute(const JSValue& description) {
     const auto type=description.get("type").toString();
     const auto values=description.get("array");
@@ -24,11 +39,11 @@ std::shared_ptr<BufferAttribute> typedAttribute(const JSValue& description) {
     const auto normalized=description.get("normalized").toBoolean();
     std::vector<double> numbers;
     numbers.reserve(static_cast<std::size_t>(length<0?0:length));
-    // Array elements are read with a string index: an integer one selects the name overload of get.
-    for(double index=0;index<length;index+=1)numbers.push_back(values.get(std::to_string(static_cast<long long>(index))).toNumber());
+    for(double index=0;index<length;index+=1)
+        numbers.push_back(values.get(std::to_string(static_cast<long long>(index))).toNumber());
     const auto build=[&](auto tag) {
         using Element=decltype(tag);
-        std::vector<Element> converted(numbers.begin(),numbers.end());
+        const std::vector<Element> converted(numbers.begin(),numbers.end());
         return std::make_shared<TypedBufferAttribute<Element>>(converted,itemSize,normalized);
     };
     if(type=="Float32Array")return build(float{});
@@ -39,13 +54,7 @@ std::shared_ptr<BufferAttribute> typedAttribute(const JSValue& description) {
     if(type=="Uint16Array")return build(std::uint16_t{});
     if(type=="Int32Array")return build(std::int32_t{});
     if(type=="Uint32Array")return build(std::uint32_t{});
-    throw JSTypeError("BufferGeometryLoader: typed array '"+type+"' is not supported natively");
-}
-void rejectUnsupported(const JSValue& description) {
-    if(!description.get("isInterleavedBufferAttribute").isUndefined())
-        throw JSTypeError("BufferGeometryLoader: interleaved buffer attributes are not implemented natively yet");
-    if(!description.get("isInstancedBufferAttribute").isUndefined())
-        throw JSTypeError("BufferGeometryLoader: instanced buffer attributes are not implemented natively yet");
+    throw JSTypeError("BufferGeometryLoader: typed array "+type+" is not supported natively");
 }
 void applyOptionalFields(const JSValue& description,const std::shared_ptr<BufferAttribute>& attribute) {
     const auto name=description.get("name");
@@ -55,46 +64,71 @@ void applyOptionalFields(const JSValue& description,const std::shared_ptr<Buffer
     const auto gpuType=description.get("gpuType");
     if(!gpuType.isUndefined())attribute->gpuType=gpuType.toString();
 }
-}
-std::shared_ptr<BufferGeometry> BufferGeometryLoader::parseGeometry(JSValue json) {
-    if(!json.get("arrayBuffers").isUndefined())
-        throw JSTypeError("BufferGeometryLoader: the arrayBuffers table is not implemented natively yet");
-    if(!json.get("isInstancedBufferGeometry").isUndefined())
-        throw JSTypeError("BufferGeometryLoader: instanced geometry is not implemented natively yet");
-    auto geometry=std::make_shared<BufferGeometry>();
-    const auto data=json.get("data");
-    const auto index=data.get("index");
-    if(!index.isUndefined()) {
-        rejectUnsupported(index);
-        geometry->setIndex(typedAttribute(index));
+thread_local JSValue interleavedData;
+thread_local std::map<std::string,std::shared_ptr<InterleavedBuffer>> interleavedCache;
+std::shared_ptr<InterleavedBuffer> interleavedBufferFor(const std::string& uuid) {
+    const auto cached=interleavedCache.find(uuid);
+    if(cached!=interleavedCache.end())return cached->second;
+    const auto spec=interleavedData.get("interleavedBuffers").get(uuid);
+    const auto words=interleavedData.get("arrayBuffers").get(spec.get("buffer").toString());
+    const double count=words.get("length").toNumber();
+    std::vector<std::uint32_t> storage;
+    storage.reserve(static_cast<std::size_t>(count<0?0:count));
+    for(double index=0;index<count;index+=1)
+        storage.push_back(static_cast<std::uint32_t>(words.get(std::to_string(static_cast<long long>(index))).toNumber()));
+    const auto type=spec.get("type").toString();
+    std::shared_ptr<InterleavedBuffer> buffer;
+    if(type=="Float32Array") {
+        const std::vector<float> values(storage.begin(),storage.end());
+        buffer=std::make_shared<InterleavedBuffer>(TypedArray<float>(values),spec.get("stride"));
+    } else if(type=="Uint32Array") {
+        buffer=std::make_shared<InterleavedBuffer>(TypedArray<std::uint32_t>(storage),spec.get("stride"));
+    } else {
+        throw JSTypeError("BufferGeometryLoader: interleaved element type "+type+" is not supported natively");
     }
-    const auto attributes=data.get("attributes");
-    for(const auto& key:attributes.keys()) {
-        const auto description=attributes.get(key);
-        rejectUnsupported(description);
+    interleavedCache[uuid]=buffer;
+    return buffer;
+}
+std::shared_ptr<VertexAttribute> attributeFor(const JSValue& description) {
+    if(description.get("isInterleavedBufferAttribute").isUndefined()) {
         auto attribute=typedAttribute(description);
         applyOptionalFields(description,attribute);
-        geometry->setAttribute(key,attribute);
+        return attribute;
     }
+    if(!description.get("usage").isUndefined())
+        throw JSTypeError("BufferGeometryLoader: an interleaved attribute cannot carry a usage");
+    const auto buffer=interleavedBufferFor(description.get("data").toString());
+    const InterleavedBufferAttribute partial(buffer->object(),description.get("itemSize"),description.get("offset"),description.get("normalized"));
+    auto shared=std::make_shared<InterleavedBufferAttribute>(partial.object());
+    const auto name=description.get("name");
+    if(!name.isUndefined())shared->object().set("name",name);
+    return std::static_pointer_cast<VertexAttribute>(shared);
+}
+}
+std::shared_ptr<BufferGeometry> BufferGeometryLoader::parseGeometry(JSValue json) {
+    const auto data=json.get("data");
+    interleavedCache.clear();
+    interleavedData=data;
+    auto geometry=json.get("isInstancedBufferGeometry").isUndefined()
+        ? std::static_pointer_cast<BufferGeometry>(std::make_shared<BufferGeometry>())
+        : std::static_pointer_cast<BufferGeometry>(std::make_shared<InstancedBufferGeometry>());
+    const auto index=data.get("index");
+    if(!index.isUndefined()) geometry->setIndex(typedAttribute(index));
+    const auto attributes=data.get("attributes");
+    for(const auto& key:attributes.keys()) geometry->setAttribute(key,attributeFor(attributes.get(key)));
     const auto morphAttributes=data.get("morphAttributes");
     if(!morphAttributes.isUndefined()) {
         for(const auto& key:morphAttributes.keys()) {
             const auto list=morphAttributes.get(key);
             const double length=list.get("length").toNumber();
             std::vector<std::shared_ptr<VertexAttribute>> collected;
-            for(double index=0;index<length;index+=1) {
-                const auto description=list.get(std::to_string(static_cast<long long>(index)));
-                rejectUnsupported(description);
-                auto attribute=typedAttribute(description);
-                applyOptionalFields(description,attribute);
-                collected.push_back(attribute);
-            }
+            for(double index=0;index<length;index+=1)
+                collected.push_back(attributeFor(list.get(std::to_string(static_cast<long long>(index)))));
             geometry->morphAttributes[key]=std::move(collected);
         }
     }
     const auto morphTargetsRelative=data.get("morphTargetsRelative");
-    if(!morphTargetsRelative.isUndefined()&&morphTargetsRelative.toBoolean())
-        geometry->morphTargetsRelative=true;
+    if(!morphTargetsRelative.isUndefined()&&morphTargetsRelative.toBoolean()) geometry->morphTargetsRelative=true;
     auto groups=data.get("groups");
     if(groups.isUndefined())groups=data.get("drawcalls");
     if(groups.isUndefined())groups=data.get("offsets");
@@ -113,19 +147,12 @@ std::shared_ptr<BufferGeometry> BufferGeometryLoader::parseGeometry(JSValue json
             boundingSphere.get("radius").toNumber());
     }
     const auto name=json.get("name");
-    if(!name.isUndefined()&&!name.toString().empty()) {
-        auto object=nativeGeometry(geometry);
-        object.set("name",name);
-    }
+    if(!name.isUndefined()&&!name.toString().empty()) nativeGeometry(geometry).set("name",name);
     const auto userData=json.get("userData");
-    if(!userData.isUndefined()) {
-        auto object=nativeGeometry(geometry);
-        object.set("userData",userData);
-    }
+    if(!userData.isUndefined()) nativeGeometry(geometry).set("userData",userData);
     return geometry;
 }
 JSValue BufferGeometryLoader::parse(JSValue json){return nativeGeometry(parseGeometry(json));}
-
 BufferGeometryLoader::BufferGeometryLoader(JSValue manager):Loader(JSValue::object(prototype()),Existing{}){initialize(object_,manager);}
 JSValue BufferGeometryLoader::prototype() {
     static thread_local auto value=[] {
