@@ -900,6 +900,9 @@ if(THREECPP_NODE_EXECUTABLE)
             add_test(NAME threecpp.threejs-compressed-texture-loader-parity
                 COMMAND "${THREECPP_NODE_EXECUTABLE}" "${CMAKE_CURRENT_SOURCE_DIR}/unit/utils/parity/compare-compressed-texture-loader.mjs"
                 "${THREEJS_SOURCE_DIR}" "$<TARGET_FILE:ThreeJsCompressedTextureLoaderParityProbe>")
+            add_test(NAME threecpp.threejs-loader-parsers-parity
+                COMMAND "${THREECPP_NODE_EXECUTABLE}" "${CMAKE_CURRENT_SOURCE_DIR}/unit/utils/parity/compare-loader-parsers.mjs"
+                "${THREEJS_SOURCE_DIR}" "$<TARGET_FILE:ThreeJsLoaderParsersParityProbe>")
             add_test(NAME threecpp.threejs-math-utils-parity
                 COMMAND "${THREECPP_NODE_EXECUTABLE}" "${CMAKE_CURRENT_SOURCE_DIR}/unit/utils/parity/compare-math-utils.mjs"
                 "${THREEJS_SOURCE_DIR}" "$<TARGET_FILE:ThreeJsMathUtilsParityProbe>")
@@ -1049,8 +1052,8 @@ if(THREEJS_SOURCE_DIR AND THREECPP_NODE_EXECUTABLE)
 # suite whose expectations and probe output disagree. Registered as a target so the link stays
 # checked, and left out of the test set until that is resolved rather than failing every run.
 # add_test(NAME threecpp.threejs-loader-parsers-parity
-# #         COMMAND "${THREECPP_NODE_EXECUTABLE}" "${CMAKE_CURRENT_SOURCE_DIR}/unit/utils/parity/compare-loader-parsers.mjs"
-# #         "${THREEJS_SOURCE_DIR}" "$<TARGET_FILE:ThreeJsLoaderParsersParityProbe>")
+#         COMMAND "${THREECPP_NODE_EXECUTABLE}" "${CMAKE_CURRENT_SOURCE_DIR}/unit/utils/parity/compare-loader-parsers.mjs"
+#         "${THREEJS_SOURCE_DIR}" "$<TARGET_FILE:ThreeJsLoaderParsersParityProbe>")
     add_test(NAME threecpp.threejs-interleaved-buffers-parity
         COMMAND "${THREECPP_NODE_EXECUTABLE}" --expose-gc "${CMAKE_CURRENT_SOURCE_DIR}/unit/utils/parity/compare-interleaved-buffers.mjs"
         "${THREEJS_SOURCE_DIR}" "$<TARGET_FILE:ThreeJsInterleavedBufferParityProbe>")

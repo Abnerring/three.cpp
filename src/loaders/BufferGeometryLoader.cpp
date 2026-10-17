@@ -36,7 +36,7 @@ JSValue arg(const Args& args,std::size_t index){return index<args.size()?args[in
 // selects the name overload of get and is read as a null pointer.
 // itemSizeOverride is used for the index buffer, which upstream always builds with an item size of one
 // regardless of what the description says - it usually says nothing.
-std::shared_ptr<BufferAttribute> typedAttribute(const JSValue& description,double itemSizeOverride=-1) {
+std::shared_ptr<BufferAttribute> typedAttribute(const JSValue& description,double itemSizeOverride=-1,bool honourInstanced=true) {
     const auto type=description.get("type").toString();
     const auto values=description.get("array");
     const double length=values.get("length").toNumber();
@@ -53,7 +53,7 @@ std::shared_ptr<BufferAttribute> typedAttribute(const JSValue& description,doubl
         using Element=decltype(tag);
         const std::vector<Element> converted(numbers.begin(),numbers.end());
         // Upstream passes only the array, the item size and the normalized flag here, so meshPerAttribute keeps its default even when the document carries one.
-        if(instanced) return std::make_shared<InstancedBufferAttribute>(TypedArray<Element>(converted),itemSize,normalized);
+        if(instanced&&honourInstanced) return std::make_shared<InstancedBufferAttribute>(TypedArray<Element>(converted),itemSize,normalized);
         return std::make_shared<TypedBufferAttribute<Element>>(converted,itemSize,normalized);
     };
     if(type=="Float32Array")return build(float{});
@@ -69,7 +69,7 @@ std::shared_ptr<BufferAttribute> typedAttribute(const JSValue& description,doubl
         // so the elements are assigned through the clamped array itself instead of being cast.
         TypedArray<std::uint8_t, true> values(numbers.size());
         for(std::size_t index=0;index<numbers.size();index+=1) values[index]=numbers[index];
-        if(instanced) return std::make_shared<InstancedBufferAttribute>(values,itemSize,normalized);
+        if(instanced&&honourInstanced) return std::make_shared<InstancedBufferAttribute>(values,itemSize,normalized);
         return std::make_shared<TypedBufferAttribute<std::uint8_t, true>>(values,itemSize,normalized);
     }
     throw JSTypeError("BufferGeometryLoader: typed array "+type+" is not supported natively");
@@ -109,12 +109,17 @@ std::shared_ptr<InterleavedBuffer> interleavedBufferFor(const std::string& uuid)
     }
     // The spec carries its own usage, and the test reads it back through the attribute's data.
     if(!spec.get("usage").isUndefined())buffer->setUsage(static_cast<int>(spec.get("usage").toNumber()));
+    // Upstream copies the uuid from the document onto the buffer, and the serialised attribute refers to
+    // the buffer by that uuid, so leaving the generated one in place changes the output.
+    if(!spec.get("uuid").isUndefined())buffer->uuid=spec.get("uuid").toString();
     interleavedCache[uuid]=buffer;
     return buffer;
 }
-std::shared_ptr<VertexAttribute> attributeFor(const JSValue& description) {
+// Morph attributes are always plain buffer attributes upstream, whatever the flag says, hence the
+// second parameter: the callers that take attributes from the document pass true.
+std::shared_ptr<VertexAttribute> attributeFor(const JSValue& description,bool honourInstanced=true) {
     if(description.get("isInterleavedBufferAttribute").isUndefined()) {
-        auto attribute=typedAttribute(description);
+        auto attribute=typedAttribute(description,-1,honourInstanced);
         applyOptionalFields(description,attribute);
         return attribute;
     }
@@ -140,7 +145,9 @@ std::shared_ptr<BufferGeometry> BufferGeometryLoader::parseGeometry(JSValue json
     const auto index=data.get("index");
     if(!index.isUndefined()) geometry->setIndex(typedAttribute(index, 1.0));
     const auto attributes=data.get("attributes");
-    for(const auto& key:attributes.keys()) geometry->setAttribute(key,attributeFor(attributes.get(key)));
+    // for (const key in undefined) iterates zero times, so an absent attributes table is not an error.
+    if(!attributes.isUndefined())
+        for(const auto& key:attributes.keys()) geometry->setAttribute(key,attributeFor(attributes.get(key)));
     const auto morphAttributes=data.get("morphAttributes");
     if(!morphAttributes.isUndefined()) {
         for(const auto& key:morphAttributes.keys()) {
@@ -148,7 +155,7 @@ std::shared_ptr<BufferGeometry> BufferGeometryLoader::parseGeometry(JSValue json
             const double length=list.get("length").toNumber();
             std::vector<std::shared_ptr<VertexAttribute>> collected;
             for(double index=0;index<length;index+=1)
-                collected.push_back(attributeFor(list.get(std::to_string(static_cast<long long>(index)))));
+                collected.push_back(attributeFor(list.get(std::to_string(static_cast<long long>(index))), false));
             geometry->morphAttributes[key]=std::move(collected);
         }
     }
