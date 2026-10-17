@@ -194,8 +194,8 @@
     "note": "Accepted port scope is src and examples/jsm, including tracked third-party dependencies. Editor/manual web applications are excluded from native application rewrites. Native host behavior, packaging and all three platforms require separate implementation and verification evidence."
   },
   "counts": {
-    "partial-unverified": 287,
-    "missing": 654,
+    "partial-unverified": 288,
+    "missing": 653,
     "vulkan-port-pending": 290,
     "dependency-unverified": 20
   },
@@ -203,8 +203,8 @@
     "src": {
       "modules": 755,
       "counts": {
-        "partial-unverified": 203,
-        "missing": 262,
+        "partial-unverified": 204,
+        "missing": 261,
         "vulkan-port-pending": 290
       }
     },
@@ -733,7 +733,7 @@
       "path": "src/loaders",
       "upstreamFiles": 16,
       "moduleCount": 16,
-      "modulesWithCppFiles": 13,
+      "modulesWithCppFiles": 14,
       "verifiedComplete": 0
     },
     {
@@ -5176,11 +5176,11 @@
       "scope": "src",
       "kind": "core",
       "upstreamSha256": "b108d49bbdfe8031c7f45d85da17abb1806f1acd383e156907107a4d69f2d5e6",
-      "header": null,
-      "implementation": null,
+      "header": "src/loaders/ObjectLoader.h",
+      "implementation": "src/loaders/ObjectLoader.cpp",
       "expectedHeader": "src/loaders/ObjectLoader.h",
       "expectedImplementation": "src/loaders/ObjectLoader.cpp",
-      "status": "missing",
+      "status": "partial-unverified",
       "verifiedComplete": false,
       "apiExtraction": "partial-static",
       "verification": {
@@ -5191,7 +5191,9 @@
         "upstreamUnitTests": [
           "test/unit/src/loaders/ObjectLoader.tests.js"
         ],
-        "cppUnitTests": [],
+        "cppUnitTests": [
+          "test/unit/src/loaders/ObjectLoader.tests.cpp"
+        ],
         "reviewedImplementation": [],
         "differentialResults": [],
         "renderingResults": [],
