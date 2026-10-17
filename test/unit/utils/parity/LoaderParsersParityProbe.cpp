@@ -6,6 +6,7 @@
 #include "core/InstancedBufferAttribute.h"
 #include "textures/Texture.h"
 #include "core/JSPromise.h"
+#include <cstdio>
 #include <iostream>
 namespace {
 void push(JSValue array,JSValue value){array.get("push").call(array,{value});}
@@ -31,7 +32,7 @@ JSValue run(JSValue request) {
         BufferGeometryLoader loader;const auto geometry=loader.parseGeometry(json);geometry->uuid="geometry";
         auto fields=JSValue::object();
         for(const auto& [name,attribute]:geometry->attributes) {
-            auto item=JSValue::object();item.set("count",attribute->getCount());item.set("itemSize",attribute->getProperty("itemSize"));item.set("normalized",attribute->getProperty("normalized"));
+            auto item=JSValue::object();const auto buffer=std::dynamic_pointer_cast<BufferAttribute>(attribute);item.set("count",buffer->count);item.set("itemSize",buffer->itemSize);item.set("normalized",buffer->normalized);
             if(const auto interleaved=std::dynamic_pointer_cast<InterleavedBufferAttribute>(attribute)) {
                 auto storage=interleaved->array.value().get("buffer");storage.set("_uuid","storage");item.set("interleaved",true);item.set("offset",interleaved->offset.value());
             } else item.set("interleaved",false);
@@ -39,7 +40,8 @@ JSValue run(JSValue request) {
             else item.set("instanced",false);
             fields.set(name,item);
         }
-        auto result=JSValue::object();result.set("json",JSValue::fromJSON(geometry->toJSON()));result.set("attributes",fields);return result;
+        auto serialized=JSValue::fromJSON(geometry->toJSON());
+        auto result=JSValue::object();result.set("json",serialized);result.set("attributes",fields);return result;
     }
     if(mode=="animation") {
         AnimationLoader loader;auto result=JSValue::array();for(const auto& clip:loader.parseAnimations(json))push(result,clip->toJSON());return result;

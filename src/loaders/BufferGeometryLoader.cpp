@@ -21,6 +21,7 @@
 #include "math/Sphere.h"
 #include "math/Vector3.h"
 #include <cstring>
+#include <cstdio>
 #include <map>
 #include <memory>
 #include <string>
@@ -32,11 +33,13 @@ using Args = std::vector<JSValue>;
 JSValue arg(const Args& args,std::size_t index){return index<args.size()?args[index]:JSValue{};}
 // The type name selects the class. Array elements are read with a string index: an integer one
 // selects the name overload of get and is read as a null pointer.
-std::shared_ptr<BufferAttribute> typedAttribute(const JSValue& description) {
+// itemSizeOverride is used for the index buffer, which upstream always builds with an item size of one
+// regardless of what the description says - it usually says nothing.
+std::shared_ptr<BufferAttribute> typedAttribute(const JSValue& description,double itemSizeOverride=-1) {
     const auto type=description.get("type").toString();
     const auto values=description.get("array");
     const double length=values.get("length").toNumber();
-    const double itemSize=description.get("itemSize").toNumber();
+    const double itemSize=itemSizeOverride>=0?itemSizeOverride:description.get("itemSize").toNumber();
     const auto normalized=description.get("normalized").toBoolean();
     std::vector<double> numbers;
     numbers.reserve(static_cast<std::size_t>(length<0?0:length));
@@ -120,7 +123,7 @@ std::shared_ptr<BufferGeometry> BufferGeometryLoader::parseGeometry(JSValue json
         ? std::static_pointer_cast<BufferGeometry>(std::make_shared<BufferGeometry>())
         : std::static_pointer_cast<BufferGeometry>(std::make_shared<InstancedBufferGeometry>());
     const auto index=data.get("index");
-    if(!index.isUndefined()) geometry->setIndex(typedAttribute(index));
+    if(!index.isUndefined()) geometry->setIndex(typedAttribute(index, 1.0));
     const auto attributes=data.get("attributes");
     for(const auto& key:attributes.keys()) geometry->setAttribute(key,attributeFor(attributes.get(key)));
     const auto morphAttributes=data.get("morphAttributes");
@@ -154,9 +157,9 @@ std::shared_ptr<BufferGeometry> BufferGeometryLoader::parseGeometry(JSValue json
             boundingSphere.get("radius").toNumber());
     }
     const auto name=json.get("name");
-    if(!name.isUndefined()&&!name.toString().empty()) nativeGeometry(geometry).set("name",name);
+    if(!name.isUndefined()&&!name.toString().empty())geometry->name=name.toString();   // upstream assigns the field
     const auto userData=json.get("userData");
-    if(!userData.isUndefined()) nativeGeometry(geometry).set("userData",userData);
+    if(!userData.isUndefined())geometry->userData=userData.toJSON().value_or(JsonValue::Object{});   // JsonValue, not JSValue
     return geometry;
 }
 JSValue BufferGeometryLoader::parse(JSValue json){return nativeGeometry(parseGeometry(json));}
