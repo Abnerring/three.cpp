@@ -57,6 +57,10 @@
    - **实现清单（照测试即可，不需要再设计）**：① `parseGeometry(JSValue) → shared_ptr<BufferGeometry>` 作为一等入口，`parse` 只做 JS 包装；② `isInstancedBufferGeometry` → `InstancedBufferGeometry`，**不读** `instanceCount`；③ `isInterleavedBufferAttribute` → 按 `data.arrayBuffers` 取缓冲、按 `stride` 建 `InterleavedBuffer`，同一 uuid **共享实例**（`interleavedBufferMap` 去重），再建 `InterleavedBufferAttribute(itemSize, offset, normalized)`；④ `arrayBuffers` 表按上游 `new Uint32Array(data).buffer` 的语义实现；⑤ 对已设置 `usage` 的属性再次解析时抛 `JSTypeError`；⑥ 其余 plain 路径可复用 `083ee72` 里的实现（index、morph、groups 含旧的 `drawcalls`/`offsets` 键、手工构造的 boundingSphere、name 与 userData）。
    - **教训**：新增模块前先 `grep` 仓库里是否**已有针对它的测试**——`Loaders.tests.cpp` 就是一份免费的完整规格，而我在实现前没有读它，反而把交错与 instanced 当作"未实现"显式报错，与规格相反。
    - **验收方式**：`cmake --build build --target THREECPPTests` 必须链接成功；跑 `THREECPPTests.exe` 时该用例通过；`BufferGeometryLoader` 的差分可用一行一 JSON 的协议补上（属性按 float32 位模式比较）。
+21. **两条从 `BufferGeometryLoader` 上换来的具体经验**。
+   - **断言里出现奇怪的大整数，先当作位模式看**：`position->getZ(0) == 3` 失败时报的是 `1077936128`，那正是 `3.0f` 的 IEEE-754 位模式（`0x40400000`）。原因是我把 `arrayBuffers` 里的 uint32 词**复制**进了 `float` 向量，而不是按字节**重解释**（`memcpy`）。见到这种数字不必再猜层次，直接检查是不是把位模式当数值用了。
+   - **同一对象要共享，就必须用同一个句柄、一次构造**：测试要求两个交错属性的 `data` 满足 `sameValue`，而 `sameValue` 对对象比较的是 `(heap_, id)`（见 `JSValue.cpp:1829`）。我原本先用缓冲对象构造一个临时属性、再从它取 `object()` 构造正式属性，中间那次拷贝使两个属性拿到**不同句柄**；改为**直接用 `buffer->object()` 一次构造**后通过。教训是：传递共享对象时不要经过中间包装，否则身份会丢。
+   - 附带一条排错顺序：先打印**指针/键**（一次构建+一次运行即可，第 208 轮用它把三种可能收到一种），再打印**id**；指针相同而 `sameValue` 为假，就说明"拷贝出了一个新对象"，此时应回到自己的构造代码里找中间步骤，而不是继续怀疑基类。
 10. **FileLoader 传输契约（冻结，实现时照此写，不要再设计）**：上游用 fetch / Request / Response / ReadableStream / AbortController / ProgressEvent / DOMParser / TextDecoder，原生侧没有这些宿主对象，因此把**只有一处**的宿主边界收窄成一个注入函数，其余逻辑照源码逐行移植。
    - 注入方式：模块级 `FileLoader::setTransport(JSValue)`，等价于 `globalThis.fetch`；未注入时 `load()` 显式抛错（说明未配置传输），不静默失败。
    - 传输入参：一个 JSValue 对象，字段 `url`（字符串，已过 `path` 与 `manager.resolveURL`）、`method`（恒为 GET）、`headers`（普通对象，来自 `requestHeader`）、`credentials`（`include` 或 `same-origin`，取自 `withCredentials`）、`signal`（对象，含布尔字段 `aborted`，由 `abort()` 置位）。
