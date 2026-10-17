@@ -194,8 +194,8 @@
     "note": "Accepted port scope is src and examples/jsm, including tracked third-party dependencies. Editor/manual web applications are excluded from native application rewrites. Native host behavior, packaging and all three platforms require separate implementation and verification evidence."
   },
   "counts": {
-    "partial-unverified": 285,
-    "missing": 656,
+    "partial-unverified": 286,
+    "missing": 655,
     "vulkan-port-pending": 290,
     "dependency-unverified": 20
   },
@@ -203,8 +203,8 @@
     "src": {
       "modules": 755,
       "counts": {
-        "partial-unverified": 201,
-        "missing": 264,
+        "partial-unverified": 202,
+        "missing": 263,
         "vulkan-port-pending": 290
       }
     },
@@ -733,7 +733,7 @@
       "path": "src/loaders",
       "upstreamFiles": 16,
       "moduleCount": 16,
-      "modulesWithCppFiles": 11,
+      "modulesWithCppFiles": 12,
       "verifiedComplete": 0
     },
     {
@@ -4936,11 +4936,11 @@
       "scope": "src",
       "kind": "core",
       "upstreamSha256": "c37a1130466e34e479dcc9efcdf53b61774ed92b22e70206863d0e045680bee0",
-      "header": null,
-      "implementation": null,
+      "header": "src/loaders/DataTextureLoader.h",
+      "implementation": "src/loaders/DataTextureLoader.cpp",
       "expectedHeader": "src/loaders/DataTextureLoader.h",
       "expectedImplementation": "src/loaders/DataTextureLoader.cpp",
-      "status": "missing",
+      "status": "partial-unverified",
       "verifiedComplete": false,
       "apiExtraction": "static-only",
       "verification": {
@@ -4951,7 +4951,9 @@
         "upstreamUnitTests": [
           "test/unit/src/loaders/DataTextureLoader.tests.js"
         ],
-        "cppUnitTests": [],
+        "cppUnitTests": [
+          "test/unit/src/loaders/DataTextureLoader.tests.cpp"
+        ],
         "reviewedImplementation": [],
         "differentialResults": [],
         "renderingResults": [],

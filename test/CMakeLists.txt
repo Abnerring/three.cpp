@@ -7,6 +7,7 @@ add_executable(THREECPPTests
         unit/src/loaders/TextureLoader.tests.cpp
         unit/src/loaders/CubeTextureLoader.tests.cpp
         unit/src/extras/ImageUtils.tests.cpp
+        unit/src/loaders/DataTextureLoader.tests.cpp
     unit/src/math/Vector3.tests.cpp
     unit/src/math/Vector4.tests.cpp
     unit/src/math/MathUtils.tests.cpp
@@ -352,6 +353,8 @@ if(THREECPP_BUILD_ADDONS)
     target_link_libraries(ThreeJsTextureLoaderParityProbe PRIVATE threecpp::threecpp)
     add_executable(ThreeJsImageUtilsParityProbe unit/utils/parity/ImageUtilsParityProbe.cpp)
     target_link_libraries(ThreeJsImageUtilsParityProbe PRIVATE threecpp::threecpp)
+    add_executable(ThreeJsDataTextureLoaderParityProbe unit/utils/parity/DataTextureLoaderParityProbe.cpp)
+    target_link_libraries(ThreeJsDataTextureLoaderParityProbe PRIVATE threecpp::threecpp)
     target_link_libraries(ThreeJsXYZLoaderParityProbe PRIVATE threecpp::addons)
     add_executable(ThreeJsSTLLoaderParityProbe unit/utils/parity/STLLoaderParityProbe.cpp)
     target_link_libraries(ThreeJsSTLLoaderParityProbe PRIVATE threecpp::addons)
@@ -873,6 +876,9 @@ if(THREECPP_NODE_EXECUTABLE)
             add_test(NAME threecpp.threejs-image-utils-parity
                 COMMAND "${THREECPP_NODE_EXECUTABLE}" "${CMAKE_CURRENT_SOURCE_DIR}/unit/utils/parity/compare-image-utils.mjs"
                 "${THREEJS_SOURCE_DIR}" "$<TARGET_FILE:ThreeJsImageUtilsParityProbe>")
+            add_test(NAME threecpp.threejs-data-texture-loader-parity
+                COMMAND "${THREECPP_NODE_EXECUTABLE}" "${CMAKE_CURRENT_SOURCE_DIR}/unit/utils/parity/compare-data-texture-loader.mjs"
+                "${THREEJS_SOURCE_DIR}" "$<TARGET_FILE:ThreeJsDataTextureLoaderParityProbe>")
             add_test(NAME threecpp.threejs-stl-loader-parity
                 COMMAND "${THREECPP_NODE_EXECUTABLE}" "${CMAKE_CURRENT_SOURCE_DIR}/unit/utils/parity/compare-stl-loader.mjs"
                 "${THREEJS_SOURCE_DIR}" "$<TARGET_FILE:ThreeJsSTLLoaderParityProbe>")
