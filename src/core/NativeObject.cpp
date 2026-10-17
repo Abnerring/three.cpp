@@ -1661,6 +1661,13 @@ JSValue textureRead(const JSValue& self, const Args&, const Args& capture) {
     if (key == "wrapT") return t->wrapT;
     if (key == "channel") return t->channel;
     if (key == "format") return t->format;
+    if (key == "magFilter") return t->magFilter;
+    if (key == "minFilter") return t->minFilter;
+    if (key == "anisotropy") return t->anisotropy;
+    if (key == "type") return t->type;
+    if (key == "flipY") return t->flipY;
+    if (key == "generateMipmaps") return t->generateMipmaps;
+    if (key == "mapping") return t->mapping;
     if (key == "isDataArrayTexture") return t->isDataArrayTexture;
     if (key == "isData3DTexture") return t->isData3DTexture;
     if (key == "isCubeTexture") return t->isCubeTexture;
@@ -1679,6 +1686,13 @@ JSValue textureWrite(const JSValue& self, const Args& args, const Args& capture)
     else if (key == "version") t->version = value.toNumber();
     else if (key == "matrixAutoUpdate") t->matrixAutoUpdate = value.toBoolean();
     else if (key == "wrapS") t->wrapS = value.toNumber();
+    else if (key == "magFilter") t->magFilter = value.toNumber();
+    else if (key == "minFilter") t->minFilter = value.toNumber();
+    else if (key == "anisotropy") t->anisotropy = value.toNumber();
+    else if (key == "type") t->type = value.toNumber();
+    else if (key == "flipY") t->flipY = value.toBoolean();
+    else if (key == "generateMipmaps") t->generateMipmaps = value.toBoolean();
+    else if (key == "mapping") t->mapping = value.toNumber();
     else if (key == "wrapT") t->wrapT = value.toNumber();
     else if (key == "channel") t->channel = value.toNumber();
     else if (key == "format") t->format = value.toNumber();
@@ -2379,7 +2393,7 @@ JSValue nativeTexture(const std::shared_ptr<Texture>& texture) {
         });
         result.setPrototype(prototype);
         for (const char* key : {"offset", "repeat", "center", "matrix", "isTexture", "isRenderTargetTexture"}) accessor(result, key, textureRead);
-        for (const char* key : {"rotation", "colorSpace", "uuid", "name", "version", "matrixAutoUpdate", "wrapS", "wrapT", "channel", "format", "needsUpdate"}) accessor(result, key, textureRead, textureWrite);
+        for (const char* key : {"rotation", "colorSpace", "uuid", "name", "version", "matrixAutoUpdate", "wrapS", "wrapT", "channel", "format", "magFilter", "minFilter", "anisotropy", "type", "flipY", "generateMipmaps", "mapping", "needsUpdate"}) accessor(result, key, textureRead, textureWrite);
         for (const auto& [name,enabled]:std::initializer_list<std::pair<const char*,bool>>{{"isDataArrayTexture",texture->isDataArrayTexture},{"isData3DTexture",texture->isData3DTexture},{"isCubeTexture",texture->isCubeTexture},{"isDepthTexture",texture->isDepthTexture},{"isCubeDepthTexture",texture->isCubeDepthTexture}})
             if(enabled)accessor(result,name,textureRead,textureWrite);
         if(std::dynamic_pointer_cast<DepthTexture>(texture))accessor(result,"compareFunction",textureRead,textureWrite);
