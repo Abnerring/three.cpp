@@ -32,7 +32,7 @@ JSValue run(JSValue request) {
         BufferGeometryLoader loader;const auto geometry=loader.parseGeometry(json);geometry->uuid="geometry";
         auto fields=JSValue::object();
         for(const auto& [name,attribute]:geometry->attributes) {
-            auto item=JSValue::object();const auto buffer=std::dynamic_pointer_cast<BufferAttribute>(attribute);item.set("count",buffer->count);item.set("itemSize",buffer->itemSize);item.set("normalized",buffer->normalized);
+            auto item=JSValue::object();const auto interleavedAttribute=std::dynamic_pointer_cast<InterleavedBufferAttribute>(attribute);const auto plainAttribute=std::dynamic_pointer_cast<BufferAttribute>(attribute);item.set("count",interleavedAttribute?interleavedAttribute->count.value():plainAttribute->count);item.set("itemSize",interleavedAttribute?interleavedAttribute->itemSize.value():plainAttribute->itemSize);item.set("normalized",interleavedAttribute?interleavedAttribute->normalized.value():plainAttribute->normalized);
             if(const auto interleaved=std::dynamic_pointer_cast<InterleavedBufferAttribute>(attribute)) {
                 auto storage=interleaved->array.value().get("buffer");storage.set("_uuid","storage");item.set("interleaved",true);item.set("offset",interleaved->offset.value());
             } else item.set("interleaved",false);
