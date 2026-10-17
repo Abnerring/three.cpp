@@ -4,21 +4,39 @@
 #include "core/BufferGeometry.h"
 #include "core/NativeObject.h"
 #include "core/Object3D.h"
+#include "lights/AmbientLight.h"
+#include "lights/DirectionalLight.h"
+#include "lights/HemisphereLight.h"
+#include "lights/PointLight.h"
+#include "lights/SpotLight.h"
 #include "loaders/BufferGeometryLoader.h"
 #include "loaders/MaterialLoader.h"
+#include "math/MathUtils.h"
+#include "objects/Bone.h"
 #include "objects/Group.h"
+#include "objects/LOD.h"
+#include "objects/Line.h"
+#include "objects/LineLoop.h"
+#include "objects/LineSegments.h"
 #include "objects/Mesh.h"
+#include "objects/Points.h"
+#include "objects/Sprite.h"
 #include "scenes/Scene.h"
+#include <cctype>
 #include <stdexcept>
 
 namespace {
-// The maths types read a std::vector, so the JSON array is copied into one. three keeps every matrix array
-// in column-major order and so does this conversion: it is a straight copy, no transposition anywhere.
+// The maths types read a std::vector, so the JSON array is copied into one. three keeps every matrix array in
+// column-major order and so does this conversion: it is a straight copy, with no transposition anywhere.
 std::vector<double> numbers(const JSValue& value) {
     std::vector<double> out;
     const auto length = static_cast<int>(value.length());
     for (int index = 0; index < length; ++index) out.push_back(value.get(index).toNumber());
     return out;
+}
+double optionalNumber(const JSValue& data, const char* name, double fallback) {
+    const auto value = data.get(name);
+    return value.isUndefined() ? fallback : value.toNumber();
 }
 }
 
@@ -41,7 +59,7 @@ ObjectLoader::Result ObjectLoader::parse(const JSValue& json) {
                 BufferGeometryLoader loader;
                 geometry = loader.parseGeometry(data);
             } else {
-                // Every other type comes from Geometries[type].fromJSON upstream, and none of those are ported.
+                // Every other type comes from Geometries[type].fromJSON upstream, and none are ported.
                 throw std::runtime_error("ObjectLoader: unknown geometry type \"" + type + "\"");
             }
             geometry->uuid = data.get("uuid").toString();
@@ -61,29 +79,88 @@ ObjectLoader::Result ObjectLoader::parse(const JSValue& json) {
     const auto object = json.get("object");
     if (object.isUndefined()) throw std::runtime_error("ObjectLoader: the document has no object");
     result.object = parseObject(object);
+    bindLightTargets(result.object);
     return result;
 }
 
 std::shared_ptr<Object3D> ObjectLoader::parseObject(const JSValue& data) {
     const auto type = data.get("type").toString();
+    const auto geometryOf = [this](const JSValue& source) {
+        const auto found = geometries_.find(source.toString());
+        return found == geometries_.end() ? std::shared_ptr<BufferGeometry>() : found->second;
+    };
+    const auto materialOf = [this](const JSValue& source) {
+        const auto found = materials_.find(source.toString());
+        return found == materials_.end() ? std::shared_ptr<Material>() : found->second;
+    };
     std::shared_ptr<Object3D> object;
-    if (type == "Scene") object = std::make_shared<Scene>();
-    else if (type == "Group") object = std::make_shared<Group>();
+    if (type == "Scene") {
+        const auto scene = std::make_shared<Scene>();
+        // Upstream tests Number.isInteger: a number is a colour, anything else is a texture key, and textures
+        // are not part of this port, so a string is refused rather than dropped.
+        const auto background = data.get("background");
+        if (!background.isUndefined()) {
+            const auto text = background.toString();
+            const bool numeric = !text.empty() &&
+                (std::isdigit(static_cast<unsigned char>(text[0])) != 0 || text[0] == '-' || text[0] == '+');
+            if (!numeric) throw std::runtime_error("ObjectLoader: texture backgrounds are not ported yet");
+            scene->background = Color(background.toNumber());
+        }
+        object = scene;
+    } else if (type == "Group") object = std::make_shared<Group>();
     else if (type == "Mesh") {
         const auto mesh = std::make_shared<Mesh>();
-        const auto geometry = geometries_.find(data.get("geometry").toString());
-        if (geometry != geometries_.end()) mesh->geometry = geometry->second;
-        const auto material = materials_.find(data.get("material").toString());
-        if (material != materials_.end()) mesh->material = material->second;
+        mesh->geometry = geometryOf(data.get("geometry"));
+        mesh->material = materialOf(data.get("material"));
         object = mesh;
-    } else if (type == "Object3D" || type.empty()) object = std::make_shared<Object3D>();
-    else if (type == "Line" || type == "LineSegments" || type == "LineLoop" || type == "Points" ||
-             type == "Sprite" || type == "LOD" || type == "Bone" || type == "SkinnedMesh" ||
-             type == "InstancedMesh" || type == "PerspectiveCamera" || type == "OrthographicCamera" ||
-             type == "AmbientLight" || type == "DirectionalLight" || type == "PointLight" ||
-             type == "SpotLight" || type == "HemisphereLight")
-        throw std::runtime_error("ObjectLoader: object type \"" + type + "\" is not ported yet");
-    else if (!type.empty() && type.find("Light") != std::string::npos)
+    } else if (type == "Line") {
+        const auto line = std::make_shared<Line>();
+        line->geometry = geometryOf(data.get("geometry"));
+        line->material = materialOf(data.get("material"));
+        object = line;
+    } else if (type == "LineLoop") {
+        const auto line = std::make_shared<LineLoop>();
+        line->geometry = geometryOf(data.get("geometry"));
+        line->material = materialOf(data.get("material"));
+        object = line;
+    } else if (type == "LineSegments") {
+        const auto line = std::make_shared<LineSegments>();
+        line->geometry = geometryOf(data.get("geometry"));
+        line->material = materialOf(data.get("material"));
+        object = line;
+    } else if (type == "Points" || type == "PointCloud") {
+        const auto points = std::make_shared<Points>();
+        points->geometry = geometryOf(data.get("geometry"));
+        points->material = materialOf(data.get("material"));
+        object = points;
+    } else if (type == "Sprite") object = std::make_shared<Sprite>(materialOf(data.get("material")));
+    else if (type == "LOD") object = std::make_shared<LOD>();
+    else if (type == "Bone") object = std::make_shared<Bone>();
+    else if (type == "Object3D" || type.empty()) object = std::make_shared<Object3D>();
+    else if (type == "AmbientLight")
+        object = std::make_shared<AmbientLight>(Color(data.get("color").toNumber()), optionalNumber(data, "intensity", 1.0));
+    else if (type == "DirectionalLight") {
+        const auto light = std::make_shared<DirectionalLight>(Color(data.get("color").toNumber()), optionalNumber(data, "intensity", 1.0));
+        // Upstream records the uuid and binds the object once the tree is complete.
+        if (!data.get("target").isUndefined() && !data.get("target").toString().empty())
+            pendingTargets_.emplace_back(light, data.get("target").toString());
+        object = light;
+    } else if (type == "PointLight")
+        object = std::make_shared<PointLight>(Color(data.get("color").toNumber()), optionalNumber(data, "intensity", 1.0),
+            optionalNumber(data, "distance", 0.0), optionalNumber(data, "decay", 2.0));
+    else if (type == "SpotLight") {
+        const auto light = std::make_shared<SpotLight>(Color(data.get("color").toNumber()), optionalNumber(data, "intensity", 1.0),
+            optionalNumber(data, "distance", 0.0), optionalNumber(data, "angle", MathUtils::PI),
+            optionalNumber(data, "penumbra", 0.0), optionalNumber(data, "decay", 2.0));
+        if (!data.get("target").isUndefined() && !data.get("target").toString().empty())
+            pendingTargets_.emplace_back(light, data.get("target").toString());
+        object = light;
+    } else if (type == "HemisphereLight")
+        object = std::make_shared<HemisphereLight>(Color(data.get("color").toNumber()),
+            Color(data.get("groundColor").toNumber()), optionalNumber(data, "intensity", 1.0));
+    else if (type == "SkinnedMesh" || type == "InstancedMesh" || type == "BatchedMesh" ||
+             type == "PerspectiveCamera" || type == "OrthographicCamera" || type == "RectAreaLight" ||
+             type == "LightProbe" || type.find("Light") != std::string::npos)
         throw std::runtime_error("ObjectLoader: object type \"" + type + "\" is not ported yet");
     else object = std::make_shared<Object3D>();   // upstream falls back to Object3D for an unknown type
 
@@ -138,4 +215,24 @@ std::shared_ptr<Object3D> ObjectLoader::parseObject(const JSValue& data) {
             if (found != clips_.end()) object->animations.push_back(found->second);
         }
     return object;
+}
+
+void ObjectLoader::bindLightTargets(const std::shared_ptr<Object3D>& root) {
+    // Upstream resolves each recorded uuid against the finished tree and points the light at that object.
+    std::map<std::string, std::shared_ptr<Object3D>> byUuid;
+    std::vector<std::shared_ptr<Object3D>> stack{root};
+    while (!stack.empty()) {
+        const auto current = stack.back();
+        stack.pop_back();
+        if (!current) continue;
+        byUuid[current->uuid] = current;
+        for (const auto& child : current->children) stack.push_back(child);
+    }
+    for (const auto& [light, uuid] : pendingTargets_) {
+        const auto found = byUuid.find(uuid);
+        if (found == byUuid.end()) continue;
+        if (const auto directional = std::dynamic_pointer_cast<DirectionalLight>(light)) directional->target = found->second;
+        else if (const auto spot = std::dynamic_pointer_cast<SpotLight>(light)) spot->target = found->second;
+    }
+    pendingTargets_.clear();
 }

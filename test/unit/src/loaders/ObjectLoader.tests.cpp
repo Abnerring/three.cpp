@@ -5,6 +5,11 @@
 #include "loaders/ObjectLoader.h"
 #include "objects/Group.h"
 #include "objects/Mesh.h"
+#include "lights/AmbientLight.h"
+#include "lights/DirectionalLight.h"
+#include "objects/Line.h"
+#include "objects/Points.h"
+#include "objects/Sprite.h"
 #include "scenes/Scene.h"
 #include <memory>
 #include <stdexcept>
@@ -66,7 +71,55 @@ TEST_CASE("ObjectLoader takes the matrix path and refuses what it cannot build")
     REQUIRE(result.object->position.y == 5.0);
     REQUIRE(result.object->position.z == 6.0);
 
-    const auto unsupported = Animation_detail::parseJSON(R"({"object": {"type": "Points"}})");
+    const auto unsupported = Animation_detail::parseJSON(R"({"object": {"type": "InstancedMesh"}})");
     ObjectLoader other;
     REQUIRE_THROWS_AS(other.parse(unsupported), std::runtime_error);
+}
+// The second slice adds the line and point families, the sprite, the level of detail node, the bone and the
+// five lights. The interesting part is the directional and spot target: upstream stores the uuid and binds it
+// after the tree exists, because the target may be a sibling that has not been parsed when the light is.
+TEST_CASE("ObjectLoader binds a light target after the tree is built") {
+    const auto realm = JSValue::object();
+    static_cast<void>(realm);
+    const auto json = Animation_detail::parseJSON(R"({
+        "object": {"type": "Scene", "uuid": "scene", "children": [
+            {"type": "DirectionalLight", "uuid": "sun", "color": 16777215, "intensity": 2, "target": "aim"},
+            {"type": "Object3D", "uuid": "aim"}
+        ]}
+    })");
+    ObjectLoader loader;
+    const auto result = loader.parse(json);
+    REQUIRE(result.object->children.size() == 2);
+    const auto sun = std::dynamic_pointer_cast<DirectionalLight>(result.object->children[0]);
+    REQUIRE(sun);
+    REQUIRE(sun->intensity == 2.0);
+    REQUIRE(sun->target);
+    REQUIRE(sun->target->uuid == "aim");
+}
+
+TEST_CASE("ObjectLoader builds the line, point and sprite families") {
+    const auto realm = JSValue::object();
+    static_cast<void>(realm);
+    const auto json = Animation_detail::parseJSON(R"({
+        "object": {"type": "Scene", "uuid": "scene", "children": [
+            {"type": "Line", "uuid": "line", "geometry": "g", "material": "m"},
+            {"type": "Points", "uuid": "points", "geometry": "g", "material": "m"},
+            {"type": "Sprite", "uuid": "sprite", "material": "m"}
+        ]},
+        "geometries": [{"type": "BufferGeometry", "uuid": "g", "data": {"attributes": {}}}],
+        "materials": [{"type": "MeshBasicMaterial", "uuid": "m", "color": 255}]
+    })");
+    ObjectLoader loader;
+    const auto result = loader.parse(json);
+    REQUIRE(result.object->children.size() == 3);
+    const auto line = std::dynamic_pointer_cast<Line>(result.object->children[0]);
+    REQUIRE(line);
+    REQUIRE(line->geometry);
+    REQUIRE(line->material);
+    const auto points = std::dynamic_pointer_cast<Points>(result.object->children[1]);
+    REQUIRE(points);
+    REQUIRE(points->material);
+    const auto sprite = std::dynamic_pointer_cast<Sprite>(result.object->children[2]);
+    REQUIRE(sprite);
+    REQUIRE(sprite->material);
 }

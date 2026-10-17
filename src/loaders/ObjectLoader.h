@@ -1,6 +1,7 @@
-﻿#pragma once
+#pragma once
 #include "core/JSValue.h"
 #include <map>
+#include <utility>
 #include <memory>
 #include <string>
 #include <vector>
@@ -29,4 +30,8 @@ class ObjectLoader {
     std::map<std::string, std::shared_ptr<BufferGeometry>> geometries_;
     std::map<std::string, std::shared_ptr<Material>> materials_;
     std::map<std::string, std::shared_ptr<AnimationClip>> clips_;
+    // Upstream stores the target of a directional or spot light as the uuid string and binds it after the
+    // whole tree exists, because the target may be a sibling that has not been parsed yet. Same two steps here.
+    std::vector<std::pair<std::shared_ptr<Object3D>, std::string>> pendingTargets_;
+    void bindLightTargets(const std::shared_ptr<Object3D>& root);
 };
