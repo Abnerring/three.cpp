@@ -56,6 +56,6 @@ JSValue run(JSValue request) {
 }
 int main() {
     const std::string input(std::istreambuf_iterator<char>(std::cin),{});const auto requests=Animation_detail::parseJSON(input);auto output=JSValue::array();
-    for(std::uint32_t i=0;i<requests.length();++i)try{push(output,run(requests.get(std::to_string(i))));}catch(const JSTypeError&){push(output,"TypeError");}catch(const std::exception&){push(output,"Error");}
+    for(std::uint32_t i=0;i<requests.length();++i)try{push(output,run(requests.get(std::to_string(i))));}catch(const JSTypeError&){push(output,"TypeError");}catch(const std::exception&){push(output,"Error");}catch(...){push(output,"Error");}
     std::cout<<output.toJSON()->dump();
 }
