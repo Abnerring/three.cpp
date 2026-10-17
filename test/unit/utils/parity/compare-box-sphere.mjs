@@ -1,4 +1,4 @@
-﻿// Differential check for the native src/math/Box3.js and src/math/Sphere.js ports.
+// Differential check for the native src/math/Box3.js and src/math/Sphere.js ports.
 //
 // Box operations read a min and a max, sphere operations a centre and a radius, and what follows. The
 // cases lean on what a hand port drifts on: an empty box (min above max), a degenerate sphere, points on
@@ -28,11 +28,17 @@ const scenarios=[
     ['box.intersects',...boxA, ...boxB],['box.intersects',...boxA, ...boxFar],
     ['box.expand',...boxA, 3,0,0],
     ['box.intersect',...boxA, ...boxB],['box.intersect',...boxA, ...boxFar],
+    ['box.union',...boxA, ...boxFar],
+    ['box.json',...boxA],
+    ['box.fromJSON',...boxA],
     ['sphere.contains',...sphereA, 0,0,0],['sphere.contains',...sphereA, 1,0,0],['sphere.contains',...sphereA, 2,0,0],
     ['sphere.distance',...sphereA, 2,0,0],['sphere.distance',...sphereA, 0,0,0],
     ['sphere.clamp',...sphereA, 2,0,0],['sphere.clamp',...sphereZero, 1,0,0],
     ['sphere.intersectsSphere',...sphereA, ...sphereFar],['sphere.intersectsSphere',...sphereA, 1.5,0,0,1],
     ['sphere.intersectsBox',...sphereA, ...boxA],['sphere.intersectsBox',...sphereA, ...boxFar],
+    ['sphere.union',...sphereA, ...sphereFar],
+    ['sphere.json',...sphereA],
+    ['sphere.fromJSON',...sphereA],
     ['sphere.boundingBox',...sphereA],['sphere.boundingBox',...sphereZero]
 ];
 const encode=value=>{
@@ -67,6 +73,12 @@ const call=(op,args)=>{
         case 'sphere.clamp': return encodePoint(sphereOf(args).clampPoint(point(args.slice(4)),new Vector3()));
         case 'sphere.intersectsSphere': return {value:sphereOf(args).intersectsSphere(sphereOf(args.slice(4)))};
         case 'sphere.intersectsBox': return {value:sphereOf(args).intersectsBox(boxOf(args.slice(4)))};
+        case 'box.union': return encodeBox(boxOf(args).union(boxOf(args.slice(6))));
+        case 'box.json': { const j=boxOf(args).toJSON(); return {min:j.min.map(encode),max:j.max.map(encode)}; }
+        case 'box.fromJSON': return encodeBox(new Box3().fromJSON(boxOf(args).toJSON()));
+        case 'sphere.union': return {radius:encode(sphereOf(args).union(sphereOf(args.slice(4))).radius)};
+        case 'sphere.json': { const j=sphereOf(args).toJSON(); return {center:j.center.map(encode),radius:encode(j.radius)}; }
+        case 'sphere.fromJSON': return {radius:encode(new Sphere().fromJSON(sphereOf(args).toJSON()).radius)};
         case 'sphere.boundingBox': return encodeBox(sphereOf(args).getBoundingBox(new Box3()));
         default: throw new Error('unknown op '+op);
     }

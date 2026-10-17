@@ -124,3 +124,22 @@ Sphere& Sphere::unionWith(const Sphere& s) {
 bool Sphere::equals(const Sphere& s) const {
     return center.equals(s.center) && radius == s.radius;
 }
+
+// Upstream serialises the centre as an array plus the radius.
+JSValue Sphere::toJSON() const {
+    auto output = JSValue::object();
+    auto center = JSValue::array();
+    for (const double value : {this->center.x, this->center.y, this->center.z})
+        center.get("push").call(center, {JSValue(value)});
+    output.set("center", center);
+    output.set("radius", radius);
+    return output;
+}
+Sphere& Sphere::fromJSON(const JSValue& json) {
+    const auto array = json.get("center");
+    center.x = array.get("0").toNumber();
+    center.y = array.get("1").toNumber();
+    center.z = array.get("2").toNumber();
+    radius = json.get("radius").toNumber();
+    return *this;
+}

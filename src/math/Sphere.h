@@ -1,4 +1,5 @@
 #pragma once
+#include "core/JSValue.h"
 #include "math/Vector3.h"
 #include <vector>
 class Box3;
@@ -29,6 +30,9 @@ class Sphere {
     Sphere& applyMatrix4(const Matrix4& matrix);
     Sphere& translate(const Vector3& offset);
     Sphere& expandByPoint(const Vector3& point);
+    // union is a C++ keyword, so the upstream name cannot be used here; see the Box3 note.
     Sphere& unionWith(const Sphere& sphere);
+    JSValue toJSON() const;
+    Sphere& fromJSON(const JSValue& json);
     bool equals(const Sphere& sphere) const;
 };

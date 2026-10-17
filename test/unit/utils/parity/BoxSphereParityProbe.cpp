@@ -65,8 +65,27 @@ int main() {
         else if (op == "box.clamp") result = pointResult(boxOf(a).clampPoint(point(a, 6), target));
         else if (op == "box.distance") result = scalarResult(boxOf(a).distanceToPoint(point(a, 6)));
         else if (op == "box.intersects") result = boolResult(boxOf(a).intersectsBox(Box3(point(a, 6), point(a, 9))));
+        else if (op == "box.union") result = boxResult(boxOf(a).unionWith(Box3(point(a, 6), point(a, 9))));
+        else if (op == "box.json") {
+            const auto json = boxOf(a).toJSON();
+            JsonValue::Array minValues, maxValues;
+            for (int index = 0; index < 3; ++index) {
+                minValues.emplace_back(encode(json.get("min").get(std::to_string(index)).toNumber()));
+                maxValues.emplace_back(encode(json.get("max").get(std::to_string(index)).toNumber()));
+            }
+            result = JsonValue(JsonValue::Object{{"min", JsonValue(minValues)}, {"max", JsonValue(maxValues)}});
+        }
+        else if (op == "box.fromJSON") result = boxResult(Box3().fromJSON(Box3(point(a, 0), point(a, 3)).toJSON()));
         else if (op == "box.expand") result = boxResult(boxOf(a).expandByPoint(point(a, 6)));
         else if (op == "box.intersect") result = boxResult(boxOf(a).intersect(Box3(point(a, 6), point(a, 9))));
+        else if (op == "sphere.union") result = JsonValue(JsonValue::Object{{"radius", encode(sphereOf(a).unionWith(Sphere(point(a, 4), a.size() > 7 ? a[7] : 0.0)).radius)}});
+        else if (op == "sphere.json") {
+            const auto json = sphereOf(a).toJSON();
+            JsonValue::Array center;
+            for (int index = 0; index < 3; ++index) center.emplace_back(encode(json.get("center").get(std::to_string(index)).toNumber()));
+            result = JsonValue(JsonValue::Object{{"center", JsonValue(center)}, {"radius", encode(json.get("radius").toNumber())}});
+        }
+        else if (op == "sphere.fromJSON") result = JsonValue(JsonValue::Object{{"radius", encode(Sphere().fromJSON(sphereOf(a).toJSON()).radius)}});
         else if (op == "sphere.contains") result = boolResult(sphereOf(a).containsPoint(point(a, 4)));
         else if (op == "sphere.distance") result = scalarResult(sphereOf(a).distanceToPoint(point(a, 4)));
         else if (op == "sphere.clamp") result = pointResult(sphereOf(a).clampPoint(point(a, 4), target));

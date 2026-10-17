@@ -1,4 +1,5 @@
 #pragma once
+#include "core/JSValue.h"
 #include "math/Vector3.h"
 #include <limits>
 #include <vector>
@@ -43,7 +44,11 @@ class Box3 {
     Vector3& getParameter(const Vector3& point, Vector3& target) const;
     Sphere& getBoundingSphere(Sphere& target) const;
     Box3& intersect(const Box3& box);
+    // Upstream calls this union; a method cannot be named that in C++, because union is a keyword, so
+    // the port keeps unionWith and this comment records the forced rename.
     Box3& unionWith(const Box3& box);
+    JSValue toJSON() const;
+    Box3& fromJSON(const JSValue& json);
     Box3& applyMatrix4(const Matrix4& matrix);
     Box3& translate(const Vector3& offset);
     bool equals(const Box3& box) const;

@@ -283,3 +283,26 @@ Box3& Box3::translate(const Vector3& v) {
 bool Box3::equals(const Box3& b) const {
     return min.equals(b.min) && max.equals(b.max);
 }
+
+// Upstream serialises the two corners as plain arrays; the same shape is produced here so a saved box
+// round trips through fromJSON.
+JSValue Box3::toJSON() const {
+    auto output = JSValue::object();
+    auto minArray = JSValue::array(), maxArray = JSValue::array();
+    for (const double value : {min.x, min.y, min.z}) minArray.get("push").call(minArray, {JSValue(value)});
+    for (const double value : {max.x, max.y, max.z}) maxArray.get("push").call(maxArray, {JSValue(value)});
+    output.set("min", minArray);
+    output.set("max", maxArray);
+    return output;
+}
+Box3& Box3::fromJSON(const JSValue& json) {
+    const auto read = [&](const char* name, Vector3& target) {
+        const auto array = json.get(name);
+        target.x = array.get("0").toNumber();
+        target.y = array.get("1").toNumber();
+        target.z = array.get("2").toNumber();
+    };
+    read("min", min);
+    read("max", max);
+    return *this;
+}
