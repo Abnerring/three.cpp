@@ -24,7 +24,8 @@ class STLLoader : public Loader {
     static STLLoader fromObject(JSValue value){return STLLoader(std::move(value),Existing{});}
     static JSValue prototype();
     static bool isBinary(const std::vector<std::uint8_t>& data);
-    std::shared_ptr<BufferGeometry> parseBytes(const std::vector<std::uint8_t>& data,bool* hasColorsOut=nullptr,double* alphaOut=nullptr);
+    std::shared_ptr<BufferGeometry> parseBytes(const std::vector<std::uint8_t>& data,bool* hasColorsOut=nullptr,double* alphaOut=nullptr,
+        std::vector<std::string>* groupNamesOut=nullptr);
     JSValue parse(JSValue data);
     JSValue load(JSValue url={},JSValue onLoad={},JSValue onProgress={},JSValue onError={});
   private:

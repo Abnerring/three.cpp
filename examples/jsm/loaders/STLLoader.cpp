@@ -120,6 +120,59 @@ bool matches(const std::vector<std::uint8_t>& data,const std::uint8_t* query,std
     return true;
 }
 }
+// The ASCII half. It is pure: no wrapping, no JSValue, and the group names leave through the
+// parameter so that the single wrap in parse can write them onto the geometry.
+std::shared_ptr<BufferGeometry> parseASCIIText(const std::string& data,std::vector<std::string>& groupNames) {
+    auto geometry=std::make_shared<BufferGeometry>();
+    std::vector<double> vertices,normals;
+    std::vector<double> groupStarts,groupCounts;
+    double normal[3]={0,0,0};
+    std::size_t endVertex=0;
+    std::size_t searchFrom=0;
+    while(true) {
+        const auto solidStart=data.find("solid",searchFrom);
+        if(solidStart==std::string::npos)break;
+        const auto solidEnd=data.find("endsolid",solidStart+5);
+        if(solidEnd==std::string::npos)break;
+        const std::string solid=data.substr(solidStart,solidEnd-solidStart);
+        searchFrom=solidEnd+8;
+        const double startVertex=static_cast<double>(endVertex);
+        std::string name;
+        groupNames.push_back(matchSolidName(solid,name)?name:std::string{});
+        std::size_t faceFrom=0;
+        while(true) {
+            const auto facetStart=solid.find("facet",faceFrom);
+            if(facetStart==std::string::npos)break;
+            const auto facetEnd=solid.find("endfacet",facetStart+5);
+            if(facetEnd==std::string::npos)break;
+            const std::string text=solid.substr(facetStart,facetEnd-facetStart);
+            faceFrom=facetEnd+8;
+            std::size_t cursor=0,next=0;
+            double triple[3]={0,0,0};
+            while(matchTriple(text,"normal",cursor,triple,next)) {
+                normal[0]=triple[0];normal[1]=triple[1];normal[2]=triple[2];
+                cursor=next;
+            }
+            cursor=0;
+            while(matchTriple(text,"vertex",cursor,triple,next)) {
+                vertices.push_back(triple[0]);vertices.push_back(triple[1]);vertices.push_back(triple[2]);
+                normals.push_back(normal[0]);normals.push_back(normal[1]);normals.push_back(normal[2]);
+                endVertex+=1;
+                cursor=next;
+            }
+            // Upstream logs when a facet does not carry exactly one normal and three vertices; there
+            // is no console natively, so those two diagnostics are recorded rather than reproduced.
+        }
+        groupStarts.push_back(startVertex);
+        groupCounts.push_back(static_cast<double>(endVertex)-startVertex);
+    }
+    const std::vector<float> positions(vertices.begin(),vertices.end()),converted(normals.begin(),normals.end());
+    geometry->setAttribute("position",std::make_shared<Float32BufferAttribute>(positions,3));
+    geometry->setAttribute("normal",std::make_shared<Float32BufferAttribute>(converted,3));
+    for(std::size_t index=0;index<groupStarts.size();index+=1)
+        geometry->addGroup(groupStarts[index],groupCounts[index],static_cast<double>(index));
+    return geometry;
+}
 bool STLLoader::isBinary(const std::vector<std::uint8_t>& data) {
     constexpr std::size_t faceSize=(32/8*3)+((32/8*3)*3)+(16/8);
     const std::uint32_t faces=readUint32(data,80,true);
@@ -131,8 +184,16 @@ bool STLLoader::isBinary(const std::vector<std::uint8_t>& data) {
     for(std::size_t off=0;off<5;off+=1) if(matches(data,solid,5,off))return false;
     return true;
 }
-std::shared_ptr<BufferGeometry> STLLoader::parseBytes(const std::vector<std::uint8_t>& data,bool* hasColorsOut,double* alphaOut) {
-    if(!isBinary(data))throw JSTypeError("STLLoader: ASCII parsing is not implemented natively yet");
+std::shared_ptr<BufferGeometry> STLLoader::parseBytes(const std::vector<std::uint8_t>& data,bool* hasColorsOut,double* alphaOut,std::vector<std::string>* groupNamesOut) {
+    if(!isBinary(data)) {
+        std::string text;
+        text.reserve(data.size());
+        for(std::uint8_t byte:data)text.push_back(char(byte));
+        std::vector<std::string> names;
+        const auto ascii=parseASCIIText(text,names);
+        if(groupNamesOut)*groupNamesOut=names;
+        return ascii;
+    }
     const std::uint32_t faces=readUint32(data,80,true);
     bool hasColors=false;
     double defaultR=0,defaultG=0,defaultB=0,alpha=0;
@@ -202,7 +263,30 @@ JSValue STLLoader::parse(JSValue data) {
     std::vector<std::uint8_t> bytes;
     bytes.reserve(text.size());
     for(char ch:text) bytes.push_back(std::uint8_t(std::uint8_t(ch)&0xff));
-    return nativeGeometry(parseBytes(bytes));
+    bool hasColors=false;
+    double alpha=0;
+    std::vector<std::string> groupNames;
+    const auto geometry=parseBytes(bytes,&hasColors,&alpha,&groupNames);
+    // The one and only wrap. Everything the pinned source writes onto the geometry is written here.
+    auto result=nativeGeometry(geometry);
+    if(hasColors) {
+        result.set("hasColors",true);
+        result.set("alpha",alpha);
+    }
+    if(!groupNames.empty()) {
+        auto names=JSValue::array();
+        // Entries go in through push: set with an integer index would select the name overload and
+        // read the integer as a null pointer.
+        for(std::size_t index=0;index<groupNames.size();index+=1)
+            names.get("push").call(names, {JSValue(groupNames[index])});
+        auto userData=result.get("userData");
+        if(userData.isUndefined()||userData.isNull()) {
+            result.set("userData",JSValue::object());
+            userData=result.get("userData");
+        }
+        userData.set("groupNames",names);
+    }
+    return result;
 }
 STLLoader::STLLoader(JSValue manager):Loader(JSValue::object(prototype()),Existing{}){initialize(object_,manager);}
 JSValue STLLoader::prototype() {

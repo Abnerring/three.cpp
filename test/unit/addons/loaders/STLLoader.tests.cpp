@@ -82,18 +82,30 @@ TEST_CASE("STLLoader decides binary from the predicted length and the solid pref
     REQUIRE_FALSE(STLLoader::isBinary(prefixed));
 }
 
-TEST_CASE("STLLoader fails loudly on an ASCII document", "[stlloader]") {
+TEST_CASE("STLLoader parses an ASCII solid", "[stlloader]") {
     STLLoader loader;
-    const std::string ascii = "solid test\nfacet normal 0 0 1\nendfacet\nendsolid test\n";
-    bool threw = false;
-    try {
-        loader.parseBytes(std::vector<std::uint8_t>(ascii.begin(), ascii.end()));
-    } catch (const JSTypeError& error) {
-        threw = true;
-        REQUIRE(std::string(error.what()).find("ASCII parsing is not implemented") != std::string::npos);
-    }
-    REQUIRE(threw);
+    const std::string ascii =
+        "solid test\n"
+        "facet normal 0 0 1\n"
+        "outer loop\n"
+        "vertex 0 0 0\n"
+        "vertex 1 0 0\n"
+        "vertex 0 1 0\n"
+        "endloop\n"
+        "endfacet\n"
+        "endsolid test\n";
+    // Through parse: the JS entry point is the only place the geometry is wrapped.
+    const auto geometry = loader.parse(JSValue(ascii));
+    REQUIRE(countOf(geometry, "position") == 3);
+    REQUIRE(countOf(geometry, "normal") == 3);
+    REQUIRE(arrayAt(geometry, "position", 3) == 1.0);
+    REQUIRE(arrayAt(geometry, "normal", 2) == 1.0);
+    const auto names = geometry.get("userData").get("groupNames");
+    REQUIRE(names.get("length").toNumber() == 1);
+    // A string index: an integer here selects the name overload, the same trap as set(0, ...).
+    REQUIRE(names.get("0").toString() == "test");
 }
+
 
 TEST_CASE("STLLoader reads the Magics header colour and packed face colours", "[stlloader]") {
     std::string header = "solid ";
