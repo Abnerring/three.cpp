@@ -86,6 +86,8 @@ std::shared_ptr<InterleavedBuffer> interleavedBufferFor(const std::string& uuid)
     } else {
         throw JSTypeError("BufferGeometryLoader: interleaved element type "+type+" is not supported natively");
     }
+    // The spec carries its own usage, and the test reads it back through the attribute's data.
+    if(!spec.get("usage").isUndefined())buffer->setUsage(static_cast<int>(spec.get("usage").toNumber()));
     interleavedCache[uuid]=buffer;
     return buffer;
 }
