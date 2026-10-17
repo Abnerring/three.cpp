@@ -342,6 +342,8 @@ if(THREECPP_BUILD_ADDONS)
     add_executable(ThreeJsXYZLoaderParityProbe unit/utils/parity/XYZLoaderParityProbe.cpp)
     add_executable(ThreeJsAnimationLoaderParityProbe unit/utils/parity/AnimationLoaderParityProbe.cpp)
     target_link_libraries(ThreeJsAnimationLoaderParityProbe PRIVATE threecpp::threecpp)
+    add_executable(ThreeJsBufferGeometryLoaderParityProbe unit/utils/parity/BufferGeometryLoaderParityProbe.cpp)
+    target_link_libraries(ThreeJsBufferGeometryLoaderParityProbe PRIVATE threecpp::threecpp)
     target_link_libraries(ThreeJsXYZLoaderParityProbe PRIVATE threecpp::addons)
     add_executable(ThreeJsSTLLoaderParityProbe unit/utils/parity/STLLoaderParityProbe.cpp)
     target_link_libraries(ThreeJsSTLLoaderParityProbe PRIVATE threecpp::addons)
@@ -854,6 +856,9 @@ if(THREECPP_NODE_EXECUTABLE)
             add_test(NAME threecpp.threejs-animation-loader-parity
                 COMMAND "${THREECPP_NODE_EXECUTABLE}" "${CMAKE_CURRENT_SOURCE_DIR}/unit/utils/parity/compare-animation-loader.mjs"
                 "${THREEJS_SOURCE_DIR}" "$<TARGET_FILE:ThreeJsAnimationLoaderParityProbe>")
+            add_test(NAME threecpp.threejs-buffer-geometry-loader-parity
+                COMMAND "${THREECPP_NODE_EXECUTABLE}" "${CMAKE_CURRENT_SOURCE_DIR}/unit/utils/parity/compare-buffer-geometry-loader.mjs"
+                "${THREEJS_SOURCE_DIR}" "$<TARGET_FILE:ThreeJsBufferGeometryLoaderParityProbe>")
             add_test(NAME threecpp.threejs-stl-loader-parity
                 COMMAND "${THREECPP_NODE_EXECUTABLE}" "${CMAKE_CURRENT_SOURCE_DIR}/unit/utils/parity/compare-stl-loader.mjs"
                 "${THREEJS_SOURCE_DIR}" "$<TARGET_FILE:ThreeJsSTLLoaderParityProbe>")
