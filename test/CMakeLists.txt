@@ -370,6 +370,8 @@ if(THREECPP_BUILD_ADDONS)
     target_link_libraries(ThreeJsBoxSphereParityProbe PRIVATE threecpp::threecpp)
     add_executable(ThreeJsPlaneParityProbe unit/utils/parity/PlaneParityProbe.cpp)
     target_link_libraries(ThreeJsPlaneParityProbe PRIVATE threecpp::threecpp)
+    add_executable(ThreeJsEulerParityProbe unit/utils/parity/EulerParityProbe.cpp)
+    target_link_libraries(ThreeJsEulerParityProbe PRIVATE threecpp::threecpp)
     target_link_libraries(ThreeJsXYZLoaderParityProbe PRIVATE threecpp::addons)
     add_executable(ThreeJsSTLLoaderParityProbe unit/utils/parity/STLLoaderParityProbe.cpp)
     target_link_libraries(ThreeJsSTLLoaderParityProbe PRIVATE threecpp::addons)
@@ -915,6 +917,9 @@ if(THREECPP_NODE_EXECUTABLE)
             add_test(NAME threecpp.threejs-plane-parity
                 COMMAND "${THREECPP_NODE_EXECUTABLE}" "${CMAKE_CURRENT_SOURCE_DIR}/unit/utils/parity/compare-plane.mjs"
                 "${THREEJS_SOURCE_DIR}" "$<TARGET_FILE:ThreeJsPlaneParityProbe>")
+            add_test(NAME threecpp.threejs-euler-parity
+                COMMAND "${THREECPP_NODE_EXECUTABLE}" "${CMAKE_CURRENT_SOURCE_DIR}/unit/utils/parity/compare-euler.mjs"
+                "${THREEJS_SOURCE_DIR}" "$<TARGET_FILE:ThreeJsEulerParityProbe>")
             add_test(NAME threecpp.threejs-stl-loader-parity
                 COMMAND "${THREECPP_NODE_EXECUTABLE}" "${CMAKE_CURRENT_SOURCE_DIR}/unit/utils/parity/compare-stl-loader.mjs"
                 "${THREEJS_SOURCE_DIR}" "$<TARGET_FILE:ThreeJsSTLLoaderParityProbe>")
