@@ -753,6 +753,12 @@ if(THREECPP_NODE_EXECUTABLE)
         add_test(NAME threecpp.threejs-webgl-lights-states-parity
             COMMAND "${THREECPP_NODE_EXECUTABLE}" "${CMAKE_CURRENT_SOURCE_DIR}/unit/utils/parity/compare-webgl-lights.mjs"
             "${THREEJS_SOURCE_DIR}" "$<TARGET_FILE:ThreeJsWebGLLightsParityProbe>")
+            # This probe walks 48 seeds of light state plus thirty-odd mode scenarios and five
+            # more families, and each one costs seconds: measured, it advanced through 18 seeds in
+            # two minutes, so the default 1500 second ceiling killed it mid-run and called the
+            # result a timeout. The ceiling is raised rather than the scenarios trimmed, because
+            # the coverage is the point.
+            set_tests_properties(threecpp.threejs-webgl-lights-states-parity PROPERTIES TIMEOUT 7200)
         add_test(NAME threecpp.threejs-native-math-protocols-parity
             COMMAND "${THREECPP_NODE_EXECUTABLE}" "${CMAKE_CURRENT_SOURCE_DIR}/unit/utils/parity/compare-native-math-protocols.mjs"
             "${THREEJS_SOURCE_DIR}" "$<TARGET_FILE:ThreeJsNativeMathProtocolsParityProbe>")
