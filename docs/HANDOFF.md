@@ -74,6 +74,11 @@
    - **已确证的事实**：抛点在 `Cache.get` 之后 ✓；`key` 是 String、`created` 是 Object、活动堆存在 ✓；`CacheStore::add` = `validate(key) + validate(file) + requireRealm() + cache.get("add").call(...)` ✓；`requireRealm` 的消息是 "Cache mutation requires a live JSValue realm"，**与实测消息不同** ✓ → 抛点来自 `validate` 或 JS 侧 `add`。
    - **下一步（最小单变量）**：把 `created.set("complete",true)` 单独注释掉跑一次；再单独注释 `decoder.call(...)`。**一次只改一行**，因为第 247、248 两轮各因一次改多处而得到误导性结果 ✗。
    - **硬约束（本轮踩到）**：工作树里留**未跟踪**的 `.h/.cpp` 会让 `port-audit` 失败（审计把它们计入清单，与已提交的 `port-status.json` 不一致），退出码 8。也就是说"未验证的 WIP"不是无害的——它会以门禁变红的方式显形。**结论**：要么验证到绿并提交，要么删掉。
+24. **改类布局会崩：加字段或加虚函数都可能让无关测试 SIGSEGV，机制未查明**。这一点在会话里复现了三次，每次回退即恢复全绿：给 `Object3D` 加一个虚函数 `intersectsFrustum` ✗；给 `BufferGeometry` 加 `indirect`/`indirectOffset` 两个字段 ✗；第三次用 ASan 全量重编后依旧复现 ✗。
+   - **ASan 给出的证据**（最有价值的部分）：原树在 AddressSanitizer 下 **692 用例全通过、零报告** ✓✓，所以**不是**内存破坏 ✗。而带改动跑时，ASan 精确指到 `BufferGeometry::getIndirect`（`BufferGeometry.h:58`）→ `std::_Ref_count_base::_Incref`，寄存器 `rax = 17d7d7d7d7d7d7d8` —— `0xD7` 是 MSVC 的未初始化内存填充，即新增的 `std::shared_ptr` 成员读出来是垃圾 ✗，而 `BufferGeometry` 的构造函数是 `: uuid(...) {}`、该成员本应默认构造为 null。
+   - **已排除**：陈旧构建 ✗（ASan 全量重编后仍复现）、内存破坏 ✗（ASan 原树干净）、PCH/unity/LTCG ✗（项目均未启用）、缺 `/EHsc` ✗（那是另一个独立问题：给 ASan 传 `CMAKE_CXX_FLAGS` 会覆盖项目自带的 `/EHsc`，导致 Catch2 报 `CATCH_CONFIG_DISABLE_EXCEPTIONS` 并 fast-fail，**修法是把 `/EHsc` 一并写进 flags**）。
+   - **建议的第一步**：在 ASan 配置下，写一个最小用例只构造 `BufferGeometry` 并打印 `sizeof(BufferGeometry)`、`offsetof(indirect)` 与成员的 `use_count()`，确认各 TU 看到的是同一布局；若不一致，问题就在头文件/预编译路径而非运行时。
+   - **纪律**：在查清之前，**不要**再改 `Object3D`/`BufferGeometry`/`Material` 这类被广泛派生或广泛持有的类的布局 ✗；需要新能力时优先用**不改布局**的方式（新类、自由函数、外部映射表）。
 10. **FileLoader 传输契约（冻结，实现时照此写，不要再设计）**：上游用 fetch / Request / Response / ReadableStream / AbortController / ProgressEvent / DOMParser / TextDecoder，原生侧没有这些宿主对象，因此把**只有一处**的宿主边界收窄成一个注入函数，其余逻辑照源码逐行移植。
    - 注入方式：模块级 `FileLoader::setTransport(JSValue)`，等价于 `globalThis.fetch`；未注入时 `load()` 显式抛错（说明未配置传输），不静默失败。
    - 传输入参：一个 JSValue 对象，字段 `url`（字符串，已过 `path` 与 `manager.resolveURL`）、`method`（恒为 GET）、`headers`（普通对象，来自 `requestHeader`）、`credentials`（`include` 或 `same-origin`，取自 `withCredentials`）、`signal`（对象，含布尔字段 `aborted`，由 `abort()` 置位）。
