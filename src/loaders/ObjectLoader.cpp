@@ -270,7 +270,28 @@ std::shared_ptr<Object3D> ObjectLoader::parseObject(const JSValue& data) {
             const auto found = clips_.find(objectAnimations.get(index).toString());
             if (found != clips_.end()) object->animations.push_back(found->second);
         }
-    return object;
+    // Upstream restores the levels last, after the children exist, because a level names a child by uuid.
+    if (type == "LOD") {
+        const auto lod = std::dynamic_pointer_cast<LOD>(object);
+        if (!data.get("autoUpdate").isUndefined()) lod->autoUpdate = data.get("autoUpdate");
+        const auto levels = data.get("levels");
+        if (!levels.isUndefined())
+            for (double index = 0; index < levels.length(); index += 1) {
+                const auto level = levels.get(index);
+                const auto wanted = level.get("object").toString();
+                // The upstream lookup searches this object's subtree, not the whole document.
+                std::shared_ptr<Object3D> found;
+                std::vector<std::shared_ptr<Object3D>> stack{object};
+                while (!stack.empty() && !found) {
+                    const auto current = stack.back();
+                    stack.pop_back();
+                    if (!current) continue;
+                    if (current->uuid == wanted) { found = current; break; }
+                    for (const auto& child : current->children) stack.push_back(child);
+                }
+                if (found) lod->addLevel(found, level.get("distance"), level.get("hysteresis"));
+            }
+    }    return object;
 }
 
 void ObjectLoader::bindLightTargets(const std::shared_ptr<Object3D>& root) {

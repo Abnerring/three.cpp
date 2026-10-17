@@ -12,6 +12,7 @@
 #include "cameras/OrthographicCamera.h"
 #include "cameras/PerspectiveCamera.h"
 #include "objects/InstancedMesh.h"
+#include "objects/LOD.h"
 #include "objects/Sprite.h"
 #include "scenes/Fog.h"
 #include "scenes/FogExp2.h"
@@ -223,4 +224,28 @@ TEST_CASE("ObjectLoader builds an exponential fog and refuses a texture environm
     const auto texture = Animation_detail::parseJSON(R"({"object": {"type": "Scene", "environment": "env"}})");
     ObjectLoader other;
     REQUIRE_THROWS_AS(other.parse(texture), std::runtime_error);
+}
+// A level names one of the object's own children by uuid, so the restore has to run after the children exist.
+TEST_CASE("ObjectLoader restores the levels of a level of detail node") {
+    const auto realm = JSValue::object();
+    static_cast<void>(realm);
+    const auto json = Animation_detail::parseJSON(R"({
+        "object": {"type": "LOD", "uuid": "lod", "autoUpdate": false,
+            "levels": [{"object": "near", "distance": 10, "hysteresis": 0.5}, {"object": "far", "distance": 20}],
+            "children": [
+                {"type": "Mesh", "uuid": "near", "material": "m", "geometry": "g"},
+                {"type": "Mesh", "uuid": "far", "material": "m", "geometry": "g"}
+            ]},
+        "geometries": [{"type": "BufferGeometry", "uuid": "g", "data": {"attributes": {}}}],
+        "materials": [{"type": "MeshBasicMaterial", "uuid": "m", "color": 255}]
+    })");
+    ObjectLoader loader;
+    const auto result = loader.parse(json);
+    const auto lod = std::dynamic_pointer_cast<LOD>(result.object);
+    REQUIRE(lod);
+    REQUIRE(lod->autoUpdate.toBoolean() == false);
+    const auto levels = lod->levels;
+    REQUIRE(levels.length() == 2.0);
+    REQUIRE(levels.get("0").get("distance").toNumber() == 10.0);
+    REQUIRE(levels.get("1").get("distance").toNumber() == 20.0);
 }
