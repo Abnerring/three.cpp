@@ -1,4 +1,4 @@
-﻿#include "loaders/DataTextureLoader.h"
+#include "loaders/DataTextureLoader.h"
 #include "core/NativeObject.h"
 #include "loaders/FileLoader.h"
 #include "constants.h"
@@ -11,7 +11,9 @@ using Args = std::vector<JSValue>;
 JSValue arg(const Args& args,std::size_t index){return index<args.size()?args[index]:JSValue{};}
 // The file callback carries no state of its own, so the texture being filled and the caller's callbacks
 // are parked in thread locals. FileLoader answers synchronously in this port, so nothing is in flight.
-JSValue& selfSlot(){static thread_local JSValue value;return value;}
+// The instance whose parse must run: upstream closes over the loader, so the native equivalent is the
+// instance itself.
+DataTextureLoader*& selfLoader(){static thread_local DataTextureLoader* value=nullptr;return value;}
 std::shared_ptr<DataTexture>& pendingTexture(){static thread_local std::shared_ptr<DataTexture> value;return value;}
 JSValue& pendingTextureObject(){static thread_local JSValue value;return value;}
 JSValue& pendingOnLoad(){static thread_local JSValue value;return value;}
@@ -64,7 +66,7 @@ JSValue DataTextureLoader::load(JSValue url,JSValue onLoad,JSValue onProgress,JS
     pendingTextureObject()=nativeTexture(texture);
     pendingOnLoad()=onLoad;
     pendingOnError()=onError;
-    selfSlot()=object_;
+    selfLoader()=this;
     FileLoader fileLoader(object_.get("manager"));
     const auto call=[&](const char* name,const JSValue& value){const auto method=fileLoader.object().get(name);if(!method.isUndefined())method.call(fileLoader.object(),{value});};
     call("setResponseType",JSValue("arraybuffer"));
@@ -76,7 +78,7 @@ JSValue DataTextureLoader::load(JSValue url,JSValue onLoad,JSValue onProgress,JS
         try {
             // Dispatched through the object, so a subclass that overrides parse takes part exactly as it
             // does upstream, where the callback closes over the loader instance.
-            texData=selfSlot().get("parse").call(selfSlot(), {args.empty()?JSValue{}:args[0]});
+            texData=selfLoader()->parse(args.empty()?JSValue{}:args[0]);
         } catch(const std::exception& error) {
             // Upstream logs to the console when no onError was supplied; there is no console here, so
             // that branch is recorded rather than reproduced. Either way the texture is left unapplied.

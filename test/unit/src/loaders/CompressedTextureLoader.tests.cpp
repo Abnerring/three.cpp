@@ -2,7 +2,12 @@
 #include "animation/AnimationUtils.h"
 #include "constants.h"
 #include "core/JSValue.h"
+#include "core/NativeArray.h"
+#include "core/NativeObject.h"
 #include "loaders/CompressedTextureLoader.h"
+#include "loaders/FileLoader.h"
+#include <cstdint>
+#include <vector>
 #include "loaders/FileLoader.h"
 #include "core/NativeArray.h"
 #include "core/NativeObject.h"
@@ -65,4 +70,36 @@ TEST_CASE("CompressedTextureLoader refuses the forms it cannot represent", "[com
     REQUIRE_THROWS_AS(loader.load(urls), JSTypeError);
     CompressedTextureLoader base;
     REQUIRE_THROWS_AS(base.parse(JSValue{}, JSValue(true)), JSTypeError);
+}
+
+namespace {
+// A canned response for FileLoader's injectable transport: real bytes, because an arraybuffer request
+// converts the body itself.
+JSValue transportAnswer(const JSValue&, const std::vector<JSValue>& args, const std::vector<JSValue>&) {
+    auto headers = JSValue::object();
+    headers.set("get", JSValue::function([](const JSValue&, const std::vector<JSValue>&, const std::vector<JSValue>&) { return JSValue{}; }, {}, "get", 1));
+    auto response = JSValue::object();
+    response.set("status", 200.0);
+    response.set("statusText", "OK");
+    response.set("url", args.empty() ? JSValue{} : args[0]);
+    response.set("headers", headers);
+    response.set("body", nativeArray(AnimationArray(Uint8Array(std::vector<std::uint8_t>{1, 2, 3, 4}))));
+    return response;
+}
+}
+
+TEST_CASE("CompressedTextureLoader loads a single url through the injected transport", "[compressedtextureloader]") {
+    const auto realm = JSValue::object();
+    static_cast<void>(realm);
+    // A string url must take the normal path: the six-url check used to reject it because a string has a
+    // length, which made every ordinary load throw.
+    FileLoader::setTransport(JSValue::function(transportAnswer, {}, "transport", 1));
+    StubLoader loader;
+    loader.payload = texData("{\"width\":16,\"height\":8,\"format\":1023,\"mipmapCount\":1,\"mipmaps\":[]}");
+    const auto texture = loader.load(JSValue("https://example.com/a.bin"));
+    // The subclass parse runs through the virtual hook, so what it returned is what was applied.
+    REQUIRE(texture.get("format").toNumber() == 1023.0);
+    REQUIRE(texture.get("minFilter").toNumber() == LinearFilter);
+    REQUIRE(texture.get("version").toNumber() == 1.0);
+    FileLoader::setTransport(JSValue{});
 }

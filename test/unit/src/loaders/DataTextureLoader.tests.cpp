@@ -2,7 +2,12 @@
 #include "animation/AnimationUtils.h"
 #include "constants.h"
 #include "core/JSValue.h"
+#include "core/NativeArray.h"
+#include "core/NativeObject.h"
 #include "loaders/DataTextureLoader.h"
+#include "loaders/FileLoader.h"
+#include <cstdint>
+#include <vector>
 #include <memory>
 #include <string>
 
@@ -85,4 +90,27 @@ TEST_CASE("DataTextureLoader.createDataTexture parses then applies", "[datatextu
     REQUIRE(typed->version == 1.0);
     // createDataTexture is the same path behind the JS door, and version is exposed there.
     REQUIRE(loader.createDataTexture(JSValue{}).get("version").toNumber() == 1.0);
+}
+
+TEST_CASE("DataTextureLoader loads through the injected transport", "[datatextureloader]") {
+    const auto realm = JSValue::object();
+    static_cast<void>(realm);
+    // The same dispatch fix applies here: load hands the buffer to the virtual parse on the instance.
+    // The transport must be captureless, so it builds its response in place.
+    FileLoader::setTransport(JSValue::function([](const JSValue&, const std::vector<JSValue>&, const std::vector<JSValue>&) {
+        auto headers = JSValue::object();
+        headers.set("get", JSValue::function([](const JSValue&, const std::vector<JSValue>&, const std::vector<JSValue>&) { return JSValue{}; }, {}, "get", 1));
+        auto answer = JSValue::object();
+        answer.set("status", 200.0);
+        answer.set("statusText", "OK");
+        answer.set("url", "https://example.com/b.bin");
+        answer.set("headers", headers);
+        answer.set("body", nativeArray(AnimationArray(Uint8Array(std::vector<std::uint8_t>{9}))));
+        return answer;
+    }, {}, "transport", 1));
+    StubLoader loader;
+    loader.payload = texData("{\"width\":2,\"height\":2,\"data\":null,\"flipY\":true}");
+    auto surface = loader.load(JSValue("https://example.com/b.bin"));
+    REQUIRE(surface.get("version").toNumber() == 1.0);
+    FileLoader::setTransport(JSValue{});
 }

@@ -15,7 +15,9 @@ JSValue arg(const Args& args,std::size_t index){return index<args.size()?args[in
 std::shared_ptr<CompressedTexture>& pendingTexture(){static thread_local std::shared_ptr<CompressedTexture> value;return value;}
 JSValue& pendingTextureObject(){static thread_local JSValue value;return value;}
 JSValue& pendingOnLoad(){static thread_local JSValue value;return value;}
-JSValue& selfSlot(){static thread_local JSValue value;return value;}
+// The object whose parse must run: upstream closes over the loader instance, so the native equivalent is
+// the instance itself, which is what makes a subclass override take part.
+CompressedTextureLoader*& selfLoader(){static thread_local CompressedTextureLoader* value=nullptr;return value;}
 }
 CompressedTextureLoader::CompressedTextureLoader(JSValue manager):Loader(JSValue::object(prototype()),Existing{}){initialize(object_,manager);}
 JSValue CompressedTextureLoader::parse(JSValue buffer,JSValue premultiplyAlpha) {
@@ -52,7 +54,7 @@ JSValue CompressedTextureLoader::load(JSValue url,JSValue onLoad,JSValue onProgr
     pendingTexture()=texture;
     pendingTextureObject()=nativeTexture(texture);
     pendingOnLoad()=onLoad;
-    selfSlot()=object_;
+    selfLoader()=this;
     FileLoader fileLoader(object_.get("manager"));
     const auto call=[&](const char* name,const JSValue& value){const auto method=fileLoader.object().get(name);if(!method.isUndefined())method.call(fileLoader.object(),{value});};
     call("setPath",object_.get("path"));
@@ -60,7 +62,7 @@ JSValue CompressedTextureLoader::load(JSValue url,JSValue onLoad,JSValue onProgr
     call("setRequestHeader",object_.get("requestHeader"));
     call("setWithCredentials",object_.get("withCredentials"));
     const auto callback=JSValue::function([](const JSValue&,const Args& args,const Args&)->JSValue{
-        const auto texDatas=selfSlot().get("parse").call(selfSlot(), {args.empty()?JSValue{}:args[0], JSValue(true)});
+        const auto texDatas=selfLoader()->parse(args.empty()?JSValue{}:args[0], JSValue(true));
         if(!texDatas.get("isCubemap").isUndefined()&&texDatas.get("isCubemap").toBoolean())
             throw JSTypeError("CompressedTextureLoader: a cubemap packed into one file is not implemented natively");
         CompressedTextureLoader loader;
@@ -72,6 +74,7 @@ JSValue CompressedTextureLoader::load(JSValue url,JSValue onLoad,JSValue onProgr
     static_cast<void>(result);
     pendingTexture().reset();
     pendingOnLoad()=JSValue{};
+    selfLoader()=nullptr;
     return pendingTextureObject();
 }
 JSValue CompressedTextureLoader::prototype() {
