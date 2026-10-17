@@ -194,8 +194,8 @@
     "note": "Accepted port scope is src and examples/jsm, including tracked third-party dependencies. Editor/manual web applications are excluded from native application rewrites. Native host behavior, packaging and all three platforms require separate implementation and verification evidence."
   },
   "counts": {
-    "partial-unverified": 283,
-    "missing": 658,
+    "partial-unverified": 284,
+    "missing": 657,
     "vulkan-port-pending": 290,
     "dependency-unverified": 20
   },
@@ -203,8 +203,8 @@
     "src": {
       "modules": 755,
       "counts": {
-        "partial-unverified": 199,
-        "missing": 266,
+        "partial-unverified": 200,
+        "missing": 265,
         "vulkan-port-pending": 290
       }
     },
@@ -733,7 +733,7 @@
       "path": "src/loaders",
       "upstreamFiles": 16,
       "moduleCount": 16,
-      "modulesWithCppFiles": 10,
+      "modulesWithCppFiles": 11,
       "verifiedComplete": 0
     },
     {
@@ -4903,11 +4903,11 @@
       "scope": "src",
       "kind": "core",
       "upstreamSha256": "2e27075fd9404ea4a583fdf34c9dc87137ec20323ac1ce0265b3f6f8fde371e8",
-      "header": null,
-      "implementation": null,
+      "header": "src/loaders/CubeTextureLoader.h",
+      "implementation": "src/loaders/CubeTextureLoader.cpp",
       "expectedHeader": "src/loaders/CubeTextureLoader.h",
       "expectedImplementation": "src/loaders/CubeTextureLoader.cpp",
-      "status": "missing",
+      "status": "partial-unverified",
       "verifiedComplete": false,
       "apiExtraction": "static-only",
       "verification": {
@@ -4918,7 +4918,9 @@
         "upstreamUnitTests": [
           "test/unit/src/loaders/CubeTextureLoader.tests.js"
         ],
-        "cppUnitTests": [],
+        "cppUnitTests": [
+          "test/unit/src/loaders/CubeTextureLoader.tests.cpp"
+        ],
         "reviewedImplementation": [],
         "differentialResults": [],
         "renderingResults": [],

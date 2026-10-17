@@ -5,6 +5,7 @@ add_executable(THREECPPTests
         unit/src/loaders/AnimationLoader.tests.cpp
         unit/src/loaders/ImageLoader.tests.cpp
         unit/src/loaders/TextureLoader.tests.cpp
+        unit/src/loaders/CubeTextureLoader.tests.cpp
     unit/src/math/Vector3.tests.cpp
     unit/src/math/Vector4.tests.cpp
     unit/src/math/MathUtils.tests.cpp
