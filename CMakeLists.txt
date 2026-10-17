@@ -106,7 +106,8 @@ target_sources(threecpp PRIVATE
     src/loaders/BufferGeometryLoader.cpp
     src/loaders/ImageLoader.cpp
     src/loaders/TextureLoader.cpp
-    src/loaders/CubeTextureLoader.cpp src/loaders/MaterialLoader.cpp src/loaders/FileLoader.cpp
+    src/loaders/CubeTextureLoader.cpp
+    src/extras/ImageUtils.cpp src/loaders/MaterialLoader.cpp src/loaders/FileLoader.cpp
     src/core/InterleavedBufferAttribute.cpp
     src/objects/Line.cpp
     src/objects/LineLoop.cpp
