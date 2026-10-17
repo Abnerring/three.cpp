@@ -64,6 +64,14 @@ std::shared_ptr<BufferAttribute> typedAttribute(const JSValue& description,doubl
     if(type=="Uint16Array")return build(std::uint16_t{});
     if(type=="Int32Array")return build(std::int32_t{});
     if(type=="Uint32Array")return build(std::uint32_t{});
+    if(type=="Uint8ClampedArray") {
+        // The clamped array is a distinct type in this port: it saturates to 0..255 rather than wrapping,
+        // so the elements are assigned through the clamped array itself instead of being cast.
+        TypedArray<std::uint8_t, true> values(numbers.size());
+        for(std::size_t index=0;index<numbers.size();index+=1) values[index]=numbers[index];
+        if(instanced) return std::make_shared<InstancedBufferAttribute>(values,itemSize,normalized);
+        return std::make_shared<TypedBufferAttribute<std::uint8_t, true>>(values,itemSize,normalized);
+    }
     throw JSTypeError("BufferGeometryLoader: typed array "+type+" is not supported natively");
 }
 void applyOptionalFields(const JSValue& description,const std::shared_ptr<BufferAttribute>& attribute) {
@@ -153,7 +161,10 @@ std::shared_ptr<BufferGeometry> BufferGeometryLoader::parseGeometry(JSValue json
         const double length=groups.get("length").toNumber();
         for(double index=0;index<length;index+=1) {
             const auto group=groups.get(std::to_string(static_cast<long long>(index)));
-            geometry->addGroup(group.get("start").toNumber(),group.get("count").toNumber(),group.get("materialIndex").toNumber());
+            // A missing materialIndex takes the default of zero, which is what undefined means for a JS
+            // parameter; reading it as a number would give NaN instead.
+            const auto materialIndex=group.get("materialIndex");
+            geometry->addGroup(group.get("start").toNumber(),group.get("count").toNumber(),materialIndex.isUndefined()?0.0:materialIndex.toNumber());
         }
     }
     const auto boundingSphere=data.get("boundingSphere");
