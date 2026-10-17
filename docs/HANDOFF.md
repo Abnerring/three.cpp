@@ -79,6 +79,10 @@
    - **已排除**：陈旧构建 ✗（ASan 全量重编后仍复现）、内存破坏 ✗（ASan 原树干净）、PCH/unity/LTCG ✗（项目均未启用）、缺 `/EHsc` ✗（那是另一个独立问题：给 ASan 传 `CMAKE_CXX_FLAGS` 会覆盖项目自带的 `/EHsc`，导致 Catch2 报 `CATCH_CONFIG_DISABLE_EXCEPTIONS` 并 fast-fail，**修法是把 `/EHsc` 一并写进 flags**）。
    - **建议的第一步**：在 ASan 配置下，写一个最小用例只构造 `BufferGeometry` 并打印 `sizeof(BufferGeometry)`、`offsetof(indirect)` 与成员的 `use_count()`，确认各 TU 看到的是同一布局；若不一致，问题就在头文件/预编译路径而非运行时。
    - **纪律**：在查清之前，**不要**再改 `Object3D`/`BufferGeometry`/`Material` 这类被广泛派生或广泛持有的类的布局 ✗；需要新能力时优先用**不改布局**的方式（新类、自由函数、外部映射表）。
+25. **已移植模块的差分覆盖已经完整**（里程碑）。做法是先**扫描缺口**再补，而不是凭印象挑模块：扫描脚本把 `docs/port-status.json` 里每个非 `missing`、非 `src/nodes/`、非 `src/renderers/` 的模块与 `test/unit/utils/parity/` 下的文本对照，第一次列出了 **4 个**没有差分的模块（`DirectionalLightShadow` 32 行、`PointLightShadow` 32 行、`ExternalTexture` 54 行、`Fog` 99 行），补完后再跑即**空列表** ✓。
+   - 也就是说：除着色器图（`src/nodes/`）与渲染后端（`src/renderers/`）之外，端口里**每一个已移植模块都有针对上游模块的差分**，且都是 bit-exact（数值数组按 float32 位模式、`-0`/`NaN`/`±Infinity` 显式编码）。
+   - **建议把这个扫描固化成例行检查**：新增任何模块后跑一次，缺口数必须回到 0，否则就是"加了代码没加验证"。
+   - 同类扫描还有两个：**方法级缺口**（第 18 轮用过，比对上游方法名与本地头文件）与 **与布局相关的崩溃**（第 24 条）。三者合起来构成"移植完成度"的三个正交维度：模块存在 ✓、方法齐备 ✓、行为一致 ✓。
 10. **FileLoader 传输契约（冻结，实现时照此写，不要再设计）**：上游用 fetch / Request / Response / ReadableStream / AbortController / ProgressEvent / DOMParser / TextDecoder，原生侧没有这些宿主对象，因此把**只有一处**的宿主边界收窄成一个注入函数，其余逻辑照源码逐行移植。
    - 注入方式：模块级 `FileLoader::setTransport(JSValue)`，等价于 `globalThis.fetch`；未注入时 `load()` 显式抛错（说明未配置传输），不静默失败。
    - 传输入参：一个 JSValue 对象，字段 `url`（字符串，已过 `path` 与 `manager.resolveURL`）、`method`（恒为 GET）、`headers`（普通对象，来自 `requestHeader`）、`credentials`（`include` 或 `same-origin`，取自 `withCredentials`）、`signal`（对象，含布尔字段 `aborted`，由 `abort()` 置位）。
