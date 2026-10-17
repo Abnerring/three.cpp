@@ -9,6 +9,7 @@
 #include "lights/DirectionalLight.h"
 #include "objects/Line.h"
 #include "objects/Points.h"
+#include "objects/InstancedMesh.h"
 #include "objects/Sprite.h"
 #include "scenes/Scene.h"
 #include <memory>
@@ -71,7 +72,7 @@ TEST_CASE("ObjectLoader takes the matrix path and refuses what it cannot build")
     REQUIRE(result.object->position.y == 5.0);
     REQUIRE(result.object->position.z == 6.0);
 
-    const auto unsupported = Animation_detail::parseJSON(R"({"object": {"type": "InstancedMesh"}})");
+    const auto unsupported = Animation_detail::parseJSON(R"({"object": {"type": "SkinnedMesh"}})");
     ObjectLoader other;
     REQUIRE_THROWS_AS(other.parse(unsupported), std::runtime_error);
 }
@@ -122,4 +123,27 @@ TEST_CASE("ObjectLoader builds the line, point and sprite families") {
     const auto sprite = std::dynamic_pointer_cast<Sprite>(result.object->children[2]);
     REQUIRE(sprite);
     REQUIRE(sprite->material);
+}
+// The instanced mesh is the first object whose payload is not just a geometry and a material: the per
+// instance matrix and the optional per instance colour are re-read as float attributes with the upstream
+// item sizes.
+TEST_CASE("ObjectLoader builds an instanced mesh from its matrix and colour") {
+    const auto realm = JSValue::object();
+    static_cast<void>(realm);
+    const auto json = Animation_detail::parseJSON(R"({
+        "object": {"type": "InstancedMesh", "uuid": "instanced", "material": "m", "geometry": "g", "count": 3,
+            "instanceMatrix": {"array": [1,0,0,0, 0,1,0,0, 0,0,1,0, 0,0,0,1]},
+            "instanceColor": {"array": [1,0,0], "itemSize": 3}},
+        "geometries": [{"type": "BufferGeometry", "uuid": "g", "data": {"attributes": {}}}],
+        "materials": [{"type": "MeshBasicMaterial", "uuid": "m", "color": 255}]
+    })");
+    ObjectLoader loader;
+    const auto result = loader.parse(json);
+    const auto mesh = std::dynamic_pointer_cast<InstancedMesh>(result.object);
+    REQUIRE(mesh);
+    REQUIRE(mesh->instanceMatrix);
+    REQUIRE(mesh->instanceMatrix->itemSize == 16.0);
+    REQUIRE(mesh->instanceColor);
+    REQUIRE(mesh->instanceColor->itemSize == 3.0);
+    REQUIRE(mesh->count == 3);
 }

@@ -14,6 +14,7 @@
 #include "math/MathUtils.h"
 #include "objects/Bone.h"
 #include "objects/Group.h"
+#include "objects/InstancedMesh.h"
 #include "objects/LOD.h"
 #include "objects/Line.h"
 #include "objects/LineLoop.h"
@@ -158,7 +159,23 @@ std::shared_ptr<Object3D> ObjectLoader::parseObject(const JSValue& data) {
     } else if (type == "HemisphereLight")
         object = std::make_shared<HemisphereLight>(Color(data.get("color").toNumber()),
             Color(data.get("groundColor").toNumber()), optionalNumber(data, "intensity", 1.0));
-    else if (type == "SkinnedMesh" || type == "InstancedMesh" || type == "BatchedMesh" ||
+    else if (type == "InstancedMesh") {
+        const auto geometry = geometryOf(data.get("geometry"));
+        const auto material = materialOf(data.get("material"));
+        const auto count = static_cast<int>(data.get("count").toNumber());
+        const auto mesh = std::make_shared<InstancedMesh>(geometry ? geometry : std::make_shared<BufferGeometry>(), material, count);
+        // Upstream re-reads both attributes as Float32Array with the item sizes sixteen and the stored one.
+        const auto matrixArray = numbers(data.get("instanceMatrix").get("array"));
+        mesh->instanceMatrix = std::make_shared<InstancedBufferAttribute>(
+            TypedArray<float>(std::vector<float>(matrixArray.begin(), matrixArray.end())), 16);
+        if (!data.get("instanceColor").isUndefined()) {
+            const auto colorArray = numbers(data.get("instanceColor").get("array"));
+            mesh->instanceColor = std::make_shared<InstancedBufferAttribute>(
+                TypedArray<float>(std::vector<float>(colorArray.begin(), colorArray.end())),
+                data.get("instanceColor").get("itemSize").toNumber());
+        }
+        object = mesh;
+    }    else if (type == "SkinnedMesh" || type == "BatchedMesh" ||
              type == "PerspectiveCamera" || type == "OrthographicCamera" || type == "RectAreaLight" ||
              type == "LightProbe" || type.find("Light") != std::string::npos)
         throw std::runtime_error("ObjectLoader: object type \"" + type + "\" is not ported yet");
