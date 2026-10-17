@@ -9,6 +9,8 @@
 #include "lights/DirectionalLight.h"
 #include "objects/Line.h"
 #include "objects/Points.h"
+#include "cameras/OrthographicCamera.h"
+#include "cameras/PerspectiveCamera.h"
 #include "objects/InstancedMesh.h"
 #include "objects/Sprite.h"
 #include "scenes/Scene.h"
@@ -146,4 +148,33 @@ TEST_CASE("ObjectLoader builds an instanced mesh from its matrix and colour") {
     REQUIRE(mesh->instanceColor);
     REQUIRE(mesh->instanceColor->itemSize == 3.0);
     REQUIRE(mesh->count == 3);
+}
+// The two cameras take their upstream parameter order and the fields that only one of them has.
+TEST_CASE("ObjectLoader builds both cameras") {
+    const auto realm = JSValue::object();
+    static_cast<void>(realm);
+    const auto json = Animation_detail::parseJSON(R"({
+        "object": {"type": "Scene", "uuid": "scene", "children": [
+            {"type": "PerspectiveCamera", "uuid": "pcam", "fov": 60, "aspect": 2, "near": 0.5, "far": 500,
+             "zoom": 2, "focus": 5, "filmGauge": 70, "filmOffset": 3},
+            {"type": "OrthographicCamera", "uuid": "ocam", "left": -2, "right": 2, "top": 3, "bottom": -3,
+             "near": 0.1, "far": 50, "zoom": 4}
+        ]}
+    })");
+    ObjectLoader loader;
+    const auto result = loader.parse(json);
+    REQUIRE(result.object->children.size() == 2);
+    const auto perspective = std::dynamic_pointer_cast<PerspectiveCamera>(result.object->children[0]);
+    REQUIRE(perspective);
+    REQUIRE(perspective->fov == 60.0);
+    REQUIRE(perspective->aspect == 2.0);
+    REQUIRE(perspective->zoom == 2.0);
+    REQUIRE(perspective->focus == 5.0);
+    const auto orthographic = std::dynamic_pointer_cast<OrthographicCamera>(result.object->children[1]);
+    REQUIRE(orthographic);
+    REQUIRE(orthographic->left == -2.0);
+    REQUIRE(orthographic->right == 2.0);
+    REQUIRE(orthographic->top == 3.0);
+    REQUIRE(orthographic->bottom == -3.0);
+    REQUIRE(orthographic->zoom == 4.0);
 }

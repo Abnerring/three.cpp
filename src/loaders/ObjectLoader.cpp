@@ -3,6 +3,8 @@
 #include "animation/AnimationClip.h"
 #include "core/BufferGeometry.h"
 #include "core/NativeObject.h"
+#include "cameras/OrthographicCamera.h"
+#include "cameras/PerspectiveCamera.h"
 #include "core/Object3D.h"
 #include "lights/AmbientLight.h"
 #include "lights/DirectionalLight.h"
@@ -175,7 +177,24 @@ std::shared_ptr<Object3D> ObjectLoader::parseObject(const JSValue& data) {
                 data.get("instanceColor").get("itemSize").toNumber());
         }
         object = mesh;
-    }    else if (type == "SkinnedMesh" || type == "BatchedMesh" ||
+    }    else if (type == "PerspectiveCamera") {
+        const auto camera = std::make_shared<PerspectiveCamera>(optionalNumber(data, "fov", 50.0), optionalNumber(data, "aspect", 1.0),
+            optionalNumber(data, "near", 0.1), optionalNumber(data, "far", 2000.0));
+        if (!data.get("focus").isUndefined()) camera->focus = data.get("focus").toNumber();
+        if (!data.get("zoom").isUndefined()) camera->zoom = data.get("zoom").toNumber();
+        if (!data.get("filmGauge").isUndefined()) camera->filmGauge = data.get("filmGauge").toNumber();
+        if (!data.get("filmOffset").isUndefined()) camera->filmOffset = data.get("filmOffset").toNumber();
+        if (!data.get("view").isUndefined()) throw std::runtime_error("ObjectLoader: camera views are not ported yet");
+        object = camera;
+    } else if (type == "OrthographicCamera") {
+        const auto camera = std::make_shared<OrthographicCamera>(optionalNumber(data, "left", -1.0), optionalNumber(data, "right", 1.0),
+            optionalNumber(data, "top", 1.0), optionalNumber(data, "bottom", -1.0),
+            optionalNumber(data, "near", 0.1), optionalNumber(data, "far", 2000.0));
+        if (!data.get("zoom").isUndefined()) camera->zoom = data.get("zoom").toNumber();
+        if (!data.get("view").isUndefined()) throw std::runtime_error("ObjectLoader: camera views are not ported yet");
+        object = camera;
+    }
+    else if (type == "SkinnedMesh" || type == "BatchedMesh" ||
              type == "PerspectiveCamera" || type == "OrthographicCamera" || type == "RectAreaLight" ||
              type == "LightProbe" || type.find("Light") != std::string::npos)
         throw std::runtime_error("ObjectLoader: object type \"" + type + "\" is not ported yet");
