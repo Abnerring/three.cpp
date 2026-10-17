@@ -2,6 +2,7 @@ add_executable(THREECPPTests
     unit/three.source.unit.cpp
     unit/src/math/Vector2.tests.cpp
         unit/src/loaders/FileLoader.tests.cpp
+        unit/src/loaders/AnimationLoader.tests.cpp
     unit/src/math/Vector3.tests.cpp
     unit/src/math/Vector4.tests.cpp
     unit/src/math/MathUtils.tests.cpp
