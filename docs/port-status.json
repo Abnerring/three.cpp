@@ -194,8 +194,8 @@
     "note": "Accepted port scope is src and examples/jsm, including tracked third-party dependencies. Editor/manual web applications are excluded from native application rewrites. Native host behavior, packaging and all three platforms require separate implementation and verification evidence."
   },
   "counts": {
-    "partial-unverified": 281,
-    "missing": 660,
+    "partial-unverified": 282,
+    "missing": 659,
     "vulkan-port-pending": 290,
     "dependency-unverified": 20
   },
@@ -203,8 +203,8 @@
     "src": {
       "modules": 755,
       "counts": {
-        "partial-unverified": 197,
-        "missing": 268,
+        "partial-unverified": 198,
+        "missing": 267,
         "vulkan-port-pending": 290
       }
     },
@@ -733,7 +733,7 @@
       "path": "src/loaders",
       "upstreamFiles": 16,
       "moduleCount": 16,
-      "modulesWithCppFiles": 8,
+      "modulesWithCppFiles": 9,
       "verifiedComplete": 0
     },
     {
@@ -5021,11 +5021,11 @@
       "scope": "src",
       "kind": "core",
       "upstreamSha256": "2aee00b8842e7171fe3c1f53e2ecb85ca18da2f9c7ff42ace70c91541a74e029",
-      "header": null,
-      "implementation": null,
+      "header": "src/loaders/ImageLoader.h",
+      "implementation": "src/loaders/ImageLoader.cpp",
       "expectedHeader": "src/loaders/ImageLoader.h",
       "expectedImplementation": "src/loaders/ImageLoader.cpp",
-      "status": "missing",
+      "status": "partial-unverified",
       "verifiedComplete": false,
       "apiExtraction": "static-only",
       "verification": {
@@ -5036,7 +5036,9 @@
         "upstreamUnitTests": [
           "test/unit/src/loaders/ImageLoader.tests.js"
         ],
-        "cppUnitTests": [],
+        "cppUnitTests": [
+          "test/unit/src/loaders/ImageLoader.tests.cpp"
+        ],
         "reviewedImplementation": [],
         "differentialResults": [],
         "renderingResults": [],
