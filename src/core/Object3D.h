@@ -63,7 +63,9 @@ class Object3D : public EventDispatcher, public std::enable_shared_from_this<Obj
     Quaternion quaternion;
     Matrix4 modelViewMatrix, matrix, matrixWorld;
     Matrix3 normalMatrix;
-    bool matrixAutoUpdate, matrixWorldAutoUpdate, matrixWorldNeedsUpdate = false;
+    // Upstream defaults both auto updates to true; the single initialiser here used to cover only the
+    // last of the three, leaving the first two indeterminate.
+    bool matrixAutoUpdate = true, matrixWorldAutoUpdate = true, matrixWorldNeedsUpdate = false;
     Layers layers;
     bool visible = true, castShadow = false, receiveShadow = false, frustumCulled = true;
     double renderOrder = 0;
