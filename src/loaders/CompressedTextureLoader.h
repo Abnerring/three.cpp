@@ -19,9 +19,10 @@
 // maps directly: the base mip sizes the image, the mipmap chain becomes the texture's mipmaps, a single
 // mip forces the plain min filter, and the format comes from the texData.
 //
-// No differential yet: the mapping lives inside load, whose transport is a browser fetch, so comparing
-// it needs a fetch stub on the oracle side. The unit cases cover the mapping itself, and this note is
-// here rather than an implied claim that parity has been measured.
+// The differential drives load on both sides with a canned transport - fetch stubbed for the pinned
+// module, FileLoader's injectable transport here - and compares the min filter, the format and the
+// version bump. The image dimensions are compared from the typed texture in the unit cases instead:
+// their getter needs a texture source, which this loader builds only through the typed field.
 class CompressedTextureLoader : public Loader {
   public:
     explicit CompressedTextureLoader(JSValue manager={});

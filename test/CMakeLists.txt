@@ -356,6 +356,8 @@ if(THREECPP_BUILD_ADDONS)
     target_link_libraries(ThreeJsImageUtilsParityProbe PRIVATE threecpp::threecpp)
     add_executable(ThreeJsDataTextureLoaderParityProbe unit/utils/parity/DataTextureLoaderParityProbe.cpp)
     target_link_libraries(ThreeJsDataTextureLoaderParityProbe PRIVATE threecpp::threecpp)
+    add_executable(ThreeJsCompressedTextureLoaderParityProbe unit/utils/parity/CompressedTextureLoaderParityProbe.cpp)
+    target_link_libraries(ThreeJsCompressedTextureLoaderParityProbe PRIVATE threecpp::threecpp)
     target_link_libraries(ThreeJsXYZLoaderParityProbe PRIVATE threecpp::addons)
     add_executable(ThreeJsSTLLoaderParityProbe unit/utils/parity/STLLoaderParityProbe.cpp)
     target_link_libraries(ThreeJsSTLLoaderParityProbe PRIVATE threecpp::addons)
@@ -880,6 +882,9 @@ if(THREECPP_NODE_EXECUTABLE)
             add_test(NAME threecpp.threejs-data-texture-loader-parity
                 COMMAND "${THREECPP_NODE_EXECUTABLE}" "${CMAKE_CURRENT_SOURCE_DIR}/unit/utils/parity/compare-data-texture-loader.mjs"
                 "${THREEJS_SOURCE_DIR}" "$<TARGET_FILE:ThreeJsDataTextureLoaderParityProbe>")
+            add_test(NAME threecpp.threejs-compressed-texture-loader-parity
+                COMMAND "${THREECPP_NODE_EXECUTABLE}" "${CMAKE_CURRENT_SOURCE_DIR}/unit/utils/parity/compare-compressed-texture-loader.mjs"
+                "${THREEJS_SOURCE_DIR}" "$<TARGET_FILE:ThreeJsCompressedTextureLoaderParityProbe>")
             add_test(NAME threecpp.threejs-stl-loader-parity
                 COMMAND "${THREECPP_NODE_EXECUTABLE}" "${CMAKE_CURRENT_SOURCE_DIR}/unit/utils/parity/compare-stl-loader.mjs"
                 "${THREEJS_SOURCE_DIR}" "$<TARGET_FILE:ThreeJsSTLLoaderParityProbe>")
