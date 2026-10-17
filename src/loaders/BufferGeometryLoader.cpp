@@ -20,6 +20,7 @@
 #include "loaders/FileLoader.h"
 #include "math/Sphere.h"
 #include "math/Vector3.h"
+#include <cstring>
 #include <map>
 #include <memory>
 #include <string>
@@ -79,7 +80,10 @@ std::shared_ptr<InterleavedBuffer> interleavedBufferFor(const std::string& uuid)
     const auto type=spec.get("type").toString();
     std::shared_ptr<InterleavedBuffer> buffer;
     if(type=="Float32Array") {
-        const std::vector<float> values(storage.begin(),storage.end());
+        // The arrayBuffers table stores uint32 words, so a Float32 view reinterprets those bytes;
+        // copying the words into floats would give 1077936128 for 3.0.
+        std::vector<float> values(storage.size());
+        for(std::size_t index=0;index<storage.size();index+=1) std::memcpy(&values[index],&storage[index],sizeof(float));
         buffer=std::make_shared<InterleavedBuffer>(TypedArray<float>(values),spec.get("stride"));
     } else if(type=="Uint32Array") {
         buffer=std::make_shared<InterleavedBuffer>(TypedArray<std::uint32_t>(storage),spec.get("stride"));
@@ -100,8 +104,9 @@ std::shared_ptr<VertexAttribute> attributeFor(const JSValue& description) {
     if(!description.get("usage").isUndefined())
         throw JSTypeError("BufferGeometryLoader: an interleaved attribute cannot carry a usage");
     const auto buffer=interleavedBufferFor(description.get("data").toString());
-    const InterleavedBufferAttribute partial(buffer->object(),description.get("itemSize"),description.get("offset"),description.get("normalized"));
-    auto shared=std::make_shared<InterleavedBufferAttribute>(partial.object());
+    // Constructed once, with the buffer object as data: an intermediate copy is what made the two
+    // attributes point at different objects. The buffer object is the same handle for both of them.
+    auto shared=std::make_shared<InterleavedBufferAttribute>(buffer->object(),description.get("itemSize"),description.get("offset"),description.get("normalized"));
     const auto name=description.get("name");
     if(!name.isUndefined())shared->object().set("name",name);
     return std::static_pointer_cast<VertexAttribute>(shared);
