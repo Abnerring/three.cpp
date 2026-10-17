@@ -48,6 +48,10 @@
    - **差分的成品配方（两个加载器已验证，照抄即可）**：① 探针读 stdin，一行一个文档，二进制用 base64、文本用转义（`|` 代表换行、`-` 空串、`+` 空格 —— 空格必须转义，否则字段整体错位）；② 输出几何形状 + `position`/`normal`/`color` 的 **float32 位模式**（十六进制），NaN/±0 因此无歧义；③ 脚本用 **data URL** 导入固定模块（把裸 `three` 说明符改写成 `<checkout>/src/Three.js` 的 file URL），并与二进制探针**各自独立成文件**——把新文档塞进一个已经在跑的脚本，出问题时无法归因；④ mismatch 时**打印两侧对象与文档**再断言；⑤ 数组元素一律用**字符串索引**读写（整数索引会命中原名重载并当空指针）。
    - **门禁五项**（缺一不可，都是本会话踩出来的）：注册后回读 CMake ✓；构建日志里出现**库源**的 `.obj` ✓；出现**测试源**的 `.obj` ✓；**探针可执行文件已重新链接**（只重建测试目标会让旧探针继续参与比较，症状是它回一句源码里早已删除的错误文本）；退出码 + 运行器的 `parity:` 输出同时命中。
    - **诊断纪律**：失败且没有输出时，下一步一律**完整打印**而不是过滤；给**真实函数**加打印比复刻探针有效——复刻只证明你复制的那段，不证明真实函数里跑的是同一段。
+19. **lights-states 探针的性能疑点：30 秒实验即可定性**。实测对照：`threecpp.webgl-lights-states-unit` **0.25 秒**通过，而 `threecpp.threejs-webgl-lights-states-parity` 的探针**耗尽约 1805 秒 CPU 仍未完成**，相差四个数量级。由此可以排除三件事：不是移植的灯光状态逻辑本身慢（单元那半很快）；不是挂起或死循环（进度标记持续推进）；也不是 `watch`/`trace` 机制（种子 0..47 走 `mode 0`，不经过 watch，却已经是每种子约 6.7 秒）。
+   - **剩下的两个嫌疑**：① `lightsCase` 里 `manager.setup(lights)`（移植的 `WebGLLights`）在特定种子下的复杂度；② `encode(state)` 与 `JsonValue` 的深拷贝/序列化开销（探针全程用 JSON 值承载状态，宿主层开销可能被放大）。
+   - **实验（约 30 秒）**：先把探针 `main` 那一行密集代码**格式化成多行**（零逻辑改动，第 167 轮直接插桩失败过一次，原因就是那一行难以定位作用域），再在 `lightsCase` 内为 `setup` 与 `encode` 各计一次 `std::chrono`，跑 30 秒采样。若时间在 `setup` → 是移植逻辑的复杂度问题；若在 `encode`/`JsonValue` → 是**宿主层开销**，那将影响全部 parity 探针，比单个测试的时长重要得多。
+   - **测试时长本身**：`test/CMakeLists.txt` 已给该测试 `PROPERTIES TIMEOUT 7200`，但那是我估的值，**尚未用一次完整运行校准**；若确实要跑完，建议流式写日志（`ctest ... | Tee-Object -FilePath build\lights-run.log`），因为 `--output-on-failure` **不会**显示超时测试的输出，而"先捕获再打印"的写法会让整个运行期间零输出。
 10. **FileLoader 传输契约（冻结，实现时照此写，不要再设计）**：上游用 fetch / Request / Response / ReadableStream / AbortController / ProgressEvent / DOMParser / TextDecoder，原生侧没有这些宿主对象，因此把**只有一处**的宿主边界收窄成一个注入函数，其余逻辑照源码逐行移植。
    - 注入方式：模块级 `FileLoader::setTransport(JSValue)`，等价于 `globalThis.fetch`；未注入时 `load()` 显式抛错（说明未配置传输），不静默失败。
    - 传输入参：一个 JSValue 对象，字段 `url`（字符串，已过 `path` 与 `manager.resolveURL`）、`method`（恒为 GET）、`headers`（普通对象，来自 `requestHeader`）、`credentials`（`include` 或 `same-origin`，取自 `withCredentials`）、`signal`（对象，含布尔字段 `aborted`，由 `abort()` 置位）。
