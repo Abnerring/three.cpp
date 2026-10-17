@@ -56,7 +56,7 @@ void applyOptionalFields(const JSValue& description,const std::shared_ptr<Buffer
     if(!gpuType.isUndefined())attribute->gpuType=gpuType.toString();
 }
 }
-JSValue BufferGeometryLoader::parse(JSValue json) {
+std::shared_ptr<BufferGeometry> BufferGeometryLoader::parseGeometry(JSValue json) {
     if(!json.get("arrayBuffers").isUndefined())
         throw JSTypeError("BufferGeometryLoader: the arrayBuffers table is not implemented natively yet");
     if(!json.get("isInstancedBufferGeometry").isUndefined())
@@ -122,8 +122,10 @@ JSValue BufferGeometryLoader::parse(JSValue json) {
         auto object=nativeGeometry(geometry);
         object.set("userData",userData);
     }
-    return nativeGeometry(geometry);
+    return geometry;
 }
+JSValue BufferGeometryLoader::parse(JSValue json){return nativeGeometry(parseGeometry(json));}
+
 BufferGeometryLoader::BufferGeometryLoader(JSValue manager):Loader(JSValue::object(prototype()),Existing{}){initialize(object_,manager);}
 JSValue BufferGeometryLoader::prototype() {
     static thread_local auto value=[] {

@@ -1,5 +1,7 @@
-﻿#pragma once
+#pragma once
+#include "core/BufferGeometry.h"
 #include "core/JSValue.h"
+#include <memory>
 #include "loaders/Loader.h"
 
 // Port of src/loaders/BufferGeometryLoader.js at the pinned revision (see upstream.json).
@@ -19,6 +21,7 @@ class BufferGeometryLoader : public Loader {
     static BufferGeometryLoader fromObject(JSValue value){return BufferGeometryLoader(std::move(value),Existing{});}
     static JSValue prototype();
     JSValue parse(JSValue json);
+    std::shared_ptr<BufferGeometry> parseGeometry(JSValue json);
     JSValue load(JSValue url={},JSValue onLoad={},JSValue onProgress={},JSValue onError={});
   private:
     BufferGeometryLoader(JSValue value,Existing):Loader(std::move(value),Existing{}) {}
