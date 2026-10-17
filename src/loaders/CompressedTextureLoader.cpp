@@ -1,7 +1,8 @@
-﻿#include "loaders/CompressedTextureLoader.h"
+#include "loaders/CompressedTextureLoader.h"
 #include "constants.h"
 #include "core/NativeObject.h"
 #include "loaders/FileLoader.h"
+#include <cstdio>
 #include <memory>
 #include <string>
 #include <vector>
@@ -44,7 +45,8 @@ void CompressedTextureLoader::applyTexData(const std::shared_ptr<CompressedTextu
     texture->version+=1;
 }
 JSValue CompressedTextureLoader::load(JSValue url,JSValue onLoad,JSValue onProgress,JSValue onError){
-    if(!url.get("length").isUndefined())
+    // A string also has a length, so the six-url array form is recognised by the value being an object.
+    if(url.type()==JSValue::Type::Object&&!url.get("length").isUndefined())
         throw JSTypeError("CompressedTextureLoader: the six-url array form is not implemented natively");
     auto texture=std::make_shared<CompressedTexture>();
     pendingTexture()=texture;

@@ -1,8 +1,13 @@
-﻿#include "catch.hpp"
+#include "catch.hpp"
 #include "animation/AnimationUtils.h"
 #include "constants.h"
 #include "core/JSValue.h"
 #include "loaders/CompressedTextureLoader.h"
+#include "loaders/FileLoader.h"
+#include "core/NativeArray.h"
+#include "core/NativeObject.h"
+#include <cstdint>
+#include <vector>
 #include <memory>
 #include <string>
 
