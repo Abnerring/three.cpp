@@ -576,6 +576,8 @@ add_executable(ThreeJsLoaderFoundationParityProbe unit/utils/parity/LoaderFounda
 target_link_libraries(ThreeJsLoaderFoundationParityProbe PRIVATE threecpp::threecpp)
 add_executable(ThreeJsLoaderParsersParityProbe unit/utils/parity/LoaderParsersParityProbe.cpp)
 target_link_libraries(ThreeJsLoaderParsersParityProbe PRIVATE threecpp::threecpp)
+    add_executable(ThreeJsTangentsParityProbe unit/utils/parity/TangentsParityProbe.cpp)
+    target_link_libraries(ThreeJsTangentsParityProbe PRIVATE threecpp::threecpp)
 add_executable(ThreeJsInterleavedAttributeParityProbe unit/utils/parity/InterleavedAttributeParityProbe.cpp)
 target_link_libraries(ThreeJsInterleavedAttributeParityProbe PRIVATE threecpp::threecpp)
 add_executable(ThreeJsLODParityProbe unit/utils/parity/LODParityProbe.cpp)
@@ -903,6 +905,9 @@ if(THREECPP_NODE_EXECUTABLE)
             add_test(NAME threecpp.threejs-loader-parsers-parity
                 COMMAND "${THREECPP_NODE_EXECUTABLE}" "${CMAKE_CURRENT_SOURCE_DIR}/unit/utils/parity/compare-loader-parsers.mjs"
                 "${THREEJS_SOURCE_DIR}" "$<TARGET_FILE:ThreeJsLoaderParsersParityProbe>")
+            add_test(NAME threecpp.threejs-tangents-parity
+                COMMAND "${THREECPP_NODE_EXECUTABLE}" "${CMAKE_CURRENT_SOURCE_DIR}/unit/utils/parity/compare-tangents.mjs"
+                "${THREEJS_SOURCE_DIR}" "$<TARGET_FILE:ThreeJsTangentsParityProbe>")
             add_test(NAME threecpp.threejs-math-utils-parity
                 COMMAND "${THREECPP_NODE_EXECUTABLE}" "${CMAKE_CURRENT_SOURCE_DIR}/unit/utils/parity/compare-math-utils.mjs"
                 "${THREEJS_SOURCE_DIR}" "$<TARGET_FILE:ThreeJsMathUtilsParityProbe>")

@@ -69,6 +69,9 @@ class BufferGeometry : public EventDispatcher, public std::enable_shared_from_th
     BufferGeometry& setFromPoints(const std::vector<Vector3>& points);
     void computeBoundingBox();
     void computeBoundingSphere();
+    // Upstream logs and returns when the index, positions, normals or uvs are missing, so this returns
+    // without changing anything rather than throwing. Degenerate uv triangles are skipped the same way.
+    void computeTangents();
     void computeVertexNormals();
     void normalizeNormals();
     std::shared_ptr<BufferGeometry> toNonIndexed();

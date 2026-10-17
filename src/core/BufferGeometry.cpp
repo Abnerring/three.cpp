@@ -345,3 +345,75 @@ BufferGeometry& BufferGeometry::lookAt(const Vector3& vector) {
     scratch.updateMatrix();
     return applyMatrix4(scratch.matrix);
 }
+void BufferGeometry::computeTangents() {
+    // Based on http://www.terathon.com/code/tangent.html, per vertex tangents.
+    const auto positionAttribute = std::dynamic_pointer_cast<BufferAttribute>(getAttribute("position"));
+    const auto normalAttribute = std::dynamic_pointer_cast<BufferAttribute>(getAttribute("normal"));
+    const auto uvAttribute = std::dynamic_pointer_cast<BufferAttribute>(getAttribute("uv"));
+    if (!index || !positionAttribute || !normalAttribute || !uvAttribute) {
+        // Upstream reports the missing attributes on the console and returns; nothing changes here.
+        return;
+    }
+    const auto positionCount = static_cast<std::size_t>(positionAttribute->count);
+    auto tangent = std::dynamic_pointer_cast<BufferAttribute>(getAttribute("tangent"));
+    if (!tangent || tangent->count != positionAttribute->count) {
+        tangent = std::make_shared<Float32BufferAttribute>(std::vector<float>(4 * positionCount, 0.0f), 4);
+        setAttribute("tangent", tangent);
+    }
+    std::vector<Vector3> tan1(positionCount), tan2(positionCount);
+    std::vector<std::uint8_t> used(positionCount, 0);
+    Vector3 vA, vB, vC, sdir, tdir;
+    Vector2 uvA, uvB, uvC;
+    const auto handleTriangle = [&](double a, double b, double c) {
+        used[static_cast<std::size_t>(a)] = used[static_cast<std::size_t>(b)] = used[static_cast<std::size_t>(c)] = 1;
+        const auto read3 = [](const std::shared_ptr<BufferAttribute>& attribute, double i, Vector3& target) {
+            target.x = attribute->getX(i); target.y = attribute->getY(i); target.z = attribute->getZ(i);
+        };
+        const auto read2 = [](const std::shared_ptr<BufferAttribute>& attribute, double i, Vector2& target) {
+            target.x = attribute->getX(i); target.y = attribute->getY(i);
+        };
+        read3(positionAttribute, a, vA); read3(positionAttribute, b, vB); read3(positionAttribute, c, vC);
+        read2(uvAttribute, a, uvA); read2(uvAttribute, b, uvB); read2(uvAttribute, c, uvC);
+        vB.sub(vA); vC.sub(vA);
+        uvB.sub(uvA); uvC.sub(uvA);
+        const double r = 1.0 / (uvB.x * uvC.y - uvC.x * uvB.y);
+        // Degenerate uv triangles are ignored, exactly as upstream does when r is not finite.
+        if (!std::isfinite(r)) return;
+        sdir.copy(vB).multiplyScalar(uvC.y).addScaledVector(vC, -uvB.y).multiplyScalar(r);
+        tdir.copy(vC).multiplyScalar(uvB.x).addScaledVector(vB, -uvC.x).multiplyScalar(r);
+        tan1[static_cast<std::size_t>(a)].add(sdir);
+        tan1[static_cast<std::size_t>(b)].add(sdir);
+        tan1[static_cast<std::size_t>(c)].add(sdir);
+        tan2[static_cast<std::size_t>(a)].add(tdir);
+        tan2[static_cast<std::size_t>(b)].add(tdir);
+        tan2[static_cast<std::size_t>(c)].add(tdir);
+    };
+    const auto indexCount = index->count;
+    if (groups.empty()) {
+        // Upstream falls back to a single implicit group covering the whole index buffer.
+        for (double j = 0; j < indexCount; j += 3)
+            handleTriangle(index->getX(j + 0), index->getX(j + 1), index->getX(j + 2));
+    } else {
+        for (std::size_t g = 0; g < groups.size(); ++g) {
+            const auto& group = groups[g];
+            for (double j = group.start; j < group.start + group.count; j += 3)
+                handleTriangle(index->getX(j + 0), index->getX(j + 1), index->getX(j + 2));
+        }
+    }
+    Vector3 tmp, tmp2, n, n2;
+    for (std::size_t v = 0; v < positionCount; ++v) {
+        if (!used[v]) continue;
+        n.x = normalAttribute->getX(static_cast<double>(v));
+        n.y = normalAttribute->getY(static_cast<double>(v));
+        n.z = normalAttribute->getZ(static_cast<double>(v));
+        n2.copy(n);
+        tmp.copy(tan1[v]);
+        // Gram-Schmidt orthogonalize, then take the handedness from the bitangent.
+        tmp.sub(n.multiplyScalar(n.dot(tan1[v]))).normalize();
+        tmp2.crossVectors(n2, tan1[v]);
+        const double test = tmp2.dot(tan2[v]);
+        const double w = (test < 0.0) ? -1.0 : 1.0;
+        tangent->setXYZW(static_cast<double>(v), tmp.x, tmp.y, tmp.z, w);
+    }
+    this->_transformed = true;
+}
