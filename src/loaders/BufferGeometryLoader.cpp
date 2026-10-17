@@ -11,6 +11,7 @@
 // branch is recorded rather than reproduced.
 #include "loaders/BufferGeometryLoader.h"
 #include "core/BufferAttribute.h"
+#include "core/InstancedBufferAttribute.h"
 #include "core/BufferGeometry.h"
 #include "core/InstancedBufferGeometry.h"
 #include "core/InterleavedBuffer.h"
@@ -45,9 +46,14 @@ std::shared_ptr<BufferAttribute> typedAttribute(const JSValue& description,doubl
     numbers.reserve(static_cast<std::size_t>(length<0?0:length));
     for(double index=0;index<length;index+=1)
         numbers.push_back(values.get(std::to_string(static_cast<long long>(index))).toNumber());
-    const auto build=[&](auto tag) {
+    // An instanced attribute is a different class, and upstream builds one here; falling through to the
+    // plain class would silently drop the per-instance data.
+    const auto instanced=description.get("isInstancedBufferAttribute").toBoolean();
+    const auto meshPerAttribute=description.get("meshPerAttribute");
+    const auto build=[&](auto tag) -> std::shared_ptr<BufferAttribute> {
         using Element=decltype(tag);
         const std::vector<Element> converted(numbers.begin(),numbers.end());
+        if(instanced) return std::make_shared<InstancedBufferAttribute>(TypedArray<Element>(converted),itemSize,normalized,meshPerAttribute);
         return std::make_shared<TypedBufferAttribute<Element>>(converted,itemSize,normalized);
     };
     if(type=="Float32Array")return build(float{});
@@ -66,7 +72,7 @@ void applyOptionalFields(const JSValue& description,const std::shared_ptr<Buffer
     const auto usage=description.get("usage");
     if(!usage.isUndefined())attribute->setUsage(static_cast<int>(usage.toNumber()));
     const auto gpuType=description.get("gpuType");
-    if(!gpuType.isUndefined())attribute->gpuType=gpuType.toString();
+    if(!gpuType.isUndefined())attribute->gpuType=gpuType;   // upstream keeps the number, not its spelling
 }
 thread_local JSValue interleavedData;
 thread_local std::map<std::string,std::shared_ptr<InterleavedBuffer>> interleavedCache;
@@ -119,7 +125,8 @@ std::shared_ptr<BufferGeometry> BufferGeometryLoader::parseGeometry(JSValue json
     const auto data=json.get("data");
     interleavedCache.clear();
     interleavedData=data;
-    auto geometry=json.get("isInstancedBufferGeometry").isUndefined()
+    // Upstream tests the flag for truth, not presence: an explicit false is a plain geometry.
+    auto geometry=!json.get("isInstancedBufferGeometry").toBoolean()
         ? std::static_pointer_cast<BufferGeometry>(std::make_shared<BufferGeometry>())
         : std::static_pointer_cast<BufferGeometry>(std::make_shared<InstancedBufferGeometry>());
     const auto index=data.get("index");
