@@ -42,6 +42,11 @@
    - **检查点命令应显式排除并写明理由**：`ctest --test-dir build -R parity -E "webgl-lights-states" -j 4`。过去几轮我是"默默排除"的，直到本轮才把它跑到底并拿到证据；**排除项必须带证据**，否则与"把失败藏起来"没有区别。
    - **尚未查明它挂在哪里**：单元那一半通过，说明被测的灯光状态逻辑本身没问题，问题在 parity 那一半的驱动（Node 侧或探针侧的等待未结束）。要查就先给它一个更短的超时（例如 `--timeout 120`）再抓输出，或直接手动跑它的 `.mjs` 看停在哪一步。
    - 这是**本环境/该驱动的缺陷**，不是移植回归：同一提交下其它 134 个差分全部通过，且该用例的单元部分通过。
+18. **下一个加载器：依赖已核查，骨架已定型**。九种类型化属性（`Int8/Uint8/Uint8Clamped/Int16/Uint16/Int32/Uint32/Float32/Float64`）都已在 `src/core/BufferAttribute.h` 里存在，因此 `PLYLoader` 的依赖面**已就绪**，不需要先补属性类。剩余 jsm 加载器的上游规模：`GCodeLoader` 312 行、`MD2Loader` 435、`PCDLoader` 622、`NRRDLoader` 718、`VOXLoader` 919、`PLYLoader` 990（`XYZLoader` 143 与 `STLLoader` 421 已完成）。
+   - **建议顺序**：先 `PLYLoader`（覆盖面最大，元素/属性表的结构会顺带为 `PCDLoader`、`NRRDLoader` 打通同一条路）；若要快速闭环则先 `GCodeLoader`，但它产出对象树而非单个几何，差分要比较的字段更多。
+   - **差分的成品配方（两个加载器已验证，照抄即可）**：① 探针读 stdin，一行一个文档，二进制用 base64、文本用转义（`|` 代表换行、`-` 空串、`+` 空格 —— 空格必须转义，否则字段整体错位）；② 输出几何形状 + `position`/`normal`/`color` 的 **float32 位模式**（十六进制），NaN/±0 因此无歧义；③ 脚本用 **data URL** 导入固定模块（把裸 `three` 说明符改写成 `<checkout>/src/Three.js` 的 file URL），并与二进制探针**各自独立成文件**——把新文档塞进一个已经在跑的脚本，出问题时无法归因；④ mismatch 时**打印两侧对象与文档**再断言；⑤ 数组元素一律用**字符串索引**读写（整数索引会命中原名重载并当空指针）。
+   - **门禁五项**（缺一不可，都是本会话踩出来的）：注册后回读 CMake ✓；构建日志里出现**库源**的 `.obj` ✓；出现**测试源**的 `.obj` ✓；**探针可执行文件已重新链接**（只重建测试目标会让旧探针继续参与比较，症状是它回一句源码里早已删除的错误文本）；退出码 + 运行器的 `parity:` 输出同时命中。
+   - **诊断纪律**：失败且没有输出时，下一步一律**完整打印**而不是过滤；给**真实函数**加打印比复刻探针有效——复刻只证明你复制的那段，不证明真实函数里跑的是同一段。
 10. **FileLoader 传输契约（冻结，实现时照此写，不要再设计）**：上游用 fetch / Request / Response / ReadableStream / AbortController / ProgressEvent / DOMParser / TextDecoder，原生侧没有这些宿主对象，因此把**只有一处**的宿主边界收窄成一个注入函数，其余逻辑照源码逐行移植。
    - 注入方式：模块级 `FileLoader::setTransport(JSValue)`，等价于 `globalThis.fetch`；未注入时 `load()` 显式抛错（说明未配置传输），不静默失败。
    - 传输入参：一个 JSValue 对象，字段 `url`（字符串，已过 `path` 与 `manager.resolveURL`）、`method`（恒为 GET）、`headers`（普通对象，来自 `requestHeader`）、`credentials`（`include` 或 `same-origin`，取自 `withCredentials`）、`signal`（对象，含布尔字段 `aborted`，由 `abort()` 置位）。
