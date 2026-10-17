@@ -26,6 +26,7 @@
 #include "objects/Sprite.h"
 #include "scenes/FogExp2.h"
 #include "scenes/Scene.h"
+#include "textures/Texture.h"
 #include <cctype>
 #include <stdexcept>
 
@@ -71,9 +72,46 @@ ObjectLoader::Result ObjectLoader::parse(const JSValue& json) {
             if (const auto userData = data.get("userData").toJSON()) geometry->userData = *userData;
             geometries_[geometry->uuid] = geometry;
         }
-    const auto materialList = json.get("materials");
+    const auto textureList = json.get("textures");
+    if (!textureList.isUndefined())
+        for (double index = 0; index < textureList.length(); index += 1) {
+            const auto data = textureList.get(index);
+            // Images are a host concern, so no source is attached here; every other field is pure data and is
+            // carried over exactly. Upstream builds a cube or data texture when the image says so, and with no
+            // image it builds the plain one, which is the branch this port always takes.
+            const auto texture = std::make_shared<Texture>();
+            texture->uuid = data.get("uuid").toString();
+            if (!data.get("name").isUndefined()) texture->name = data.get("name").toString();
+            if (!data.get("mapping").isUndefined()) texture->mapping = data.get("mapping").toNumber();
+            if (!data.get("channel").isUndefined()) texture->channel = data.get("channel").toNumber();
+            if (!data.get("offset").isUndefined()) texture->offset.fromArray(numbers(data.get("offset")));
+            if (!data.get("repeat").isUndefined()) texture->repeat.fromArray(numbers(data.get("repeat")));
+            if (!data.get("center").isUndefined()) texture->center.fromArray(numbers(data.get("center")));
+            if (!data.get("rotation").isUndefined()) texture->rotation = data.get("rotation").toNumber();
+            if (!data.get("wrap").isUndefined()) {
+                texture->wrapS = data.get("wrap").get("0").toNumber();
+                texture->wrapT = data.get("wrap").get("1").toNumber();
+            }
+            if (!data.get("format").isUndefined()) texture->format = data.get("format").toNumber();
+            if (!data.get("internalFormat").isUndefined()) texture->internalFormat = data.get("internalFormat").toString();
+            if (!data.get("type").isUndefined()) texture->type = data.get("type").toNumber();
+            if (!data.get("colorSpace").isUndefined()) texture->colorSpace = data.get("colorSpace").toString();
+            if (!data.get("minFilter").isUndefined()) texture->minFilter = data.get("minFilter").toNumber();
+            if (!data.get("magFilter").isUndefined()) texture->magFilter = data.get("magFilter").toNumber();
+            if (!data.get("anisotropy").isUndefined()) texture->anisotropy = data.get("anisotropy").toNumber();
+            if (!data.get("flipY").isUndefined()) texture->flipY = data.get("flipY").toBoolean();
+            if (!data.get("generateMipmaps").isUndefined()) texture->generateMipmaps = data.get("generateMipmaps").toBoolean();
+            if (!data.get("mipmapsAutoUpdate").isUndefined()) texture->mipmapsAutoUpdate = data.get("mipmapsAutoUpdate").toBoolean();
+            if (!data.get("premultiplyAlpha").isUndefined()) texture->premultiplyAlpha = data.get("premultiplyAlpha").toBoolean();
+            if (!data.get("unpackAlignment").isUndefined()) texture->unpackAlignment = data.get("unpackAlignment").toNumber();
+            if (!data.get("normalized").isUndefined()) texture->normalized = data.get("normalized").toBoolean();
+            if (!data.get("compareFunction").isUndefined())
+                throw std::runtime_error("ObjectLoader: texture compare functions are not ported yet");
+            textures_[texture->uuid] = texture;
+        }    const auto materialList = json.get("materials");
     if (!materialList.isUndefined()) {
         MaterialLoader loader;
+        loader.setTextures(textures_);
         for (double index = 0; index < materialList.length(); index += 1) {
             const auto data = materialList.get(index);
             const auto uuid = data.get("uuid").toString();

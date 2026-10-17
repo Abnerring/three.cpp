@@ -17,6 +17,7 @@
 #include "scenes/Fog.h"
 #include "scenes/FogExp2.h"
 #include "scenes/Scene.h"
+#include "textures/Texture.h"
 #include <memory>
 #include <stdexcept>
 
@@ -248,4 +249,33 @@ TEST_CASE("ObjectLoader restores the levels of a level of detail node") {
     REQUIRE(levels.length() == 2.0);
     REQUIRE(levels.get("0").get("distance").toNumber() == 10.0);
     REQUIRE(levels.get("1").get("distance").toNumber() == 20.0);
+}
+// Texture records are pure data apart from the image, which is a host concern, so every other field is
+// carried over and the material that references the texture by uuid resolves to it.
+TEST_CASE("ObjectLoader builds texture records and resolves them from materials") {
+    const auto realm = JSValue::object();
+    static_cast<void>(realm);
+    const auto json = Animation_detail::parseJSON(R"({
+        "object": {"type": "Mesh", "uuid": "mesh", "material": "m", "geometry": "g"},
+        "geometries": [{"type": "BufferGeometry", "uuid": "g", "data": {"attributes": {}}}],
+        "textures": [{"uuid": "tex", "name": "checker", "repeat": [2, 3], "wrap": [1000, 1001],
+            "magFilter": 1006, "colorSpace": "srgb", "flipY": false}],
+        "materials": [{"type": "MeshBasicMaterial", "uuid": "m", "color": 255, "map": "tex"}]
+    })");
+    ObjectLoader loader;
+    const auto result = loader.parse(json);
+    const auto mesh = std::dynamic_pointer_cast<Mesh>(result.object);
+    REQUIRE(mesh);
+    REQUIRE(mesh->material);
+    const auto material = std::dynamic_pointer_cast<MeshBasicMaterial>(mesh->material);
+    REQUIRE(material);
+    REQUIRE(material->map);
+    REQUIRE(material->map->uuid == "tex");
+    REQUIRE(material->map->repeat.x == 2.0);
+    REQUIRE(material->map->repeat.y == 3.0);
+    REQUIRE(material->map->wrapS == 1000.0);
+    REQUIRE(material->map->wrapT == 1001.0);
+    REQUIRE(material->map->magFilter == 1006.0);
+    REQUIRE(material->map->colorSpace == "srgb");
+    REQUIRE(material->map->flipY == false);
 }
