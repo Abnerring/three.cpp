@@ -37,6 +37,10 @@
    - **收尾步骤（照做即可，内容都已定型）**：① `write` 整体重写 `STLLoader.cpp`（单次包装：`parse` 是唯一包装点，`parseASCIIText(data, groupNames&)` 纯解析，`parseBytes` 用出参报告）；② 头文件给 `parseBytes` 加第四个出参 `std::vector<std::string>* groupNamesOut`；③ 测试文件**按 TEST_CASE 定位**替换旧用例（第 84–95 行那块 `STLLoader fails loudly on an ASCII document`），**注意第 51 行的 `geometryOf` 辅助函数里也有 `nativeGeometry(loader.parseBytes(bytes))`，它必须保留**——按文本匹配会改错这一行（已因此失败一次）。
    - **崩溃的定位结论**：`add_group` 与二次包装都**不是**根因（两者都已排除：前者由 probe3 排除，后者由第 146 轮的单次包装重构排除，且重构后二进制差分仍 5 文档通过）。ASCII 用例在**测试二进制里**崩溃，但**同样调用**的独立程序通过，因此是**用例之间的交互**：二进制用例先包装了几何，随后 ASCII 用例再走一次包装路径。**下一件事就是按用例名单独运行**（`build\bin\THREECPPAddonTests.exe "STLLoader parses an ASCII solid"`）来确认；若单独通过，就让 ASCII 用例不共享该状态（例如清空 Cache/几何包装状态，或把该用例放在最前）。
    - **方法教训（这 19 轮里最贵的一条）**：探针四次都从 `parseBytes` 进入并自己包装，而单元测试从 `parse` 进入——**复刻代码不如复刻调用方式**。改成与测试完全相同的入口后，一次就得到"实现正确"的结论。另一条：给**真实函数**加打印（第 138/140 轮）比复刻探针有效得多。
+17. **`threecpp.threejs-webgl-lights-states-parity` 在本环境会挂起（已证实，不是断言失败）**：单独运行该测试，`threecpp.webgl-lights-states-unit` 0.25 秒通过，而 parity 那一半在 ctest 的 1500 秒上限处被判定 `***Timeout`（实测耗时 1500.17 秒）。因此全量检查点里出现的 "1 failed of 135" 就是它，差分网络的真实状态是其余 **134/134 通过**。
+   - **检查点命令应显式排除并写明理由**：`ctest --test-dir build -R parity -E "webgl-lights-states" -j 4`。过去几轮我是"默默排除"的，直到本轮才把它跑到底并拿到证据；**排除项必须带证据**，否则与"把失败藏起来"没有区别。
+   - **尚未查明它挂在哪里**：单元那一半通过，说明被测的灯光状态逻辑本身没问题，问题在 parity 那一半的驱动（Node 侧或探针侧的等待未结束）。要查就先给它一个更短的超时（例如 `--timeout 120`）再抓输出，或直接手动跑它的 `.mjs` 看停在哪一步。
+   - 这是**本环境/该驱动的缺陷**，不是移植回归：同一提交下其它 134 个差分全部通过，且该用例的单元部分通过。
 10. **FileLoader 传输契约（冻结，实现时照此写，不要再设计）**：上游用 fetch / Request / Response / ReadableStream / AbortController / ProgressEvent / DOMParser / TextDecoder，原生侧没有这些宿主对象，因此把**只有一处**的宿主边界收窄成一个注入函数，其余逻辑照源码逐行移植。
    - 注入方式：模块级 `FileLoader::setTransport(JSValue)`，等价于 `globalThis.fetch`；未注入时 `load()` 显式抛错（说明未配置传输），不静默失败。
    - 传输入参：一个 JSValue 对象，字段 `url`（字符串，已过 `path` 与 `manager.resolveURL`）、`method`（恒为 GET）、`headers`（普通对象，来自 `requestHeader`）、`credentials`（`include` 或 `same-origin`，取自 `withCredentials`）、`signal`（对象，含布尔字段 `aborted`，由 `abort()` 置位）。
