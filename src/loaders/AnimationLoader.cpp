@@ -1,4 +1,4 @@
-﻿#include "loaders/AnimationLoader.h"
+#include "loaders/AnimationLoader.h"
 #include "animation/AnimationClip.h"
 #include "animation/AnimationRuntime.h"
 #include "core/JsonValue.h"
@@ -11,7 +11,7 @@ namespace {
 using Args = std::vector<JSValue>;
 JSValue arg(const Args& args,std::size_t index){return index<args.size()?args[index]:JSValue{};}
 }
-JSValue AnimationLoader::parse(JSValue json) {
+std::vector<std::shared_ptr<AnimationClip>> AnimationLoader::parseAnimations(JSValue json) {
     // Reading an array goes through a string index: an integer one selects the name overload of get
     // and is read as a null pointer, which is the trap that cost several rounds on STLLoader.
     const auto length=json.get("length").toNumber();
@@ -19,7 +19,12 @@ JSValue AnimationLoader::parse(JSValue json) {
     clips->reserve(static_cast<std::size_t>(length<0?0:length));
     for(double index=0;index<length;index+=1)
         clips->push_back(AnimationClip::parse(json.get(std::to_string(static_cast<long long>(index)))));
-    return nativeAnimationClips(clips);
+    return *clips;
+}
+
+// parse is the JS door over the same loop, so the two entry points cannot drift apart.
+JSValue AnimationLoader::parse(JSValue json) {
+    return nativeAnimationClips(std::make_shared<std::vector<std::shared_ptr<AnimationClip>>>(parseAnimations(json)));
 }
 AnimationLoader::AnimationLoader(JSValue manager):Loader(JSValue::object(prototype()),Existing{}){initialize(object_,manager);}
 JSValue AnimationLoader::prototype() {

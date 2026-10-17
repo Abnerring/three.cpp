@@ -1,5 +1,8 @@
-﻿#pragma once
+#pragma once
+#include "animation/AnimationClip.h"
 #include "core/JSValue.h"
+#include <memory>
+#include <vector>
 #include "loaders/Loader.h"
 
 // Port of src/loaders/AnimationLoader.js at the pinned revision (see upstream.json).
@@ -15,6 +18,8 @@ class AnimationLoader : public Loader {
     static AnimationLoader fromObject(JSValue value){return AnimationLoader(std::move(value),Existing{});}
     static JSValue prototype();
     JSValue parse(JSValue json);
+    // The typed entry point: the probes and any native caller want the clips, not a JS array.
+    std::vector<std::shared_ptr<AnimationClip>> parseAnimations(JSValue json);
     JSValue load(JSValue url={},JSValue onLoad={},JSValue onProgress={},JSValue onError={});
   private:
     AnimationLoader(JSValue value,Existing):Loader(std::move(value),Existing{}) {}
