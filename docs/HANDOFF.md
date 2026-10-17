@@ -68,6 +68,12 @@
    - **三个薄封装的语义**：`TextureLoader.load` 造 `Texture` ✓ 并设 `image` 与 `needsUpdate` ✓；`CubeTextureLoader.load` 取 6 张图 ✓，顺序必须是 `px, nx, py, ny, pz, nz` ✓，再交给 `CubeTexture` ✓。
    - **差分方式**：上游侧在脚本里**垫一个最小 `Image`**（就像 `file-loader` 差分里垫 `ProgressEvent` ✓），让 `ImageLoader` 的图片解码走我们提供的像素；比较 `texture.image` 的宽、高与前若干像素的**原始字节** ✓。这样两侧语义一致 ✓，且不需要浏览器 ✓。
    - **验收**：注入式解码器的单测（成功 ✓、解码器抛错 ✓、未注入时抛错 ✓、`Cache` 命中 ✓）+ 差分（`TextureLoader` 与 `CubeTextureLoader` 各一组 ✓）。
+23. **`CubeTextureLoader` 的未完成线索，以及"WIP 会破坏审计门禁"这条硬约束**。
+   - `CubeTextureLoader` 本身极薄（上游 25 行逻辑 ✓）：6 次 `ImageLoader.load`、按索引写 `images[i]`、`loaded === 6` 才回调 `onLoad`、`colorSpace = "srgb"`、同步返回纹理 ✓。实现与编译都曾一次通过 ✓，但两个用例卡在 `Expected runtime object`（由 `CacheStore::add` 里的 `validate` → `JSWeakValue(value)` 抛出）。
+   - **已排除的假设**（都是实验证实的，不要再重复）：文件名跨用例复用 ✗（改成唯一名后毫无变化）；循环没执行 ✗（打印显示 `length=6`、`index=0` 已执行）；没进 `ImageLoader::load` ✗（打印显示已进入）；realm 缺失 ✗（`hasActiveHeap()==1`）；manager 是普通对象 ✗（`LoadingManager::fromObject` 正常工作）；**`Cache.add` 是抛点** ✗✗（单独注释掉它反而让失败从 2 个变成 3 个，说明它是必需的）。
+   - **已确证的事实**：抛点在 `Cache.get` 之后 ✓；`key` 是 String、`created` 是 Object、活动堆存在 ✓；`CacheStore::add` = `validate(key) + validate(file) + requireRealm() + cache.get("add").call(...)` ✓；`requireRealm` 的消息是 "Cache mutation requires a live JSValue realm"，**与实测消息不同** ✓ → 抛点来自 `validate` 或 JS 侧 `add`。
+   - **下一步（最小单变量）**：把 `created.set("complete",true)` 单独注释掉跑一次；再单独注释 `decoder.call(...)`。**一次只改一行**，因为第 247、248 两轮各因一次改多处而得到误导性结果 ✗。
+   - **硬约束（本轮踩到）**：工作树里留**未跟踪**的 `.h/.cpp` 会让 `port-audit` 失败（审计把它们计入清单，与已提交的 `port-status.json` 不一致），退出码 8。也就是说"未验证的 WIP"不是无害的——它会以门禁变红的方式显形。**结论**：要么验证到绿并提交，要么删掉。
 10. **FileLoader 传输契约（冻结，实现时照此写，不要再设计）**：上游用 fetch / Request / Response / ReadableStream / AbortController / ProgressEvent / DOMParser / TextDecoder，原生侧没有这些宿主对象，因此把**只有一处**的宿主边界收窄成一个注入函数，其余逻辑照源码逐行移植。
    - 注入方式：模块级 `FileLoader::setTransport(JSValue)`，等价于 `globalThis.fetch`；未注入时 `load()` 显式抛错（说明未配置传输），不静默失败。
    - 传输入参：一个 JSValue 对象，字段 `url`（字符串，已过 `path` 与 `manager.resolveURL`）、`method`（恒为 GET）、`headers`（普通对象，来自 `requestHeader`）、`credentials`（`include` 或 `same-origin`，取自 `withCredentials`）、`signal`（对象，含布尔字段 `aborted`，由 `abort()` 置位）。
