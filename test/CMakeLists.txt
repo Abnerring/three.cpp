@@ -590,6 +590,8 @@ target_link_libraries(ThreeJsLoaderParsersParityProbe PRIVATE threecpp::threecpp
     target_link_libraries(ThreeJsLine3TriangleParityProbe PRIVATE threecpp::threecpp)
     add_executable(ThreeJsSphericalCylindricalBox2ParityProbe unit/utils/parity/SphericalCylindricalBox2ParityProbe.cpp)
     target_link_libraries(ThreeJsSphericalCylindricalBox2ParityProbe PRIVATE threecpp::threecpp)
+    add_executable(ThreeJsFogExternalParityProbe unit/utils/parity/FogExternalParityProbe.cpp)
+    target_link_libraries(ThreeJsFogExternalParityProbe PRIVATE threecpp::threecpp)
 add_executable(ThreeJsInterleavedAttributeParityProbe unit/utils/parity/InterleavedAttributeParityProbe.cpp)
 target_link_libraries(ThreeJsInterleavedAttributeParityProbe PRIVATE threecpp::threecpp)
 add_executable(ThreeJsLODParityProbe unit/utils/parity/LODParityProbe.cpp)
@@ -938,6 +940,9 @@ if(THREECPP_NODE_EXECUTABLE)
             add_test(NAME threecpp.threejs-spherical-cylindrical-box2-parity
                 COMMAND "${THREECPP_NODE_EXECUTABLE}" "${CMAKE_CURRENT_SOURCE_DIR}/unit/utils/parity/compare-spherical-cylindrical-box2.mjs"
                 "${THREEJS_SOURCE_DIR}" "$<TARGET_FILE:ThreeJsSphericalCylindricalBox2ParityProbe>")
+            add_test(NAME threecpp.threejs-fog-external-parity
+                COMMAND "${THREECPP_NODE_EXECUTABLE}" "${CMAKE_CURRENT_SOURCE_DIR}/unit/utils/parity/compare-fog-external.mjs"
+                "${THREEJS_SOURCE_DIR}" "$<TARGET_FILE:ThreeJsFogExternalParityProbe>")
             add_test(NAME threecpp.threejs-math-utils-parity
                 COMMAND "${THREECPP_NODE_EXECUTABLE}" "${CMAKE_CURRENT_SOURCE_DIR}/unit/utils/parity/compare-math-utils.mjs"
                 "${THREEJS_SOURCE_DIR}" "$<TARGET_FILE:ThreeJsMathUtilsParityProbe>")
