@@ -49,11 +49,11 @@ std::shared_ptr<BufferAttribute> typedAttribute(const JSValue& description,doubl
     // An instanced attribute is a different class, and upstream builds one here; falling through to the
     // plain class would silently drop the per-instance data.
     const auto instanced=description.get("isInstancedBufferAttribute").toBoolean();
-    const auto meshPerAttribute=description.get("meshPerAttribute");
     const auto build=[&](auto tag) -> std::shared_ptr<BufferAttribute> {
         using Element=decltype(tag);
         const std::vector<Element> converted(numbers.begin(),numbers.end());
-        if(instanced) return std::make_shared<InstancedBufferAttribute>(TypedArray<Element>(converted),itemSize,normalized,meshPerAttribute);
+        // Upstream passes only the array, the item size and the normalized flag here, so meshPerAttribute keeps its default even when the document carries one.
+        if(instanced) return std::make_shared<InstancedBufferAttribute>(TypedArray<Element>(converted),itemSize,normalized);
         return std::make_shared<TypedBufferAttribute<Element>>(converted,itemSize,normalized);
     };
     if(type=="Float32Array")return build(float{});
