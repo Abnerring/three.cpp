@@ -83,6 +83,11 @@
    - 也就是说：除着色器图（`src/nodes/`）与渲染后端（`src/renderers/`）之外，端口里**每一个已移植模块都有针对上游模块的差分**，且都是 bit-exact（数值数组按 float32 位模式、`-0`/`NaN`/`±Infinity` 显式编码）。
    - **建议把这个扫描固化成例行检查**：新增任何模块后跑一次，缺口数必须回到 0，否则就是"加了代码没加验证"。
    - 同类扫描还有两个：**方法级缺口**（第 18 轮用过，比对上游方法名与本地头文件）与 **与布局相关的崩溃**（第 24 条）。三者合起来构成"移植完成度"的三个正交维度：模块存在 ✓、方法齐备 ✓、行为一致 ✓。
+26. **加功能时先看旧的否定断言；调试时先看完整输出**。两条经验在本会话各出现三次，都是"代码没错、做法错了"的类型。
+   - **旧断言会拒绝新功能**：`ObjectLoader` 的切片依次加入 `Points`、`InstancedMesh`、`SkinnedMesh` 时，三次都有一条旧用例写着 `REQUIRE_THROWS_AS(parse({type:"..."}), runtime_error)`，而被点名的正是刚实现的类型，于是**功能是对的、测试是红的**。做法：实现一个类型之前，先 `grep` 该类型名是否出现在测试里，并确认那些断言是不是"它还不支持"；若是，同一次提交里把它换成仍然不支持的兄弟类型（`BatchedMesh` 目前是安全的那一个）。
+   - **不要过滤诊断输出**：三次浪费整轮的共同原因是把失败输出 `Select-String` 得过窄。真实原因分别藏在没有匹配到的行里 —— Catch2 的 `due to unexpected exception with message:`、JS 侧 `TypeError` 的堆栈、以及断言上下文。做法：先用最小用例跑一次并**打印完整输出**（`Select-Object -Last 30` 而不是 `Select-String`），确认失败类型（断言 / 异常 / 崩溃）再决定下一步。
+   - **配套的第三条**：调试 `.mjs` 差分脚本时**直接跑 `node`**，不要经 `ctest -V`，因为 JS 异常在 ctest 的输出里会被混在中间。差分脚本报错时，上游自己也可能抛错（见第 27 条）。
+27. **`ObjectLoader` 的纹理路径是宿主边界，不要试图做差分**。上游 `parseTextures` 在记录缺少 `image` 时读 `source.data` 会**直接崩溃**；`parseImages` 要求 `url`，字符串 url 会走 `ImageLoader`（需要 `document`）。因此无宿主环境下：纹理只能靠**单测**验证（已覆盖 `repeat`/`wrap`/`magFilter`/`colorSpace`/`flipY`），而差分只比结构摘要。端口在无图像时构造普通 `Texture` 不是简化，正是上游那个分支本身。
 10. **FileLoader 传输契约（冻结，实现时照此写，不要再设计）**：上游用 fetch / Request / Response / ReadableStream / AbortController / ProgressEvent / DOMParser / TextDecoder，原生侧没有这些宿主对象，因此把**只有一处**的宿主边界收窄成一个注入函数，其余逻辑照源码逐行移植。
    - 注入方式：模块级 `FileLoader::setTransport(JSValue)`，等价于 `globalThis.fetch`；未注入时 `load()` 显式抛错（说明未配置传输），不静默失败。
    - 传输入参：一个 JSValue 对象，字段 `url`（字符串，已过 `path` 与 `manager.resolveURL`）、`method`（恒为 GET）、`headers`（普通对象，来自 `requestHeader`）、`credentials`（`include` 或 `same-origin`，取自 `withCredentials`）、`signal`（对象，含布尔字段 `aborted`，由 `abort()` 置位）。
