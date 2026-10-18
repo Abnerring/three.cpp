@@ -88,6 +88,12 @@
    - **不要过滤诊断输出**：三次浪费整轮的共同原因是把失败输出 `Select-String` 得过窄。真实原因分别藏在没有匹配到的行里 —— Catch2 的 `due to unexpected exception with message:`、JS 侧 `TypeError` 的堆栈、以及断言上下文。做法：先用最小用例跑一次并**打印完整输出**（`Select-Object -Last 30` 而不是 `Select-String`），确认失败类型（断言 / 异常 / 崩溃）再决定下一步。
    - **配套的第三条**：调试 `.mjs` 差分脚本时**直接跑 `node`**，不要经 `ctest -V`，因为 JS 异常在 ctest 的输出里会被混在中间。差分脚本报错时，上游自己也可能抛错（见第 27 条）。
 27. **`ObjectLoader` 的纹理路径是宿主边界，不要试图做差分**。上游 `parseTextures` 在记录缺少 `image` 时读 `source.data` 会**直接崩溃**；`parseImages` 要求 `url`，字符串 url 会走 `ImageLoader`（需要 `document`）。因此无宿主环境下：纹理只能靠**单测**验证（已覆盖 `repeat`/`wrap`/`magFilter`/`colorSpace`/`flipY`），而差分只比结构摘要。端口在无图像时构造普通 `Texture` 不是简化，正是上游那个分支本身。
+28. **方法级审计已经收敛：可移植的方法表面是完整的**。对 288 个 `partial-unverified` 模块做"上游方法名 vs 本地实现"扫描，报出 6 个模块 / 15 个方法，逐个核对后**全部**是下面四类之一：
+   - **误报：空方法**。`Object3D.intersectsFrustum` 在上游就是 `intersectsFrustum( /* frustum */ ) {}`，一个空的默认实现，由子类覆盖。端口用 `Frustum::intersectsObject` 里的 `dynamic_cast` 分支承担同样职责，行为一致而结构不同，**不需要**在 `Object3D` 上加它 —— 这也解释了第 24 条那次崩溃：当时加的是**虚函数**，改的是布局。
+   - **误报：命名差异**。`DataTextureLoader._applyTexData` 在端口里叫 `applyTexData`。
+   - **误报：实现位置不同**。`InstancedInterleavedBuffer.copy/clone/toJSON` 已经完整实现在 `prototype()` 里（`copy` 搬 `meshPerAttribute`、`clone` 写回结果、`toJSON` 加 flag 与值），只是不在头文件里。
+   - **真实缺口，但受限**：`BufferGeometry.setIndirect/getIndirect`（需要两个字段 → 受第 24 条布局限制）；`Material.onBeforeCompile/customProgramCacheKey`（着色器钩子，且上游由函数源码字符串取 cache key）；`ObjectLoader.parseShapes`（需要 `ShapeGeometry.fromJSON`）；`ObjectLoader.parseImages`（宿主边界，见第 27 条）。
+   - **扫描脚本的教训**：只在头文件里找方法名会漏掉原型注册、也会漏掉 `.cpp` 里的定义；应把 `src/` 下同名 `.h` 与 `.cpp` 一起搜，并把"空方法体"识别出来，否则每轮都会重新发现同一批幽灵。
 10. **FileLoader 传输契约（冻结，实现时照此写，不要再设计）**：上游用 fetch / Request / Response / ReadableStream / AbortController / ProgressEvent / DOMParser / TextDecoder，原生侧没有这些宿主对象，因此把**只有一处**的宿主边界收窄成一个注入函数，其余逻辑照源码逐行移植。
    - 注入方式：模块级 `FileLoader::setTransport(JSValue)`，等价于 `globalThis.fetch`；未注入时 `load()` 显式抛错（说明未配置传输），不静默失败。
    - 传输入参：一个 JSValue 对象，字段 `url`（字符串，已过 `path` 与 `manager.resolveURL`）、`method`（恒为 GET）、`headers`（普通对象，来自 `requestHeader`）、`credentials`（`include` 或 `same-origin`，取自 `withCredentials`）、`signal`（对象，含布尔字段 `aborted`，由 `abort()` 置位）。
