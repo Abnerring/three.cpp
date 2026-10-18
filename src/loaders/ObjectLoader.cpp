@@ -23,6 +23,8 @@
 #include "objects/LineSegments.h"
 #include "objects/Mesh.h"
 #include "objects/Points.h"
+#include "objects/Skeleton.h"
+#include "objects/SkinnedMesh.h"
 #include "objects/Sprite.h"
 #include "scenes/FogExp2.h"
 #include "scenes/Scene.h"
@@ -121,6 +123,25 @@ ObjectLoader::Result ObjectLoader::parse(const JSValue& json) {
     const auto object = json.get("object");
     if (object.isUndefined()) throw std::runtime_error("ObjectLoader: the document has no object");
     result.object = parseObject(object);
+    // Upstream builds the skeletons after the tree, because a skeleton resolves its bones by uuid.
+    const auto skeletonList = json.get("skeletons");
+    if (!skeletonList.isUndefined()) {
+        std::map<std::string, std::shared_ptr<Bone>> bones;
+        std::vector<std::shared_ptr<Object3D>> stack{result.object};
+        while (!stack.empty()) {
+            const auto current = stack.back();
+            stack.pop_back();
+            if (!current) continue;
+            if (const auto bone = std::dynamic_pointer_cast<Bone>(current)) bones[current->uuid] = bone;
+            for (const auto& child : current->children) stack.push_back(child);
+        }
+        for (double index = 0; index < skeletonList.length(); index += 1) {
+            const auto skeleton = std::make_shared<Skeleton>();
+            skeleton->fromJSON(*skeletonList.get(index).toJSON(), bones);
+            skeletons_[skeleton->uuid] = skeleton;
+        }
+    }
+    bindSkeletons(result.object);
     bindLightTargets(result.object);
     return result;
 }
@@ -252,7 +273,16 @@ std::shared_ptr<Object3D> ObjectLoader::parseObject(const JSValue& data) {
         if (!data.get("view").isUndefined()) throw std::runtime_error("ObjectLoader: camera views are not ported yet");
         object = camera;
     }
-    else if (type == "SkinnedMesh" || type == "BatchedMesh" ||
+    else if (type == "SkinnedMesh") {
+        const auto mesh = std::make_shared<SkinnedMesh>();
+        mesh->geometry = geometryOf(data.get("geometry"));
+        mesh->material = materialOf(data.get("material"));
+        if (!data.get("bindMode").isUndefined()) mesh->bindMode = data.get("bindMode").toString();
+        if (!data.get("bindMatrix").isUndefined()) mesh->bindMatrix.fromArray(numbers(data.get("bindMatrix")));
+        // Upstream stores the uuid here and binds it after the skeletons are built.
+        if (!data.get("skeleton").isUndefined()) pendingSkeletons_.emplace_back(mesh, data.get("skeleton").toString());
+        object = mesh;
+    }    else if (type == "BatchedMesh" ||
              type == "PerspectiveCamera" || type == "OrthographicCamera" || type == "RectAreaLight" ||
              type == "LightProbe" || type.find("Light") != std::string::npos)
         throw std::runtime_error("ObjectLoader: object type \"" + type + "\" is not ported yet");
@@ -350,4 +380,17 @@ void ObjectLoader::bindLightTargets(const std::shared_ptr<Object3D>& root) {
         else if (const auto spot = std::dynamic_pointer_cast<SpotLight>(light)) spot->target = found->second;
     }
     pendingTargets_.clear();
+}
+void ObjectLoader::bindSkeletons(const std::shared_ptr<Object3D>& root) {
+    static_cast<void>(root);
+    if (pendingSkeletons_.empty()) return;
+    // Upstream resolves the recorded uuid and binds with the mesh own bind matrix.
+    for (const auto& [object, uuid] : pendingSkeletons_) {
+        const auto found = skeletons_.find(uuid);
+        if (found == skeletons_.end()) continue;
+        const auto mesh = std::dynamic_pointer_cast<SkinnedMesh>(object);
+        if (!mesh) continue;
+        mesh->bind(found->second, mesh->bindMatrix);
+    }
+    pendingSkeletons_.clear();
 }

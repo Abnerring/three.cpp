@@ -13,6 +13,8 @@
 #include "cameras/PerspectiveCamera.h"
 #include "objects/InstancedMesh.h"
 #include "objects/LOD.h"
+#include "objects/Skeleton.h"
+#include "objects/SkinnedMesh.h"
 #include "objects/Sprite.h"
 #include "scenes/Fog.h"
 #include "scenes/FogExp2.h"
@@ -78,7 +80,7 @@ TEST_CASE("ObjectLoader takes the matrix path and refuses what it cannot build")
     REQUIRE(result.object->position.y == 5.0);
     REQUIRE(result.object->position.z == 6.0);
 
-    const auto unsupported = Animation_detail::parseJSON(R"({"object": {"type": "SkinnedMesh"}})");
+    const auto unsupported = Animation_detail::parseJSON(R"({"object": {"type": "BatchedMesh"}})");
     ObjectLoader other;
     REQUIRE_THROWS_AS(other.parse(unsupported), std::runtime_error);
 }
@@ -278,4 +280,28 @@ TEST_CASE("ObjectLoader builds texture records and resolves them from materials"
     REQUIRE(material->map->magFilter == 1006.0);
     REQUIRE(material->map->colorSpace == "srgb");
     REQUIRE(material->map->flipY == false);
+}
+// A skeleton resolves its bones by uuid against the finished tree, and the skinned mesh that named it is
+// bound afterwards, which is the same two step shape as the light targets.
+TEST_CASE("ObjectLoader binds a skinned mesh to its skeleton") {
+    const auto realm = JSValue::object();
+    static_cast<void>(realm);
+    const auto json = Animation_detail::parseJSON(R"({
+        "object": {"type": "Scene", "uuid": "scene", "children": [
+            {"type": "Bone", "uuid": "bone0"},
+            {"type": "Bone", "uuid": "bone1"},
+            {"type": "SkinnedMesh", "uuid": "skin", "material": "m", "geometry": "g", "skeleton": "skel",
+             "bindMode": "detached"}
+        ]},
+        "geometries": [{"type": "BufferGeometry", "uuid": "g", "data": {"attributes": {}}}],
+        "materials": [{"type": "MeshBasicMaterial", "uuid": "m", "color": 255}],
+        "skeletons": [{"uuid": "skel", "bones": ["bone0", "bone1"], "boneInverses": [[1,0,0,0,0,1,0,0,0,0,1,0,0,0,0,1],[1,0,0,0,0,1,0,0,0,0,1,0,0,0,0,1]]}]
+    })");
+    ObjectLoader loader;
+    const auto result = loader.parse(json);
+    const auto mesh = std::dynamic_pointer_cast<SkinnedMesh>(result.object->children[2]);
+    REQUIRE(mesh);
+    REQUIRE(mesh->bindMode == "detached");
+    REQUIRE(mesh->skeleton);
+    REQUIRE(mesh->skeleton->bones.size() == 2);
 }

@@ -12,6 +12,7 @@ class AnimationClip;
 class BufferGeometry;
 class Material;
 class Texture;
+class Skeleton;
 
 // Port of src/loaders/ObjectLoader.js, first slice.
 //
@@ -33,6 +34,11 @@ class ObjectLoader {
     std::map<std::string, std::shared_ptr<Material>> materials_;
     // Kept in an ordered map so the material loader receives them in document order.
     OrderedMap<std::shared_ptr<Texture>> textures_;
+    // A skinned mesh records the skeleton uuid the document gave it and is bound once every skeleton exists,
+    // which is the same two step shape the light targets use.
+    std::map<std::string, std::shared_ptr<Skeleton>> skeletons_;
+    std::vector<std::pair<std::shared_ptr<Object3D>, std::string>> pendingSkeletons_;
+    void bindSkeletons(const std::shared_ptr<Object3D>& root);
     std::map<std::string, std::shared_ptr<AnimationClip>> clips_;
     // Upstream stores the target of a directional or spot light as the uuid string and binds it after the
     // whole tree exists, because the target may be a sibling that has not been parsed yet. Same two steps here.
