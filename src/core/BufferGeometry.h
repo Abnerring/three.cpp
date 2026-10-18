@@ -47,6 +47,16 @@ class BufferGeometry : public EventDispatcher, public std::enable_shared_from_th
         return *this;
     }
     BufferGeometry& setIndex(const std::vector<std::uint32_t>& values);
+    // Upstream keeps the indirect attribute and its offset as plain fields, sets both in setIndirect and
+    // hands the attribute back from getIndirect, with it null until something is set.
+    std::shared_ptr<BufferAttribute> indirect;
+    double indirectOffset = 0;
+    BufferGeometry& setIndirect(std::shared_ptr<BufferAttribute> value, double offset = 0) {
+        indirect = std::move(value);
+        indirectOffset = offset;
+        return *this;
+    }
+    std::shared_ptr<BufferAttribute> getIndirect() const { return indirect; }
     std::shared_ptr<VertexAttribute> getAttribute(const std::string& name) const;
     BufferGeometry& setAttribute(const std::string& name,
                                  std::shared_ptr<VertexAttribute> attribute);
