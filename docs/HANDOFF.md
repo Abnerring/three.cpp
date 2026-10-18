@@ -74,12 +74,10 @@
    - **已确证的事实**：抛点在 `Cache.get` 之后 ✓；`key` 是 String、`created` 是 Object、活动堆存在 ✓；`CacheStore::add` = `validate(key) + validate(file) + requireRealm() + cache.get("add").call(...)` ✓；`requireRealm` 的消息是 "Cache mutation requires a live JSValue realm"，**与实测消息不同** ✓ → 抛点来自 `validate` 或 JS 侧 `add`。
    - **下一步（最小单变量）**：把 `created.set("complete",true)` 单独注释掉跑一次；再单独注释 `decoder.call(...)`。**一次只改一行**，因为第 247、248 两轮各因一次改多处而得到误导性结果 ✗。
    - **硬约束（本轮踩到）**：工作树里留**未跟踪**的 `.h/.cpp` 会让 `port-audit` 失败（审计把它们计入清单，与已提交的 `port-status.json` 不一致），退出码 8。也就是说"未验证的 WIP"不是无害的——它会以门禁变红的方式显形。**结论**：要么验证到绿并提交，要么删掉。
-24. **改类布局会崩：加字段或加虚函数都可能让无关测试 SIGSEGV，机制未查明**。这一点在会话里复现了三次，每次回退即恢复全绿：给 `Object3D` 加一个虚函数 `intersectsFrustum` ✗；给 `BufferGeometry` 加 `indirect`/`indirectOffset` 两个字段 ✗；第三次用 ASan 全量重编后依旧复现 ✗。
-   - **ASan 给出的证据**（最有价值的部分）：原树在 AddressSanitizer 下 **692 用例全通过、零报告** ✓✓，所以**不是**内存破坏 ✗。而带改动跑时，ASan 精确指到 `BufferGeometry::getIndirect`（`BufferGeometry.h:58`）→ `std::_Ref_count_base::_Incref`，寄存器 `rax = 17d7d7d7d7d7d7d8` —— `0xD7` 是 MSVC 的未初始化内存填充，即新增的 `std::shared_ptr` 成员读出来是垃圾 ✗，而 `BufferGeometry` 的构造函数是 `: uuid(...) {}`、该成员本应默认构造为 null。
-   - **已排除**：陈旧构建 ✗（ASan 全量重编后仍复现）、内存破坏 ✗（ASan 原树干净）、PCH/unity/LTCG ✗（项目均未启用）、缺 `/EHsc` ✗（那是另一个独立问题：给 ASan 传 `CMAKE_CXX_FLAGS` 会覆盖项目自带的 `/EHsc`，导致 Catch2 报 `CATCH_CONFIG_DISABLE_EXCEPTIONS` 并 fast-fail，**修法是把 `/EHsc` 一并写进 flags**）。
-   - **建议的第一步**：在 ASan 配置下，写一个最小用例只构造 `BufferGeometry` 并打印 `sizeof(BufferGeometry)`、`offsetof(indirect)` 与成员的 `use_count()`，确认各 TU 看到的是同一布局；若不一致，问题就在头文件/预编译路径而非运行时。
-   - **纪律**：在查清之前，**不要**再改 `Object3D`/`BufferGeometry`/`Material` 这类被广泛派生或广泛持有的类的布局 ✗；需要新能力时优先用**不改布局**的方式（新类、自由函数、外部映射表）。
-25. **已移植模块的差分覆盖已经完整**（里程碑）。做法是先**扫描缺口**再补，而不是凭印象挑模块：扫描脚本把 `docs/port-status.json` 里每个非 `missing`、非 `src/nodes/`、非 `src/renderers/` 的模块与 `test/unit/utils/parity/` 下的文本对照，第一次列出了 **4 个**没有差分的模块（`DirectionalLightShadow` 32 行、`PointLightShadow` 32 行、`ExternalTexture` 54 行、`Fog` 99 行），补完后再跑即**空列表** ✓。
+24. **"改类布局会崩"是误诊，真因是陈旧目标文件**（重要更正）。曾经记录为：给 `Object3D` 加虚函数、给 `BufferGeometry` 加字段都会让无关套件 SIGSEGV，回退即恢复。**这条结论是错的**，第 68-69 轮用干净重建推翻了它：同一份带 `indirect`/`indirectOffset` 字段的树，`cmake --build build --clean-first` 之后 **705 用例全通过**，两个访问器也正常入库。
+   - **真因**：在一个小时内反复"改头文件 → 增量构建 → 跑测试"，会有目标文件的时间戳**不早于**头文件的情形，于是依赖该头文件的 TU **没有重编**，两个 TU 对类布局的理解不一致。新成员落在未初始化字节上 —— 这正是当时 ASan 报出的 `0xD7D7D7D7`（MSVC 的未初始化填充）以及"默认构造的 `shared_ptr` 读出垃圾"的来历。原树 ASan 干净也因此说得通：布局一致时没有越界。
+   - **做法**：改动**头文件里的类布局**之后，若出现"无法解释的崩溃"，先 `cmake --build build --clean-first` 再复现；不要据此给能力下定论。日常增量构建是可靠的，只有这种"同一分钟内反复改头文件"的节奏才会踩到。
+   - **教训**：`0xC0000409` 与 `0xC0000005` 这类错误码**不能当作根因**，它们只说明"进程异常终止"；同一错误码在本会话里至少对应过三种不同原因（缺 `/EHsc`、未初始化成员、真正的布局不一致）。25. **已移植模块的差分覆盖已经完整**（里程碑）。做法是先**扫描缺口**再补，而不是凭印象挑模块：扫描脚本把 `docs/port-status.json` 里每个非 `missing`、非 `src/nodes/`、非 `src/renderers/` 的模块与 `test/unit/utils/parity/` 下的文本对照，第一次列出了 **4 个**没有差分的模块（`DirectionalLightShadow` 32 行、`PointLightShadow` 32 行、`ExternalTexture` 54 行、`Fog` 99 行），补完后再跑即**空列表** ✓。
    - 也就是说：除着色器图（`src/nodes/`）与渲染后端（`src/renderers/`）之外，端口里**每一个已移植模块都有针对上游模块的差分**，且都是 bit-exact（数值数组按 float32 位模式、`-0`/`NaN`/`±Infinity` 显式编码）。
    - **建议把这个扫描固化成例行检查**：新增任何模块后跑一次，缺口数必须回到 0，否则就是"加了代码没加验证"。
    - 同类扫描还有两个：**方法级缺口**（第 18 轮用过，比对上游方法名与本地头文件）与 **与布局相关的崩溃**（第 24 条）。三者合起来构成"移植完成度"的三个正交维度：模块存在 ✓、方法齐备 ✓、行为一致 ✓。
