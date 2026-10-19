@@ -376,3 +376,52 @@ for (let i = 0; i < helperScenarios.length; i += 1) {
     assert.deepEqual(helperLines[i], expected, `scenario ${line}`);
 }
 console.log(`helper parity: ${helperScenarios.length} scenarios`);
+// The helpers that build child objects instead of being a line themselves.
+const {ArrowHelper} = await import(pathToFileURL(path.join(sourceDir, 'src/helpers/ArrowHelper.js')).href);
+const {PointLightHelper} = await import(pathToFileURL(path.join(sourceDir, 'src/helpers/PointLightHelper.js')).href);
+const {DirectionalLightHelper} = await import(pathToFileURL(path.join(sourceDir, 'src/helpers/DirectionalLightHelper.js')).href);
+const {PointLight: PointLightForHelper} = await import(pathToFileURL(path.join(sourceDir, 'src/lights/PointLight.js')).href);
+const {DirectionalLight: DirectionalLightForHelper} = await import(pathToFileURL(path.join(sourceDir, 'src/lights/DirectionalLight.js')).href);
+
+const childHelperScenarios = [
+    ['helper pointlight 1', () => new PointLightHelper(new PointLightForHelper(), 1)],
+    ['helper directional 1', () => new DirectionalLightHelper(new DirectionalLightForHelper(), 1)],
+    ['helper arrow 0 0 1 0 0 0 2', () => new ArrowHelper(new Vector3(0, 0, 1), new Vector3(0, 0, 0), 2)],
+];
+
+// The probe reports a child as its type, plus the vertex count and first points when the child is a line.
+const describeChild = (child) => {
+    const described = {type: child.type};
+    if (child.isLine && child.geometry) {
+        const position = child.geometry.attributes.position;
+        described.count = position.count;
+        const limit = Math.min(position.count * 3, 6);
+        const points = [];
+        for (let k = 0; k < limit; k++) points.push(bitOf(position.array[k]));
+        described.points = points;
+    }
+    return described;
+};
+const describeHelper = (helper) => {
+    const described = {kind: 'helper', which: null, type: helper.type};
+    if (helper.isLine && helper.geometry) {
+        const position = helper.geometry.attributes.position;
+        described.selfCount = position.count;
+        const limit = Math.min(position.count * 3, 6);
+        const points = [];
+        for (let k = 0; k < limit; k++) points.push(bitOf(position.array[k]));
+        described.selfPoints = points;
+    }
+    described.children = helper.children.map(describeChild);
+    return described;
+};
+
+const childRaw = execFileSync(probePath, [], {input: childHelperScenarios.map(([line]) => line).join('\n'), encoding: 'utf8'});
+const childLines = childRaw.trim().split('\n').map((line) => JSON.parse(line));
+for (let i = 0; i < childHelperScenarios.length; i += 1) {
+    const [line, build] = childHelperScenarios[i];
+    const expected = describeHelper(build());
+    expected.which = line.split(' ')[1];
+    assert.deepEqual(childLines[i], expected, `scenario ${line}`);
+}
+console.log(`child helper parity: ${childHelperScenarios.length} scenarios`);
