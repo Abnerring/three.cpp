@@ -34,6 +34,7 @@ const {LatheGeometry} = await import(pathToFileURL(path.join(sourceDir, 'src/geo
 const {Vector2} = await import(pathToFileURL(path.join(sourceDir, 'src/math/Vector2.js')).href);
 
 const bitArray = (values) => Array.from(new Uint32Array(new Float32Array(values).buffer));
+const bitOf = (value) => new Uint32Array(new Float32Array([value]).buffer)[0];
 
 const describeAttributes = (geometry) => {
     const out = {};
@@ -114,3 +115,28 @@ for (let i = 0; i < scenarios.length; i += 1) {
 }
 
 console.log(`primitive geometry parity: ${scenarios.length} scenarios`);
+
+// The arc length functions behind the tube framing, checked directly: cached segment lengths, the parameter
+// mapping, the arc length point, and the parameter and arc length tangents.
+const curveScenarios = [
+    ['curve 0 3 0 0 0 1 0 0 1 0 1', () => new CatmullRomCurve3([new Vector3(0, 0, 0), new Vector3(1, 0, 0), new Vector3(1, 0, 1)], false)],
+    ['curve 1 4 0 0 0 1 1 0 2 0 1 2 2 2', () => new CatmullRomCurve3([new Vector3(0, 0, 0), new Vector3(1, 1, 0), new Vector3(2, 0, 1), new Vector3(2, 2, 2)], true)],
+];
+
+const curveRaw = execFileSync(probePath, [], {input: curveScenarios.map(([line]) => line).join('\n'), encoding: 'utf8', maxBuffer: 64 * 1024 * 1024});
+const curveLines = curveRaw.trim().split('\n').map((line) => JSON.parse(line));
+for (let i = 0; i < curveScenarios.length; i += 1) {
+    const [line, build] = curveScenarios[i];
+    const curve = build();
+    const samples = [0, 0.25, 0.5, 0.75, 1];
+    const expected = {
+        kind: 'curve',
+        points: samples.map((t) => { const p = curve.getPoint(t); return [bitOf(p.x), bitOf(p.y), bitOf(p.z)]; }),
+        tangents: samples.map((t) => { const g = curve.getTangent(t); return [bitOf(g.x), bitOf(g.y), bitOf(g.z)]; }),
+        lengths: Array.from(curve.getLengths()).map(bitOf),
+        utoT: samples.map((t) => bitOf(curve.getUtoTmapping(t))),
+        pointAt: samples.map((t) => { const p = curve.getPointAt(t); return [bitOf(p.x), bitOf(p.y), bitOf(p.z)]; }),
+    };
+    assert.deepEqual(curveLines[i], expected, `scenario ${line}`);
+}
+console.log(`curve parity: ${curveScenarios.length} scenarios`);

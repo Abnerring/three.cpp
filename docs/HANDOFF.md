@@ -103,7 +103,9 @@
    - 诊断：数量一致说明**分段与拓扑**没问题；值从第 2 个顶点起就分叉，说明是**框架（frame）方向**的差异，也就是 `computeFrenetFrames`/`getTangent` 这条链，而不是 `TubeGeometry` 的索引生成。
    - 处理：本轮**不把 tube 场景并入差分**（否则门禁变红），探针分支保留（只是测试代码，未被调用即无害），问题记在此处。
    - **已排除的**（第二轮排查结果）：① 曲线本身没问题——探针新增 `curve` 分支，把 `CatmullRomCurve3` 的 `getPoint` 与 `getTangent` 在 t=0..1 五点上的位模式与上游逐一比对，**完全相等**；② `computeFrenetFrames` 的实现与上游逐行一致——取 `getTangentAt`、按最小绝对分量选初值法线（`<=`、顺序 x→y→z）、初值三叉、按夹角绕轴旋转、闭合修正都在。
-   - **剩下的嫌疑**：`getTangentAt` 背后的**弧长映射**。上游 `getTangentAt(u)` = `getTangent(getUtoTmapping(u))`，而 `getUtoTmapping` 依赖 `getLengths()`/`getLength()` 的分段长度缓存；我上一轮验的是 `getTangent`（参数 t 直达），没验 `getTangentAt`（先经弧长再参数）。下一步就是把 `getLengths()`、`getUtoTmapping(t)`、`getPointAt(u)`、`getTangentAt(u)` 四者与上游逐点对拍。
+   - **也已排除的**（第三轮排查结果）：**弧长映射没问题**。探针的 `curve` 分支现在输出 `getPoint`/`getTangent`/`getLengths()`/`getUtoTmapping`/`getPointAt` 五项，两条曲线（闭合与不闭合）与上游**逐位相等**，其中 `getLengths()` 的 201 个分段长度全部一致。这些已并入差分（`curve parity: 2 scenarios`），以后不会回退。
+   - **因此剩下的嫌疑只在 `TubeGeometry` 自身**：曲线、切线、弧长、框架实现四者都已排除，那么差异只能来自 `TubeGeometry.generateSegment` 里对 `normal`/`binormal`/`P` 的用法，或 `computeFrenetFrames` 的**调用参数**（`closed` 与分段数）。下一轮直接读端口 `TubeGeometry.cpp` 的 `generateSegment` 与索引生成，与上游逐行比。
+   - 原记录（已排除项保留说明）：上游 `getTangentAt(u)` = `getTangent(getUtoTmapping(u))`，而 `getUtoTmapping` 依赖 `getLengths()`/`getLength()` 的分段长度缓存；我上一轮验的是 `getTangent`（参数 t 直达），没验 `getTangentAt`（先经弧长再参数）。下一步就是把 `getLengths()`、`getUtoTmapping(t)`、`getPointAt(u)`、`getTangentAt(u)` 四者与上游逐点对拍。
    - 教训：这类"数量对、值不对"的失败正是位级对拍的价值所在——若只比对顶点数，会得出"没问题"的错误结论。
 39. **差分覆盖的选点表：上游有单测的 242 个模块里，105 个已有对拍，170 个没有；其中 125 个是可移植的**。统计方法：扫 `test/**/*.mjs` 里出现的 `src/.../Name.js` 取模块名，与 `../three.js/test/unit/src/**/Name.tests.js` 的模块名求差集。按可移植性分组如下（括号为数量）：
    - **可移植、尚未对拍（125）**：光照与 helper 22、对象与渲染目标 27、几何 20、曲线 14、杂项 14、材质 13、关键帧与插值 11、音频 4。这一组是当前**唯一能"做完并证明做对"**的方向，第 37、38 条的 SDK 阻塞不适用于它。

@@ -202,6 +202,23 @@ int main() {
                 if (i > 0) std::cout << ",";
                 std::cout << "[" << bits(static_cast<float>(tangent.x)) << "," << bits(static_cast<float>(tangent.y)) << "," << bits(static_cast<float>(tangent.z)) << "]";
             }
+            std::cout << "],\"lengths\":[";
+            const auto lengths = curve.getLengths();
+            for (std::size_t j = 0; lengths && j < lengths->size(); j += 1) {
+                if (j > 0) std::cout << ",";
+                std::cout << bits(static_cast<float>((*lengths)[j]));
+            }
+            std::cout << "],\"utoT\":[";
+            for (int i = 0; i <= 4; i += 1) {
+                if (i > 0) std::cout << ",";
+                std::cout << bits(static_cast<float>(curve.getUtoTmapping(i / 4.0)));
+            }
+            std::cout << "],\"pointAt\":[";
+            for (int i = 0; i <= 4; i += 1) {
+                const auto pointAt = curve.getPointAt(i / 4.0);
+                if (i > 0) std::cout << ",";
+                std::cout << "[" << bits(static_cast<float>(pointAt.x)) << "," << bits(static_cast<float>(pointAt.y)) << "," << bits(static_cast<float>(pointAt.z)) << "]";
+            }
             std::cout << "]}" << std::endl;
             continue;
         } else {
