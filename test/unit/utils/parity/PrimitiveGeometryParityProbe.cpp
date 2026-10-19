@@ -36,6 +36,13 @@
 #include "animation/tracks/QuaternionKeyframeTrack.h"
 #include "animation/tracks/BooleanKeyframeTrack.h"
 #include "animation/tracks/StringKeyframeTrack.h"
+#include "lights/AmbientLight.h"
+#include "lights/DirectionalLight.h"
+#include "lights/PointLight.h"
+#include "lights/SpotLight.h"
+#include "lights/HemisphereLight.h"
+#include "lights/LightProbe.h"
+#include "lights/RectAreaLight.h"
 #include "extras/curves/QuadraticBezierCurve3.h"
 #include "extras/curves/CubicBezierCurve3.h"
 #include "extras/curves/CatmullRomCurve3.h"
@@ -449,6 +456,39 @@ int main() {
                 std::cout << "]";
             }
             std::cout << "]}" << std::endl;
+            continue;
+        } else if (kind == "light") {
+            std::string which;
+            in >> which;
+            std::shared_ptr<Light> light;
+            std::cout << "{\"kind\":\"light\",\"which\":\"" << which << "\"";
+            double r = 0, g = 0, b = 0, intensity = 0;
+            if (which == "ambient" || which == "directional" || which == "point" || which == "spot" || which == "rectarea") {
+                in >> r >> g >> b >> intensity;
+                if (in.fail()) { std::cout << "{\"error\":\"short input\"}" << std::endl; continue; }
+                const Color color(r, g, b);
+                if (which == "ambient") light = std::make_shared<AmbientLight>(color, intensity);
+                else if (which == "directional") light = std::make_shared<DirectionalLight>(color, intensity);
+                else if (which == "point") { double distance = 0, decay = 0; in >> distance >> decay; if (in.fail()) { std::cout << "{\"error\":\"short input\"}" << std::endl; continue; } light = std::make_shared<PointLight>(color, intensity, distance, decay); }
+                else if (which == "spot") { double distance = 0, angle = 0, penumbra = 0, decay = 0; in >> distance >> angle >> penumbra >> decay; if (in.fail()) { std::cout << "{\"error\":\"short input\"}" << std::endl; continue; } light = std::make_shared<SpotLight>(color, intensity, distance, angle, penumbra, decay); }
+                else { double width = 0, height = 0; in >> width >> height; if (in.fail()) { std::cout << "{\"error\":\"short input\"}" << std::endl; continue; } light = std::make_shared<RectAreaLight>(color, intensity, width, height); }
+            } else if (which == "hemisphere") {
+                double r2 = 0, g2 = 0, b2 = 0;
+                in >> r >> g >> b >> r2 >> g2 >> b2 >> intensity;
+                if (in.fail()) { std::cout << "{\"error\":\"short input\"}" << std::endl; continue; }
+                light = std::make_shared<HemisphereLight>(Color(r, g, b), Color(r2, g2, b2), intensity);
+            } else if (which == "probe") {
+                in >> intensity;
+                if (in.fail()) { std::cout << "{\"error\":\"short input\"}" << std::endl; continue; }
+                light = std::make_shared<LightProbe>(std::make_shared<SphericalHarmonics3>(), intensity);
+            } else { std::cout << "{\"error\":\"unknown light\"}" << std::endl; continue; }
+            std::cout << ",\"type\":\"" << light->type << "\"";
+            std::cout << ",\"color\":[" << bits(static_cast<float>(light->color.r)) << "," << bits(static_cast<float>(light->color.g)) << "," << bits(static_cast<float>(light->color.b)) << "]";
+            std::cout << ",\"intensity\":" << bits(static_cast<float>(light->intensity));
+            if (auto point = std::dynamic_pointer_cast<PointLight>(light)) std::cout << ",\"distance\":" << bits(static_cast<float>(point->distance)) << ",\"decay\":" << bits(static_cast<float>(point->decay));
+            if (auto spot = std::dynamic_pointer_cast<SpotLight>(light)) std::cout << ",\"distance\":" << bits(static_cast<float>(spot->distance)) << ",\"angle\":" << bits(static_cast<float>(spot->angle)) << ",\"penumbra\":" << bits(static_cast<float>(spot->penumbra)) << ",\"decay\":" << bits(static_cast<float>(spot->decay));
+            if (auto area = std::dynamic_pointer_cast<RectAreaLight>(light)) std::cout << ",\"width\":" << bits(static_cast<float>(area->width)) << ",\"height\":" << bits(static_cast<float>(area->height));
+            std::cout << "}" << std::endl;
             continue;
         } else {
             std::cout << "{\"error\":\"unknown kind\"}" << std::endl;

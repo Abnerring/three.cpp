@@ -273,3 +273,37 @@ for (let i = 0; i < textScenarios.length; i += 1) {
     assert.deepEqual(textLines[i], expected, `scenario ${line}`);
 }
 console.log(`text parity: ${textScenarios.length} scenarios`);
+// The lights: their type, colour and intensity, plus the scalars each kind adds.
+const {AmbientLight} = await import(pathToFileURL(path.join(sourceDir, 'src/lights/AmbientLight.js')).href);
+const {DirectionalLight} = await import(pathToFileURL(path.join(sourceDir, 'src/lights/DirectionalLight.js')).href);
+const {PointLight} = await import(pathToFileURL(path.join(sourceDir, 'src/lights/PointLight.js')).href);
+const {SpotLight} = await import(pathToFileURL(path.join(sourceDir, 'src/lights/SpotLight.js')).href);
+const {HemisphereLight} = await import(pathToFileURL(path.join(sourceDir, 'src/lights/HemisphereLight.js')).href);
+const {RectAreaLight} = await import(pathToFileURL(path.join(sourceDir, 'src/lights/RectAreaLight.js')).href);
+const {LightProbe} = await import(pathToFileURL(path.join(sourceDir, 'src/lights/LightProbe.js')).href);
+const {Color} = await import(pathToFileURL(path.join(sourceDir, 'src/math/Color.js')).href);
+
+const lightScenarios = [
+    ['light ambient 1 0.5 0.25 3', () => new AmbientLight(new Color(1, 0.5, 0.25), 3)],
+    ['light directional 0.5 0.25 1 2.5', () => new DirectionalLight(new Color(0.5, 0.25, 1), 2.5)],
+    ['light point 1 1 1 2 10 1', () => new PointLight(new Color(1, 1, 1), 2, 10, 1)],
+    ['light spot 1 0.5 0 3 10 0.5 0.25 1.5', () => new SpotLight(new Color(1, 0.5, 0), 3, 10, 0.5, 0.25, 1.5)],
+    ['light hemisphere 1 1 1 0.2 0.2 0.4 1.5', () => new HemisphereLight(new Color(1, 1, 1), new Color(0.2, 0.2, 0.4), 1.5)],
+    ['light rectarea 1 1 1 5 4 3', () => new RectAreaLight(new Color(1, 1, 1), 5, 4, 3)],
+    ['light probe 2', () => new LightProbe(undefined, 2)],
+];
+
+const lightRaw = execFileSync(probePath, [], {input: lightScenarios.map(([line]) => line).join('\n'), encoding: 'utf8'});
+const lightLines = lightRaw.trim().split('\n').map((line) => JSON.parse(line));
+for (let i = 0; i < lightScenarios.length; i += 1) {
+    const [line, build] = lightScenarios[i];
+    const light = build();
+    const expected = {kind: 'light', which: line.split(' ')[1], type: light.type,
+        color: [bitOf(light.color.r), bitOf(light.color.g), bitOf(light.color.b)],
+        intensity: bitOf(light.intensity)};
+    if ('distance' in light) { expected.distance = bitOf(light.distance); expected.decay = bitOf(light.decay); }
+    if ('angle' in light) { expected.angle = bitOf(light.angle); expected.penumbra = bitOf(light.penumbra); }
+    if ('width' in light) { expected.width = bitOf(light.width); expected.height = bitOf(light.height); }
+    assert.deepEqual(lightLines[i], expected, `scenario ${line}`);
+}
+console.log(`light parity: ${lightScenarios.length} scenarios`);
