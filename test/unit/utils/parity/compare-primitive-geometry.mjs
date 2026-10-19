@@ -227,3 +227,32 @@ for (let i = 0; i < interpolantScenarios.length; i += 1) {
     assert.deepEqual(interpolantLines[i], expected, `scenario ${line}`);
 }
 console.log(`interpolant parity: ${interpolantScenarios.length} scenarios`);
+// The keyframe tracks: the value size the track reports and the interpolated result at five parameters.
+const {NumberKeyframeTrack} = await import(pathToFileURL(path.join(sourceDir, 'src/animation/tracks/NumberKeyframeTrack.js')).href);
+const {ColorKeyframeTrack} = await import(pathToFileURL(path.join(sourceDir, 'src/animation/tracks/ColorKeyframeTrack.js')).href);
+const {VectorKeyframeTrack} = await import(pathToFileURL(path.join(sourceDir, 'src/animation/tracks/VectorKeyframeTrack.js')).href);
+const {QuaternionKeyframeTrack} = await import(pathToFileURL(path.join(sourceDir, 'src/animation/tracks/QuaternionKeyframeTrack.js')).href);
+const {BooleanKeyframeTrack} = await import(pathToFileURL(path.join(sourceDir, 'src/animation/tracks/BooleanKeyframeTrack.js')).href);
+
+const trackScenarios = [
+    ['track number 3 0 1 2 3 0 10 20', () => new NumberKeyframeTrack('.v', [0, 1, 2], [0, 10, 20])],
+    ['track color 3 0 1 2 9 1 0 0 0 1 0 0 0 1', () => new ColorKeyframeTrack('.c', [0, 1, 2], [1, 0, 0, 0, 1, 0, 0, 0, 1])],
+    ['track vector 3 0 1 2 6 0 0 0 1 1 1', () => new VectorKeyframeTrack('.p', [0, 1, 2], [0, 0, 0, 1, 1, 1])],
+    ['track quaternion 2 0 1 8 0 0 0 1 0 0 0.7071 0.7071', () => new QuaternionKeyframeTrack('.q', [0, 1], [0, 0, 0, 1, 0, 0, 0.7071, 0.7071])],
+    ['track boolean 3 0 1 2 3 1 0 1', () => new BooleanKeyframeTrack('.b', [0, 1, 2], [1, 0, 1])],
+];
+
+const trackRaw = execFileSync(probePath, [], {input: trackScenarios.map(([line]) => line).join('\n'), encoding: 'utf8'});
+const trackLines = trackRaw.trim().split('\n').map((line) => JSON.parse(line));
+for (let i = 0; i < trackScenarios.length; i += 1) {
+    const [line, build] = trackScenarios[i];
+    const track = build();
+    const interpolant = track.createInterpolant();
+    const results = [0, 0.25, 0.5, 0.75, 1].map((t) => {
+        interpolant.evaluate(t);
+        return Array.from(interpolant.resultBuffer).map(bitOf);
+    });
+    const expected = {kind: 'track', which: line.split(' ')[1], valueSize: track.getValueSize(), results};
+    assert.deepEqual(trackLines[i], expected, `scenario ${line}`);
+}
+console.log(`track parity: ${trackScenarios.length} scenarios`);

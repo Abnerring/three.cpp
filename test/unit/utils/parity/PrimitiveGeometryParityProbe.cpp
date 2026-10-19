@@ -30,6 +30,11 @@
 #include "math/interpolants/DiscreteInterpolant.h"
 #include "math/interpolants/CubicInterpolant.h"
 #include "math/interpolants/QuaternionLinearInterpolant.h"
+#include "animation/tracks/NumberKeyframeTrack.h"
+#include "animation/tracks/ColorKeyframeTrack.h"
+#include "animation/tracks/VectorKeyframeTrack.h"
+#include "animation/tracks/QuaternionKeyframeTrack.h"
+#include "animation/tracks/BooleanKeyframeTrack.h"
 #include "extras/curves/QuadraticBezierCurve3.h"
 #include "extras/curves/CubicBezierCurve3.h"
 #include "extras/curves/CatmullRomCurve3.h"
@@ -392,6 +397,36 @@ int main() {
                 if (i > 0) std::cout << ",";
                 std::cout << "[";
                 for (int c = 0; c < static_cast<int>(sampleSize); c += 1) { if (c > 0) std::cout << ","; std::cout << bits(static_cast<float>(result.number(c))); }
+                std::cout << "]";
+            }
+            std::cout << "]}" << std::endl;
+            continue;
+        } else if (kind == "track") {
+            std::string which;
+            double count = 0;
+            in >> which >> count;
+            std::vector<double> times;
+            for (int k = 0; k < static_cast<int>(count); k += 1) { double value = 0; in >> value; times.push_back(value); }
+            double valueCount = 0;
+            in >> valueCount;
+            std::vector<double> values;
+            for (int k = 0; k < static_cast<int>(valueCount); k += 1) { double value = 0; in >> value; values.push_back(value); }
+            if (in.fail()) { std::cout << "{\"error\":\"short input\"}" << std::endl; continue; }
+            std::shared_ptr<KeyframeTrack> track;
+            if (which == "number") track = std::make_shared<NumberKeyframeTrack>(JSValue(".v"), InterpolantArray(times), InterpolantArray(values));
+            else if (which == "color") track = std::make_shared<ColorKeyframeTrack>(JSValue(".c"), InterpolantArray(times), InterpolantArray(values));
+            else if (which == "vector") track = std::make_shared<VectorKeyframeTrack>(JSValue(".p"), InterpolantArray(times), InterpolantArray(values));
+            else if (which == "quaternion") track = std::make_shared<QuaternionKeyframeTrack>(JSValue(".q"), InterpolantArray(times), InterpolantArray(values));
+            else if (which == "boolean") track = std::make_shared<BooleanKeyframeTrack>(JSValue(".b"), InterpolantArray(times), InterpolantArray(values));
+            else { std::cout << "{\"error\":\"unknown track\"}" << std::endl; continue; }
+            std::cout << "{\"kind\":\"track\",\"which\":\"" << which << "\",\"valueSize\":" << track->getValueSize();
+            std::cout << ",\"results\":[";
+            const auto interpolant = track->createInterpolant();
+            for (int i = 0; i <= 4; i += 1) {
+                const auto result = interpolant->evaluate(i / 4.0);
+                if (i > 0) std::cout << ",";
+                std::cout << "[";
+                for (int c = 0; c < static_cast<int>(interpolant->resultBuffer.size()); c += 1) { if (c > 0) std::cout << ","; std::cout << bits(static_cast<float>(interpolant->resultBuffer.number(c))); }
                 std::cout << "]";
             }
             std::cout << "]}" << std::endl;
