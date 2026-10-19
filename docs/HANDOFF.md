@@ -99,6 +99,10 @@
    - **已定位到具体夹具**：在探针的 `light()` 入口打印后，输出停在 `light seed=18 type=1` —— `type 1` 就是 **`LightProbe`**，即**构造这个夹具**时自转 ✗。这一步与端口无关（端口 `setup` 已打印返回 ✓）。
    - **结论**：渲染灯光状态的端口行为目前**没有被证明有问题**，只是这个差分**从未跑通** ✗。下一步有两条路：一是在 `LightProbe` 夹具里继续二分（看是 `coefficients` 的 9 次赋值还是 `is`+type 的属性名出问题）；二是**两侧同时跳过 `LightProbe`**（`.mjs` 里过滤、探针里跳过），先让其余灯型跑通并纳入门禁，把 `LightProbe` 留作已知缺口 —— 后者更快见效。
    - **纪律**：修好之前不要让它进普通门禁（会挂住 CI）；也不要因为单元版通过就宣称渲染灯光状态的差分级验证已完成。
+32. **`vulkan-port-pending` 的 290 项不是待移植缺口，而是被本端口自己的后端取代的上游渲染器实现**。读 `docs/port-status.json` 时会以为还有 290 个模块要写，实际构成是：`src/renderers/shaders` 132、`src/renderers/common` 68、`src/renderers/webgpu` 40、`src/renderers/webgl` 30、`src/renderers/webgl-fallback` 12、`src/renderers/webxr` 3，外加 5 个 `WebGL*RenderTarget` 与 `WebGLRenderer` 本身。
+   - 这些是**跑在浏览器里的 JS 渲染器**：WebGL 的 `WebGLPrograms`/`WebGLState`/`WebGLTextures`，WebGPU 的 `Backend`/`Renderer` 家族，以及它们共用的 `common` 抽象。本端口不使用它们中的任何一个，而是自己实现了一份 Vulkan 后端（`src/renderers/vulkan/` 下 13 个 `.cpp`：绑定与缓冲命令、管线布局、程序 uniform、ESSL 着色器编译等）。
+   - **含义**：把它们列为 `vulkan-port-pending` 在"上游模块是否有对应实现"这个维度上是诚实的，但在"还剩多少移植工作"这个维度上会**严重高估**。真正的判断标准应当是：**上游的渲染能力在 Vulkan 后端里有没有等价路径**，而不是"这些 JS 文件有没有被逐行翻译"。
+   - **做法建议**：以后统计完成度时，把这三类分开报：① 已移植且有差分 ✓；② 宿主边界（第 31 条，16 个，现只剩 4 个渲染器绑定 + 3 个非逻辑文件）✗；③ 被后端取代的 JS 渲染器（290）✓。混在一起会得出错误结论。
 31. **宿主边界清单：`src/` 内（除 `src/nodes/`）剩余未移植模块全部归因于宿主或渲染器**。这是"可移植面已完工"的判据，可随时用下面的扫描复核（读 `docs/port-status.json` 的 `missing`，过滤 `src/`、排除 `src/nodes/`，再按上游源码里出现的宿主 API 分类）。当前 16 个，逐一归因：
    - **WebAudio（6）**：`audio/Audio.js` 779、`audio/PositionalAudio.js` 254、`audio/AudioListener.js` 219、`loaders/AudioLoader.js` 109、`audio/AudioAnalyser.js` 98、`audio/AudioContext.js` 41 —— 全部需要 `AudioContext`/`GainNode`/`PannerNode` 这类浏览器音频节点。
    - **渲染器（4）**：`extras/PMREMGenerator.js` 771、`cameras/CubeCamera.js` 260、`Three.WebGPU.js` 43、`Three.WebGPU.Nodes.js` 33 —— 需要 WebGPU/WebGL 渲染目标与预滤波。
