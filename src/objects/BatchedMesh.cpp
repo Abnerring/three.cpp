@@ -2,6 +2,8 @@
 
 #include "core/BufferAttribute.h"
 #include "core/BufferGeometry.h"
+#include "core/Intersection.h"
+#include "core/Raycaster.h"
 #include "materials/MeshBasicMaterial.h"
 #include <algorithm>
 #include <cmath>
@@ -419,4 +421,30 @@ BatchedMesh& BatchedMesh::copy(const Object3D& source, bool recursive) {
     _instanceMatrices = value._instanceMatrices;
     _instanceColors = value._instanceColors;
     return *this;
+}
+bool BatchedMesh::raycast(const Raycaster& raycaster, std::vector<Intersection>& intersects) {
+    const auto before = intersects.size();
+    Mesh scratch;
+    scratch.material = material;
+    scratch.geometry = std::make_shared<BufferGeometry>();
+    scratch.geometry->attributes = geometry->attributes;
+    if (geometry->getIndex() != nullptr) scratch.geometry->setIndex(geometry->getIndex());
+    for (std::size_t i = 0; i < _instanceInfo.size(); i += 1) {
+        const auto& record = _instanceInfo[i];
+        if (!record.visible || !record.active) continue;
+        const auto range = _geometryInfo[static_cast<std::size_t>(record.geometryId)];
+        scratch.geometry->setDrawRange(range.start, range.count);
+        scratch.matrixWorld = matrixWorld;
+        scratch.matrixWorld.multiply(_instanceMatrices[i]);
+        if (const auto box = getBoundingBoxAt(record.geometryId)) scratch.geometry->boundingBox = box;
+        if (const auto sphere = getBoundingSphereAt(record.geometryId)) scratch.geometry->boundingSphere = sphere;
+        std::vector<Intersection> hits;
+        scratch.raycast(raycaster, hits);
+        for (auto& hit : hits) {
+            hit.object = this;
+            hit.batchId = static_cast<double>(i);
+            intersects.push_back(std::move(hit));
+        }
+    }
+    return intersects.size() > before;
 }

@@ -21,4 +21,6 @@ struct Intersection {
     std::optional<Face> face;
     std::optional<std::size_t> faceIndex;
     std::optional<double> index, instanceId, distanceToRay;
+    // A batched mesh stamps the instance of the batch that was hit, which upstream names batchId.
+    std::optional<double> batchId;
 };

@@ -1,6 +1,8 @@
 #include "catch.hpp"
 #include "core/BufferAttribute.h"
 #include "core/BufferGeometry.h"
+#include "core/Intersection.h"
+#include "core/Raycaster.h"
 #include "objects/BatchedMesh.h"
 #include <memory>
 #include <stdexcept>
@@ -290,4 +292,36 @@ TEST_CASE("BatchedMesh copies its bookkeeping") {
     copy->deleteInstance(0.0);
     REQUIRE(copy->getInstanceCount() == 1.0);
     REQUIRE(batch->getInstanceCount() == 2.0);
+}
+// A ray tests every visible instance through the ordinary mesh raycast, and each hit names the instance of the
+// batch it came from.
+TEST_CASE("BatchedMesh raycasts its instances") {
+    auto batch = std::make_shared<BatchedMesh>(4, 16);
+    auto geometry = std::make_shared<BufferGeometry>();
+    geometry->setAttribute("position", std::make_shared<Float32BufferAttribute>(
+        std::vector<float>{-1.0f, -1.0f, 0.0f, 1.0f, -1.0f, 0.0f, 1.0f, 1.0f, 0.0f, -1.0f, 1.0f, 0.0f}, 3));
+    geometry->setIndex(std::make_shared<Uint16BufferAttribute>(std::vector<std::uint16_t>{0, 1, 2, 0, 2, 3}, 1));
+    batch->addGeometry(geometry);
+    batch->addInstance(0.0);
+    batch->addInstance(0.0);
+    Matrix4 moved;
+    moved.set(1, 0, 0, 5, 0, 1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1);
+    batch->setMatrixAt(1.0, moved);
+    // The instance transform has to be where the raycast reads it: storage index twelve is the x translation.
+    REQUIRE(batch->getMatrixAt(1.0).elements()[12] == 5.0);
+    const auto range = batch->getGeometryRangeAt(0.0);
+    REQUIRE(range.count == 6.0);
+    batch->updateMatrixWorld(true);
+
+    Raycaster raycaster(Vector3(0.0, 0.0, 5.0), Vector3(0.0, 0.0, -1.0));
+    std::vector<Intersection> hits;
+    REQUIRE(batch->raycast(raycaster, hits));
+    // The quad is two triangles and the ray passes through their shared edge, so both report a hit; what
+    // matters is that every one of them names the first instance and that the translated one is not tested.
+    REQUIRE(hits.size() >= 1);
+    for (const auto& hit : hits) {
+        REQUIRE(hit.batchId.has_value());
+        REQUIRE(hit.batchId.value() == 0.0);
+        REQUIRE(hit.object == batch.get());
+    }
 }
