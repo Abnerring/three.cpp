@@ -58,6 +58,7 @@
 #include "materials/MeshPhysicalMaterial.h"
 #include "helpers/AxesHelper.h"
 #include "cameras/PerspectiveCamera.h"
+#include "cameras/ArrayCamera.h"
 #include "textures/Texture.h"
 #include "scenes/Fog.h"
 #include "scenes/FogExp2.h"
@@ -620,6 +621,10 @@ int main() {
             else if (which == "mesh") node = std::make_shared<Mesh>();
             else if (which == "points") node = std::make_shared<Points>();
             else if (which == "sprite") node = std::make_shared<Sprite>();
+            else if (which == "array") { double count = 0; in >> count; if (in.fail() || !noTrailingTokens(in)) { std::cout << "{\"error\":\"short input or trailing tokens\"}" << std::endl; continue; }
+                SharedArray<std::shared_ptr<Camera>> cameras;
+                for (int k = 0; k < static_cast<int>(count); k += 1) cameras.push_back(std::make_shared<PerspectiveCamera>());
+                node = std::make_shared<ArrayCamera>(cameras); }
             else if (which == "lod") node = std::make_shared<LOD>();
             else if (which == "rendertarget") { double width = 0, height = 0; in >> width >> height; if (in.fail() || !noTrailingTokens(in)) { std::cout << "{\"error\":\"short input or trailing tokens\"}" << std::endl; continue; } target = std::make_shared<RenderTarget>(width, height); }
             else if (which == "rendertarget3d") { double width = 0, height = 0, depth = 0; in >> width >> height >> depth; if (in.fail() || !noTrailingTokens(in)) { std::cout << "{\"error\":\"short input or trailing tokens\"}" << std::endl; continue; } target = std::make_shared<RenderTarget3D>(width, height, depth); }
@@ -641,6 +646,7 @@ int main() {
             std::cout << ",\"matrixAutoUpdate\":" << (node->matrixAutoUpdate ? "true" : "false");
             std::cout << ",\"matrixWorldAutoUpdate\":" << (node->matrixWorldAutoUpdate ? "true" : "false");
             std::cout << ",\"layersMask\":" << node->layers.mask.value().toNumber();
+            if (auto arrayCamera = std::dynamic_pointer_cast<ArrayCamera>(node)) std::cout << ",\"camerasCount\":" << static_cast<int>(arrayCamera->cameras.size());
             if (auto perspective = std::dynamic_pointer_cast<PerspectiveCamera>(node)) { std::cout << ",\"fov\":" << bits(static_cast<float>(perspective->fov)) << ",\"aspect\":" << bits(static_cast<float>(perspective->aspect)) << ",\"near\":" << bits(static_cast<float>(perspective->near)) << ",\"far\":" << bits(static_cast<float>(perspective->far)); }
             if (auto ortho = std::dynamic_pointer_cast<OrthographicCamera>(node)) { std::cout << ",\"left\":" << bits(static_cast<float>(ortho->left)) << ",\"right\":" << bits(static_cast<float>(ortho->right)) << ",\"top\":" << bits(static_cast<float>(ortho->top)) << ",\"bottom\":" << bits(static_cast<float>(ortho->bottom)) << ",\"near\":" << bits(static_cast<float>(ortho->near)) << ",\"far\":" << bits(static_cast<float>(ortho->far)); }
             std::cout << "}}" << std::endl;
