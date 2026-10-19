@@ -86,6 +86,7 @@ add_library(threecpp
     src/extras/core/Interpolations.cpp src/extras/core/CurvePath.cpp
     src/extras/core/Path.cpp src/extras/core/Shape.cpp src/extras/core/ShapePath.cpp
     src/extras/ShapeUtils.cpp src/extras/DataUtils.cpp src/extras/TextureUtils.cpp src/extras/lib/earcut.cpp
+    src/extras/Earcut.cpp
     src/extras/Controls.cpp
     src/extras/curves/LineCurve.cpp src/extras/curves/LineCurve3.cpp
     src/extras/curves/QuadraticBezierCurve.cpp src/extras/curves/QuadraticBezierCurve3.cpp

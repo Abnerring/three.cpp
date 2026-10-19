@@ -194,8 +194,8 @@
     "note": "Accepted port scope is src and examples/jsm, including tracked third-party dependencies. Editor/manual web applications are excluded from native application rewrites. Native host behavior, packaging and all three platforms require separate implementation and verification evidence."
   },
   "counts": {
-    "partial-unverified": 301,
-    "missing": 640,
+    "partial-unverified": 302,
+    "missing": 639,
     "vulkan-port-pending": 290,
     "dependency-unverified": 20
   },
@@ -203,8 +203,8 @@
     "src": {
       "modules": 755,
       "counts": {
-        "partial-unverified": 217,
-        "missing": 248,
+        "partial-unverified": 218,
+        "missing": 247,
         "vulkan-port-pending": 290
       }
     },
@@ -677,7 +677,7 @@
       "path": "src/extras",
       "upstreamFiles": 7,
       "moduleCount": 7,
-      "modulesWithCppFiles": 5,
+      "modulesWithCppFiles": 6,
       "verifiedComplete": 0
     },
     {
@@ -2674,11 +2674,11 @@
       "scope": "src",
       "kind": "core",
       "upstreamSha256": "ee0edaac9f3f89c092fd6b238fb809ede3ae8131b38b377dc813b435dc8d0a5b",
-      "header": null,
-      "implementation": null,
+      "header": "src/extras/Earcut.h",
+      "implementation": "src/extras/Earcut.cpp",
       "expectedHeader": "src/extras/Earcut.h",
       "expectedImplementation": "src/extras/Earcut.cpp",
-      "status": "missing",
+      "status": "partial-unverified",
       "verifiedComplete": false,
       "apiExtraction": "static-only",
       "verification": {
