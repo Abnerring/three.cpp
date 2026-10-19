@@ -194,8 +194,8 @@
     "note": "Accepted port scope is src and examples/jsm, including tracked third-party dependencies. Editor/manual web applications are excluded from native application rewrites. Native host behavior, packaging and all three platforms require separate implementation and verification evidence."
   },
   "counts": {
-    "partial-unverified": 294,
-    "missing": 647,
+    "partial-unverified": 295,
+    "missing": 646,
     "vulkan-port-pending": 290,
     "dependency-unverified": 20
   },
@@ -203,8 +203,8 @@
     "src": {
       "modules": 755,
       "counts": {
-        "partial-unverified": 210,
-        "missing": 255,
+        "partial-unverified": 211,
+        "missing": 254,
         "vulkan-port-pending": 290
       }
     },
@@ -656,7 +656,7 @@
       "path": "src/audio",
       "upstreamFiles": 5,
       "moduleCount": 5,
-      "modulesWithCppFiles": 2,
+      "modulesWithCppFiles": 3,
       "verifiedComplete": 0
     },
     {
@@ -1811,11 +1811,11 @@
       "scope": "src",
       "kind": "core",
       "upstreamSha256": "81b12d5986bfc564af95f3b82958e47b7bcad1e64395d0b369d53345e6651b8a",
-      "header": null,
-      "implementation": null,
+      "header": "src/audio/AudioListener.h",
+      "implementation": "src/audio/AudioListener.cpp",
       "expectedHeader": "src/audio/AudioListener.h",
       "expectedImplementation": "src/audio/AudioListener.cpp",
-      "status": "missing",
+      "status": "partial-unverified",
       "verifiedComplete": false,
       "apiExtraction": "static-only",
       "verification": {
@@ -1826,7 +1826,9 @@
         "upstreamUnitTests": [
           "test/unit/src/audio/AudioListener.tests.js"
         ],
-        "cppUnitTests": [],
+        "cppUnitTests": [
+          "test/unit/src/audio/AudioListener.tests.cpp"
+        ],
         "reviewedImplementation": [],
         "differentialResults": [],
         "renderingResults": [],
