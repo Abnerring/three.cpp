@@ -99,6 +99,15 @@
    - **已定位到具体夹具**：在探针的 `light()` 入口打印后，输出停在 `light seed=18 type=1` —— `type 1` 就是 **`LightProbe`**，即**构造这个夹具**时自转 ✗。这一步与端口无关（端口 `setup` 已打印返回 ✓）。
    - **结论**：渲染灯光状态的端口行为目前**没有被证明有问题**，只是这个差分**从未跑通** ✗。下一步有两条路：一是在 `LightProbe` 夹具里继续二分（看是 `coefficients` 的 9 次赋值还是 `is`+type 的属性名出问题）；二是**两侧同时跳过 `LightProbe`**（`.mjs` 里过滤、探针里跳过），先让其余灯型跑通并纳入门禁，把 `LightProbe` 留作已知缺口 —— 后者更快见效。
    - **纪律**：修好之前不要让它进普通门禁（会挂住 CI）；也不要因为单元版通过就宣称渲染灯光状态的差分级验证已完成。
+31. **宿主边界清单：`src/` 内（除 `src/nodes/`）剩余未移植模块全部归因于宿主或渲染器**。这是"可移植面已完工"的判据，可随时用下面的扫描复核（读 `docs/port-status.json` 的 `missing`，过滤 `src/`、排除 `src/nodes/`，再按上游源码里出现的宿主 API 分类）。当前 16 个，逐一归因：
+   - **WebAudio（6）**：`audio/Audio.js` 779、`audio/PositionalAudio.js` 254、`audio/AudioListener.js` 219、`loaders/AudioLoader.js` 109、`audio/AudioAnalyser.js` 98、`audio/AudioContext.js` 41 —— 全部需要 `AudioContext`/`GainNode`/`PannerNode` 这类浏览器音频节点。
+   - **渲染器（4）**：`extras/PMREMGenerator.js` 771、`cameras/CubeCamera.js` 260、`Three.WebGPU.js` 43、`Three.WebGPU.Nodes.js` 33 —— 需要 WebGPU/WebGL 渲染目标与预滤波。
+   - **视频播放（2）**：`textures/VideoTexture.js` 128、`textures/VideoFrameTexture.js` 73 —— 需要 `VideoFrame` 或 `readyState` 驱动的帧更新；`VideoFrameTexture` 还**继承** `VideoTexture`，所以不能只做薄封装。
+   - **位图解码（1）**：`loaders/ImageBitmapLoader.js` 226 —— 需要 `createImageBitmap`。
+   - **外部包（1）**：`extras/Earcut.js` 29 —— 只是 `earcut` 包的再导出。
+   - **入口再导出（2）**：`Three.Legacy.js` 1（空文件）、`Three.TSL.js` 4 —— 没有逻辑。
+   - **做法上的含义**：这 16 个不是"忘了移植"，而是**必须由宿主提供能力**。要解锁它们，正确路径是照 `ImageLoader` 的注入式模板（第 22 条）为音频/视频/位图各加一个注入接口，而不是在移植里伪造 DOM 对象。
+   - **另外两处已知的宿主依赖**（模块本身已移植）：`ObjectLoader.parseImages` 的 `url` 字符串分支，以及 `BatchedMesh` 的三个 GPU 纹理与绘制参数。
 30. **`ObjectLoader` 的图像记录形状：`url` 必须是记录，不是 `data`**。写差分文档时踩了两次：上游 `parseImages` 对每条记录调用 `deserializeImage(image.url)`，于是
    - 记录里**没有 `url`** → `deserializeImage(undefined)` → 读 `image.data` **直接崩** ✗；
    - 记录里 `url` 是**字符串** → 走 `ImageLoader` → 需要 `document` ✗；
