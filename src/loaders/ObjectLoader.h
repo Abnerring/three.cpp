@@ -1,6 +1,8 @@
 #pragma once
 #include "core/JSValue.h"
 #include "core/OrderedMap.h"
+#include "extras/core/Shape.h"
+#include "geometries/ShapeGeometry.h"
 #include "textures/TextureSource.h"
 #include <map>
 #include <utility>
@@ -37,6 +39,8 @@ class ObjectLoader {
     // Native image descriptors, keyed by the uuid the document gave them. A document whose image is a URL
     // rather than a data record needs a host decoder and is refused by name.
     std::map<std::string, TextureImage::Ptr> images_;
+    // The shapes a document declares, keyed by uuid, which a shape geometry refers to by that uuid.
+    ShapeGeometry::ShapeMap shapes_;
     OrderedMap<std::shared_ptr<Texture>> textures_;
     // A skinned mesh records the skeleton uuid the document gave it and is bound once every skeleton exists,
     // which is the same two step shape the light targets use.

@@ -1,6 +1,8 @@
 #include "catch.hpp"
 #include "animation/AnimationUtils.h"
 #include "core/BufferGeometry.h"
+#include "extras/core/Shape.h"
+#include "geometries/ShapeGeometry.h"
 #include "core/Object3D.h"
 #include "loaders/ObjectLoader.h"
 #include "objects/Group.h"
@@ -435,4 +437,33 @@ TEST_CASE("ObjectLoader builds image records from data") {
     })");
     ObjectLoader other;
     REQUIRE_THROWS_AS(other.parse(url), std::runtime_error);
+}
+// A shape geometry names its shapes by uuid, so the loader has to read the shape table before the geometries.
+// The record here is produced by the port own serialiser, which keeps the test honest about the format.
+TEST_CASE("ObjectLoader builds a shape geometry from the shape table") {
+    const auto realm = JSValue::object();
+    static_cast<void>(realm);
+    auto shape = std::make_shared<Shape>();
+    shape->moveTo(0.0, 0.0);
+    shape->lineTo(1.0, 0.0);
+    shape->lineTo(1.0, 1.0);
+    shape->lineTo(0.0, 0.0);
+    // Built as a value tree rather than as text, so the case cannot fail on a formatting mistake.
+    const auto shapeRecord = shape->toJSON();
+    const auto geometryRecord = JsonValue(JsonValue::Object{
+        {"type", "ShapeGeometry"}, {"uuid", "g"}, {"curveSegments", 4},
+        {"shapes", JsonValue(JsonValue::Array{JsonValue(shape->uuid)})}});
+    const JsonValue document(JsonValue::Object{
+        {"object", JsonValue(JsonValue::Object{{"type", "Mesh"}, {"uuid", "mesh"}, {"geometry", "g"}})},
+        {"shapes", JsonValue(JsonValue::Array{shapeRecord})},
+        {"geometries", JsonValue(JsonValue::Array{geometryRecord})}});
+    ObjectLoader loader;
+    const auto result = loader.parse(JSValue::fromJSON(document));
+    const auto mesh = std::dynamic_pointer_cast<Mesh>(result.object);
+    REQUIRE(mesh);
+    REQUIRE(mesh->geometry);
+    REQUIRE(mesh->geometry->type == "ShapeGeometry");
+    const auto position = std::dynamic_pointer_cast<BufferAttribute>(mesh->geometry->getAttribute("position"));
+    REQUIRE(position);
+    REQUIRE(position->count > 0);
 }

@@ -61,7 +61,14 @@ ObjectLoader::Result ObjectLoader::parse(const JSValue& json) {
             clips_[clip->uuid.toString()] = clip;
             result.animations.push_back(clip);
         }
-    const auto geometries = json.get("geometries");
+    // Upstream reads the shapes before the geometries, because a shape geometry names them by uuid.
+    const auto shapeList = json.get("shapes");
+    if (!shapeList.isUndefined())
+        for (double index = 0; index < shapeList.length(); index += 1) {
+            auto shape = std::make_shared<Shape>();
+            if (const auto record = shapeList.get(index).toJSON()) shape->fromJSON(*record);
+            shapes_[shape->uuid] = shape;
+        }    const auto geometries = json.get("geometries");
     if (!geometries.isUndefined())
         for (double index = 0; index < geometries.length(); index += 1) {
             const auto data = geometries.get(index);
@@ -70,6 +77,9 @@ ObjectLoader::Result ObjectLoader::parse(const JSValue& json) {
             if (type == "BufferGeometry" || type == "InstancedBufferGeometry") {
                 BufferGeometryLoader loader;
                 geometry = loader.parseGeometry(data);
+            } else if (type == "ShapeGeometry") {
+                // The registry path upstream takes: the geometry resolves its shapes through the table.
+                if (const auto record = data.toJSON()) geometry = ShapeGeometry::fromJSON(*record, shapes_);
             } else {
                 // Every other type comes from Geometries[type].fromJSON upstream, and none are ported.
                 throw std::runtime_error("ObjectLoader: unknown geometry type \"" + type + "\"");
