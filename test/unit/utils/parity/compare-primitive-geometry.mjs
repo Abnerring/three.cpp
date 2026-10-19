@@ -425,3 +425,63 @@ for (let i = 0; i < childHelperScenarios.length; i += 1) {
     assert.deepEqual(childLines[i], expected, `scenario ${line}`);
 }
 console.log(`child helper parity: ${childHelperScenarios.length} scenarios`);
+// The scene graph defaults and the two render targets.
+const {PerspectiveCamera} = await import(pathToFileURL(path.join(sourceDir, 'src/cameras/PerspectiveCamera.js')).href);
+const {OrthographicCamera} = await import(pathToFileURL(path.join(sourceDir, 'src/cameras/OrthographicCamera.js')).href);
+const {Scene} = await import(pathToFileURL(path.join(sourceDir, 'src/scenes/Scene.js')).href);
+const {Group} = await import(pathToFileURL(path.join(sourceDir, 'src/objects/Group.js')).href);
+const {Mesh} = await import(pathToFileURL(path.join(sourceDir, 'src/objects/Mesh.js')).href);
+const {Points} = await import(pathToFileURL(path.join(sourceDir, 'src/objects/Points.js')).href);
+const {Sprite} = await import(pathToFileURL(path.join(sourceDir, 'src/objects/Sprite.js')).href);
+const {LOD} = await import(pathToFileURL(path.join(sourceDir, 'src/objects/LOD.js')).href);
+const {RenderTarget} = await import(pathToFileURL(path.join(sourceDir, 'src/core/RenderTarget.js')).href);
+const {RenderTarget3D} = await import(pathToFileURL(path.join(sourceDir, 'src/core/RenderTarget3D.js')).href);
+
+const nodeScenarios = [
+    ['node perspective 50 1 0.1 2000', () => new PerspectiveCamera(50, 1, 0.1, 2000)],
+    ['node perspective 35 1.5 0.5 100', () => new PerspectiveCamera(35, 1.5, 0.5, 100)],
+    ['node ortho -2 2 1 -1 0.1 50', () => new OrthographicCamera(-2, 2, 1, -1, 0.1, 50)],
+    ['node scene', () => new Scene()],
+    ['node group', () => new Group()],
+    ['node mesh', () => new Mesh()],
+    ['node points', () => new Points()],
+    ['node sprite', () => new Sprite()],
+    ['node lod', () => new LOD()],
+    ['node rendertarget 16 8', () => new RenderTarget(16, 8)],
+    ['node rendertarget3d 4 4 2', () => new RenderTarget3D(4, 4, 2)],
+];
+
+const nodeRaw = execFileSync(probePath, [], {input: nodeScenarios.map(([line]) => line).join('\n'), encoding: 'utf8'});
+const nodeLines = nodeRaw.trim().split('\n').map((line) => JSON.parse(line));
+for (let i = 0; i < nodeScenarios.length; i += 1) {
+    const [line, build] = nodeScenarios[i];
+    const node = build();
+    const which = line.split(' ')[1];
+    let expected;
+    if (which.startsWith('rendertarget')) {
+        expected = {kind: 'node', which, width: bitOf(node.width), height: bitOf(node.height)};
+        if (which === 'rendertarget3d') expected.depth = bitOf(node.depth);
+    } else {
+        expected = {kind: 'node', which, type: node.type, fields: {
+            visible: node.visible,
+            castShadow: node.castShadow,
+            receiveShadow: node.receiveShadow,
+            frustumCulled: node.frustumCulled,
+            renderOrder: bitOf(node.renderOrder),
+            matrixAutoUpdate: node.matrixAutoUpdate,
+            matrixWorldAutoUpdate: node.matrixWorldAutoUpdate,
+            layersMask: node.layers.mask,
+        }};
+        if (node.isPerspectiveCamera) {
+            expected.fields.fov = bitOf(node.fov);
+            expected.fields.aspect = bitOf(node.aspect);
+            expected.fields.near = bitOf(node.near);
+            expected.fields.far = bitOf(node.far);
+        }
+        if (node.isOrthographicCamera) {
+            for (const key of ['left', 'right', 'top', 'bottom', 'near', 'far']) expected.fields[key] = bitOf(node[key]);
+        }
+    }
+    assert.deepEqual(nodeLines[i], expected, `scenario ${line}`);
+}
+console.log(`node parity: ${nodeScenarios.length} scenarios`);

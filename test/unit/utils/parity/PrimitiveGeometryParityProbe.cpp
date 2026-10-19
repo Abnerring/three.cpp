@@ -57,6 +57,16 @@
 #include "materials/MeshMatcapMaterial.h"
 #include "materials/MeshPhysicalMaterial.h"
 #include "helpers/AxesHelper.h"
+#include "cameras/PerspectiveCamera.h"
+#include "cameras/OrthographicCamera.h"
+#include "core/RenderTarget.h"
+#include "core/RenderTarget3D.h"
+#include "objects/Group.h"
+#include "objects/Mesh.h"
+#include "objects/Points.h"
+#include "objects/Sprite.h"
+#include "objects/LOD.h"
+#include "scenes/Scene.h"
 #include "helpers/GridHelper.h"
 #include "helpers/ArrowHelper.h"
 #include "helpers/PointLightHelper.h"
@@ -579,6 +589,43 @@ int main() {
                 std::cout << "}";
             }
             std::cout << "]}" << std::endl;
+            continue;
+        } else if (kind == "node") {
+            std::string which;
+            in >> which;
+            std::shared_ptr<Object3D> node;
+            std::shared_ptr<RenderTarget> target;
+            if (which == "perspective") { double fov = 0, aspect = 0, near = 0, far = 0; in >> fov >> aspect >> near >> far; if (in.fail()) { std::cout << "{\"error\":\"short input\"}" << std::endl; continue; } node = std::make_shared<PerspectiveCamera>(fov, aspect, near, far); }
+            else if (which == "ortho") { double left = 0, right = 0, top = 0, bottom = 0, near = 0, far = 0; in >> left >> right >> top >> bottom >> near >> far; if (in.fail()) { std::cout << "{\"error\":\"short input\"}" << std::endl; continue; } node = std::make_shared<OrthographicCamera>(left, right, top, bottom, near, far); }
+            else if (which == "scene") node = std::make_shared<Scene>();
+            else if (which == "group") node = std::make_shared<Group>();
+            else if (which == "mesh") node = std::make_shared<Mesh>();
+            else if (which == "points") node = std::make_shared<Points>();
+            else if (which == "sprite") node = std::make_shared<Sprite>();
+            else if (which == "lod") node = std::make_shared<LOD>();
+            else if (which == "rendertarget") { double width = 0, height = 0; in >> width >> height; if (in.fail()) { std::cout << "{\"error\":\"short input\"}" << std::endl; continue; } target = std::make_shared<RenderTarget>(width, height); }
+            else if (which == "rendertarget3d") { double width = 0, height = 0, depth = 0; in >> width >> height >> depth; if (in.fail()) { std::cout << "{\"error\":\"short input\"}" << std::endl; continue; } target = std::make_shared<RenderTarget3D>(width, height, depth); }
+            else { std::cout << "{\"error\":\"unknown node\"}" << std::endl; continue; }
+            std::cout << "{\"kind\":\"node\",\"which\":\"" << which << "\"";
+            if (target) {
+                std::cout << ",\"width\":" << bits(static_cast<float>(target->width)) << ",\"height\":" << bits(static_cast<float>(target->height));
+                if (target->isRenderTarget3D) { if (auto target3d = std::dynamic_pointer_cast<RenderTarget3D>(target)) std::cout << ",\"depth\":" << bits(static_cast<float>(target3d->depth)); }
+                std::cout << "}" << std::endl;
+                continue;
+            }
+            std::cout << ",\"type\":\"" << node->type << "\"";
+            std::cout << ",\"fields\":{";
+            std::cout << "\"visible\":" << (node->visible ? "true" : "false");
+            std::cout << ",\"castShadow\":" << (node->castShadow ? "true" : "false");
+            std::cout << ",\"receiveShadow\":" << (node->receiveShadow ? "true" : "false");
+            std::cout << ",\"frustumCulled\":" << (node->frustumCulled ? "true" : "false");
+            std::cout << ",\"renderOrder\":" << bits(static_cast<float>(node->renderOrder));
+            std::cout << ",\"matrixAutoUpdate\":" << (node->matrixAutoUpdate ? "true" : "false");
+            std::cout << ",\"matrixWorldAutoUpdate\":" << (node->matrixWorldAutoUpdate ? "true" : "false");
+            std::cout << ",\"layersMask\":" << node->layers.mask.value().toNumber();
+            if (auto perspective = std::dynamic_pointer_cast<PerspectiveCamera>(node)) { std::cout << ",\"fov\":" << bits(static_cast<float>(perspective->fov)) << ",\"aspect\":" << bits(static_cast<float>(perspective->aspect)) << ",\"near\":" << bits(static_cast<float>(perspective->near)) << ",\"far\":" << bits(static_cast<float>(perspective->far)); }
+            if (auto ortho = std::dynamic_pointer_cast<OrthographicCamera>(node)) { std::cout << ",\"left\":" << bits(static_cast<float>(ortho->left)) << ",\"right\":" << bits(static_cast<float>(ortho->right)) << ",\"top\":" << bits(static_cast<float>(ortho->top)) << ",\"bottom\":" << bits(static_cast<float>(ortho->bottom)) << ",\"near\":" << bits(static_cast<float>(ortho->near)) << ",\"far\":" << bits(static_cast<float>(ortho->far)); }
+            std::cout << "}}" << std::endl;
             continue;
         } else {
             std::cout << "{\"error\":\"unknown kind\"}" << std::endl;
