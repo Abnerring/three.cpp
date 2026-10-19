@@ -99,6 +99,11 @@
    - **已定位到具体夹具**：在探针的 `light()` 入口打印后，输出停在 `light seed=18 type=1` —— `type 1` 就是 **`LightProbe`**，即**构造这个夹具**时自转 ✗。这一步与端口无关（端口 `setup` 已打印返回 ✓）。
    - **结论**：渲染灯光状态的端口行为目前**没有被证明有问题**，只是这个差分**从未跑通** ✗。下一步有两条路：一是在 `LightProbe` 夹具里继续二分（看是 `coefficients` 的 9 次赋值还是 `is`+type 的属性名出问题）；二是**两侧同时跳过 `LightProbe`**（`.mjs` 里过滤、探针里跳过），先让其余灯型跑通并纳入门禁，把 `LightProbe` 留作已知缺口 —— 后者更快见效。
    - **纪律**：修好之前不要让它进普通门禁（会挂住 CI）；也不要因为单元版通过就宣称渲染灯光状态的差分级验证已完成。
+33. **两条防回归纪律（都来自一次真实事故）**。加 `Earcut` 封装时，我用整文件写入的方式创建 `test/unit/src/extras/Earcut.tests.cpp`，而**那个文件早就存在**，里面有 5 个对拍上游三角形顺序的用例。结果它们被静默覆盖，核心用例数从 737 掉到 733，而门禁只看退出码，没看数量，于是带着损失提交了。两条规则：
+   - **写文件前先确认它是否存在**。新文件才整写；已存在的文件一律用定点补丁追加。当时我检查了"CMake 里有没有登记"，却没检查"文件在不在"，这个检查顺序是错的。
+   - **用例数只能单调不减**。任何一次门禁里，核心与 addons 的用例数、断言数如果比上一轮**下降**，就当作回归处理：查明原因、修复、再提交。断言数会因测试改写而小幅波动，但用例数下降没有正当理由。
+   - 事后核对：`git diff --stat HEAD~1 HEAD -- test/unit/src` 能立刻显示被大幅删除的测试文件；`--list-tests` 的条目数与汇总行的用例数应当一致。
+34. **三个"入口再导出"模块判定为不适用，不需要移植**：`src/Three.Legacy.js`（1 行，空文件，只是历史兼容占位）、`src/Three.TSL.js`（4 行，把 `src/nodes` 的 TSL 再导出）、`src/Three.WebGPU.js` 与 `src/Three.WebGPU.Nodes.js`（43 与 33 行，全部是 WebGPU 渲染器与节点系统的再导出）。它们没有任何自己的逻辑：等价物是"本端口的入口头文件与 Vulkan 后端"，写一个 `Three.WebGPU` 的 C++ 再导出既没有调用者也没有意义。判定理由记录在此，而不是把它们留在"待移植"里充数。
 32. **`vulkan-port-pending` 的 290 项不是待移植缺口，而是被本端口自己的后端取代的上游渲染器实现**。读 `docs/port-status.json` 时会以为还有 290 个模块要写，实际构成是：`src/renderers/shaders` 132、`src/renderers/common` 68、`src/renderers/webgpu` 40、`src/renderers/webgl` 30、`src/renderers/webgl-fallback` 12、`src/renderers/webxr` 3，外加 5 个 `WebGL*RenderTarget` 与 `WebGLRenderer` 本身。
    - 这些是**跑在浏览器里的 JS 渲染器**：WebGL 的 `WebGLPrograms`/`WebGLState`/`WebGLTextures`，WebGPU 的 `Backend`/`Renderer` 家族，以及它们共用的 `common` 抽象。本端口不使用它们中的任何一个，而是自己实现了一份 Vulkan 后端（`src/renderers/vulkan/` 下 13 个 `.cpp`：绑定与缓冲命令、管线布局、程序 uniform、ESSL 着色器编译等）。
    - **含义**：把它们列为 `vulkan-port-pending` 在"上游模块是否有对应实现"这个维度上是诚实的，但在"还剩多少移植工作"这个维度上会**严重高估**。真正的判断标准应当是：**上游的渲染能力在 Vulkan 后端里有没有等价路径**，而不是"这些 JS 文件有没有被逐行翻译"。
