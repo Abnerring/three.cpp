@@ -99,3 +99,9 @@
    - **已定位到具体夹具**：在探针的 `light()` 入口打印后，输出停在 `light seed=18 type=1` —— `type 1` 就是 **`LightProbe`**，即**构造这个夹具**时自转 ✗。这一步与端口无关（端口 `setup` 已打印返回 ✓）。
    - **结论**：渲染灯光状态的端口行为目前**没有被证明有问题**，只是这个差分**从未跑通** ✗。下一步有两条路：一是在 `LightProbe` 夹具里继续二分（看是 `coefficients` 的 9 次赋值还是 `is`+type 的属性名出问题）；二是**两侧同时跳过 `LightProbe`**（`.mjs` 里过滤、探针里跳过），先让其余灯型跑通并纳入门禁，把 `LightProbe` 留作已知缺口 —— 后者更快见效。
    - **纪律**：修好之前不要让它进普通门禁（会挂住 CI）；也不要因为单元版通过就宣称渲染灯光状态的差分级验证已完成。
+30. **`ObjectLoader` 的图像记录形状：`url` 必须是记录，不是 `data`**。写差分文档时踩了两次：上游 `parseImages` 对每条记录调用 `deserializeImage(image.url)`，于是
+   - 记录里**没有 `url`** → `deserializeImage(undefined)` → 读 `image.data` **直接崩** ✗；
+   - 记录里 `url` 是**字符串** → 走 `ImageLoader` → 需要 `document` ✗；
+   - 记录里 `url` 是**对象** `{data, width, height, type}` → 走上游的数据分支 ✓，构造 `DataTexture` ✓。
+   端口的 `parseImages` 直接读记录的 `data`/`width`/`height`/`type`（跳过 `url` 这层），所以两侧都能吃，但**生成文档时必须按上游的 `url` 记录形写**，否则 oracle 先崩。
+   这也解释了 `BatchedMesh` 的差分为什么需要两个**带数据图像**的纹理（`matricesTexture`、`indirectTexture`）：上游分支无条件读它们的 uuid，缺了就是崩溃而不是跳过。端口有意跳过这三个纹理（矩阵与颜色存在向量里、间接表只用于 multi draw），结构摘要因此不观察它们 —— 这是**有意取舍**，不是遗漏。
