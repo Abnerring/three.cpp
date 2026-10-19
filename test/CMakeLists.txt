@@ -17,6 +17,7 @@ add_executable(THREECPPTests
         unit/src/objects/BatchedMesh.tests.cpp
         unit/src/textures/CanvasTexture.tests.cpp
         unit/src/textures/HTMLTexture.tests.cpp
+        unit/src/textures/VideoTexture.tests.cpp
         unit/src/audio/AudioContext.tests.cpp
         unit/src/audio/Audio.tests.cpp
         unit/src/audio/AudioListener.tests.cpp

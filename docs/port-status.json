@@ -194,8 +194,8 @@
     "note": "Accepted port scope is src and examples/jsm, including tracked third-party dependencies. Editor/manual web applications are excluded from native application rewrites. Native host behavior, packaging and all three platforms require separate implementation and verification evidence."
   },
   "counts": {
-    "partial-unverified": 298,
-    "missing": 643,
+    "partial-unverified": 300,
+    "missing": 641,
     "vulkan-port-pending": 290,
     "dependency-unverified": 20
   },
@@ -203,8 +203,8 @@
     "src": {
       "modules": 755,
       "counts": {
-        "partial-unverified": 214,
-        "missing": 251,
+        "partial-unverified": 216,
+        "missing": 249,
         "vulkan-port-pending": 290
       }
     },
@@ -1048,7 +1048,7 @@
       "path": "src/textures",
       "upstreamFiles": 17,
       "moduleCount": 17,
-      "modulesWithCppFiles": 15,
+      "modulesWithCppFiles": 17,
       "verifiedComplete": 0
     }
   ],
@@ -22012,11 +22012,11 @@
       "scope": "src",
       "kind": "core",
       "upstreamSha256": "2af0e53e890a35e57c167c0045cac7e85611ea6d66d31587ad2424ac2276daa3",
-      "header": null,
-      "implementation": null,
+      "header": "src/textures/VideoFrameTexture.h",
+      "implementation": "src/textures/VideoFrameTexture.cpp",
       "expectedHeader": "src/textures/VideoFrameTexture.h",
       "expectedImplementation": "src/textures/VideoFrameTexture.cpp",
-      "status": "missing",
+      "status": "partial-unverified",
       "verifiedComplete": false,
       "apiExtraction": "static-only",
       "verification": {
@@ -22039,11 +22039,11 @@
       "scope": "src",
       "kind": "core",
       "upstreamSha256": "0363fdff7a8fa4b49d901a78853584a0023a669e3ff90300fa60d91867991cdd",
-      "header": null,
-      "implementation": null,
+      "header": "src/textures/VideoTexture.h",
+      "implementation": "src/textures/VideoTexture.cpp",
       "expectedHeader": "src/textures/VideoTexture.h",
       "expectedImplementation": "src/textures/VideoTexture.cpp",
-      "status": "missing",
+      "status": "partial-unverified",
       "verifiedComplete": false,
       "apiExtraction": "static-only",
       "verification": {
@@ -22054,7 +22054,9 @@
         "upstreamUnitTests": [
           "test/unit/src/textures/VideoTexture.tests.js"
         ],
-        "cppUnitTests": [],
+        "cppUnitTests": [
+          "test/unit/src/textures/VideoTexture.tests.cpp"
+        ],
         "reviewedImplementation": [],
         "differentialResults": [],
         "renderingResults": [],
