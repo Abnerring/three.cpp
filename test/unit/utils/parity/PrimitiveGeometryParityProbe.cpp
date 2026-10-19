@@ -310,15 +310,15 @@ int main() {
             }
             CatmullRomCurve3 curve(points, closed != 0.0);
             std::cout << "{\"kind\":\"curve\",\"points\":[";
-            for (int i = 0; i <= 4; i += 1) {
-                const double t = i / 4.0;
+            for (int i = 0; i <= 16; i += 1) {
+                const double t = i / 16.0;
                 const auto point = curve.getPoint(t);
                 if (i > 0) std::cout << ",";
                 std::cout << "[" << bits(static_cast<float>(point.x)) << "," << bits(static_cast<float>(point.y)) << "," << bits(static_cast<float>(point.z)) << "]";
             }
             std::cout << "],\"tangents\":[";
-            for (int i = 0; i <= 4; i += 1) {
-                const double t = i / 4.0;
+            for (int i = 0; i <= 16; i += 1) {
+                const double t = i / 16.0;
                 const auto tangent = curve.getTangent(t);
                 if (i > 0) std::cout << ",";
                 std::cout << "[" << bits(static_cast<float>(tangent.x)) << "," << bits(static_cast<float>(tangent.y)) << "," << bits(static_cast<float>(tangent.z)) << "]";
@@ -330,13 +330,13 @@ int main() {
                 std::cout << bits(static_cast<float>((*lengths)[j]));
             }
             std::cout << "],\"utoT\":[";
-            for (int i = 0; i <= 4; i += 1) {
+            for (int i = 0; i <= 16; i += 1) {
                 if (i > 0) std::cout << ",";
-                std::cout << bits(static_cast<float>(curve.getUtoTmapping(i / 4.0)));
+                std::cout << bits(static_cast<float>(curve.getUtoTmapping(i / 16.0)));
             }
             std::cout << "],\"pointAt\":[";
-            for (int i = 0; i <= 4; i += 1) {
-                const auto pointAt = curve.getPointAt(i / 4.0);
+            for (int i = 0; i <= 16; i += 1) {
+                const auto pointAt = curve.getPointAt(i / 16.0);
                 if (i > 0) std::cout << ",";
                 std::cout << "[" << bits(static_cast<float>(pointAt.x)) << "," << bits(static_cast<float>(pointAt.y)) << "," << bits(static_cast<float>(pointAt.z)) << "]";
             }

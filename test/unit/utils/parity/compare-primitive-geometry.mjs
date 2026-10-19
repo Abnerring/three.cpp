@@ -131,7 +131,7 @@ const curveLines = curveRaw.trim().split('\n').map((line) => JSON.parse(line));
 for (let i = 0; i < curveScenarios.length; i += 1) {
     const [line, build] = curveScenarios[i];
     const curve = build();
-    const samples = [0, 0.25, 0.5, 0.75, 1];
+    const samples = Array.from({length: 17}, (_, k) => k / 16);
     const expected = {
         kind: 'curve',
         points: samples.map((t) => { const p = curve.getPoint(t); return [bitOf(p.x), bitOf(p.y), bitOf(p.z)]; }),
