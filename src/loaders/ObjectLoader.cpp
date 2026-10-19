@@ -14,6 +14,7 @@
 #include "lights/RectAreaLight.h"
 #include "lights/SpotLight.h"
 #include "loaders/BufferGeometryLoader.h"
+#include "loaders/ImageLoader.h"
 #include "loaders/MaterialLoader.h"
 #include "geometries/BoxGeometry.h"
 #include "geometries/CapsuleGeometry.h"
@@ -138,8 +139,25 @@ ObjectLoader::Result ObjectLoader::parse(const JSValue& json) {
             // Upstream reads image.url and only then looks inside it, so a record is either {data, ...} or
             // {url: {data, ...}}. A string url would go to an image loader and needs a host decoder.
             const auto nested = data.get("data").isUndefined() && data.get("url").isObject();
-            if (data.get("data").isUndefined() && !nested)
-                throw std::runtime_error("ObjectLoader: image records that name a url need a host decoder");
+            // A string url is decoded through the image loader decoder, which is the host boundary the image
+            // loader already exposes; without one the record is refused rather than left sourceless.
+            if (data.get("data").isUndefined() && !nested) {
+                const auto url = data.get("url");
+                if (url.isUndefined() || url.isObject())
+                    throw std::runtime_error("ObjectLoader: image record has neither data nor url");
+                const auto decoder = ImageLoader::decoder();
+                if (decoder.isUndefined())
+                    throw std::runtime_error("ObjectLoader: image urls need a decoder; call ImageLoader::setDecoder");
+                auto request = JSValue::object();
+                request.set("url", url);
+                const auto decoded = decoder.call(JSValue(), {request});
+                std::vector<std::uint8_t> bytes;
+                const auto pixels = decoded.get("data");
+                for (double i = 0; i < pixels.length(); i += 1) bytes.push_back(static_cast<std::uint8_t>(pixels.get(i).toNumber()));
+                images_[uuid] = std::make_shared<TextureImage>(Uint8Array(bytes), decoded.get("width").toNumber(),
+                                                              decoded.get("height").toNumber());
+                continue;
+            }
             const auto source = nested ? data.get("url") : data;
             const auto kind = source.get("type").toString();
             const auto values = numbers(source.get("data"));

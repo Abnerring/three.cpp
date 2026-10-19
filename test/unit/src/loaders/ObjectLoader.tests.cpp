@@ -4,6 +4,7 @@
 #include "extras/core/Shape.h"
 #include "geometries/ShapeGeometry.h"
 #include "core/Object3D.h"
+#include "loaders/ImageLoader.h"
 #include "loaders/ObjectLoader.h"
 #include "objects/Group.h"
 #include "objects/Mesh.h"
@@ -431,12 +432,36 @@ TEST_CASE("ObjectLoader builds image records from data") {
     REQUIRE(basic->map->image.get()->width == 2.0);
     REQUIRE(basic->map->image.get()->height == 2.0);
 
+    // A record that names a url goes through the image loader decoder; without one it is refused.
     const auto url = Animation_detail::parseJSON(R"({
-        "object": {"type": "Object3D", "uuid": "o"},
-        "images": [{"uuid": "img", "url": "texture.png"}]
+        "object": {"type": "Mesh", "uuid": "mesh", "geometry": "g", "material": "m"},
+        "geometries": [{"type": "BufferGeometry", "uuid": "g", "data": {"attributes": {}}}],
+        "images": [{"uuid": "img", "url": "texture.png"}],
+        "textures": [{"uuid": "tex", "image": "img"}],
+        "materials": [{"type": "MeshBasicMaterial", "uuid": "m", "map": "tex"}]
     })");
+    ImageLoader::setDecoder(JSValue());
     ObjectLoader other;
     REQUIRE_THROWS_AS(other.parse(url), std::runtime_error);
+    ImageLoader::setDecoder(JSValue::function([](const JSValue&, const std::vector<JSValue>&, const std::vector<JSValue>&) {
+        auto decoded = JSValue::object();
+        decoded.set("width", 2);
+        decoded.set("height", 2);
+        auto pixels = JSValue::array();
+        for (int i = 0; i < 16; i += 1) pixels.set(std::to_string(i), 255);
+        decoded.set("data", pixels);
+        return decoded;
+    }, {}, "decoder", 1));
+    ObjectLoader withDecoder;
+    const auto decodedResult = withDecoder.parse(url);
+    const auto decodedMesh = std::dynamic_pointer_cast<Mesh>(decodedResult.object);
+    REQUIRE(decodedMesh);
+    const auto decodedMaterial = std::dynamic_pointer_cast<MeshBasicMaterial>(decodedMesh->material);
+    REQUIRE(decodedMaterial);
+    REQUIRE(decodedMaterial->map);
+    REQUIRE(decodedMaterial->map->image.get().get());
+    REQUIRE(decodedMaterial->map->image.get().get()->width == 2.0);
+    ImageLoader::setDecoder(JSValue());
 }
 // A shape geometry names its shapes by uuid, so the loader has to read the shape table before the geometries.
 // The record here is produced by the port own serialiser, which keeps the test honest about the format.
