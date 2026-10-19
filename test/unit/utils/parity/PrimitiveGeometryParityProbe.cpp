@@ -56,6 +56,12 @@
 #include "materials/MeshToonMaterial.h"
 #include "materials/MeshMatcapMaterial.h"
 #include "materials/MeshPhysicalMaterial.h"
+#include "helpers/AxesHelper.h"
+#include "helpers/GridHelper.h"
+#include "helpers/ArrowHelper.h"
+#include "helpers/PointLightHelper.h"
+#include "helpers/DirectionalLightHelper.h"
+#include "objects/Line.h"
 #include "extras/curves/QuadraticBezierCurve3.h"
 #include "extras/curves/CubicBezierCurve3.h"
 #include "extras/curves/CatmullRomCurve3.h"
@@ -536,6 +542,43 @@ int main() {
             std::cout << ",\"toneMapped\":" << (material->toneMapped ? "true" : "false");
             std::cout << ",\"vertexColors\":" << (material->vertexColors ? "true" : "false");
             std::cout << "}}" << std::endl;
+            continue;
+        } else if (kind == "helper") {
+            std::string which;
+            in >> which;
+            std::shared_ptr<Object3D> helper;
+            if (which == "axes") { double size = 0; in >> size; if (in.fail()) { std::cout << "{\"error\":\"short input\"}" << std::endl; continue; } helper = std::make_shared<AxesHelper>(size); }
+            else if (which == "grid") { double size = 0, divisions = 0; in >> size >> divisions; if (in.fail()) { std::cout << "{\"error\":\"short input\"}" << std::endl; continue; } helper = std::make_shared<GridHelper>(size, divisions); }
+            else if (which == "arrow") { double dx = 0, dy = 0, dz = 0, ox = 0, oy = 0, oz = 0, length = 0; in >> dx >> dy >> dz >> ox >> oy >> oz >> length; if (in.fail()) { std::cout << "{\"error\":\"short input\"}" << std::endl; continue; } helper = std::make_shared<ArrowHelper>(Vector3(dx, dy, dz), Vector3(ox, oy, oz), length); }
+            else if (which == "pointlight") { double sphereSize = 0; in >> sphereSize; if (in.fail()) { std::cout << "{\"error\":\"short input\"}" << std::endl; continue; } helper = std::make_shared<PointLightHelper>(std::make_shared<PointLight>(), sphereSize); }
+            else if (which == "directional") { double size = 0; in >> size; if (in.fail()) { std::cout << "{\"error\":\"short input\"}" << std::endl; continue; } helper = std::make_shared<DirectionalLightHelper>(std::make_shared<DirectionalLight>(), size); }
+            else { std::cout << "{\"error\":\"unknown helper\"}" << std::endl; continue; }
+            std::cout << "{\"kind\":\"helper\",\"which\":\"" << which << "\",\"type\":\"" << helper->type << "\"";
+            if (auto self = std::dynamic_pointer_cast<Line>(helper)) {
+                if (self->geometry) {
+                    const auto position = std::dynamic_pointer_cast<BufferAttribute>(self->geometry->getAttribute("position"));
+                    std::cout << ",\"selfCount\":" << static_cast<int>(position ? position->count : 0);
+                    std::cout << ",\"selfPoints\":[";
+                    for (int i = 0; position && i < 6 && i < static_cast<int>(position->count) * 3; i += 1) { if (i > 0) std::cout << ","; std::cout << bits(static_cast<float>(position->getComponent(i / 3, i % 3))); }
+                    std::cout << "]";
+                }
+            }
+            std::cout << ",\"children\":[";
+            for (std::size_t c = 0; c < helper->children.size(); c += 1) {
+                if (c > 0) std::cout << ",";
+                std::cout << "{\"type\":\"" << helper->children[c]->type << "\"";
+                if (auto line = std::dynamic_pointer_cast<Line>(helper->children[c])) {
+                    if (line->geometry) {
+                        const auto position = std::dynamic_pointer_cast<BufferAttribute>(line->geometry->getAttribute("position"));
+                        std::cout << ",\"count\":" << static_cast<int>(position ? position->count : 0);
+                        std::cout << ",\"points\":[";
+                        for (int i = 0; position && i < 6 && i < static_cast<int>(position->count) * 3; i += 1) { if (i > 0) std::cout << ","; std::cout << bits(static_cast<float>(position->getComponent(i / 3, i % 3))); }
+                        std::cout << "]";
+                    }
+                }
+                std::cout << "}";
+            }
+            std::cout << "]}" << std::endl;
             continue;
         } else {
             std::cout << "{\"error\":\"unknown kind\"}" << std::endl;

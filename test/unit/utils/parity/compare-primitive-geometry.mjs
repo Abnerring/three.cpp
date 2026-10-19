@@ -352,3 +352,27 @@ for (let i = 0; i < materialScenarios.length; i += 1) {
     assert.deepEqual(materialLines[i], expected, `scenario ${line}`);
 }
 console.log(`material parity: ${materialScenarios.length} scenarios`);
+// The line based helpers: the helper describes itself, so its own geometry is compared.
+const {AxesHelper} = await import(pathToFileURL(path.join(sourceDir, 'src/helpers/AxesHelper.js')).href);
+const {GridHelper} = await import(pathToFileURL(path.join(sourceDir, 'src/helpers/GridHelper.js')).href);
+
+const helperScenarios = [
+    ['helper axes 1', () => new AxesHelper(1)],
+    ['helper axes 2.5', () => new AxesHelper(2.5)],
+    ['helper grid 10 10', () => new GridHelper(10, 10)],
+    ['helper grid 6 3', () => new GridHelper(6, 3)],
+];
+const helperRaw = execFileSync(probePath, [], {input: helperScenarios.map(([line]) => line).join('\n'), encoding: 'utf8'});
+const helperLines = helperRaw.trim().split('\n').map((line) => JSON.parse(line));
+for (let i = 0; i < helperScenarios.length; i += 1) {
+    const [line, build] = helperScenarios[i];
+    const helper = build();
+    const position = helper.geometry.attributes.position;
+    const limit = Math.min(position.count * 3, 6);
+    const points = [];
+    for (let k = 0; k < limit; k++) points.push(bitOf(position.array[k]));
+    const expected = {kind: 'helper', which: line.split(' ')[1], type: helper.type,
+        selfCount: position.count, selfPoints: points, children: []};
+    assert.deepEqual(helperLines[i], expected, `scenario ${line}`);
+}
+console.log(`helper parity: ${helperScenarios.length} scenarios`);
