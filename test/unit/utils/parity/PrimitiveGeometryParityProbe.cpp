@@ -83,6 +83,8 @@
 #include "textures/CubeTexture.h"
 #include "textures/DataArrayTexture.h"
 #include "textures/Data3DTexture.h"
+#include "textures/CompressedTexture.h"
+#include "textures/CompressedArrayTexture.h"
 #include "textures/DataTexture.h"
 #include "textures/DepthTexture.h"
 #include "cameras/OrthographicCamera.h"
@@ -704,6 +706,8 @@ int main() {
             else if (which == "data3d") { double width = 0, height = 0, depth = 0; in >> width >> height >> depth; if (in.fail() || !noTrailingTokens(in)) { std::cout << "{\"error\":\"short input or trailing tokens\"}" << std::endl; continue; }
                 std::vector<std::uint8_t> bytes(static_cast<std::size_t>(width * height * depth * 4), 0);
                 texture = std::make_shared<Data3DTexture>(Uint8Array(bytes), width, height, depth); }
+            else if (which == "compressed") { if (in.fail() || !noTrailingTokens(in)) { std::cout << "{\"error\":\"trailing tokens\"}" << std::endl; continue; } texture = std::make_shared<CompressedTexture>(); }
+            else if (which == "compressedarray") { if (in.fail() || !noTrailingTokens(in)) { std::cout << "{\"error\":\"trailing tokens\"}" << std::endl; continue; } texture = std::make_shared<CompressedArrayTexture>(); }
             else { std::cout << "{\"error\":\"unknown texture\"}" << std::endl; continue; }
             std::cout << "{\"kind\":\"texture\",\"which\":\"" << which << "\",\"fields\":{";
             std::cout << "\"mapping\":" << bits(static_cast<float>(texture->mapping));
