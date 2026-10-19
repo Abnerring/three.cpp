@@ -1,6 +1,7 @@
 #pragma once
 #include "core/JSValue.h"
 #include "core/OrderedMap.h"
+#include "textures/TextureSource.h"
 #include <map>
 #include <utility>
 #include <memory>
@@ -33,6 +34,9 @@ class ObjectLoader {
     std::map<std::string, std::shared_ptr<BufferGeometry>> geometries_;
     std::map<std::string, std::shared_ptr<Material>> materials_;
     // Kept in an ordered map so the material loader receives them in document order.
+    // Native image descriptors, keyed by the uuid the document gave them. A document whose image is a URL
+    // rather than a data record needs a host decoder and is refused by name.
+    std::map<std::string, TextureImage::Ptr> images_;
     OrderedMap<std::shared_ptr<Texture>> textures_;
     // A skinned mesh records the skeleton uuid the document gave it and is bound once every skeleton exists,
     // which is the same two step shape the light targets use.

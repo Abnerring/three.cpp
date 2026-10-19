@@ -23,6 +23,7 @@
 #include "scenes/FogExp2.h"
 #include "scenes/Scene.h"
 #include "textures/Texture.h"
+#include "textures/TextureSource.h"
 #include <memory>
 #include <stdexcept>
 
@@ -404,4 +405,34 @@ TEST_CASE("ObjectLoader builds an area light and a light probe") {
     REQUIRE(probe->intensity == 3.0);
     REQUIRE(probe->sh);
     REQUIRE(probe->sh->toArray()[0] == 1.0);
+}
+
+// An image record that carries data becomes a native descriptor and the texture that names it attaches it.
+// A record that carries a url would need a host decoder and is refused rather than left without a source.
+TEST_CASE("ObjectLoader builds image records from data") {
+    const auto realm = JSValue::object();
+    static_cast<void>(realm);
+    const auto json = Animation_detail::parseJSON(R"({
+        "object": {"type": "Mesh", "uuid": "mesh", "geometry": "g", "material": "m"},
+        "geometries": [{"type": "BufferGeometry", "uuid": "g", "data": {"attributes": {}}}],
+        "images": [{"uuid": "img", "data": [1, 2, 3, 4], "width": 2, "height": 2, "type": "Uint8Array"}],
+        "textures": [{"uuid": "tex", "image": "img", "name": "pixels"}],
+        "materials": [{"type": "MeshBasicMaterial", "uuid": "m", "color": 255, "map": "tex"}]
+    })");
+    ObjectLoader loader;
+    const auto result = loader.parse(json);
+    const auto mesh = std::dynamic_pointer_cast<Mesh>(result.object);
+    const auto basic = std::dynamic_pointer_cast<MeshBasicMaterial>(mesh->material);
+    REQUIRE(basic);
+    REQUIRE(basic->map);
+    REQUIRE(basic->map->image.get() != nullptr);
+    REQUIRE(basic->map->image.get()->width == 2.0);
+    REQUIRE(basic->map->image.get()->height == 2.0);
+
+    const auto url = Animation_detail::parseJSON(R"({
+        "object": {"type": "Object3D", "uuid": "o"},
+        "images": [{"uuid": "img", "url": "texture.png"}]
+    })");
+    ObjectLoader other;
+    REQUIRE_THROWS_AS(other.parse(url), std::runtime_error);
 }

@@ -33,6 +33,7 @@
 #include "scenes/FogExp2.h"
 #include "scenes/Scene.h"
 #include "textures/Texture.h"
+#include "textures/TextureSource.h"
 #include <cctype>
 #include <stdexcept>
 
@@ -78,7 +79,31 @@ ObjectLoader::Result ObjectLoader::parse(const JSValue& json) {
             if (const auto userData = data.get("userData").toJSON()) geometry->userData = *userData;
             geometries_[geometry->uuid] = geometry;
         }
-    const auto textureList = json.get("textures");
+    // Upstream deserialises each image record and looks it up by uuid when a texture names it. A record that
+    // carries data becomes a native descriptor here; a record that carries a url would need a host decoder.
+    const auto imageList = json.get("images");
+    if (!imageList.isUndefined())
+        for (double index = 0; index < imageList.length(); index += 1) {
+            const auto data = imageList.get(index);
+            const auto uuid = data.get("uuid").toString();
+            if (data.get("data").isUndefined())
+                throw std::runtime_error("ObjectLoader: image records that name a url need a host decoder");
+            const auto kind = data.get("type").toString();
+            const auto values = numbers(data.get("data"));
+            TextureImage::Ptr image;
+            if (kind == "Uint8Array") {
+                std::vector<std::uint8_t> bytes; for (const auto value : values) bytes.push_back(static_cast<std::uint8_t>(value));
+                const Uint8Array pixels(bytes);
+                image = std::make_shared<TextureImage>(pixels, data.get("width").toNumber(), data.get("height").toNumber());
+            } else if (kind == "Float32Array") {
+                std::vector<float> floats; for (const auto value : values) floats.push_back(static_cast<float>(value));
+                const Float32Array pixels(floats);
+                image = std::make_shared<TextureImage>(pixels, data.get("width").toNumber(), data.get("height").toNumber());
+            } else {
+                throw std::runtime_error("ObjectLoader: image data type \"" + kind + "\" is not ported yet");
+            }
+            images_[uuid] = image;
+        }    const auto textureList = json.get("textures");
     if (!textureList.isUndefined())
         for (double index = 0; index < textureList.length(); index += 1) {
             const auto data = textureList.get(index);
@@ -113,6 +138,11 @@ ObjectLoader::Result ObjectLoader::parse(const JSValue& json) {
             if (!data.get("normalized").isUndefined()) texture->normalized = data.get("normalized").toBoolean();
             if (!data.get("compareFunction").isUndefined())
                 throw std::runtime_error("ObjectLoader: texture compare functions are not ported yet");
+            // Upstream attaches the source the record names, and silently leaves it unset when missing.
+            if (!data.get("image").isUndefined()) {
+                const auto found = images_.find(data.get("image").toString());
+                if (found != images_.end()) texture->image = found->second;
+            }
             textures_[texture->uuid] = texture;
         }    const auto materialList = json.get("materials");
     if (!materialList.isUndefined()) {
