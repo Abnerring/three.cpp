@@ -9,11 +9,14 @@
 #include "lights/AmbientLight.h"
 #include "lights/DirectionalLight.h"
 #include "lights/HemisphereLight.h"
+#include "lights/LightProbe.h"
 #include "lights/PointLight.h"
+#include "lights/RectAreaLight.h"
 #include "lights/SpotLight.h"
 #include "loaders/BufferGeometryLoader.h"
 #include "loaders/MaterialLoader.h"
 #include "math/MathUtils.h"
+#include "math/SphericalHarmonics3.h"
 #include "objects/BatchedMesh.h"
 #include "objects/Bone.h"
 #include "objects/Group.h"
@@ -359,8 +362,16 @@ std::shared_ptr<Object3D> ObjectLoader::parseObject(const JSValue& data) {
         // The matrices, indirect and colours textures the document names have no native counterpart: the
         // matrices and colours live in vectors here, and the indirect table only exists for multi draw.
         object = mesh;
-    } else if (type == "RectAreaLight" || type == "LightProbe")
-        throw std::runtime_error("ObjectLoader: object type \"" + type + "\" is not ported yet");
+    }
+    else if (type == "RectAreaLight")
+        object = std::make_shared<RectAreaLight>(Color(data.get("color").toNumber()), optionalNumber(data, "intensity", 1.0),
+            optionalNumber(data, "width", 10.0), optionalNumber(data, "height", 10.0));
+    else if (type == "LightProbe") {
+        // Upstream builds the harmonics from the flat coefficient array the document carries.
+        auto harmonics = std::make_shared<SphericalHarmonics3>();
+        harmonics->fromArray(numbers(data.get("sh")));
+        object = std::make_shared<LightProbe>(harmonics, optionalNumber(data, "intensity", 1.0));
+    }
     else object = std::make_shared<Object3D>();   // upstream falls back to Object3D for an unknown type
 
     // The epilogue below is shared by every type and mirrors the upstream tail line for line.

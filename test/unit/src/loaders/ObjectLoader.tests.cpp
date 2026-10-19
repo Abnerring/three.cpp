@@ -7,6 +7,8 @@
 #include "objects/Mesh.h"
 #include "lights/AmbientLight.h"
 #include "lights/DirectionalLight.h"
+#include "lights/LightProbe.h"
+#include "lights/RectAreaLight.h"
 #include "objects/Line.h"
 #include "objects/Points.h"
 #include "cameras/OrthographicCamera.h"
@@ -81,9 +83,12 @@ TEST_CASE("ObjectLoader takes the matrix path and refuses what it cannot build")
     REQUIRE(result.object->position.y == 5.0);
     REQUIRE(result.object->position.z == 6.0);
 
-    const auto unsupported = Animation_detail::parseJSON(R"({"object": {"type": "RectAreaLight"}})");
+    // Every type the loader knows now builds, and an unknown one falls back to a plain object.
+    const auto unknown = Animation_detail::parseJSON(R"({"object": {"type": "SomethingUnheardOf"}})");
     ObjectLoader other;
-    REQUIRE_THROWS_AS(other.parse(unsupported), std::runtime_error);
+    const auto fallback = other.parse(unknown);
+    REQUIRE(fallback.object);
+    REQUIRE(std::dynamic_pointer_cast<Mesh>(fallback.object) == nullptr);
 }
 // The second slice adds the line and point families, the sprite, the level of detail node, the bone and the
 // five lights. The interesting part is the directional and spot target: upstream stores the uuid and binds it
@@ -374,4 +379,29 @@ TEST_CASE("ObjectLoader restores a batched mesh") {
     REQUIRE(range.reservedVertexCount == 3.0);
     REQUIRE(range.count == 3.0);
     REQUIRE(batch->getUnusedVertexCount() == 5.0);    // eight vertices, three already reserved
+}
+// The last two light types the loader was refusing: the area light with its rectangle and the probe with its
+// harmonics, which the document carries as a flat coefficient array.
+TEST_CASE("ObjectLoader builds an area light and a light probe") {
+    const auto realm = JSValue::object();
+    static_cast<void>(realm);
+    const auto json = Animation_detail::parseJSON(R"({
+        "object": {"type": "Scene", "uuid": "scene", "children": [
+            {"type": "RectAreaLight", "uuid": "area", "color": 255, "intensity": 2, "width": 4, "height": 6},
+            {"type": "LightProbe", "uuid": "probe", "intensity": 3,
+             "sh": [1,0,0, 0,0,0, 0,0,0, 0,0,0, 0,0,0, 0,0,0, 0,0,0, 0,0,0, 0,0,0]}
+        ]}
+    })");
+    ObjectLoader loader;
+    const auto result = loader.parse(json);
+    const auto area = std::dynamic_pointer_cast<RectAreaLight>(result.object->children[0]);
+    REQUIRE(area);
+    REQUIRE(area->width == 4.0);
+    REQUIRE(area->height == 6.0);
+    REQUIRE(area->intensity == 2.0);
+    const auto probe = std::dynamic_pointer_cast<LightProbe>(result.object->children[1]);
+    REQUIRE(probe);
+    REQUIRE(probe->intensity == 3.0);
+    REQUIRE(probe->sh);
+    REQUIRE(probe->sh->toArray()[0] == 1.0);
 }
