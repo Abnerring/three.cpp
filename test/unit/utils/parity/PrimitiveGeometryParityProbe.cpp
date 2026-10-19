@@ -68,6 +68,8 @@
 #include "scenes/FogExp2.h"
 #include "math/SphericalHarmonics3.h"
 #include "textures/CubeTexture.h"
+#include "textures/DataArrayTexture.h"
+#include "textures/Data3DTexture.h"
 #include "textures/DataTexture.h"
 #include "textures/DepthTexture.h"
 #include "cameras/OrthographicCamera.h"
@@ -670,6 +672,12 @@ int main() {
                 TextureImage::Faces faces;
                 for (int k = 0; k < static_cast<int>(count); k += 1) faces.push_back(std::make_shared<TextureImage>(4.0, 4.0));
                 texture = std::make_shared<CubeTexture>(TextureImage::array(faces)); }
+            else if (which == "array2d") { double width = 0, height = 0, depth = 0; in >> width >> height >> depth; if (in.fail() || !noTrailingTokens(in)) { std::cout << "{\"error\":\"short input or trailing tokens\"}" << std::endl; continue; }
+                std::vector<std::uint8_t> bytes(static_cast<std::size_t>(width * height * depth * 4), 0);
+                texture = std::make_shared<DataArrayTexture>(Uint8Array(bytes), width, height, depth); }
+            else if (which == "data3d") { double width = 0, height = 0, depth = 0; in >> width >> height >> depth; if (in.fail() || !noTrailingTokens(in)) { std::cout << "{\"error\":\"short input or trailing tokens\"}" << std::endl; continue; }
+                std::vector<std::uint8_t> bytes(static_cast<std::size_t>(width * height * depth * 4), 0);
+                texture = std::make_shared<Data3DTexture>(Uint8Array(bytes), width, height, depth); }
             else { std::cout << "{\"error\":\"unknown texture\"}" << std::endl; continue; }
             std::cout << "{\"kind\":\"texture\",\"which\":\"" << which << "\",\"fields\":{";
             std::cout << "\"mapping\":" << bits(static_cast<float>(texture->mapping));

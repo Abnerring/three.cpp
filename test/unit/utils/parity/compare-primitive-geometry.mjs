@@ -496,11 +496,15 @@ const {Texture} = await import(pathToFileURL(path.join(sourceDir, 'src/textures/
 const {DataTexture} = await import(pathToFileURL(path.join(sourceDir, 'src/textures/DataTexture.js')).href);
 const {DepthTexture} = await import(pathToFileURL(path.join(sourceDir, 'src/textures/DepthTexture.js')).href);
 const {CubeTexture} = await import(pathToFileURL(path.join(sourceDir, 'src/textures/CubeTexture.js')).href);
+const {DataArrayTexture} = await import(pathToFileURL(path.join(sourceDir, 'src/textures/DataArrayTexture.js')).href);
+const {Data3DTexture} = await import(pathToFileURL(path.join(sourceDir, 'src/textures/Data3DTexture.js')).href);
 
 const textureScenarios = [
     ['texture base', () => new Texture()],
     ['texture data 4 2', () => new DataTexture(new Uint8Array(4 * 2 * 4), 4, 2)],
     ['texture depth 4 2', () => new DepthTexture(4, 2)],
+    ['texture array2d 2 2 2', () => new DataArrayTexture(new Uint8Array(2 * 2 * 2 * 4), 2, 2, 2)],
+    ['texture data3d 2 2 2', () => new Data3DTexture(new Uint8Array(2 * 2 * 2 * 4), 2, 2, 2)],
     ['texture cube 6', () => new CubeTexture([{width: 4, height: 4}, {width: 4, height: 4}, {width: 4, height: 4}, {width: 4, height: 4}, {width: 4, height: 4}, {width: 4, height: 4}])],
 ];
 
