@@ -489,11 +489,13 @@ console.log(`node parity: ${nodeScenarios.length} scenarios`);
 const {Texture} = await import(pathToFileURL(path.join(sourceDir, 'src/textures/Texture.js')).href);
 const {DataTexture} = await import(pathToFileURL(path.join(sourceDir, 'src/textures/DataTexture.js')).href);
 const {DepthTexture} = await import(pathToFileURL(path.join(sourceDir, 'src/textures/DepthTexture.js')).href);
+const {CubeTexture} = await import(pathToFileURL(path.join(sourceDir, 'src/textures/CubeTexture.js')).href);
 
 const textureScenarios = [
     ['texture base', () => new Texture()],
     ['texture data 4 2', () => new DataTexture(new Uint8Array(4 * 2 * 4), 4, 2)],
     ['texture depth 4 2', () => new DepthTexture(4, 2)],
+    ['texture cube 6', () => new CubeTexture([{width: 4, height: 4}, {width: 4, height: 4}, {width: 4, height: 4}, {width: 4, height: 4}, {width: 4, height: 4}, {width: 4, height: 4}])],
 ];
 
 const textureRaw = execFileSync(probePath, [], {input: textureScenarios.map(([line]) => line).join('\n'), encoding: 'utf8'});

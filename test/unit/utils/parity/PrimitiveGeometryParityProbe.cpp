@@ -62,6 +62,7 @@
 #include "scenes/Fog.h"
 #include "scenes/FogExp2.h"
 #include "math/SphericalHarmonics3.h"
+#include "textures/CubeTexture.h"
 #include "textures/DataTexture.h"
 #include "textures/DepthTexture.h"
 #include "cameras/OrthographicCamera.h"
@@ -653,6 +654,10 @@ int main() {
                 std::vector<std::uint8_t> bytes(static_cast<std::size_t>(width * height * 4), 0);
                 texture = std::make_shared<DataTexture>(Uint8Array(bytes), width, height); }
             else if (which == "depth") { double width = 0, height = 0; in >> width >> height; if (in.fail() || !noTrailingTokens(in)) { std::cout << "{\"error\":\"short input or trailing tokens\"}" << std::endl; continue; } texture = std::make_shared<DepthTexture>(width, height); }
+            else if (which == "cube") { double count = 0; in >> count; if (in.fail() || !noTrailingTokens(in)) { std::cout << "{\"error\":\"short input or trailing tokens\"}" << std::endl; continue; }
+                TextureImage::Faces faces;
+                for (int k = 0; k < static_cast<int>(count); k += 1) faces.push_back(std::make_shared<TextureImage>(4.0, 4.0));
+                texture = std::make_shared<CubeTexture>(TextureImage::array(faces)); }
             else { std::cout << "{\"error\":\"unknown texture\"}" << std::endl; continue; }
             std::cout << "{\"kind\":\"texture\",\"which\":\"" << which << "\",\"fields\":{";
             std::cout << "\"mapping\":" << bits(static_cast<float>(texture->mapping));
