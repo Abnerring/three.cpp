@@ -99,6 +99,11 @@
    - **已定位到具体夹具**：在探针的 `light()` 入口打印后，输出停在 `light seed=18 type=1` —— `type 1` 就是 **`LightProbe`**，即**构造这个夹具**时自转 ✗。这一步与端口无关（端口 `setup` 已打印返回 ✓）。
    - **结论**：渲染灯光状态的端口行为目前**没有被证明有问题**，只是这个差分**从未跑通** ✗。下一步有两条路：一是在 `LightProbe` 夹具里继续二分（看是 `coefficients` 的 9 次赋值还是 `is`+type 的属性名出问题）；二是**两侧同时跳过 `LightProbe`**（`.mjs` 里过滤、探针里跳过），先让其余灯型跑通并纳入门禁，把 `LightProbe` 留作已知缺口 —— 后者更快见效。
    - **纪律**：修好之前不要让它进普通门禁（会挂住 CI）；也不要因为单元版通过就宣称渲染灯光状态的差分级验证已完成。
+41. **`PlaneHelper` 少了一个子对象：上游会加入一个半透明象限 `Mesh`，本端口没有（待修）**。位置：`src/helpers/PlaneHelper.cpp` 的构造函数只建了 8 点线几何并调用 `Line(geometry, material)`，**没有** `mesh` 成员，也没有 `add(mesh)`。
+   - 上游 `src/helpers/PlaneHelper.js` 的构造函数除了 `positions`（8 个点）和 `LineBasicMaterial` 之外，还建了一个 `Mesh`（`PlaneGeometry(1,1)` + 半透明 `MeshBasicMaterial`，`side: DoubleSide`、`transparent: true`、`opacity: 0.2`、`depthWrite: false`、`toneMapped: false`），并 `this.add(mesh)`；`updateMatrixWorld` 还会按 `plane` 的位置与朝向摆放它，`dispose` 也会释放它的几何与材质。
+   - 证据：差分把 `plane` 场景与 `box3` 一起启用时变红，单独跑 `box3` 是绿的；红的差异就是 `children: []`（端口）对 `children: [{type:'Mesh'}]`（上游），线的 8 个顶点完全一致。
+   - 修法：给 `PlaneHelper` 加 `mesh` 成员（`PlaneGeometry` + 上述参数的 `MeshBasicMaterial`）、构造里 `add(mesh)`、`updateMatrixWorld` 里按上游摆放、`dispose` 里释放。修好后把 `plane` 场景加回差分（探针分支和脚本场景已经写好过一次，照抄即可）。
+   - 备注：`box3` 场景已启用并通过（8 顶点 + 索引，与本端口的实现一致）。
 40. **`TubeGeometry` 曾被我误报为"与上游存在真实分歧"，实际是本端口正确、我的对拍输入写错了**（本条留作反面教材）。
    - 经过：加 tube 场景时差分报错，我看到"顶点数与索引数一致、`position` 位模式不同"，据此写下"框架计算有分歧"的结论，并用三轮排查依次排除了曲线 `getPoint`/`getTangent`、弧长 `getLengths`/`getUtoTmapping`/`getPointAt`、以及 `computeFrenetFrames` 本身——这些排查本身是有效的（并且顺带把五项曲线函数固化进了差分），但它们全都在证明**被测代码没问题**。
    - 真相：`test/unit/utils/parity/compare-primitive-geometry.mjs` 里三条 tube 场景的**输入行本身写错了**：第一条少一个坐标（8 个数字而非 9 个），第二条同样少一个，第三条把控制点数量写成了 4 而实际给了 3 个点。探针按空格流式解析，数字错位后读到的是错的控制点，于是"顶点数对、值不对"——这个现象和我当时给出的诊断（框架方向差异）**恰好吻合**，所以我没有去怀疑输入。
