@@ -13,6 +13,7 @@ add_executable(THREECPPTests
         unit/src/core/BufferGeometryLookAt.tests.cpp
         unit/src/core/Object3DMatrix.tests.cpp
         unit/src/objects/BatchedMesh.tests.cpp
+        unit/src/textures/CanvasTexture.tests.cpp
         unit/src/core/BufferGeometryIndirect.tests.cpp
     unit/src/math/Vector3.tests.cpp
     unit/src/math/Vector4.tests.cpp

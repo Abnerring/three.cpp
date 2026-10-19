@@ -194,8 +194,8 @@
     "note": "Accepted port scope is src and examples/jsm, including tracked third-party dependencies. Editor/manual web applications are excluded from native application rewrites. Native host behavior, packaging and all three platforms require separate implementation and verification evidence."
   },
   "counts": {
-    "partial-unverified": 289,
-    "missing": 652,
+    "partial-unverified": 290,
+    "missing": 651,
     "vulkan-port-pending": 290,
     "dependency-unverified": 20
   },
@@ -203,8 +203,8 @@
     "src": {
       "modules": 755,
       "counts": {
-        "partial-unverified": 205,
-        "missing": 260,
+        "partial-unverified": 206,
+        "missing": 259,
         "vulkan-port-pending": 290
       }
     },
@@ -1048,7 +1048,7 @@
       "path": "src/textures",
       "upstreamFiles": 17,
       "moduleCount": 17,
-      "modulesWithCppFiles": 13,
+      "modulesWithCppFiles": 14,
       "verifiedComplete": 0
     }
   ],
@@ -21565,11 +21565,11 @@
       "scope": "src",
       "kind": "core",
       "upstreamSha256": "de66d5c20fd05d59a09ef60f17f9c1cd03e3da82b04d4bb846bc2fc8b76f6b22",
-      "header": null,
-      "implementation": null,
+      "header": "src/textures/CanvasTexture.h",
+      "implementation": "src/textures/CanvasTexture.cpp",
       "expectedHeader": "src/textures/CanvasTexture.h",
       "expectedImplementation": "src/textures/CanvasTexture.cpp",
-      "status": "missing",
+      "status": "partial-unverified",
       "verifiedComplete": false,
       "apiExtraction": "static-only",
       "verification": {
@@ -21580,7 +21580,9 @@
         "upstreamUnitTests": [
           "test/unit/src/textures/CanvasTexture.tests.js"
         ],
-        "cppUnitTests": [],
+        "cppUnitTests": [
+          "test/unit/src/textures/CanvasTexture.tests.cpp"
+        ],
         "reviewedImplementation": [],
         "differentialResults": [],
         "renderingResults": [],

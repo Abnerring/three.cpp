@@ -61,6 +61,7 @@ add_library(threecpp
     src/geometries/WireframeGeometry.cpp
     src/materials/Material.cpp src/materials/MeshBasicMaterial.cpp src/objects/Mesh.cpp
     src/textures/TextureSource.cpp src/textures/Texture.cpp src/textures/DataTexture.cpp
+    src/textures/CanvasTexture.cpp
     src/textures/DataArrayTexture.cpp src/textures/Data3DTexture.cpp src/textures/CubeTexture.cpp
     src/textures/DepthTexture.cpp src/textures/CubeDepthTexture.cpp src/textures/FramebufferTexture.cpp
     src/textures/CompressedTexture.cpp src/textures/CompressedArrayTexture.cpp
