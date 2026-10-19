@@ -49,7 +49,10 @@ const documents=[
             {type:'Mesh',uuid:'near',material:'m',geometry:'g'},
             {type:'Mesh',uuid:'far',material:'m',geometry:'g'}
         ]},geometries:[geometry],materials:[material]},
-    {object:{type:'Mesh',uuid:'multi',geometry:'g',material:['m','m2']},
+    {object:{type:'Scene',uuid:'scene',children:[
+        {type:'Object3D',uuid:'frozen',matrix:[1,0,0,0, 0,1,0,0, 0,0,1,0, 7,8,9,1],matrixAutoUpdate:false},
+        {type:'Object3D',uuid:'auto',matrix:[1,0,0,0, 0,1,0,0, 0,0,1,0, 1,2,3,1]}
+    ]}},    {object:{type:'Mesh',uuid:'multi',geometry:'g',material:['m','m2']},
      geometries:[geometry],
      materials:[material,{type:'MeshBasicMaterial',uuid:'m2',color:65280}]},    {object:{type:'Scene',uuid:'scene',backgroundBlurriness:0.5,backgroundIntensity:2,
         fog:{type:'Fog',color:16777215,near:1,far:100}}}
