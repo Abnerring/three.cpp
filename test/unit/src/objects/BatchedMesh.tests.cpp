@@ -262,3 +262,32 @@ TEST_CASE("BatchedMesh resizes its instance and geometry buffers") {
     REQUIRE(positions->getComponent(0.0, 0.0) == 1.0);
     REQUIRE(positions->count == 4.0);
 }
+// A copy takes the whole bookkeeping with it and is independent of the source afterwards.
+TEST_CASE("BatchedMesh copies its bookkeeping") {
+    auto batch = std::make_shared<BatchedMesh>(4, 16);
+    auto geometry = std::make_shared<BufferGeometry>();
+    geometry->setAttribute("position", std::make_shared<Float32BufferAttribute>(
+        std::vector<float>{1.0f, 2.0f, 3.0f, 4.0f, 5.0f, 6.0f, 7.0f, 8.0f, 9.0f}, 3));
+    geometry->setIndex(std::make_shared<Uint16BufferAttribute>(std::vector<std::uint16_t>{0, 1, 2}, 1));
+    batch->addGeometry(geometry);
+    batch->addInstance(0.0);
+    batch->addInstance(0.0);
+    Matrix4 moved;
+    moved.set(1, 0, 0, 7, 0, 1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1);
+    batch->setMatrixAt(1.0, moved);
+    batch->perObjectFrustumCulled = false;
+
+    auto copy = std::make_shared<BatchedMesh>(1, 1);
+    copy->copy(*batch);
+    REQUIRE(copy->perObjectFrustumCulled == false);
+    REQUIRE(copy->getInstanceCount() == 2.0);
+    REQUIRE(copy->getUnusedVertexCount() == batch->getUnusedVertexCount());
+    REQUIRE(copy->getMatrixAt(1.0).elements()[12] == 7.0);
+    const auto range = copy->getGeometryRangeAt(0.0);
+    REQUIRE(range.reservedVertexCount == 3.0);
+
+    // The copy shares no state with the source: deleting in one leaves the other alone.
+    copy->deleteInstance(0.0);
+    REQUIRE(copy->getInstanceCount() == 1.0);
+    REQUIRE(batch->getInstanceCount() == 2.0);
+}

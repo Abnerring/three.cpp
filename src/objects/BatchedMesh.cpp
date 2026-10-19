@@ -397,3 +397,26 @@ BatchedMesh& BatchedMesh::setGeometrySize(double maxVertexCount, double maxIndex
     }
     return *this;
 }
+BatchedMesh& BatchedMesh::copy(const Object3D& source, bool recursive) {
+    Mesh::copy(source, recursive);
+    const auto& value = dynamic_cast<const BatchedMesh&>(source);
+    geometry = value.geometry ? value.geometry->clone() : std::make_shared<BufferGeometry>();
+    perObjectFrustumCulled = value.perObjectFrustumCulled;
+    sortObjects = value.sortObjects;
+    boundingBox = value.boundingBox;
+    boundingSphere = value.boundingSphere;
+    _geometryInfo = value._geometryInfo;
+    _instanceInfo = value._instanceInfo;
+    _availableInstanceIds = value._availableInstanceIds;
+    _availableGeometryIds = value._availableGeometryIds;
+    _nextIndexStart = value._nextIndexStart;
+    _nextVertexStart = value._nextVertexStart;
+    _geometryCount = value._geometryCount;
+    _maxInstanceCount = value._maxInstanceCount;
+    _maxVertexCount = value._maxVertexCount;
+    _maxIndexCount = value._maxIndexCount;
+    _geometryInitialized = value._geometryInitialized;
+    _instanceMatrices = value._instanceMatrices;
+    _instanceColors = value._instanceColors;
+    return *this;
+}

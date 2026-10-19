@@ -66,6 +66,9 @@ class BatchedMesh : public Mesh {
     std::optional<Sphere> getBoundingSphereAt(double geometryId);
     void computeBoundingBox();
     void computeBoundingSphere();
+    // Upstream copies the whole bookkeeping and clones its two instance textures; the vectors stand in for
+    // those textures here, so they are copied rather than cloned and the rest maps field for field.
+    BatchedMesh& copy(const Object3D& source, bool recursive = true) override;
     BatchedMesh& setInstanceCount(double maxInstanceCount);
     BatchedMesh& setGeometrySize(double maxVertexCount, double maxIndexCount);
     std::optional<Box3> boundingBox;
