@@ -611,3 +611,20 @@ for (let i = 0; i < pathScenarios.length; i += 1) {
     assert.deepEqual(pathLines[i], expected, `scenario ${line}`);
 }
 console.log(`path parity: ${pathScenarios.length} scenarios`);
+// The stereo camera is not a scene graph object, so it is compared on its own fields.
+const {StereoCamera} = await import(pathToFileURL(path.join(sourceDir, 'src/cameras/StereoCamera.js')).href);
+const stereoScenarios = [
+    ['stereo', () => new StereoCamera()],
+];
+const stereoRaw = execFileSync(probePath, [], {input: stereoScenarios.map(([line]) => line).join('\n'), encoding: 'utf8'});
+const stereoLines = stereoRaw.trim().split('\n').map((line) => JSON.parse(line));
+for (let i = 0; i < stereoScenarios.length; i += 1) {
+    const [line, build] = stereoScenarios[i];
+    const stereo = build();
+    const expected = {kind: 'stereo', type: stereo.type, aspect: bitOf(stereo.aspect), eyeSep: bitOf(stereo.eyeSep),
+        hasLeft: stereo.cameraL !== null && stereo.cameraL !== undefined,
+        hasRight: stereo.cameraR !== null && stereo.cameraR !== undefined};
+    if (stereo.cameraL) { expected.leftFov = bitOf(stereo.cameraL.fov); expected.leftAspect = bitOf(stereo.cameraL.aspect); }
+    assert.deepEqual(stereoLines[i], expected, `scenario ${line}`);
+}
+console.log(`stereo camera parity: ${stereoScenarios.length} scenarios`);

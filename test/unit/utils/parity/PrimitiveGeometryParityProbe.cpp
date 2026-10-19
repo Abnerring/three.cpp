@@ -59,6 +59,7 @@
 #include "helpers/AxesHelper.h"
 #include "cameras/PerspectiveCamera.h"
 #include "cameras/ArrayCamera.h"
+#include "cameras/StereoCamera.h"
 #include "textures/Texture.h"
 #include "scenes/Fog.h"
 #include "scenes/FogExp2.h"
@@ -743,6 +744,15 @@ int main() {
             std::cout << "{\"kind\":\"path\",\"curves\":" << path.curves->size() << ",\"points\":[";
             for (int i = 0; i <= 4; i += 1) { const auto point = path.getPoint(i / 4.0); if (i > 0) std::cout << ","; std::cout << "[" << bits(static_cast<float>(point.x)) << "," << bits(static_cast<float>(point.y)) << "]"; }
             std::cout << "]}" << std::endl;
+            continue;
+        } else if (kind == "stereo") {
+            StereoCamera stereo;
+            if (in.fail() || !noTrailingTokens(in)) { std::cout << "{\"error\":\"short input or trailing tokens\"}" << std::endl; continue; }
+            std::cout << "{\"kind\":\"stereo\",\"type\":\"" << stereo.type << "\"";
+            std::cout << ",\"aspect\":" << bits(static_cast<float>(stereo.aspect)) << ",\"eyeSep\":" << bits(static_cast<float>(stereo.eyeSep));
+            std::cout << ",\"hasLeft\":" << (stereo.cameraL ? "true" : "false") << ",\"hasRight\":" << (stereo.cameraR ? "true" : "false");
+            if (stereo.cameraL) std::cout << ",\"leftFov\":" << bits(static_cast<float>(stereo.cameraL->fov)) << ",\"leftAspect\":" << bits(static_cast<float>(stereo.cameraL->aspect));
+            std::cout << "}" << std::endl;
             continue;
         } else {
             std::cout << "{\"error\":\"unknown kind\"}" << std::endl;
