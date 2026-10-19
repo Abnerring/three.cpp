@@ -194,8 +194,8 @@
     "note": "Accepted port scope is src and examples/jsm, including tracked third-party dependencies. Editor/manual web applications are excluded from native application rewrites. Native host behavior, packaging and all three platforms require separate implementation and verification evidence."
   },
   "counts": {
-    "partial-unverified": 300,
-    "missing": 641,
+    "partial-unverified": 301,
+    "missing": 640,
     "vulkan-port-pending": 290,
     "dependency-unverified": 20
   },
@@ -203,8 +203,8 @@
     "src": {
       "modules": 755,
       "counts": {
-        "partial-unverified": 216,
-        "missing": 249,
+        "partial-unverified": 217,
+        "missing": 248,
         "vulkan-port-pending": 290
       }
     },
@@ -663,7 +663,7 @@
       "path": "src/cameras",
       "upstreamFiles": 6,
       "moduleCount": 6,
-      "modulesWithCppFiles": 5,
+      "modulesWithCppFiles": 6,
       "verifiedComplete": 0
     },
     {
@@ -1935,11 +1935,11 @@
       "scope": "src",
       "kind": "core",
       "upstreamSha256": "ea8949fea06d93d1bb94b35ca2ca891cfb93b1f1d590ef07f26d8766065e8484",
-      "header": null,
-      "implementation": null,
+      "header": "src/cameras/CubeCamera.h",
+      "implementation": "src/cameras/CubeCamera.cpp",
       "expectedHeader": "src/cameras/CubeCamera.h",
       "expectedImplementation": "src/cameras/CubeCamera.cpp",
-      "status": "missing",
+      "status": "partial-unverified",
       "verifiedComplete": false,
       "apiExtraction": "static-only",
       "verification": {
@@ -1950,7 +1950,9 @@
         "upstreamUnitTests": [
           "test/unit/src/cameras/CubeCamera.tests.js"
         ],
-        "cppUnitTests": [],
+        "cppUnitTests": [
+          "test/unit/src/cameras/CubeCamera.tests.cpp"
+        ],
         "reviewedImplementation": [],
         "differentialResults": [],
         "renderingResults": [],

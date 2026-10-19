@@ -44,6 +44,7 @@ add_library(threecpp
     src/core/BufferAttribute.cpp src/core/BufferGeometry.cpp src/core/JSDataSnapshot.cpp
     src/core/Raycaster.cpp
     src/cameras/Camera.cpp src/cameras/PerspectiveCamera.cpp src/cameras/OrthographicCamera.cpp
+    src/cameras/CubeCamera.cpp
     src/scenes/Scene.cpp src/geometries/PlaneGeometry.cpp src/geometries/BoxGeometry.cpp
     src/geometries/CircleGeometry.cpp
     src/geometries/RingGeometry.cpp
