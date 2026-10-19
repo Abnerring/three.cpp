@@ -489,8 +489,8 @@ int main() {
             StringKeyframeTrack track(JSValue(".s"), InterpolantArray(times), InterpolantArray(words));
             std::cout << "{\"kind\":\"text\",\"valueSize\":" << track.getValueSize() << ",\"results\":[";
             const auto interpolant = track.createInterpolant();
-            for (int i = 0; i <= 4; i += 1) {
-                interpolant->evaluate(i / 4.0);
+            for (int i = 0; i <= 16; i += 1) {
+                interpolant->evaluate(i / 16.0);
                 if (i > 0) std::cout << ",";
                 std::cout << "\"" << interpolant->resultBuffer.get(0).toString() << "\"";
             }
@@ -516,8 +516,8 @@ int main() {
             std::cout << "{\"kind\":\"track\",\"which\":\"" << which << "\",\"valueSize\":" << track->getValueSize();
             std::cout << ",\"results\":[";
             const auto interpolant = track->createInterpolant();
-            for (int i = 0; i <= 4; i += 1) {
-                const auto result = interpolant->evaluate(i / 4.0);
+            for (int i = 0; i <= 16; i += 1) {
+                const auto result = interpolant->evaluate(i / 16.0);
                 if (i > 0) std::cout << ",";
                 std::cout << "[";
                 for (int c = 0; c < static_cast<int>(interpolant->resultBuffer.size()); c += 1) { if (c > 0) std::cout << ","; std::cout << bits(static_cast<float>(interpolant->resultBuffer.number(c))); }

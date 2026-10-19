@@ -249,7 +249,7 @@ for (let i = 0; i < trackScenarios.length; i += 1) {
     const [line, build] = trackScenarios[i];
     const track = build();
     const interpolant = track.createInterpolant();
-    const results = [0, 0.25, 0.5, 0.75, 1].map((t) => {
+    const results = Array.from({length: 17}, (_, k) => k / 16).map((t) => {
         interpolant.evaluate(t);
         return Array.from(interpolant.resultBuffer).map(bitOf);
     });
@@ -268,7 +268,7 @@ for (let i = 0; i < textScenarios.length; i += 1) {
     const [line, build] = textScenarios[i];
     const track = build();
     const interpolant = track.createInterpolant();
-    const results = [0, 0.25, 0.5, 0.75, 1].map((t) => { interpolant.evaluate(t); return interpolant.resultBuffer[0]; });
+    const results = Array.from({length: 17}, (_, k) => k / 16).map((t) => { interpolant.evaluate(t); return interpolant.resultBuffer[0]; });
     const expected = {kind: 'text', valueSize: track.getValueSize(), results};
     assert.deepEqual(textLines[i], expected, `scenario ${line}`);
 }
