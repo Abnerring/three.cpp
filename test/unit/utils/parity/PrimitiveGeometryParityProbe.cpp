@@ -178,6 +178,32 @@ int main() {
             }
             auto path = std::make_shared<CatmullRomCurve3>(points, closed != 0.0);
             geometry = std::make_shared<TubeGeometry>(path, tubularSegments, radius, radialSegments, closed != 0.0);
+        } else if (kind == "curve") {
+            double closed = 0, count = 0;
+            in >> closed >> count;
+            auto points = std::make_shared<CatmullRomCurve3::Points>();
+            for (int i = 0; i < static_cast<int>(count); i += 1) {
+                double x = 0, y = 0, z = 0;
+                in >> x >> y >> z;
+                points->push_back(std::make_shared<Vector3>(x, y, z));
+            }
+            CatmullRomCurve3 curve(points, closed != 0.0);
+            std::cout << "{\"kind\":\"curve\",\"points\":[";
+            for (int i = 0; i <= 4; i += 1) {
+                const double t = i / 4.0;
+                const auto point = curve.getPoint(t);
+                if (i > 0) std::cout << ",";
+                std::cout << "[" << bits(static_cast<float>(point.x)) << "," << bits(static_cast<float>(point.y)) << "," << bits(static_cast<float>(point.z)) << "]";
+            }
+            std::cout << "],\"tangents\":[";
+            for (int i = 0; i <= 4; i += 1) {
+                const double t = i / 4.0;
+                const auto tangent = curve.getTangent(t);
+                if (i > 0) std::cout << ",";
+                std::cout << "[" << bits(static_cast<float>(tangent.x)) << "," << bits(static_cast<float>(tangent.y)) << "," << bits(static_cast<float>(tangent.z)) << "]";
+            }
+            std::cout << "]}" << std::endl;
+            continue;
         } else {
             std::cout << "{\"error\":\"unknown kind\"}" << std::endl;
             continue;
