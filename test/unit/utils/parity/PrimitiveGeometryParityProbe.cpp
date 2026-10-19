@@ -348,8 +348,8 @@ int main() {
             LineCurve3 curve(std::make_shared<Vector3>(ax, ay, az), std::make_shared<Vector3>(bx, by, bz));
             if (in.fail() || !noTrailingTokens(in)) { std::cout << "{\"error\":\"short input or trailing tokens\"}" << std::endl; continue; }
             std::cout << "{\"kind\":\"line3\",\"points\":[";
-            for (int i = 0; i <= 4; i += 1) {
-                const auto point = curve.getPoint(i / 4.0);
+            for (int i = 0; i <= 16; i += 1) {
+                const auto point = curve.getPoint(i / 16.0);
                 if (i > 0) std::cout << ",";
                 std::cout << "[" << bits(static_cast<float>(point.x)) << "," << bits(static_cast<float>(point.y)) << "," << bits(static_cast<float>(point.z)) << "]";
             }
@@ -361,8 +361,8 @@ int main() {
             if (in.fail() || !noTrailingTokens(in)) { std::cout << "{\"error\":\"short input or trailing tokens\"}" << std::endl; continue; }
             QuadraticBezierCurve3 curve(std::make_shared<Vector3>(ax, ay, az), std::make_shared<Vector3>(bx, by, bz), std::make_shared<Vector3>(cx, cy, cz));
             std::cout << "{\"kind\":\"quad3\",\"points\":[";
-            for (int i = 0; i <= 4; i += 1) {
-                const auto point = curve.getPoint(i / 4.0);
+            for (int i = 0; i <= 16; i += 1) {
+                const auto point = curve.getPoint(i / 16.0);
                 if (i > 0) std::cout << ",";
                 std::cout << "[" << bits(static_cast<float>(point.x)) << "," << bits(static_cast<float>(point.y)) << "," << bits(static_cast<float>(point.z)) << "]";
             }
@@ -375,8 +375,8 @@ int main() {
             CubicBezierCurve3 curve(std::make_shared<Vector3>(p[0], p[1], p[2]), std::make_shared<Vector3>(p[3], p[4], p[5]),
                                     std::make_shared<Vector3>(p[6], p[7], p[8]), std::make_shared<Vector3>(p[9], p[10], p[11]));
             std::cout << "{\"kind\":\"cubic3\",\"points\":[";
-            for (int i = 0; i <= 4; i += 1) {
-                const auto point = curve.getPoint(i / 4.0);
+            for (int i = 0; i <= 16; i += 1) {
+                const auto point = curve.getPoint(i / 16.0);
                 if (i > 0) std::cout << ",";
                 std::cout << "[" << bits(static_cast<float>(point.x)) << "," << bits(static_cast<float>(point.y)) << "," << bits(static_cast<float>(point.z)) << "]";
             }

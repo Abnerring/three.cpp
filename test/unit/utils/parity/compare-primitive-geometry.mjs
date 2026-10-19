@@ -161,7 +161,7 @@ for (let i = 0; i < simpleCurveScenarios.length; i += 1) {
     const curve = build();
     const expected = {
         kind: line.split(' ')[0],
-        points: [0, 0.25, 0.5, 0.75, 1].map((t) => { const p = curve.getPoint(t); return [bitOf(p.x), bitOf(p.y), bitOf(p.z)]; }),
+        points: Array.from({length: 17}, (_, k) => { const p = curve.getPoint(k / 16); return [bitOf(p.x), bitOf(p.y), bitOf(p.z)]; }),
     };
     assert.deepEqual(simpleLines[i], expected, `scenario ${line}`);
 }
