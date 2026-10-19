@@ -485,3 +485,37 @@ for (let i = 0; i < nodeScenarios.length; i += 1) {
     assert.deepEqual(nodeLines[i], expected, `scenario ${line}`);
 }
 console.log(`node parity: ${nodeScenarios.length} scenarios`);
+// The texture defaults and the two data backed textures.
+const {Texture} = await import(pathToFileURL(path.join(sourceDir, 'src/textures/Texture.js')).href);
+const {DataTexture} = await import(pathToFileURL(path.join(sourceDir, 'src/textures/DataTexture.js')).href);
+const {DepthTexture} = await import(pathToFileURL(path.join(sourceDir, 'src/textures/DepthTexture.js')).href);
+
+const textureScenarios = [
+    ['texture base', () => new Texture()],
+    ['texture data 4 2', () => new DataTexture(new Uint8Array(4 * 2 * 4), 4, 2)],
+    ['texture depth 4 2', () => new DepthTexture(4, 2)],
+];
+
+const textureRaw = execFileSync(probePath, [], {input: textureScenarios.map(([line]) => line).join('\n'), encoding: 'utf8'});
+const textureLines = textureRaw.trim().split('\n').map((line) => JSON.parse(line));
+for (let i = 0; i < textureScenarios.length; i += 1) {
+    const [line, build] = textureScenarios[i];
+    const texture = build();
+    const expected = {kind: 'texture', which: line.split(' ')[1], fields: {
+        mapping: bitOf(texture.mapping),
+        wrapS: bitOf(texture.wrapS),
+        wrapT: bitOf(texture.wrapT),
+        magFilter: bitOf(texture.magFilter),
+        minFilter: bitOf(texture.minFilter),
+        format: bitOf(texture.format),
+        type: bitOf(texture.type),
+        anisotropy: bitOf(texture.anisotropy),
+        flipY: texture.flipY,
+        generateMipmaps: texture.generateMipmaps,
+        premultiplyAlpha: texture.premultiplyAlpha,
+        unpackAlignment: bitOf(texture.unpackAlignment),
+        colorSpace: texture.colorSpace,
+    }};
+    assert.deepEqual(textureLines[i], expected, `scenario ${line}`);
+}
+console.log(`texture parity: ${textureScenarios.length} scenarios`);

@@ -58,6 +58,9 @@
 #include "materials/MeshPhysicalMaterial.h"
 #include "helpers/AxesHelper.h"
 #include "cameras/PerspectiveCamera.h"
+#include "textures/Texture.h"
+#include "textures/DataTexture.h"
+#include "textures/DepthTexture.h"
 #include "cameras/OrthographicCamera.h"
 #include "core/RenderTarget.h"
 #include "core/RenderTarget3D.h"
@@ -625,6 +628,32 @@ int main() {
             std::cout << ",\"layersMask\":" << node->layers.mask.value().toNumber();
             if (auto perspective = std::dynamic_pointer_cast<PerspectiveCamera>(node)) { std::cout << ",\"fov\":" << bits(static_cast<float>(perspective->fov)) << ",\"aspect\":" << bits(static_cast<float>(perspective->aspect)) << ",\"near\":" << bits(static_cast<float>(perspective->near)) << ",\"far\":" << bits(static_cast<float>(perspective->far)); }
             if (auto ortho = std::dynamic_pointer_cast<OrthographicCamera>(node)) { std::cout << ",\"left\":" << bits(static_cast<float>(ortho->left)) << ",\"right\":" << bits(static_cast<float>(ortho->right)) << ",\"top\":" << bits(static_cast<float>(ortho->top)) << ",\"bottom\":" << bits(static_cast<float>(ortho->bottom)) << ",\"near\":" << bits(static_cast<float>(ortho->near)) << ",\"far\":" << bits(static_cast<float>(ortho->far)); }
+            std::cout << "}}" << std::endl;
+            continue;
+        } else if (kind == "texture") {
+            std::string which;
+            in >> which;
+            std::shared_ptr<Texture> texture;
+            if (which == "base") texture = std::make_shared<Texture>();
+            else if (which == "data") { double width = 0, height = 0; in >> width >> height; if (in.fail()) { std::cout << "{\"error\":\"short input\"}" << std::endl; continue; }
+                std::vector<std::uint8_t> bytes(static_cast<std::size_t>(width * height * 4), 0);
+                texture = std::make_shared<DataTexture>(Uint8Array(bytes), width, height); }
+            else if (which == "depth") { double width = 0, height = 0; in >> width >> height; if (in.fail()) { std::cout << "{\"error\":\"short input\"}" << std::endl; continue; } texture = std::make_shared<DepthTexture>(width, height); }
+            else { std::cout << "{\"error\":\"unknown texture\"}" << std::endl; continue; }
+            std::cout << "{\"kind\":\"texture\",\"which\":\"" << which << "\",\"fields\":{";
+            std::cout << "\"mapping\":" << bits(static_cast<float>(texture->mapping));
+            std::cout << ",\"wrapS\":" << bits(static_cast<float>(texture->wrapS));
+            std::cout << ",\"wrapT\":" << bits(static_cast<float>(texture->wrapT));
+            std::cout << ",\"magFilter\":" << bits(static_cast<float>(texture->magFilter));
+            std::cout << ",\"minFilter\":" << bits(static_cast<float>(texture->minFilter));
+            std::cout << ",\"format\":" << bits(static_cast<float>(texture->format));
+            std::cout << ",\"type\":" << bits(static_cast<float>(texture->type));
+            std::cout << ",\"anisotropy\":" << bits(static_cast<float>(texture->anisotropy));
+            std::cout << ",\"flipY\":" << (texture->flipY ? "true" : "false");
+            std::cout << ",\"generateMipmaps\":" << (texture->generateMipmaps ? "true" : "false");
+            std::cout << ",\"premultiplyAlpha\":" << (texture->premultiplyAlpha ? "true" : "false");
+            std::cout << ",\"unpackAlignment\":" << bits(static_cast<float>(texture->unpackAlignment));
+            std::cout << ",\"colorSpace\":\"" << texture->colorSpace << "\"";
             std::cout << "}}" << std::endl;
             continue;
         } else {
