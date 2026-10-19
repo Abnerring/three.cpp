@@ -96,5 +96,6 @@
    - 单元版 `threecpp.webgl-lights-states-unit`（82 断言 / 12 用例）**0.2 秒通过** ✓；差分版 CPU 接近零，不是慢，是卡住。
    - 单独运行 `ThreeJsWebGLLightsParityProbe.exe`（不经 node、标准输入关掉）同样挂住，所以**也不是** `compare-webgl-lights.mjs` 的问题。顺带发现该脚本第 46 行调用 `execFileSync(probe,[],{encoding,...})` **没有传 `input`**，探针若读 stdin 会等不到 EOF —— 这是真实缺陷，应当修，但不是主因。
    - 在原生 `src/renderers/webgl/WebGLLights.cpp` 的 `setup` 返回处加打印后，最后一个用例仍然打印了 `setup done` ✓ —— 说明**端口正常返回**。而挂在 `encode(state)` 之前的打印**没有出现** ✗，也就是说卡住的位置在**探针构造函数 `light(seed+i, i, trace, mode)`** 里，属于**测试代码** ✗，不是端口逻辑。
-   - **结论**：渲染灯光状态的端口行为目前**没有被证明有问题**，只是这个差分**从未跑通** ✗。下一步应当在探针的 `light()` 里加进度打印（按 `i` 与 `type`），找出哪个类型/字段让探针自转。
+   - **已定位到具体夹具**：在探针的 `light()` 入口打印后，输出停在 `light seed=18 type=1` —— `type 1` 就是 **`LightProbe`**，即**构造这个夹具**时自转 ✗。这一步与端口无关（端口 `setup` 已打印返回 ✓）。
+   - **结论**：渲染灯光状态的端口行为目前**没有被证明有问题**，只是这个差分**从未跑通** ✗。下一步有两条路：一是在 `LightProbe` 夹具里继续二分（看是 `coefficients` 的 9 次赋值还是 `is`+type 的属性名出问题）；二是**两侧同时跳过 `LightProbe`**（`.mjs` 里过滤、探针里跳过），先让其余灯型跑通并纳入门禁，把 `LightProbe` 留作已知缺口 —— 后者更快见效。
    - **纪律**：修好之前不要让它进普通门禁（会挂住 CI）；也不要因为单元版通过就宣称渲染灯光状态的差分级验证已完成。
