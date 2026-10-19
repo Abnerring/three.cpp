@@ -145,3 +145,75 @@ double BatchedMesh::setGeometryAt(double geometryId, const std::shared_ptr<Buffe
     info.boundingSphere = source->boundingSphere;
     return geometryId;
 }
+void BatchedMesh::validateInstanceId(double instanceId) const {
+    // Upstream rejects an id past the records and one that has been freed.
+    if (instanceId < 0 || instanceId >= static_cast<double>(_instanceInfo.size()) ||
+        !_instanceInfo[static_cast<std::size_t>(instanceId)].active)
+        throw std::runtime_error("THREE.BatchedMesh: Invalid instanceId.");
+}
+
+void BatchedMesh::validateGeometryId(double geometryId) const {
+    if (geometryId < 0 || geometryId >= _geometryCount || !_geometryInfo[static_cast<std::size_t>(geometryId)].active)
+        throw std::runtime_error("THREE.BatchedMesh: Invalid geometryId.");
+}
+
+double BatchedMesh::addInstance(double geometryId) {
+    validateGeometryId(geometryId);
+    const bool atCapacity = static_cast<double>(_instanceInfo.size()) >= _maxInstanceCount;
+    if (atCapacity && _availableInstanceIds.empty())
+        throw std::runtime_error("THREE.BatchedMesh: Maximum item count reached.");
+
+    InstanceInfo info;
+    info.visible = true;
+    info.active = true;
+    info.geometryId = geometryId;
+
+    double drawId = -1;
+    if (!_availableInstanceIds.empty()) {
+        // Freed ids are reused smallest first, which is what the upstream sort does.
+        std::sort(_availableInstanceIds.begin(), _availableInstanceIds.end());
+        drawId = _availableInstanceIds.front();
+        _availableInstanceIds.erase(_availableInstanceIds.begin());
+        _instanceInfo[static_cast<std::size_t>(drawId)] = info;
+    } else {
+        drawId = static_cast<double>(_instanceInfo.size());
+        _instanceInfo.push_back(info);
+    }
+
+    // Upstream writes an identity matrix and a white colour for the new instance.
+    const auto slot = static_cast<std::size_t>(drawId);
+    if (_instanceMatrices.size() <= slot) _instanceMatrices.resize(slot + 1, Matrix4());
+    if (_instanceColors.size() <= slot) _instanceColors.resize(slot + 1, Color(1.0, 1.0, 1.0));
+    _instanceMatrices[slot].identity();
+    _instanceColors[slot].setRGB(1.0, 1.0, 1.0);
+    return drawId;
+}
+
+BatchedMesh& BatchedMesh::setVisibleAt(double instanceId, bool visible) {
+    validateInstanceId(instanceId);
+    auto& record = _instanceInfo[static_cast<std::size_t>(instanceId)];
+    if (record.visible != visible) record.visible = visible;   // upstream returns early when unchanged
+    return *this;
+}
+
+bool BatchedMesh::getVisibleAt(double instanceId) const {
+    validateInstanceId(instanceId);
+    return _instanceInfo[static_cast<std::size_t>(instanceId)].visible;
+}
+
+BatchedMesh& BatchedMesh::setGeometryIdAt(double instanceId, double geometryId) {
+    validateInstanceId(instanceId);
+    validateGeometryId(geometryId);
+    _instanceInfo[static_cast<std::size_t>(instanceId)].geometryId = geometryId;
+    return *this;
+}
+
+double BatchedMesh::getGeometryIdAt(double instanceId) const {
+    validateInstanceId(instanceId);
+    return _instanceInfo[static_cast<std::size_t>(instanceId)].geometryId;
+}
+
+BatchedMesh::GeometryInfo BatchedMesh::getGeometryRangeAt(double geometryId) const {
+    validateGeometryId(geometryId);
+    return _geometryInfo[static_cast<std::size_t>(geometryId)];
+}

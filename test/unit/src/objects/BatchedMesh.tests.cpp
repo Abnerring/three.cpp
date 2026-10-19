@@ -103,3 +103,40 @@ TEST_CASE("BatchedMesh zero fills reserved space and refuses one that does not f
     large->setIndex(std::make_shared<Uint16BufferAttribute>(std::vector<std::uint16_t>{0, 1, 2}, 1));
     REQUIRE_THROWS_AS(batch->addGeometry(large), std::runtime_error);
 }
+// Instances name a geometry, can be hidden, can be repointed, and are limited by the max instance count that
+// the batch was constructed with.
+TEST_CASE("BatchedMesh manages its instances") {
+    auto batch = std::make_shared<BatchedMesh>(2, 8);
+    auto geometry = std::make_shared<BufferGeometry>();
+    geometry->setAttribute("position", std::make_shared<Float32BufferAttribute>(
+        std::vector<float>{1.0f, 2.0f, 3.0f, 4.0f, 5.0f, 6.0f, 7.0f, 8.0f, 9.0f}, 3));
+    geometry->setIndex(std::make_shared<Uint16BufferAttribute>(std::vector<std::uint16_t>{0, 1, 2}, 1));
+    REQUIRE(batch->addGeometry(geometry) == 0.0);
+
+    REQUIRE(batch->addInstance(0.0) == 0.0);
+    REQUIRE(batch->addInstance(0.0) == 1.0);
+    REQUIRE(batch->getInstanceCount() == 2.0);
+    // The batch is at its limit and nothing has been freed, so one more is refused.
+    REQUIRE_THROWS_AS(batch->addInstance(0.0), std::runtime_error);
+
+    REQUIRE(batch->getVisibleAt(0.0));
+    batch->setVisibleAt(0.0, false);
+    REQUIRE(batch->getVisibleAt(0.0) == false);
+    REQUIRE(batch->getVisibleAt(1.0));
+
+    REQUIRE(batch->getGeometryIdAt(1.0) == 0.0);
+    batch->setGeometryIdAt(1.0, 0.0);
+    REQUIRE(batch->getGeometryIdAt(1.0) == 0.0);
+
+    const auto range = batch->getGeometryRangeAt(0.0);
+    REQUIRE(range.vertexStart == 0.0);
+    REQUIRE(range.reservedVertexCount == 3.0);
+    REQUIRE(range.indexStart == 0.0);
+    REQUIRE(range.reservedIndexCount == 3.0);
+    REQUIRE(range.start == 0.0);
+    REQUIRE(range.count == 3.0);
+
+    // Ids that were never handed out are rejected rather than read past the records.
+    REQUIRE_THROWS_AS(batch->getVisibleAt(7.0), std::runtime_error);
+    REQUIRE_THROWS_AS(batch->getGeometryRangeAt(3.0), std::runtime_error);
+}

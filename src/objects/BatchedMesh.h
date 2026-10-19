@@ -1,5 +1,7 @@
 #pragma once
 #include "math/Box3.h"
+#include "math/Color.h"
+#include "math/Matrix4.h"
 #include "math/Sphere.h"
 #include "objects/Mesh.h"
 #include <memory>
@@ -38,6 +40,14 @@ class BatchedMesh : public Mesh {
     // them without going through a geometry copy that this slice does not carry yet.
     void initializeGeometry(const std::shared_ptr<BufferGeometry>& reference);
     void validateGeometry(const std::shared_ptr<BufferGeometry>& geometry) const;
+    void validateInstanceId(double instanceId) const;
+    void validateGeometryId(double geometryId) const;
+    double addInstance(double geometryId);
+    BatchedMesh& setVisibleAt(double instanceId, bool visible);
+    bool getVisibleAt(double instanceId) const;
+    BatchedMesh& setGeometryIdAt(double instanceId, double geometryId);
+    double getGeometryIdAt(double instanceId) const;
+    GeometryInfo getGeometryRangeAt(double geometryId) const;
     double addGeometry(const std::shared_ptr<BufferGeometry>& geometry, double reservedVertexCount = -1, double reservedIndexCount = -1);
     double setGeometryAt(double geometryId, const std::shared_ptr<BufferGeometry>& geometry);
 
@@ -54,4 +64,8 @@ class BatchedMesh : public Mesh {
     double _nextIndexStart = 0, _nextVertexStart = 0, _geometryCount = 0;
     bool _geometryInitialized = false;
     double _maxInstanceCount = 0, _maxVertexCount = 0, _maxIndexCount = 0;
+    // Upstream holds one matrix and one colour per instance in data textures; without a renderer the same
+    // values live in these vectors, which is the only difference and keeps the accessors exact.
+    std::vector<Matrix4> _instanceMatrices;
+    std::vector<Color> _instanceColors;
 };
