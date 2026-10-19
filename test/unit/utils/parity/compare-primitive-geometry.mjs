@@ -170,6 +170,9 @@ console.log(`simple curve parity: ${simpleCurveScenarios.length} scenarios`);
 const {EllipseCurve} = await import(pathToFileURL(path.join(sourceDir, 'src/extras/curves/EllipseCurve.js')).href);
 const {ArcCurve} = await import(pathToFileURL(path.join(sourceDir, 'src/extras/curves/ArcCurve.js')).href);
 const {LineCurve} = await import(pathToFileURL(path.join(sourceDir, 'src/extras/curves/LineCurve.js')).href);
+const {QuadraticBezierCurve} = await import(pathToFileURL(path.join(sourceDir, 'src/extras/curves/QuadraticBezierCurve.js')).href);
+const {CubicBezierCurve} = await import(pathToFileURL(path.join(sourceDir, 'src/extras/curves/CubicBezierCurve.js')).href);
+const {SplineCurve} = await import(pathToFileURL(path.join(sourceDir, 'src/extras/curves/SplineCurve.js')).href);
 
 const flatCurveScenarios = [
     ['ellipse 0 0 2 1 0 6.283185307179586 0 0', () => new EllipseCurve(0, 0, 2, 1, 0, Math.PI * 2, false, 0)],
@@ -177,6 +180,10 @@ const flatCurveScenarios = [
     ['arc 0 0 1 0 3.141592653589793 0', () => new ArcCurve(0, 0, 1, 0, Math.PI, false)],
     ['arc 1 2 2 0 4.71238898038469 1', () => new ArcCurve(1, 2, 2, 0, Math.PI * 1.5, true)],
     ['line2 0 0 3 4', () => new LineCurve(new Vector2(0, 0), new Vector2(3, 4))],
+    ['quad2 0 0 1 2 3 0', () => new QuadraticBezierCurve(new Vector2(0, 0), new Vector2(1, 2), new Vector2(3, 0))],
+    ['cubic2 0 0 1 2 3 -2 4 0', () => new CubicBezierCurve(new Vector2(0, 0), new Vector2(1, 2), new Vector2(3, -2), new Vector2(4, 0))],
+    ['spline2 3 0 0 1 2 2 0', () => new SplineCurve([new Vector2(0, 0), new Vector2(1, 2), new Vector2(2, 0)])],
+    ['spline2 5 0 0 1 3 2 -1 3 0 4 2', () => new SplineCurve([new Vector2(0, 0), new Vector2(1, 3), new Vector2(2, -1), new Vector2(3, 0), new Vector2(4, 2)])],
 ];
 
 const flatRaw = execFileSync(probePath, [], {input: flatCurveScenarios.map(([line]) => line).join('\n'), encoding: 'utf8'});

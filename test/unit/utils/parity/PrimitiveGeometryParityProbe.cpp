@@ -23,6 +23,9 @@
 #include "extras/curves/EllipseCurve.h"
 #include "extras/curves/ArcCurve.h"
 #include "extras/curves/LineCurve.h"
+#include "extras/curves/QuadraticBezierCurve.h"
+#include "extras/curves/CubicBezierCurve.h"
+#include "extras/curves/SplineCurve.h"
 #include "extras/curves/QuadraticBezierCurve3.h"
 #include "extras/curves/CubicBezierCurve3.h"
 #include "extras/curves/CatmullRomCurve3.h"
@@ -331,6 +334,35 @@ int main() {
                 if (i > 0) std::cout << ",";
                 std::cout << "[" << bits(static_cast<float>(point.x)) << "," << bits(static_cast<float>(point.y)) << "]";
             }
+            std::cout << "]}" << std::endl;
+            continue;
+        } else if (kind == "quad2") {
+            double v[6] = {};
+            for (int k = 0; k < 6; k += 1) in >> v[k];
+            if (in.fail()) { std::cout << "{\"error\":\"short input\"}" << std::endl; continue; }
+            QuadraticBezierCurve curve(std::make_shared<Vector2>(v[0], v[1]), std::make_shared<Vector2>(v[2], v[3]), std::make_shared<Vector2>(v[4], v[5]));
+            std::cout << "{\"kind\":\"quad2\",\"points\":[";
+            for (int i = 0; i <= 4; i += 1) { const auto p = curve.getPoint(i / 4.0); if (i > 0) std::cout << ","; std::cout << "[" << bits(static_cast<float>(p.x)) << "," << bits(static_cast<float>(p.y)) << "]"; }
+            std::cout << "]}" << std::endl;
+            continue;
+        } else if (kind == "cubic2") {
+            double v[8] = {};
+            for (int k = 0; k < 8; k += 1) in >> v[k];
+            if (in.fail()) { std::cout << "{\"error\":\"short input\"}" << std::endl; continue; }
+            CubicBezierCurve curve(std::make_shared<Vector2>(v[0], v[1]), std::make_shared<Vector2>(v[2], v[3]), std::make_shared<Vector2>(v[4], v[5]), std::make_shared<Vector2>(v[6], v[7]));
+            std::cout << "{\"kind\":\"cubic2\",\"points\":[";
+            for (int i = 0; i <= 4; i += 1) { const auto p = curve.getPoint(i / 4.0); if (i > 0) std::cout << ","; std::cout << "[" << bits(static_cast<float>(p.x)) << "," << bits(static_cast<float>(p.y)) << "]"; }
+            std::cout << "]}" << std::endl;
+            continue;
+        } else if (kind == "spline2") {
+            double count = 0;
+            in >> count;
+            auto points = std::make_shared<SplineCurve::Points>();
+            for (int k = 0; k < static_cast<int>(count); k += 1) { double x = 0, y = 0; in >> x >> y; points->push_back(std::make_shared<Vector2>(x, y)); }
+            if (in.fail()) { std::cout << "{\"error\":\"short input\"}" << std::endl; continue; }
+            SplineCurve curve(points);
+            std::cout << "{\"kind\":\"spline2\",\"points\":[";
+            for (int i = 0; i <= 4; i += 1) { const auto p = curve.getPoint(i / 4.0); if (i > 0) std::cout << ","; std::cout << "[" << bits(static_cast<float>(p.x)) << "," << bits(static_cast<float>(p.y)) << "]"; }
             std::cout << "]}" << std::endl;
             continue;
         } else {
