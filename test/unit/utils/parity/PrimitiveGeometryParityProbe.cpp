@@ -62,6 +62,7 @@
 #include "helpers/AxesHelper.h"
 #include "helpers/Box3Helper.h"
 #include "helpers/PlaneHelper.h"
+#include "helpers/PolarGridHelper.h"
 #include "math/Plane.h"
 #include "math/Box3.h"
 #include "cameras/PerspectiveCamera.h"
@@ -597,6 +598,8 @@ int main() {
                 helper = std::make_shared<Box3Helper>(std::make_shared<Box3>(Vector3(minx, miny, minz), Vector3(maxx, maxy, maxz))); }
             else if (which == "planehelper") { double nx = 0, ny = 0, nz = 0, constant = 0, size = 0; in >> nx >> ny >> nz >> constant >> size; if (in.fail() || !noTrailingTokens(in)) { std::cout << "{\"error\":\"short input or trailing tokens\"}" << std::endl; continue; }
                 helper = std::make_shared<PlaneHelper>(std::make_shared<Plane>(Vector3(nx, ny, nz), constant), size); }
+            else if (which == "polargrid") { double radius = 0, sectors = 0, rings = 0, divisions = 0; in >> radius >> sectors >> rings >> divisions; if (in.fail() || !noTrailingTokens(in)) { std::cout << "{\"error\":\"short input or trailing tokens\"}" << std::endl; continue; }
+                helper = std::make_shared<PolarGridHelper>(radius, sectors, rings, divisions); }
             else { std::cout << "{\"error\":\"unknown helper\"}" << std::endl; continue; }
             std::cout << "{\"kind\":\"helper\",\"which\":\"" << which << "\",\"type\":\"" << helper->type << "\"";
             if (auto self = std::dynamic_pointer_cast<Line>(helper)) {
