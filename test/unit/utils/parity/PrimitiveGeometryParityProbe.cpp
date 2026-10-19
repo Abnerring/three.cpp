@@ -69,6 +69,9 @@
 #include "core/RenderTarget3D.h"
 #include "objects/Group.h"
 #include "objects/Mesh.h"
+#include "objects/InstancedMesh.h"
+#include "materials/MeshBasicMaterial.h"
+#include "geometries/BoxGeometry.h"
 #include "objects/Points.h"
 #include "objects/Sprite.h"
 #include "objects/LOD.h"
@@ -694,6 +697,26 @@ int main() {
             std::cout << "{\"kind\":\"sh\",\"coefficients\":[";
             for (int k = 0; k < 9; k += 1) { if (k > 0) std::cout << ","; std::cout << "[" << bits(static_cast<float>(sh.coefficients[k].x)) << "," << bits(static_cast<float>(sh.coefficients[k].y)) << "," << bits(static_cast<float>(sh.coefficients[k].z)) << "]"; }
             std::cout << "]}" << std::endl;
+            continue;
+        } else if (kind == "instance") {
+            double count = 0;
+            in >> count;
+            if (in.fail() || !noTrailingTokens(in)) { std::cout << "{\"error\":\"short input or trailing tokens\"}" << std::endl; continue; }
+            auto geometry = std::make_shared<BoxGeometry>(1, 1, 1, 1, 1, 1);
+            auto material = std::make_shared<MeshBasicMaterial>();
+            InstancedMesh mesh(geometry, material, count);
+            std::cout << "{\"kind\":\"instance\",\"type\":\"" << mesh.type << "\"";
+            std::cout << ",\"count\":" << bits(static_cast<float>(mesh.count));
+            if (mesh.instanceMatrix) {
+                std::cout << ",\"matrixCount\":" << static_cast<int>(mesh.instanceMatrix->count);
+                std::cout << ",\"matrixItemSize\":" << static_cast<int>(mesh.instanceMatrix->itemSize);
+                std::cout << ",\"matrixFirst\":[";
+                for (int i = 0; i < 8 && i < static_cast<int>(mesh.instanceMatrix->count) * 16; i += 1) { if (i > 0) std::cout << ","; std::cout << bits(static_cast<float>(mesh.instanceMatrix->getComponent(i / 16, i % 16))); }
+                std::cout << "]";
+            } else std::cout << ",\"matrixCount\":null";
+            std::cout << ",\"hasColor\":" << (mesh.instanceColor ? "true" : "false");
+            std::cout << ",\"frustumCulled\":" << (mesh.frustumCulled ? "true" : "false");
+            std::cout << "}" << std::endl;
             continue;
         } else {
             std::cout << "{\"error\":\"unknown kind\"}" << std::endl;

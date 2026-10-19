@@ -562,3 +562,28 @@ for (let i = 0; i < shScenarios.length; i += 1) {
     assert.deepEqual(shLines[i], expected, `scenario ${line}`);
 }
 console.log(`spherical harmonics parity: ${shScenarios.length} scenarios`);
+
+// The instanced mesh: its count and the buffer it allocates for the instance matrices.
+const {InstancedMesh} = await import(pathToFileURL(path.join(sourceDir, 'src/objects/InstancedMesh.js')).href);
+const {BoxGeometry: BoxForInstancing} = await import(pathToFileURL(path.join(sourceDir, 'src/geometries/BoxGeometry.js')).href);
+const {MeshBasicMaterial: BasicForInstancing} = await import(pathToFileURL(path.join(sourceDir, 'src/materials/MeshBasicMaterial.js')).href);
+
+const instanceScenarios = [
+    ['instance 1', 1],
+    ['instance 3', 3],
+    ['instance 8', 8],
+];
+const instanceRaw = execFileSync(probePath, [], {input: instanceScenarios.map(([line]) => line).join('\n'), encoding: 'utf8'});
+const instanceLines = instanceRaw.trim().split('\n').map((line) => JSON.parse(line));
+for (let i = 0; i < instanceScenarios.length; i += 1) {
+    const [line, count] = instanceScenarios[i];
+    const mesh = new InstancedMesh(new BoxForInstancing(1, 1, 1, 1, 1, 1), new BasicForInstancing(), count);
+    const matrix = mesh.instanceMatrix;
+    const first = [];
+    for (let k = 0; k < 8; k++) first.push(bitOf(matrix.array[k]));
+    const expected = {kind: 'instance', type: mesh.type, count: bitOf(mesh.count),
+        matrixCount: matrix.count, matrixItemSize: matrix.itemSize, matrixFirst: first,
+        hasColor: mesh.instanceColor !== null, frustumCulled: mesh.frustumCulled};
+    assert.deepEqual(instanceLines[i], expected, `scenario ${line}`);
+}
+console.log(`instanced mesh parity: ${instanceScenarios.length} scenarios`);
