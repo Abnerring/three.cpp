@@ -96,6 +96,9 @@ const scenarios = [
     ['extrude 2 0 1 12 4 0 0 2 0 2 2 0 2', () => { const s = new Shape(); s.moveTo(0, 0); s.lineTo(2, 0); s.lineTo(2, 2); s.lineTo(0, 2); return new ExtrudeGeometry(s, {depth: 2, bevelEnabled: false, steps: 1, curveSegments: 12}); }],
     ['extrude 1.5 1 3 12 3 0 0 1 0 0 1', () => { const s = new Shape(); s.moveTo(0, 0); s.lineTo(1, 0); s.lineTo(0, 1); return new ExtrudeGeometry(s, {depth: 1.5, bevelEnabled: true, steps: 3, curveSegments: 12}); }],
     ['extrude 3 0 2 6 4 0 0 2 0 2 2 0 2', () => { const s = new Shape(); s.moveTo(0, 0); s.lineTo(2, 0); s.lineTo(2, 2); s.lineTo(0, 2); return new ExtrudeGeometry(s, {depth: 3, bevelEnabled: false, steps: 2, curveSegments: 6}); }],
+    ['tube 8 0.2 6 0 3 0 0 0 1 0 0 1 0 1', () => new TubeGeometry(new CatmullRomCurve3([new Vector3(0, 0, 0), new Vector3(1, 0, 0), new Vector3(1, 0, 1)], false), 8, 0.2, 6, false)],
+    ['tube 12 0.5 8 1 4 0 0 0 1 1 1 2 0 1 2 2 2', () => new TubeGeometry(new CatmullRomCurve3([new Vector3(0, 0, 0), new Vector3(1, 1, 1), new Vector3(2, 0, 1), new Vector3(2, 2, 2)], true), 12, 0.5, 8, true)],
+    ['tube 16 0.3 5 0 3 0 0 0 0 1 0 1 1 0', () => new TubeGeometry(new CatmullRomCurve3([new Vector3(0, 0, 0), new Vector3(0, 1, 0), new Vector3(1, 1, 0)], false), 16, 0.3, 5, false)],
 ];
 
 const raw = execFileSync(probePath, [], {input: scenarios.map(([line]) => line).join('\n'), encoding: 'utf8', maxBuffer: 64 * 1024 * 1024});

@@ -178,6 +178,31 @@ int main() {
             }
             auto path = std::make_shared<CatmullRomCurve3>(points, closed != 0.0);
             geometry = std::make_shared<TubeGeometry>(path, tubularSegments, radius, radialSegments, closed != 0.0);
+        } else if (kind == "frames") {
+            double segments = 0, closed = 0, count = 0;
+            in >> segments >> closed >> count;
+            auto points = std::make_shared<CatmullRomCurve3::Points>();
+            for (int i = 0; i < static_cast<int>(count); i += 1) {
+                double x = 0, y = 0, z = 0;
+                in >> x >> y >> z;
+                points->push_back(std::make_shared<Vector3>(x, y, z));
+            }
+            CatmullRomCurve3 curve(points, closed != 0.0);
+            const auto frames = curve.computeFrenetFrames(segments, closed != 0.0);
+            std::cout << "{\"kind\":\"frames\",\"normals\":[";
+            for (std::size_t i = 0; i < frames.normals.size() && i < 3; i += 1) {
+                const auto& n = frames.normals[i];
+                if (i > 0) std::cout << ",";
+                std::cout << "[" << bits(static_cast<float>(n.x)) << "," << bits(static_cast<float>(n.y)) << "," << bits(static_cast<float>(n.z)) << "]";
+            }
+            std::cout << "],\"binormals\":[";
+            for (std::size_t i = 0; i < frames.binormals.size() && i < 3; i += 1) {
+                const auto& b = frames.binormals[i];
+                if (i > 0) std::cout << ",";
+                std::cout << "[" << bits(static_cast<float>(b.x)) << "," << bits(static_cast<float>(b.y)) << "," << bits(static_cast<float>(b.z)) << "]";
+            }
+            std::cout << "]}" << std::endl;
+            continue;
         } else if (kind == "curve") {
             double closed = 0, count = 0;
             in >> closed >> count;

@@ -99,14 +99,11 @@
    - **已定位到具体夹具**：在探针的 `light()` 入口打印后，输出停在 `light seed=18 type=1` —— `type 1` 就是 **`LightProbe`**，即**构造这个夹具**时自转 ✗。这一步与端口无关（端口 `setup` 已打印返回 ✓）。
    - **结论**：渲染灯光状态的端口行为目前**没有被证明有问题**，只是这个差分**从未跑通** ✗。下一步有两条路：一是在 `LightProbe` 夹具里继续二分（看是 `coefficients` 的 9 次赋值还是 `is`+type 的属性名出问题）；二是**两侧同时跳过 `LightProbe`**（`.mjs` 里过滤、探针里跳过），先让其余灯型跑通并纳入门禁，把 `LightProbe` 留作已知缺口 —— 后者更快见效。
    - **纪律**：修好之前不要让它进普通门禁（会挂住 CI）；也不要因为单元版通过就宣称渲染灯光状态的差分级验证已完成。
-40. **`TubeGeometry` 与上游存在真实分歧：拓扑一致、顶点值不一致（待修）**。差分探针已能构造它（`CatmullRomCurve3` 控制点 → 管道），对拍结果显示：顶点数与索引数**完全一致**（8 段 × 6 径向 → 63 顶点、288 索引），但 `position` 的浮点位模式从第 2 个值起就与上游不同。
-   - 诊断：数量一致说明**分段与拓扑**没问题；值从第 2 个顶点起就分叉，说明是**框架（frame）方向**的差异，也就是 `computeFrenetFrames`/`getTangent` 这条链，而不是 `TubeGeometry` 的索引生成。
-   - 处理：本轮**不把 tube 场景并入差分**（否则门禁变红），探针分支保留（只是测试代码，未被调用即无害），问题记在此处。
-   - **已排除的**（第二轮排查结果）：① 曲线本身没问题——探针新增 `curve` 分支，把 `CatmullRomCurve3` 的 `getPoint` 与 `getTangent` 在 t=0..1 五点上的位模式与上游逐一比对，**完全相等**；② `computeFrenetFrames` 的实现与上游逐行一致——取 `getTangentAt`、按最小绝对分量选初值法线（`<=`、顺序 x→y→z）、初值三叉、按夹角绕轴旋转、闭合修正都在。
-   - **也已排除的**（第三轮排查结果）：**弧长映射没问题**。探针的 `curve` 分支现在输出 `getPoint`/`getTangent`/`getLengths()`/`getUtoTmapping`/`getPointAt` 五项，两条曲线（闭合与不闭合）与上游**逐位相等**，其中 `getLengths()` 的 201 个分段长度全部一致。这些已并入差分（`curve parity: 2 scenarios`），以后不会回退。
-   - **因此剩下的嫌疑只在 `TubeGeometry` 自身**：曲线、切线、弧长、框架实现四者都已排除，那么差异只能来自 `TubeGeometry.generateSegment` 里对 `normal`/`binormal`/`P` 的用法，或 `computeFrenetFrames` 的**调用参数**（`closed` 与分段数）。下一轮直接读端口 `TubeGeometry.cpp` 的 `generateSegment` 与索引生成，与上游逐行比。
-   - 原记录（已排除项保留说明）：上游 `getTangentAt(u)` = `getTangent(getUtoTmapping(u))`，而 `getUtoTmapping` 依赖 `getLengths()`/`getLength()` 的分段长度缓存；我上一轮验的是 `getTangent`（参数 t 直达），没验 `getTangentAt`（先经弧长再参数）。下一步就是把 `getLengths()`、`getUtoTmapping(t)`、`getPointAt(u)`、`getTangentAt(u)` 四者与上游逐点对拍。
-   - 教训：这类"数量对、值不对"的失败正是位级对拍的价值所在——若只比对顶点数，会得出"没问题"的错误结论。
+40. **`TubeGeometry` 曾被我误报为"与上游存在真实分歧"，实际是本端口正确、我的对拍输入写错了**（本条留作反面教材）。
+   - 经过：加 tube 场景时差分报错，我看到"顶点数与索引数一致、`position` 位模式不同"，据此写下"框架计算有分歧"的结论，并用三轮排查依次排除了曲线 `getPoint`/`getTangent`、弧长 `getLengths`/`getUtoTmapping`/`getPointAt`、以及 `computeFrenetFrames` 本身——这些排查本身是有效的（并且顺带把五项曲线函数固化进了差分），但它们全都在证明**被测代码没问题**。
+   - 真相：`test/unit/utils/parity/compare-primitive-geometry.mjs` 里三条 tube 场景的**输入行本身写错了**：第一条少一个坐标（8 个数字而非 9 个），第二条同样少一个，第三条把控制点数量写成了 4 而实际给了 3 个点。探针按空格流式解析，数字错位后读到的是错的控制点，于是"顶点数对、值不对"——这个现象和我当时给出的诊断（框架方向差异）**恰好吻合**，所以我没有去怀疑输入。
+   - 修正后事实：`tube` 与上游**完全一致**，`position`/`normal`/`uv`/`index` 四项逐一匹配；`computeFrenetFrames` 的 `normals`/`binormals` 前若干项也逐位相等。三条 tube 场景已并入差分（现共 39 个几何场景 + 2 个曲线场景）。
+   - 教训：① 自定义行协议**没有校验**，错一个数字会伪装成"被测代码的 bug"；给探针加上"按 `count` 校验数字个数"的检查是值得的。② 报"发现分歧"之前，先把**输入**验一遍，代价远低于三轮排查。③ 位级对拍依然值得——它这次是**正确地**排除了嫌疑，只是嫌疑人是我自己。
 39. **差分覆盖的选点表：上游有单测的 242 个模块里，105 个已有对拍，170 个没有；其中 125 个是可移植的**。统计方法：扫 `test/**/*.mjs` 里出现的 `src/.../Name.js` 取模块名，与 `../three.js/test/unit/src/**/Name.tests.js` 的模块名求差集。按可移植性分组如下（括号为数量）：
    - **可移植、尚未对拍（125）**：光照与 helper 22、对象与渲染目标 27、几何 20、曲线 14、杂项 14、材质 13、关键帧与插值 11、音频 4。这一组是当前**唯一能"做完并证明做对"**的方向，第 37、38 条的 SDK 阻塞不适用于它。
    - **被阻塞（45）**：TSL 节点系统 32、GPU 计算 8、WebGL 渲染目标 5。前两组要 SDK，第三组要本端口的等价物。
