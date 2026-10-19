@@ -198,3 +198,26 @@ for (let i = 0; i < flatCurveScenarios.length; i += 1) {
     assert.deepEqual(flatLines[i], expected, `scenario ${line}`);
 }
 console.log(`flat curve parity: ${flatCurveScenarios.length} scenarios`);
+// The interpolants behind the keyframe tracks: the result at five parameters, as bits.
+const {LinearInterpolant} = await import(pathToFileURL(path.join(sourceDir, 'src/math/interpolants/LinearInterpolant.js')).href);
+const {DiscreteInterpolant} = await import(pathToFileURL(path.join(sourceDir, 'src/math/interpolants/DiscreteInterpolant.js')).href);
+
+const interpolantScenarios = [
+    ['interp linear 1 3 0 1 2 3 0 10 20', () => new LinearInterpolant([0, 1, 2], [0, 10, 20], 1)],
+    ['interp linear 2 4 0 1 2 3 8 0 0 1 1 2 2 3 3', () => new LinearInterpolant([0, 1, 2, 3], [0, 0, 1, 1, 2, 2, 3, 3], 2)],
+    ['interp discrete 2 3 0 1 2 6 0 0 1 1 2 2', () => new DiscreteInterpolant([0, 1, 2], [0, 0, 1, 1, 2, 2], 2)],
+];
+
+const interpolantRaw = execFileSync(probePath, [], {input: interpolantScenarios.map(([line]) => line).join('\n'), encoding: 'utf8'});
+const interpolantLines = interpolantRaw.trim().split('\n').map((line) => JSON.parse(line));
+for (let i = 0; i < interpolantScenarios.length; i += 1) {
+    const [line, build] = interpolantScenarios[i];
+    const interpolant = build();
+    const expected = {
+        kind: 'interp',
+        which: line.split(' ')[1],
+        results: [0, 0.25, 0.5, 0.75, 1].map((t) => Array.from(interpolant.evaluate(t)).map(bitOf)),
+    };
+    assert.deepEqual(interpolantLines[i], expected, `scenario ${line}`);
+}
+console.log(`interpolant parity: ${interpolantScenarios.length} scenarios`);

@@ -26,6 +26,8 @@
 #include "extras/curves/QuadraticBezierCurve.h"
 #include "extras/curves/CubicBezierCurve.h"
 #include "extras/curves/SplineCurve.h"
+#include "math/interpolants/LinearInterpolant.h"
+#include "math/interpolants/DiscreteInterpolant.h"
 #include "extras/curves/QuadraticBezierCurve3.h"
 #include "extras/curves/CubicBezierCurve3.h"
 #include "extras/curves/CatmullRomCurve3.h"
@@ -363,6 +365,31 @@ int main() {
             SplineCurve curve(points);
             std::cout << "{\"kind\":\"spline2\",\"points\":[";
             for (int i = 0; i <= 4; i += 1) { const auto p = curve.getPoint(i / 4.0); if (i > 0) std::cout << ","; std::cout << "[" << bits(static_cast<float>(p.x)) << "," << bits(static_cast<float>(p.y)) << "]"; }
+            std::cout << "]}" << std::endl;
+            continue;
+        } else if (kind == "interp") {
+            std::string which;
+            double sampleSize = 0, count = 0;
+            in >> which >> sampleSize >> count;
+            std::vector<double> positions;
+            for (int k = 0; k < static_cast<int>(count); k += 1) { double value = 0; in >> value; positions.push_back(value); }
+            double sampleCount = 0;
+            in >> sampleCount;
+            std::vector<double> samples;
+            for (int k = 0; k < static_cast<int>(sampleCount); k += 1) { double value = 0; in >> value; samples.push_back(value); }
+            if (in.fail()) { std::cout << "{\"error\":\"short input\"}" << std::endl; continue; }
+            std::shared_ptr<Interpolant> interpolant;
+            if (which == "linear") interpolant = std::make_shared<LinearInterpolant>(InterpolantArray(positions), InterpolantArray(samples), sampleSize);
+            else if (which == "discrete") interpolant = std::make_shared<DiscreteInterpolant>(InterpolantArray(positions), InterpolantArray(samples), sampleSize);
+            else { std::cout << "{\"error\":\"unknown interpolant\"}" << std::endl; continue; }
+            std::cout << "{\"kind\":\"interp\",\"which\":\"" << which << "\",\"results\":[";
+            for (int i = 0; i <= 4; i += 1) {
+                const auto result = interpolant->evaluate(i / 4.0);
+                if (i > 0) std::cout << ",";
+                std::cout << "[";
+                for (int c = 0; c < static_cast<int>(sampleSize); c += 1) { if (c > 0) std::cout << ","; std::cout << bits(static_cast<float>(result.number(c))); }
+                std::cout << "]";
+            }
             std::cout << "]}" << std::endl;
             continue;
         } else {
