@@ -718,6 +718,21 @@ int main() {
             std::cout << ",\"frustumCulled\":" << (mesh.frustumCulled ? "true" : "false");
             std::cout << "}" << std::endl;
             continue;
+        } else if (kind == "path") {
+            double count = 0;
+            in >> count;
+            std::vector<double> coordinates;
+            for (int k = 0; k < static_cast<int>(count) * 2; k += 1) { double value = 0; in >> value; coordinates.push_back(value); }
+            if (in.fail() || !noTrailingTokens(in)) { std::cout << "{\"error\":\"short input or trailing tokens\"}" << std::endl; continue; }
+            Path path;
+            for (int k = 0; k < static_cast<int>(count); k += 1) {
+                if (k == 0) path.moveTo(coordinates[0], coordinates[1]);
+                else path.lineTo(coordinates[k * 2], coordinates[k * 2 + 1]);
+            }
+            std::cout << "{\"kind\":\"path\",\"curves\":" << path.curves->size() << ",\"points\":[";
+            for (int i = 0; i <= 4; i += 1) { const auto point = path.getPoint(i / 4.0); if (i > 0) std::cout << ","; std::cout << "[" << bits(static_cast<float>(point.x)) << "," << bits(static_cast<float>(point.y)) << "]"; }
+            std::cout << "]}" << std::endl;
+            continue;
         } else {
             std::cout << "{\"error\":\"unknown kind\"}" << std::endl;
             continue;

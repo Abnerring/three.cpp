@@ -587,3 +587,21 @@ for (let i = 0; i < instanceScenarios.length; i += 1) {
     assert.deepEqual(instanceLines[i], expected, `scenario ${line}`);
 }
 console.log(`instanced mesh parity: ${instanceScenarios.length} scenarios`);
+// The path container: the curves it accumulates and the point at five parameters.
+const {Path} = await import(pathToFileURL(path.join(sourceDir, 'src/extras/core/Path.js')).href);
+
+const pathScenarios = [
+    ['path 4 0 0 2 0 2 2 0 2', [[0, 0], [2, 0], [2, 2], [0, 2]]],
+    ['path 2 1 1 4 1', [[1, 1], [4, 1]]],
+];
+const pathRaw = execFileSync(probePath, [], {input: pathScenarios.map(([line]) => line).join('\n'), encoding: 'utf8'});
+const pathLines = pathRaw.trim().split('\n').map((line) => JSON.parse(line));
+for (let i = 0; i < pathScenarios.length; i += 1) {
+    const [line, coordinates] = pathScenarios[i];
+    const path = new Path();
+    coordinates.forEach(([x, y], index) => { if (index === 0) path.moveTo(x, y); else path.lineTo(x, y); });
+    const expected = {kind: 'path', curves: path.curves.length,
+        points: [0, 0.25, 0.5, 0.75, 1].map((t) => { const p = path.getPoint(t); return [bitOf(p.x), bitOf(p.y)]; })};
+    assert.deepEqual(pathLines[i], expected, `scenario ${line}`);
+}
+console.log(`path parity: ${pathScenarios.length} scenarios`);
