@@ -404,12 +404,16 @@ console.log(`helper parity: ${helperScenarios.length} scenarios`);
 const {ArrowHelper} = await import(pathToFileURL(path.join(sourceDir, 'src/helpers/ArrowHelper.js')).href);
 const {PointLightHelper} = await import(pathToFileURL(path.join(sourceDir, 'src/helpers/PointLightHelper.js')).href);
 const {DirectionalLightHelper} = await import(pathToFileURL(path.join(sourceDir, 'src/helpers/DirectionalLightHelper.js')).href);
+const {HemisphereLightHelper} = await import(pathToFileURL(path.join(sourceDir, 'src/helpers/HemisphereLightHelper.js')).href);
+const {HemisphereLight: HemisphereLightForHelper} = await import(pathToFileURL(path.join(sourceDir, 'src/lights/HemisphereLight.js')).href);
 const {PointLight: PointLightForHelper} = await import(pathToFileURL(path.join(sourceDir, 'src/lights/PointLight.js')).href);
 const {DirectionalLight: DirectionalLightForHelper} = await import(pathToFileURL(path.join(sourceDir, 'src/lights/DirectionalLight.js')).href);
 
 const childHelperScenarios = [
     ['helper pointlight 1', () => new PointLightHelper(new PointLightForHelper(), 1)],
     ['helper directional 1', () => new DirectionalLightHelper(new DirectionalLightForHelper(), 1)],
+    ['helper hemisphere 1', () => new HemisphereLightHelper(new HemisphereLightForHelper(), 1)],
+    ['helper hemisphere 2.5', () => new HemisphereLightHelper(new HemisphereLightForHelper(), 2.5)],
     ['helper arrow 0 0 1 0 0 0 2', () => new ArrowHelper(new Vector3(0, 0, 1), new Vector3(0, 0, 0), 2)],
 ];
 
