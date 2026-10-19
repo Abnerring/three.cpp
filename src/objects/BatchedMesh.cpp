@@ -1,8 +1,9 @@
-﻿#include "objects/BatchedMesh.h"
+#include "objects/BatchedMesh.h"
 
 #include "core/BufferAttribute.h"
 #include "core/BufferGeometry.h"
 #include "materials/MeshBasicMaterial.h"
+#include <algorithm>
 #include <stdexcept>
 #include <string>
 
@@ -55,4 +56,92 @@ void BatchedMesh::validateGeometry(const std::shared_ptr<BufferGeometry>& candid
             throw std::runtime_error("THREE.BatchedMesh: Added geometry attribute \"" + name +
                                      "\" has an inconsistent itemSize or normalized value.");
     }
+}
+double BatchedMesh::addGeometry(const std::shared_ptr<BufferGeometry>& geometry, double reservedVertexCount,
+                                double reservedIndexCount) {
+    initializeGeometry(geometry);
+    validateGeometry(geometry);
+
+    GeometryInfo info;
+    info.vertexStart = _nextVertexStart;
+    const auto position = std::dynamic_pointer_cast<BufferAttribute>(geometry->getAttribute("position"));
+    info.reservedVertexCount = reservedVertexCount == -1 ? position->count : reservedVertexCount;
+
+    const auto index = geometry->getIndex();
+    const bool hasIndex = index != nullptr;
+    if (hasIndex) {
+        info.indexStart = _nextIndexStart;
+        info.reservedIndexCount = reservedIndexCount == -1 ? index->count : reservedIndexCount;
+    }
+
+    // The reserved space has to fit in the buffers the batch allocated when it was built.
+    if ((info.indexStart != -1 && info.indexStart + info.reservedIndexCount > _maxIndexCount) ||
+        info.vertexStart + info.reservedVertexCount > _maxVertexCount)
+        throw std::runtime_error("THREE.BatchedMesh: Reserved space request exceeds the maximum buffer size.");
+
+    // A freed id is reused, and the smallest one goes first, which is what the upstream sort does.
+    double geometryId = -1;
+    if (!_availableGeometryIds.empty()) {
+        std::sort(_availableGeometryIds.begin(), _availableGeometryIds.end());
+        geometryId = _availableGeometryIds.front();
+        _availableGeometryIds.erase(_availableGeometryIds.begin());
+        _geometryInfo[static_cast<std::size_t>(geometryId)] = info;
+    } else {
+        geometryId = _geometryCount;
+        _geometryCount += 1;
+        _geometryInfo.push_back(info);
+    }
+
+    setGeometryAt(geometryId, geometry);
+    _nextIndexStart = info.indexStart + info.reservedIndexCount;
+    _nextVertexStart = info.vertexStart + info.reservedVertexCount;
+    return geometryId;
+}
+
+double BatchedMesh::setGeometryAt(double geometryId, const std::shared_ptr<BufferGeometry>& source) {
+    if (geometryId >= _geometryCount)
+        throw std::runtime_error("THREE.BatchedMesh: Maximum geometry count reached.");
+    validateGeometry(source);
+
+    const bool hasIndex = geometry->getIndex() != nullptr;
+    const auto destinationIndex = geometry->getIndex();
+    const auto sourceIndex = source->getIndex();
+    auto& info = _geometryInfo[static_cast<std::size_t>(geometryId)];
+    if ((hasIndex && sourceIndex->count > info.reservedIndexCount) ||
+        std::dynamic_pointer_cast<BufferAttribute>(source->getAttribute("position"))->count > info.reservedVertexCount)
+        throw std::runtime_error("THREE.BatchedMesh: Reserved space not large enough for provided geometry.");
+
+    const double vertexStart = info.vertexStart;
+    const double reservedVertexCount = info.reservedVertexCount;
+    const auto sourcePosition = std::dynamic_pointer_cast<BufferAttribute>(source->getAttribute("position"));
+    info.vertexCount = sourcePosition->count;
+
+    for (const auto& [name, target] : geometry->attributes) {
+        const auto destination = std::dynamic_pointer_cast<BufferAttribute>(target);
+        const auto origin = std::dynamic_pointer_cast<BufferAttribute>(source->getAttribute(name));
+        // Copy the source components, then fill the reserved tail with zeroes, exactly as upstream does.
+        for (double i = 0; i < origin->count; i += 1)
+            for (double c = 0; c < origin->itemSize; c += 1)
+                destination->setComponent(vertexStart + i, c, origin->getComponent(i, c));
+        for (double i = origin->count; i < reservedVertexCount; i += 1)
+            for (double c = 0; c < origin->itemSize; c += 1)
+                destination->setComponent(vertexStart + i, c, 0.0);
+    }
+
+    if (hasIndex) {
+        const double indexStart = info.indexStart;
+        const double reservedIndexCount = info.reservedIndexCount;
+        info.indexCount = sourceIndex->count;
+        // The batch index is rebased on the vertex range this geometry occupies.
+        for (double i = 0; i < sourceIndex->count; i += 1)
+            destinationIndex->setX(indexStart + i, vertexStart + sourceIndex->getX(i));
+        for (double i = sourceIndex->count; i < reservedIndexCount; i += 1)
+            destinationIndex->setX(indexStart + i, vertexStart);
+    }
+
+    info.start = hasIndex ? info.indexStart : info.vertexStart;
+    info.count = hasIndex ? info.indexCount : info.vertexCount;
+    info.boundingBox = source->boundingBox;
+    info.boundingSphere = source->boundingSphere;
+    return geometryId;
 }

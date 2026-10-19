@@ -1,4 +1,6 @@
-﻿#pragma once
+#pragma once
+#include "math/Box3.h"
+#include "math/Sphere.h"
 #include "objects/Mesh.h"
 #include <memory>
 #include <vector>
@@ -17,6 +19,9 @@ class BatchedMesh : public Mesh {
         double indexStart = -1, indexCount = -1, reservedIndexCount = -1;
         double start = -1, count = -1;
         bool active = true;
+        // Upstream clones whatever bounds the source geometry carried; a null one stays null.
+        std::optional<Box3> boundingBox;
+        std::optional<Sphere> boundingSphere;
     };
 
     const bool isBatchedMesh = true;
@@ -33,6 +38,8 @@ class BatchedMesh : public Mesh {
     // them without going through a geometry copy that this slice does not carry yet.
     void initializeGeometry(const std::shared_ptr<BufferGeometry>& reference);
     void validateGeometry(const std::shared_ptr<BufferGeometry>& geometry) const;
+    double addGeometry(const std::shared_ptr<BufferGeometry>& geometry, double reservedVertexCount = -1, double reservedIndexCount = -1);
+    double setGeometryAt(double geometryId, const std::shared_ptr<BufferGeometry>& geometry);
 
   private:
     // One record per instance: its geometry id and whether it is active.
