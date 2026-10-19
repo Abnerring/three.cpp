@@ -201,11 +201,17 @@ console.log(`flat curve parity: ${flatCurveScenarios.length} scenarios`);
 // The interpolants behind the keyframe tracks: the result at five parameters, as bits.
 const {LinearInterpolant} = await import(pathToFileURL(path.join(sourceDir, 'src/math/interpolants/LinearInterpolant.js')).href);
 const {DiscreteInterpolant} = await import(pathToFileURL(path.join(sourceDir, 'src/math/interpolants/DiscreteInterpolant.js')).href);
+const {CubicInterpolant} = await import(pathToFileURL(path.join(sourceDir, 'src/math/interpolants/CubicInterpolant.js')).href);
+const {QuaternionLinearInterpolant} = await import(pathToFileURL(path.join(sourceDir, 'src/math/interpolants/QuaternionLinearInterpolant.js')).href);
 
 const interpolantScenarios = [
     ['interp linear 1 3 0 1 2 3 0 10 20', () => new LinearInterpolant([0, 1, 2], [0, 10, 20], 1)],
     ['interp linear 2 4 0 1 2 3 8 0 0 1 1 2 2 3 3', () => new LinearInterpolant([0, 1, 2, 3], [0, 0, 1, 1, 2, 2, 3, 3], 2)],
     ['interp discrete 2 3 0 1 2 6 0 0 1 1 2 2', () => new DiscreteInterpolant([0, 1, 2], [0, 0, 1, 1, 2, 2], 2)],
+    ['interp cubic 1 2 0 1 6 0 10 1 20 0 1', () => new CubicInterpolant([0, 1], [0, 10, 1, 20, 0, 1], 1)],
+    ['interp cubic 2 2 0 1 12 0 0 1 1 2 0 0 3 1 4 0 0', () => new CubicInterpolant([0, 1], [0, 0, 1, 1, 2, 0, 0, 3, 1, 4, 0, 0], 2)],
+    ['interp quaternionLinear 4 2 0 1 8 0 0 0 1 0 0 0.7071067811865476 0.7071067811865476', () => new QuaternionLinearInterpolant([0, 1], [0, 0, 0, 1, 0, 0, 0.7071067811865476, 0.7071067811865476], 4)],
+    ['interp quaternionLinear 4 3 0 1 2 12 0 0 0 1 0 0 0 1 0.7071 0 0.7071 0', () => new QuaternionLinearInterpolant([0, 1, 2], [0, 0, 0, 1, 0, 0, 0, 1, 0.7071, 0, 0.7071, 0], 4)],
 ];
 
 const interpolantRaw = execFileSync(probePath, [], {input: interpolantScenarios.map(([line]) => line).join('\n'), encoding: 'utf8'});

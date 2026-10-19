@@ -28,6 +28,8 @@
 #include "extras/curves/SplineCurve.h"
 #include "math/interpolants/LinearInterpolant.h"
 #include "math/interpolants/DiscreteInterpolant.h"
+#include "math/interpolants/CubicInterpolant.h"
+#include "math/interpolants/QuaternionLinearInterpolant.h"
 #include "extras/curves/QuadraticBezierCurve3.h"
 #include "extras/curves/CubicBezierCurve3.h"
 #include "extras/curves/CatmullRomCurve3.h"
@@ -381,6 +383,8 @@ int main() {
             std::shared_ptr<Interpolant> interpolant;
             if (which == "linear") interpolant = std::make_shared<LinearInterpolant>(InterpolantArray(positions), InterpolantArray(samples), sampleSize);
             else if (which == "discrete") interpolant = std::make_shared<DiscreteInterpolant>(InterpolantArray(positions), InterpolantArray(samples), sampleSize);
+            else if (which == "cubic") interpolant = std::make_shared<CubicInterpolant>(InterpolantArray(positions), InterpolantArray(samples), sampleSize);
+            else if (which == "quaternionLinear") interpolant = std::make_shared<QuaternionLinearInterpolant>(InterpolantArray(positions), InterpolantArray(samples), sampleSize);
             else { std::cout << "{\"error\":\"unknown interpolant\"}" << std::endl; continue; }
             std::cout << "{\"kind\":\"interp\",\"which\":\"" << which << "\",\"results\":[";
             for (int i = 0; i <= 4; i += 1) {
