@@ -92,6 +92,12 @@
    - **误报：实现位置不同**。`InstancedInterleavedBuffer.copy/clone/toJSON` 已经完整实现在 `prototype()` 里（`copy` 搬 `meshPerAttribute`、`clone` 写回结果、`toJSON` 加 flag 与值），只是不在头文件里。
    - **真实缺口，但受限**：`BufferGeometry.setIndirect/getIndirect`（需要两个字段 → 受第 24 条布局限制）；`Material.onBeforeCompile/customProgramCacheKey`（着色器钩子，且上游由函数源码字符串取 cache key）；`ObjectLoader.parseShapes`（需要 `ShapeGeometry.fromJSON`）；`ObjectLoader.parseImages`（宿主边界，见第 27 条）。
    - **扫描脚本的教训**：只在头文件里找方法名会漏掉原型注册、也会漏掉 `.cpp` 里的定义；应把 `src/` 下同名 `.h` 与 `.cpp` 一起搜，并把"空方法体"识别出来，否则每轮都会重新发现同一批幽灵。
+29. **`threecpp.threejs-webgl-lights-states-parity` 会挂死，原因已定位到具体 seed**。这个差分在 ctest 里给了 7200 秒超时，实际观察是：单元版 `threecpp.webgl-lights-states-unit`（82 断言 / 12 用例）**0.2 秒通过**，而差分版**永远不返回**，进程 CPU 接近零 —— 所以不是慢，是**卡住**。
+   - **不是脚本的问题**：单独运行 `ThreeJsWebGLLightsParityProbe.exe`（不经过 node、标准输入直接关掉）同样挂住。另外顺带发现 `compare-webgl-lights.mjs` 第 46 行调用 `execFileSync(probe,[],{encoding,...})` **没有传 `input`**，探针若读 stdin 就等不到 EOF；这一条要一起修，但它不是主因。
+   - **挂在哪：seed 26**。给 48 个 seed 的循环加 `fprintf` 后，输出停在 `seed 26`，即 `lightsCase(26, 0)` 内部不返回。
+   - **可疑位置**：`src/renderers/webgl/WebGLLights.cpp` 里有多处**由 JS 数值驱动、没有上限**的循环 —— 例如 `for(double i=0;i<length.toNumber();++i)`（第 90 行）与 `for(double j=0;j<cascadeCount.toNumber();++j)`（第 112 行）。`undefined.toNumber()` 给 NaN，循环会跳过；但如果某个字段给出**极大值**，循环就等于死循环。
+   - **下一步**：在 `lightsCase(26,0)` 里把第 90/112 行的边界值打印出来（`length`、`cascadeCount` 等），确认是哪个数值异常大；这既可能是指令的期望值写法问题，也可能是端口把某个默认值算错。
+   - **纪律**：在修好之前把这个测试当作**已知失败** ✗，不要因为它通过而宣称渲染相关的差分可信；也不要让它进普通门禁（它会挂住 CI）。
 10. **FileLoader 传输契约（冻结，实现时照此写，不要再设计）**：上游用 fetch / Request / Response / ReadableStream / AbortController / ProgressEvent / DOMParser / TextDecoder，原生侧没有这些宿主对象，因此把**只有一处**的宿主边界收窄成一个注入函数，其余逻辑照源码逐行移植。
    - 注入方式：模块级 `FileLoader::setTransport(JSValue)`，等价于 `globalThis.fetch`；未注入时 `load()` 显式抛错（说明未配置传输），不静默失败。
    - 传输入参：一个 JSValue 对象，字段 `url`（字符串，已过 `path` 与 `manager.resolveURL`）、`method`（恒为 GET）、`headers`（普通对象，来自 `requestHeader`）、`credentials`（`include` 或 `same-origin`，取自 `withCredentials`）、`signal`（对象，含布尔字段 `aborted`，由 `abort()` 置位）。
