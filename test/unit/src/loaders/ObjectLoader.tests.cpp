@@ -467,3 +467,34 @@ TEST_CASE("ObjectLoader builds a shape geometry from the shape table") {
     REQUIRE(position);
     REQUIRE(position->count > 0);
 }
+// Geometries other than the buffer ones resolve through their own fromJSON, which the loader now dispatches
+// to by the type the document names.
+TEST_CASE("ObjectLoader builds primitive geometries from the registry") {
+    const auto realm = JSValue::object();
+    static_cast<void>(realm);
+    const auto json = Animation_detail::parseJSON(R"({
+        "object": {"type": "Scene", "uuid": "scene", "children": [
+            {"type": "Mesh", "uuid": "box", "geometry": "g1", "material": "m"},
+            {"type": "Mesh", "uuid": "sphere", "geometry": "g2", "material": "m"}
+        ]},
+        "geometries": [
+            {"type": "BoxGeometry", "uuid": "g1", "width": 2, "height": 3, "depth": 4,
+             "widthSegments": 1, "heightSegments": 1, "depthSegments": 1},
+            {"type": "SphereGeometry", "uuid": "g2", "radius": 5, "widthSegments": 8, "heightSegments": 6}
+        ],
+        "materials": [{"type": "MeshBasicMaterial", "uuid": "m", "color": 255}]
+    })");
+    ObjectLoader loader;
+    const auto result = loader.parse(json);
+    const auto box = std::dynamic_pointer_cast<Mesh>(result.object->children[0]);
+    REQUIRE(box);
+    REQUIRE(box->geometry);
+    REQUIRE(box->geometry->type == "BoxGeometry");
+    const auto boxPosition = std::dynamic_pointer_cast<BufferAttribute>(box->geometry->getAttribute("position"));
+    REQUIRE(boxPosition);
+    REQUIRE(boxPosition->count > 0);
+    const auto sphere = std::dynamic_pointer_cast<Mesh>(result.object->children[1]);
+    REQUIRE(sphere);
+    REQUIRE(sphere->geometry->type == "SphereGeometry");
+    REQUIRE(sphere->geometry->getAttribute("position"));
+}

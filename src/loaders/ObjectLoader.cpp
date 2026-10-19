@@ -15,6 +15,25 @@
 #include "lights/SpotLight.h"
 #include "loaders/BufferGeometryLoader.h"
 #include "loaders/MaterialLoader.h"
+#include "geometries/BoxGeometry.h"
+#include "geometries/CapsuleGeometry.h"
+#include "geometries/CircleGeometry.h"
+#include "geometries/ConeGeometry.h"
+#include "geometries/CylinderGeometry.h"
+#include "geometries/DodecahedronGeometry.h"
+#include "geometries/ExtrudeGeometry.h"
+#include "geometries/IcosahedronGeometry.h"
+#include "geometries/LatheGeometry.h"
+#include "geometries/OctahedronGeometry.h"
+#include "geometries/PlaneGeometry.h"
+#include "geometries/PolyhedronGeometry.h"
+#include "geometries/RingGeometry.h"
+#include "geometries/ShapeGeometry.h"
+#include "geometries/SphereGeometry.h"
+#include "geometries/TetrahedronGeometry.h"
+#include "geometries/TorusGeometry.h"
+#include "geometries/TorusKnotGeometry.h"
+#include "geometries/TubeGeometry.h"
 #include "math/MathUtils.h"
 #include "math/SphericalHarmonics3.h"
 #include "objects/BatchedMesh.h"
@@ -77,10 +96,30 @@ ObjectLoader::Result ObjectLoader::parse(const JSValue& json) {
             if (type == "BufferGeometry" || type == "InstancedBufferGeometry") {
                 BufferGeometryLoader loader;
                 geometry = loader.parseGeometry(data);
-            } else if (type == "ShapeGeometry") {
-                // The registry path upstream takes: the geometry resolves its shapes through the table.
-                if (const auto record = data.toJSON()) geometry = ShapeGeometry::fromJSON(*record, shapes_);
-            } else {
+            } else if (type == "ShapeGeometry" || type == "ExtrudeGeometry") {
+                // The two that resolve their shapes through the table read before the geometries.
+                const auto record = data.toJSON();
+                if (!record) throw std::runtime_error("ObjectLoader: geometry record is not serializable");
+                if (type == "ShapeGeometry") geometry = ShapeGeometry::fromJSON(*record, shapes_);
+                else geometry = ExtrudeGeometry::fromJSON(*record, shapes_);
+            } else if (type == "BoxGeometry") geometry = BoxGeometry::fromJSON(*data.toJSON());
+            else if (type == "CapsuleGeometry") geometry = CapsuleGeometry::fromJSON(*data.toJSON());
+            else if (type == "CircleGeometry") geometry = CircleGeometry::fromJSON(*data.toJSON());
+            else if (type == "ConeGeometry") geometry = ConeGeometry::fromJSON(*data.toJSON());
+            else if (type == "CylinderGeometry") geometry = CylinderGeometry::fromJSON(*data.toJSON());
+            else if (type == "DodecahedronGeometry") geometry = DodecahedronGeometry::fromJSON(*data.toJSON());
+            else if (type == "IcosahedronGeometry") geometry = IcosahedronGeometry::fromJSON(*data.toJSON());
+            else if (type == "LatheGeometry") geometry = LatheGeometry::fromJSON(*data.toJSON());
+            else if (type == "OctahedronGeometry") geometry = OctahedronGeometry::fromJSON(*data.toJSON());
+            else if (type == "PlaneGeometry") geometry = PlaneGeometry::fromJSON(*data.toJSON());
+            else if (type == "PolyhedronGeometry") geometry = PolyhedronGeometry::fromJSON(*data.toJSON());
+            else if (type == "RingGeometry") geometry = RingGeometry::fromJSON(*data.toJSON());
+            else if (type == "SphereGeometry") geometry = SphereGeometry::fromJSON(*data.toJSON());
+            else if (type == "TetrahedronGeometry") geometry = TetrahedronGeometry::fromJSON(*data.toJSON());
+            else if (type == "TorusGeometry") geometry = TorusGeometry::fromJSON(*data.toJSON());
+            else if (type == "TorusKnotGeometry") geometry = TorusKnotGeometry::fromJSON(*data.toJSON());
+            else if (type == "TubeGeometry") geometry = TubeGeometry::fromJSON(*data.toJSON());
+            else {
                 // Every other type comes from Geometries[type].fromJSON upstream, and none are ported.
                 throw std::runtime_error("ObjectLoader: unknown geometry type \"" + type + "\"");
             }
