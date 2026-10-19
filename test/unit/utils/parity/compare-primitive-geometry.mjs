@@ -13,6 +13,7 @@ const {BoxGeometry} = await import(pathToFileURL(path.join(sourceDir, 'src/geome
 const {ShapeGeometry} = await import(pathToFileURL(path.join(sourceDir, 'src/geometries/ShapeGeometry.js')).href);
 const {Shape} = await import(pathToFileURL(path.join(sourceDir, 'src/extras/core/Shape.js')).href);
 const {EdgesGeometry} = await import(pathToFileURL(path.join(sourceDir, 'src/geometries/EdgesGeometry.js')).href);
+const {ExtrudeGeometry} = await import(pathToFileURL(path.join(sourceDir, 'src/geometries/ExtrudeGeometry.js')).href);
 const {WireframeGeometry} = await import(pathToFileURL(path.join(sourceDir, 'src/geometries/WireframeGeometry.js')).href);
 const {PlaneGeometry} = await import(pathToFileURL(path.join(sourceDir, 'src/geometries/PlaneGeometry.js')).href);
 const {CircleGeometry} = await import(pathToFileURL(path.join(sourceDir, 'src/geometries/CircleGeometry.js')).href);
@@ -88,6 +89,9 @@ const scenarios = [
     ['edges 2 2 2 30', () => new EdgesGeometry(new BoxGeometry(2, 2, 2, 1, 1, 1), 30)],
     ['wireframe 2 2 2', () => new WireframeGeometry(new BoxGeometry(2, 2, 2, 1, 1, 1))],
     ['wireframe 1 3 5', () => new WireframeGeometry(new BoxGeometry(1, 3, 5, 1, 1, 1))],
+    ['extrude 2 0 1 12 4 0 0 2 0 2 2 0 2', () => { const s = new Shape(); s.moveTo(0, 0); s.lineTo(2, 0); s.lineTo(2, 2); s.lineTo(0, 2); return new ExtrudeGeometry(s, {depth: 2, bevelEnabled: false, steps: 1, curveSegments: 12}); }],
+    ['extrude 1.5 1 3 12 3 0 0 1 0 0 1', () => { const s = new Shape(); s.moveTo(0, 0); s.lineTo(1, 0); s.lineTo(0, 1); return new ExtrudeGeometry(s, {depth: 1.5, bevelEnabled: true, steps: 3, curveSegments: 12}); }],
+    ['extrude 3 0 2 6 4 0 0 2 0 2 2 0 2', () => { const s = new Shape(); s.moveTo(0, 0); s.lineTo(2, 0); s.lineTo(2, 2); s.lineTo(0, 2); return new ExtrudeGeometry(s, {depth: 3, bevelEnabled: false, steps: 2, curveSegments: 6}); }],
 ];
 
 const raw = execFileSync(probePath, [], {input: scenarios.map(([line]) => line).join('\n'), encoding: 'utf8', maxBuffer: 64 * 1024 * 1024});

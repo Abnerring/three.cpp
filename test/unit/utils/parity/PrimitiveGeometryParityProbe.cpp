@@ -18,6 +18,8 @@
 #include "geometries/CylinderGeometry.h"
 #include "geometries/PlaneGeometry.h"
 #include "geometries/SphereGeometry.h"
+#include "geometries/ExtrudeGeometry.h"
+#include "core/JSValue.h"
 #include "geometries/EdgesGeometry.h"
 #include "geometries/WireframeGeometry.h"
 #include "geometries/TorusGeometry.h"
@@ -145,6 +147,23 @@ int main() {
             in >> width >> height >> depth;
             auto source = std::make_shared<BoxGeometry>(width, height, depth, 1, 1, 1);
             geometry = std::make_shared<WireframeGeometry>(source);
+        } else if (kind == "extrude") {
+            double depth = 0, bevel = 0, steps = 0, curveSegments = 0, count = 0;
+            in >> depth >> bevel >> steps >> curveSegments >> count;
+            auto shape = std::make_shared<Shape>();
+            for (int i = 0; i < static_cast<int>(count); i += 1) {
+                double x = 0, y = 0;
+                in >> x >> y;
+                if (i == 0) shape->moveTo(x, y);
+                else shape->lineTo(x, y);
+            }
+            auto options = std::make_shared<ExtrudeGeometry::Options>();
+            options->set("depth", JSValue(depth));
+            options->set("bevelEnabled", JSValue(bevel != 0.0));
+            options->set("steps", JSValue(steps));
+            options->set("curveSegments", JSValue(curveSegments));
+            ExtrudeGeometry::Shapes shapes{std::shared_ptr<Shape>(shape)};
+            geometry = std::make_shared<ExtrudeGeometry>(shapes, options);
         } else {
             std::cout << "{\"error\":\"unknown kind\"}" << std::endl;
             continue;
