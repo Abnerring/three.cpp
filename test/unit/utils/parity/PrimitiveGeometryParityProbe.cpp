@@ -4,7 +4,11 @@
 #include "core/BufferAttribute.h"
 #include "core/BufferGeometry.h"
 #include "geometries/BoxGeometry.h"
+#include "geometries/CircleGeometry.h"
+#include "geometries/ConeGeometry.h"
+#include "geometries/CylinderGeometry.h"
 #include "geometries/PlaneGeometry.h"
+#include "geometries/RingGeometry.h"
 
 #include <cstdint>
 #include <cstring>
@@ -55,6 +59,22 @@ int main() {
             double width = 0, height = 0, ws = 0, hs = 0;
             in >> width >> height >> ws >> hs;
             geometry = std::make_shared<PlaneGeometry>(width, height, ws, hs);
+        } else if (kind == "circle") {
+            double radius = 0, segments = 0, thetaStart = 0, thetaLength = 0;
+            in >> radius >> segments >> thetaStart >> thetaLength;
+            geometry = std::make_shared<CircleGeometry>(radius, segments, thetaStart, thetaLength);
+        } else if (kind == "ring") {
+            double inner = 0, outer = 0, thetaSegments = 0, phiSegments = 0, thetaStart = 0, thetaLength = 0;
+            in >> inner >> outer >> thetaSegments >> phiSegments >> thetaStart >> thetaLength;
+            geometry = std::make_shared<RingGeometry>(inner, outer, thetaSegments, phiSegments, thetaStart, thetaLength);
+        } else if (kind == "cone") {
+            double radius = 0, height = 0, radialSegments = 0, heightSegments = 0, openEnded = 0, thetaStart = 0, thetaLength = 0;
+            in >> radius >> height >> radialSegments >> heightSegments >> openEnded >> thetaStart >> thetaLength;
+            geometry = std::make_shared<ConeGeometry>(radius, height, radialSegments, heightSegments, openEnded != 0.0, thetaStart, thetaLength);
+        } else if (kind == "cylinder") {
+            double radiusTop = 0, radiusBottom = 0, height = 0, radialSegments = 0, heightSegments = 0, openEnded = 0, thetaStart = 0, thetaLength = 0;
+            in >> radiusTop >> radiusBottom >> height >> radialSegments >> heightSegments >> openEnded >> thetaStart >> thetaLength;
+            geometry = std::make_shared<CylinderGeometry>(radiusTop, radiusBottom, height, radialSegments, heightSegments, openEnded != 0.0, thetaStart, thetaLength);
         } else {
             std::cout << "{\"error\":\"unknown kind\"}" << std::endl;
             continue;

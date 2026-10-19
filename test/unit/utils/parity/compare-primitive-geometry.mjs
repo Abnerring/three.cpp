@@ -1,4 +1,4 @@
-﻿// Differential for the primitive geometries: the same parameters through the port probe and through the
+// Differential for the primitive geometries: the same parameters through the port probe and through the
 // pinned upstream module, compared field for field. Attribute values travel as float32 bit patterns so the
 // comparison is exact.
 import assert from 'node:assert/strict';
@@ -11,6 +11,10 @@ const probePath = process.argv[3];
 
 const {BoxGeometry} = await import(pathToFileURL(path.join(sourceDir, 'src/geometries/BoxGeometry.js')).href);
 const {PlaneGeometry} = await import(pathToFileURL(path.join(sourceDir, 'src/geometries/PlaneGeometry.js')).href);
+const {CircleGeometry} = await import(pathToFileURL(path.join(sourceDir, 'src/geometries/CircleGeometry.js')).href);
+const {RingGeometry} = await import(pathToFileURL(path.join(sourceDir, 'src/geometries/RingGeometry.js')).href);
+const {ConeGeometry} = await import(pathToFileURL(path.join(sourceDir, 'src/geometries/ConeGeometry.js')).href);
+const {CylinderGeometry} = await import(pathToFileURL(path.join(sourceDir, 'src/geometries/CylinderGeometry.js')).href);
 
 const bitArray = (values) => Array.from(new Uint32Array(new Float32Array(values).buffer));
 
@@ -44,6 +48,14 @@ const scenarios = [
     ['plane 2 4 1 1', () => new PlaneGeometry(2, 4, 1, 1)],
     ['plane 2 4 2 3', () => new PlaneGeometry(2, 4, 2, 3)],
     ['plane 1.5 0.25 4 1', () => new PlaneGeometry(1.5, 0.25, 4, 1)],
+    ['circle 1 8 0 6.283185307179586', () => new CircleGeometry(1, 8, 0, Math.PI * 2)],
+    ['circle 2 16 0.5 3', () => new CircleGeometry(2, 16, 0.5, 3)],
+    ['ring 0.5 1 8 1 0 6.283185307179586', () => new RingGeometry(0.5, 1, 8, 1, 0, Math.PI * 2)],
+    ['ring 1 3 12 2 0 3', () => new RingGeometry(1, 3, 12, 2, 0, 3)],
+    ['cone 1 2 8 1 0 0 6.283185307179586', () => new ConeGeometry(1, 2, 8, 1, false, 0, Math.PI * 2)],
+    ['cone 0.75 3 6 2 1 0.25 4', () => new ConeGeometry(0.75, 3, 6, 2, true, 0.25, 4)],
+    ['cylinder 1 1 2 8 1 0 0 6.283185307179586', () => new CylinderGeometry(1, 1, 2, 8, 1, false, 0, Math.PI * 2)],
+    ['cylinder 0.5 1.5 3 12 3 1 0 4', () => new CylinderGeometry(0.5, 1.5, 3, 12, 3, true, 0, 4)],
 ];
 
 const raw = execFileSync(probePath, [], {input: scenarios.map(([line]) => line).join('\n'), encoding: 'utf8', maxBuffer: 64 * 1024 * 1024});
