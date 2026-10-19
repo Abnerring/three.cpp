@@ -18,6 +18,9 @@
 #include "geometries/CylinderGeometry.h"
 #include "geometries/PlaneGeometry.h"
 #include "geometries/SphereGeometry.h"
+#include "geometries/TubeGeometry.h"
+#include "extras/curves/CatmullRomCurve3.h"
+#include "math/Vector3.h"
 #include "geometries/ExtrudeGeometry.h"
 #include "core/JSValue.h"
 #include "geometries/EdgesGeometry.h"
@@ -164,6 +167,17 @@ int main() {
             options->set("curveSegments", JSValue(curveSegments));
             ExtrudeGeometry::Shapes shapes{std::shared_ptr<Shape>(shape)};
             geometry = std::make_shared<ExtrudeGeometry>(shapes, options);
+        } else if (kind == "tube") {
+            double tubularSegments = 0, radius = 0, radialSegments = 0, closed = 0, count = 0;
+            in >> tubularSegments >> radius >> radialSegments >> closed >> count;
+            auto points = std::make_shared<CatmullRomCurve3::Points>();
+            for (int i = 0; i < static_cast<int>(count); i += 1) {
+                double x = 0, y = 0, z = 0;
+                in >> x >> y >> z;
+                points->push_back(std::make_shared<Vector3>(x, y, z));
+            }
+            auto path = std::make_shared<CatmullRomCurve3>(points, closed != 0.0);
+            geometry = std::make_shared<TubeGeometry>(path, tubularSegments, radius, radialSegments, closed != 0.0);
         } else {
             std::cout << "{\"error\":\"unknown kind\"}" << std::endl;
             continue;
