@@ -60,6 +60,8 @@
 #include "materials/ShaderMaterial.h"
 #include "materials/RawShaderMaterial.h"
 #include "helpers/AxesHelper.h"
+#include "helpers/Box3Helper.h"
+#include "math/Box3.h"
 #include "cameras/PerspectiveCamera.h"
 #include "cameras/ArrayCamera.h"
 #include "cameras/StereoCamera.h"
@@ -589,6 +591,8 @@ int main() {
             else if (which == "arrow") { double dx = 0, dy = 0, dz = 0, ox = 0, oy = 0, oz = 0, length = 0; in >> dx >> dy >> dz >> ox >> oy >> oz >> length; if (in.fail() || !noTrailingTokens(in)) { std::cout << "{\"error\":\"short input or trailing tokens\"}" << std::endl; continue; } helper = std::make_shared<ArrowHelper>(Vector3(dx, dy, dz), Vector3(ox, oy, oz), length); }
             else if (which == "pointlight") { double sphereSize = 0; in >> sphereSize; if (in.fail() || !noTrailingTokens(in)) { std::cout << "{\"error\":\"short input or trailing tokens\"}" << std::endl; continue; } helper = std::make_shared<PointLightHelper>(std::make_shared<PointLight>(), sphereSize); }
             else if (which == "directional") { double size = 0; in >> size; if (in.fail() || !noTrailingTokens(in)) { std::cout << "{\"error\":\"short input or trailing tokens\"}" << std::endl; continue; } helper = std::make_shared<DirectionalLightHelper>(std::make_shared<DirectionalLight>(), size); }
+            else if (which == "box3") { double minx = 0, miny = 0, minz = 0, maxx = 0, maxy = 0, maxz = 0; in >> minx >> miny >> minz >> maxx >> maxy >> maxz; if (in.fail() || !noTrailingTokens(in)) { std::cout << "{\"error\":\"short input or trailing tokens\"}" << std::endl; continue; }
+                helper = std::make_shared<Box3Helper>(std::make_shared<Box3>(Vector3(minx, miny, minz), Vector3(maxx, maxy, maxz))); }
             else { std::cout << "{\"error\":\"unknown helper\"}" << std::endl; continue; }
             std::cout << "{\"kind\":\"helper\",\"which\":\"" << which << "\",\"type\":\"" << helper->type << "\"";
             if (auto self = std::dynamic_pointer_cast<Line>(helper)) {

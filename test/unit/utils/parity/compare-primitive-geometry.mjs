@@ -357,12 +357,15 @@ console.log(`material parity: ${materialScenarios.length} scenarios`);
 // The line based helpers: the helper describes itself, so its own geometry is compared.
 const {AxesHelper} = await import(pathToFileURL(path.join(sourceDir, 'src/helpers/AxesHelper.js')).href);
 const {GridHelper} = await import(pathToFileURL(path.join(sourceDir, 'src/helpers/GridHelper.js')).href);
+const {Box3Helper} = await import(pathToFileURL(path.join(sourceDir, 'src/helpers/Box3Helper.js')).href);
+const {Box3} = await import(pathToFileURL(path.join(sourceDir, 'src/math/Box3.js')).href);
 
 const helperScenarios = [
     ['helper axes 1', () => new AxesHelper(1)],
     ['helper axes 2.5', () => new AxesHelper(2.5)],
     ['helper grid 10 10', () => new GridHelper(10, 10)],
     ['helper grid 6 3', () => new GridHelper(6, 3)],
+    ['helper box3 -1 -1 -1 1 1 1', () => new Box3Helper(new Box3(new Vector3(-1, -1, -1), new Vector3(1, 1, 1)))],
 ];
 const helperRaw = execFileSync(probePath, [], {input: helperScenarios.map(([line]) => line).join('\n'), encoding: 'utf8'});
 const helperLines = helperRaw.trim().split('\n').map((line) => JSON.parse(line));
