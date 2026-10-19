@@ -6,6 +6,11 @@
 #include "geometries/BoxGeometry.h"
 #include "geometries/DodecahedronGeometry.h"
 #include "geometries/IcosahedronGeometry.h"
+#include "geometries/LatheGeometry.h"
+#include "extras/core/Path.h"
+#include "geometries/ShapeGeometry.h"
+#include "extras/core/Shape.h"
+#include "math/Vector2.h"
 #include "geometries/OctahedronGeometry.h"
 #include "geometries/TetrahedronGeometry.h"
 #include "geometries/CircleGeometry.h"
@@ -106,6 +111,16 @@ int main() {
                 std::cout << "{\"error\":\"unknown polyhedron\"}" << std::endl;
                 continue;
             }
+        } else if (kind == "lathe") {
+            double segments = 0, phiStart = 0, phiLength = 0, count = 0;
+            in >> segments >> phiStart >> phiLength >> count;
+            Path::PointsPtr points = std::make_shared<Path::Points>();
+            for (int i = 0; i < static_cast<int>(count); i += 1) {
+                double x = 0, y = 0;
+                in >> x >> y;
+                points->push_back(std::make_shared<Vector2>(x, y));
+            }
+            geometry = std::make_shared<LatheGeometry>(points, segments, phiStart, phiLength);
         } else {
             std::cout << "{\"error\":\"unknown kind\"}" << std::endl;
             continue;

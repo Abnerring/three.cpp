@@ -22,6 +22,8 @@ const {DodecahedronGeometry} = await import(pathToFileURL(path.join(sourceDir, '
 const {IcosahedronGeometry} = await import(pathToFileURL(path.join(sourceDir, 'src/geometries/IcosahedronGeometry.js')).href);
 const {OctahedronGeometry} = await import(pathToFileURL(path.join(sourceDir, 'src/geometries/OctahedronGeometry.js')).href);
 const {TetrahedronGeometry} = await import(pathToFileURL(path.join(sourceDir, 'src/geometries/TetrahedronGeometry.js')).href);
+const {LatheGeometry} = await import(pathToFileURL(path.join(sourceDir, 'src/geometries/LatheGeometry.js')).href);
+const {Vector2} = await import(pathToFileURL(path.join(sourceDir, 'src/math/Vector2.js')).href);
 
 const bitArray = (values) => Array.from(new Uint32Array(new Float32Array(values).buffer));
 
@@ -74,6 +76,8 @@ const scenarios = [
     ['polyhedron icosahedron 1.5 1', () => new IcosahedronGeometry(1.5, 1)],
     ['polyhedron octahedron 1 1', () => new OctahedronGeometry(1, 1)],
     ['polyhedron tetrahedron 2 2', () => new TetrahedronGeometry(2, 2)],
+    ['lathe 6 0 6.283185307179586 3 0 0 1 0 0 1', () => new LatheGeometry([new Vector2(0, 0), new Vector2(1, 0), new Vector2(0, 1)], 6, 0, Math.PI * 2)],
+    ['lathe 8 0.5 3 4 0 1 1 1 1 0 0 0', () => new LatheGeometry([new Vector2(0, 1), new Vector2(1, 1), new Vector2(1, 0), new Vector2(0, 0)], 8, 0.5, 3)],
 ];
 
 const raw = execFileSync(probePath, [], {input: scenarios.map(([line]) => line).join('\n'), encoding: 'utf8', maxBuffer: 64 * 1024 * 1024});
