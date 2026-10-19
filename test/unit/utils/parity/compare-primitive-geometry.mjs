@@ -690,3 +690,22 @@ for (let i = 0; i < rayScenarios.length; i += 1) {
     assert.deepEqual(rayLines[i], expected, `scenario ${line}`);
 }
 console.log(`raycaster parity: ${rayScenarios.length} scenarios`);
+
+// The curve path container: two line curves joined end to end.
+const {CurvePath} = await import(pathToFileURL(path.join(sourceDir, 'src/extras/core/CurvePath.js')).href);
+const curvePathScenarios = [
+    ['curvepath 0 0 1 0 1 1', [[0, 0], [1, 0], [1, 1]]],
+    ['curvepath 1 1 3 2 3 5', [[1, 1], [3, 2], [3, 5]]],
+];
+const curvePathRaw = execFileSync(probePath, [], {input: curvePathScenarios.map(([line]) => line).join('\n'), encoding: 'utf8'});
+const curvePathLines = curvePathRaw.trim().split('\n').map((line) => JSON.parse(line));
+for (let i = 0; i < curvePathScenarios.length; i += 1) {
+    const [line, coordinates] = curvePathScenarios[i];
+    const path = new CurvePath();
+    path.add(new LineCurve(new Vector2(coordinates[0][0], coordinates[0][1]), new Vector2(coordinates[1][0], coordinates[1][1])));
+    path.add(new LineCurve(new Vector2(coordinates[1][0], coordinates[1][1]), new Vector2(coordinates[2][0], coordinates[2][1])));
+    const expected = {kind: 'curvepath', curves: path.curves.length,
+        points: [0, 0.25, 0.5, 0.75, 1].map((t) => { const p = path.getPoint(t); return [bitOf(p.x), bitOf(p.y)]; })};
+    assert.deepEqual(curvePathLines[i], expected, `scenario ${line}`);
+}
+console.log(`curve path parity: ${curvePathScenarios.length} scenarios`);

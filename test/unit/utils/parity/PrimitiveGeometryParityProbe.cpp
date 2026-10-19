@@ -9,6 +9,8 @@
 #include "geometries/IcosahedronGeometry.h"
 #include "geometries/LatheGeometry.h"
 #include "extras/core/Path.h"
+#include "extras/core/CurvePath.h"
+#include "extras/curves/LineCurve.h"
 #include "geometries/ShapeGeometry.h"
 #include "extras/core/Shape.h"
 #include "math/Vector2.h"
@@ -801,6 +803,17 @@ int main() {
             std::cout << ",\"lineThreshold\":" << bits(static_cast<float>(lineThreshold));
             std::cout << ",\"pointsThreshold\":" << bits(static_cast<float>(pointsThreshold));
             std::cout << "}" << std::endl;
+            continue;
+        } else if (kind == "curvepath") {
+            double ax = 0, ay = 0, bx = 0, by = 0, cx = 0, cy = 0;
+            in >> ax >> ay >> bx >> by >> cx >> cy;
+            if (in.fail() || !noTrailingTokens(in)) { std::cout << "{\"error\":\"short input or trailing tokens\"}" << std::endl; continue; }
+            CurvePath<Vector2> path;
+            path.add(std::make_shared<LineCurve>(std::make_shared<Vector2>(ax, ay), std::make_shared<Vector2>(bx, by)));
+            path.add(std::make_shared<LineCurve>(std::make_shared<Vector2>(bx, by), std::make_shared<Vector2>(cx, cy)));
+            std::cout << "{\"kind\":\"curvepath\",\"curves\":" << path.curves->size() << ",\"points\":[";
+            for (int i = 0; i <= 4; i += 1) { const auto point = path.getPoint(i / 4.0); if (i > 0) std::cout << ","; std::cout << "[" << bits(static_cast<float>(point.x)) << "," << bits(static_cast<float>(point.y)) << "]"; }
+            std::cout << "]}" << std::endl;
             continue;
         } else {
             std::cout << "{\"error\":\"unknown kind\"}" << std::endl;
