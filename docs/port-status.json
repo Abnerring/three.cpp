@@ -194,8 +194,8 @@
     "note": "Accepted port scope is src and examples/jsm, including tracked third-party dependencies. Editor/manual web applications are excluded from native application rewrites. Native host behavior, packaging and all three platforms require separate implementation and verification evidence."
   },
   "counts": {
-    "partial-unverified": 288,
-    "missing": 653,
+    "partial-unverified": 289,
+    "missing": 652,
     "vulkan-port-pending": 290,
     "dependency-unverified": 20
   },
@@ -203,8 +203,8 @@
     "src": {
       "modules": 755,
       "counts": {
-        "partial-unverified": 204,
-        "missing": 261,
+        "partial-unverified": 205,
+        "missing": 260,
         "vulkan-port-pending": 290
       }
     },
@@ -922,7 +922,7 @@
       "path": "src/objects",
       "upstreamFiles": 14,
       "moduleCount": 14,
-      "modulesWithCppFiles": 13,
+      "modulesWithCppFiles": 14,
       "verifiedComplete": 0
     },
     {
@@ -13186,11 +13186,11 @@
       "scope": "src",
       "kind": "core",
       "upstreamSha256": "e5d037a6421eea55631aac056577c58ae92dd883e91fa86d2a241529f62b6e99",
-      "header": null,
-      "implementation": null,
+      "header": "src/objects/BatchedMesh.h",
+      "implementation": "src/objects/BatchedMesh.cpp",
       "expectedHeader": "src/objects/BatchedMesh.h",
       "expectedImplementation": "src/objects/BatchedMesh.cpp",
-      "status": "missing",
+      "status": "partial-unverified",
       "verifiedComplete": false,
       "apiExtraction": "static-only",
       "verification": {
@@ -13201,7 +13201,9 @@
         "upstreamUnitTests": [
           "test/unit/src/objects/BatchedMesh.tests.js"
         ],
-        "cppUnitTests": [],
+        "cppUnitTests": [
+          "test/unit/src/objects/BatchedMesh.tests.cpp"
+        ],
         "reviewedImplementation": [],
         "differentialResults": [],
         "renderingResults": [],

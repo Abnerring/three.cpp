@@ -153,6 +153,7 @@ target_sources(threecpp PRIVATE
     src/core/InstancedBufferAttribute.cpp
     src/objects/Bone.cpp
     src/objects/Skeleton.cpp
+    src/objects/BatchedMesh.cpp
     src/objects/SkinnedMesh.cpp
     src/objects/InstancedMesh.cpp
     src/math/SphericalHarmonics3.cpp
