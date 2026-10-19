@@ -35,6 +35,7 @@ add_library(threecpp
     src/math/interpolants/BezierInterpolant.cpp
     src/core/EventDispatcher.cpp src/core/Object3D.cpp src/core/JSValue.cpp src/core/NativeObject.cpp
     src/audio/AudioContext.cpp
+    src/audio/PositionalAudio.cpp
     src/audio/AudioAnalyser.cpp
     src/audio/AudioListener.cpp
     src/audio/Audio.cpp
