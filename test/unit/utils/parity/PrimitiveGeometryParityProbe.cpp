@@ -2,6 +2,7 @@
 // back. Values are emitted as float32 bit patterns so the comparison is exact and cannot drift through
 // decimal printing.
 #include "core/BufferAttribute.h"
+#include "core/Raycaster.h"
 #include "core/BufferGeometry.h"
 #include "geometries/BoxGeometry.h"
 #include "geometries/DodecahedronGeometry.h"
@@ -752,6 +753,22 @@ int main() {
             std::cout << ",\"aspect\":" << bits(static_cast<float>(stereo.aspect)) << ",\"eyeSep\":" << bits(static_cast<float>(stereo.eyeSep));
             std::cout << ",\"hasLeft\":" << (stereo.cameraL ? "true" : "false") << ",\"hasRight\":" << (stereo.cameraR ? "true" : "false");
             if (stereo.cameraL) std::cout << ",\"leftFov\":" << bits(static_cast<float>(stereo.cameraL->fov)) << ",\"leftAspect\":" << bits(static_cast<float>(stereo.cameraL->aspect));
+            std::cout << "}" << std::endl;
+            continue;
+        } else if (kind == "ray") {
+            double ox = 0, oy = 0, oz = 0, dx = 0, dy = 0, dz = 0, near = 0, far = 0;
+            in >> ox >> oy >> oz >> dx >> dy >> dz >> near >> far;
+            if (in.fail() || !noTrailingTokens(in)) { std::cout << "{\"error\":\"short input or trailing tokens\"}" << std::endl; continue; }
+            Raycaster raycaster(Vector3(ox, oy, oz), Vector3(dx, dy, dz), near, far);
+            std::cout << "{\"kind\":\"ray\",\"origin\":[" << bits(static_cast<float>(raycaster.ray.origin.x)) << "," << bits(static_cast<float>(raycaster.ray.origin.y)) << "," << bits(static_cast<float>(raycaster.ray.origin.z)) << "]";
+            std::cout << ",\"direction\":[" << bits(static_cast<float>(raycaster.ray.direction.x)) << "," << bits(static_cast<float>(raycaster.ray.direction.y)) << "," << bits(static_cast<float>(raycaster.ray.direction.z)) << "]";
+            std::cout << ",\"near\":" << bits(static_cast<float>(raycaster.near));
+            std::cout << ",\"far\":" << bits(static_cast<float>(raycaster.far));
+            std::cout << ",\"paramKeys\":" << raycaster.params.size();
+            const auto lineThreshold = raycaster.params.contains("Line") ? raycaster.params.at("Line").at("threshold").get<double>() : -1.0;
+            const auto pointsThreshold = raycaster.params.contains("Points") ? raycaster.params.at("Points").at("threshold").get<double>() : -1.0;
+            std::cout << ",\"lineThreshold\":" << bits(static_cast<float>(lineThreshold));
+            std::cout << ",\"pointsThreshold\":" << bits(static_cast<float>(pointsThreshold));
             std::cout << "}" << std::endl;
             continue;
         } else {

@@ -628,3 +628,24 @@ for (let i = 0; i < stereoScenarios.length; i += 1) {
     assert.deepEqual(stereoLines[i], expected, `scenario ${line}`);
 }
 console.log(`stereo camera parity: ${stereoScenarios.length} scenarios`);
+// The raycaster: its ray, its clipping range and the thresholds it starts with.
+const {Raycaster} = await import(pathToFileURL(path.join(sourceDir, 'src/core/Raycaster.js')).href);
+const rayScenarios = [
+    ['ray 0 0 0 0 0 -1 0 100', () => new Raycaster(new Vector3(0, 0, 0), new Vector3(0, 0, -1), 0, 100)],
+    ['ray 1 2 3 0 1 0 0.5 10', () => new Raycaster(new Vector3(1, 2, 3), new Vector3(0, 1, 0), 0.5, 10)],
+];
+const rayRaw = execFileSync(probePath, [], {input: rayScenarios.map(([line]) => line).join('\n'), encoding: 'utf8'});
+const rayLines = rayRaw.trim().split('\n').map((line) => JSON.parse(line));
+for (let i = 0; i < rayScenarios.length; i += 1) {
+    const [line, build] = rayScenarios[i];
+    const raycaster = build();
+    const expected = {kind: 'ray',
+        origin: [bitOf(raycaster.ray.origin.x), bitOf(raycaster.ray.origin.y), bitOf(raycaster.ray.origin.z)],
+        direction: [bitOf(raycaster.ray.direction.x), bitOf(raycaster.ray.direction.y), bitOf(raycaster.ray.direction.z)],
+        near: bitOf(raycaster.near), far: bitOf(raycaster.far),
+        paramKeys: Object.keys(raycaster.params).length,
+        lineThreshold: bitOf(raycaster.params.Line.threshold),
+        pointsThreshold: bitOf(raycaster.params.Points.threshold)};
+    assert.deepEqual(rayLines[i], expected, `scenario ${line}`);
+}
+console.log(`raycaster parity: ${rayScenarios.length} scenarios`);
