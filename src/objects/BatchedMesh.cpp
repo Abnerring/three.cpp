@@ -217,3 +217,51 @@ BatchedMesh::GeometryInfo BatchedMesh::getGeometryRangeAt(double geometryId) con
     validateGeometryId(geometryId);
     return _geometryInfo[static_cast<std::size_t>(geometryId)];
 }
+BatchedMesh& BatchedMesh::setMatrixAt(double instanceId, const Matrix4& matrix) {
+    validateInstanceId(instanceId);
+    _instanceMatrices[static_cast<std::size_t>(instanceId)] = matrix;
+    return *this;
+}
+
+Matrix4 BatchedMesh::getMatrixAt(double instanceId) const {
+    validateInstanceId(instanceId);
+    return _instanceMatrices[static_cast<std::size_t>(instanceId)];
+}
+
+BatchedMesh& BatchedMesh::setColorAt(double instanceId, const Color& color) {
+    validateInstanceId(instanceId);
+    const auto slot = static_cast<std::size_t>(instanceId);
+    if (_instanceColors.size() <= slot) _instanceColors.resize(slot + 1, Color(1.0, 1.0, 1.0));
+    _instanceColors[slot] = color;
+    return *this;
+}
+
+Color BatchedMesh::getColorAt(double instanceId) const {
+    validateInstanceId(instanceId);
+    const auto slot = static_cast<std::size_t>(instanceId);
+    // Upstream answers white until the colour texture exists, and every instance starts white here.
+    if (slot >= _instanceColors.size()) return Color(1.0, 1.0, 1.0);
+    return _instanceColors[slot];
+}
+
+BatchedMesh& BatchedMesh::deleteInstance(double instanceId) {
+    validateInstanceId(instanceId);
+    _instanceInfo[static_cast<std::size_t>(instanceId)].active = false;
+    _availableInstanceIds.push_back(instanceId);
+    return *this;
+}
+
+BatchedMesh& BatchedMesh::deleteGeometry(double geometryId) {
+    // Upstream returns quietly for an id that is out of range or already freed, unlike deleteInstance.
+    if (geometryId < 0 || geometryId >= _geometryCount) return *this;
+    auto& info = _geometryInfo[static_cast<std::size_t>(geometryId)];
+    if (!info.active) return *this;
+    // Every instance pointing at this geometry goes with it.
+    for (std::size_t index = 0; index < _instanceInfo.size(); index += 1) {
+        const auto& record = _instanceInfo[index];
+        if (record.active && record.geometryId == geometryId) deleteInstance(static_cast<double>(index));
+    }
+    info.active = false;
+    _availableGeometryIds.push_back(geometryId);
+    return *this;
+}

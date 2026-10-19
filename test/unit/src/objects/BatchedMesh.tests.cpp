@@ -140,3 +140,56 @@ TEST_CASE("BatchedMesh manages its instances") {
     REQUIRE_THROWS_AS(batch->getVisibleAt(7.0), std::runtime_error);
     REQUIRE_THROWS_AS(batch->getGeometryRangeAt(3.0), std::runtime_error);
 }
+// Per instance matrices and colours round trip, and deleting frees ids for reuse while taking the instances
+// that pointed at a deleted geometry with it.
+TEST_CASE("BatchedMesh stores per instance matrices and colours") {
+    auto batch = std::make_shared<BatchedMesh>(2, 8);
+    auto geometry = std::make_shared<BufferGeometry>();
+    geometry->setAttribute("position", std::make_shared<Float32BufferAttribute>(
+        std::vector<float>{1.0f, 2.0f, 3.0f}, 3));
+    geometry->setIndex(std::make_shared<Uint16BufferAttribute>(std::vector<std::uint16_t>{0, 0, 0}, 1));
+    batch->addGeometry(geometry);
+    batch->addInstance(0.0);
+
+    // A fresh instance is identity and white.
+    REQUIRE(batch->getMatrixAt(0.0).elements()[12] == 0.0);
+    REQUIRE(batch->getColorAt(0.0).r == 1.0);
+
+    // Matrix4.set is the upstream one, which writes te[12] from its fourth argument, so a translation of
+    // (4, 5, 6) sits in the fourth slot of each group rather than at the start of the last group.
+    Matrix4 moved;
+    moved.set(1, 0, 0, 4, 0, 1, 0, 5, 0, 0, 1, 6, 0, 0, 0, 1);
+    REQUIRE(moved.elements()[12] == 4.0);
+    batch->setMatrixAt(0.0, moved);
+    REQUIRE(batch->getMatrixAt(0.0).elements()[12] == 4.0);
+    REQUIRE(batch->getMatrixAt(0.0).elements()[14] == 6.0);
+
+    batch->setColorAt(0.0, Color(0.25, 0.5, 0.75));
+    REQUIRE(batch->getColorAt(0.0).g == 0.5);
+}
+
+TEST_CASE("BatchedMesh reuses ids freed by delete") {
+    auto batch = std::make_shared<BatchedMesh>(3, 16);
+    auto geometry = std::make_shared<BufferGeometry>();
+    geometry->setAttribute("position", std::make_shared<Float32BufferAttribute>(
+        std::vector<float>{1.0f, 2.0f, 3.0f}, 3));
+    geometry->setIndex(std::make_shared<Uint16BufferAttribute>(std::vector<std::uint16_t>{0, 0, 0}, 1));
+    const auto geometryId = batch->addGeometry(geometry);
+    REQUIRE(geometryId == 0.0);
+
+    batch->addInstance(0.0);
+    batch->addInstance(0.0);
+    batch->addInstance(0.0);
+    batch->deleteInstance(1.0);
+    // The freed record is inactive, so reading it is refused rather than answering stale data.
+    REQUIRE_THROWS_AS(batch->getVisibleAt(1.0), std::runtime_error);
+    // The smallest freed id is handed out again.
+    REQUIRE(batch->addInstance(0.0) == 1.0);
+
+    // Deleting a geometry takes its instances with it and frees the geometry id.
+    batch->deleteGeometry(0.0);
+    REQUIRE_THROWS_AS(batch->getGeometryRangeAt(0.0), std::runtime_error);
+    REQUIRE(batch->getInstanceCount() == 0.0);
+    // Deleting it again is quietly ignored, which is the upstream asymmetry against deleteInstance.
+    REQUIRE_NOTHROW(batch->deleteGeometry(0.0));
+}

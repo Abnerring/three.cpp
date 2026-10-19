@@ -48,6 +48,12 @@ class BatchedMesh : public Mesh {
     BatchedMesh& setGeometryIdAt(double instanceId, double geometryId);
     double getGeometryIdAt(double instanceId) const;
     GeometryInfo getGeometryRangeAt(double geometryId) const;
+    BatchedMesh& setMatrixAt(double instanceId, const Matrix4& matrix);
+    Matrix4 getMatrixAt(double instanceId) const;
+    BatchedMesh& setColorAt(double instanceId, const Color& color);
+    Color getColorAt(double instanceId) const;
+    BatchedMesh& deleteInstance(double instanceId);
+    BatchedMesh& deleteGeometry(double geometryId);
     double addGeometry(const std::shared_ptr<BufferGeometry>& geometry, double reservedVertexCount = -1, double reservedIndexCount = -1);
     double setGeometryAt(double geometryId, const std::shared_ptr<BufferGeometry>& geometry);
 
