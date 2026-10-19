@@ -4,6 +4,10 @@
 #include "core/BufferAttribute.h"
 #include "core/BufferGeometry.h"
 #include "geometries/BoxGeometry.h"
+#include "geometries/DodecahedronGeometry.h"
+#include "geometries/IcosahedronGeometry.h"
+#include "geometries/OctahedronGeometry.h"
+#include "geometries/TetrahedronGeometry.h"
 #include "geometries/CircleGeometry.h"
 #include "geometries/ConeGeometry.h"
 #include "geometries/CylinderGeometry.h"
@@ -90,6 +94,18 @@ int main() {
             double radius = 0, tube = 0, tubularSegments = 0, radialSegments = 0, p = 0, q = 0;
             in >> radius >> tube >> tubularSegments >> radialSegments >> p >> q;
             geometry = std::make_shared<TorusKnotGeometry>(radius, tube, tubularSegments, radialSegments, p, q);
+        } else if (kind == "polyhedron") {
+            std::string which;
+            double radius = 0, detail = 0;
+            in >> which >> radius >> detail;
+            if (which == "dodecahedron") geometry = std::make_shared<DodecahedronGeometry>(radius, detail);
+            else if (which == "icosahedron") geometry = std::make_shared<IcosahedronGeometry>(radius, detail);
+            else if (which == "octahedron") geometry = std::make_shared<OctahedronGeometry>(radius, detail);
+            else if (which == "tetrahedron") geometry = std::make_shared<TetrahedronGeometry>(radius, detail);
+            else {
+                std::cout << "{\"error\":\"unknown polyhedron\"}" << std::endl;
+                continue;
+            }
         } else {
             std::cout << "{\"error\":\"unknown kind\"}" << std::endl;
             continue;

@@ -18,6 +18,10 @@ const {CylinderGeometry} = await import(pathToFileURL(path.join(sourceDir, 'src/
 const {SphereGeometry} = await import(pathToFileURL(path.join(sourceDir, 'src/geometries/SphereGeometry.js')).href);
 const {TorusGeometry} = await import(pathToFileURL(path.join(sourceDir, 'src/geometries/TorusGeometry.js')).href);
 const {TorusKnotGeometry} = await import(pathToFileURL(path.join(sourceDir, 'src/geometries/TorusKnotGeometry.js')).href);
+const {DodecahedronGeometry} = await import(pathToFileURL(path.join(sourceDir, 'src/geometries/DodecahedronGeometry.js')).href);
+const {IcosahedronGeometry} = await import(pathToFileURL(path.join(sourceDir, 'src/geometries/IcosahedronGeometry.js')).href);
+const {OctahedronGeometry} = await import(pathToFileURL(path.join(sourceDir, 'src/geometries/OctahedronGeometry.js')).href);
+const {TetrahedronGeometry} = await import(pathToFileURL(path.join(sourceDir, 'src/geometries/TetrahedronGeometry.js')).href);
 
 const bitArray = (values) => Array.from(new Uint32Array(new Float32Array(values).buffer));
 
@@ -65,6 +69,11 @@ const scenarios = [
     ['torus 2 0.5 6 24 3', () => new TorusGeometry(2, 0.5, 6, 24, 3)],
     ['torusknot 1 0.4 16 8 2 3', () => new TorusKnotGeometry(1, 0.4, 16, 8, 2, 3)],
     ['torusknot 2 0.3 20 6 3 4', () => new TorusKnotGeometry(2, 0.3, 20, 6, 3, 4)],
+    ['polyhedron dodecahedron 1 0', () => new DodecahedronGeometry(1, 0)],
+    ['polyhedron icosahedron 1 0', () => new IcosahedronGeometry(1, 0)],
+    ['polyhedron icosahedron 1.5 1', () => new IcosahedronGeometry(1.5, 1)],
+    ['polyhedron octahedron 1 1', () => new OctahedronGeometry(1, 1)],
+    ['polyhedron tetrahedron 2 2', () => new TetrahedronGeometry(2, 2)],
 ];
 
 const raw = execFileSync(probePath, [], {input: scenarios.map(([line]) => line).join('\n'), encoding: 'utf8', maxBuffer: 64 * 1024 * 1024});
