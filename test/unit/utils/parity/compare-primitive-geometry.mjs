@@ -543,3 +543,22 @@ for (let i = 0; i < fogScenarios.length; i += 1) {
     assert.deepEqual(fogLines[i], expected, `scenario ${line}`);
 }
 console.log(`fog parity: ${fogScenarios.length} scenarios`);
+
+// The spherical harmonics coefficients, compared as the nine triples they hold.
+
+const shScenarios = [
+    ['sh 9 0.1 0.2 0.3 1 2 3 4 5 6', [0.1, 0.2, 0.3, 1, 2, 3, 4, 5, 6]],
+    ['sh 27 1 2 3 4 5 6 7 8 9 10 11 12 13 14 15 16 17 18 19 20 21 22 23 24 25 26 27', Array.from({length: 27}, (_, i) => i + 1)],
+    ['sh 0', []],
+];
+const shRaw = execFileSync(probePath, [], {input: shScenarios.map(([line]) => line).join('\n'), encoding: 'utf8'});
+const shLines = shRaw.trim().split('\n').map((line) => JSON.parse(line));
+for (let i = 0; i < shScenarios.length; i += 1) {
+    const [line, values] = shScenarios[i];
+    const sh = new SphericalHarmonics3();
+    // The count in the line is the number of scalar values, three per coefficient.
+    for (let k = 0; k < values.length / 3 && k < 9; k++) sh.coefficients[k].set(values[k * 3], values[k * 3 + 1], values[k * 3 + 2]);
+    const expected = {kind: 'sh', coefficients: sh.coefficients.map((c) => [bitOf(c.x), bitOf(c.y), bitOf(c.z)])};
+    assert.deepEqual(shLines[i], expected, `scenario ${line}`);
+}
+console.log(`spherical harmonics parity: ${shScenarios.length} scenarios`);
