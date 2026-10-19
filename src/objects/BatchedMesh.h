@@ -66,6 +66,8 @@ class BatchedMesh : public Mesh {
     std::optional<Sphere> getBoundingSphereAt(double geometryId);
     void computeBoundingBox();
     void computeBoundingSphere();
+    BatchedMesh& setInstanceCount(double maxInstanceCount);
+    BatchedMesh& setGeometrySize(double maxVertexCount, double maxIndexCount);
     std::optional<Box3> boundingBox;
     std::optional<Sphere> boundingSphere;
     double addGeometry(const std::shared_ptr<BufferGeometry>& geometry, double reservedVertexCount = -1, double reservedIndexCount = -1);

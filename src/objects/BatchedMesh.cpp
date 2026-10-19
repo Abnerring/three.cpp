@@ -334,3 +334,66 @@ void BatchedMesh::computeBoundingSphere() {
         boundingSphere->unionWith(transformed);
     }
 }
+BatchedMesh& BatchedMesh::setInstanceCount(double maxInstanceCount) {
+    // Trailing free ids are dropped first, so a shrink succeeds whenever the used ids fit.
+    std::sort(_availableInstanceIds.begin(), _availableInstanceIds.end());
+    while (!_availableInstanceIds.empty() &&
+           _availableInstanceIds.back() == static_cast<double>(_instanceInfo.size()) - 1.0) {
+        _instanceInfo.pop_back();
+        _availableInstanceIds.pop_back();
+    }
+    if (maxInstanceCount < static_cast<double>(_instanceInfo.size()))
+        throw std::runtime_error("THREE.BatchedMesh: Instance ids outside the range " +
+                                 std::to_string(static_cast<int>(maxInstanceCount)) +
+                                 " are being used. Cannot shrink instance count.");
+    // Upstream reallocates its multi draw arrays and two instance textures here; the vectors that stand in for
+    // the textures are resized instead, and the records beyond the new count are dropped.
+    _maxInstanceCount = maxInstanceCount;
+    const auto keep = static_cast<std::size_t>(maxInstanceCount);
+    if (_instanceMatrices.size() > keep) _instanceMatrices.resize(keep);
+    if (_instanceColors.size() > keep) _instanceColors.resize(keep);
+    return *this;
+}
+
+BatchedMesh& BatchedMesh::setGeometrySize(double maxVertexCount, double maxIndexCount) {
+    // The active ranges decide how far the buffers may shrink.
+    double requiredVertexLength = 0.0, requiredIndexLength = 0.0;
+    for (const auto& info : _geometryInfo) {
+        if (!info.active) continue;
+        requiredVertexLength = std::max(requiredVertexLength, info.vertexStart + info.reservedVertexCount);
+        requiredIndexLength = std::max(requiredIndexLength, info.indexStart + info.reservedIndexCount);
+    }
+    if (requiredVertexLength > maxVertexCount)
+        // The upstream message names the index count here; it reads odd, and it is copied as it stands.
+        throw std::runtime_error("THREE.BatchedMesh: Geometry vertex values are being used outside the range " +
+                                 std::to_string(static_cast<int>(maxIndexCount)) + ". Cannot shrink further.");
+    if (geometry->getIndex() != nullptr && requiredIndexLength > maxIndexCount)
+        throw std::runtime_error("THREE.BatchedMesh: Geometry index values are being used outside the range " +
+                                 std::to_string(static_cast<int>(maxIndexCount)) + ". Cannot shrink further.");
+
+    const auto previous = geometry;
+    _maxVertexCount = maxVertexCount;
+    _maxIndexCount = maxIndexCount;
+    if (_geometryInitialized) {
+        _geometryInitialized = false;
+        geometry = std::make_shared<BufferGeometry>();
+        initializeGeometry(previous);
+    }
+    // Copy what fits from the old buffers into the new ones, attribute by attribute.
+    for (const auto& [name, target] : geometry->attributes) {
+        const auto destination = std::dynamic_pointer_cast<BufferAttribute>(target);
+        const auto origin = std::dynamic_pointer_cast<BufferAttribute>(previous->getAttribute(name));
+        if (!destination || !origin) continue;
+        const double vertices = std::min(origin->count, destination->count);
+        for (double i = 0; i < vertices; i += 1)
+            for (double c = 0; c < destination->itemSize && c < origin->itemSize; c += 1)
+                destination->setComponent(i, c, origin->getComponent(i, c));
+    }
+    if (previous->getIndex() != nullptr && geometry->getIndex() != nullptr) {
+        const auto destination = geometry->getIndex();
+        const auto origin = previous->getIndex();
+        const double count = std::min(origin->count, destination->count);
+        for (double i = 0; i < count; i += 1) destination->setX(i, origin->getX(i));
+    }
+    return *this;
+}

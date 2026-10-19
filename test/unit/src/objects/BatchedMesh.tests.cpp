@@ -234,3 +234,31 @@ TEST_CASE("BatchedMesh computes its bounding volumes from the packed geometry") 
     REQUIRE(batch->boundingSphere.has_value());
     REQUIRE(batch->boundingSphere->radius > 3.0);
 }
+// Shrinking an instance count drops trailing free ids and refuses when a used id would fall outside the new
+// range; resizing the geometry buffers rebuilds them and copies across what still fits.
+TEST_CASE("BatchedMesh resizes its instance and geometry buffers") {
+    auto batch = std::make_shared<BatchedMesh>(4, 16);
+    auto geometry = std::make_shared<BufferGeometry>();
+    geometry->setAttribute("position", std::make_shared<Float32BufferAttribute>(
+        std::vector<float>{1.0f, 2.0f, 3.0f, 4.0f, 5.0f, 6.0f, 7.0f, 8.0f, 9.0f}, 3));
+    geometry->setIndex(std::make_shared<Uint16BufferAttribute>(std::vector<std::uint16_t>{0, 1, 2}, 1));
+    batch->addGeometry(geometry);
+
+    batch->addInstance(0.0);
+    batch->addInstance(0.0);
+    batch->addInstance(0.0);
+    batch->deleteInstance(2.0);          // the free id is the last one, so a shrink may drop it
+    batch->setInstanceCount(2.0);
+    REQUIRE(batch->getInstanceCount() == 2.0);
+    // Two records remain, so one is out of range now.
+    REQUIRE_THROWS_AS(batch->setInstanceCount(1.0), std::runtime_error);
+
+    // The geometry holds three vertices, so a four vertex budget is enough and a two vertex budget is not.
+    REQUIRE_NOTHROW(batch->setGeometrySize(4.0, 8.0));
+    REQUIRE_THROWS_AS(batch->setGeometrySize(2.0, 8.0), std::runtime_error);
+    // The data survived the rebuild.
+    const auto positions = std::dynamic_pointer_cast<BufferAttribute>(batch->geometry->getAttribute("position"));
+    REQUIRE(positions);
+    REQUIRE(positions->getComponent(0.0, 0.0) == 1.0);
+    REQUIRE(positions->count == 4.0);
+}
