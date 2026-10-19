@@ -1,5 +1,8 @@
-﻿#pragma once
+#pragma once
 #include "core/JSValue.h"
+#include <memory>
+
+class Audio;
 
 // Port of src/audio/AudioAnalyser.js at the pinned revision.
 //
@@ -9,7 +12,7 @@
 // constructor allocated, and the average is the plain mean of those bytes.
 class AudioAnalyser {
   public:
-    explicit AudioAnalyser(JSValue audio = {}, double fftSize = 2048);
+    explicit AudioAnalyser(const std::shared_ptr<Audio>& audio, double fftSize = 2048);
 
     JSValue getFrequencyData();
     double getAverageFrequency();

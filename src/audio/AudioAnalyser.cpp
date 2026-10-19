@@ -1,18 +1,20 @@
 #include "audio/AudioAnalyser.h"
 
+#include "audio/Audio.h"
 #include "core/NativeObject.h"
 #include "core/TypedArray.h"
 #include "core/JSValue.h"
 
-AudioAnalyser::AudioAnalyser(JSValue audio, double fftSize) {
+AudioAnalyser::AudioAnalyser(const std::shared_ptr<Audio>& audio, double fftSize) {
     object_ = JSValue::object();
-    const auto context = audio.get("context");
+    const auto context = audio->context;
     auto analyser = context.get("createAnalyser").call(context, {});
     analyser.set("fftSize", JSValue(fftSize));
     const auto bins = analyser.get("frequencyBinCount").toNumber();
     // The data array is allocated from the bin count and then kept for every read, as upstream does.
     auto data = nativeArray(Uint8Array(std::vector<std::uint8_t>(static_cast<std::size_t>(bins), 0)));
-    audio.get("getOutput").call(audio, {}).get("connect").call(audio.get("getOutput").call(audio, {}), {analyser});
+    const auto output = audio->getOutput();
+    output.get("connect").call(output, {analyser});
     object_.set("analyser", analyser);
     object_.set("data", data);
 }

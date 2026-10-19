@@ -1,4 +1,5 @@
 #include "catch.hpp"
+#include "audio/Audio.h"
 #include "audio/AudioAnalyser.h"
 #include "core/JSValue.h"
 #include <vector>
@@ -37,10 +38,14 @@ TEST_CASE("AudioAnalyser sizes its data from the analyser node") {
     static_cast<void>(realm);
     analyserCount = 0;
     auto context = JSValue::object();
+    // The Audio base needs a gain and a destination before the analyser is built on top of it.
+    context.set("createGain", JSValue::function([](const JSValue&, const std::vector<JSValue>&, const std::vector<JSValue>&) { return makeOutput(); }, {}, "createGain", 0));
+    context.set("destination", JSValue::object());
     context.set("createAnalyser", JSValue::function([](const JSValue&, const std::vector<JSValue>&, const std::vector<JSValue>&) { return makeAnalyser(); }, {}, "createAnalyser", 0));
-    auto audio = JSValue::object();
-    audio.set("context", context);
-    audio.set("getOutput", JSValue::function([](const JSValue&, const std::vector<JSValue>&, const std::vector<JSValue>&) { return makeOutput(); }, {}, "getOutput", 0));
+    auto listener = JSValue::object();
+    listener.set("context", context);
+    listener.set("getInput", JSValue::function([](const JSValue&, const std::vector<JSValue>&, const std::vector<JSValue>&) { return makeOutput(); }, {}, "getInput", 0));
+    auto audio = std::make_shared<Audio>(listener);
 
     AudioAnalyser analyser(audio, 1024);
     REQUIRE(analyserCount == 1);

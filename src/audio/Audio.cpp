@@ -1,183 +1,150 @@
-#include "audio/Audio.h"
+﻿#include "audio/Audio.h"
 
 #include <cmath>
 #include <stdexcept>
 
-namespace {
-JSValue get(const JSValue& self, const char* name) { return self.get(name); }
-}
-
-Audio::Audio(JSValue listener) {
-    object_ = JSValue::object();
-    object_.set("type", "Audio");
-    object_.set("listener", listener);
-    const auto context = listener.get("context");
+Audio::Audio(JSValue listener) : listener(std::move(listener)) {
+    type = "Audio";
+    context = this->listener.get("context");
     if (context.isUndefined()) throw std::runtime_error("THREE.Audio: the listener carries no context");
-    object_.set("context", context);
-    const auto gain = context.get("createGain").call(context, {});
-    const auto input = listener.get("getInput").call(listener, {});
+    gain = context.get("createGain").call(context, {});
+    const auto input = this->listener.get("getInput").call(this->listener, {});
     gain.get("connect").call(gain, {input});
-    object_.set("gain", gain);
-    object_.set("autoplay", false);
-    object_.set("buffer", JSValue(nullptr));
-    object_.set("detune", 0);
-    object_.set("loop", false);
-    object_.set("loopStart", 0);
-    object_.set("loopEnd", 0);
-    object_.set("offset", 0);
-    object_.set("playbackRate", 1);
-    object_.set("isPlaying", false);
-    object_.set("hasPlaybackControl", true);
-    object_.set("sourceType", "empty");
-    object_.set("source", JSValue(nullptr));
-    object_.set("filters", JSValue::array());
-    object_.set("_progress", 0);
-    object_.set("_startedAt", 0);
-    object_.set("_pausedAt", 0);
+    buffer = JSValue(nullptr);
+    source = JSValue(nullptr);
 }
 
-JSValue Audio::getOutput() const { return get(object_, "gain"); }
+JSValue Audio::getOutput() const { return gain; }
 
-JSValue Audio::setNodeSource(JSValue audioNode) {
-    // A node source has no playback control, which is why play and pause refuse it below.
-    object_.set("hasPlaybackControl", false);
-    object_.set("sourceType", "audioNode");
-    object_.set("source", audioNode);
+Audio& Audio::setNodeSource(JSValue audioNode) {
+    // A node source has no playback control, which is why play and pause refuse it.
+    hasPlaybackControl = false;
+    sourceType = "audioNode";
+    source = std::move(audioNode);
     connect();
-    return object_;
+    return *this;
 }
 
-JSValue Audio::setBuffer(JSValue audioBuffer) {
-    object_.set("sourceType", "buffer");
-    object_.set("buffer", audioBuffer);
-    return object_;
+Audio& Audio::setBuffer(JSValue audioBuffer) {
+    sourceType = "buffer";
+    buffer = std::move(audioBuffer);
+    return *this;
 }
 
-JSValue Audio::getLoop() const { return get(object_, "loop"); }
-JSValue Audio::setLoop(JSValue value) { object_.set("loop", value); return object_; }
-JSValue Audio::getLoopStart() const { return get(object_, "loopStart"); }
-JSValue Audio::setLoopStart(JSValue value) { object_.set("loopStart", value); return object_; }
-JSValue Audio::getLoopEnd() const { return get(object_, "loopEnd"); }
-JSValue Audio::setLoopEnd(JSValue value) { object_.set("loopEnd", value); return object_; }
+Audio& Audio::setLoop(bool value) {
+    loop = value;
+    return *this;
+}
 
-JSValue Audio::getVolume() const { return get(object_, "gain").get("gain").get("value"); }
+Audio& Audio::setLoopStart(double value) {
+    loopStart = value;
+    return *this;
+}
 
-JSValue Audio::setVolume(JSValue value) {
-    // Upstream assigns the automation value directly, which is what the gain param exposes.
-    auto gain = get(object_, "gain");
+Audio& Audio::setLoopEnd(double value) {
+    loopEnd = value;
+    return *this;
+}
+
+double Audio::getVolume() const {
     auto param = gain.get("gain");
-    param.set("value", value);
-    return object_;
+    return param.get("value").toNumber();
 }
 
-JSValue Audio::getPlaybackRate() const { return get(object_, "playbackRate"); }
+Audio& Audio::setVolume(double value) {
+    // Upstream assigns the automation value directly, which is what the gain param exposes.
+    auto param = gain.get("gain");
+    param.set("value", JSValue(value));
+    return *this;
+}
 
-JSValue Audio::setPlaybackRate(JSValue value) {
-    object_.set("playbackRate", value);
-    const auto source = get(object_, "source");
-    if (get(object_, "hasPlaybackControl").toBoolean() && !source.isUndefined() && !source.isNull()) {
+Audio& Audio::setPlaybackRate(double value) {
+    playbackRate = value;
+    if (hasPlaybackControl && !source.isNull() && !source.isUndefined()) {
         auto assigned = source;
-        assigned.set("playbackRate", get(object_, "playbackRate"));
+        assigned.set("playbackRate", JSValue(playbackRate));
     }
-    return object_;
+    return *this;
 }
 
-JSValue Audio::getDetune() const { return get(object_, "detune"); }
-
-JSValue Audio::setDetune(JSValue value) {
-    object_.set("detune", value);
-    const auto source = get(object_, "source");
-    if (get(object_, "hasPlaybackControl").toBoolean() && !source.isUndefined() && !source.isNull()) {
+Audio& Audio::setDetune(double value) {
+    detune = value;
+    if (hasPlaybackControl && !source.isNull() && !source.isUndefined()) {
         auto assigned = source;
-        assigned.set("detune", get(object_, "detune"));
+        assigned.set("detune", JSValue(detune));
     }
-    return object_;
+    return *this;
 }
 
-JSValue Audio::play(JSValue delay) {
-    if (get(object_, "isPlaying").toBoolean() || !get(object_, "hasPlaybackControl").toBoolean())
-        return object_;   // upstream warns and returns; the refusal is the behaviour that matters
-    // The delay parameter defaults to zero upstream, which undefined means for a JS default.
-    const double delayValue = delay.isUndefined() ? 0.0 : delay.toNumber();
-    const auto context = get(object_, "context");
-    const auto startedAt = context.get("currentTime").toNumber() + delayValue;
-    object_.set("_startedAt", startedAt);
-    const auto source = context.get("createBufferSource").call(context, {});
-    auto configured = source;
-    configured.set("buffer", get(object_, "buffer"));
-    configured.set("loop", get(object_, "loop"));
-    configured.set("loopStart", get(object_, "loopStart"));
-    configured.set("loopEnd", get(object_, "loopEnd"));
-    const double offset = get(object_, "_progress").toNumber() + get(object_, "offset").toNumber();
-    source.get("start").call(source, {JSValue(startedAt), JSValue(offset), get(object_, "duration")});
-    object_.set("isPlaying", true);
-    object_.set("source", source);
-    setDetune(get(object_, "detune"));
-    setPlaybackRate(get(object_, "playbackRate"));
+Audio& Audio::play(double delay) {
+    if (isPlaying || !hasPlaybackControl) return *this;   // upstream warns and returns
+    startedAt = context.get("currentTime").toNumber() + delay;
+    auto created = context.get("createBufferSource").call(context, {});
+    created.set("buffer", buffer);
+    created.set("loop", JSValue(loop));
+    created.set("loopStart", JSValue(loopStart));
+    created.set("loopEnd", JSValue(loopEnd));
+    created.get("start").call(created, {JSValue(startedAt), JSValue(progress + offset),
+                                        JSValue(std::numeric_limits<double>::quiet_NaN())});
+    isPlaying = true;
+    source = created;
+    setDetune(detune);
+    setPlaybackRate(playbackRate);
     return connect();
 }
 
-JSValue Audio::pause() {
-    if (!get(object_, "hasPlaybackControl").toBoolean()) return object_;
-    if (get(object_, "isPlaying").toBoolean()) {
-        const auto context = get(object_, "context");
-        const double elapsed = std::max(context.get("currentTime").toNumber() - get(object_, "_startedAt").toNumber(), 0.0);
-        double progress = get(object_, "_progress").toNumber() + elapsed * get(object_, "playbackRate").toNumber();
-        if (get(object_, "loop").toBoolean()) {
+Audio& Audio::pause() {
+    if (!hasPlaybackControl) return *this;
+    if (isPlaying) {
+        const double elapsed = std::max(context.get("currentTime").toNumber() - startedAt, 0.0);
+        double wrapped = progress + elapsed * playbackRate;
+        if (loop) {
             // A looping source wraps its progress by the duration, falling back to the buffer duration.
-            double duration = get(object_, "duration").toNumber();
-            if (!(duration > 0)) duration = get(object_, "buffer").get("duration").toNumber();
-            if (duration > 0) progress = std::fmod(progress, duration);
+            double duration = buffer.get("duration").toNumber();
+            if (!(duration > 0)) duration = 0;
+            if (duration > 0) wrapped = std::fmod(wrapped, duration);
         }
-        object_.set("_progress", progress);
-        const auto source = get(object_, "source");
+        progress = wrapped;
         source.get("stop").call(source, {});
         auto ended = source;
         ended.set("onended", JSValue(nullptr));
-        object_.set("isPlaying", false);
+        isPlaying = false;
     }
-    return object_;
+    return *this;
 }
 
-JSValue Audio::stop(JSValue delay) {
-    if (!get(object_, "hasPlaybackControl").toBoolean()) return object_;
-    object_.set("_progress", 0);
-    const auto source = get(object_, "source");
-    if (!source.isUndefined() && !source.isNull()) {
-        const auto context = get(object_, "context");
-        const double delayValue = delay.isUndefined() ? 0.0 : delay.toNumber();
-        source.get("stop").call(source, {JSValue(context.get("currentTime").toNumber() + delayValue)});
+Audio& Audio::stop(double delay) {
+    if (!hasPlaybackControl) return *this;
+    progress = 0;
+    if (!source.isNull() && !source.isUndefined()) {
+        source.get("stop").call(source, {JSValue(context.get("currentTime").toNumber() + delay)});
         auto ended = source;
         ended.set("onended", JSValue(nullptr));
     }
-    object_.set("isPlaying", false);
-    return object_;
+    isPlaying = false;
+    return *this;
 }
 
-JSValue Audio::connect() {
-    const auto filters = get(object_, "filters");
-    const auto length = filters.length();
-    const auto source = get(object_, "source");
-    if (length > 0 && !source.isUndefined() && !source.isNull()) {
-        source.get("connect").call(source, {filters.get(0)});
-        for (double i = 1; i < length; i += 1)
-            filters.get(i - 1).get("connect").call(filters.get(i - 1), {filters.get(i)});
-        filters.get(length - 1).get("connect").call(filters.get(length - 1), {getOutput()});
-    } else if (!source.isUndefined() && !source.isNull()) {
+Audio& Audio::connect() {
+    if (!filters.empty() && !source.isNull() && !source.isUndefined()) {
+        source.get("connect").call(source, {filters.front()});
+        for (std::size_t i = 1; i < filters.size(); i += 1)
+            filters[i - 1].get("connect").call(filters[i - 1], {filters[i]});
+        filters.back().get("connect").call(filters.back(), {getOutput()});
+    } else if (!source.isNull() && !source.isUndefined()) {
         source.get("connect").call(source, {getOutput()});
     }
-    return object_;
+    return *this;
 }
 
-JSValue Audio::disconnect() {
-    const auto filters = get(object_, "filters");
-    const auto length = filters.length();
-    const auto source = get(object_, "source");
-    if (length > 0 && !source.isUndefined() && !source.isNull()) {
+Audio& Audio::disconnect() {
+    if (!filters.empty() && !source.isNull() && !source.isUndefined()) {
         source.get("disconnect").call(source, {});
-        for (double i = 0; i < length; i += 1) filters.get(i).get("disconnect").call(filters.get(i), {});
-    } else if (!source.isUndefined() && !source.isNull()) {
+        for (auto& filter : filters) filter.get("disconnect").call(filter, {});
+    } else if (!source.isNull() && !source.isUndefined()) {
         source.get("disconnect").call(source, {});
     }
-    return object_;
+    return *this;
 }
+
+void Audio::updateMatrixWorld(bool force) { Object3D::updateMatrixWorld(force); }

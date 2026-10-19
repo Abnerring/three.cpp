@@ -31,32 +31,30 @@ TEST_CASE("Audio tracks playback progress against the context clock") {
     listener.set("getInput", JSValue::function([](const JSValue&, const std::vector<JSValue>&, const std::vector<JSValue>&) { return JSValue::object(); }, {}, "getInput", 0));
 
     Audio audio(listener);
-    const auto self = audio.object();
-    REQUIRE(self.get("isPlaying").toBoolean() == false);
-    REQUIRE(audio.getVolume().toNumber() == 1.0);
+    REQUIRE(audio.isPlaying == false);
+    REQUIRE(audio.getVolume() == 1.0);
     audio.setVolume(0.5);
-    REQUIRE(audio.getVolume().toNumber() == 0.5);
+    REQUIRE(audio.getVolume() == 0.5);
     audio.setPlaybackRate(2);
-    REQUIRE(audio.getPlaybackRate().toNumber() == 2.0);
-    REQUIRE(audio.setLoop(true).get("loop").toBoolean());
+    REQUIRE(audio.getPlaybackRate() == 2.0);
+    REQUIRE(audio.setLoop(true).getLoop());
     // A looping source needs a duration to wrap by, either its own or the buffer one.
     auto buffer = JSValue::object();
     buffer.set("duration", 100);
     audio.setBuffer(buffer);
 
     audio.play();
-    REQUIRE(audio.object().get("isPlaying").toBoolean());
-    REQUIRE(audio.object().get("_startedAt").toNumber() == 10.0);
+    REQUIRE(audio.isPlaying);
+    REQUIRE(audio.startedAt == 10.0);
 
     // Three seconds of context time at twice the rate is six seconds of progress.
-    audio.object().set("context", context);
     context.set("currentTime", 13);
     audio.pause();
-    REQUIRE(audio.object().get("isPlaying").toBoolean() == false);
-    REQUIRE(audio.object().get("_progress").toNumber() == 6.0);
+    REQUIRE(audio.isPlaying == false);
+    REQUIRE(audio.progress == 6.0);
 
     audio.play();
     audio.stop();
-    REQUIRE(audio.object().get("_progress").toNumber() == 0.0);
-    REQUIRE(audio.object().get("isPlaying").toBoolean() == false);
+    REQUIRE(audio.progress == 0.0);
+    REQUIRE(audio.isPlaying == false);
 }
