@@ -59,6 +59,9 @@
 #include "helpers/AxesHelper.h"
 #include "cameras/PerspectiveCamera.h"
 #include "textures/Texture.h"
+#include "scenes/Fog.h"
+#include "scenes/FogExp2.h"
+#include "math/SphericalHarmonics3.h"
 #include "textures/DataTexture.h"
 #include "textures/DepthTexture.h"
 #include "cameras/OrthographicCamera.h"
@@ -655,6 +658,34 @@ int main() {
             std::cout << ",\"unpackAlignment\":" << bits(static_cast<float>(texture->unpackAlignment));
             std::cout << ",\"colorSpace\":\"" << texture->colorSpace << "\"";
             std::cout << "}}" << std::endl;
+            continue;
+        } else if (kind == "fog") {
+            std::string which;
+            in >> which;
+            double r = 0, g = 0, b = 0, density = 0, near = 0, far = 0;
+            if (which == "linear") {
+                in >> r >> g >> b >> near >> far;
+                if (in.fail()) { std::cout << "{\"error\":\"short input\"}" << std::endl; continue; }
+                Fog fog(Color(r, g, b), near, far);
+                std::cout << "{\"kind\":\"fog\",\"which\":\"linear\",\"name\":\"" << fog.name << "\",\"color\":[" << bits(static_cast<float>(fog.color.r)) << "," << bits(static_cast<float>(fog.color.g)) << "," << bits(static_cast<float>(fog.color.b)) << "],\"near\":" << bits(static_cast<float>(fog.near)) << ",\"far\":" << bits(static_cast<float>(fog.far)) << "}" << std::endl;
+            } else if (which == "exp2") {
+                in >> r >> g >> b >> density;
+                if (in.fail()) { std::cout << "{\"error\":\"short input\"}" << std::endl; continue; }
+                FogExp2 fog(Color(r, g, b), density);
+                std::cout << "{\"kind\":\"fog\",\"which\":\"exp2\",\"name\":\"" << fog.name << "\",\"color\":[" << bits(static_cast<float>(fog.color.r)) << "," << bits(static_cast<float>(fog.color.g)) << "," << bits(static_cast<float>(fog.color.b)) << "],\"density\":" << bits(static_cast<float>(fog.density)) << "}" << std::endl;
+            } else { std::cout << "{\"error\":\"unknown fog\"}" << std::endl; continue; }
+            continue;
+        } else if (kind == "sh") {
+            double count = 0;
+            in >> count;
+            std::vector<double> values;
+            for (int k = 0; k < static_cast<int>(count); k += 1) { double value = 0; in >> value; values.push_back(value); }
+            if (in.fail()) { std::cout << "{\"error\":\"short input\"}" << std::endl; continue; }
+            SphericalHarmonics3 sh;
+            for (std::size_t k = 0; k < values.size() / 3 && k < 9; k += 1) sh.coefficients[k].set(values[k * 3], values[k * 3 + 1], values[k * 3 + 2]);
+            std::cout << "{\"kind\":\"sh\",\"coefficients\":[";
+            for (int k = 0; k < 9; k += 1) { if (k > 0) std::cout << ","; std::cout << "[" << bits(static_cast<float>(sh.coefficients[k].x)) << "," << bits(static_cast<float>(sh.coefficients[k].y)) << "," << bits(static_cast<float>(sh.coefficients[k].z)) << "]"; }
+            std::cout << "]}" << std::endl;
             continue;
         } else {
             std::cout << "{\"error\":\"unknown kind\"}" << std::endl;

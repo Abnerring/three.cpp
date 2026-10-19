@@ -519,3 +519,27 @@ for (let i = 0; i < textureScenarios.length; i += 1) {
     assert.deepEqual(textureLines[i], expected, `scenario ${line}`);
 }
 console.log(`texture parity: ${textureScenarios.length} scenarios`);
+// The fog forms and the spherical harmonics coefficients.
+const {Fog} = await import(pathToFileURL(path.join(sourceDir, 'src/scenes/Fog.js')).href);
+const {FogExp2} = await import(pathToFileURL(path.join(sourceDir, 'src/scenes/FogExp2.js')).href);
+const {SphericalHarmonics3} = await import(pathToFileURL(path.join(sourceDir, 'src/math/SphericalHarmonics3.js')).href);
+
+const fogScenarios = [
+    ['fog linear 0.5 0.25 1 1 100', () => new Fog(new Color(0.5, 0.25, 1), 1, 100)],
+    ['fog linear 1 1 1 2 50', () => new Fog(new Color(1, 1, 1), 2, 50)],
+    ['fog exp2 0.5 0.25 1 0.02', () => new FogExp2(new Color(0.5, 0.25, 1), 0.02)],
+    ['fog exp2 0 0 0 1.5', () => new FogExp2(new Color(0, 0, 0), 1.5)],
+];
+const fogRaw = execFileSync(probePath, [], {input: fogScenarios.map(([line]) => line).join('\n'), encoding: 'utf8'});
+const fogLines = fogRaw.trim().split('\n').map((line) => JSON.parse(line));
+for (let i = 0; i < fogScenarios.length; i += 1) {
+    const [line, build] = fogScenarios[i];
+    const fog = build();
+    const which = line.split(' ')[1];
+    const expected = {kind: 'fog', which, name: fog.name,
+        color: [bitOf(fog.color.r), bitOf(fog.color.g), bitOf(fog.color.b)]};
+    if (which === 'linear') { expected.near = bitOf(fog.near); expected.far = bitOf(fog.far); }
+    else expected.density = bitOf(fog.density);
+    assert.deepEqual(fogLines[i], expected, `scenario ${line}`);
+}
+console.log(`fog parity: ${fogScenarios.length} scenarios`);
