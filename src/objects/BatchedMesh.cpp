@@ -4,6 +4,7 @@
 #include "core/BufferGeometry.h"
 #include "materials/MeshBasicMaterial.h"
 #include <algorithm>
+#include <cmath>
 #include <stdexcept>
 #include <string>
 
@@ -264,4 +265,72 @@ BatchedMesh& BatchedMesh::deleteGeometry(double geometryId) {
     info.active = false;
     _availableGeometryIds.push_back(geometryId);
     return *this;
+}
+std::optional<Box3> BatchedMesh::getBoundingBoxAt(double geometryId) {
+    if (geometryId < 0 || geometryId >= _geometryCount) return std::nullopt;
+    auto& info = _geometryInfo[static_cast<std::size_t>(geometryId)];
+    if (!info.boundingBox) {
+        // The bounds come from the packed vertices this geometry occupies, following the batch index when
+        // there is one, which is exactly what upstream walks.
+        Box3 box;
+        box.makeEmpty();
+        const auto position = std::dynamic_pointer_cast<BufferAttribute>(geometry->getAttribute("position"));
+        const auto index = geometry->getIndex();
+        for (double i = info.start; i < info.start + info.count; i += 1) {
+            const double vertex = index ? index->getX(i) : i;
+            box.expandByPoint(Vector3(position->getX(vertex), position->getY(vertex), position->getZ(vertex)));
+        }
+        info.boundingBox = box;
+    }
+    return info.boundingBox;
+}
+
+std::optional<Sphere> BatchedMesh::getBoundingSphereAt(double geometryId) {
+    if (geometryId < 0 || geometryId >= _geometryCount) return std::nullopt;
+    auto& info = _geometryInfo[static_cast<std::size_t>(geometryId)];
+    if (!info.boundingSphere) {
+        // Upstream centres the sphere on the box centre and takes the largest distance to a vertex.
+        Sphere sphere;
+        const auto box = getBoundingBoxAt(geometryId);
+        if (!box) return std::nullopt;
+        box->getCenter(sphere.center);
+        const auto position = std::dynamic_pointer_cast<BufferAttribute>(geometry->getAttribute("position"));
+        const auto index = geometry->getIndex();
+        double maxRadiusSq = 0.0;
+        for (double i = info.start; i < info.start + info.count; i += 1) {
+            const double vertex = index ? index->getX(i) : i;
+            const Vector3 point(position->getX(vertex), position->getY(vertex), position->getZ(vertex));
+            maxRadiusSq = std::max(maxRadiusSq, sphere.center.distanceToSquared(point));
+        }
+        sphere.radius = std::sqrt(maxRadiusSq);
+        info.boundingSphere = sphere;
+    }
+    return info.boundingSphere;
+}
+
+void BatchedMesh::computeBoundingBox() {
+    if (!boundingBox) boundingBox = Box3();
+    boundingBox->makeEmpty();
+    // Every active instance contributes its geometry bounds transformed by its own matrix.
+    for (std::size_t i = 0; i < _instanceInfo.size(); i += 1) {
+        if (!_instanceInfo[i].active) continue;
+        const auto box = getBoundingBoxAt(_instanceInfo[i].geometryId);
+        if (!box) continue;
+        Box3 transformed = *box;
+        transformed.applyMatrix4(_instanceMatrices[i]);
+        boundingBox->unionWith(transformed);
+    }
+}
+
+void BatchedMesh::computeBoundingSphere() {
+    if (!boundingSphere) boundingSphere = Sphere();
+    boundingSphere->makeEmpty();
+    for (std::size_t i = 0; i < _instanceInfo.size(); i += 1) {
+        if (!_instanceInfo[i].active) continue;
+        const auto sphere = getBoundingSphereAt(_instanceInfo[i].geometryId);
+        if (!sphere) continue;
+        Sphere transformed = *sphere;
+        transformed.applyMatrix4(_instanceMatrices[i]);
+        boundingSphere->unionWith(transformed);
+    }
 }

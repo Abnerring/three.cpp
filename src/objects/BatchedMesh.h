@@ -54,6 +54,13 @@ class BatchedMesh : public Mesh {
     Color getColorAt(double instanceId) const;
     BatchedMesh& deleteInstance(double instanceId);
     BatchedMesh& deleteGeometry(double geometryId);
+    // Upstream returns null for an id past the geometry count, which an empty optional models here.
+    std::optional<Box3> getBoundingBoxAt(double geometryId);
+    std::optional<Sphere> getBoundingSphereAt(double geometryId);
+    void computeBoundingBox();
+    void computeBoundingSphere();
+    std::optional<Box3> boundingBox;
+    std::optional<Sphere> boundingSphere;
     double addGeometry(const std::shared_ptr<BufferGeometry>& geometry, double reservedVertexCount = -1, double reservedIndexCount = -1);
     double setGeometryAt(double geometryId, const std::shared_ptr<BufferGeometry>& geometry);
 

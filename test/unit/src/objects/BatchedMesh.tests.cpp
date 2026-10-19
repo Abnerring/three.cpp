@@ -193,3 +193,44 @@ TEST_CASE("BatchedMesh reuses ids freed by delete") {
     // Deleting it again is quietly ignored, which is the upstream asymmetry against deleteInstance.
     REQUIRE_NOTHROW(batch->deleteGeometry(0.0));
 }
+// The bounds are computed from the packed vertices a geometry occupies, and the mesh bounds union those of
+// every active instance after its own matrix.
+TEST_CASE("BatchedMesh computes its bounding volumes from the packed geometry") {
+    auto batch = std::make_shared<BatchedMesh>(4, 8);
+    auto geometry = std::make_shared<BufferGeometry>();
+    geometry->setAttribute("position", std::make_shared<Float32BufferAttribute>(
+        std::vector<float>{0.0f, 0.0f, 0.0f, 1.0f, 0.0f, 0.0f, 0.0f, 1.0f, 0.0f}, 3));
+    geometry->setIndex(std::make_shared<Uint16BufferAttribute>(std::vector<std::uint16_t>{0, 1, 2}, 1));
+    batch->addGeometry(geometry);
+
+    const auto box = batch->getBoundingBoxAt(0.0);
+    REQUIRE(box.has_value());
+    REQUIRE(box->min.x == 0.0);
+    REQUIRE(box->max.x == 1.0);
+    REQUIRE(box->max.y == 1.0);
+
+    const auto sphere = batch->getBoundingSphereAt(0.0);
+    REQUIRE(sphere.has_value());
+    REQUIRE(sphere->center.x == 0.5);
+    REQUIRE(sphere->radius > 0.7);
+    REQUIRE(sphere->radius < 0.71);       // sqrt(0.5) for a right triangle spanning the unit square
+
+    // An id past the geometry count answers nothing rather than reading past the records.
+    REQUIRE(batch->getBoundingBoxAt(9.0).has_value() == false);
+    REQUIRE(batch->getBoundingSphereAt(9.0).has_value() == false);
+
+    // Two instances, the second translated by five along x, so the mesh box has to reach six.
+    batch->addInstance(0.0);
+    batch->addInstance(0.0);
+    Matrix4 moved;
+    moved.set(1, 0, 0, 5, 0, 1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1);
+    batch->setMatrixAt(1.0, moved);
+    batch->computeBoundingBox();
+    REQUIRE(batch->boundingBox.has_value());
+    REQUIRE(batch->boundingBox->min.x == 0.0);
+    REQUIRE(batch->boundingBox->max.x == 6.0);
+
+    batch->computeBoundingSphere();
+    REQUIRE(batch->boundingSphere.has_value());
+    REQUIRE(batch->boundingSphere->radius > 3.0);
+}
