@@ -45,7 +45,7 @@ const describeAttributes = (geometry) => {
             continue;
         }
         const array = attribute.array;
-        const limit = Math.min(attribute.count, 6);
+        const limit = Math.min(attribute.count, 24);
         const values = [];
         for (let i = 0; i < limit * itemSize; i += 1) values.push(array[i]);
         out[name] = {count: attribute.count, itemSize, bits: bitArray(values)};
@@ -56,7 +56,7 @@ const describeAttributes = (geometry) => {
 const describeIndex = (geometry) => {
     if (!geometry.index) return null;
     const array = geometry.index.array;
-    return {count: geometry.index.count, first: Array.from(array.slice(0, 8)).map(Number)};
+    return {count: geometry.index.count, first: Array.from(array.slice(0, 32)).map(Number)};
 };
 
 const scenarios = [

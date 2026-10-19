@@ -146,7 +146,7 @@ void emitAttribute(const std::shared_ptr<BufferGeometry>& geometry, const char* 
     }
     const auto count = static_cast<int>(attribute->count);
     std::cout << "\"" << name << "\":{\"count\":" << count << ",\"itemSize\":" << itemSize << ",\"bits\":[";
-    const int limit = count < 6 ? count : 6;
+    const int limit = count < 24 ? count : 24;
     for (int i = 0; i < limit; i += 1) {
         for (int c = 0; c < itemSize; c += 1) {
             if (i > 0 || c > 0) std::cout << ",";
@@ -856,7 +856,7 @@ int main() {
         if (index) {
             std::cout << "\"index\":{\"count\":" << static_cast<int>(index->count) << ",\"first\":[";
             const int indexCount = static_cast<int>(index->count);
-            const int limit = indexCount < 8 ? indexCount : 8;
+            const int limit = indexCount < 32 ? indexCount : 32;
             for (int i = 0; i < limit; i += 1) {
                 if (i > 0) std::cout << ",";
                 std::cout << static_cast<int>(index->getX(i));
