@@ -1,4 +1,4 @@
-﻿// Differential check for the native src/loaders/ObjectLoader.js port.
+// Differential check for the native src/loaders/ObjectLoader.js port.
 //
 // Both sides parse the same documents and the resulting trees are compared as structural summaries: type,
 // name, uuid, transform, flags, layers and children. The documents cover every branch the port implements,
@@ -60,12 +60,16 @@ const encode=value=>{
     return value;
 };
 const triple=v=>({x:encode(v.x),y:encode(v.y),z:encode(v.z)});
-const summary=(object,depth=0)=>{
+const materialSummary=(object)=>{
+    const material=object.material;
+    return material?{present:true,type:material.type}:{present:false};
+};const summary=(object,depth=0)=>{
     if(depth>6)return {cut:true};
     return {
         type:object.type,name:object.name??'',uuid:object.uuid??'',
         position:triple(object.position),quaternion:triple(object.quaternion),scale:triple(object.scale),
         visible:object.visible,renderOrder:encode(object.renderOrder),layers:encode(object.layers.mask),
+        material:materialSummary(object),
         children:(object.children??[]).map(child=>summary(child,depth+1))
     };
 };

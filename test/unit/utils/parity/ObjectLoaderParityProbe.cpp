@@ -8,6 +8,12 @@
 #include "core/JsonValue.h"
 #include "core/Object3D.h"
 #include "loaders/ObjectLoader.h"
+#include "materials/MeshBasicMaterial.h"
+#include "objects/Line.h"
+#include "objects/Mesh.h"
+#include "objects/Points.h"
+#include "objects/Sprite.h"
+#include "textures/Texture.h"
 #include <cmath>
 #include <iostream>
 #include <string>
@@ -22,7 +28,16 @@ JsonValue encode(double value) {
 JsonValue triple(double x, double y, double z) {
     return JsonValue(JsonValue::Object{{"x", encode(x)}, {"y", encode(y)}, {"z", encode(z)}});
 }
-JsonValue summary(const std::shared_ptr<Object3D>& object, int depth) {
+// Every drawable in this slice carries its material on its own class, so the first cast that succeeds wins.
+JsonValue materialSummary(const std::shared_ptr<Object3D>& object) {
+    std::shared_ptr<Material> material;
+    if (const auto mesh = std::dynamic_pointer_cast<Mesh>(object)) material = mesh->material;
+    else if (const auto line = std::dynamic_pointer_cast<Line>(object)) material = line->material;
+    else if (const auto points = std::dynamic_pointer_cast<Points>(object)) material = points->material;
+    else if (const auto sprite = std::dynamic_pointer_cast<Sprite>(object)) material = sprite->material;
+    if (!material) return JsonValue(JsonValue::Object{{"present", false}});
+    return JsonValue(JsonValue::Object{{"present", true}, {"type", material->type}});
+}JsonValue summary(const std::shared_ptr<Object3D>& object, int depth) {
     if (!object || depth > 6) return JsonValue(JsonValue::Object{{"cut", true}});
     JsonValue::Array children;
     for (const auto& child : object->children) children.emplace_back(summary(child, depth + 1));
@@ -36,6 +51,7 @@ JsonValue summary(const std::shared_ptr<Object3D>& object, int depth) {
         {"visible", object->visible},
         {"renderOrder", encode(object->renderOrder)},
         {"layers", encode(object->layers.mask.value().toNumber())},
+        {"material", materialSummary(object)},
         {"children", JsonValue(children)}});
 }
 }
