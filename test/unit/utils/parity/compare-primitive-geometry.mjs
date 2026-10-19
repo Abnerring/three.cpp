@@ -405,6 +405,8 @@ const {ArrowHelper} = await import(pathToFileURL(path.join(sourceDir, 'src/helpe
 const {PointLightHelper} = await import(pathToFileURL(path.join(sourceDir, 'src/helpers/PointLightHelper.js')).href);
 const {DirectionalLightHelper} = await import(pathToFileURL(path.join(sourceDir, 'src/helpers/DirectionalLightHelper.js')).href);
 const {HemisphereLightHelper} = await import(pathToFileURL(path.join(sourceDir, 'src/helpers/HemisphereLightHelper.js')).href);
+const {SpotLightHelper} = await import(pathToFileURL(path.join(sourceDir, 'src/helpers/SpotLightHelper.js')).href);
+const {SpotLight: SpotLightForHelper} = await import(pathToFileURL(path.join(sourceDir, 'src/lights/SpotLight.js')).href);
 const {HemisphereLight: HemisphereLightForHelper} = await import(pathToFileURL(path.join(sourceDir, 'src/lights/HemisphereLight.js')).href);
 const {PointLight: PointLightForHelper} = await import(pathToFileURL(path.join(sourceDir, 'src/lights/PointLight.js')).href);
 const {DirectionalLight: DirectionalLightForHelper} = await import(pathToFileURL(path.join(sourceDir, 'src/lights/DirectionalLight.js')).href);
@@ -414,6 +416,7 @@ const childHelperScenarios = [
     ['helper directional 1', () => new DirectionalLightHelper(new DirectionalLightForHelper(), 1)],
     ['helper hemisphere 1', () => new HemisphereLightHelper(new HemisphereLightForHelper(), 1)],
     ['helper hemisphere 2.5', () => new HemisphereLightHelper(new HemisphereLightForHelper(), 2.5)],
+    ['helper spotlight', () => new SpotLightHelper(new SpotLightForHelper())],
     ['helper arrow 0 0 1 0 0 0 2', () => new ArrowHelper(new Vector3(0, 0, 1), new Vector3(0, 0, 0), 2)],
 ];
 

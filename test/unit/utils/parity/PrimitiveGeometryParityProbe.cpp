@@ -64,6 +64,7 @@
 #include "helpers/PlaneHelper.h"
 #include "helpers/PolarGridHelper.h"
 #include "helpers/HemisphereLightHelper.h"
+#include "helpers/SpotLightHelper.h"
 #include "math/Plane.h"
 #include "math/Box3.h"
 #include "cameras/PerspectiveCamera.h"
@@ -596,6 +597,7 @@ int main() {
             else if (which == "pointlight") { double sphereSize = 0; in >> sphereSize; if (in.fail() || !noTrailingTokens(in)) { std::cout << "{\"error\":\"short input or trailing tokens\"}" << std::endl; continue; } helper = std::make_shared<PointLightHelper>(std::make_shared<PointLight>(), sphereSize); }
             else if (which == "directional") { double size = 0; in >> size; if (in.fail() || !noTrailingTokens(in)) { std::cout << "{\"error\":\"short input or trailing tokens\"}" << std::endl; continue; } helper = std::make_shared<DirectionalLightHelper>(std::make_shared<DirectionalLight>(), size); }
             else if (which == "hemisphere") { double size = 0; in >> size; if (in.fail() || !noTrailingTokens(in)) { std::cout << "{\"error\":\"short input or trailing tokens\"}" << std::endl; continue; } helper = std::make_shared<HemisphereLightHelper>(std::make_shared<HemisphereLight>(), size); }
+            else if (which == "spotlight") { if (in.fail() || !noTrailingTokens(in)) { std::cout << "{\"error\":\"trailing tokens\"}" << std::endl; continue; } helper = std::make_shared<SpotLightHelper>(std::make_shared<SpotLight>()); }
             else if (which == "box3") { double minx = 0, miny = 0, minz = 0, maxx = 0, maxy = 0, maxz = 0; in >> minx >> miny >> minz >> maxx >> maxy >> maxz; if (in.fail() || !noTrailingTokens(in)) { std::cout << "{\"error\":\"short input or trailing tokens\"}" << std::endl; continue; }
                 helper = std::make_shared<Box3Helper>(std::make_shared<Box3>(Vector3(minx, miny, minz), Vector3(maxx, maxy, maxz))); }
             else if (which == "planehelper") { double nx = 0, ny = 0, nz = 0, constant = 0, size = 0; in >> nx >> ny >> nz >> constant >> size; if (in.fail() || !noTrailingTokens(in)) { std::cout << "{\"error\":\"short input or trailing tokens\"}" << std::endl; continue; }
