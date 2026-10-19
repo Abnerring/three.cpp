@@ -92,40 +92,9 @@
    - **误报：实现位置不同**。`InstancedInterleavedBuffer.copy/clone/toJSON` 已经完整实现在 `prototype()` 里（`copy` 搬 `meshPerAttribute`、`clone` 写回结果、`toJSON` 加 flag 与值），只是不在头文件里。
    - **真实缺口，但受限**：`BufferGeometry.setIndirect/getIndirect`（需要两个字段 → 受第 24 条布局限制）；`Material.onBeforeCompile/customProgramCacheKey`（着色器钩子，且上游由函数源码字符串取 cache key）；`ObjectLoader.parseShapes`（需要 `ShapeGeometry.fromJSON`）；`ObjectLoader.parseImages`（宿主边界，见第 27 条）。
    - **扫描脚本的教训**：只在头文件里找方法名会漏掉原型注册、也会漏掉 `.cpp` 里的定义；应把 `src/` 下同名 `.h` 与 `.cpp` 一起搜，并把"空方法体"识别出来，否则每轮都会重新发现同一批幽灵。
-29. **`threecpp.threejs-webgl-lights-states-parity` 会挂死，原因已定位到具体 seed**。这个差分在 ctest 里给了 7200 秒超时，实际观察是：单元版 `threecpp.webgl-lights-states-unit`（82 断言 / 12 用例）**0.2 秒通过**，而差分版**永远不返回**，进程 CPU 接近零 —— 所以不是慢，是**卡住**。
-   - **不是脚本的问题**：单独运行 `ThreeJsWebGLLightsParityProbe.exe`（不经过 node、标准输入直接关掉）同样挂住。另外顺带发现 `compare-webgl-lights.mjs` 第 46 行调用 `execFileSync(probe,[],{encoding,...})` **没有传 `input`**，探针若读 stdin 就等不到 EOF；这一条要一起修，但它不是主因。
-   - **挂在哪：seed 26**。给 48 个 seed 的循环加 `fprintf` 后，输出停在 `seed 26`，即 `lightsCase(26, 0)` 内部不返回。
-   - **可疑位置**：`src/renderers/webgl/WebGLLights.cpp` 里有多处**由 JS 数值驱动、没有上限**的循环 —— 例如 `for(double i=0;i<length.toNumber();++i)`（第 90 行）与 `for(double j=0;j<cascadeCount.toNumber();++j)`（第 112 行）。`undefined.toNumber()` 给 NaN，循环会跳过；但如果某个字段给出**极大值**，循环就等于死循环。
-   - **下一步**：在 `lightsCase(26,0)` 里把第 90/112 行的边界值打印出来（`length`、`cascadeCount` 等），确认是哪个数值异常大；这既可能是指令的期望值写法问题，也可能是端口把某个默认值算错。
-   - **纪律**：在修好之前把这个测试当作**已知失败** ✗，不要因为它通过而宣称渲染相关的差分可信；也不要让它进普通门禁（它会挂住 CI）。
-10. **FileLoader 传输契约（冻结，实现时照此写，不要再设计）**：上游用 fetch / Request / Response / ReadableStream / AbortController / ProgressEvent / DOMParser / TextDecoder，原生侧没有这些宿主对象，因此把**只有一处**的宿主边界收窄成一个注入函数，其余逻辑照源码逐行移植。
-   - 注入方式：模块级 `FileLoader::setTransport(JSValue)`，等价于 `globalThis.fetch`；未注入时 `load()` 显式抛错（说明未配置传输），不静默失败。
-   - 传输入参：一个 JSValue 对象，字段 `url`（字符串，已过 `path` 与 `manager.resolveURL`）、`method`（恒为 GET）、`headers`（普通对象，来自 `requestHeader`）、`credentials`（`include` 或 `same-origin`，取自 `withCredentials`）、`signal`（对象，含布尔字段 `aborted`，由 `abort()` 置位）。
-   - 传输返回：一个 JSValue 对象，字段 `status`（数值，0 与 200 视为成功，0 时按上游输出 `FileLoader: HTTP Status 0 received.` 警告）、`statusText`、`url`、`headers`（对象，含方法 `get(name)`，用于 `X-File-Size` 与 `Content-Length`）、`chunks`（**有序数组**，每项为 Uint8Array 形状的字节序列；分块按序投递以复现上游逐块读取的行为）。
-   - 进度事件：每投递一块后，向上游注册的每个 `onProgress` 回调传入 `{type: progress, lengthComputable, loaded, total}`，其中 `total` 取 `X-File-Size` 优先、否则 `Content-Length`、再否则 0，`lengthComputable` 为 total 非 0，`loaded` 为累计字节数；这与上游 ReadableStream 包装的时序一一对应。
-   - responseType：`arraybuffer` 合并各块为一个字节缓冲；`text` 按 UTF-8 解码（`mimeType` 含 charset 时只接受 utf-8，其它标签显式报未实现）；`json` 解码后解析；`blob` 与 `document` 显式抛未实现错误（DOMParser 与 Blob 在原生侧不存在），不得伪造结果。
-   - 其余状态机照源码：缓存键为 `file:` 前缀加 url、命中缓存时经 setTimeout 等价的零延迟投递并在其间调用 `manager.itemStart`；重复请求复用 `loading[url]` 回调列表；成功后只在此处写缓存并回调所有等待者；失败时若回调列表已被删除则只 `manager.itemError` 并重抛，否则回调每个 `onError` 再 `itemError`；最后无条件 `manager.itemEnd`。
-   - 参数生效时机：`mimeType` 与 `responseType` 在发起请求时各取一次快照，之后修改不影响进行中的请求。
-9. **加固差分前先分辨探针是"单侧"还是"两侧配对"**：
-   - 单侧（只改 JS 侧即可加固）：摘要统计、场景列表、注入序列等都在 .mjs 里，C++ 探针按既有协议被动接收。例：`compare-camera-utils.mjs`、`compare-loft-decal.mjs`、`compare-mesh-surface-sampler.mjs`、`compare-animation-clip-creator.mjs`、`compare-curve-extras.mjs`、以及 `compare-animation-runtime.mjs` 的摘要统计（第 50 轮只加了比较值计数）。
-   - 两侧配对（必须同时改 C++ 探针与脚本，再重编）：`compare-runtime.mjs` 用 `const expected = {}` 加 `emit(name, value)` 收集具名 trace，C++ 探针必须产出**同名的每一项**，否则 `compare` 会报缺失 —— 因此加固它是"C++ 加发射 + JS 加 emit + 重编 + 验证"的完整闭环，不是多写几行。
-   - 判断方法：打开 .mjs 看它是否有 `emit` / 固定具名键集合；若 `expected` 的键由脚本枚举而探针只是逐行应答，则通常属单侧（但仍需确认协议）。
-8. **流程纪律（本轮踩到，务必遵守）**：
-   - 验证命令失败时**不要提交**，即使怀疑失败原因是自己调用姿势不对 —— 先看清输出、再用正确方式复跑一次，通过后才提交。本轮我曾把脚本与 git commit 放在同一条命令里，脚本因我传错了探针二进制名（ENOENT）而失败，我却仍然提交了；事后用注册的 ctest 复跑确认改动本身没问题，但操作顺序是错的。
-   - **过滤输出时不要连错误一起滤掉**：同一轮我用只匹配 files changed 的过滤器查看提交结果，恰好把失败信息挡在视野之外。凡是用 Select-String / grep 收窄输出，都要同时保留 error / Error / FAILED / Exception 等模式。
-   - 探针二进制名不要凭记忆拼：`build/bin/` 下的可执行名与脚本名并不一一对应（例如动画运行时探针并非 compare-animation-runtime 对应的同名文件）。最可靠的做法是**直接用 ctest 跑注册好的用例**（它自带正确路径），或在 test/CMakeLists.txt 里查 $<TARGET_FILE:...> 的名字。
-7. **差分网络的运行时覆盖清单与判断方法（采集于本轮）**：判断"某模块有没有差分覆盖"**不能 grep 导入语句** —— 这个仓库的加载方式至少有三种（字面量 url 调用、为把 three 说明符指向 src/Three.js 而使用的 base64 data URL、以及目录枚举加动态循环），静态扫描必然漏报（曾据此得出"59 个模块无覆盖"的错误结论）。可靠做法：运行 ctest --test-dir build -R parity -E webgl-lights-states -V -j 4，然后采集各探针自报的摘要行。
-   - 当前规模（131 个测试全绿，无空转探针）：V8 array sort 1272 cases / 1738420 comparator calls；Addon math 5316 场景；CurveExtras 28176；RectAreaLight 65717 项比较；Advanced geometry 103833 值/身份；JSM shaders 52 模块 / 8029 项；Convex hull 358 场景；SortUtils 748 场景 / 178302 元素；MeshSurfaceSampler 73 场景；BufferGeometryUtils 110 场景 / 15 操作；Teapot 84 场景 / 262656 分量。
-   - 加固候选（**按比较量而非场景数排序** —— 场景数不等于覆盖强度，这一条同样适用于本清单本身）：Runtime parity 仅 674 次比较，数量级明显低于同类；Animation runtime parity 15 个场景且**不自报比较数**，强度无法判断，应先让它自报或补足场景。先前按场景数把 Storage parity（35）、InterleavedBuffer parity（43）、Interleaved attribute parity（46）也列为偏薄是**误判**：场景少不等于比较少，例如 Extended runtime parity 只有 7 个场景却做了 15345 次转换，DataUtils parity 只有 24 个场景却覆盖全部 65536 个半精度编码。
-6. **同一类风险的系统排查结果（审计，未修）**：MeshSurfaceSampler 的越界读取修好之后，我把 `examples/jsm` 下全部 17 处 `fromBufferAttribute` 调用点过了一遍，判断哪些可能被越界下标触达（JS 得 `undefined` → NaN，原生则是越界读内存）。结论是**风险收敛到“索引缓冲区损坏”这一种输入**：
-   - 安全（下标由 count 循环界定，不依赖数据内容）：DecalGeometry 的非索引分支、ConvexHull（`i < position.count`）、MeshSurfaceSampler（已修）。
-   - 依赖索引数据、数据畸形时可越界：DecalGeometry 的索引分支、BufferGeometryUtils（`computeMorphedAttributes` 与顶点合并读取）、VertexNormalsHelper、VertexTangentsHelper —— 这些位置的下标直接来自 index 属性的值。
-   - 与 MeshSurfaceSampler 的关键区别：那一处**无需畸形数据**即可触达（顶点数不是 3 的倍数就会走到），因此优先修；这一批需要**索引值超出 position.count** 的畸形几何，严重性低一档但属同一缺陷类别。
-   - 修法与已落地的 `readInto` 相同：在读取处按 JS TypedArray 语义判界，越界返回 NaN。若要补测试，场景应构造一个索引值超出 `position.count` 的几何。：`examples/jsm/math/MeshSurfaceSampler` 在"顶点数不是 3 的倍数"的几何上会**越界读写**，而上游不会。复现：一个只有 2 个顶点的 position 属性（`count/3 = 0.67`）。上游 `new Float32Array(0.67)` 经 ToIndex 得长度 0，`build()` 的 `for (i < 0.67)` 仍跑一次，对长度 0 的数组写 `faceWeights[0]` 被**静默忽略**，于是 `distribution` 为空；`_sampleFaceIndex` 读到 `distribution[-1]` 得 `undefined`，`random() * undefined = NaN`，`_binarySearch(NaN)` 因 `start <= end`（0 <= -1）不成立而返回 -1，最后 `_sampleFace(-1)` 用负下标读属性得到 `undefined` → 采样结果是 NaN —— **全程不抛错**。C++ 侧两处不同：`std::vector<float> faceWeights(static_cast<std::size_t>(0.67))` 长度为 0 却仍写 `faceWeights[0]`（**越界写**），且我的 `sampleFaceIndex` 对空分布显式抛 `JSTypeError`（上游此处不抛）。修法：按 ToIndex 语义定长并让越界写被忽略（或先判定 `i < size`），`sampleFaceIndex` 去掉抛错、让 NaN 走到 `binarySearch` 返回 -1，`sampleFace` 对负下标按 JS 的 `undefined` 语义产出 NaN 而不是读内存。补测需要给探针加一个"2 顶点几何"的网格类型。
-
-## 三、已完结的近期工作（勿重复）
-
-- 数学对齐：`src/` 内三角函数与非三角初等函数（`pow/exp/log/log2`）全部走 `JSNumberMath`（fdlibm 适配），差分 2,491 + 921 + 2,869 + 146 场景逐位一致；`Math.sqrt` 与 `Math.sqrt` 同为正确舍入，无需替换。
-- `Color` 的四个历史 gamma API 已按 r187 事实删除。
-- addons：`jsm/shaders` 全 52 个模块（8,029 项比较）、`jsm/math/{ColorSpaces,SimplexNoise,ConvexHull,MeshSurfaceSampler}`、`jsm/geometries/{Parametric*,BoxLine,RoundedBox,ConvexGeometry,LoftGeometry,DecalGeometry,TeapotGeometry}`、`jsm/utils/{SortUtils,SkeletonUtils,BufferGeometryUtils,CameraUtils}`、`jsm/lights/RectAreaLight*`（65,717 项比较）、`jsm/animation/AnimationClipCreator`（51 场景 / 884 条目）。
-- 尚未补齐的记录项：`CreateVisibilityAnimation` 的 duration 0 已纳入并通过（见 VALIDATION.md 最新一段）。
+29. **`threecpp.threejs-webgl-lights-states-parity` 会挂死，挂点在探针里，不在端口里**（重要更正）。这个测试带着 7200 秒超时，从未在本会话跑完。逐层定位的结果推翻了"端口死循环"的初判：
+   - 单元版 `threecpp.webgl-lights-states-unit`（82 断言 / 12 用例）**0.2 秒通过** ✓；差分版 CPU 接近零，不是慢，是卡住。
+   - 单独运行 `ThreeJsWebGLLightsParityProbe.exe`（不经 node、标准输入关掉）同样挂住，所以**也不是** `compare-webgl-lights.mjs` 的问题。顺带发现该脚本第 46 行调用 `execFileSync(probe,[],{encoding,...})` **没有传 `input`**，探针若读 stdin 会等不到 EOF —— 这是真实缺陷，应当修，但不是主因。
+   - 在原生 `src/renderers/webgl/WebGLLights.cpp` 的 `setup` 返回处加打印后，最后一个用例仍然打印了 `setup done` ✓ —— 说明**端口正常返回**。而挂在 `encode(state)` 之前的打印**没有出现** ✗，也就是说卡住的位置在**探针构造函数 `light(seed+i, i, trace, mode)`** 里，属于**测试代码** ✗，不是端口逻辑。
+   - **结论**：渲染灯光状态的端口行为目前**没有被证明有问题**，只是这个差分**从未跑通** ✗。下一步应当在探针的 `light()` 里加进度打印（按 `i` 与 `type`），找出哪个类型/字段让探针自转。
+   - **纪律**：修好之前不要让它进普通门禁（会挂住 CI）；也不要因为单元版通过就宣称渲染灯光状态的差分级验证已完成。
