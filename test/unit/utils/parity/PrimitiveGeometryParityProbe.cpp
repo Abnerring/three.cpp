@@ -10,6 +10,7 @@
 #include "geometries/LatheGeometry.h"
 #include "extras/core/Path.h"
 #include "extras/core/CurvePath.h"
+#include "extras/core/ShapePath.h"
 #include "extras/curves/LineCurve.h"
 #include "geometries/ShapeGeometry.h"
 #include "extras/core/Shape.h"
@@ -817,6 +818,23 @@ int main() {
             path.add(std::make_shared<LineCurve>(std::make_shared<Vector2>(bx, by), std::make_shared<Vector2>(cx, cy)));
             std::cout << "{\"kind\":\"curvepath\",\"curves\":" << path.curves->size() << ",\"points\":[";
             for (int i = 0; i <= 4; i += 1) { const auto point = path.getPoint(i / 4.0); if (i > 0) std::cout << ","; std::cout << "[" << bits(static_cast<float>(point.x)) << "," << bits(static_cast<float>(point.y)) << "]"; }
+            std::cout << "]}" << std::endl;
+            continue;
+        } else if (kind == "shapath") {
+            double count = 0;
+            in >> count;
+            std::vector<double> coordinates;
+            for (int k = 0; k < static_cast<int>(count) * 2; k += 1) { double value = 0; in >> value; coordinates.push_back(value); }
+            if (in.fail() || !noTrailingTokens(in)) { std::cout << "{\"error\":\"short input or trailing tokens\"}" << std::endl; continue; }
+            ShapePath shapePath;
+            for (int k = 0; k < static_cast<int>(count); k += 1) {
+                if (k == 0) shapePath.moveTo(coordinates[0], coordinates[1]);
+                else shapePath.lineTo(coordinates[k * 2], coordinates[k * 2 + 1]);
+            }
+            std::cout << "{\"kind\":\"shapath\",\"type\":\"" << shapePath.type << "\",\"subPaths\":" << shapePath.subPaths->size();
+            std::cout << ",\"curves\":" << (shapePath.subPaths->empty() ? 0 : static_cast<int>(shapePath.subPaths->front()->curves->size()));
+            std::cout << ",\"points\":[";
+            if (!shapePath.subPaths->empty()) { for (int i = 0; i <= 4; i += 1) { const auto point = shapePath.subPaths->front()->getPoint(i / 4.0); if (i > 0) std::cout << ","; std::cout << "[" << bits(static_cast<float>(point.x)) << "," << bits(static_cast<float>(point.y)) << "]"; } }
             std::cout << "]}" << std::endl;
             continue;
         } else {

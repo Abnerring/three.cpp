@@ -714,3 +714,22 @@ for (let i = 0; i < curvePathScenarios.length; i += 1) {
     assert.deepEqual(curvePathLines[i], expected, `scenario ${line}`);
 }
 console.log(`curve path parity: ${curvePathScenarios.length} scenarios`);
+// The shape path: the outline a shape is built from.
+const {ShapePath} = await import(pathToFileURL(path.join(sourceDir, 'src/extras/core/ShapePath.js')).href);
+const shapePathScenarios = [
+    ['shapath 4 0 0 2 0 2 2 0 2', [[0, 0], [2, 0], [2, 2], [0, 2]]],
+    ['shapath 3 0 0 1 0 0 1', [[0, 0], [1, 0], [0, 1]]],
+];
+const shapePathRaw = execFileSync(probePath, [], {input: shapePathScenarios.map(([line]) => line).join('\n'), encoding: 'utf8'});
+const shapePathLines = shapePathRaw.trim().split('\n').map((line) => JSON.parse(line));
+for (let i = 0; i < shapePathScenarios.length; i += 1) {
+    const [line, coordinates] = shapePathScenarios[i];
+    const shapePath = new ShapePath();
+    coordinates.forEach(([x, y], index) => { if (index === 0) shapePath.moveTo(x, y); else shapePath.lineTo(x, y); });
+    const subPath = shapePath.subPaths[0];
+    const expected = {kind: 'shapath', type: shapePath.type, subPaths: shapePath.subPaths.length,
+        curves: subPath ? subPath.curves.length : 0,
+        points: subPath ? [0, 0.25, 0.5, 0.75, 1].map((t) => { const p = subPath.getPoint(t); return [bitOf(p.x), bitOf(p.y)]; }) : []};
+    assert.deepEqual(shapePathLines[i], expected, `scenario ${line}`);
+}
+console.log(`shape path parity: ${shapePathScenarios.length} scenarios`);
