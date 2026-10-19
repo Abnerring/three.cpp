@@ -99,6 +99,14 @@
    - **已定位到具体夹具**：在探针的 `light()` 入口打印后，输出停在 `light seed=18 type=1` —— `type 1` 就是 **`LightProbe`**，即**构造这个夹具**时自转 ✗。这一步与端口无关（端口 `setup` 已打印返回 ✓）。
    - **结论**：渲染灯光状态的端口行为目前**没有被证明有问题**，只是这个差分**从未跑通** ✗。下一步有两条路：一是在 `LightProbe` 夹具里继续二分（看是 `coefficients` 的 9 次赋值还是 `is`+type 的属性名出问题）；二是**两侧同时跳过 `LightProbe`**（`.mjs` 里过滤、探针里跳过），先让其余灯型跑通并纳入门禁，把 `LightProbe` 留作已知缺口 —— 后者更快见效。
    - **纪律**：修好之前不要让它进普通门禁（会挂住 CI）；也不要因为单元版通过就宣称渲染灯光状态的差分级验证已完成。
+36. **"渲染到纹理"的分阶段计划，附勘察到的实际缺口**。先给结论：后端底子比想象的厚，缺的是**入口**而不是**机制**。
+   - **已有的**：`src/core/RenderTarget.h` 的数据模型（`textures`、`depthTexture`、`viewport`/`scissor`）；`src/renderers/VulkanRenderer.cpp` 里的 `VkRenderPass`/`VkImage`/`VkImageView`/`VkFramebuffer` 与带 mip 层的图像屏障（约 1410 行那段 `barrier` lambda 已经按 `levels` 逐层转换）。
+   - **缺的（按依赖顺序）**：
+     1. `VulkanRenderer` 只有 `render(Scene&, Camera&)`（`src/renderers/VulkanRenderer.h:61`），**没有** `setRenderTarget` / `getRenderTarget` / `getActiveCubeFace` / `getActiveMipmapLevel`。上游这四个方法是 `CubeCamera.update`、`PMREMGenerator` 和高层渲染入口的共同前置。
+     2. 渲染通道目前只有一条（面向窗口），需要按"当前绑定目标"选择或创建 `VkRenderPass`/`VkFramebuffer`，并处理颜色/深度附着的布局转换与 mip 层选择。
+     3. 立方体渲染目标类型（六面 + 每面 mip 链）。本端口没有 `WebGLCubeRenderTarget` 的等价物；`RenderTarget3D` 是另一回事。
+     4. 预滤波的两个 pass（模糊与等距柱状采样）及其着色器。`ShaderChunk` 已有，但这两个 pass 的采样逻辑在 `PMREMGenerator` 内部。
+   - **建议的最小里程碑**：先只做 (1)+(2) 的一个子集——把场景渲染到一张 2D 离屏纹理并能读回——用一个单元测试固定住；再扩到六面；最后才是 `PMREMGenerator`。每一步都能独立验证，避免一次性接上一个无法调试的大件。
 35. **`PMREMGenerator` 是 `src/` 内最后一项真工程，它卡在后端的渲染目标能力上，而不是卡在移植工作量上**。依赖面清点：
    - 上游 import 的是 `WebGLCubeRenderTarget`、`ShaderMaterial`、`CubeCamera`、`BoxGeometry`、`ShaderChunk`、`MathUtils.floorPowerOfTwo`、`Color`、`Vector3`。其中后面七项本端口都有（`CubeCamera` 见第 109 轮），真正缺的是**第一项**。
    - 本端口只有 `src/core/RenderTarget.h` 与 `RenderTarget3D.h`，**没有立方体渲染目标**；Vulkan 后端（`src/renderers/vulkan/`）目前只有管线布局、着色器编译、uniform 缓冲、绑定与缓冲命令这些**管线构件**，没有"渲染到纹理 / 立方体面 / mip 链"的通道机制。
