@@ -194,8 +194,8 @@
     "note": "Accepted port scope is src and examples/jsm, including tracked third-party dependencies. Editor/manual web applications are excluded from native application rewrites. Native host behavior, packaging and all three platforms require separate implementation and verification evidence."
   },
   "counts": {
-    "partial-unverified": 295,
-    "missing": 646,
+    "partial-unverified": 296,
+    "missing": 645,
     "vulkan-port-pending": 290,
     "dependency-unverified": 20
   },
@@ -203,8 +203,8 @@
     "src": {
       "modules": 755,
       "counts": {
-        "partial-unverified": 211,
-        "missing": 254,
+        "partial-unverified": 212,
+        "missing": 253,
         "vulkan-port-pending": 290
       }
     },
@@ -656,7 +656,7 @@
       "path": "src/audio",
       "upstreamFiles": 5,
       "moduleCount": 5,
-      "modulesWithCppFiles": 3,
+      "modulesWithCppFiles": 4,
       "verifiedComplete": 0
     },
     {
@@ -1753,11 +1753,11 @@
       "scope": "src",
       "kind": "core",
       "upstreamSha256": "c3795c6b8322a3a3aa2609a5e35f2c2f6b207c29a7214281892702c5faf8f00d",
-      "header": null,
-      "implementation": null,
+      "header": "src/audio/AudioAnalyser.h",
+      "implementation": "src/audio/AudioAnalyser.cpp",
       "expectedHeader": "src/audio/AudioAnalyser.h",
       "expectedImplementation": "src/audio/AudioAnalyser.cpp",
-      "status": "missing",
+      "status": "partial-unverified",
       "verifiedComplete": false,
       "apiExtraction": "static-only",
       "verification": {
@@ -1766,7 +1766,9 @@
           "pointer": "/modules/21"
         },
         "upstreamUnitTests": [],
-        "cppUnitTests": [],
+        "cppUnitTests": [
+          "test/unit/src/audio/AudioAnalyser.tests.cpp"
+        ],
         "reviewedImplementation": [],
         "differentialResults": [],
         "renderingResults": [],

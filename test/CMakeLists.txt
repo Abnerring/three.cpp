@@ -19,6 +19,7 @@ add_executable(THREECPPTests
         unit/src/audio/AudioContext.tests.cpp
         unit/src/audio/Audio.tests.cpp
         unit/src/audio/AudioListener.tests.cpp
+        unit/src/audio/AudioAnalyser.tests.cpp
         unit/src/core/BufferGeometryIndirect.tests.cpp
     unit/src/math/Vector3.tests.cpp
     unit/src/math/Vector4.tests.cpp
