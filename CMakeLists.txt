@@ -34,6 +34,7 @@ add_library(threecpp
     src/math/interpolants/CubicInterpolant.cpp src/math/interpolants/QuaternionLinearInterpolant.cpp
     src/math/interpolants/BezierInterpolant.cpp
     src/core/EventDispatcher.cpp src/core/Object3D.cpp src/core/JSValue.cpp src/core/NativeObject.cpp
+    src/audio/AudioContext.cpp
     src/core/NativeRenderingObject.cpp src/core/Layers.cpp src/core/JSObject.cpp src/core/JSNumber.cpp
     src/core/JSWeakRef.cpp src/core/JSFinalizationRegistry.cpp
     src/core/BufferAttribute.cpp src/core/BufferGeometry.cpp src/core/JSDataSnapshot.cpp

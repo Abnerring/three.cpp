@@ -194,8 +194,8 @@
     "note": "Accepted port scope is src and examples/jsm, including tracked third-party dependencies. Editor/manual web applications are excluded from native application rewrites. Native host behavior, packaging and all three platforms require separate implementation and verification evidence."
   },
   "counts": {
-    "partial-unverified": 292,
-    "missing": 649,
+    "partial-unverified": 293,
+    "missing": 648,
     "vulkan-port-pending": 290,
     "dependency-unverified": 20
   },
@@ -203,8 +203,8 @@
     "src": {
       "modules": 755,
       "counts": {
-        "partial-unverified": 208,
-        "missing": 257,
+        "partial-unverified": 209,
+        "missing": 256,
         "vulkan-port-pending": 290
       }
     },
@@ -656,7 +656,7 @@
       "path": "src/audio",
       "upstreamFiles": 5,
       "moduleCount": 5,
-      "modulesWithCppFiles": 0,
+      "modulesWithCppFiles": 1,
       "verifiedComplete": 0
     },
     {
@@ -1778,11 +1778,11 @@
       "scope": "src",
       "kind": "core",
       "upstreamSha256": "463e8eb1850596a03142608ffd826173f3b39fb0bd3f91b57df193047ee120eb",
-      "header": null,
-      "implementation": null,
+      "header": "src/audio/AudioContext.h",
+      "implementation": "src/audio/AudioContext.cpp",
       "expectedHeader": "src/audio/AudioContext.h",
       "expectedImplementation": "src/audio/AudioContext.cpp",
-      "status": "missing",
+      "status": "partial-unverified",
       "verifiedComplete": false,
       "apiExtraction": "static-only",
       "verification": {
@@ -1793,7 +1793,9 @@
         "upstreamUnitTests": [
           "test/unit/src/audio/AudioContext.tests.js"
         ],
-        "cppUnitTests": [],
+        "cppUnitTests": [
+          "test/unit/src/audio/AudioContext.tests.cpp"
+        ],
         "reviewedImplementation": [],
         "differentialResults": [],
         "renderingResults": [],
