@@ -107,6 +107,7 @@ target_sources(threecpp PRIVATE
     src/loaders/LoadingManager.cpp src/loaders/AnimationLoader.cpp
     src/loaders/BufferGeometryLoader.cpp
     src/loaders/ImageLoader.cpp
+    src/loaders/ImageBitmapLoader.cpp
     src/loaders/TextureLoader.cpp
     src/loaders/CubeTextureLoader.cpp
     src/extras/ImageUtils.cpp
