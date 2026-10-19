@@ -10,6 +10,10 @@ const sourceDir = process.argv[2];
 const probePath = process.argv[3];
 
 const {BoxGeometry} = await import(pathToFileURL(path.join(sourceDir, 'src/geometries/BoxGeometry.js')).href);
+const {ShapeGeometry} = await import(pathToFileURL(path.join(sourceDir, 'src/geometries/ShapeGeometry.js')).href);
+const {Shape} = await import(pathToFileURL(path.join(sourceDir, 'src/extras/core/Shape.js')).href);
+const {EdgesGeometry} = await import(pathToFileURL(path.join(sourceDir, 'src/geometries/EdgesGeometry.js')).href);
+const {WireframeGeometry} = await import(pathToFileURL(path.join(sourceDir, 'src/geometries/WireframeGeometry.js')).href);
 const {PlaneGeometry} = await import(pathToFileURL(path.join(sourceDir, 'src/geometries/PlaneGeometry.js')).href);
 const {CircleGeometry} = await import(pathToFileURL(path.join(sourceDir, 'src/geometries/CircleGeometry.js')).href);
 const {RingGeometry} = await import(pathToFileURL(path.join(sourceDir, 'src/geometries/RingGeometry.js')).href);
@@ -78,6 +82,12 @@ const scenarios = [
     ['polyhedron tetrahedron 2 2', () => new TetrahedronGeometry(2, 2)],
     ['lathe 6 0 6.283185307179586 3 0 0 1 0 0 1', () => new LatheGeometry([new Vector2(0, 0), new Vector2(1, 0), new Vector2(0, 1)], 6, 0, Math.PI * 2)],
     ['lathe 8 0.5 3 4 0 1 1 1 1 0 0 0', () => new LatheGeometry([new Vector2(0, 1), new Vector2(1, 1), new Vector2(1, 0), new Vector2(0, 0)], 8, 0.5, 3)],
+    ['shape 4 4 0 0 2 0 2 2 0 2', () => { const shape = new Shape(); shape.moveTo(0, 0); shape.lineTo(2, 0); shape.lineTo(2, 2); shape.lineTo(0, 2); return new ShapeGeometry(shape, 4); }],
+    ['shape 12 3 0 0 1 0 0 1', () => { const shape = new Shape(); shape.moveTo(0, 0); shape.lineTo(1, 0); shape.lineTo(0, 1); return new ShapeGeometry(shape, 12); }],
+    ['edges 2 2 2 1', () => new EdgesGeometry(new BoxGeometry(2, 2, 2, 1, 1, 1), 1)],
+    ['edges 2 2 2 30', () => new EdgesGeometry(new BoxGeometry(2, 2, 2, 1, 1, 1), 30)],
+    ['wireframe 2 2 2', () => new WireframeGeometry(new BoxGeometry(2, 2, 2, 1, 1, 1))],
+    ['wireframe 1 3 5', () => new WireframeGeometry(new BoxGeometry(1, 3, 5, 1, 1, 1))],
 ];
 
 const raw = execFileSync(probePath, [], {input: scenarios.map(([line]) => line).join('\n'), encoding: 'utf8', maxBuffer: 64 * 1024 * 1024});

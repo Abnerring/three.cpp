@@ -18,6 +18,8 @@
 #include "geometries/CylinderGeometry.h"
 #include "geometries/PlaneGeometry.h"
 #include "geometries/SphereGeometry.h"
+#include "geometries/EdgesGeometry.h"
+#include "geometries/WireframeGeometry.h"
 #include "geometries/TorusGeometry.h"
 #include "geometries/TorusKnotGeometry.h"
 #include "geometries/RingGeometry.h"
@@ -121,6 +123,28 @@ int main() {
                 points->push_back(std::make_shared<Vector2>(x, y));
             }
             geometry = std::make_shared<LatheGeometry>(points, segments, phiStart, phiLength);
+        } else if (kind == "shape") {
+            double curveSegments = 0, count = 0;
+            in >> curveSegments >> count;
+            auto shape = std::make_shared<Shape>();
+            for (int i = 0; i < static_cast<int>(count); i += 1) {
+                double x = 0, y = 0;
+                in >> x >> y;
+                if (i == 0) shape->moveTo(x, y);
+                else shape->lineTo(x, y);
+            }
+            ShapeGeometry::Shapes shapes{std::shared_ptr<Shape>(shape)};
+            geometry = std::make_shared<ShapeGeometry>(shapes, curveSegments);
+        } else if (kind == "edges") {
+            double width = 0, height = 0, depth = 0, threshold = 0;
+            in >> width >> height >> depth >> threshold;
+            auto source = std::make_shared<BoxGeometry>(width, height, depth, 1, 1, 1);
+            geometry = std::make_shared<EdgesGeometry>(source, threshold);
+        } else if (kind == "wireframe") {
+            double width = 0, height = 0, depth = 0;
+            in >> width >> height >> depth;
+            auto source = std::make_shared<BoxGeometry>(width, height, depth, 1, 1, 1);
+            geometry = std::make_shared<WireframeGeometry>(source);
         } else {
             std::cout << "{\"error\":\"unknown kind\"}" << std::endl;
             continue;
