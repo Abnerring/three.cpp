@@ -35,6 +35,7 @@
 #include "animation/tracks/VectorKeyframeTrack.h"
 #include "animation/tracks/QuaternionKeyframeTrack.h"
 #include "animation/tracks/BooleanKeyframeTrack.h"
+#include "animation/tracks/StringKeyframeTrack.h"
 #include "extras/curves/QuadraticBezierCurve3.h"
 #include "extras/curves/CubicBezierCurve3.h"
 #include "extras/curves/CatmullRomCurve3.h"
@@ -401,7 +402,25 @@ int main() {
             }
             std::cout << "]}" << std::endl;
             continue;
-        } else if (kind == "track") {
+        } else if (kind == "text") {
+            double count = 0;
+            in >> count;
+            std::vector<double> times;
+            for (int k = 0; k < static_cast<int>(count); k += 1) { double value = 0; in >> value; times.push_back(value); }
+            std::vector<std::string> words;
+            std::string word;
+            while (in >> word) words.push_back(word);
+            if (words.empty()) { std::cout << "{\"error\":\"short input\"}" << std::endl; continue; }
+            StringKeyframeTrack track(JSValue(".s"), InterpolantArray(times), InterpolantArray(words));
+            std::cout << "{\"kind\":\"text\",\"valueSize\":" << track.getValueSize() << ",\"results\":[";
+            const auto interpolant = track.createInterpolant();
+            for (int i = 0; i <= 4; i += 1) {
+                interpolant->evaluate(i / 4.0);
+                if (i > 0) std::cout << ",";
+                std::cout << "\"" << interpolant->resultBuffer.get(0).toString() << "\"";
+            }
+            std::cout << "]}" << std::endl;
+            continue;        } else if (kind == "track") {
             std::string which;
             double count = 0;
             in >> which >> count;

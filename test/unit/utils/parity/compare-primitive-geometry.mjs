@@ -233,6 +233,7 @@ const {ColorKeyframeTrack} = await import(pathToFileURL(path.join(sourceDir, 'sr
 const {VectorKeyframeTrack} = await import(pathToFileURL(path.join(sourceDir, 'src/animation/tracks/VectorKeyframeTrack.js')).href);
 const {QuaternionKeyframeTrack} = await import(pathToFileURL(path.join(sourceDir, 'src/animation/tracks/QuaternionKeyframeTrack.js')).href);
 const {BooleanKeyframeTrack} = await import(pathToFileURL(path.join(sourceDir, 'src/animation/tracks/BooleanKeyframeTrack.js')).href);
+const {StringKeyframeTrack} = await import(pathToFileURL(path.join(sourceDir, 'src/animation/tracks/StringKeyframeTrack.js')).href);
 
 const trackScenarios = [
     ['track number 3 0 1 2 3 0 10 20', () => new NumberKeyframeTrack('.v', [0, 1, 2], [0, 10, 20])],
@@ -256,3 +257,19 @@ for (let i = 0; i < trackScenarios.length; i += 1) {
     assert.deepEqual(trackLines[i], expected, `scenario ${line}`);
 }
 console.log(`track parity: ${trackScenarios.length} scenarios`);
+// The string track carries words rather than numbers, so it is compared separately.
+const textScenarios = [
+    ['text 3 0 1 2 a b c', () => new StringKeyframeTrack('.s', [0, 1, 2], ['a', 'b', 'c'])],
+    ['text 4 0 1 2 3 idle walk run jump', () => new StringKeyframeTrack('.s', [0, 1, 2, 3], ['idle', 'walk', 'run', 'jump'])],
+];
+const textRaw = execFileSync(probePath, [], {input: textScenarios.map(([line]) => line).join('\n'), encoding: 'utf8'});
+const textLines = textRaw.trim().split('\n').map((line) => JSON.parse(line));
+for (let i = 0; i < textScenarios.length; i += 1) {
+    const [line, build] = textScenarios[i];
+    const track = build();
+    const interpolant = track.createInterpolant();
+    const results = [0, 0.25, 0.5, 0.75, 1].map((t) => { interpolant.evaluate(t); return interpolant.resultBuffer[0]; });
+    const expected = {kind: 'text', valueSize: track.getValueSize(), results};
+    assert.deepEqual(textLines[i], expected, `scenario ${line}`);
+}
+console.log(`text parity: ${textScenarios.length} scenarios`);
