@@ -143,3 +143,26 @@ for (let i = 0; i < curveScenarios.length; i += 1) {
     assert.deepEqual(curveLines[i], expected, `scenario ${line}`);
 }
 console.log(`curve parity: ${curveScenarios.length} scenarios`);
+// The plain 3D curves: the parameter point at five samples, again as bits.
+const {LineCurve3} = await import(pathToFileURL(path.join(sourceDir, 'src/extras/curves/LineCurve3.js')).href);
+const {QuadraticBezierCurve3} = await import(pathToFileURL(path.join(sourceDir, 'src/extras/curves/QuadraticBezierCurve3.js')).href);
+const {CubicBezierCurve3} = await import(pathToFileURL(path.join(sourceDir, 'src/extras/curves/CubicBezierCurve3.js')).href);
+
+const simpleCurveScenarios = [
+    ['line3 0 0 0 1 2 3', () => new LineCurve3(new Vector3(0, 0, 0), new Vector3(1, 2, 3))],
+    ['quad3 0 0 0 1 2 0 3 0 1', () => new QuadraticBezierCurve3(new Vector3(0, 0, 0), new Vector3(1, 2, 0), new Vector3(3, 0, 1))],
+    ['cubic3 0 0 0 1 2 0 3 -2 0 4 0 1', () => new CubicBezierCurve3(new Vector3(0, 0, 0), new Vector3(1, 2, 0), new Vector3(3, -2, 0), new Vector3(4, 0, 1))],
+];
+
+const simpleRaw = execFileSync(probePath, [], {input: simpleCurveScenarios.map(([line]) => line).join('\n'), encoding: 'utf8'});
+const simpleLines = simpleRaw.trim().split('\n').map((line) => JSON.parse(line));
+for (let i = 0; i < simpleCurveScenarios.length; i += 1) {
+    const [line, build] = simpleCurveScenarios[i];
+    const curve = build();
+    const expected = {
+        kind: line.split(' ')[0],
+        points: [0, 0.25, 0.5, 0.75, 1].map((t) => { const p = curve.getPoint(t); return [bitOf(p.x), bitOf(p.y), bitOf(p.z)]; }),
+    };
+    assert.deepEqual(simpleLines[i], expected, `scenario ${line}`);
+}
+console.log(`simple curve parity: ${simpleCurveScenarios.length} scenarios`);

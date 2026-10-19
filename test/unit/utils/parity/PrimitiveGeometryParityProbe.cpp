@@ -19,6 +19,9 @@
 #include "geometries/PlaneGeometry.h"
 #include "geometries/SphereGeometry.h"
 #include "geometries/TubeGeometry.h"
+#include "extras/curves/LineCurve3.h"
+#include "extras/curves/QuadraticBezierCurve3.h"
+#include "extras/curves/CubicBezierCurve3.h"
 #include "extras/curves/CatmullRomCurve3.h"
 #include "math/Vector3.h"
 #include "geometries/ExtrudeGeometry.h"
@@ -69,6 +72,8 @@ int main() {
         std::istringstream in(line);
         std::string kind;
         if (!(in >> kind)) continue;
+        // A short line leaves numbers unread, which would build a different object than intended and
+        // look like a port bug. Refuse it instead.
         std::shared_ptr<BufferGeometry> geometry;
         if (kind == "box") {
             double width = 0, height = 0, depth = 0, ws = 0, hs = 0, ds = 0;
@@ -243,6 +248,46 @@ int main() {
                 const auto pointAt = curve.getPointAt(i / 4.0);
                 if (i > 0) std::cout << ",";
                 std::cout << "[" << bits(static_cast<float>(pointAt.x)) << "," << bits(static_cast<float>(pointAt.y)) << "," << bits(static_cast<float>(pointAt.z)) << "]";
+            }
+            std::cout << "]}" << std::endl;
+            continue;
+        } else if (kind == "line3") {
+            double ax = 0, ay = 0, az = 0, bx = 0, by = 0, bz = 0;
+            in >> ax >> ay >> az >> bx >> by >> bz;
+            LineCurve3 curve(std::make_shared<Vector3>(ax, ay, az), std::make_shared<Vector3>(bx, by, bz));
+            if (in.fail()) { std::cout << "{\"error\":\"short input\"}" << std::endl; continue; }
+            std::cout << "{\"kind\":\"line3\",\"points\":[";
+            for (int i = 0; i <= 4; i += 1) {
+                const auto point = curve.getPoint(i / 4.0);
+                if (i > 0) std::cout << ",";
+                std::cout << "[" << bits(static_cast<float>(point.x)) << "," << bits(static_cast<float>(point.y)) << "," << bits(static_cast<float>(point.z)) << "]";
+            }
+            std::cout << "]}" << std::endl;
+            continue;
+        } else if (kind == "quad3") {
+            double ax = 0, ay = 0, az = 0, bx = 0, by = 0, bz = 0, cx = 0, cy = 0, cz = 0;
+            in >> ax >> ay >> az >> bx >> by >> bz >> cx >> cy >> cz;
+            if (in.fail()) { std::cout << "{\"error\":\"short input\"}" << std::endl; continue; }
+            QuadraticBezierCurve3 curve(std::make_shared<Vector3>(ax, ay, az), std::make_shared<Vector3>(bx, by, bz), std::make_shared<Vector3>(cx, cy, cz));
+            std::cout << "{\"kind\":\"quad3\",\"points\":[";
+            for (int i = 0; i <= 4; i += 1) {
+                const auto point = curve.getPoint(i / 4.0);
+                if (i > 0) std::cout << ",";
+                std::cout << "[" << bits(static_cast<float>(point.x)) << "," << bits(static_cast<float>(point.y)) << "," << bits(static_cast<float>(point.z)) << "]";
+            }
+            std::cout << "]}" << std::endl;
+            continue;
+        } else if (kind == "cubic3") {
+            double p[12] = {};
+            for (int k = 0; k < 12; k += 1) in >> p[k];
+            if (in.fail()) { std::cout << "{\"error\":\"short input\"}" << std::endl; continue; }
+            CubicBezierCurve3 curve(std::make_shared<Vector3>(p[0], p[1], p[2]), std::make_shared<Vector3>(p[3], p[4], p[5]),
+                                    std::make_shared<Vector3>(p[6], p[7], p[8]), std::make_shared<Vector3>(p[9], p[10], p[11]));
+            std::cout << "{\"kind\":\"cubic3\",\"points\":[";
+            for (int i = 0; i <= 4; i += 1) {
+                const auto point = curve.getPoint(i / 4.0);
+                if (i > 0) std::cout << ",";
+                std::cout << "[" << bits(static_cast<float>(point.x)) << "," << bits(static_cast<float>(point.y)) << "," << bits(static_cast<float>(point.z)) << "]";
             }
             std::cout << "]}" << std::endl;
             continue;
