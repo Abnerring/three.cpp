@@ -43,6 +43,19 @@
 #include "lights/HemisphereLight.h"
 #include "lights/LightProbe.h"
 #include "lights/RectAreaLight.h"
+#include "materials/LineBasicMaterial.h"
+#include "materials/LineDashedMaterial.h"
+#include "materials/PointsMaterial.h"
+#include "materials/SpriteMaterial.h"
+#include "materials/ShadowMaterial.h"
+#include "materials/MeshDepthMaterial.h"
+#include "materials/MeshDistanceMaterial.h"
+#include "materials/MeshNormalMaterial.h"
+#include "materials/MeshLambertMaterial.h"
+#include "materials/MeshPhongMaterial.h"
+#include "materials/MeshToonMaterial.h"
+#include "materials/MeshMatcapMaterial.h"
+#include "materials/MeshPhysicalMaterial.h"
 #include "extras/curves/QuadraticBezierCurve3.h"
 #include "extras/curves/CubicBezierCurve3.h"
 #include "extras/curves/CatmullRomCurve3.h"
@@ -489,6 +502,40 @@ int main() {
             if (auto spot = std::dynamic_pointer_cast<SpotLight>(light)) std::cout << ",\"distance\":" << bits(static_cast<float>(spot->distance)) << ",\"angle\":" << bits(static_cast<float>(spot->angle)) << ",\"penumbra\":" << bits(static_cast<float>(spot->penumbra)) << ",\"decay\":" << bits(static_cast<float>(spot->decay));
             if (auto area = std::dynamic_pointer_cast<RectAreaLight>(light)) std::cout << ",\"width\":" << bits(static_cast<float>(area->width)) << ",\"height\":" << bits(static_cast<float>(area->height));
             std::cout << "}" << std::endl;
+            continue;
+        } else if (kind == "mat") {
+            std::string which;
+            in >> which;
+            std::shared_ptr<Material> material;
+            if (which == "linebasic") material = std::make_shared<LineBasicMaterial>();
+            else if (which == "linedashed") material = std::make_shared<LineDashedMaterial>();
+            else if (which == "points") material = std::make_shared<PointsMaterial>();
+            else if (which == "sprite") material = std::make_shared<SpriteMaterial>();
+            else if (which == "shadow") material = std::make_shared<ShadowMaterial>();
+            else if (which == "depth") material = std::make_shared<MeshDepthMaterial>();
+            else if (which == "distance") material = std::make_shared<MeshDistanceMaterial>();
+            else if (which == "normal") material = std::make_shared<MeshNormalMaterial>();
+            else if (which == "lambert") material = std::make_shared<MeshLambertMaterial>();
+            else if (which == "phong") material = std::make_shared<MeshPhongMaterial>();
+            else if (which == "toon") material = std::make_shared<MeshToonMaterial>();
+            else if (which == "matcap") material = std::make_shared<MeshMatcapMaterial>();
+            else if (which == "physical") material = std::make_shared<MeshPhysicalMaterial>();
+            else { std::cout << "{\"error\":\"unknown material\"}" << std::endl; continue; }
+            std::cout << "{\"kind\":\"mat\",\"which\":\"" << which << "\",\"type\":\"" << material->type << "\"";
+            std::cout << ",\"fields\":{";
+            std::cout << "\"opacity\":" << bits(static_cast<float>(material->opacity));
+            std::cout << ",\"transparent\":" << (material->transparent ? "true" : "false");
+            std::cout << ",\"visible\":" << (material->visible ? "true" : "false");
+            std::cout << ",\"side\":" << material->side;
+            std::cout << ",\"blending\":" << material->blending;
+            std::cout << ",\"depthTest\":" << (material->depthTest ? "true" : "false");
+            std::cout << ",\"depthWrite\":" << (material->depthWrite ? "true" : "false");
+            std::cout << ",\"alphaTest\":" << bits(static_cast<float>(material->alphaTest));
+            std::cout << ",\"premultipliedAlpha\":" << (material->premultipliedAlpha ? "true" : "false");
+            std::cout << ",\"dithering\":" << (material->dithering ? "true" : "false");
+            std::cout << ",\"toneMapped\":" << (material->toneMapped ? "true" : "false");
+            std::cout << ",\"vertexColors\":" << (material->vertexColors ? "true" : "false");
+            std::cout << "}}" << std::endl;
             continue;
         } else {
             std::cout << "{\"error\":\"unknown kind\"}" << std::endl;

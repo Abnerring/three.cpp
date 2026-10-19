@@ -307,3 +307,48 @@ for (let i = 0; i < lightScenarios.length; i += 1) {
     assert.deepEqual(lightLines[i], expected, `scenario ${line}`);
 }
 console.log(`light parity: ${lightScenarios.length} scenarios`);
+// The materials, compared on the defaults they all share.
+const materialModules = {
+    linebasic: ['LineBasicMaterial', 'src/materials/LineBasicMaterial.js'],
+    linedashed: ['LineDashedMaterial', 'src/materials/LineDashedMaterial.js'],
+    points: ['PointsMaterial', 'src/materials/PointsMaterial.js'],
+    sprite: ['SpriteMaterial', 'src/materials/SpriteMaterial.js'],
+    shadow: ['ShadowMaterial', 'src/materials/ShadowMaterial.js'],
+    depth: ['MeshDepthMaterial', 'src/materials/MeshDepthMaterial.js'],
+    distance: ['MeshDistanceMaterial', 'src/materials/MeshDistanceMaterial.js'],
+    normal: ['MeshNormalMaterial', 'src/materials/MeshNormalMaterial.js'],
+    lambert: ['MeshLambertMaterial', 'src/materials/MeshLambertMaterial.js'],
+    phong: ['MeshPhongMaterial', 'src/materials/MeshPhongMaterial.js'],
+    toon: ['MeshToonMaterial', 'src/materials/MeshToonMaterial.js'],
+    matcap: ['MeshMatcapMaterial', 'src/materials/MeshMatcapMaterial.js'],
+    physical: ['MeshPhysicalMaterial', 'src/materials/MeshPhysicalMaterial.js'],
+};
+const materialClasses = {};
+for (const [which, [name, modulePath]] of Object.entries(materialModules)) {
+    const module = await import(pathToFileURL(path.join(sourceDir, modulePath)).href);
+    materialClasses[which] = module[name];
+}
+const materialScenarios = Object.keys(materialModules).map((which) => [`mat ${which}`, which]);
+
+const materialRaw = execFileSync(probePath, [], {input: materialScenarios.map(([line]) => line).join('\n'), encoding: 'utf8'});
+const materialLines = materialRaw.trim().split('\n').map((line) => JSON.parse(line));
+for (let i = 0; i < materialScenarios.length; i += 1) {
+    const [line, which] = materialScenarios[i];
+    const material = new materialClasses[which]();
+    const expected = {kind: 'mat', which, type: material.type, fields: {
+        opacity: bitOf(material.opacity),
+        transparent: material.transparent,
+        visible: material.visible,
+        side: material.side,
+        blending: material.blending,
+        depthTest: material.depthTest,
+        depthWrite: material.depthWrite,
+        alphaTest: bitOf(material.alphaTest),
+        premultipliedAlpha: material.premultipliedAlpha,
+        dithering: material.dithering,
+        toneMapped: material.toneMapped,
+        vertexColors: material.vertexColors,
+    }};
+    assert.deepEqual(materialLines[i], expected, `scenario ${line}`);
+}
+console.log(`material parity: ${materialScenarios.length} scenarios`);
