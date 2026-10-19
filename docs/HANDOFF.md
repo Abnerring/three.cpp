@@ -99,6 +99,10 @@
    - **已定位到具体夹具**：在探针的 `light()` 入口打印后，输出停在 `light seed=18 type=1` —— `type 1` 就是 **`LightProbe`**，即**构造这个夹具**时自转 ✗。这一步与端口无关（端口 `setup` 已打印返回 ✓）。
    - **结论**：渲染灯光状态的端口行为目前**没有被证明有问题**，只是这个差分**从未跑通** ✗。下一步有两条路：一是在 `LightProbe` 夹具里继续二分（看是 `coefficients` 的 9 次赋值还是 `is`+type 的属性名出问题）；二是**两侧同时跳过 `LightProbe`**（`.mjs` 里过滤、探针里跳过），先让其余灯型跑通并纳入门禁，把 `LightProbe` 留作已知缺口 —— 后者更快见效。
    - **纪律**：修好之前不要让它进普通门禁（会挂住 CI）；也不要因为单元版通过就宣称渲染灯光状态的差分级验证已完成。
+37. **本环境没有 Vulkan SDK，因此后端改动无法验证；这是硬性环境约束，不是待办**。证据：`build/CMakeCache.txt` 里 `THREECPP_BUILD_VULKAN:BOOL=OFF`，并且 `THREECPP_VULKAN_INCLUDE_DIR:PATH=THREECPP_VULKAN_INCLUDE_DIR-NOTFOUND`、`THREECPP_GLSLANG_VALIDATOR:FILEPATH=...-NOTFOUND`。后果很具体：`test/CMakeLists.txt` 第 413–485 行的 `if(THREECPP_BUILD_VULKAN)` 整块被跳过，`VulkanRendererTests`（第 481 行）根本不会被生成，`cmake --build build --target VulkanRendererTests` 只会得到 `unknown target`。
+   - 我试过的排查顺序（记下来省得重走）：先怀疑 ninja 的 `premature end of file`，删掉 `.ninja_log`/`.ninja_deps` 后该警告消失但目标仍然不存在；再用 `cmake -S . -B build` 重新生成，`build.ninja` 正常写出（0.93 MB）但目标依旧没有；最后读缓存才发现选项是 OFF。
+   - **含义**：任何"渲染到纹理、立方体目标、预滤波"的改动，在本环境里只能做到"库能编译"，**没有可运行的验证途径**。按本项目"不留未验证代码"的规则，这类改动必须**先获得可验证的环境**再落地。反过来也要注意：`VulkanRenderer.cpp` 本身在库里是会编译的，所以"库能编译"不等于"后端可验证"，两者不要混。
+   - 若要解锁：安装 Vulkan SDK（提供 `vulkan/vulkan.h`、loader 与 `glslangValidator`），再用 `-DTHREECPP_BUILD_VULKAN=ON` 配置。届时第 36 条的分阶段计划可以直接执行。
 36. **"渲染到纹理"的分阶段计划，附勘察到的实际缺口**。先给结论：后端底子比想象的厚，缺的是**入口**而不是**机制**。
    - **已有的**：`src/core/RenderTarget.h` 的数据模型（`textures`、`depthTexture`、`viewport`/`scissor`）；`src/renderers/VulkanRenderer.cpp` 里的 `VkRenderPass`/`VkImage`/`VkImageView`/`VkFramebuffer` 与带 mip 层的图像屏障（约 1410 行那段 `barrier` lambda 已经按 `levels` 逐层转换）。
    - **缺的（按依赖顺序）**：
