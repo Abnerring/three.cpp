@@ -359,6 +359,21 @@ const {AxesHelper} = await import(pathToFileURL(path.join(sourceDir, 'src/helper
 const {GridHelper} = await import(pathToFileURL(path.join(sourceDir, 'src/helpers/GridHelper.js')).href);
 const {Box3Helper} = await import(pathToFileURL(path.join(sourceDir, 'src/helpers/Box3Helper.js')).href);
 const {Box3} = await import(pathToFileURL(path.join(sourceDir, 'src/math/Box3.js')).href);
+const {PlaneHelper} = await import(pathToFileURL(path.join(sourceDir, 'src/helpers/PlaneHelper.js')).href);
+const {Plane} = await import(pathToFileURL(path.join(sourceDir, 'src/math/Plane.js')).href);
+
+// A helper child is its type, plus the vertex count and first points when the child is a line.
+const describeHelperChildren = (helper) => helper.children.map((child) => {
+    const described = {type: child.type};
+    if (child.isLine && child.geometry) {
+        const position = child.geometry.attributes.position;
+        described.count = position.count;
+        const values = [];
+        for (let k = 0; k < Math.min(position.count * 3, 6); k++) values.push(bitOf(position.array[k]));
+        described.points = values;
+    }
+    return described;
+});
 
 const helperScenarios = [
     ['helper axes 1', () => new AxesHelper(1)],
@@ -366,6 +381,7 @@ const helperScenarios = [
     ['helper grid 10 10', () => new GridHelper(10, 10)],
     ['helper grid 6 3', () => new GridHelper(6, 3)],
     ['helper box3 -1 -1 -1 1 1 1', () => new Box3Helper(new Box3(new Vector3(-1, -1, -1), new Vector3(1, 1, 1)))],
+    ['helper planehelper 0 1 0 -1 2', () => new PlaneHelper(new Plane(new Vector3(0, 1, 0), -1), 2)],
 ];
 const helperRaw = execFileSync(probePath, [], {input: helperScenarios.map(([line]) => line).join('\n'), encoding: 'utf8'});
 const helperLines = helperRaw.trim().split('\n').map((line) => JSON.parse(line));
@@ -377,7 +393,7 @@ for (let i = 0; i < helperScenarios.length; i += 1) {
     const points = [];
     for (let k = 0; k < limit; k++) points.push(bitOf(position.array[k]));
     const expected = {kind: 'helper', which: line.split(' ')[1], type: helper.type,
-        selfCount: position.count, selfPoints: points, children: []};
+        selfCount: position.count, selfPoints: points, children: describeHelperChildren(helper)};
     assert.deepEqual(helperLines[i], expected, `scenario ${line}`);
 }
 console.log(`helper parity: ${helperScenarios.length} scenarios`);
