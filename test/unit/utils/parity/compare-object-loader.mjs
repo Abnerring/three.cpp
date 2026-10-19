@@ -49,7 +49,9 @@ const documents=[
             {type:'Mesh',uuid:'near',material:'m',geometry:'g'},
             {type:'Mesh',uuid:'far',material:'m',geometry:'g'}
         ]},geometries:[geometry],materials:[material]},
-    {object:{type:'Scene',uuid:'scene',backgroundBlurriness:0.5,backgroundIntensity:2,
+    {object:{type:'Mesh',uuid:'multi',geometry:'g',material:['m','m2']},
+     geometries:[geometry],
+     materials:[material,{type:'MeshBasicMaterial',uuid:'m2',color:65280}]},    {object:{type:'Scene',uuid:'scene',backgroundBlurriness:0.5,backgroundIntensity:2,
         fog:{type:'Fog',color:16777215,near:1,far:100}}}
 ];
 const encode=value=>{
@@ -62,7 +64,9 @@ const encode=value=>{
 const triple=v=>({x:encode(v.x),y:encode(v.y),z:encode(v.z)});
 const materialSummary=(object)=>{
     const material=object.material;
-    return material?{present:true,type:material.type}:{present:false};
+    if(!material)return {present:false};
+    if(Array.isArray(material))return {present:true,array:true,count:material.length,types:material.map(entry=>entry?entry.type:'')};
+    return {present:true,array:false,type:material.type};
 };const summary=(object,depth=0)=>{
     if(depth>6)return {cut:true};
     return {

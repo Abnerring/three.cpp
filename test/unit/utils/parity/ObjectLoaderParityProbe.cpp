@@ -35,8 +35,16 @@ JsonValue materialSummary(const std::shared_ptr<Object3D>& object) {
     else if (const auto line = std::dynamic_pointer_cast<Line>(object)) material = line->material;
     else if (const auto points = std::dynamic_pointer_cast<Points>(object)) material = points->material;
     else if (const auto sprite = std::dynamic_pointer_cast<Sprite>(object)) material = sprite->material;
+    // The port keeps an array in materials and leaves the single material empty, so the array case is read
+    // from that field and reported by type list rather than by one type name.
+    if (const auto mesh = std::dynamic_pointer_cast<Mesh>(object); mesh && mesh->materialIsArray) {
+        JsonValue::Array types;
+        for (const auto& entry : mesh->materials) types.emplace_back(entry ? entry->type : std::string());
+        return JsonValue(JsonValue::Object{{"present", true}, {"array", true},
+            {"count", static_cast<double>(mesh->materials.size())}, {"types", JsonValue(types)}});
+    }
     if (!material) return JsonValue(JsonValue::Object{{"present", false}});
-    return JsonValue(JsonValue::Object{{"present", true}, {"type", material->type}});
+    return JsonValue(JsonValue::Object{{"present", true}, {"array", false}, {"type", material->type}});
 }JsonValue summary(const std::shared_ptr<Object3D>& object, int depth) {
     if (!object || depth > 6) return JsonValue(JsonValue::Object{{"cut", true}});
     JsonValue::Array children;
