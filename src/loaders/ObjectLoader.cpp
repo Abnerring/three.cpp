@@ -135,19 +135,23 @@ ObjectLoader::Result ObjectLoader::parse(const JSValue& json) {
         for (double index = 0; index < imageList.length(); index += 1) {
             const auto data = imageList.get(index);
             const auto uuid = data.get("uuid").toString();
-            if (data.get("data").isUndefined())
+            // Upstream reads image.url and only then looks inside it, so a record is either {data, ...} or
+            // {url: {data, ...}}. A string url would go to an image loader and needs a host decoder.
+            const auto nested = data.get("data").isUndefined() && data.get("url").isObject();
+            if (data.get("data").isUndefined() && !nested)
                 throw std::runtime_error("ObjectLoader: image records that name a url need a host decoder");
-            const auto kind = data.get("type").toString();
-            const auto values = numbers(data.get("data"));
+            const auto source = nested ? data.get("url") : data;
+            const auto kind = source.get("type").toString();
+            const auto values = numbers(source.get("data"));
             TextureImage::Ptr image;
             if (kind == "Uint8Array") {
                 std::vector<std::uint8_t> bytes; for (const auto value : values) bytes.push_back(static_cast<std::uint8_t>(value));
                 const Uint8Array pixels(bytes);
-                image = std::make_shared<TextureImage>(pixels, data.get("width").toNumber(), data.get("height").toNumber());
+                image = std::make_shared<TextureImage>(pixels, source.get("width").toNumber(), source.get("height").toNumber());
             } else if (kind == "Float32Array") {
                 std::vector<float> floats; for (const auto value : values) floats.push_back(static_cast<float>(value));
                 const Float32Array pixels(floats);
-                image = std::make_shared<TextureImage>(pixels, data.get("width").toNumber(), data.get("height").toNumber());
+                image = std::make_shared<TextureImage>(pixels, source.get("width").toNumber(), source.get("height").toNumber());
             } else {
                 throw std::runtime_error("ObjectLoader: image data type \"" + kind + "\" is not ported yet");
             }

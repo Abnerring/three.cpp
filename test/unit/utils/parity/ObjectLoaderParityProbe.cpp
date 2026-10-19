@@ -7,6 +7,7 @@
 #include "animation/AnimationUtils.h"
 #include "core/JsonValue.h"
 #include "core/Object3D.h"
+#include "core/InterleavedBufferAttribute.h"
 #include "loaders/ObjectLoader.h"
 #include "materials/MeshBasicMaterial.h"
 #include "objects/Line.h"
@@ -45,6 +46,25 @@ JsonValue materialSummary(const std::shared_ptr<Object3D>& object) {
     }
     if (!material) return JsonValue(JsonValue::Object{{"present", false}});
     return JsonValue(JsonValue::Object{{"present", true}, {"array", false}, {"type", material->type}});
+}// The geometry a drawable carries, reported by type and by how much it holds, which is what makes the
+// registry dispatch observable without shipping the whole attribute buffer.
+JsonValue geometrySummary(const std::shared_ptr<Object3D>& object) {
+    std::shared_ptr<BufferGeometry> geometry;
+    if (const auto mesh = std::dynamic_pointer_cast<Mesh>(object)) geometry = mesh->geometry;
+    else if (const auto line = std::dynamic_pointer_cast<Line>(object)) geometry = line->geometry;
+    else if (const auto points = std::dynamic_pointer_cast<Points>(object)) geometry = points->geometry;
+    else if (const auto sprite = std::dynamic_pointer_cast<Sprite>(object)) geometry = sprite->geometry;
+    if (!geometry) return JsonValue(JsonValue::Object{{"present", false}});
+    // A position may be an interleaved attribute, which does not derive from BufferAttribute, so both are
+    // asked before the count is reported.
+    const auto source = geometry->getAttribute("position");
+    double positionCount = 0.0;
+    if (const auto plain = std::dynamic_pointer_cast<BufferAttribute>(source)) positionCount = plain->count;
+    else if (const auto interleaved = std::dynamic_pointer_cast<InterleavedBufferAttribute>(source)) positionCount = interleaved->count.value().toNumber();
+    const auto index = geometry->getIndex();
+    return JsonValue(JsonValue::Object{{"present", true}, {"type", geometry->type},
+        {"positionCount", encode(positionCount)},
+        {"indexCount", encode(index ? index->count : 0.0)}});
 }JsonValue summary(const std::shared_ptr<Object3D>& object, int depth) {
     if (!object || depth > 6) return JsonValue(JsonValue::Object{{"cut", true}});
     JsonValue::Array children;
@@ -60,6 +80,7 @@ JsonValue materialSummary(const std::shared_ptr<Object3D>& object) {
         {"renderOrder", encode(object->renderOrder)},
         {"layers", encode(object->layers.mask.value().toNumber())},
         {"material", materialSummary(object)},
+        {"geometry", geometrySummary(object)},
         {"children", JsonValue(children)}});
 }
 }

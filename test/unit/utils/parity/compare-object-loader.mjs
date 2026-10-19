@@ -70,7 +70,17 @@ const documents=[
      geometries:[geometry],materials:[material],
      images:[{uuid:'img1',url:{data:[0,0,0,255],width:1,height:1,type:'Uint8Array'}},
              {uuid:'img2',url:{data:[0,0,0,255],width:1,height:1,type:'Uint8Array'}}],
-     textures:[{uuid:'mt',image:'img1'},{uuid:'it',image:'img2'}]},    {object:{type:'Mesh',uuid:'multi',geometry:'g',material:['m','m2']},
+     textures:[{uuid:'mt',image:'img1'},{uuid:'it',image:'img2'}]},    {object:{type:'Scene',uuid:'scene',children:[
+        {type:'Mesh',uuid:'box',geometry:'gb',material:'m'},
+        {type:'Mesh',uuid:'sphere',geometry:'gs',material:'m'},
+        {type:'Mesh',uuid:'torus',geometry:'gt',material:'m'}
+    ]},
+     materials:[material],
+     geometries:[
+        {type:'BoxGeometry',uuid:'gb',width:2,height:3,depth:4,widthSegments:1,heightSegments:1,depthSegments:1},
+        {type:'SphereGeometry',uuid:'gs',radius:5,widthSegments:8,heightSegments:6},
+        {type:'TorusGeometry',uuid:'gt',radius:3,tube:1,radialSegments:6,tubularSegments:8}
+    ]},    {object:{type:'Mesh',uuid:'multi',geometry:'g',material:['m','m2']},
      geometries:[geometry],
      materials:[material,{type:'MeshBasicMaterial',uuid:'m2',color:65280}]},    {object:{type:'Scene',uuid:'scene',backgroundBlurriness:0.5,backgroundIntensity:2,
         fog:{type:'Fog',color:16777215,near:1,far:100}}}
@@ -88,6 +98,12 @@ const materialSummary=(object)=>{
     if(!material)return {present:false};
     if(Array.isArray(material))return {present:true,array:true,count:material.length,types:material.map(entry=>entry?entry.type:'')};
     return {present:true,array:false,type:material.type};
+};const geometrySummary=(object)=>{
+    const geometry=object.geometry;
+    if(!geometry)return {present:false};
+    return {present:true,type:geometry.type,
+        positionCount:encode(geometry.attributes?.position?.count??0),
+        indexCount:encode(geometry.index?.count??0)};
 };const summary=(object,depth=0)=>{
     if(depth>6)return {cut:true};
     return {
@@ -95,6 +111,7 @@ const materialSummary=(object)=>{
         position:triple(object.position),quaternion:triple(object.quaternion),scale:triple(object.scale),
         visible:object.visible,renderOrder:encode(object.renderOrder),layers:encode(object.layers.mask),
         material:materialSummary(object),
+        geometry:geometrySummary(object),
         children:(object.children??[]).map(child=>summary(child,depth+1))
     };
 };
@@ -107,8 +124,8 @@ for(let index=0;index<documents.length;++index){
     const actual=JSON.parse(output[index]);
     if(JSON.stringify(actual)!==JSON.stringify(expected)){
         console.log('MISMATCH document',index);
-        console.log('  probe :',JSON.stringify(actual).slice(0,400));
-        console.log('  oracle:',JSON.stringify(expected).slice(0,400));
+        console.log('  probe :',JSON.stringify(actual));
+        console.log('  oracle:',JSON.stringify(expected));
     }
     assert.deepEqual(actual,expected,`document ${index}`);
 }
