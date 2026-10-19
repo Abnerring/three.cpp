@@ -361,6 +361,8 @@ const {Box3Helper} = await import(pathToFileURL(path.join(sourceDir, 'src/helper
 const {Box3} = await import(pathToFileURL(path.join(sourceDir, 'src/math/Box3.js')).href);
 const {PolarGridHelper} = await import(pathToFileURL(path.join(sourceDir, 'src/helpers/PolarGridHelper.js')).href);
 const {CameraHelper} = await import(pathToFileURL(path.join(sourceDir, 'src/helpers/CameraHelper.js')).href);
+const {SkeletonHelper} = await import(pathToFileURL(path.join(sourceDir, 'src/helpers/SkeletonHelper.js')).href);
+const {Object3D: Object3DForHelper} = await import(pathToFileURL(path.join(sourceDir, 'src/core/Object3D.js')).href);
 const {PerspectiveCamera: PerspectiveCameraForHelper} = await import(pathToFileURL(path.join(sourceDir, 'src/cameras/PerspectiveCamera.js')).href);
 const {PlaneHelper} = await import(pathToFileURL(path.join(sourceDir, 'src/helpers/PlaneHelper.js')).href);
 const {Plane} = await import(pathToFileURL(path.join(sourceDir, 'src/math/Plane.js')).href);
@@ -388,6 +390,7 @@ const helperScenarios = [
     ['helper polargrid 5 8 4 16', () => new PolarGridHelper(5, 8, 4, 16)],
     ['helper polargrid 2 4 2 8', () => new PolarGridHelper(2, 4, 2, 8)],
     ['helper camerahelper', () => new CameraHelper(new PerspectiveCameraForHelper())],
+    ['helper skeletonhelper', () => new SkeletonHelper(new Object3DForHelper())],
 ];
 const helperRaw = execFileSync(probePath, [], {input: helperScenarios.map(([line]) => line).join('\n'), encoding: 'utf8'});
 const helperLines = helperRaw.trim().split('\n').map((line) => JSON.parse(line));
