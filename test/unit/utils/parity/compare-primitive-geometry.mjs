@@ -15,6 +15,9 @@ const {CircleGeometry} = await import(pathToFileURL(path.join(sourceDir, 'src/ge
 const {RingGeometry} = await import(pathToFileURL(path.join(sourceDir, 'src/geometries/RingGeometry.js')).href);
 const {ConeGeometry} = await import(pathToFileURL(path.join(sourceDir, 'src/geometries/ConeGeometry.js')).href);
 const {CylinderGeometry} = await import(pathToFileURL(path.join(sourceDir, 'src/geometries/CylinderGeometry.js')).href);
+const {SphereGeometry} = await import(pathToFileURL(path.join(sourceDir, 'src/geometries/SphereGeometry.js')).href);
+const {TorusGeometry} = await import(pathToFileURL(path.join(sourceDir, 'src/geometries/TorusGeometry.js')).href);
+const {TorusKnotGeometry} = await import(pathToFileURL(path.join(sourceDir, 'src/geometries/TorusKnotGeometry.js')).href);
 
 const bitArray = (values) => Array.from(new Uint32Array(new Float32Array(values).buffer));
 
@@ -56,6 +59,12 @@ const scenarios = [
     ['cone 0.75 3 6 2 1 0.25 4', () => new ConeGeometry(0.75, 3, 6, 2, true, 0.25, 4)],
     ['cylinder 1 1 2 8 1 0 0 6.283185307179586', () => new CylinderGeometry(1, 1, 2, 8, 1, false, 0, Math.PI * 2)],
     ['cylinder 0.5 1.5 3 12 3 1 0 4', () => new CylinderGeometry(0.5, 1.5, 3, 12, 3, true, 0, 4)],
+    ['sphere 1 8 6 0 6.283185307179586 0 3.141592653589793', () => new SphereGeometry(1, 8, 6, 0, Math.PI * 2, 0, Math.PI)],
+    ['sphere 2 12 8 0.5 3 0.25 2', () => new SphereGeometry(2, 12, 8, 0.5, 3, 0.25, 2)],
+    ['torus 1 0.4 8 16 6.283185307179586', () => new TorusGeometry(1, 0.4, 8, 16, Math.PI * 2)],
+    ['torus 2 0.5 6 24 3', () => new TorusGeometry(2, 0.5, 6, 24, 3)],
+    ['torusknot 1 0.4 16 8 2 3', () => new TorusKnotGeometry(1, 0.4, 16, 8, 2, 3)],
+    ['torusknot 2 0.3 20 6 3 4', () => new TorusKnotGeometry(2, 0.3, 20, 6, 3, 4)],
 ];
 
 const raw = execFileSync(probePath, [], {input: scenarios.map(([line]) => line).join('\n'), encoding: 'utf8', maxBuffer: 64 * 1024 * 1024});

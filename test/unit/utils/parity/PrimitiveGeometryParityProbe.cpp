@@ -8,6 +8,9 @@
 #include "geometries/ConeGeometry.h"
 #include "geometries/CylinderGeometry.h"
 #include "geometries/PlaneGeometry.h"
+#include "geometries/SphereGeometry.h"
+#include "geometries/TorusGeometry.h"
+#include "geometries/TorusKnotGeometry.h"
 #include "geometries/RingGeometry.h"
 
 #include <cstdint>
@@ -75,6 +78,18 @@ int main() {
             double radiusTop = 0, radiusBottom = 0, height = 0, radialSegments = 0, heightSegments = 0, openEnded = 0, thetaStart = 0, thetaLength = 0;
             in >> radiusTop >> radiusBottom >> height >> radialSegments >> heightSegments >> openEnded >> thetaStart >> thetaLength;
             geometry = std::make_shared<CylinderGeometry>(radiusTop, radiusBottom, height, radialSegments, heightSegments, openEnded != 0.0, thetaStart, thetaLength);
+        } else if (kind == "sphere") {
+            double radius = 0, widthSegments = 0, heightSegments = 0, phiStart = 0, phiLength = 0, thetaStart = 0, thetaLength = 0;
+            in >> radius >> widthSegments >> heightSegments >> phiStart >> phiLength >> thetaStart >> thetaLength;
+            geometry = std::make_shared<SphereGeometry>(radius, widthSegments, heightSegments, phiStart, phiLength, thetaStart, thetaLength);
+        } else if (kind == "torus") {
+            double radius = 0, tube = 0, radialSegments = 0, tubularSegments = 0, arc = 0;
+            in >> radius >> tube >> radialSegments >> tubularSegments >> arc;
+            geometry = std::make_shared<TorusGeometry>(radius, tube, radialSegments, tubularSegments, arc);
+        } else if (kind == "torusknot") {
+            double radius = 0, tube = 0, tubularSegments = 0, radialSegments = 0, p = 0, q = 0;
+            in >> radius >> tube >> tubularSegments >> radialSegments >> p >> q;
+            geometry = std::make_shared<TorusKnotGeometry>(radius, tube, tubularSegments, radialSegments, p, q);
         } else {
             std::cout << "{\"error\":\"unknown kind\"}" << std::endl;
             continue;
