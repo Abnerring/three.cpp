@@ -388,8 +388,8 @@ int main() {
             if (in.fail() || !noTrailingTokens(in)) { std::cout << "{\"error\":\"short input or trailing tokens\"}" << std::endl; continue; }
             EllipseCurve curve(ax, ay, rx, ry, start, end, clockwise != 0.0, rotation);
             std::cout << "{\"kind\":\"ellipse\",\"points\":[";
-            for (int i = 0; i <= 4; i += 1) {
-                const auto point = curve.getPoint(i / 4.0);
+            for (int i = 0; i <= 16; i += 1) {
+                const auto point = curve.getPoint(i / 16.0);
                 if (i > 0) std::cout << ",";
                 std::cout << "[" << bits(static_cast<float>(point.x)) << "," << bits(static_cast<float>(point.y)) << "]";
             }
@@ -401,8 +401,8 @@ int main() {
             if (in.fail() || !noTrailingTokens(in)) { std::cout << "{\"error\":\"short input or trailing tokens\"}" << std::endl; continue; }
             ArcCurve curve(ax, ay, radius, start, end, clockwise != 0.0);
             std::cout << "{\"kind\":\"arc\",\"points\":[";
-            for (int i = 0; i <= 4; i += 1) {
-                const auto point = curve.getPoint(i / 4.0);
+            for (int i = 0; i <= 16; i += 1) {
+                const auto point = curve.getPoint(i / 16.0);
                 if (i > 0) std::cout << ",";
                 std::cout << "[" << bits(static_cast<float>(point.x)) << "," << bits(static_cast<float>(point.y)) << "]";
             }
@@ -414,8 +414,8 @@ int main() {
             if (in.fail() || !noTrailingTokens(in)) { std::cout << "{\"error\":\"short input or trailing tokens\"}" << std::endl; continue; }
             LineCurve curve(std::make_shared<Vector2>(ax, ay), std::make_shared<Vector2>(bx, by));
             std::cout << "{\"kind\":\"line2\",\"points\":[";
-            for (int i = 0; i <= 4; i += 1) {
-                const auto point = curve.getPoint(i / 4.0);
+            for (int i = 0; i <= 16; i += 1) {
+                const auto point = curve.getPoint(i / 16.0);
                 if (i > 0) std::cout << ",";
                 std::cout << "[" << bits(static_cast<float>(point.x)) << "," << bits(static_cast<float>(point.y)) << "]";
             }
@@ -427,7 +427,7 @@ int main() {
             if (in.fail() || !noTrailingTokens(in)) { std::cout << "{\"error\":\"short input or trailing tokens\"}" << std::endl; continue; }
             QuadraticBezierCurve curve(std::make_shared<Vector2>(v[0], v[1]), std::make_shared<Vector2>(v[2], v[3]), std::make_shared<Vector2>(v[4], v[5]));
             std::cout << "{\"kind\":\"quad2\",\"points\":[";
-            for (int i = 0; i <= 4; i += 1) { const auto p = curve.getPoint(i / 4.0); if (i > 0) std::cout << ","; std::cout << "[" << bits(static_cast<float>(p.x)) << "," << bits(static_cast<float>(p.y)) << "]"; }
+            for (int i = 0; i <= 16; i += 1) { const auto p = curve.getPoint(i / 16.0); if (i > 0) std::cout << ","; std::cout << "[" << bits(static_cast<float>(p.x)) << "," << bits(static_cast<float>(p.y)) << "]"; }
             std::cout << "]}" << std::endl;
             continue;
         } else if (kind == "cubic2") {
@@ -436,7 +436,7 @@ int main() {
             if (in.fail() || !noTrailingTokens(in)) { std::cout << "{\"error\":\"short input or trailing tokens\"}" << std::endl; continue; }
             CubicBezierCurve curve(std::make_shared<Vector2>(v[0], v[1]), std::make_shared<Vector2>(v[2], v[3]), std::make_shared<Vector2>(v[4], v[5]), std::make_shared<Vector2>(v[6], v[7]));
             std::cout << "{\"kind\":\"cubic2\",\"points\":[";
-            for (int i = 0; i <= 4; i += 1) { const auto p = curve.getPoint(i / 4.0); if (i > 0) std::cout << ","; std::cout << "[" << bits(static_cast<float>(p.x)) << "," << bits(static_cast<float>(p.y)) << "]"; }
+            for (int i = 0; i <= 16; i += 1) { const auto p = curve.getPoint(i / 16.0); if (i > 0) std::cout << ","; std::cout << "[" << bits(static_cast<float>(p.x)) << "," << bits(static_cast<float>(p.y)) << "]"; }
             std::cout << "]}" << std::endl;
             continue;
         } else if (kind == "spline2") {
@@ -447,7 +447,7 @@ int main() {
             if (in.fail() || !noTrailingTokens(in)) { std::cout << "{\"error\":\"short input or trailing tokens\"}" << std::endl; continue; }
             SplineCurve curve(points);
             std::cout << "{\"kind\":\"spline2\",\"points\":[";
-            for (int i = 0; i <= 4; i += 1) { const auto p = curve.getPoint(i / 4.0); if (i > 0) std::cout << ","; std::cout << "[" << bits(static_cast<float>(p.x)) << "," << bits(static_cast<float>(p.y)) << "]"; }
+            for (int i = 0; i <= 16; i += 1) { const auto p = curve.getPoint(i / 16.0); if (i > 0) std::cout << ","; std::cout << "[" << bits(static_cast<float>(p.x)) << "," << bits(static_cast<float>(p.y)) << "]"; }
             std::cout << "]}" << std::endl;
             continue;
         } else if (kind == "interp") {

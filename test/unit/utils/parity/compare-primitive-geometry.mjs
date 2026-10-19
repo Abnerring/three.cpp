@@ -193,7 +193,7 @@ for (let i = 0; i < flatCurveScenarios.length; i += 1) {
     const curve = build();
     const expected = {
         kind: line.split(' ')[0],
-        points: [0, 0.25, 0.5, 0.75, 1].map((t) => { const p = curve.getPoint(t); return [bitOf(p.x), bitOf(p.y)]; }),
+        points: Array.from({length: 17}, (_, k) => { const p = curve.getPoint(k / 16); return [bitOf(p.x), bitOf(p.y)]; }),
     };
     assert.deepEqual(flatLines[i], expected, `scenario ${line}`);
 }
