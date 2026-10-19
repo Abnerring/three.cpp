@@ -99,6 +99,13 @@
 #include <vector>
 
 namespace {
+// A counted protocol can read too few values if the count is smaller than the data; that error would look like a
+// divergence in the code under test, so any leftover token on the line is refused.
+bool noTrailingTokens(std::istringstream& in) {
+    in >> std::ws;
+    return in.eof();
+}
+
 std::uint32_t bits(float value) {
     std::uint32_t raw = 0;
     std::memcpy(&raw, &value, sizeof(raw));
@@ -313,7 +320,7 @@ int main() {
             double ax = 0, ay = 0, az = 0, bx = 0, by = 0, bz = 0;
             in >> ax >> ay >> az >> bx >> by >> bz;
             LineCurve3 curve(std::make_shared<Vector3>(ax, ay, az), std::make_shared<Vector3>(bx, by, bz));
-            if (in.fail()) { std::cout << "{\"error\":\"short input\"}" << std::endl; continue; }
+            if (in.fail() || !noTrailingTokens(in)) { std::cout << "{\"error\":\"short input or trailing tokens\"}" << std::endl; continue; }
             std::cout << "{\"kind\":\"line3\",\"points\":[";
             for (int i = 0; i <= 4; i += 1) {
                 const auto point = curve.getPoint(i / 4.0);
@@ -325,7 +332,7 @@ int main() {
         } else if (kind == "quad3") {
             double ax = 0, ay = 0, az = 0, bx = 0, by = 0, bz = 0, cx = 0, cy = 0, cz = 0;
             in >> ax >> ay >> az >> bx >> by >> bz >> cx >> cy >> cz;
-            if (in.fail()) { std::cout << "{\"error\":\"short input\"}" << std::endl; continue; }
+            if (in.fail() || !noTrailingTokens(in)) { std::cout << "{\"error\":\"short input or trailing tokens\"}" << std::endl; continue; }
             QuadraticBezierCurve3 curve(std::make_shared<Vector3>(ax, ay, az), std::make_shared<Vector3>(bx, by, bz), std::make_shared<Vector3>(cx, cy, cz));
             std::cout << "{\"kind\":\"quad3\",\"points\":[";
             for (int i = 0; i <= 4; i += 1) {
@@ -338,7 +345,7 @@ int main() {
         } else if (kind == "cubic3") {
             double p[12] = {};
             for (int k = 0; k < 12; k += 1) in >> p[k];
-            if (in.fail()) { std::cout << "{\"error\":\"short input\"}" << std::endl; continue; }
+            if (in.fail() || !noTrailingTokens(in)) { std::cout << "{\"error\":\"short input or trailing tokens\"}" << std::endl; continue; }
             CubicBezierCurve3 curve(std::make_shared<Vector3>(p[0], p[1], p[2]), std::make_shared<Vector3>(p[3], p[4], p[5]),
                                     std::make_shared<Vector3>(p[6], p[7], p[8]), std::make_shared<Vector3>(p[9], p[10], p[11]));
             std::cout << "{\"kind\":\"cubic3\",\"points\":[";
@@ -352,7 +359,7 @@ int main() {
         } else if (kind == "ellipse") {
             double ax = 0, ay = 0, rx = 0, ry = 0, start = 0, end = 0, clockwise = 0, rotation = 0;
             in >> ax >> ay >> rx >> ry >> start >> end >> clockwise >> rotation;
-            if (in.fail()) { std::cout << "{\"error\":\"short input\"}" << std::endl; continue; }
+            if (in.fail() || !noTrailingTokens(in)) { std::cout << "{\"error\":\"short input or trailing tokens\"}" << std::endl; continue; }
             EllipseCurve curve(ax, ay, rx, ry, start, end, clockwise != 0.0, rotation);
             std::cout << "{\"kind\":\"ellipse\",\"points\":[";
             for (int i = 0; i <= 4; i += 1) {
@@ -365,7 +372,7 @@ int main() {
         } else if (kind == "arc") {
             double ax = 0, ay = 0, radius = 0, start = 0, end = 0, clockwise = 0;
             in >> ax >> ay >> radius >> start >> end >> clockwise;
-            if (in.fail()) { std::cout << "{\"error\":\"short input\"}" << std::endl; continue; }
+            if (in.fail() || !noTrailingTokens(in)) { std::cout << "{\"error\":\"short input or trailing tokens\"}" << std::endl; continue; }
             ArcCurve curve(ax, ay, radius, start, end, clockwise != 0.0);
             std::cout << "{\"kind\":\"arc\",\"points\":[";
             for (int i = 0; i <= 4; i += 1) {
@@ -378,7 +385,7 @@ int main() {
         } else if (kind == "line2") {
             double ax = 0, ay = 0, bx = 0, by = 0;
             in >> ax >> ay >> bx >> by;
-            if (in.fail()) { std::cout << "{\"error\":\"short input\"}" << std::endl; continue; }
+            if (in.fail() || !noTrailingTokens(in)) { std::cout << "{\"error\":\"short input or trailing tokens\"}" << std::endl; continue; }
             LineCurve curve(std::make_shared<Vector2>(ax, ay), std::make_shared<Vector2>(bx, by));
             std::cout << "{\"kind\":\"line2\",\"points\":[";
             for (int i = 0; i <= 4; i += 1) {
@@ -391,7 +398,7 @@ int main() {
         } else if (kind == "quad2") {
             double v[6] = {};
             for (int k = 0; k < 6; k += 1) in >> v[k];
-            if (in.fail()) { std::cout << "{\"error\":\"short input\"}" << std::endl; continue; }
+            if (in.fail() || !noTrailingTokens(in)) { std::cout << "{\"error\":\"short input or trailing tokens\"}" << std::endl; continue; }
             QuadraticBezierCurve curve(std::make_shared<Vector2>(v[0], v[1]), std::make_shared<Vector2>(v[2], v[3]), std::make_shared<Vector2>(v[4], v[5]));
             std::cout << "{\"kind\":\"quad2\",\"points\":[";
             for (int i = 0; i <= 4; i += 1) { const auto p = curve.getPoint(i / 4.0); if (i > 0) std::cout << ","; std::cout << "[" << bits(static_cast<float>(p.x)) << "," << bits(static_cast<float>(p.y)) << "]"; }
@@ -400,7 +407,7 @@ int main() {
         } else if (kind == "cubic2") {
             double v[8] = {};
             for (int k = 0; k < 8; k += 1) in >> v[k];
-            if (in.fail()) { std::cout << "{\"error\":\"short input\"}" << std::endl; continue; }
+            if (in.fail() || !noTrailingTokens(in)) { std::cout << "{\"error\":\"short input or trailing tokens\"}" << std::endl; continue; }
             CubicBezierCurve curve(std::make_shared<Vector2>(v[0], v[1]), std::make_shared<Vector2>(v[2], v[3]), std::make_shared<Vector2>(v[4], v[5]), std::make_shared<Vector2>(v[6], v[7]));
             std::cout << "{\"kind\":\"cubic2\",\"points\":[";
             for (int i = 0; i <= 4; i += 1) { const auto p = curve.getPoint(i / 4.0); if (i > 0) std::cout << ","; std::cout << "[" << bits(static_cast<float>(p.x)) << "," << bits(static_cast<float>(p.y)) << "]"; }
@@ -411,7 +418,7 @@ int main() {
             in >> count;
             auto points = std::make_shared<SplineCurve::Points>();
             for (int k = 0; k < static_cast<int>(count); k += 1) { double x = 0, y = 0; in >> x >> y; points->push_back(std::make_shared<Vector2>(x, y)); }
-            if (in.fail()) { std::cout << "{\"error\":\"short input\"}" << std::endl; continue; }
+            if (in.fail() || !noTrailingTokens(in)) { std::cout << "{\"error\":\"short input or trailing tokens\"}" << std::endl; continue; }
             SplineCurve curve(points);
             std::cout << "{\"kind\":\"spline2\",\"points\":[";
             for (int i = 0; i <= 4; i += 1) { const auto p = curve.getPoint(i / 4.0); if (i > 0) std::cout << ","; std::cout << "[" << bits(static_cast<float>(p.x)) << "," << bits(static_cast<float>(p.y)) << "]"; }
@@ -427,7 +434,7 @@ int main() {
             in >> sampleCount;
             std::vector<double> samples;
             for (int k = 0; k < static_cast<int>(sampleCount); k += 1) { double value = 0; in >> value; samples.push_back(value); }
-            if (in.fail()) { std::cout << "{\"error\":\"short input\"}" << std::endl; continue; }
+            if (in.fail() || !noTrailingTokens(in)) { std::cout << "{\"error\":\"short input or trailing tokens\"}" << std::endl; continue; }
             std::shared_ptr<Interpolant> interpolant;
             if (which == "linear") interpolant = std::make_shared<LinearInterpolant>(InterpolantArray(positions), InterpolantArray(samples), sampleSize);
             else if (which == "discrete") interpolant = std::make_shared<DiscreteInterpolant>(InterpolantArray(positions), InterpolantArray(samples), sampleSize);
@@ -472,7 +479,7 @@ int main() {
             in >> valueCount;
             std::vector<double> values;
             for (int k = 0; k < static_cast<int>(valueCount); k += 1) { double value = 0; in >> value; values.push_back(value); }
-            if (in.fail()) { std::cout << "{\"error\":\"short input\"}" << std::endl; continue; }
+            if (in.fail() || !noTrailingTokens(in)) { std::cout << "{\"error\":\"short input or trailing tokens\"}" << std::endl; continue; }
             std::shared_ptr<KeyframeTrack> track;
             if (which == "number") track = std::make_shared<NumberKeyframeTrack>(JSValue(".v"), InterpolantArray(times), InterpolantArray(values));
             else if (which == "color") track = std::make_shared<ColorKeyframeTrack>(JSValue(".c"), InterpolantArray(times), InterpolantArray(values));
@@ -504,20 +511,21 @@ int main() {
                 const Color color(r, g, b);
                 if (which == "ambient") light = std::make_shared<AmbientLight>(color, intensity);
                 else if (which == "directional") light = std::make_shared<DirectionalLight>(color, intensity);
-                else if (which == "point") { double distance = 0, decay = 0; in >> distance >> decay; if (in.fail()) { std::cout << "{\"error\":\"short input\"}" << std::endl; continue; } light = std::make_shared<PointLight>(color, intensity, distance, decay); }
-                else if (which == "spot") { double distance = 0, angle = 0, penumbra = 0, decay = 0; in >> distance >> angle >> penumbra >> decay; if (in.fail()) { std::cout << "{\"error\":\"short input\"}" << std::endl; continue; } light = std::make_shared<SpotLight>(color, intensity, distance, angle, penumbra, decay); }
-                else { double width = 0, height = 0; in >> width >> height; if (in.fail()) { std::cout << "{\"error\":\"short input\"}" << std::endl; continue; } light = std::make_shared<RectAreaLight>(color, intensity, width, height); }
+                else if (which == "point") { double distance = 0, decay = 0; in >> distance >> decay; if (in.fail() || !noTrailingTokens(in)) { std::cout << "{\"error\":\"short input or trailing tokens\"}" << std::endl; continue; } light = std::make_shared<PointLight>(color, intensity, distance, decay); }
+                else if (which == "spot") { double distance = 0, angle = 0, penumbra = 0, decay = 0; in >> distance >> angle >> penumbra >> decay; if (in.fail() || !noTrailingTokens(in)) { std::cout << "{\"error\":\"short input or trailing tokens\"}" << std::endl; continue; } light = std::make_shared<SpotLight>(color, intensity, distance, angle, penumbra, decay); }
+                else { double width = 0, height = 0; in >> width >> height; if (in.fail() || !noTrailingTokens(in)) { std::cout << "{\"error\":\"short input or trailing tokens\"}" << std::endl; continue; } light = std::make_shared<RectAreaLight>(color, intensity, width, height); }
             } else if (which == "hemisphere") {
                 double r2 = 0, g2 = 0, b2 = 0;
                 in >> r >> g >> b >> r2 >> g2 >> b2 >> intensity;
-                if (in.fail()) { std::cout << "{\"error\":\"short input\"}" << std::endl; continue; }
+                if (in.fail() || !noTrailingTokens(in)) { std::cout << "{\"error\":\"short input or trailing tokens\"}" << std::endl; continue; }
                 light = std::make_shared<HemisphereLight>(Color(r, g, b), Color(r2, g2, b2), intensity);
             } else if (which == "probe") {
                 in >> intensity;
-                if (in.fail()) { std::cout << "{\"error\":\"short input\"}" << std::endl; continue; }
+                if (in.fail() || !noTrailingTokens(in)) { std::cout << "{\"error\":\"short input or trailing tokens\"}" << std::endl; continue; }
                 light = std::make_shared<LightProbe>(std::make_shared<SphericalHarmonics3>(), intensity);
             } else { std::cout << "{\"error\":\"unknown light\"}" << std::endl; continue; }
             std::cout << ",\"type\":\"" << light->type << "\"";
+            if (!noTrailingTokens(in)) { std::cout << "{\"error\":\"trailing tokens\"}" << std::endl; continue; }
             std::cout << ",\"color\":[" << bits(static_cast<float>(light->color.r)) << "," << bits(static_cast<float>(light->color.g)) << "," << bits(static_cast<float>(light->color.b)) << "]";
             std::cout << ",\"intensity\":" << bits(static_cast<float>(light->intensity));
             if (auto point = std::dynamic_pointer_cast<PointLight>(light)) std::cout << ",\"distance\":" << bits(static_cast<float>(point->distance)) << ",\"decay\":" << bits(static_cast<float>(point->decay));
@@ -563,11 +571,11 @@ int main() {
             std::string which;
             in >> which;
             std::shared_ptr<Object3D> helper;
-            if (which == "axes") { double size = 0; in >> size; if (in.fail()) { std::cout << "{\"error\":\"short input\"}" << std::endl; continue; } helper = std::make_shared<AxesHelper>(size); }
-            else if (which == "grid") { double size = 0, divisions = 0; in >> size >> divisions; if (in.fail()) { std::cout << "{\"error\":\"short input\"}" << std::endl; continue; } helper = std::make_shared<GridHelper>(size, divisions); }
-            else if (which == "arrow") { double dx = 0, dy = 0, dz = 0, ox = 0, oy = 0, oz = 0, length = 0; in >> dx >> dy >> dz >> ox >> oy >> oz >> length; if (in.fail()) { std::cout << "{\"error\":\"short input\"}" << std::endl; continue; } helper = std::make_shared<ArrowHelper>(Vector3(dx, dy, dz), Vector3(ox, oy, oz), length); }
-            else if (which == "pointlight") { double sphereSize = 0; in >> sphereSize; if (in.fail()) { std::cout << "{\"error\":\"short input\"}" << std::endl; continue; } helper = std::make_shared<PointLightHelper>(std::make_shared<PointLight>(), sphereSize); }
-            else if (which == "directional") { double size = 0; in >> size; if (in.fail()) { std::cout << "{\"error\":\"short input\"}" << std::endl; continue; } helper = std::make_shared<DirectionalLightHelper>(std::make_shared<DirectionalLight>(), size); }
+            if (which == "axes") { double size = 0; in >> size; if (in.fail() || !noTrailingTokens(in)) { std::cout << "{\"error\":\"short input or trailing tokens\"}" << std::endl; continue; } helper = std::make_shared<AxesHelper>(size); }
+            else if (which == "grid") { double size = 0, divisions = 0; in >> size >> divisions; if (in.fail() || !noTrailingTokens(in)) { std::cout << "{\"error\":\"short input or trailing tokens\"}" << std::endl; continue; } helper = std::make_shared<GridHelper>(size, divisions); }
+            else if (which == "arrow") { double dx = 0, dy = 0, dz = 0, ox = 0, oy = 0, oz = 0, length = 0; in >> dx >> dy >> dz >> ox >> oy >> oz >> length; if (in.fail() || !noTrailingTokens(in)) { std::cout << "{\"error\":\"short input or trailing tokens\"}" << std::endl; continue; } helper = std::make_shared<ArrowHelper>(Vector3(dx, dy, dz), Vector3(ox, oy, oz), length); }
+            else if (which == "pointlight") { double sphereSize = 0; in >> sphereSize; if (in.fail() || !noTrailingTokens(in)) { std::cout << "{\"error\":\"short input or trailing tokens\"}" << std::endl; continue; } helper = std::make_shared<PointLightHelper>(std::make_shared<PointLight>(), sphereSize); }
+            else if (which == "directional") { double size = 0; in >> size; if (in.fail() || !noTrailingTokens(in)) { std::cout << "{\"error\":\"short input or trailing tokens\"}" << std::endl; continue; } helper = std::make_shared<DirectionalLightHelper>(std::make_shared<DirectionalLight>(), size); }
             else { std::cout << "{\"error\":\"unknown helper\"}" << std::endl; continue; }
             std::cout << "{\"kind\":\"helper\",\"which\":\"" << which << "\",\"type\":\"" << helper->type << "\"";
             if (auto self = std::dynamic_pointer_cast<Line>(helper)) {
@@ -601,16 +609,16 @@ int main() {
             in >> which;
             std::shared_ptr<Object3D> node;
             std::shared_ptr<RenderTarget> target;
-            if (which == "perspective") { double fov = 0, aspect = 0, near = 0, far = 0; in >> fov >> aspect >> near >> far; if (in.fail()) { std::cout << "{\"error\":\"short input\"}" << std::endl; continue; } node = std::make_shared<PerspectiveCamera>(fov, aspect, near, far); }
-            else if (which == "ortho") { double left = 0, right = 0, top = 0, bottom = 0, near = 0, far = 0; in >> left >> right >> top >> bottom >> near >> far; if (in.fail()) { std::cout << "{\"error\":\"short input\"}" << std::endl; continue; } node = std::make_shared<OrthographicCamera>(left, right, top, bottom, near, far); }
+            if (which == "perspective") { double fov = 0, aspect = 0, near = 0, far = 0; in >> fov >> aspect >> near >> far; if (in.fail() || !noTrailingTokens(in)) { std::cout << "{\"error\":\"short input or trailing tokens\"}" << std::endl; continue; } node = std::make_shared<PerspectiveCamera>(fov, aspect, near, far); }
+            else if (which == "ortho") { double left = 0, right = 0, top = 0, bottom = 0, near = 0, far = 0; in >> left >> right >> top >> bottom >> near >> far; if (in.fail() || !noTrailingTokens(in)) { std::cout << "{\"error\":\"short input or trailing tokens\"}" << std::endl; continue; } node = std::make_shared<OrthographicCamera>(left, right, top, bottom, near, far); }
             else if (which == "scene") node = std::make_shared<Scene>();
             else if (which == "group") node = std::make_shared<Group>();
             else if (which == "mesh") node = std::make_shared<Mesh>();
             else if (which == "points") node = std::make_shared<Points>();
             else if (which == "sprite") node = std::make_shared<Sprite>();
             else if (which == "lod") node = std::make_shared<LOD>();
-            else if (which == "rendertarget") { double width = 0, height = 0; in >> width >> height; if (in.fail()) { std::cout << "{\"error\":\"short input\"}" << std::endl; continue; } target = std::make_shared<RenderTarget>(width, height); }
-            else if (which == "rendertarget3d") { double width = 0, height = 0, depth = 0; in >> width >> height >> depth; if (in.fail()) { std::cout << "{\"error\":\"short input\"}" << std::endl; continue; } target = std::make_shared<RenderTarget3D>(width, height, depth); }
+            else if (which == "rendertarget") { double width = 0, height = 0; in >> width >> height; if (in.fail() || !noTrailingTokens(in)) { std::cout << "{\"error\":\"short input or trailing tokens\"}" << std::endl; continue; } target = std::make_shared<RenderTarget>(width, height); }
+            else if (which == "rendertarget3d") { double width = 0, height = 0, depth = 0; in >> width >> height >> depth; if (in.fail() || !noTrailingTokens(in)) { std::cout << "{\"error\":\"short input or trailing tokens\"}" << std::endl; continue; } target = std::make_shared<RenderTarget3D>(width, height, depth); }
             else { std::cout << "{\"error\":\"unknown node\"}" << std::endl; continue; }
             std::cout << "{\"kind\":\"node\",\"which\":\"" << which << "\"";
             if (target) {
@@ -638,10 +646,10 @@ int main() {
             in >> which;
             std::shared_ptr<Texture> texture;
             if (which == "base") texture = std::make_shared<Texture>();
-            else if (which == "data") { double width = 0, height = 0; in >> width >> height; if (in.fail()) { std::cout << "{\"error\":\"short input\"}" << std::endl; continue; }
+            else if (which == "data") { double width = 0, height = 0; in >> width >> height; if (in.fail() || !noTrailingTokens(in)) { std::cout << "{\"error\":\"short input or trailing tokens\"}" << std::endl; continue; }
                 std::vector<std::uint8_t> bytes(static_cast<std::size_t>(width * height * 4), 0);
                 texture = std::make_shared<DataTexture>(Uint8Array(bytes), width, height); }
-            else if (which == "depth") { double width = 0, height = 0; in >> width >> height; if (in.fail()) { std::cout << "{\"error\":\"short input\"}" << std::endl; continue; } texture = std::make_shared<DepthTexture>(width, height); }
+            else if (which == "depth") { double width = 0, height = 0; in >> width >> height; if (in.fail() || !noTrailingTokens(in)) { std::cout << "{\"error\":\"short input or trailing tokens\"}" << std::endl; continue; } texture = std::make_shared<DepthTexture>(width, height); }
             else { std::cout << "{\"error\":\"unknown texture\"}" << std::endl; continue; }
             std::cout << "{\"kind\":\"texture\",\"which\":\"" << which << "\",\"fields\":{";
             std::cout << "\"mapping\":" << bits(static_cast<float>(texture->mapping));
@@ -665,12 +673,12 @@ int main() {
             double r = 0, g = 0, b = 0, density = 0, near = 0, far = 0;
             if (which == "linear") {
                 in >> r >> g >> b >> near >> far;
-                if (in.fail()) { std::cout << "{\"error\":\"short input\"}" << std::endl; continue; }
+                if (in.fail() || !noTrailingTokens(in)) { std::cout << "{\"error\":\"short input or trailing tokens\"}" << std::endl; continue; }
                 Fog fog(Color(r, g, b), near, far);
                 std::cout << "{\"kind\":\"fog\",\"which\":\"linear\",\"name\":\"" << fog.name << "\",\"color\":[" << bits(static_cast<float>(fog.color.r)) << "," << bits(static_cast<float>(fog.color.g)) << "," << bits(static_cast<float>(fog.color.b)) << "],\"near\":" << bits(static_cast<float>(fog.near)) << ",\"far\":" << bits(static_cast<float>(fog.far)) << "}" << std::endl;
             } else if (which == "exp2") {
                 in >> r >> g >> b >> density;
-                if (in.fail()) { std::cout << "{\"error\":\"short input\"}" << std::endl; continue; }
+                if (in.fail() || !noTrailingTokens(in)) { std::cout << "{\"error\":\"short input or trailing tokens\"}" << std::endl; continue; }
                 FogExp2 fog(Color(r, g, b), density);
                 std::cout << "{\"kind\":\"fog\",\"which\":\"exp2\",\"name\":\"" << fog.name << "\",\"color\":[" << bits(static_cast<float>(fog.color.r)) << "," << bits(static_cast<float>(fog.color.g)) << "," << bits(static_cast<float>(fog.color.b)) << "],\"density\":" << bits(static_cast<float>(fog.density)) << "}" << std::endl;
             } else { std::cout << "{\"error\":\"unknown fog\"}" << std::endl; continue; }
@@ -680,7 +688,7 @@ int main() {
             in >> count;
             std::vector<double> values;
             for (int k = 0; k < static_cast<int>(count); k += 1) { double value = 0; in >> value; values.push_back(value); }
-            if (in.fail()) { std::cout << "{\"error\":\"short input\"}" << std::endl; continue; }
+            if (in.fail() || !noTrailingTokens(in)) { std::cout << "{\"error\":\"short input or trailing tokens\"}" << std::endl; continue; }
             SphericalHarmonics3 sh;
             for (std::size_t k = 0; k < values.size() / 3 && k < 9; k += 1) sh.coefficients[k].set(values[k * 3], values[k * 3 + 1], values[k * 3 + 2]);
             std::cout << "{\"kind\":\"sh\",\"coefficients\":[";
