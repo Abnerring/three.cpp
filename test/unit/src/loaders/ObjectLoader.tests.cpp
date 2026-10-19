@@ -11,6 +11,7 @@
 #include "objects/Points.h"
 #include "cameras/OrthographicCamera.h"
 #include "cameras/PerspectiveCamera.h"
+#include "objects/BatchedMesh.h"
 #include "objects/InstancedMesh.h"
 #include "objects/LOD.h"
 #include "objects/Skeleton.h"
@@ -80,7 +81,7 @@ TEST_CASE("ObjectLoader takes the matrix path and refuses what it cannot build")
     REQUIRE(result.object->position.y == 5.0);
     REQUIRE(result.object->position.z == 6.0);
 
-    const auto unsupported = Animation_detail::parseJSON(R"({"object": {"type": "BatchedMesh"}})");
+    const auto unsupported = Animation_detail::parseJSON(R"({"object": {"type": "RectAreaLight"}})");
     ObjectLoader other;
     REQUIRE_THROWS_AS(other.parse(unsupported), std::runtime_error);
 }
@@ -340,4 +341,37 @@ TEST_CASE("ObjectLoader refuses a material array on a line") {
     })");
     ObjectLoader loader;
     REQUIRE_THROWS_AS(loader.parse(json), std::runtime_error);
+}
+// A batched mesh carries its whole bookkeeping in the document, so the loader has to put every record back
+// rather than rebuild the batch from the geometry alone.
+TEST_CASE("ObjectLoader restores a batched mesh") {
+    const auto realm = JSValue::object();
+    static_cast<void>(realm);
+    const auto json = Animation_detail::parseJSON(R"({
+        "object": {"type": "BatchedMesh", "uuid": "batch", "geometry": "g", "material": "m",
+            "maxInstanceCount": 4, "maxVertexCount": 8, "maxIndexCount": 16,
+            "perObjectFrustumCulled": false, "sortObjects": false,
+            "geometryInitialized": true, "geometryCount": 1,
+            "nextVertexStart": 3, "nextIndexStart": 3,
+            "geometryInfo": [{"vertexStart": 0, "vertexCount": 3, "reservedVertexCount": 3,
+                              "indexStart": 0, "indexCount": 3, "reservedIndexCount": 3,
+                              "start": 0, "count": 3, "active": true}],
+            "instanceInfo": [{"geometryIndex": 0, "active": true, "visible": false}],
+            "availableInstanceIds": [], "availableGeometryIds": []},
+        "geometries": [{"type": "BufferGeometry", "uuid": "g", "data": {"attributes": {}}}],
+        "materials": [{"type": "MeshBasicMaterial", "uuid": "m", "color": 255}]
+    })");
+    ObjectLoader loader;
+    const auto result = loader.parse(json);
+    const auto batch = std::dynamic_pointer_cast<BatchedMesh>(result.object);
+    REQUIRE(batch);
+    REQUIRE(batch->perObjectFrustumCulled == false);
+    REQUIRE(batch->sortObjects == false);
+    REQUIRE(batch->getInstanceCount() == 1.0);
+    REQUIRE(batch->getVisibleAt(0.0) == false);
+    const auto range = batch->getGeometryRangeAt(0.0);
+    REQUIRE(range.vertexStart == 0.0);
+    REQUIRE(range.reservedVertexCount == 3.0);
+    REQUIRE(range.count == 3.0);
+    REQUIRE(batch->getUnusedVertexCount() == 5.0);    // eight vertices, three already reserved
 }

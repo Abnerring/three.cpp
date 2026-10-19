@@ -14,6 +14,7 @@
 #include "loaders/BufferGeometryLoader.h"
 #include "loaders/MaterialLoader.h"
 #include "math/MathUtils.h"
+#include "objects/BatchedMesh.h"
 #include "objects/Bone.h"
 #include "objects/Group.h"
 #include "objects/InstancedMesh.h"
@@ -306,9 +307,59 @@ std::shared_ptr<Object3D> ObjectLoader::parseObject(const JSValue& data) {
         // Upstream stores the uuid here and binds it after the skeletons are built.
         if (!data.get("skeleton").isUndefined()) pendingSkeletons_.emplace_back(mesh, data.get("skeleton").toString());
         object = mesh;
-    }    else if (type == "BatchedMesh" ||
-             type == "PerspectiveCamera" || type == "OrthographicCamera" || type == "RectAreaLight" ||
-             type == "LightProbe" || type.find("Light") != std::string::npos)
+    }    else if (type == "BatchedMesh") {
+        const auto material = materialOf(data.get("material"));
+        const auto mesh = std::make_shared<BatchedMesh>(data.get("maxInstanceCount").toNumber(),
+            data.get("maxVertexCount").toNumber(), data.get("maxIndexCount").toNumber(), material);
+        const auto geometry = geometryOf(data.get("geometry"));
+        mesh->geometry = geometry ? geometry : std::make_shared<BufferGeometry>();
+        if (!data.get("perObjectFrustumCulled").isUndefined()) mesh->perObjectFrustumCulled = data.get("perObjectFrustumCulled").toBoolean();
+        if (!data.get("sortObjects").isUndefined()) mesh->sortObjects = data.get("sortObjects").toBoolean();
+        // The ranges come back as one record per geometry, with the bounds decoded from their JSON forms.
+        const auto infos = data.get("geometryInfo");
+        if (!infos.isUndefined())
+            for (double index = 0; index < infos.length(); index += 1) {
+                const auto source = infos.get(index);
+                BatchedMesh::GeometryInfo info;
+                info.vertexStart = source.get("vertexStart").toNumber();
+                info.vertexCount = source.get("vertexCount").toNumber();
+                info.reservedVertexCount = source.get("reservedVertexCount").toNumber();
+                info.indexStart = source.get("indexStart").toNumber();
+                info.indexCount = source.get("indexCount").toNumber();
+                info.reservedIndexCount = source.get("reservedIndexCount").toNumber();
+                info.start = source.get("start").toNumber();
+                info.count = source.get("count").toNumber();
+                info.active = source.get("active").isUndefined() ? true : source.get("active").toBoolean();
+                if (!source.get("boundingBox").isUndefined()) { Box3 decoded; decoded.fromJSON(source.get("boundingBox")); info.boundingBox = decoded; }
+                if (!source.get("boundingSphere").isUndefined()) { Sphere decoded; decoded.fromJSON(source.get("boundingSphere")); info.boundingSphere = decoded; }
+                mesh->_geometryInfo.push_back(info);
+            }
+        const auto instances = data.get("instanceInfo");
+        if (!instances.isUndefined())
+            for (double index = 0; index < instances.length(); index += 1) {
+                const auto source = instances.get(index);
+                BatchedMesh::InstanceInfo info;
+                info.geometryId = source.get("geometryIndex").toNumber();
+                info.active = source.get("active").isUndefined() ? true : source.get("active").toBoolean();
+                info.visible = source.get("visible").isUndefined() ? true : source.get("visible").toBoolean();
+                mesh->_instanceInfo.push_back(info);
+            }
+        const auto readIds = [](const JSValue& source, std::vector<double>& target) {
+            if (source.isUndefined()) return;
+            for (double index = 0; index < source.length(); index += 1) target.push_back(source.get(index).toNumber());
+        };
+        readIds(data.get("availableInstanceIds"), mesh->_availableInstanceIds);
+        readIds(data.get("availableGeometryIds"), mesh->_availableGeometryIds);
+        if (!data.get("nextIndexStart").isUndefined()) mesh->_nextIndexStart = data.get("nextIndexStart").toNumber();
+        if (!data.get("nextVertexStart").isUndefined()) mesh->_nextVertexStart = data.get("nextVertexStart").toNumber();
+        if (!data.get("geometryCount").isUndefined()) mesh->_geometryCount = data.get("geometryCount").toNumber();
+        if (!data.get("geometryInitialized").isUndefined()) mesh->_geometryInitialized = data.get("geometryInitialized").toBoolean();
+        if (!data.get("boundingBox").isUndefined()) { Box3 decoded; decoded.fromJSON(data.get("boundingBox")); mesh->boundingBox = decoded; }
+        if (!data.get("boundingSphere").isUndefined()) { Sphere decoded; decoded.fromJSON(data.get("boundingSphere")); mesh->boundingSphere = decoded; }
+        // The matrices, indirect and colours textures the document names have no native counterpart: the
+        // matrices and colours live in vectors here, and the indirect table only exists for multi draw.
+        object = mesh;
+    } else if (type == "RectAreaLight" || type == "LightProbe")
         throw std::runtime_error("ObjectLoader: object type \"" + type + "\" is not ported yet");
     else object = std::make_shared<Object3D>();   // upstream falls back to Object3D for an unknown type
 

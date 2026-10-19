@@ -14,7 +14,14 @@
 // texture maps an instance to its geometry range. What is portable is the bookkeeping around them - the
 // per geometry ranges, the per instance records, the geometry initialization and validation - and that is
 // what this first slice covers. Anything that would silently pretend to draw is left out.
+class ObjectLoader;
+
 class BatchedMesh : public Mesh {
+    // The loader restores the bookkeeping straight from a document, as upstream does when it assigns to the
+    // underscore fields. A friend declaration keeps that out of the public surface without adding anything
+    // to the class layout.
+    friend class ObjectLoader;
+
   public:
     struct GeometryInfo {
         double vertexStart = -1, vertexCount = -1, reservedVertexCount = -1;
