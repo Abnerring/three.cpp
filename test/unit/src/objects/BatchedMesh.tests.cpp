@@ -325,3 +325,37 @@ TEST_CASE("BatchedMesh raycasts its instances") {
         REQUIRE(hit.object == batch.get());
     }
 }
+// Optimising moves every active range down in vertex order, rebasing the index values by the same delta so the
+// packed geometry stays addressable.
+TEST_CASE("BatchedMesh optimises away a freed range") {
+    auto batch = std::make_shared<BatchedMesh>(4, 16);
+    auto first = std::make_shared<BufferGeometry>();
+    first->setAttribute("position", std::make_shared<Float32BufferAttribute>(
+        std::vector<float>{1.0f, 0.0f, 0.0f, 2.0f, 0.0f, 0.0f, 3.0f, 0.0f, 0.0f}, 3));
+    first->setIndex(std::make_shared<Uint16BufferAttribute>(std::vector<std::uint16_t>{0, 1, 2}, 1));
+    REQUIRE(batch->addGeometry(first) == 0.0);
+
+    auto second = std::make_shared<BufferGeometry>();
+    second->setAttribute("position", std::make_shared<Float32BufferAttribute>(
+        std::vector<float>{9.0f, 0.0f, 0.0f, 8.0f, 0.0f, 0.0f, 7.0f, 0.0f, 0.0f}, 3));
+    second->setIndex(std::make_shared<Uint16BufferAttribute>(std::vector<std::uint16_t>{0, 1, 2}, 1));
+    REQUIRE(batch->addGeometry(second) == 1.0);
+
+    // Before the optimisation the second range sits after the first, with its indices already rebased.
+    REQUIRE(batch->getGeometryRangeAt(1.0).vertexStart == 3.0);
+    REQUIRE(batch->geometry->getIndex()->getX(3.0) == 3.0);
+
+    batch->deleteGeometry(0.0);
+    batch->optimize();
+
+    const auto range = batch->getGeometryRangeAt(1.0);
+    REQUIRE(range.vertexStart == 0.0);
+    REQUIRE(range.indexStart == 0.0);
+    REQUIRE(range.start == 0.0);
+    REQUIRE(batch->getUnusedVertexCount() == 13.0);
+    // The data moved with the range and its indices came down by three.
+    const auto positions = std::dynamic_pointer_cast<BufferAttribute>(batch->geometry->getAttribute("position"));
+    REQUIRE(positions->getComponent(0.0, 0.0) == 9.0);
+    REQUIRE(batch->geometry->getIndex()->getX(0.0) == 0.0);
+    REQUIRE(batch->geometry->getIndex()->getX(2.0) == 2.0);
+}

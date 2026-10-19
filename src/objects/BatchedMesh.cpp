@@ -448,3 +448,53 @@ bool BatchedMesh::raycast(const Raycaster& raycaster, std::vector<Intersection>&
     }
     return intersects.size() > before;
 }
+BatchedMesh& BatchedMesh::optimize() {
+    // The ranges are visited in vertex order, because a range can be reused and so need not be sorted.
+    std::vector<std::size_t> order(_geometryInfo.size());
+    for (std::size_t i = 0; i < order.size(); i += 1) order[i] = i;
+    std::sort(order.begin(), order.end(), [this](std::size_t a, std::size_t b) {
+        return _geometryInfo[a].vertexStart < _geometryInfo[b].vertexStart;
+    });
+
+    const auto index = geometry->getIndex();
+    double nextVertexStart = 0.0, nextIndexStart = 0.0;
+    for (const auto id : order) {
+        auto& info = _geometryInfo[id];
+        if (!info.active) continue;
+        if (index) {
+            if (info.indexStart != nextIndexStart) {
+                // The index values are rebased on the vertex move before the block itself is copied, so the
+                // original start is still available when the delta is taken.
+                const double delta = nextVertexStart - info.vertexStart;
+                const auto count = static_cast<std::size_t>(info.reservedIndexCount);
+                std::vector<double> shifted(count);
+                for (std::size_t i = 0; i < count; i += 1) shifted[i] = index->getX(info.indexStart + static_cast<double>(i)) + delta;
+                for (std::size_t i = 0; i < count; i += 1) index->setX(nextIndexStart + static_cast<double>(i), shifted[i]);
+                info.indexStart = nextIndexStart;
+            }
+            nextIndexStart += info.reservedIndexCount;
+        }
+        if (info.vertexStart != nextVertexStart) {
+            for (const auto& [name, target] : geometry->attributes) {
+                const auto attribute = std::dynamic_pointer_cast<BufferAttribute>(target);
+                if (!attribute) continue;
+                const auto vertices = static_cast<std::size_t>(info.reservedVertexCount);
+                const auto itemSize = static_cast<std::size_t>(attribute->itemSize);
+                // A temporary keeps the move safe when the destination overlaps the source.
+                std::vector<double> moved(vertices * itemSize);
+                for (std::size_t v = 0; v < vertices; v += 1)
+                    for (std::size_t c = 0; c < itemSize; c += 1)
+                        moved[v * itemSize + c] = attribute->getComponent(info.vertexStart + static_cast<double>(v), static_cast<double>(c));
+                for (std::size_t v = 0; v < vertices; v += 1)
+                    for (std::size_t c = 0; c < itemSize; c += 1)
+                        attribute->setComponent(nextVertexStart + static_cast<double>(v), static_cast<double>(c), moved[v * itemSize + c]);
+            }
+            info.vertexStart = nextVertexStart;
+        }
+        nextVertexStart += info.reservedVertexCount;
+        info.start = index ? info.indexStart : info.vertexStart;
+    }
+    _nextIndexStart = nextIndexStart;
+    _nextVertexStart = nextVertexStart;
+    return *this;
+}

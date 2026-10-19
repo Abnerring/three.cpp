@@ -70,6 +70,9 @@ class BatchedMesh : public Mesh {
     // those textures here, so they are copied rather than cloned and the rest maps field for field.
     BatchedMesh& copy(const Object3D& source, bool recursive = true) override;
     bool raycast(const Raycaster& raycaster, std::vector<Intersection>& intersects) override;
+    // Compacts the buffers by moving every active range down in vertex order and shifting the indices with
+    // it, which is what upstream does when it lets a batch reuse freed space.
+    BatchedMesh& optimize();
     BatchedMesh& setInstanceCount(double maxInstanceCount);
     BatchedMesh& setGeometrySize(double maxVertexCount, double maxIndexCount);
     std::optional<Box3> boundingBox;
