@@ -305,3 +305,39 @@ TEST_CASE("ObjectLoader binds a skinned mesh to its skeleton") {
     REQUIRE(mesh->skeleton);
     REQUIRE(mesh->skeleton->bones.size() == 2);
 }
+// A mesh may name several materials, which upstream keeps as an array and which decides the draw groups.
+TEST_CASE("ObjectLoader keeps a material array on a mesh") {
+    const auto realm = JSValue::object();
+    static_cast<void>(realm);
+    const auto json = Animation_detail::parseJSON(R"({
+        "object": {"type": "Mesh", "uuid": "mesh", "geometry": "g", "material": ["m1", "m2"]},
+        "geometries": [{"type": "BufferGeometry", "uuid": "g", "data": {"attributes": {}}}],
+        "materials": [{"type": "MeshBasicMaterial", "uuid": "m1", "color": 255},
+                      {"type": "MeshBasicMaterial", "uuid": "m2", "color": 65280}]
+    })");
+    ObjectLoader loader;
+    const auto result = loader.parse(json);
+    const auto mesh = std::dynamic_pointer_cast<Mesh>(result.object);
+    REQUIRE(mesh);
+    REQUIRE(mesh->materialIsArray);
+    REQUIRE(mesh->materials.size() == 2);
+    // The port keeps an array in materials and leaves the single material empty, which is its convention.
+    REQUIRE(mesh->material == nullptr);
+    REQUIRE(mesh->materials[0]->uuid == "m1");
+    REQUIRE(mesh->materials[1]->uuid == "m2");
+}
+
+// The line and point families have no array form in this port yet, so an array is refused by name rather
+// than reduced to its first entry.
+TEST_CASE("ObjectLoader refuses a material array on a line") {
+    const auto realm = JSValue::object();
+    static_cast<void>(realm);
+    const auto json = Animation_detail::parseJSON(R"({
+        "object": {"type": "Line", "uuid": "line", "geometry": "g", "material": ["m1", "m2"]},
+        "geometries": [{"type": "BufferGeometry", "uuid": "g", "data": {"attributes": {}}}],
+        "materials": [{"type": "MeshBasicMaterial", "uuid": "m1", "color": 255},
+                      {"type": "MeshBasicMaterial", "uuid": "m2", "color": 65280}]
+    })");
+    ObjectLoader loader;
+    REQUIRE_THROWS_AS(loader.parse(json), std::runtime_error);
+}

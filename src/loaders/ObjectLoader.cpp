@@ -153,8 +153,26 @@ std::shared_ptr<Object3D> ObjectLoader::parseObject(const JSValue& data) {
         return found == geometries_.end() ? std::shared_ptr<BufferGeometry>() : found->second;
     };
     const auto materialOf = [this](const JSValue& source) {
+        // A string is a uuid; an array is an object here, and only meshes carry arrays in this port, so the
+        // other types refuse one by name rather than looking up a comma joined string and finding nothing.
+        if (source.isObject() && source.length() > 0)
+            throw std::runtime_error("ObjectLoader: material arrays are only ported for meshes so far");
         const auto found = materials_.find(source.toString());
         return found == materials_.end() ? std::shared_ptr<Material>() : found->second;
+    };
+    // Upstream resolves a material field that may be an array of uuids; a mesh built from one keeps it.
+    const auto materialsOf = [this](const JSValue& source) {
+        std::vector<std::shared_ptr<Material>> out;
+        if (source.isUndefined()) return out;
+        if (source.isObject() && source.length() > 0) {
+            for (double index = 0; index < source.length(); index += 1) {
+                const auto found = materials_.find(source.get(index).toString());
+                if (found != materials_.end()) out.push_back(found->second);
+            }
+        } else if (const auto found = materials_.find(source.toString()); found != materials_.end()) {
+            out.push_back(found->second);
+        }
+        return out;
     };
     std::shared_ptr<Object3D> object;
     if (type == "Scene") {
@@ -191,10 +209,16 @@ std::shared_ptr<Object3D> ObjectLoader::parseObject(const JSValue& data) {
         if (!data.get("environmentRotation").isUndefined()) scene->environmentRotation.fromArray(numbers(data.get("environmentRotation")));        object = scene;
     } else if (type == "Group") object = std::make_shared<Group>();
     else if (type == "Mesh") {
-        const auto mesh = std::make_shared<Mesh>();
-        mesh->geometry = geometryOf(data.get("geometry"));
-        mesh->material = materialOf(data.get("material"));
-        object = mesh;
+        const auto resolved = materialsOf(data.get("material"));
+        const auto geometry = geometryOf(data.get("geometry"));
+        if (resolved.size() > 1) {
+            object = std::make_shared<Mesh>(geometry ? geometry : std::make_shared<BufferGeometry>(), resolved);
+        } else {
+            const auto mesh = std::make_shared<Mesh>();
+            mesh->geometry = geometry;
+            mesh->material = resolved.empty() ? nullptr : resolved.front();
+            object = mesh;
+        }
     } else if (type == "Line") {
         const auto line = std::make_shared<Line>();
         line->geometry = geometryOf(data.get("geometry"));
