@@ -20,6 +20,9 @@
 #include "geometries/SphereGeometry.h"
 #include "geometries/TubeGeometry.h"
 #include "extras/curves/LineCurve3.h"
+#include "extras/curves/EllipseCurve.h"
+#include "extras/curves/ArcCurve.h"
+#include "extras/curves/LineCurve.h"
 #include "extras/curves/QuadraticBezierCurve3.h"
 #include "extras/curves/CubicBezierCurve3.h"
 #include "extras/curves/CatmullRomCurve3.h"
@@ -288,6 +291,45 @@ int main() {
                 const auto point = curve.getPoint(i / 4.0);
                 if (i > 0) std::cout << ",";
                 std::cout << "[" << bits(static_cast<float>(point.x)) << "," << bits(static_cast<float>(point.y)) << "," << bits(static_cast<float>(point.z)) << "]";
+            }
+            std::cout << "]}" << std::endl;
+            continue;
+        } else if (kind == "ellipse") {
+            double ax = 0, ay = 0, rx = 0, ry = 0, start = 0, end = 0, clockwise = 0, rotation = 0;
+            in >> ax >> ay >> rx >> ry >> start >> end >> clockwise >> rotation;
+            if (in.fail()) { std::cout << "{\"error\":\"short input\"}" << std::endl; continue; }
+            EllipseCurve curve(ax, ay, rx, ry, start, end, clockwise != 0.0, rotation);
+            std::cout << "{\"kind\":\"ellipse\",\"points\":[";
+            for (int i = 0; i <= 4; i += 1) {
+                const auto point = curve.getPoint(i / 4.0);
+                if (i > 0) std::cout << ",";
+                std::cout << "[" << bits(static_cast<float>(point.x)) << "," << bits(static_cast<float>(point.y)) << "]";
+            }
+            std::cout << "]}" << std::endl;
+            continue;
+        } else if (kind == "arc") {
+            double ax = 0, ay = 0, radius = 0, start = 0, end = 0, clockwise = 0;
+            in >> ax >> ay >> radius >> start >> end >> clockwise;
+            if (in.fail()) { std::cout << "{\"error\":\"short input\"}" << std::endl; continue; }
+            ArcCurve curve(ax, ay, radius, start, end, clockwise != 0.0);
+            std::cout << "{\"kind\":\"arc\",\"points\":[";
+            for (int i = 0; i <= 4; i += 1) {
+                const auto point = curve.getPoint(i / 4.0);
+                if (i > 0) std::cout << ",";
+                std::cout << "[" << bits(static_cast<float>(point.x)) << "," << bits(static_cast<float>(point.y)) << "]";
+            }
+            std::cout << "]}" << std::endl;
+            continue;
+        } else if (kind == "line2") {
+            double ax = 0, ay = 0, bx = 0, by = 0;
+            in >> ax >> ay >> bx >> by;
+            if (in.fail()) { std::cout << "{\"error\":\"short input\"}" << std::endl; continue; }
+            LineCurve curve(std::make_shared<Vector2>(ax, ay), std::make_shared<Vector2>(bx, by));
+            std::cout << "{\"kind\":\"line2\",\"points\":[";
+            for (int i = 0; i <= 4; i += 1) {
+                const auto point = curve.getPoint(i / 4.0);
+                if (i > 0) std::cout << ",";
+                std::cout << "[" << bits(static_cast<float>(point.x)) << "," << bits(static_cast<float>(point.y)) << "]";
             }
             std::cout << "]}" << std::endl;
             continue;
