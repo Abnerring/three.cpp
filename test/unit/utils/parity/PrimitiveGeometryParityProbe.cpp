@@ -468,8 +468,8 @@ int main() {
             else if (which == "quaternionLinear") interpolant = std::make_shared<QuaternionLinearInterpolant>(InterpolantArray(positions), InterpolantArray(samples), sampleSize);
             else { std::cout << "{\"error\":\"unknown interpolant\"}" << std::endl; continue; }
             std::cout << "{\"kind\":\"interp\",\"which\":\"" << which << "\",\"results\":[";
-            for (int i = 0; i <= 4; i += 1) {
-                const auto result = interpolant->evaluate(i / 4.0);
+            for (int i = 0; i <= 16; i += 1) {
+                const auto result = interpolant->evaluate(i / 16.0);
                 if (i > 0) std::cout << ",";
                 std::cout << "[";
                 for (int c = 0; c < static_cast<int>(sampleSize); c += 1) { if (c > 0) std::cout << ","; std::cout << bits(static_cast<float>(result.number(c))); }

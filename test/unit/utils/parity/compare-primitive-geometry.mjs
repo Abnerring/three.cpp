@@ -222,7 +222,7 @@ for (let i = 0; i < interpolantScenarios.length; i += 1) {
     const expected = {
         kind: 'interp',
         which: line.split(' ')[1],
-        results: [0, 0.25, 0.5, 0.75, 1].map((t) => Array.from(interpolant.evaluate(t)).map(bitOf)),
+        results: Array.from({length: 17}, (_, k) => k / 16).map((t) => Array.from(interpolant.evaluate(t)).map(bitOf)),
     };
     assert.deepEqual(interpolantLines[i], expected, `scenario ${line}`);
 }
