@@ -57,6 +57,8 @@
 #include "materials/MeshToonMaterial.h"
 #include "materials/MeshMatcapMaterial.h"
 #include "materials/MeshPhysicalMaterial.h"
+#include "materials/ShaderMaterial.h"
+#include "materials/RawShaderMaterial.h"
 #include "helpers/AxesHelper.h"
 #include "cameras/PerspectiveCamera.h"
 #include "cameras/ArrayCamera.h"
@@ -557,6 +559,8 @@ int main() {
             else if (which == "toon") material = std::make_shared<MeshToonMaterial>();
             else if (which == "matcap") material = std::make_shared<MeshMatcapMaterial>();
             else if (which == "physical") material = std::make_shared<MeshPhysicalMaterial>();
+            else if (which == "shader") material = std::make_shared<ShaderMaterial>();
+            else if (which == "rawshader") material = std::make_shared<RawShaderMaterial>();
             else { std::cout << "{\"error\":\"unknown material\"}" << std::endl; continue; }
             std::cout << "{\"kind\":\"mat\",\"which\":\"" << which << "\",\"type\":\"" << material->type << "\"";
             std::cout << ",\"fields\":{";

@@ -322,6 +322,8 @@ const materialModules = {
     toon: ['MeshToonMaterial', 'src/materials/MeshToonMaterial.js'],
     matcap: ['MeshMatcapMaterial', 'src/materials/MeshMatcapMaterial.js'],
     physical: ['MeshPhysicalMaterial', 'src/materials/MeshPhysicalMaterial.js'],
+    shader: ['ShaderMaterial', 'src/materials/ShaderMaterial.js'],
+    rawshader: ['RawShaderMaterial', 'src/materials/RawShaderMaterial.js'],
 };
 const materialClasses = {};
 for (const [which, [name, modulePath]] of Object.entries(materialModules)) {
