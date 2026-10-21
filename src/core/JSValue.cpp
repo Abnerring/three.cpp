@@ -1230,8 +1230,11 @@ class JSHeap : public std::enable_shared_from_this<JSHeap> {
         }
         return marked;
         };
+        const bool gcTrace = std::getenv("THREECPP_GC_TRACE") != nullptr; int gcPasses = 0;
         auto stableMark = [&] {
             for (;;) {
+                ++gcPasses;
+                if (gcTrace) std::fprintf(stderr, "[gc] stableMark pass %d records=%zu nextId=%llu\n", gcPasses, records.size(), static_cast<unsigned long long>(nextId));
                 const auto beforeAllocation = nextId;
                 std::unordered_map<std::uint64_t, std::size_t> beforeRoots;
                 for (const auto& [id, value] : records) beforeRoots.emplace(id, value->roots);
