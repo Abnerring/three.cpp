@@ -57,11 +57,15 @@ JSValue shadowFirst(const JSValue&,const Args& args,const Args&) {
     return bs-as+bm-am;
 }
 JSValue module() {
-    static thread_local JSWeakValue weak;
-    if(const auto value=weak.lock();value&&value->isObject())return *value;
+    // Upstream keeps nextVersion in module scope, so it must outlive every collection.
+    // A weak reference renewing itself is not enough: once the collector runs, the module
+    // is rebuilt and the counter restarts, which is exactly what the lights parity test
+    // caught. Hold it strongly instead (see HANDOFF item 52).
+    static thread_local JSValue strong;
+    if (strong.isObject()) return strong;
     auto result=JSValue::object(nullptr);literal(result,"nextVersion",0);
     literal(result,"sort",ordinary(shadowFirst,{},"shadowCastingAndTexturingLightsFirst",2));
-    result.retainForHeapLifetime();weak=JSWeakValue(result);return result;
+    result.retainForHeapLifetime();strong=result;return result;
 }
 void copyColor(JSValue uniforms,const char* field,const JSValue& source,const JSValue& intensity) {
     const auto target=uniforms.get(field),copy=target.get("copy");const auto copied=copy.call(target,{source});

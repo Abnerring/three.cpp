@@ -115,6 +115,10 @@
    - 于是嫌疑落在 `global`，即 `WebGLLights.cpp:225` 传进去的 `module()`。`module()`（59–65 行）用 `static thread_local JSWeakValue weak` 做单例，命中就返回，否则重建并 `retainForHeapLifetime()` 后再存弱引用。**如果这个 `retainForHeapLifetime()` 并没有真的让它活到进程结束**，那么每次 GC 之后 `module()` 都会**重建**，`nextVersion` 随之归零——`root.1` 看到的版本号 0 就解释得通。
    - **这同时解释了第 226 轮那个怪现象**：多一个存活对象会改变 GC 时机，从而改变 `module()` 被重建的次数；对象越多、GC 越频繁，重建越多，表现成"超线性变慢乃至卡住"。**两个症状可能是一个根因**：模块级单例的弱引用没能撑住。
    - **验证方法（下一步）**：在探针里连续调 `module()` 两次比较 `sameValue`，再在 `setup` 若干次后比较一次；若中途由 true 变 false 即坐实。修法方向是把 `nextVersion`（以及同一 `module()` 里的 `sort`）挂到一个**真正不会被回收**的宿主上，而不是靠 `JSWeakValue` 自我续命。
+53. **第 233 轮：修好了——第一次改动 `src/` 的真实缺陷修复**。把 `WebGLLights.cpp` 的 `module()` 从"弱引用自我续命"改成**强引用静态**（`static thread_local JSValue strong`，命中即返回，未命中则构造后 `retainForHeapLifetime()` 再赋给它）。
+   - **行为验证**：`mod3` 打印的 `version` 从修前的 **0 / 0 / 0** 变成修后的 **0 / 2 / 4**——第一个用例 0、第二个用例 2，**与上游期望完全一致**（这正是 `threejs-webgl-lights-states-parity` 报的第一个差异 `root.1.setup.version`）。
+   - **门禁**：核心 **738 用例 / 205,626 断言**、addons **155 / 23,996**、`primitive-geometry`、`port-audit` 全部通过，数字**一个没变**（说明这处修改没有影响任何既有行为）。
+   - **遗留的性能问题（下一轮）**：改成强引用后，探针的**默认全量路径变慢**（180 秒仍未输出），而 `mod3`（只跑三个 case）很快。说明强引用把某个对象图钉在了根集合里，回收成本随之上升。要么 `retainForHeapLifetime()` 与强引用叠加造成双重保留，要么被钉住的对象参与了每轮 mark。下一步用 `stages` 模式定位是哪一阶段开始变慢，再决定是"只强引用计数器的宿主、不放整个模块"还是"去掉 `retainForHeapLifetime()`"。
 52. **第 232 轮：闭环——`module()` 撑得过小数据、撑不过真实运行，所以计数器在真实用例里每个 case 都回到 0**。
    - `mod4`（复刻 `lightsCase(0,0)` 的 6 盏灯数组）：`hash` 从全 `-1` 变成实际计数（`sunLength:1`、`rectAreaLength:0`、`numSpotMaps:1` 等），`version` 是 **0**。**这证明 `if(changed)` 块确实执行了**，`state.set("version",next)` 真的被调用；`next` 为 0 是**对的**，因为那是进程里第一次变更。
    - 把它和前一晚两个实验拼起来：`mod2` 在**只分配少量对象**的 22 轮里看到计数器一路涨到 **45**（没有归零）；而真实用例里 `mod3` 逐个 seed 打印都是 **0**。
