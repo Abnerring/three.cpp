@@ -150,6 +150,7 @@ const {CubicBezierCurve3} = await import(pathToFileURL(path.join(sourceDir, 'src
 
 const simpleCurveScenarios = [
     ['line3 0 0 0 1 2 3', () => new LineCurve3(new Vector3(0, 0, 0), new Vector3(1, 2, 3))],
+    ['line3 -1 -1 -1 1 1 1', () => new LineCurve3(new Vector3(-1, -1, -1), new Vector3(1, 1, 1))],
     ['quad3 0 0 0 1 2 0 3 0 1', () => new QuadraticBezierCurve3(new Vector3(0, 0, 0), new Vector3(1, 2, 0), new Vector3(3, 0, 1))],
     ['cubic3 0 0 0 1 2 0 3 -2 0 4 0 1', () => new CubicBezierCurve3(new Vector3(0, 0, 0), new Vector3(1, 2, 0), new Vector3(3, -2, 0), new Vector3(4, 0, 1))],
 ];
@@ -177,14 +178,18 @@ const {SplineCurve} = await import(pathToFileURL(path.join(sourceDir, 'src/extra
 const flatCurveScenarios = [
     ['ellipse 0 0 2 1 0 6.283185307179586 0 0', () => new EllipseCurve(0, 0, 2, 1, 0, Math.PI * 2, false, 0)],
     ['ellipse 1 1 3 2 0.5 4 1 0.25', () => new EllipseCurve(1, 1, 3, 2, 0.5, 4, true, 0.25)],
+    ['ellipse 0 0 1 1 0 6.283185307179586 1 0', () => new EllipseCurve(0, 0, 1, 1, 0, Math.PI * 2, true, 0)],
     ['arc 0 0 1 0 3.141592653589793 0', () => new ArcCurve(0, 0, 1, 0, Math.PI, false)],
     ['arc 1 2 2 0 4.71238898038469 1', () => new ArcCurve(1, 2, 2, 0, Math.PI * 1.5, true)],
+    ['arc 0 0 2 0 6.283185307179586 0', () => new ArcCurve(0, 0, 2, 0, Math.PI * 2, false)],
     ['line2 0 0 3 4', () => new LineCurve(new Vector2(0, 0), new Vector2(3, 4))],
+    ['line2 -1 -1 1 1', () => new LineCurve(new Vector2(-1, -1), new Vector2(1, 1))],
     ['quad2 0 0 1 2 3 0', () => new QuadraticBezierCurve(new Vector2(0, 0), new Vector2(1, 2), new Vector2(3, 0))],
     ['quad2 0 0 2 2 4 0', () => new QuadraticBezierCurve(new Vector2(0, 0), new Vector2(2, 2), new Vector2(4, 0))],
     ['cubic2 0 0 1 2 3 -2 4 0', () => new CubicBezierCurve(new Vector2(0, 0), new Vector2(1, 2), new Vector2(3, -2), new Vector2(4, 0))],
     ['cubic2 0 0 2 3 3 -3 5 0', () => new CubicBezierCurve(new Vector2(0, 0), new Vector2(2, 3), new Vector2(3, -3), new Vector2(5, 0))],
     ['spline2 3 0 0 1 2 2 0', () => new SplineCurve([new Vector2(0, 0), new Vector2(1, 2), new Vector2(2, 0)])],
+    ['spline2 3 0 0 0 1 1 0', () => new SplineCurve([new Vector2(0, 0), new Vector2(0, 1), new Vector2(1, 0)])],
     ['spline2 5 0 0 1 3 2 -1 3 0 4 2', () => new SplineCurve([new Vector2(0, 0), new Vector2(1, 3), new Vector2(2, -1), new Vector2(3, 0), new Vector2(4, 2)])],
     ['spline2 4 0 0 1 1 2 0 3 1', () => new SplineCurve([new Vector2(0, 0), new Vector2(1, 1), new Vector2(2, 0), new Vector2(3, 1)])],
 ];
