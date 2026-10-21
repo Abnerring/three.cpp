@@ -323,6 +323,7 @@ const lightScenarios = [
     ['light spot 0 1 0 1 5 0.75 0.5 2', () => new SpotLight(new Color(0, 1, 0), 1, 5, 0.75, 0.5, 2)],
     ['light spot 1 1 1 1 0 0 0 0', () => new SpotLight(new Color(1, 1, 1), 1, 0, 0, 0, 0)],
     ['light spot 0.5 0.5 0.5 2 4 0.25 0.75 1', () => new SpotLight(new Color(0.5, 0.5, 0.5), 2, 4, 0.25, 0.75, 1)],
+    ['light spot 1 1 1 10 100 1.5 0 1', () => new SpotLight(new Color(1, 1, 1), 10, 100, 1.5, 0, 1)],
     ['light hemisphere 1 1 1 0.2 0.2 0.4 1.5', () => new HemisphereLight(new Color(1, 1, 1), new Color(0.2, 0.2, 0.4), 1.5)],
     ['light hemisphere 0 0 1 1 0 0 2', () => new HemisphereLight(new Color(0, 0, 1), new Color(1, 0, 0), 2)],
     ['light hemisphere 0.5 0.5 0.5 0.5 0.5 0.5 0', () => new HemisphereLight(new Color(0.5, 0.5, 0.5), new Color(0.5, 0.5, 0.5), 0)],
@@ -443,6 +444,7 @@ const helperScenarios = [
     ['helper grid 7 3', () => new GridHelper(7, 3)],
     ['helper box3 -1 -1 -1 1 1 1', () => new Box3Helper(new Box3(new Vector3(-1, -1, -1), new Vector3(1, 1, 1)))],
     ['helper box3 0 0 0 0 0 0', () => new Box3Helper(new Box3(new Vector3(0, 0, 0), new Vector3(0, 0, 0)))],
+    ['helper box3 0 0 0 10 10 10', () => new Box3Helper(new Box3(new Vector3(0, 0, 0), new Vector3(10, 10, 10)))],
     ['helper planehelper 0 1 0 -1 2', () => new PlaneHelper(new Plane(new Vector3(0, 1, 0), -1), 2)],
     ['helper planehelper 1 0 0 0 0.001', () => new PlaneHelper(new Plane(new Vector3(1, 0, 0), 0), 0.001)],
     ['helper polargrid 5 8 4 16', () => new PolarGridHelper(5, 8, 4, 16)],
@@ -549,6 +551,7 @@ const nodeScenarios = [
     ['node perspective 90 2 1 10', () => new PerspectiveCamera(90, 2, 1, 10)],
     ['node perspective 1 0.1 0.01 1', () => new PerspectiveCamera(1, 0.1, 0.01, 1)],
     ['node perspective 180 1 0.1 100', () => new PerspectiveCamera(180, 1, 0.1, 100)],
+    ['node perspective 75 1.7777777777777777 0.1 1000', () => new PerspectiveCamera(75, 16 / 9, 0.1, 1000)],
     ['node ortho -2 2 1 -1 0.1 50', () => new OrthographicCamera(-2, 2, 1, -1, 0.1, 50)],
     ['node ortho -5 5 5 -5 1 100', () => new OrthographicCamera(-5, 5, 5, -5, 1, 100)],
     ['node ortho 0 0 0 0 0 0', () => new OrthographicCamera(0, 0, 0, 0, 0, 0)],
@@ -635,6 +638,7 @@ const textureScenarios = [
     ['texture array2d 1 1 1', () => new DataArrayTexture(new Uint8Array(4), 1, 1, 1)],
     ['texture data3d 2 2 2', () => new Data3DTexture(new Uint8Array(2 * 2 * 2 * 4), 2, 2, 2)],
     ['texture data3d 3 1 2', () => new Data3DTexture(new Uint8Array(3 * 1 * 2 * 4), 3, 1, 2)],
+    ['texture data3d 4 4 4', () => new Data3DTexture(new Uint8Array(4 * 4 * 4 * 4), 4, 4, 4)],
     ['texture compressed', () => new CompressedTexture()],
     ['texture compressedarray', () => new CompressedArrayTexture()],
     ['texture cube 6', () => new CubeTexture([{width: 4, height: 4}, {width: 4, height: 4}, {width: 4, height: 4}, {width: 4, height: 4}, {width: 4, height: 4}, {width: 4, height: 4}])],
@@ -820,6 +824,7 @@ const curvePathScenarios = [
     ['curvepath 0 0 0 1 1 1', [[0, 0], [0, 1], [1, 1]]],
     ['curvepath 0 0 1 1 2 2', [[0, 0], [1, 1], [2, 2]]],
     ['curvepath 0 0 2 0 1 1', [[0, 0], [2, 0], [1, 1]]],
+    ['curvepath 4 4 5 4 5 5', [[4, 4], [5, 4], [5, 5]]],
 ];
 const curvePathRaw = execFileSync(probePath, [], {input: curvePathScenarios.map(([line]) => line).join('\n'), encoding: 'utf8'});
 const curvePathLines = curvePathRaw.trim().split('\n').map((line) => JSON.parse(line));
