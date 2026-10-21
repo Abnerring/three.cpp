@@ -305,6 +305,7 @@ const lightScenarios = [
     ['light point 1 0 0 5 0 0', () => new PointLight(new Color(1, 0, 0), 5, 0, 0)],
     ['light spot 1 0.5 0 3 10 0.5 0.25 1.5', () => new SpotLight(new Color(1, 0.5, 0), 3, 10, 0.5, 0.25, 1.5)],
     ['light spot 0 1 0 1 5 0.75 0.5 2', () => new SpotLight(new Color(0, 1, 0), 1, 5, 0.75, 0.5, 2)],
+    ['light spot 1 1 1 1 0 0 0 0', () => new SpotLight(new Color(1, 1, 1), 1, 0, 0, 0, 0)],
     ['light hemisphere 1 1 1 0.2 0.2 0.4 1.5', () => new HemisphereLight(new Color(1, 1, 1), new Color(0.2, 0.2, 0.4), 1.5)],
     ['light hemisphere 0 0 1 1 0 0 2', () => new HemisphereLight(new Color(0, 0, 1), new Color(1, 0, 0), 2)],
     ['light hemisphere 0.5 0.5 0.5 0.5 0.5 0.5 0', () => new HemisphereLight(new Color(0.5, 0.5, 0.5), new Color(0.5, 0.5, 0.5), 0)],
@@ -595,6 +596,7 @@ const textureScenarios = [
     ['texture compressedarray', () => new CompressedArrayTexture()],
     ['texture cube 6', () => new CubeTexture([{width: 4, height: 4}, {width: 4, height: 4}, {width: 4, height: 4}, {width: 4, height: 4}, {width: 4, height: 4}, {width: 4, height: 4}])],
     ['texture cube 1', () => new CubeTexture([{width: 4, height: 4}])],
+    ['texture cube 2', () => new CubeTexture([{width: 4, height: 4}, {width: 4, height: 4}])],
 ];
 
 const textureRaw = execFileSync(probePath, [], {input: textureScenarios.map(([line]) => line).join('\n'), encoding: 'utf8'});
@@ -633,6 +635,7 @@ const fogScenarios = [
     ['fog exp2 0.5 0.25 1 0.02', () => new FogExp2(new Color(0.5, 0.25, 1), 0.02)],
     ['fog exp2 0 0 0 1.5', () => new FogExp2(new Color(0, 0, 0), 1.5)],
     ['fog exp2 0.5 0.5 0.5 0', () => new FogExp2(new Color(0.5, 0.5, 0.5), 0)],
+    ['fog exp2 1 0 0 1000', () => new FogExp2(new Color(1, 0, 0), 1000)],
 ];
 const fogRaw = execFileSync(probePath, [], {input: fogScenarios.map(([line]) => line).join('\n'), encoding: 'utf8'});
 const fogLines = fogRaw.trim().split('\n').map((line) => JSON.parse(line));
@@ -654,6 +657,7 @@ const shScenarios = [
     ['sh 9 0.1 0.2 0.3 1 2 3 4 5 6', [0.1, 0.2, 0.3, 1, 2, 3, 4, 5, 6]],
     ['sh 27 1 2 3 4 5 6 7 8 9 10 11 12 13 14 15 16 17 18 19 20 21 22 23 24 25 26 27', Array.from({length: 27}, (_, i) => i + 1)],
     ['sh 9 0 0 0 0 0 0 0 0 0', [0, 0, 0, 0, 0, 0, 0, 0, 0]],
+    ['sh 18 1 1 1 2 2 2 3 3 3 4 4 4 5 5 5 6 6 6', [1, 1, 1, 2, 2, 2, 3, 3, 3, 4, 4, 4, 5, 5, 5, 6, 6, 6]],
     ['sh 0', []],
 ];
 const shRaw = execFileSync(probePath, [], {input: shScenarios.map(([line]) => line).join('\n'), encoding: 'utf8'});
@@ -701,6 +705,7 @@ const pathScenarios = [
     ['path 2 1 1 4 1', [[1, 1], [4, 1]]],
     ['path 2 0 0 1 1', [[0, 0], [1, 1]]],
     ['path 5 0 0 1 0 1 1 0 1 0 0', [[0, 0], [1, 0], [1, 1], [0, 1], [0, 0]]],
+    ['path 3 0 0 1 0 2 0', [[0, 0], [1, 0], [2, 0]]],
 ];
 const pathRaw = execFileSync(probePath, [], {input: pathScenarios.map(([line]) => line).join('\n'), encoding: 'utf8'});
 const pathLines = pathRaw.trim().split('\n').map((line) => JSON.parse(line));
