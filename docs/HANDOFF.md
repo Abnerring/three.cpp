@@ -145,6 +145,12 @@
    - **处理**：**回退**这处改动（`git checkout src/core/JSValue.cpp`）。理由：它虽然无害，但**没有解决任何被测量的现象**，留着会让后来者误以为问题已处理。本项目不接受"无害但无效"的改动。
    - **下一步（换个切法）**：既然 `allocate`/`record`/`release`/`safepoint` 都读过了、都不是 O(N)，那就在 `JSValue::object()` 这条路径上**分段计时**：把 `current()`、`allocate()`、`record(...).prototype = ...`、以及 `JSValue` 的**析构**分别包一层计时，跑 `timing3` 看哪一段随堆增长。这比继续猜容器有效。
    - **已证伪假设累计到 5 个**：`state` 被复制、单例在实例间不持久、压力后归零、重审循环 O(N²)、`safepoint` 每次回收。
+63. **第 243 轮：插桩代码没有出现在二进制里——教训是"改完要验证改动真的被编译进去"**。
+   - 第二次尝试（无条件打印，不再依赖环境变量）：把 `JSValue::object()`（`JSValue.cpp:1733`）改成三段计时并每 1000 次打印一行，同时补上 `<chrono>/<cstdio>/<cstdlib>`。**编译无错误**，`timing2` 也正常跑完（12 轮 × 1000 次分配），但 **stderr 里一行 `[obj]` 都没有**。
+   - 对照：前几轮把同样的 `fprintf` 放在 `JSHeap::allocate` 里（`[heap]` 那行）时**是有输出**的。两处都是同一个编译单元、同一个 target，所以不是环境变量、不是 stderr 重定向、也不是 stdout/stderr 混淆的问题。
+   - 中间还踩了两个工具坑：`$t.Replace(...)` 里用反斜杠转义双引号在 PowerShell 里**直接语法错误**（整段脚本没执行，文件未被改动——事后 `git status` 确认过）；补 include 时又因为之前回退把 `<cstdio>` 一起撤掉而先失败一次。
+   - **结论与下一步**：不要再"改完就信"。下次插桩后**先 `Select-String` 那个 exe 里有没有那段字面量**（或用 `strings`），确认代码真的进了二进制；再跑。如果字面量在、输出仍无，才去怀疑运行路径。
+   - **本轮无代码变更**（插桩已 `git checkout` 撤回），核心 738 / 205,626、`primitive-geometry`、`port-audit` 全绿，树干净。
 62. **第 242 轮：分段计时的实现尝试失败在两处工程细节上，方法本身仍然有效**。
    - 想在 `JSValue::object()`（`JSValue.cpp:1733`）里分三段计时（`current()` / `allocate()` / `record(...).prototype = …`），受 `THREECPP_GC_TRACE` 控制每 1000 次打印一行均值。两次编译失败：一次是 `#include <chrono>` 缺失（因为回退把之前加的 `<cstdio>` 一起撤了），补上 `<chrono>/<cstdio>/<cstdlib>` 后编译通过；但运行时**一行输出都没有**，说明子进程没有继承到那个环境变量。
    - **处理**：回退这次插桩（`git checkout src/core/JSValue.cpp`），保持树干净。核心 738 / 205,626 与 `primitive-geometry`、`port-audit` 依旧全绿。
