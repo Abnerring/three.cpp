@@ -297,12 +297,15 @@ const {Color} = await import(pathToFileURL(path.join(sourceDir, 'src/math/Color.
 const lightScenarios = [
     ['light ambient 1 0.5 0.25 3', () => new AmbientLight(new Color(1, 0.5, 0.25), 3)],
     ['light directional 0.5 0.25 1 2.5', () => new DirectionalLight(new Color(0.5, 0.25, 1), 2.5)],
+    ['light directional 0 0 0 0.5', () => new DirectionalLight(new Color(0, 0, 0), 0.5)],
     ['light point 1 1 1 2 10 1', () => new PointLight(new Color(1, 1, 1), 2, 10, 1)],
+    ['light point 1 0 0 5 0 0', () => new PointLight(new Color(1, 0, 0), 5, 0, 0)],
     ['light spot 1 0.5 0 3 10 0.5 0.25 1.5', () => new SpotLight(new Color(1, 0.5, 0), 3, 10, 0.5, 0.25, 1.5)],
     ['light spot 0 1 0 1 5 0.75 0.5 2', () => new SpotLight(new Color(0, 1, 0), 1, 5, 0.75, 0.5, 2)],
     ['light hemisphere 1 1 1 0.2 0.2 0.4 1.5', () => new HemisphereLight(new Color(1, 1, 1), new Color(0.2, 0.2, 0.4), 1.5)],
     ['light hemisphere 0 0 1 1 0 0 2', () => new HemisphereLight(new Color(0, 0, 1), new Color(1, 0, 0), 2)],
     ['light rectarea 1 1 1 5 4 3', () => new RectAreaLight(new Color(1, 1, 1), 5, 4, 3)],
+    ['light rectarea 0.5 0.25 1 2 3 4', () => new RectAreaLight(new Color(0.5, 0.25, 1), 2, 3, 4)],
     ['light probe 2', () => new LightProbe(undefined, 2)],
 ];
 
@@ -572,11 +575,13 @@ const textureScenarios = [
     ['texture data 4 2', () => new DataTexture(new Uint8Array(4 * 2 * 4), 4, 2)],
     ['texture data 1 1', () => new DataTexture(new Uint8Array(1 * 1 * 4), 1, 1)],
     ['texture depth 4 2', () => new DepthTexture(4, 2)],
+    ['texture depth 1 1', () => new DepthTexture(1, 1)],
     ['texture array2d 2 2 2', () => new DataArrayTexture(new Uint8Array(2 * 2 * 2 * 4), 2, 2, 2)],
     ['texture data3d 2 2 2', () => new Data3DTexture(new Uint8Array(2 * 2 * 2 * 4), 2, 2, 2)],
     ['texture compressed', () => new CompressedTexture()],
     ['texture compressedarray', () => new CompressedArrayTexture()],
     ['texture cube 6', () => new CubeTexture([{width: 4, height: 4}, {width: 4, height: 4}, {width: 4, height: 4}, {width: 4, height: 4}, {width: 4, height: 4}, {width: 4, height: 4}])],
+    ['texture cube 1', () => new CubeTexture([{width: 4, height: 4}])],
 ];
 
 const textureRaw = execFileSync(probePath, [], {input: textureScenarios.map(([line]) => line).join('\n'), encoding: 'utf8'});
