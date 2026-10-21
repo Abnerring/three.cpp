@@ -75,6 +75,7 @@
 #include "math/Box3.h"
 #include "cameras/PerspectiveCamera.h"
 #include "cameras/ArrayCamera.h"
+#include "cameras/CubeCamera.h"
 #include "cameras/StereoCamera.h"
 #include "textures/Texture.h"
 #include "scenes/Fog.h"
@@ -662,6 +663,7 @@ int main() {
                 for (int k = 0; k < static_cast<int>(count); k += 1) cameras.push_back(std::make_shared<PerspectiveCamera>());
                 node = std::make_shared<ArrayCamera>(cameras); }
             else if (which == "lod") node = std::make_shared<LOD>();
+            else if (which == "cubecamera") { double near = 0, far = 0; in >> near >> far; if (in.fail() || !noTrailingTokens(in)) { std::cout << "{\"error\":\"short input or trailing tokens\"}" << std::endl; continue; } node = std::make_shared<CubeCamera>(near, far, JSValue::object()); }
             else if (which == "rendertarget") { double width = 0, height = 0; in >> width >> height; if (in.fail() || !noTrailingTokens(in)) { std::cout << "{\"error\":\"short input or trailing tokens\"}" << std::endl; continue; } target = std::make_shared<RenderTarget>(width, height); }
             else if (which == "rendertarget3d") { double width = 0, height = 0, depth = 0; in >> width >> height >> depth; if (in.fail() || !noTrailingTokens(in)) { std::cout << "{\"error\":\"short input or trailing tokens\"}" << std::endl; continue; } target = std::make_shared<RenderTarget3D>(width, height, depth); }
             else { std::cout << "{\"error\":\"unknown node\"}" << std::endl; continue; }

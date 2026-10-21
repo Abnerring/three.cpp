@@ -471,6 +471,7 @@ console.log(`child helper parity: ${childHelperScenarios.length} scenarios`);
 const {PerspectiveCamera} = await import(pathToFileURL(path.join(sourceDir, 'src/cameras/PerspectiveCamera.js')).href);
 const {OrthographicCamera} = await import(pathToFileURL(path.join(sourceDir, 'src/cameras/OrthographicCamera.js')).href);
 const {ArrayCamera} = await import(pathToFileURL(path.join(sourceDir, 'src/cameras/ArrayCamera.js')).href);
+const {CubeCamera} = await import(pathToFileURL(path.join(sourceDir, 'src/cameras/CubeCamera.js')).href);
 const {Scene} = await import(pathToFileURL(path.join(sourceDir, 'src/scenes/Scene.js')).href);
 const {Group} = await import(pathToFileURL(path.join(sourceDir, 'src/objects/Group.js')).href);
 const {Mesh} = await import(pathToFileURL(path.join(sourceDir, 'src/objects/Mesh.js')).href);
@@ -492,6 +493,7 @@ const nodeScenarios = [
     ['node lod', () => new LOD()],
     ['node array 2', () => new ArrayCamera([new PerspectiveCamera(), new PerspectiveCamera()])],
     ['node array 3', () => new ArrayCamera([new PerspectiveCamera(), new PerspectiveCamera(), new PerspectiveCamera()])],
+    ['node cubecamera 0.5 500', () => new CubeCamera(0.5, 500, {})],
     ['node rendertarget 16 8', () => new RenderTarget(16, 8)],
     ['node rendertarget3d 4 4 2', () => new RenderTarget3D(4, 4, 2)],
 ];
