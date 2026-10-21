@@ -105,20 +105,20 @@
    - **为什么走不动**：本环境**没有 Vulkan SDK**（`THREECPP_BUILD_VULKAN=OFF`、`THREECPP_VULKAN_INCLUDE_DIR-NOTFOUND`、`THREECPP_GLSLANG_VALIDATOR-NOTFOUND`）。后果很具体：`test/CMakeLists.txt` 里 `if(THREECPP_BUILD_VULKAN)` 整块被跳过，`VulkanRendererTests` 目标**根本不会生成**，"渲染到纹理 / 立方体目标 / 预滤波"这类改动只能编译、**无法验证**。按本项目"不留未验证代码"的规则，这类改动必须先有可验证的环境。同理 `src/nodes`（TSL，219 个模块）的验收是"生成的着色器能编译"，也被同一缺口卡住。
    - **解锁条件**：安装 Vulkan SDK（`vulkan/vulkan.h`、loader、`glslangValidator`），用 `-DTHREECPP_BUILD_VULKAN=ON` 配置；届时第 36 条的分阶段计划（先渲染到二维离屏纹理并读回，再扩到六面，最后接 `PMREMGenerator`）可以直接执行。
    - **在不装 SDK 的前提下还能做的**：继续往**已有差分能力**上加场景（第 187–190 轮各加 5 条，四次全部一次通过）；给已有模块补边界与退化输入；扩充单元测试。这些都是"能做完并且能证明做对了"的工作。
-43. **差分覆盖矩阵（第 190 轮收尾的实测值：167 个场景、21 组）**。数据来自 compare-primitive-geometry.mjs 的实际输出，不是估算：
+43. **差分覆盖矩阵（第 195 轮收尾的实测值：182 个场景、21 组）**。数据来自 compare-primitive-geometry.mjs 的实际输出，不是估算：
    - primitive geometry parity：39 场景
    - curve parity：2 场景
    - simple curve parity：3 场景
    - flat curve parity：9 场景
-   - interpolant parity：7 场景
-   - track parity：6 场景
+   - interpolant parity：12 场景
+   - track parity：10 场景
    - text parity：3 场景
-   - light parity：8 场景
+   - light parity：9 场景
    - material parity：15 场景
    - helper parity：18 场景
-   - child helper parity：6 场景
-   - node parity：15 场景
-   - texture parity：8 场景
+   - child helper parity：7 场景
+   - node parity：17 场景
+   - texture parity：9 场景
    - fog parity：6 场景
    - spherical harmonics parity：4 场景
    - instanced mesh parity：4 场景
@@ -126,10 +126,11 @@
    - stereo camera parity：1 场景
    - raycaster parity：3 场景
    - curve path parity：4 场景
-   - shape path parity：3 场景
-   - **深度**：曲线/插值/轨道组每个场景在 **17 个参数点**上比对（原先 5 点）；几何组每个属性比对 **24 个顶点**（72 个 float32 位模式）与 **32 个索引**（原先 6 顶点 / 8 索引）。
-   - **边界与退化**：第 187–190 轮专门补了退化输入——零尺寸盒、千分之一单位平面、`far == near` 的射线、零长度曲线段、共线路径、`density = 0` 的指数雾、`near = 0, far = 1` 的线性雾、全零球谐系数、单格网格、百万分之一长的轴、两词字符串轨道、单实例与十六实例。
-   - **写法**：这一批全部是**只加场景行**、探针一行未改；反观第 186 轮"加新 kind"把探针文件改坏、只能回退。**扩张验证面时优先走"已有能力 + 新数据"**。
+   - shape path parity：4 场景
+   - **深度**：曲线/插值/轨道组每个场景在 **17 个参数点**上比对；几何组每个属性比对 **24 个顶点**（72 个 float32 位模式）与 **32 个索引**。
+   - **边界与退化**：零尺寸盒、千分之一单位平面、`far == near` 的射线、零长度曲线段、共线路径、`density = 0` 的指数雾、`near = 0, far = 1` 的线性雾、全零球谐系数、单格网格、百万分之一长的轴、两词字符串轨道、单像素纹理、1×1 渲染目标、单实例与十六实例。
+   - **组合完整性**：四种插值器都覆盖 1/2/3 分量与 2/3 采样；六类轨道都有 2 采样与更长形式；纹理 8 类、材质 15 类、光源 7 类、helper 18 + 子对象 6。
+   - **写法**：第 187–195 轮共九次扩场景，全部是**只加场景行**、探针一行未改，九次一次通过；反观第 186 轮"加新 kind"把探针文件改坏、只能回退。**扩张验证面时优先走"已有能力 + 新数据"**。
 42. **差分验证的现状与操作纪律（第 175–180 轮把深度翻了 3–4 倍之后的总结）**。当前 `compare-primitive-geometry.mjs` 是一个脚本、二十一个组、**147 个场景**，全部与固定上游逐位比对：
    - **组与深度**：几何 39（每个属性比较 **24 个顶点**、**32 个索引**）、光照 7、helper 11 + 子对象 6、材质 15、纹理 8、对象 13、fog 4、球谐 3、实例化 3、曲线 2（4 个数组）+ 简单曲线 3 + 平面曲线 9（曲线类均为 **17 个采样**）、插值 7（17 点）、轨道 5 + 字符串 2（17 点）、路径 2、曲线路径 2、形状路径 2、立体相机 1、射线 2。
    - **为什么深度重要**：5 个采样会漏掉四分点之间的弯折（`cubic` 与四元数 slerp 尤其明显）；6 个顶点会漏掉扫掠与细分的中段。加深之后 147 个场景**仍然全部逐位相等**，这才是"一模一样"的有力证据。
