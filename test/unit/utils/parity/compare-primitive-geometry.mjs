@@ -240,6 +240,7 @@ const trackScenarios = [
     ['track color 3 0 1 2 9 1 0 0 0 1 0 0 0 1', () => new ColorKeyframeTrack('.c', [0, 1, 2], [1, 0, 0, 0, 1, 0, 0, 0, 1])],
     ['track vector 3 0 1 2 6 0 0 0 1 1 1', () => new VectorKeyframeTrack('.p', [0, 1, 2], [0, 0, 0, 1, 1, 1])],
     ['track quaternion 2 0 1 8 0 0 0 1 0 0 0.7071 0.7071', () => new QuaternionKeyframeTrack('.q', [0, 1], [0, 0, 0, 1, 0, 0, 0.7071, 0.7071])],
+    ['track quaternion 3 0 1 2 12 0 0 0 1 0 0 0.7071 0.7071 0.7071 0 0.7071 0', () => new QuaternionKeyframeTrack('.q', [0, 1, 2], [0, 0, 0, 1, 0, 0, 0.7071, 0.7071, 0.7071, 0, 0.7071, 0])],
     ['track boolean 3 0 1 2 3 1 0 1', () => new BooleanKeyframeTrack('.b', [0, 1, 2], [1, 0, 1])],
 ];
 
@@ -261,6 +262,7 @@ console.log(`track parity: ${trackScenarios.length} scenarios`);
 const textScenarios = [
     ['text 3 0 1 2 a b c', () => new StringKeyframeTrack('.s', [0, 1, 2], ['a', 'b', 'c'])],
     ['text 4 0 1 2 3 idle walk run jump', () => new StringKeyframeTrack('.s', [0, 1, 2, 3], ['idle', 'walk', 'run', 'jump'])],
+    ['text 2 0 1 a b', () => new StringKeyframeTrack('.s', [0, 1], ['a', 'b'])],
 ];
 const textRaw = execFileSync(probePath, [], {input: textScenarios.map(([line]) => line).join('\n'), encoding: 'utf8'});
 const textLines = textRaw.trim().split('\n').map((line) => JSON.parse(line));
@@ -389,9 +391,11 @@ const helperScenarios = [
     ['helper axes 1', () => new AxesHelper(1)],
     ['helper axes 2.5', () => new AxesHelper(2.5)],
     ['helper axes 0.5', () => new AxesHelper(0.5)],
+    ['helper axes 0.000001', () => new AxesHelper(0.000001)],
     ['helper grid 10 10', () => new GridHelper(10, 10)],
     ['helper grid 6 3', () => new GridHelper(6, 3)],
     ['helper grid 2 2', () => new GridHelper(2, 2)],
+    ['helper grid 1 1', () => new GridHelper(1, 1)],
     ['helper box3 -1 -1 -1 1 1 1', () => new Box3Helper(new Box3(new Vector3(-1, -1, -1), new Vector3(1, 1, 1)))],
     ['helper box3 0 0 0 0 0 0', () => new Box3Helper(new Box3(new Vector3(0, 0, 0), new Vector3(0, 0, 0)))],
     ['helper planehelper 0 1 0 -1 2', () => new PlaneHelper(new Plane(new Vector3(0, 1, 0), -1), 2)],
@@ -616,6 +620,7 @@ console.log(`fog parity: ${fogScenarios.length} scenarios`);
 const shScenarios = [
     ['sh 9 0.1 0.2 0.3 1 2 3 4 5 6', [0.1, 0.2, 0.3, 1, 2, 3, 4, 5, 6]],
     ['sh 27 1 2 3 4 5 6 7 8 9 10 11 12 13 14 15 16 17 18 19 20 21 22 23 24 25 26 27', Array.from({length: 27}, (_, i) => i + 1)],
+    ['sh 9 0 0 0 0 0 0 0 0 0', [0, 0, 0, 0, 0, 0, 0, 0, 0]],
     ['sh 0', []],
 ];
 const shRaw = execFileSync(probePath, [], {input: shScenarios.map(([line]) => line).join('\n'), encoding: 'utf8'});
