@@ -228,6 +228,7 @@ const interpolantScenarios = [
     ['interp cubic 2 2 0 1 12 0 0 1 1 2 0 0 3 1 4 0 0', () => new CubicInterpolant([0, 1], [0, 0, 1, 1, 2, 0, 0, 3, 1, 4, 0, 0], 2)],
     ['interp cubic 1 3 0 1 2 9 0 10 1 20 0 1 30 2 0', () => new CubicInterpolant([0, 1, 2], [0, 10, 1, 20, 0, 1, 30, 2, 0], 1)],
     ['interp cubic 2 3 0 1 2 18 0 0 1 1 1 0 2 2 0 0 3 3 1 0 4 4 0 0', () => new CubicInterpolant([0, 1, 2], [0, 0, 1, 1, 1, 0, 2, 2, 0, 0, 3, 3, 1, 0, 4, 4, 0, 0], 2)],
+    ['interp cubic 3 2 0 1 18 0 0 0 1 1 1 2 2 2 3 3 3 4 4 4 5 5 5', () => new CubicInterpolant([0, 1], [0, 0, 0, 1, 1, 1, 2, 2, 2, 3, 3, 3, 4, 4, 4, 5, 5, 5], 3)],
     ['interp quaternionLinear 4 2 0 1 8 0 0 0 1 0 0 0.7071067811865476 0.7071067811865476', () => new QuaternionLinearInterpolant([0, 1], [0, 0, 0, 1, 0, 0, 0.7071067811865476, 0.7071067811865476], 4)],
     ['interp quaternionLinear 4 2 0 1 8 0 0 0 1 0 0 0 1', () => new QuaternionLinearInterpolant([0, 1], [0, 0, 0, 1, 0, 0, 0, 1], 4)],
     ['interp quaternionLinear 4 3 0 1 2 12 0 0 0 1 0 0 0.7071067811865476 0.7071067811865476 0.7071067811865476 0 0 0.7071067811865476', () => new QuaternionLinearInterpolant([0, 1, 2], [0, 0, 0, 1, 0, 0, 0.7071067811865476, 0.7071067811865476, 0.7071067811865476, 0, 0, 0.7071067811865476], 4)],
@@ -332,6 +333,7 @@ const lightScenarios = [
     ['light rectarea 0.5 0.25 1 2 3 4', () => new RectAreaLight(new Color(0.5, 0.25, 1), 2, 3, 4)],
     ['light rectarea 1 1 1 1 0 0', () => new RectAreaLight(new Color(1, 1, 1), 1, 0, 0)],
     ['light rectarea 0 0 0 0 1 1', () => new RectAreaLight(new Color(0, 0, 0), 0, 1, 1)],
+    ['light rectarea 1 1 1 50 100 200', () => new RectAreaLight(new Color(1, 1, 1), 50, 100, 200)],
     ['light probe 2', () => new LightProbe(undefined, 2)],
     ['light probe 0', () => new LightProbe(undefined, 0)],
 ];
@@ -494,6 +496,7 @@ const childHelperScenarios = [
     ['helper arrow 0 0 1 0 0 0 2', () => new ArrowHelper(new Vector3(0, 0, 1), new Vector3(0, 0, 0), 2)],
     ['helper arrow 1 0 0 1 1 1 5', () => new ArrowHelper(new Vector3(1, 0, 0), new Vector3(1, 1, 1), 5)],
     ['helper arrow 0 1 0 0 0 0 0.5', () => new ArrowHelper(new Vector3(0, 1, 0), new Vector3(0, 0, 0), 0.5)],
+    ['helper arrow 0 0 1 0 0 0 0.1', () => new ArrowHelper(new Vector3(0, 0, 1), new Vector3(0, 0, 0), 0.1)],
 ];
 
 // The probe reports a child as its type, plus the vertex count and first points when the child is a line.
@@ -632,6 +635,7 @@ const textureScenarios = [
     ['texture data 3 5', () => new DataTexture(new Uint8Array(3 * 5 * 4), 3, 5)],
     ['texture data 16 2', () => new DataTexture(new Uint8Array(16 * 2 * 4), 16, 2)],
     ['texture data 64 64', () => new DataTexture(new Uint8Array(64 * 64 * 4), 64, 64)],
+    ['texture data 128 1', () => new DataTexture(new Uint8Array(128 * 1 * 4), 128, 1)],
     ['texture depth 4 2', () => new DepthTexture(4, 2)],
     ['texture depth 1 1', () => new DepthTexture(1, 1)],
     ['texture depth 2 8', () => new DepthTexture(2, 8)],
@@ -714,6 +718,7 @@ const shScenarios = [
     ['sh 18 1 1 1 2 2 2 3 3 3 4 4 4 5 5 5 6 6 6', [1, 1, 1, 2, 2, 2, 3, 3, 3, 4, 4, 4, 5, 5, 5, 6, 6, 6]],
     ['sh 12 1 0 0 0 1 0 0 0 1 2 2 2', [1, 0, 0, 0, 1, 0, 0, 0, 1, 2, 2, 2]],
     ['sh 24 1 2 3 4 5 6 7 8 9 10 11 12 13 14 15 16 17 18 19 20 21 22 23 24', [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23, 24]],
+    ['sh 6 -1 -2 -3 -4 -5 -6', [-1, -2, -3, -4, -5, -6]],
     ['sh 0', []],
 ];
 const shRaw = execFileSync(probePath, [], {input: shScenarios.map(([line]) => line).join('\n'), encoding: 'utf8'});
