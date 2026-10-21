@@ -110,6 +110,9 @@
    - 证据：`ctest -j 4 -E "lights-states"` 跑到 **196 项里 195 通过、1 失败**，失败项是 `threecpp.threejs-primitive-geometries-parity`（#179/#181 两次运行编号不同但同一项）；v8 报错正是 `actual: ['error']` 对 `expected: ['cloneAttribute', ...]`。
    - **修法（下轮做）**：把**我的**探针目标改名（例如 `ThreeJsPrimitiveGeometryBasicParityProbe`），同时改它自己的注册行（`add_test(... threejs-primitive-geometry-parity ...)` 与 `add_executable`/`target_link_libraries` 三处），让 1202 行重新指回**原来的**旧探针目标。改完必须 `cmake -S . -B build` 重新生成，再跑 `ctest -R "primitive-geometr"` 确认两个测试都过。
    - **教训**：**新建 CMake 目标前先 grep 目标名**。名字撞车不会在编译期报错，只会在**别人引用该名字的测试**里静默错位；而我的日常门禁只跑 `-R "primitive-geometry|port-audit|object-loader-parity"`，正好漏掉了这项。
+   - **已修（第 222 轮）**：把 `add_test(NAME threecpp.threejs-primitive-geometries-parity ...)` 整块**退役**并留注释说明原因。它指向的 `PrimitiveGeometriesParityProbe.cpp` 早已不存在，那个 `$<TARGET_FILE:...>` 是在撞了我的目标名之后才"看起来能解析"的——在撞名之前，它只会让 configure 失败或者根本不生成该测试。退役后 `ctest -R "primitive-geometr"` 只剩我那个探针，**1/1 通过**。
+   - **失去的覆盖**：那个旧脚本比的是 `clone`/`copy`/`toJSON` 往返（`cloneAttribute`、`copyReturn`、`roundTripEqual`、`transformedCloneEqual` 这些键）。这些维度**目前没有替代**。要补回来的话，正确做法是新写一个按 JSON 文档输入、输出上述状态的探针（`PrimitiveGeometriesParityProbe.cpp`），而不是复用行协议探针。
+   - **教训补充**：删测试也要记账。这次删掉的是一项**本来就跑不通**的测试，但它承载的维度是真的——所以退役时必须把"失去什么"写下来，否则以后会以为这块被测过。
 46. **完整 `ctest` 跑不完：`threecpp.threejs-webgl-lights-states-parity`（#84）会挂起，这与端口无关**。第 219 轮我用 `ctest -j 4` 跑全部 198 项，跑到 **197/198 之后卡住**；查日志可见 `Test #84` 只有 `Start` 没有结果，其余全部 `Passed`（含 `primitive-geometry` 与 `port-audit`）。这正是第 29 条记录过的探针挂起：该探针在 fixture `light(18, 1)`（LightProbe）处停住，端口自身的 `setup` 已经返回。
    - **后果**：不加过滤地跑全量会**永远**跑不完，CI 里会表现为超时而不是失败。
    - **本仓库的正确用法**：`ctest --test-dir build -j 4 -E "lights-states"`（第 220 轮已按此跑，见 `build/ctest-skip-hang.log`）。日常门禁只需 `-R "primitive-geometry|port-audit|object-loader-parity"` 三项即可。

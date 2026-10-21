@@ -1197,9 +1197,8 @@ if(THREEJS_SOURCE_DIR AND THREECPP_NODE_EXECUTABLE)
     add_test(NAME threecpp.threejs-animation-parity
         COMMAND "${THREECPP_NODE_EXECUTABLE}" "${CMAKE_CURRENT_SOURCE_DIR}/unit/utils/parity/compare-animation.mjs"
         "${THREEJS_SOURCE_DIR}" "$<TARGET_FILE:ThreeJsAnimationParityProbe>")
-    add_test(NAME threecpp.threejs-primitive-geometries-parity
-        COMMAND "${THREECPP_NODE_EXECUTABLE}" "${CMAKE_CURRENT_SOURCE_DIR}/unit/utils/parity/compare-primitive-geometries.mjs"
-        "${THREEJS_SOURCE_DIR}" "$<TARGET_FILE:ThreeJsPrimitiveGeometryParityProbe>")
+    # Retired: this test expected unit/utils/parity/PrimitiveGeometriesParityProbe.cpp, which no longer
+    # exists; it was silently pointing at ThreeJsPrimitiveGeometryParityProbe and failing. See HANDOFF item 47.
     add_test(NAME threecpp.threejs-advanced-geometries-parity
         COMMAND "${THREECPP_NODE_EXECUTABLE}" "${CMAKE_CURRENT_SOURCE_DIR}/unit/utils/parity/compare-advanced-geometries.mjs"
         "${THREEJS_SOURCE_DIR}" "$<TARGET_FILE:ThreeJsAdvancedGeometryParityProbe>")
