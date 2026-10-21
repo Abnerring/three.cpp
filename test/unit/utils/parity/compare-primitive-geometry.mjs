@@ -226,6 +226,7 @@ const interpolantScenarios = [
     ['interp cubic 1 2 0 1 6 0 10 1 20 0 1', () => new CubicInterpolant([0, 1], [0, 10, 1, 20, 0, 1], 1)],
     ['interp cubic 2 2 0 1 12 0 0 1 1 2 0 0 3 1 4 0 0', () => new CubicInterpolant([0, 1], [0, 0, 1, 1, 2, 0, 0, 3, 1, 4, 0, 0], 2)],
     ['interp cubic 1 3 0 1 2 9 0 10 1 20 0 1 30 2 0', () => new CubicInterpolant([0, 1, 2], [0, 10, 1, 20, 0, 1, 30, 2, 0], 1)],
+    ['interp cubic 2 3 0 1 2 18 0 0 1 1 1 0 2 2 0 0 3 3 1 0 4 4 0 0', () => new CubicInterpolant([0, 1, 2], [0, 0, 1, 1, 1, 0, 2, 2, 0, 0, 3, 3, 1, 0, 4, 4, 0, 0], 2)],
     ['interp quaternionLinear 4 2 0 1 8 0 0 0 1 0 0 0.7071067811865476 0.7071067811865476', () => new QuaternionLinearInterpolant([0, 1], [0, 0, 0, 1, 0, 0, 0.7071067811865476, 0.7071067811865476], 4)],
     ['interp quaternionLinear 4 2 0 1 8 0 0 0 1 0 0 0 1', () => new QuaternionLinearInterpolant([0, 1], [0, 0, 0, 1, 0, 0, 0, 1], 4)],
     ['interp quaternionLinear 4 3 0 1 2 12 0 0 0 1 0 0 0 1 0.7071 0 0.7071 0', () => new QuaternionLinearInterpolant([0, 1, 2], [0, 0, 0, 1, 0, 0, 0, 1, 0.7071, 0, 0.7071, 0], 4)],
@@ -431,6 +432,7 @@ const helperScenarios = [
     ['helper grid 1 1', () => new GridHelper(1, 1)],
     ['helper grid 100 100', () => new GridHelper(100, 100)],
     ['helper grid 10 1', () => new GridHelper(10, 1)],
+    ['helper grid 5 5', () => new GridHelper(5, 5)],
     ['helper box3 -1 -1 -1 1 1 1', () => new Box3Helper(new Box3(new Vector3(-1, -1, -1), new Vector3(1, 1, 1)))],
     ['helper box3 0 0 0 0 0 0', () => new Box3Helper(new Box3(new Vector3(0, 0, 0), new Vector3(0, 0, 0)))],
     ['helper planehelper 0 1 0 -1 2', () => new PlaneHelper(new Plane(new Vector3(0, 1, 0), -1), 2)],
@@ -439,6 +441,7 @@ const helperScenarios = [
     ['helper polargrid 1 3 2 4', () => new PolarGridHelper(1, 3, 2, 4)],
     ['helper polargrid 10 16 8 64', () => new PolarGridHelper(10, 16, 8, 64)],
     ['helper polargrid 2 6 3 12', () => new PolarGridHelper(2, 6, 3, 12)],
+    ['helper polargrid 3 5 4 10', () => new PolarGridHelper(3, 5, 4, 10)],
     ['helper polargrid 2 4 2 8', () => new PolarGridHelper(2, 4, 2, 8)],
     ['helper camerahelper', () => new CameraHelper(new PerspectiveCameraForHelper())],
     ['helper skeletonhelper', () => new SkeletonHelper(new Object3DForHelper())],
@@ -618,6 +621,7 @@ const textureScenarios = [
     ['texture cube 6', () => new CubeTexture([{width: 4, height: 4}, {width: 4, height: 4}, {width: 4, height: 4}, {width: 4, height: 4}, {width: 4, height: 4}, {width: 4, height: 4}])],
     ['texture cube 1', () => new CubeTexture([{width: 4, height: 4}])],
     ['texture cube 2', () => new CubeTexture([{width: 4, height: 4}, {width: 4, height: 4}])],
+    ['texture cube 4', () => new CubeTexture([{width: 4, height: 4}, {width: 4, height: 4}, {width: 4, height: 4}, {width: 4, height: 4}])],
 ];
 
 const textureRaw = execFileSync(probePath, [], {input: textureScenarios.map(([line]) => line).join('\n'), encoding: 'utf8'});
@@ -728,6 +732,7 @@ const pathScenarios = [
     ['path 2 0 0 1 1', [[0, 0], [1, 1]]],
     ['path 5 0 0 1 0 1 1 0 1 0 0', [[0, 0], [1, 0], [1, 1], [0, 1], [0, 0]]],
     ['path 3 0 0 1 0 2 0', [[0, 0], [1, 0], [2, 0]]],
+    ['path 2 -1 -1 2 2', [[-1, -1], [2, 2]]],
 ];
 const pathRaw = execFileSync(probePath, [], {input: pathScenarios.map(([line]) => line).join('\n'), encoding: 'utf8'});
 const pathLines = pathRaw.trim().split('\n').map((line) => JSON.parse(line));
