@@ -105,6 +105,10 @@
    - **为什么走不动**：本环境**没有 Vulkan SDK**（`THREECPP_BUILD_VULKAN=OFF`、`THREECPP_VULKAN_INCLUDE_DIR-NOTFOUND`、`THREECPP_GLSLANG_VALIDATOR-NOTFOUND`）。后果很具体：`test/CMakeLists.txt` 里 `if(THREECPP_BUILD_VULKAN)` 整块被跳过，`VulkanRendererTests` 目标**根本不会生成**，"渲染到纹理 / 立方体目标 / 预滤波"这类改动只能编译、**无法验证**。按本项目"不留未验证代码"的规则，这类改动必须先有可验证的环境。同理 `src/nodes`（TSL，219 个模块）的验收是"生成的着色器能编译"，也被同一缺口卡住。
    - **解锁条件**：安装 Vulkan SDK（`vulkan/vulkan.h`、loader、`glslangValidator`），用 `-DTHREECPP_BUILD_VULKAN=ON` 配置；届时第 36 条的分阶段计划（先渲染到二维离屏纹理并读回，再扩到六面，最后接 `PMREMGenerator`）可以直接执行。
    - **在不装 SDK 的前提下还能做的**：继续往**已有差分能力**上加场景（第 187–190 轮各加 5 条，四次全部一次通过）；给已有模块补边界与退化输入；扩充单元测试。这些都是"能做完并且能证明做对了"的工作。
+46. **完整 `ctest` 跑不完：`threecpp.threejs-webgl-lights-states-parity`（#84）会挂起，这与端口无关**。第 219 轮我用 `ctest -j 4` 跑全部 198 项，跑到 **197/198 之后卡住**；查日志可见 `Test #84` 只有 `Start` 没有结果，其余全部 `Passed`（含 `primitive-geometry` 与 `port-audit`）。这正是第 29 条记录过的探针挂起：该探针在 fixture `light(18, 1)`（LightProbe）处停住，端口自身的 `setup` 已经返回。
+   - **后果**：不加过滤地跑全量会**永远**跑不完，CI 里会表现为超时而不是失败。
+   - **本仓库的正确用法**：`ctest --test-dir build -j 4 -E "lights-states"`（第 220 轮已按此跑，见 `build/ctest-skip-hang.log`）。日常门禁只需 `-R "primitive-geometry|port-audit|object-loader-parity"` 三项即可。
+   - **要彻底解决**：修该探针的 fixture（从 `light(18, 1)` 起逐步二分），或者给它加 `set_tests_properties(... TIMEOUT ...)` 让全量跑能正常结束。这两件事都不影响端口产物。
 45. **"按类名匹配测试文件"会严重高估缺口：165 个测试文件覆盖 208 个类，但绝大多数"没对上"的类其实被多类共用的测试文件覆盖了**。我按 `类名 == 测试文件名` 扫了一遍，得到"152 个类可能缺测试"，抽查就推翻了：`Path`/`CurvePath`/`ShapePath` 各有自己的 `*.tests.cpp`；`TextureImage`（即 `TextureSource`）在 `Texture.tests.cpp` 里有专门用例（像素保留、回调替换、元数据重读）；helper 全部由 `Helpers.tests.cpp` 覆盖。
    - **教训**：类名 ↔ 文件名不是覆盖关系的可靠代理。要判断某类有没有测试，**grep 类名**（`TextureImage`、`PolarGridHelper` 等）而不是猜文件名。这与第 43 条里差分 gap 扫描踩的是同一个坑（那次也是名字匹配不准）。
    - **结论**：就本仓库现状而言，**没有明显缺失单元测试的模块**。想继续加测试，应该针对"行为"而不是"类"——例如给已有用例补边界值，或给差分已发现的行为写等价的 C++ 断言。
