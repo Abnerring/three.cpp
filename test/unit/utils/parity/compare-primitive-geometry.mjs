@@ -242,11 +242,15 @@ const {StringKeyframeTrack} = await import(pathToFileURL(path.join(sourceDir, 's
 
 const trackScenarios = [
     ['track number 3 0 1 2 3 0 10 20', () => new NumberKeyframeTrack('.v', [0, 1, 2], [0, 10, 20])],
+    ['track number 2 0 1 2 0 5', () => new NumberKeyframeTrack('.v', [0, 1], [0, 5])],
     ['track color 3 0 1 2 9 1 0 0 0 1 0 0 0 1', () => new ColorKeyframeTrack('.c', [0, 1, 2], [1, 0, 0, 0, 1, 0, 0, 0, 1])],
+    ['track color 2 0 1 6 1 0 0 0 0 1', () => new ColorKeyframeTrack('.c', [0, 1], [1, 0, 0, 0, 0, 1])],
     ['track vector 3 0 1 2 6 0 0 0 1 1 1', () => new VectorKeyframeTrack('.p', [0, 1, 2], [0, 0, 0, 1, 1, 1])],
+    ['track vector 2 0 1 6 1 2 3 4 5 6', () => new VectorKeyframeTrack('.p', [0, 1], [1, 2, 3, 4, 5, 6])],
     ['track quaternion 2 0 1 8 0 0 0 1 0 0 0.7071 0.7071', () => new QuaternionKeyframeTrack('.q', [0, 1], [0, 0, 0, 1, 0, 0, 0.7071, 0.7071])],
     ['track quaternion 3 0 1 2 12 0 0 0 1 0 0 0.7071 0.7071 0.7071 0 0.7071 0', () => new QuaternionKeyframeTrack('.q', [0, 1, 2], [0, 0, 0, 1, 0, 0, 0.7071, 0.7071, 0.7071, 0, 0.7071, 0])],
     ['track boolean 3 0 1 2 3 1 0 1', () => new BooleanKeyframeTrack('.b', [0, 1, 2], [1, 0, 1])],
+    ['track boolean 2 0 1 2 0 0', () => new BooleanKeyframeTrack('.b', [0, 1], [0, 0])],
 ];
 
 const trackRaw = execFileSync(probePath, [], {input: trackScenarios.map(([line]) => line).join('\n'), encoding: 'utf8'});
@@ -755,6 +759,7 @@ const shapePathScenarios = [
     ['shapath 4 0 0 2 0 2 2 0 2', [[0, 0], [2, 0], [2, 2], [0, 2]]],
     ['shapath 3 0 0 1 0 0 1', [[0, 0], [1, 0], [0, 1]]],
     ['shapath 2 0 0 4 3', [[0, 0], [4, 3]]],
+    ['shapath 4 0 0 1 0 1 1 0 1', [[0, 0], [1, 0], [1, 1], [0, 1]]],
 ];
 const shapePathRaw = execFileSync(probePath, [], {input: shapePathScenarios.map(([line]) => line).join('\n'), encoding: 'utf8'});
 const shapePathLines = shapePathRaw.trim().split('\n').map((line) => JSON.parse(line));
