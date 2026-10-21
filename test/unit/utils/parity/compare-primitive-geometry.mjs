@@ -218,6 +218,7 @@ const interpolantScenarios = [
     ['interp linear 2 4 0 1 2 3 8 0 0 1 1 2 2 3 3', () => new LinearInterpolant([0, 1, 2, 3], [0, 0, 1, 1, 2, 2, 3, 3], 2)],
     ['interp linear 3 2 0 1 6 0 0 0 1 1 1', () => new LinearInterpolant([0, 1], [0, 0, 0, 1, 1, 1], 3)],
     ['interp linear 4 2 0 1 8 0 1 2 3 4 5 6 7', () => new LinearInterpolant([0, 1], [0, 1, 2, 3, 4, 5, 6, 7], 4)],
+    ['interp linear 4 3 0 1 2 12 0 1 2 3 4 5 6 7 8 9 10 11', () => new LinearInterpolant([0, 1, 2], [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11], 4)],
     ['interp discrete 2 3 0 1 2 6 0 0 1 1 2 2', () => new DiscreteInterpolant([0, 1, 2], [0, 0, 1, 1, 2, 2], 2)],
     ['interp discrete 1 2 0 1 2 5 7', () => new DiscreteInterpolant([0, 1], [5, 7], 1)],
     ['interp discrete 4 2 0 1 8 0 1 2 3 4 5 6 7', () => new DiscreteInterpolant([0, 1], [0, 1, 2, 3, 4, 5, 6, 7], 4)],
@@ -474,6 +475,7 @@ const childHelperScenarios = [
     ['helper spotlight', () => new SpotLightHelper(new SpotLightForHelper())],
     ['helper arrow 0 0 1 0 0 0 2', () => new ArrowHelper(new Vector3(0, 0, 1), new Vector3(0, 0, 0), 2)],
     ['helper arrow 1 0 0 1 1 1 5', () => new ArrowHelper(new Vector3(1, 0, 0), new Vector3(1, 1, 1), 5)],
+    ['helper arrow 0 1 0 0 0 0 0.5', () => new ArrowHelper(new Vector3(0, 1, 0), new Vector3(0, 0, 0), 0.5)],
 ];
 
 // The probe reports a child as its type, plus the vertex count and first points when the child is a line.
@@ -542,6 +544,7 @@ const nodeScenarios = [
     ['node sprite', () => new Sprite()],
     ['node lod', () => new LOD()],
     ['node array 2', () => new ArrayCamera([new PerspectiveCamera(), new PerspectiveCamera()])],
+    ['node array 1', () => new ArrayCamera([new PerspectiveCamera()])],
     ['node array 3', () => new ArrayCamera([new PerspectiveCamera(), new PerspectiveCamera(), new PerspectiveCamera()])],
     ['node cubecamera 0.5 500', () => new CubeCamera(0.5, 500, {})],
     ['node rendertarget 16 8', () => new RenderTarget(16, 8)],
@@ -672,6 +675,7 @@ const shScenarios = [
     ['sh 27 1 2 3 4 5 6 7 8 9 10 11 12 13 14 15 16 17 18 19 20 21 22 23 24 25 26 27', Array.from({length: 27}, (_, i) => i + 1)],
     ['sh 9 0 0 0 0 0 0 0 0 0', [0, 0, 0, 0, 0, 0, 0, 0, 0]],
     ['sh 18 1 1 1 2 2 2 3 3 3 4 4 4 5 5 5 6 6 6', [1, 1, 1, 2, 2, 2, 3, 3, 3, 4, 4, 4, 5, 5, 5, 6, 6, 6]],
+    ['sh 12 1 0 0 0 1 0 0 0 1 2 2 2', [1, 0, 0, 0, 1, 0, 0, 0, 1, 2, 2, 2]],
     ['sh 0', []],
 ];
 const shRaw = execFileSync(probePath, [], {input: shScenarios.map(([line]) => line).join('\n'), encoding: 'utf8'});
@@ -780,6 +784,7 @@ const curvePathScenarios = [
     ['curvepath 0 0 1 0 2 0', [[0, 0], [1, 0], [2, 0]]],
     ['curvepath 0 0 0 0 0 0', [[0, 0], [0, 0], [0, 0]]],
     ['curvepath 0 0 1 1 2 2', [[0, 0], [1, 1], [2, 2]]],
+    ['curvepath 0 0 2 0 1 1', [[0, 0], [2, 0], [1, 1]]],
 ];
 const curvePathRaw = execFileSync(probePath, [], {input: curvePathScenarios.map(([line]) => line).join('\n'), encoding: 'utf8'});
 const curvePathLines = curvePathRaw.trim().split('\n').map((line) => JSON.parse(line));
