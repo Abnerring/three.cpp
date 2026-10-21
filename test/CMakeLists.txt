@@ -827,7 +827,7 @@ if(THREECPP_NODE_EXECUTABLE)
             # two minutes, so the default 1500 second ceiling killed it mid-run and called the
             # result a timeout. The ceiling is raised rather than the scenarios trimmed, because
             # the coverage is the point.
-            set_tests_properties(threecpp.threejs-webgl-lights-states-parity PROPERTIES TIMEOUT 7200)
+            set_tests_properties(threecpp.threejs-webgl-lights-states-parity PROPERTIES TIMEOUT 120)
         add_test(NAME threecpp.threejs-native-math-protocols-parity
             COMMAND "${THREECPP_NODE_EXECUTABLE}" "${CMAKE_CURRENT_SOURCE_DIR}/unit/utils/parity/compare-native-math-protocols.mjs"
             "${THREEJS_SOURCE_DIR}" "$<TARGET_FILE:ThreeJsNativeMathProtocolsParityProbe>")
