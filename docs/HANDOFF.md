@@ -105,6 +105,12 @@
    - **为什么走不动**：本环境**没有 Vulkan SDK**（`THREECPP_BUILD_VULKAN=OFF`、`THREECPP_VULKAN_INCLUDE_DIR-NOTFOUND`、`THREECPP_GLSLANG_VALIDATOR-NOTFOUND`）。后果很具体：`test/CMakeLists.txt` 里 `if(THREECPP_BUILD_VULKAN)` 整块被跳过，`VulkanRendererTests` 目标**根本不会生成**，"渲染到纹理 / 立方体目标 / 预滤波"这类改动只能编译、**无法验证**。按本项目"不留未验证代码"的规则，这类改动必须先有可验证的环境。同理 `src/nodes`（TSL，219 个模块）的验收是"生成的着色器能编译"，也被同一缺口卡住。
    - **解锁条件**：安装 Vulkan SDK（`vulkan/vulkan.h`、loader、`glslangValidator`），用 `-DTHREECPP_BUILD_VULKAN=ON` 配置；届时第 36 条的分阶段计划（先渲染到二维离屏纹理并读回，再扩到六面，最后接 `PMREMGenerator`）可以直接执行。
    - **在不装 SDK 的前提下还能做的**：继续往**已有差分能力**上加场景（第 187–190 轮各加 5 条，四次全部一次通过）；给已有模块补边界与退化输入；扩充单元测试。这些都是"能做完并且能证明做对了"的工作。
+49. **具体缺陷一：`WebGLLights` 的 `state.version` 永远是 0，因为 lambda 捕获的 `state` 与 `object_["state"]` 可能不是同一个对象**（第 227 轮定位到行）。
+   - 证据：`ctest -R lights-states-parity --output-on-failure` 的首个差异是 `root.1.setup.version`，端口 **0**、上游 **2**。上游 `WebGLLights.js:545` 是 `state.version = nextVersion ++`，端口 `WebGLLights.cpp:181` 是 `global.get("nextVersion")` 自增后 `state.set("version", next)` —— **写法一致**。
+   - 端口结构：构造函数（`WebGLLights.cpp:215`）先 `auto state = ::object({{"version",0}})`，然后用 `ordinary(::setup, {state, ...})`（**225 行**）把 `state` 交给 `setup` lambda **捕获**，再用 `literal(object_,"state",state)`（**226 行**）把它挂到对象上。`JSMember state{&object_,"state"}`（头文件 21 行）读的是**挂上去的那个**。
+   - **假设**：`literal(object_,"state",state)` 若对 `JSValue` 做了**值语义的转换/复制**，那么 lambda 捕获的是**原件**、`JSMember` 读到的是**副本**，于是 `setup` 里每轮 `state.set("version", …)` 都写进原件，快照永远是初始的 `0`。症状与"每次 setup 都从 0 开始"完全吻合。
+   - **验证方法（下轮）**：在探针里对 `manager.object().get("state")` 与 `manager.state.value()` 调 `sameValue`，或直接在 `setup` 后把两者各 dump 一次；若 `sameValue` 为 false 即确认。修法取决于 `literal` 语义：应让 lambda 捕获 `JSMember`/引用到 `object_["state"]`，而不是捕获构造期的局部 `state`。
+   - **影响面**：所有读 `state` 的地方（`setupView` 也捕获同一个 `state`，226 行）都会读到陈旧副本，这解释了为什么这个测试会**同时**在 `version` 与后续字段上不一致。
 48. **第一个真实缺陷候选：一个未被使用的 `JSValue::object()` 局部变量会让探针永远卡住**（第 225 轮定位）。
    - 现象：`ThreeJsWebGLLightsParityProbe` 用默认参数运行时**永不返回**（180 秒零输出，说明卡在构造 JSON 的过程中）；把同一个 `main` 里那句**从未被使用**的 `const auto realm = JSValue::object();` 删掉后，**9.9 秒**跑完、输出 576 KB、`ctest -R lights-states-parity` **通过**。
    - 定位过程：给 `main` 加 seed 参数（seed 17/18/19 单独跑全部正常）→ 加阶段标记（`stages` 模式打印 A…F 全程走完）→ 对比两条路径**唯一**的差异就是那句 `realm`，删掉即好。**先前第 29 条把它记成"fixture 在 light(18,1) 处挂起"是错的**：`lightsCase` 本身没问题。
