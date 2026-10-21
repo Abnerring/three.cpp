@@ -184,6 +184,7 @@ const flatCurveScenarios = [
     ['cubic2 0 0 1 2 3 -2 4 0', () => new CubicBezierCurve(new Vector2(0, 0), new Vector2(1, 2), new Vector2(3, -2), new Vector2(4, 0))],
     ['spline2 3 0 0 1 2 2 0', () => new SplineCurve([new Vector2(0, 0), new Vector2(1, 2), new Vector2(2, 0)])],
     ['spline2 5 0 0 1 3 2 -1 3 0 4 2', () => new SplineCurve([new Vector2(0, 0), new Vector2(1, 3), new Vector2(2, -1), new Vector2(3, 0), new Vector2(4, 2)])],
+    ['spline2 4 0 0 1 1 2 0 3 1', () => new SplineCurve([new Vector2(0, 0), new Vector2(1, 1), new Vector2(2, 0), new Vector2(3, 1)])],
 ];
 
 const flatRaw = execFileSync(probePath, [], {input: flatCurveScenarios.map(([line]) => line).join('\n'), encoding: 'utf8'});
@@ -274,6 +275,7 @@ const textScenarios = [
     ['text 3 0 1 2 a b c', () => new StringKeyframeTrack('.s', [0, 1, 2], ['a', 'b', 'c'])],
     ['text 4 0 1 2 3 idle walk run jump', () => new StringKeyframeTrack('.s', [0, 1, 2, 3], ['idle', 'walk', 'run', 'jump'])],
     ['text 2 0 1 a b', () => new StringKeyframeTrack('.s', [0, 1], ['a', 'b'])],
+    ['text 3 0 1 2 alpha beta gamma', () => new StringKeyframeTrack('.s', [0, 1, 2], ['alpha', 'beta', 'gamma'])],
 ];
 const textRaw = execFileSync(probePath, [], {input: textScenarios.map(([line]) => line).join('\n'), encoding: 'utf8'});
 const textLines = textRaw.trim().split('\n').map((line) => JSON.parse(line));
@@ -535,6 +537,7 @@ const nodeScenarios = [
     ['node rendertarget 16 8', () => new RenderTarget(16, 8)],
     ['node rendertarget 1 1', () => new RenderTarget(1, 1)],
     ['node rendertarget3d 4 4 2', () => new RenderTarget3D(4, 4, 2)],
+    ['node rendertarget3d 2 2 1', () => new RenderTarget3D(2, 2, 1)],
 ];
 
 const nodeRaw = execFileSync(probePath, [], {input: nodeScenarios.map(([line]) => line).join('\n'), encoding: 'utf8'});
@@ -592,6 +595,7 @@ const textureScenarios = [
     ['texture array2d 2 2 2', () => new DataArrayTexture(new Uint8Array(2 * 2 * 2 * 4), 2, 2, 2)],
     ['texture array2d 1 1 1', () => new DataArrayTexture(new Uint8Array(4), 1, 1, 1)],
     ['texture data3d 2 2 2', () => new Data3DTexture(new Uint8Array(2 * 2 * 2 * 4), 2, 2, 2)],
+    ['texture data3d 3 1 2', () => new Data3DTexture(new Uint8Array(3 * 1 * 2 * 4), 3, 1, 2)],
     ['texture compressed', () => new CompressedTexture()],
     ['texture compressedarray', () => new CompressedArrayTexture()],
     ['texture cube 6', () => new CubeTexture([{width: 4, height: 4}, {width: 4, height: 4}, {width: 4, height: 4}, {width: 4, height: 4}, {width: 4, height: 4}, {width: 4, height: 4}])],
@@ -765,6 +769,7 @@ const curvePathScenarios = [
     ['curvepath 1 1 3 2 3 5', [[1, 1], [3, 2], [3, 5]]],
     ['curvepath 0 0 1 0 2 0', [[0, 0], [1, 0], [2, 0]]],
     ['curvepath 0 0 0 0 0 0', [[0, 0], [0, 0], [0, 0]]],
+    ['curvepath 0 0 1 1 2 2', [[0, 0], [1, 1], [2, 2]]],
 ];
 const curvePathRaw = execFileSync(probePath, [], {input: curvePathScenarios.map(([line]) => line).join('\n'), encoding: 'utf8'});
 const curvePathLines = curvePathRaw.trim().split('\n').map((line) => JSON.parse(line));
