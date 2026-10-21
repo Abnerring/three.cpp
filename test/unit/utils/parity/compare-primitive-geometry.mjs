@@ -393,7 +393,9 @@ const helperScenarios = [
     ['helper grid 6 3', () => new GridHelper(6, 3)],
     ['helper grid 2 2', () => new GridHelper(2, 2)],
     ['helper box3 -1 -1 -1 1 1 1', () => new Box3Helper(new Box3(new Vector3(-1, -1, -1), new Vector3(1, 1, 1)))],
+    ['helper box3 0 0 0 0 0 0', () => new Box3Helper(new Box3(new Vector3(0, 0, 0), new Vector3(0, 0, 0)))],
     ['helper planehelper 0 1 0 -1 2', () => new PlaneHelper(new Plane(new Vector3(0, 1, 0), -1), 2)],
+    ['helper planehelper 1 0 0 0 0.001', () => new PlaneHelper(new Plane(new Vector3(1, 0, 0), 0), 0.001)],
     ['helper polargrid 5 8 4 16', () => new PolarGridHelper(5, 8, 4, 16)],
     ['helper polargrid 1 3 2 4', () => new PolarGridHelper(1, 3, 2, 4)],
     ['helper polargrid 2 4 2 8', () => new PolarGridHelper(2, 4, 2, 8)],
@@ -694,6 +696,7 @@ const {Raycaster} = await import(pathToFileURL(path.join(sourceDir, 'src/core/Ra
 const rayScenarios = [
     ['ray 0 0 0 0 0 -1 0 100', () => new Raycaster(new Vector3(0, 0, 0), new Vector3(0, 0, -1), 0, 100)],
     ['ray 1 2 3 0 1 0 0.5 10', () => new Raycaster(new Vector3(1, 2, 3), new Vector3(0, 1, 0), 0.5, 10)],
+    ['ray 0 0 0 0 0 1 0 0', () => new Raycaster(new Vector3(0, 0, 0), new Vector3(0, 0, 1), 0, 0)],
 ];
 const rayRaw = execFileSync(probePath, [], {input: rayScenarios.map(([line]) => line).join('\n'), encoding: 'utf8'});
 const rayLines = rayRaw.trim().split('\n').map((line) => JSON.parse(line));
@@ -717,6 +720,7 @@ const curvePathScenarios = [
     ['curvepath 0 0 1 0 1 1', [[0, 0], [1, 0], [1, 1]]],
     ['curvepath 1 1 3 2 3 5', [[1, 1], [3, 2], [3, 5]]],
     ['curvepath 0 0 1 0 2 0', [[0, 0], [1, 0], [2, 0]]],
+    ['curvepath 0 0 0 0 0 0', [[0, 0], [0, 0], [0, 0]]],
 ];
 const curvePathRaw = execFileSync(probePath, [], {input: curvePathScenarios.map(([line]) => line).join('\n'), encoding: 'utf8'});
 const curvePathLines = curvePathRaw.trim().split('\n').map((line) => JSON.parse(line));
@@ -735,6 +739,7 @@ const {ShapePath} = await import(pathToFileURL(path.join(sourceDir, 'src/extras/
 const shapePathScenarios = [
     ['shapath 4 0 0 2 0 2 2 0 2', [[0, 0], [2, 0], [2, 2], [0, 2]]],
     ['shapath 3 0 0 1 0 0 1', [[0, 0], [1, 0], [0, 1]]],
+    ['shapath 2 0 0 4 3', [[0, 0], [4, 3]]],
 ];
 const shapePathRaw = execFileSync(probePath, [], {input: shapePathScenarios.map(([line]) => line).join('\n'), encoding: 'utf8'});
 const shapePathLines = shapePathRaw.trim().split('\n').map((line) => JSON.parse(line));
