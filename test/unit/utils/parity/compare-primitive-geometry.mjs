@@ -590,8 +590,10 @@ const {SphericalHarmonics3} = await import(pathToFileURL(path.join(sourceDir, 's
 const fogScenarios = [
     ['fog linear 0.5 0.25 1 1 100', () => new Fog(new Color(0.5, 0.25, 1), 1, 100)],
     ['fog linear 1 1 1 2 50', () => new Fog(new Color(1, 1, 1), 2, 50)],
+    ['fog linear 0 0 0 0 1', () => new Fog(new Color(0, 0, 0), 0, 1)],
     ['fog exp2 0.5 0.25 1 0.02', () => new FogExp2(new Color(0.5, 0.25, 1), 0.02)],
     ['fog exp2 0 0 0 1.5', () => new FogExp2(new Color(0, 0, 0), 1.5)],
+    ['fog exp2 0.5 0.5 0.5 0', () => new FogExp2(new Color(0.5, 0.5, 0.5), 0)],
 ];
 const fogRaw = execFileSync(probePath, [], {input: fogScenarios.map(([line]) => line).join('\n'), encoding: 'utf8'});
 const fogLines = fogRaw.trim().split('\n').map((line) => JSON.parse(line));
@@ -635,6 +637,7 @@ const instanceScenarios = [
     ['instance 1', 1],
     ['instance 3', 3],
     ['instance 8', 8],
+    ['instance 16', 16],
 ];
 const instanceRaw = execFileSync(probePath, [], {input: instanceScenarios.map(([line]) => line).join('\n'), encoding: 'utf8'});
 const instanceLines = instanceRaw.trim().split('\n').map((line) => JSON.parse(line));
@@ -656,6 +659,7 @@ const {Path} = await import(pathToFileURL(path.join(sourceDir, 'src/extras/core/
 const pathScenarios = [
     ['path 4 0 0 2 0 2 2 0 2', [[0, 0], [2, 0], [2, 2], [0, 2]]],
     ['path 2 1 1 4 1', [[1, 1], [4, 1]]],
+    ['path 2 0 0 1 1', [[0, 0], [1, 1]]],
 ];
 const pathRaw = execFileSync(probePath, [], {input: pathScenarios.map(([line]) => line).join('\n'), encoding: 'utf8'});
 const pathLines = pathRaw.trim().split('\n').map((line) => JSON.parse(line));
@@ -712,6 +716,7 @@ const {CurvePath} = await import(pathToFileURL(path.join(sourceDir, 'src/extras/
 const curvePathScenarios = [
     ['curvepath 0 0 1 0 1 1', [[0, 0], [1, 0], [1, 1]]],
     ['curvepath 1 1 3 2 3 5', [[1, 1], [3, 2], [3, 5]]],
+    ['curvepath 0 0 1 0 2 0', [[0, 0], [1, 0], [2, 0]]],
 ];
 const curvePathRaw = execFileSync(probePath, [], {input: curvePathScenarios.map(([line]) => line).join('\n'), encoding: 'utf8'});
 const curvePathLines = curvePathRaw.trim().split('\n').map((line) => JSON.parse(line));
