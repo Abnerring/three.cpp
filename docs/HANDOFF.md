@@ -133,6 +133,12 @@
    - 实验（`timing3`）：每跑完一个用例就单独计时 **1000 次 `JSValue::object()`**，结果 **130、252、388、522、822、978、1166、1364、1494、1747、2274、2080 毫秒**——单调上升，约 **16 倍**。这是**纯分配**，不涉及任何用例逻辑，所以 `JSValue::object()` 本身就是随堆大小变慢的那条路径。
    - 已读过的实现都不是 O(N)：`allocate`（885–892）只做 `records.emplace(id, …)`，`record()`（893）是 `records.at(id)`，`release()`（1655）是 `records.find(id)`，`validateEdge`（894）只比较 `heap_`。所以要么 `records` 的容器选错了（例如用了 `std::map` 且 N 很大，但那只能解释对数级，解释不了 16 倍），要么开销在**容器的内存行为**上（每次 emplace 触发节点分配、缓存不友好），要么还有一条我没读到的路径。
    - **下一步**：先把 `records` 的声明找出来（不在 600–720 行区间，需要全文搜索），确认是 `std::map` 还是 `std::vector`；再在 `timing3` 里同时打印 `records.size()`（可用已有的 `THREECPP_GC_TRACE` 机制扩展），验证"16 倍"是否与 N 的成长同步。若确认是容器问题，把 `records` 换成 `std::unordered_map` 或 `std::vector` + 空闲表即可。
+60. **第 240 轮：根因找到了——`JSHeap::safepoint()` 在一种常见状态下**每次分配**都调用 `collect(true)`**。
+   - `JSValue.cpp:862` 的 `safepoint()`：`if (nativeOwnershipRecords == 0 && totalRoots != 0) return 0;`（快路径一）；`if (nativeOwnershipRecords != 0 && hasNativeApplicationRoots()) return 0;`（快路径二）；否则 **`return collect(true);`**。
+   - 也就是说：只要堆里**有**带 native ownership 的描述记录，而 `hasNativeApplicationRoots()` 又为假，**每一次 `JSValue::object()`**（`object()` → `current()` → `safepoint()`，见 1734 与 874–883 行）都会触发一次**完整回收尝试**。这就是实测的 **130 微秒/次分配**（正常应是 0.1 微秒量级），也解释了为什么"纯分配 1000 次"会随堆变大从 130 毫秒涨到 2 秒。
+   - 为什么第 236 轮的追踪打印是 0 行：追踪加在 `stableMark` 里，而这条路径上的 `collect` 在**到达 `stableMark` 之前**就返回了（`collecting`/`initializing`/空堆等前置判断）——所以它是"每次都白跑一遍回收的前置工作"，而不是每次都真的标记清除。
+   - **修法方向**：`safepoint()` 不应该在**每次分配**时都尝试回收；引擎通常在**分配计数达到阈值**时才进 safepoint。可行的最小改动是加一个"距上次回收的分配数"计数器，达到阈值才 `collect(true)`，并把阈值设得足够大以免影响现有测试对回收时机的依赖（核心 738 个用例就是验收标准）。
+   - **验收**：改完后 `timing3` 应显示 1000 次分配在各轮**基本恒定**（不再从 130 毫秒涨到 2 秒）；同时 `threejs-webgl-lights-states-parity` 应从超时变成能跑完，核心与 addons 断言数**不得减少**。
 58. **第 238 轮：变慢只取决于累积堆大小，与跑哪个用例无关**。
    - 实验：把**同一个** `lightsCase(0,0)` 重复 12 次并逐次计时，得到 **86、182、300、430、551、692、826、1137、1227、1448、1690、1695** 毫秒——和第 237 轮跑 12 个**不同**用例得到的曲线**几乎一样**。所以"某个用例本身慢"这个方向可以排除，**唯一的自变量是堆里已有多少对象**。
    - 已排除的分配路径部件：`JSHeap::record` 用 `std::unordered_map<JSValue,…>` 做索引（O(1) 查找），`validateEdge` 只做一次 `heap_` 比较（O(1)）。所以线性开销不在"查记录"这一步。

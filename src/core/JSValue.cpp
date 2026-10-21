@@ -888,6 +888,7 @@ class JSHeap : public std::enable_shared_from_this<JSHeap> {
         const auto id = nextId++;
         auto record = std::make_unique<Record>(); record->length = length;
         records.emplace(id, std::move(record));
+        if ((id % 10000u) == 0u && std::getenv("THREECPP_GC_TRACE") != nullptr) std::fprintf(stderr, "[heap] allocations=%llu records=%zu\n", static_cast<unsigned long long>(id), records.size());
         return JSValue(shared_from_this(), id, type);
     }
     Record& record(const JSValue& value) const { return *records.at(std::get<JSValue::Reference>(value.value_).id); }
