@@ -430,6 +430,7 @@ const helperScenarios = [
     ['helper axes 0.5', () => new AxesHelper(0.5)],
     ['helper axes 0.000001', () => new AxesHelper(0.000001)],
     ['helper axes 100', () => new AxesHelper(100)],
+    ['helper axes 1000', () => new AxesHelper(1000)],
     ['helper grid 10 10', () => new GridHelper(10, 10)],
     ['helper grid 6 3', () => new GridHelper(6, 3)],
     ['helper grid 2 2', () => new GridHelper(2, 2)],
@@ -551,6 +552,7 @@ const nodeScenarios = [
     ['node ortho -5 5 5 -5 1 100', () => new OrthographicCamera(-5, 5, 5, -5, 1, 100)],
     ['node ortho 0 0 0 0 0 0', () => new OrthographicCamera(0, 0, 0, 0, 0, 0)],
     ['node ortho 1 1 1 1 1 1', () => new OrthographicCamera(1, 1, 1, 1, 1, 1)],
+    ['node ortho -100 100 100 -100 1 1000', () => new OrthographicCamera(-100, 100, 100, -100, 1, 1000)],
     ['node scene', () => new Scene()],
     ['node group', () => new Group()],
     ['node mesh', () => new Mesh()],
@@ -636,6 +638,7 @@ const textureScenarios = [
     ['texture cube 1', () => new CubeTexture([{width: 4, height: 4}])],
     ['texture cube 2', () => new CubeTexture([{width: 4, height: 4}, {width: 4, height: 4}])],
     ['texture cube 4', () => new CubeTexture([{width: 4, height: 4}, {width: 4, height: 4}, {width: 4, height: 4}, {width: 4, height: 4}])],
+    ['texture cube 5', () => new CubeTexture([{width: 4, height: 4}, {width: 4, height: 4}, {width: 4, height: 4}, {width: 4, height: 4}, {width: 4, height: 4}])],
 ];
 
 const textureRaw = execFileSync(probePath, [], {input: textureScenarios.map(([line]) => line).join('\n'), encoding: 'utf8'});
@@ -698,6 +701,7 @@ const shScenarios = [
     ['sh 9 0 0 0 0 0 0 0 0 0', [0, 0, 0, 0, 0, 0, 0, 0, 0]],
     ['sh 18 1 1 1 2 2 2 3 3 3 4 4 4 5 5 5 6 6 6', [1, 1, 1, 2, 2, 2, 3, 3, 3, 4, 4, 4, 5, 5, 5, 6, 6, 6]],
     ['sh 12 1 0 0 0 1 0 0 0 1 2 2 2', [1, 0, 0, 0, 1, 0, 0, 0, 1, 2, 2, 2]],
+    ['sh 24 1 2 3 4 5 6 7 8 9 10 11 12 13 14 15 16 17 18 19 20 21 22 23 24', [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23, 24]],
     ['sh 0', []],
 ];
 const shRaw = execFileSync(probePath, [], {input: shScenarios.map(([line]) => line).join('\n'), encoding: 'utf8'});
@@ -745,6 +749,7 @@ const pathScenarios = [
     ['path 2 1 1 4 1', [[1, 1], [4, 1]]],
     ['path 2 0 0 1 1', [[0, 0], [1, 1]]],
     ['path 5 0 0 1 0 1 1 0 1 0 0', [[0, 0], [1, 0], [1, 1], [0, 1], [0, 0]]],
+    ['path 6 0 0 1 0 2 1 1 2 -1 1 -2 0', [[0, 0], [1, 0], [2, 1], [1, 2], [-1, 1], [-2, 0]]],
     ['path 3 0 0 1 0 2 0', [[0, 0], [1, 0], [2, 0]]],
     ['path 2 -1 -1 2 2', [[-1, -1], [2, 2]]],
 ];
