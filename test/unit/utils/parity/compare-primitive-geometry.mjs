@@ -292,6 +292,7 @@ const lightScenarios = [
     ['light spot 1 0.5 0 3 10 0.5 0.25 1.5', () => new SpotLight(new Color(1, 0.5, 0), 3, 10, 0.5, 0.25, 1.5)],
     ['light spot 0 1 0 1 5 0.75 0.5 2', () => new SpotLight(new Color(0, 1, 0), 1, 5, 0.75, 0.5, 2)],
     ['light hemisphere 1 1 1 0.2 0.2 0.4 1.5', () => new HemisphereLight(new Color(1, 1, 1), new Color(0.2, 0.2, 0.4), 1.5)],
+    ['light hemisphere 0 0 1 1 0 0 2', () => new HemisphereLight(new Color(0, 0, 1), new Color(1, 0, 0), 2)],
     ['light rectarea 1 1 1 5 4 3', () => new RectAreaLight(new Color(1, 1, 1), 5, 4, 3)],
     ['light probe 2', () => new LightProbe(undefined, 2)],
 ];
@@ -439,6 +440,7 @@ const childHelperScenarios = [
     ['helper hemisphere 2.5', () => new HemisphereLightHelper(new HemisphereLightForHelper(), 2.5)],
     ['helper spotlight', () => new SpotLightHelper(new SpotLightForHelper())],
     ['helper arrow 0 0 1 0 0 0 2', () => new ArrowHelper(new Vector3(0, 0, 1), new Vector3(0, 0, 0), 2)],
+    ['helper arrow 1 0 0 1 1 1 5', () => new ArrowHelper(new Vector3(1, 0, 0), new Vector3(1, 1, 1), 5)],
 ];
 
 // The probe reports a child as its type, plus the vertex count and first points when the child is a line.
@@ -496,6 +498,7 @@ const nodeScenarios = [
     ['node perspective 35 1.5 0.5 100', () => new PerspectiveCamera(35, 1.5, 0.5, 100)],
     ['node perspective 90 2 1 10', () => new PerspectiveCamera(90, 2, 1, 10)],
     ['node ortho -2 2 1 -1 0.1 50', () => new OrthographicCamera(-2, 2, 1, -1, 0.1, 50)],
+    ['node ortho -5 5 5 -5 1 100', () => new OrthographicCamera(-5, 5, 5, -5, 1, 100)],
     ['node scene', () => new Scene()],
     ['node group', () => new Group()],
     ['node mesh', () => new Mesh()],
@@ -506,6 +509,7 @@ const nodeScenarios = [
     ['node array 3', () => new ArrayCamera([new PerspectiveCamera(), new PerspectiveCamera(), new PerspectiveCamera()])],
     ['node cubecamera 0.5 500', () => new CubeCamera(0.5, 500, {})],
     ['node rendertarget 16 8', () => new RenderTarget(16, 8)],
+    ['node rendertarget 1 1', () => new RenderTarget(1, 1)],
     ['node rendertarget3d 4 4 2', () => new RenderTarget3D(4, 4, 2)],
 ];
 
@@ -557,6 +561,7 @@ const {CompressedArrayTexture} = await import(pathToFileURL(path.join(sourceDir,
 const textureScenarios = [
     ['texture base', () => new Texture()],
     ['texture data 4 2', () => new DataTexture(new Uint8Array(4 * 2 * 4), 4, 2)],
+    ['texture data 1 1', () => new DataTexture(new Uint8Array(1 * 1 * 4), 1, 1)],
     ['texture depth 4 2', () => new DepthTexture(4, 2)],
     ['texture array2d 2 2 2', () => new DataArrayTexture(new Uint8Array(2 * 2 * 2 * 4), 2, 2, 2)],
     ['texture data3d 2 2 2', () => new Data3DTexture(new Uint8Array(2 * 2 * 2 * 4), 2, 2, 2)],
