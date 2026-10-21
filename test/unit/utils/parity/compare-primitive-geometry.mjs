@@ -230,6 +230,7 @@ const interpolantScenarios = [
     ['interp cubic 2 3 0 1 2 18 0 0 1 1 1 0 2 2 0 0 3 3 1 0 4 4 0 0', () => new CubicInterpolant([0, 1, 2], [0, 0, 1, 1, 1, 0, 2, 2, 0, 0, 3, 3, 1, 0, 4, 4, 0, 0], 2)],
     ['interp quaternionLinear 4 2 0 1 8 0 0 0 1 0 0 0.7071067811865476 0.7071067811865476', () => new QuaternionLinearInterpolant([0, 1], [0, 0, 0, 1, 0, 0, 0.7071067811865476, 0.7071067811865476], 4)],
     ['interp quaternionLinear 4 2 0 1 8 0 0 0 1 0 0 0 1', () => new QuaternionLinearInterpolant([0, 1], [0, 0, 0, 1, 0, 0, 0, 1], 4)],
+    ['interp quaternionLinear 4 3 0 1 2 12 0 0 0 1 0 0 0.7071067811865476 0.7071067811865476 0.7071067811865476 0 0 0.7071067811865476', () => new QuaternionLinearInterpolant([0, 1, 2], [0, 0, 0, 1, 0, 0, 0.7071067811865476, 0.7071067811865476, 0.7071067811865476, 0, 0, 0.7071067811865476], 4)],
     ['interp quaternionLinear 4 3 0 1 2 12 0 0 0 1 0 0 0 1 0.7071 0 0.7071 0', () => new QuaternionLinearInterpolant([0, 1, 2], [0, 0, 0, 1, 0, 0, 0, 1, 0.7071, 0, 0.7071, 0], 4)],
 ];
 
@@ -570,6 +571,7 @@ const nodeScenarios = [
     ['node rendertarget 1920 1080', () => new RenderTarget(1920, 1080)],
     ['node rendertarget3d 4 4 2', () => new RenderTarget3D(4, 4, 2)],
     ['node rendertarget3d 2 2 1', () => new RenderTarget3D(2, 2, 1)],
+    ['node rendertarget3d 8 8 4', () => new RenderTarget3D(8, 8, 4)],
 ];
 
 const nodeRaw = execFileSync(probePath, [], {input: nodeScenarios.map(([line]) => line).join('\n'), encoding: 'utf8'});
@@ -628,6 +630,7 @@ const textureScenarios = [
     ['texture depth 4 2', () => new DepthTexture(4, 2)],
     ['texture depth 1 1', () => new DepthTexture(1, 1)],
     ['texture depth 2 8', () => new DepthTexture(2, 8)],
+    ['texture depth 640 480', () => new DepthTexture(640, 480)],
     ['texture array2d 2 2 2', () => new DataArrayTexture(new Uint8Array(2 * 2 * 2 * 4), 2, 2, 2)],
     ['texture array2d 1 1 1', () => new DataArrayTexture(new Uint8Array(4), 1, 1, 1)],
     ['texture data3d 2 2 2', () => new Data3DTexture(new Uint8Array(2 * 2 * 2 * 4), 2, 2, 2)],
@@ -678,6 +681,7 @@ const fogScenarios = [
     ['fog exp2 0 0 0 1.5', () => new FogExp2(new Color(0, 0, 0), 1.5)],
     ['fog exp2 0.5 0.5 0.5 0', () => new FogExp2(new Color(0.5, 0.5, 0.5), 0)],
     ['fog exp2 1 0 0 1000', () => new FogExp2(new Color(1, 0, 0), 1000)],
+    ['fog exp2 0.2 0.4 0.6 5', () => new FogExp2(new Color(0.2, 0.4, 0.6), 5)],
 ];
 const fogRaw = execFileSync(probePath, [], {input: fogScenarios.map(([line]) => line).join('\n'), encoding: 'utf8'});
 const fogLines = fogRaw.trim().split('\n').map((line) => JSON.parse(line));
@@ -726,6 +730,7 @@ const instanceScenarios = [
     ['instance 3', 3],
     ['instance 8', 8],
     ['instance 16', 16],
+    ['instance 32', 32],
 ];
 const instanceRaw = execFileSync(probePath, [], {input: instanceScenarios.map(([line]) => line).join('\n'), encoding: 'utf8'});
 const instanceLines = instanceRaw.trim().split('\n').map((line) => JSON.parse(line));
