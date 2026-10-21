@@ -409,12 +409,14 @@ const helperScenarios = [
     ['helper grid 6 3', () => new GridHelper(6, 3)],
     ['helper grid 2 2', () => new GridHelper(2, 2)],
     ['helper grid 1 1', () => new GridHelper(1, 1)],
+    ['helper grid 100 100', () => new GridHelper(100, 100)],
     ['helper box3 -1 -1 -1 1 1 1', () => new Box3Helper(new Box3(new Vector3(-1, -1, -1), new Vector3(1, 1, 1)))],
     ['helper box3 0 0 0 0 0 0', () => new Box3Helper(new Box3(new Vector3(0, 0, 0), new Vector3(0, 0, 0)))],
     ['helper planehelper 0 1 0 -1 2', () => new PlaneHelper(new Plane(new Vector3(0, 1, 0), -1), 2)],
     ['helper planehelper 1 0 0 0 0.001', () => new PlaneHelper(new Plane(new Vector3(1, 0, 0), 0), 0.001)],
     ['helper polargrid 5 8 4 16', () => new PolarGridHelper(5, 8, 4, 16)],
     ['helper polargrid 1 3 2 4', () => new PolarGridHelper(1, 3, 2, 4)],
+    ['helper polargrid 10 16 8 64', () => new PolarGridHelper(10, 16, 8, 64)],
     ['helper polargrid 2 4 2 8', () => new PolarGridHelper(2, 4, 2, 8)],
     ['helper camerahelper', () => new CameraHelper(new PerspectiveCameraForHelper())],
     ['helper skeletonhelper', () => new SkeletonHelper(new Object3DForHelper())],
@@ -511,6 +513,7 @@ const nodeScenarios = [
     ['node perspective 90 2 1 10', () => new PerspectiveCamera(90, 2, 1, 10)],
     ['node ortho -2 2 1 -1 0.1 50', () => new OrthographicCamera(-2, 2, 1, -1, 0.1, 50)],
     ['node ortho -5 5 5 -5 1 100', () => new OrthographicCamera(-5, 5, 5, -5, 1, 100)],
+    ['node ortho 0 0 0 0 0 0', () => new OrthographicCamera(0, 0, 0, 0, 0, 0)],
     ['node scene', () => new Scene()],
     ['node group', () => new Group()],
     ['node mesh', () => new Mesh()],
@@ -616,6 +619,7 @@ const fogScenarios = [
     ['fog linear 0.5 0.25 1 1 100', () => new Fog(new Color(0.5, 0.25, 1), 1, 100)],
     ['fog linear 1 1 1 2 50', () => new Fog(new Color(1, 1, 1), 2, 50)],
     ['fog linear 0 0 0 0 1', () => new Fog(new Color(0, 0, 0), 0, 1)],
+    ['fog linear 1 1 1 0 1000', () => new Fog(new Color(1, 1, 1), 0, 1000)],
     ['fog exp2 0.5 0.25 1 0.02', () => new FogExp2(new Color(0.5, 0.25, 1), 0.02)],
     ['fog exp2 0 0 0 1.5', () => new FogExp2(new Color(0, 0, 0), 1.5)],
     ['fog exp2 0.5 0.5 0.5 0', () => new FogExp2(new Color(0.5, 0.5, 0.5), 0)],
@@ -686,6 +690,7 @@ const pathScenarios = [
     ['path 4 0 0 2 0 2 2 0 2', [[0, 0], [2, 0], [2, 2], [0, 2]]],
     ['path 2 1 1 4 1', [[1, 1], [4, 1]]],
     ['path 2 0 0 1 1', [[0, 0], [1, 1]]],
+    ['path 5 0 0 1 0 1 1 0 1 0 0', [[0, 0], [1, 0], [1, 1], [0, 1], [0, 0]]],
 ];
 const pathRaw = execFileSync(probePath, [], {input: pathScenarios.map(([line]) => line).join('\n'), encoding: 'utf8'});
 const pathLines = pathRaw.trim().split('\n').map((line) => JSON.parse(line));
