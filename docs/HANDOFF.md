@@ -99,6 +99,31 @@
    - **已定位到具体夹具**：在探针的 `light()` 入口打印后，输出停在 `light seed=18 type=1` —— `type 1` 就是 **`LightProbe`**，即**构造这个夹具**时自转 ✗。这一步与端口无关（端口 `setup` 已打印返回 ✓）。
    - **结论**：渲染灯光状态的端口行为目前**没有被证明有问题**，只是这个差分**从未跑通** ✗。下一步有两条路：一是在 `LightProbe` 夹具里继续二分（看是 `coefficients` 的 9 次赋值还是 `is`+type 的属性名出问题）；二是**两侧同时跳过 `LightProbe`**（`.mjs` 里过滤、探针里跳过），先让其余灯型跑通并纳入门禁，把 `LightProbe` 留作已知缺口 —— 后者更快见效。
    - **纪律**：修好之前不要让它进普通门禁（会挂住 CI）；也不要因为单元版通过就宣称渲染灯光状态的差分级验证已完成。
+43. **差分覆盖矩阵（第 190 轮收尾的实测值：167 个场景、21 组）**。数据来自 compare-primitive-geometry.mjs 的实际输出，不是估算：
+   - primitive geometry parity：39 场景
+   - curve parity：2 场景
+   - simple curve parity：3 场景
+   - flat curve parity：9 场景
+   - interpolant parity：7 场景
+   - track parity：6 场景
+   - text parity：3 场景
+   - light parity：8 场景
+   - material parity：15 场景
+   - helper parity：18 场景
+   - child helper parity：6 场景
+   - node parity：15 场景
+   - texture parity：8 场景
+   - fog parity：6 场景
+   - spherical harmonics parity：4 场景
+   - instanced mesh parity：4 场景
+   - path parity：3 场景
+   - stereo camera parity：1 场景
+   - raycaster parity：3 场景
+   - curve path parity：4 场景
+   - shape path parity：3 场景
+   - **深度**：曲线/插值/轨道组每个场景在 **17 个参数点**上比对（原先 5 点）；几何组每个属性比对 **24 个顶点**（72 个 float32 位模式）与 **32 个索引**（原先 6 顶点 / 8 索引）。
+   - **边界与退化**：第 187–190 轮专门补了退化输入——零尺寸盒、千分之一单位平面、`far == near` 的射线、零长度曲线段、共线路径、`density = 0` 的指数雾、`near = 0, far = 1` 的线性雾、全零球谐系数、单格网格、百万分之一长的轴、两词字符串轨道、单实例与十六实例。
+   - **写法**：这一批全部是**只加场景行**、探针一行未改；反观第 186 轮"加新 kind"把探针文件改坏、只能回退。**扩张验证面时优先走"已有能力 + 新数据"**。
 42. **差分验证的现状与操作纪律（第 175–180 轮把深度翻了 3–4 倍之后的总结）**。当前 `compare-primitive-geometry.mjs` 是一个脚本、二十一个组、**147 个场景**，全部与固定上游逐位比对：
    - **组与深度**：几何 39（每个属性比较 **24 个顶点**、**32 个索引**）、光照 7、helper 11 + 子对象 6、材质 15、纹理 8、对象 13、fog 4、球谐 3、实例化 3、曲线 2（4 个数组）+ 简单曲线 3 + 平面曲线 9（曲线类均为 **17 个采样**）、插值 7（17 点）、轨道 5 + 字符串 2（17 点）、路径 2、曲线路径 2、形状路径 2、立体相机 1、射线 2。
    - **为什么深度重要**：5 个采样会漏掉四分点之间的弯折（`cubic` 与四元数 slerp 尤其明显）；6 个顶点会漏掉扫掠与细分的中段。加深之后 147 个场景**仍然全部逐位相等**，这才是"一模一样"的有力证据。
