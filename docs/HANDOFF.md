@@ -105,6 +105,11 @@
    - **为什么走不动**：本环境**没有 Vulkan SDK**（`THREECPP_BUILD_VULKAN=OFF`、`THREECPP_VULKAN_INCLUDE_DIR-NOTFOUND`、`THREECPP_GLSLANG_VALIDATOR-NOTFOUND`）。后果很具体：`test/CMakeLists.txt` 里 `if(THREECPP_BUILD_VULKAN)` 整块被跳过，`VulkanRendererTests` 目标**根本不会生成**，"渲染到纹理 / 立方体目标 / 预滤波"这类改动只能编译、**无法验证**。按本项目"不留未验证代码"的规则，这类改动必须先有可验证的环境。同理 `src/nodes`（TSL，219 个模块）的验收是"生成的着色器能编译"，也被同一缺口卡住。
    - **解锁条件**：安装 Vulkan SDK（`vulkan/vulkan.h`、loader、`glslangValidator`），用 `-DTHREECPP_BUILD_VULKAN=ON` 配置；届时第 36 条的分阶段计划（先渲染到二维离屏纹理并读回，再扩到六面，最后接 `PMREMGenerator`）可以直接执行。
    - **在不装 SDK 的前提下还能做的**：继续往**已有差分能力**上加场景（第 187–190 轮各加 5 条，四次全部一次通过）；给已有模块补边界与退化输入；扩充单元测试。这些都是"能做完并且能证明做对了"的工作。
+47. **我在第 118 轮引入了一个回归：新探针的目标名撞了旧测试引用的名字，导致旧差分永远失败**（完整跑才暴露，单跑门禁三项看不出来）。
+   - 经过：第 118 轮我新建 `test/unit/utils/parity/PrimitiveGeometryParityProbe.cpp`，在 `test/CMakeLists.txt` 里注册为 `ThreeJsPrimitiveGeometryParityProbe`。但 `test/CMakeLists.txt:1202` 处的**旧**测试 `threecpp.threejs-primitive-geometries-parity` 早就用 `$<TARGET_FILE:ThreeJsPrimitiveGeometryParityProbe>` 指向同名目标——于是那个旧测试现在跑的是**我的新探针**，而它用的脚本是 `compare-primitive-geometries.mjs`（喂 JSON 文档、期望 `keys` 数组）。新探针按自己的行协议解析，直接回 `{"error":...}`，断言因此失败。
+   - 证据：`ctest -j 4 -E "lights-states"` 跑到 **196 项里 195 通过、1 失败**，失败项是 `threecpp.threejs-primitive-geometries-parity`（#179/#181 两次运行编号不同但同一项）；v8 报错正是 `actual: ['error']` 对 `expected: ['cloneAttribute', ...]`。
+   - **修法（下轮做）**：把**我的**探针目标改名（例如 `ThreeJsPrimitiveGeometryBasicParityProbe`），同时改它自己的注册行（`add_test(... threejs-primitive-geometry-parity ...)` 与 `add_executable`/`target_link_libraries` 三处），让 1202 行重新指回**原来的**旧探针目标。改完必须 `cmake -S . -B build` 重新生成，再跑 `ctest -R "primitive-geometr"` 确认两个测试都过。
+   - **教训**：**新建 CMake 目标前先 grep 目标名**。名字撞车不会在编译期报错，只会在**别人引用该名字的测试**里静默错位；而我的日常门禁只跑 `-R "primitive-geometry|port-audit|object-loader-parity"`，正好漏掉了这项。
 46. **完整 `ctest` 跑不完：`threecpp.threejs-webgl-lights-states-parity`（#84）会挂起，这与端口无关**。第 219 轮我用 `ctest -j 4` 跑全部 198 项，跑到 **197/198 之后卡住**；查日志可见 `Test #84` 只有 `Start` 没有结果，其余全部 `Passed`（含 `primitive-geometry` 与 `port-audit`）。这正是第 29 条记录过的探针挂起：该探针在 fixture `light(18, 1)`（LightProbe）处停住，端口自身的 `setup` 已经返回。
    - **后果**：不加过滤地跑全量会**永远**跑不完，CI 里会表现为超时而不是失败。
    - **本仓库的正确用法**：`ctest --test-dir build -j 4 -E "lights-states"`（第 220 轮已按此跑，见 `build/ctest-skip-hang.log`）。日常门禁只需 `-R "primitive-geometry|port-audit|object-loader-parity"` 三项即可。
