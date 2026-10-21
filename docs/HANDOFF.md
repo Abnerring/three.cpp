@@ -110,7 +110,11 @@
    - 端口结构：构造函数（`WebGLLights.cpp:215`）先 `auto state = ::object({{"version",0}})`，然后用 `ordinary(::setup, {state, ...})`（**225 行**）把 `state` 交给 `setup` lambda **捕获**，再用 `literal(object_,"state",state)`（**226 行**）把它挂到对象上。`JSMember state{&object_,"state"}`（头文件 21 行）读的是**挂上去的那个**。
    - **假设**：`literal(object_,"state",state)` 若对 `JSValue` 做了**值语义的转换/复制**，那么 lambda 捕获的是**原件**、`JSMember` 读到的是**副本**，于是 `setup` 里每轮 `state.set("version", …)` 都写进原件，快照永远是初始的 `0`。症状与"每次 setup 都从 0 开始"完全吻合。
    - **验证方法（下轮）**：在探针里对 `manager.object().get("state")` 与 `manager.state.value()` 调 `sameValue`，或直接在 `setup` 后把两者各 dump 一次；若 `sameValue` 为 false 即确认。修法取决于 `literal` 语义：应让 lambda 捕获 `JSMember`/引用到 `object_["state"]`，而不是捕获构造期的局部 `state`。
-   - **影响面**：所有读 `state` 的地方（`setupView` 也捕获同一个 `state`，226 行）都会读到陈旧副本，这解释了为什么这个测试会**同时**在 `version` 与后续字段上不一致。
+   - **第 228 轮：上面的"副本"假设被实验推翻，真正嫌疑换到了模块级单例上**。加了 `same` 模式后：`manager.object().get("state")` 与 `manager.state.value()` 的 `sameValue` 为 **true**（就是同一个对象），`setup` 前后两次调用后 `version` 都还是 **0**——所以问题不在副本。
+   - 顺着 `version` 往上看：`state.set("version",next)` 在 **`if(changed)`** 块里（端口 175–182 行），上游同样有守卫（`WebGLLights.js:493` 起 12 个字段的 `!==` 比较），两者**等价**，所以 `changed` 本身没问题。
+   - 于是嫌疑落在 `global`，即 `WebGLLights.cpp:225` 传进去的 `module()`。`module()`（59–65 行）用 `static thread_local JSWeakValue weak` 做单例，命中就返回，否则重建并 `retainForHeapLifetime()` 后再存弱引用。**如果这个 `retainForHeapLifetime()` 并没有真的让它活到进程结束**，那么每次 GC 之后 `module()` 都会**重建**，`nextVersion` 随之归零——`root.1` 看到的版本号 0 就解释得通。
+   - **这同时解释了第 226 轮那个怪现象**：多一个存活对象会改变 GC 时机，从而改变 `module()` 被重建的次数；对象越多、GC 越频繁，重建越多，表现成"超线性变慢乃至卡住"。**两个症状可能是一个根因**：模块级单例的弱引用没能撑住。
+   - **验证方法（下一步）**：在探针里连续调 `module()` 两次比较 `sameValue`，再在 `setup` 若干次后比较一次；若中途由 true 变 false 即坐实。修法方向是把 `nextVersion`（以及同一 `module()` 里的 `sort`）挂到一个**真正不会被回收**的宿主上，而不是靠 `JSWeakValue` 自我续命。
 48. **第一个真实缺陷候选：一个未被使用的 `JSValue::object()` 局部变量会让探针永远卡住**（第 225 轮定位）。
    - 现象：`ThreeJsWebGLLightsParityProbe` 用默认参数运行时**永不返回**（180 秒零输出，说明卡在构造 JSON 的过程中）；把同一个 `main` 里那句**从未被使用**的 `const auto realm = JSValue::object();` 删掉后，**9.9 秒**跑完、输出 576 KB、`ctest -R lights-states-parity` **通过**。
    - 定位过程：给 `main` 加 seed 参数（seed 17/18/19 单独跑全部正常）→ 加阶段标记（`stages` 模式打印 A…F 全程走完）→ 对比两条路径**唯一**的差异就是那句 `realm`，删掉即好。**先前第 29 条把它记成"fixture 在 light(18,1) 处挂起"是错的**：`lightsCase` 本身没问题。
