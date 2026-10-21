@@ -109,7 +109,12 @@
    - 现象：`ThreeJsWebGLLightsParityProbe` 用默认参数运行时**永不返回**（180 秒零输出，说明卡在构造 JSON 的过程中）；把同一个 `main` 里那句**从未被使用**的 `const auto realm = JSValue::object();` 删掉后，**9.9 秒**跑完、输出 576 KB、`ctest -R lights-states-parity` **通过**。
    - 定位过程：给 `main` 加 seed 参数（seed 17/18/19 单独跑全部正常）→ 加阶段标记（`stages` 模式打印 A…F 全程走完）→ 对比两条路径**唯一**的差异就是那句 `realm`，删掉即好。**先前第 29 条把它记成"fixture 在 light(18,1) 处挂起"是错的**：`lightsCase` 本身没问题。
    - 这**不是**探针写法问题可以解释的：那句变量既没有参与任何计算，也没有被 lambda 捕获（`[&]` 捕获不到未使用的变量）——它的唯一作用是**让一个空的 JSValue 对象在该作用域内存活到 `main` 结束**。所以嫌疑落在 JSValue 的**对象/引用登记**或**析构**路径上（例如空对象进入某个环形结构、或 finalizer 队列在退出时死循环）。
-   - **下一步（最小复现）**：单独写一个只做 `{ auto o = JSValue::object(); }` 再 `return 0;` 的探针，看是否卡住；再二分 `JSValue::object()` 到 `JSObject` 构造/登记的哪一步。**这条修好后才算真正解决 #84 的超时**，目前只是把它从"永远卡住"变成"120 秒后报失败"。
+   - **第 226 轮的最小复现结果（比上一版描述更精确）**：
+     - `{ auto o = JSValue::object(); }` 单独构造→析构，甚至循环 1000 次：**0.14 秒，不卡**。
+     - `realm` + 只跑 seed 22：**0.1 秒，不卡**。
+     - `realm` + 依次跑 seed 0…47（`stagesr` 模式）：**卡在 A22**（60 秒未完）；去掉 `realm` 的同一序列（`stages` 模式）：**全部 48 个 seed 加后面所有阶段跑完**。
+   - 结论：不是"空对象本身"的问题，也不是某个 seed 的问题，而是**累积存活对象数 + 一个多余根**时的**超线性开销**。多一个根不该改变复杂度量级，所以嫌疑集中在两点：GC 的 mark/sweep 对**不可达但未释放**的对象每轮都要重扫（近似平方），或该对象的**析构/finalizer 队列**在每次 GC 前进一次。**最小复现已收窄到"两个变量 + 一个循环"**，下一步应当在 GC 入口加计数打印，量出 mark 次数随 seed 增长的关系，而不是继续二分 fixture。
+   - **注意**：把 `realm` 删掉能让 #84 **跑完**（十秒），但它现在**失败**在一个真实的差分差异上——那是另一件事，需要看 `--output-on-failure` 的具体 diff。
 47. **我在第 118 轮引入了一个回归：新探针的目标名撞了旧测试引用的名字，导致旧差分永远失败**（完整跑才暴露，单跑门禁三项看不出来）。
    - 经过：第 118 轮我新建 `test/unit/utils/parity/PrimitiveGeometryParityProbe.cpp`，在 `test/CMakeLists.txt` 里注册为 `ThreeJsPrimitiveGeometryParityProbe`。但 `test/CMakeLists.txt:1202` 处的**旧**测试 `threecpp.threejs-primitive-geometries-parity` 早就用 `$<TARGET_FILE:ThreeJsPrimitiveGeometryParityProbe>` 指向同名目标——于是那个旧测试现在跑的是**我的新探针**，而它用的脚本是 `compare-primitive-geometries.mjs`（喂 JSON 文档、期望 `keys` 数组）。新探针按自己的行协议解析，直接回 `{"error":...}`，断言因此失败。
    - 证据：`ctest -j 4 -E "lights-states"` 跑到 **196 项里 195 通过、1 失败**，失败项是 `threecpp.threejs-primitive-geometries-parity`（#179/#181 两次运行编号不同但同一项）；v8 报错正是 `actual: ['error']` 对 `expected: ['cloneAttribute', ...]`。
