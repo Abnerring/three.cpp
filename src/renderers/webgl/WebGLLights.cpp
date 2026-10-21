@@ -65,7 +65,7 @@ JSValue module() {
     if (strong.isObject()) return strong;
     auto result=JSValue::object(nullptr);literal(result,"nextVersion",0);
     literal(result,"sort",ordinary(shadowFirst,{},"shadowCastingAndTexturingLightsFirst",2));
-    result.retainForHeapLifetime();strong=result;return result;
+    strong=result;return result;
 }
 void copyColor(JSValue uniforms,const char* field,const JSValue& source,const JSValue& intensity) {
     const auto target=uniforms.get(field),copy=target.get("copy");const auto copied=copy.call(target,{source});
