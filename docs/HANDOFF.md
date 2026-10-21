@@ -119,6 +119,11 @@
    - **行为验证**：`mod3` 打印的 `version` 从修前的 **0 / 0 / 0** 变成修后的 **0 / 2 / 4**——第一个用例 0、第二个用例 2，**与上游期望完全一致**（这正是 `threejs-webgl-lights-states-parity` 报的第一个差异 `root.1.setup.version`）。
    - **门禁**：核心 **738 用例 / 205,626 断言**、addons **155 / 23,996**、`primitive-geometry`、`port-audit` 全部通过，数字**一个没变**（说明这处修改没有影响任何既有行为）。
    - **遗留的性能问题（下一轮）**：改成强引用后，探针的**默认全量路径变慢**（180 秒仍未输出），而 `mod3`（只跑三个 case）很快。说明强引用把某个对象图钉在了根集合里，回收成本随之上升。要么 `retainForHeapLifetime()` 与强引用叠加造成双重保留，要么被钉住的对象参与了每轮 mark。下一步用 `stages` 模式定位是哪一阶段开始变慢，再决定是"只强引用计数器的宿主、不放整个模块"还是"去掉 `retainForHeapLifetime()`"。
+55. **第 235 轮：慢的结构原因找到了——`JSHeap::collect` 里有两个"重审到稳定"的 `for (;;)` 循环，而每次重审都要遍历全部记录**。
+   - 位置：`src/core/JSValue.cpp` 里 `class JSHeap`（603 行起）、`collect(bool retireRealm)`（979 行起）。关键的循环在 **1234** 行与 **1259** 行，都是 `for (;;)`；紧挨着的 1237 行是 `for (const auto& [id, value] : records) beforeRoots.emplace(id, value->roots);`——**每轮迭代都要把整张 `records` 表扫一遍**。文件里还有注释明确写着这层意图："re-mark after each owner"、"Re-read the described live graph before committing a sweep"、"Graph changes are re-audited before sweeping and must eventually settle"。
+   - **这解释了第 234 轮的观测**：迭代次数只要随对象数增长，总代价就是 O(N²) 量级。保留一个模块会让每轮多一次图变化、多一轮重审，于是"秒级"变成"分钟级"；48 个种子累积下来就是 120 秒还没输出。
+   - **下一步（性能修复方向，三条）**：① 给两个 `for (;;)` 加**迭代计数并输出**，确认它到底跑几轮、是否随 N 增长；② 若只是"最后一轮验证"需要，改成**只重审受影响的部分**而不是整张表；③ 若重审是因为"每次都有微小变化"，找出是哪个字段（很可能是 `records` 的 `roots` 表）在扫的过程中被修改，让它在 mark 期间不再变化即可把迭代数压到常数。
+   - **注意**：这条只讲性能，不涉及第 53 条的正确性修复——那条修复必须保留（它让 `version` 从 0/0/0 变成 0/2/4，与上游一致）。
 54. **第 234 轮：性能回退与保留无关，是"保留堆变大就变慢"的独立缺陷**。
    - 试了两件事：① 保留强引用 + `retainForHeapLifetime()`；② 只保留强引用、去掉 `retainForHeapLifetime()`。两者**行为相同**（`mod3` 都是 0/2/4，正确），**速度也都慢**（探针默认路径 120 秒仍未输出）。所以慢不是那句 `retainForHeapLifetime()` 造成的。
    - 回看修前：模块**每轮被回收**，同样的 48 个种子能跑完（`stages` 模式全程结束）。修后模块**一直保留**，卡在 A37 附近。结论：**端口的回收成本随保留堆大小增长得比预期快**——多保留一个模块就足以把"秒级"变成"分钟级"。
