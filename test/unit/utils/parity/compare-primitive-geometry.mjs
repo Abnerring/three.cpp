@@ -212,6 +212,7 @@ const interpolantScenarios = [
     ['interp linear 4 2 0 1 8 0 1 2 3 4 5 6 7', () => new LinearInterpolant([0, 1], [0, 1, 2, 3, 4, 5, 6, 7], 4)],
     ['interp discrete 2 3 0 1 2 6 0 0 1 1 2 2', () => new DiscreteInterpolant([0, 1, 2], [0, 0, 1, 1, 2, 2], 2)],
     ['interp discrete 1 2 0 1 2 5 7', () => new DiscreteInterpolant([0, 1], [5, 7], 1)],
+    ['interp discrete 4 2 0 1 8 0 1 2 3 4 5 6 7', () => new DiscreteInterpolant([0, 1], [0, 1, 2, 3, 4, 5, 6, 7], 4)],
     ['interp cubic 1 2 0 1 6 0 10 1 20 0 1', () => new CubicInterpolant([0, 1], [0, 10, 1, 20, 0, 1], 1)],
     ['interp cubic 2 2 0 1 12 0 0 1 1 2 0 0 3 1 4 0 0', () => new CubicInterpolant([0, 1], [0, 0, 1, 1, 2, 0, 0, 3, 1, 4, 0, 0], 2)],
     ['interp cubic 1 3 0 1 2 9 0 10 1 20 0 1 30 2 0', () => new CubicInterpolant([0, 1, 2], [0, 10, 1, 20, 0, 1, 30, 2, 0], 1)],
@@ -306,9 +307,11 @@ const lightScenarios = [
     ['light spot 0 1 0 1 5 0.75 0.5 2', () => new SpotLight(new Color(0, 1, 0), 1, 5, 0.75, 0.5, 2)],
     ['light hemisphere 1 1 1 0.2 0.2 0.4 1.5', () => new HemisphereLight(new Color(1, 1, 1), new Color(0.2, 0.2, 0.4), 1.5)],
     ['light hemisphere 0 0 1 1 0 0 2', () => new HemisphereLight(new Color(0, 0, 1), new Color(1, 0, 0), 2)],
+    ['light hemisphere 0.5 0.5 0.5 0.5 0.5 0.5 0', () => new HemisphereLight(new Color(0.5, 0.5, 0.5), new Color(0.5, 0.5, 0.5), 0)],
     ['light rectarea 1 1 1 5 4 3', () => new RectAreaLight(new Color(1, 1, 1), 5, 4, 3)],
     ['light rectarea 0.5 0.25 1 2 3 4', () => new RectAreaLight(new Color(0.5, 0.25, 1), 2, 3, 4)],
     ['light probe 2', () => new LightProbe(undefined, 2)],
+    ['light probe 0', () => new LightProbe(undefined, 0)],
 ];
 
 const lightRaw = execFileSync(probePath, [], {input: lightScenarios.map(([line]) => line).join('\n'), encoding: 'utf8'});
@@ -413,6 +416,7 @@ const helperScenarios = [
     ['helper grid 2 2', () => new GridHelper(2, 2)],
     ['helper grid 1 1', () => new GridHelper(1, 1)],
     ['helper grid 100 100', () => new GridHelper(100, 100)],
+    ['helper grid 10 1', () => new GridHelper(10, 1)],
     ['helper box3 -1 -1 -1 1 1 1', () => new Box3Helper(new Box3(new Vector3(-1, -1, -1), new Vector3(1, 1, 1)))],
     ['helper box3 0 0 0 0 0 0', () => new Box3Helper(new Box3(new Vector3(0, 0, 0), new Vector3(0, 0, 0)))],
     ['helper planehelper 0 1 0 -1 2', () => new PlaneHelper(new Plane(new Vector3(0, 1, 0), -1), 2)],
@@ -585,6 +589,7 @@ const textureScenarios = [
     ['texture depth 4 2', () => new DepthTexture(4, 2)],
     ['texture depth 1 1', () => new DepthTexture(1, 1)],
     ['texture array2d 2 2 2', () => new DataArrayTexture(new Uint8Array(2 * 2 * 2 * 4), 2, 2, 2)],
+    ['texture array2d 1 1 1', () => new DataArrayTexture(new Uint8Array(4), 1, 1, 1)],
     ['texture data3d 2 2 2', () => new Data3DTexture(new Uint8Array(2 * 2 * 2 * 4), 2, 2, 2)],
     ['texture compressed', () => new CompressedTexture()],
     ['texture compressedarray', () => new CompressedArrayTexture()],
