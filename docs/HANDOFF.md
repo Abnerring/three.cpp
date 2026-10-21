@@ -105,6 +105,11 @@
    - **为什么走不动**：本环境**没有 Vulkan SDK**（`THREECPP_BUILD_VULKAN=OFF`、`THREECPP_VULKAN_INCLUDE_DIR-NOTFOUND`、`THREECPP_GLSLANG_VALIDATOR-NOTFOUND`）。后果很具体：`test/CMakeLists.txt` 里 `if(THREECPP_BUILD_VULKAN)` 整块被跳过，`VulkanRendererTests` 目标**根本不会生成**，"渲染到纹理 / 立方体目标 / 预滤波"这类改动只能编译、**无法验证**。按本项目"不留未验证代码"的规则，这类改动必须先有可验证的环境。同理 `src/nodes`（TSL，219 个模块）的验收是"生成的着色器能编译"，也被同一缺口卡住。
    - **解锁条件**：安装 Vulkan SDK（`vulkan/vulkan.h`、loader、`glslangValidator`），用 `-DTHREECPP_BUILD_VULKAN=ON` 配置；届时第 36 条的分阶段计划（先渲染到二维离屏纹理并读回，再扩到六面，最后接 `PMREMGenerator`）可以直接执行。
    - **在不装 SDK 的前提下还能做的**：继续往**已有差分能力**上加场景（第 187–190 轮各加 5 条，四次全部一次通过）；给已有模块补边界与退化输入；扩充单元测试。这些都是"能做完并且能证明做对了"的工作。
+48. **第一个真实缺陷候选：一个未被使用的 `JSValue::object()` 局部变量会让探针永远卡住**（第 225 轮定位）。
+   - 现象：`ThreeJsWebGLLightsParityProbe` 用默认参数运行时**永不返回**（180 秒零输出，说明卡在构造 JSON 的过程中）；把同一个 `main` 里那句**从未被使用**的 `const auto realm = JSValue::object();` 删掉后，**9.9 秒**跑完、输出 576 KB、`ctest -R lights-states-parity` **通过**。
+   - 定位过程：给 `main` 加 seed 参数（seed 17/18/19 单独跑全部正常）→ 加阶段标记（`stages` 模式打印 A…F 全程走完）→ 对比两条路径**唯一**的差异就是那句 `realm`，删掉即好。**先前第 29 条把它记成"fixture 在 light(18,1) 处挂起"是错的**：`lightsCase` 本身没问题。
+   - 这**不是**探针写法问题可以解释的：那句变量既没有参与任何计算，也没有被 lambda 捕获（`[&]` 捕获不到未使用的变量）——它的唯一作用是**让一个空的 JSValue 对象在该作用域内存活到 `main` 结束**。所以嫌疑落在 JSValue 的**对象/引用登记**或**析构**路径上（例如空对象进入某个环形结构、或 finalizer 队列在退出时死循环）。
+   - **下一步（最小复现）**：单独写一个只做 `{ auto o = JSValue::object(); }` 再 `return 0;` 的探针，看是否卡住；再二分 `JSValue::object()` 到 `JSObject` 构造/登记的哪一步。**这条修好后才算真正解决 #84 的超时**，目前只是把它从"永远卡住"变成"120 秒后报失败"。
 47. **我在第 118 轮引入了一个回归：新探针的目标名撞了旧测试引用的名字，导致旧差分永远失败**（完整跑才暴露，单跑门禁三项看不出来）。
    - 经过：第 118 轮我新建 `test/unit/utils/parity/PrimitiveGeometryParityProbe.cpp`，在 `test/CMakeLists.txt` 里注册为 `ThreeJsPrimitiveGeometryParityProbe`。但 `test/CMakeLists.txt:1202` 处的**旧**测试 `threecpp.threejs-primitive-geometries-parity` 早就用 `$<TARGET_FILE:ThreeJsPrimitiveGeometryParityProbe>` 指向同名目标——于是那个旧测试现在跑的是**我的新探针**，而它用的脚本是 `compare-primitive-geometries.mjs`（喂 JSON 文档、期望 `keys` 数组）。新探针按自己的行协议解析，直接回 `{"error":...}`，断言因此失败。
    - 证据：`ctest -j 4 -E "lights-states"` 跑到 **196 项里 195 通过、1 失败**，失败项是 `threecpp.threejs-primitive-geometries-parity`（#179/#181 两次运行编号不同但同一项）；v8 报错正是 `actual: ['error']` 对 `expected: ['cloneAttribute', ...]`。
