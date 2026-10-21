@@ -327,6 +327,7 @@ const lightScenarios = [
     ['light rectarea 1 1 1 5 4 3', () => new RectAreaLight(new Color(1, 1, 1), 5, 4, 3)],
     ['light rectarea 0.5 0.25 1 2 3 4', () => new RectAreaLight(new Color(0.5, 0.25, 1), 2, 3, 4)],
     ['light rectarea 1 1 1 1 0 0', () => new RectAreaLight(new Color(1, 1, 1), 1, 0, 0)],
+    ['light rectarea 0 0 0 0 1 1', () => new RectAreaLight(new Color(0, 0, 0), 0, 1, 1)],
     ['light probe 2', () => new LightProbe(undefined, 2)],
     ['light probe 0', () => new LightProbe(undefined, 0)],
 ];
@@ -445,6 +446,7 @@ const helperScenarios = [
     ['helper polargrid 10 16 8 64', () => new PolarGridHelper(10, 16, 8, 64)],
     ['helper polargrid 2 6 3 12', () => new PolarGridHelper(2, 6, 3, 12)],
     ['helper polargrid 3 5 4 10', () => new PolarGridHelper(3, 5, 4, 10)],
+    ['helper polargrid 7 12 6 24', () => new PolarGridHelper(7, 12, 6, 24)],
     ['helper polargrid 2 4 2 8', () => new PolarGridHelper(2, 4, 2, 8)],
     ['helper camerahelper', () => new CameraHelper(new PerspectiveCameraForHelper())],
     ['helper skeletonhelper', () => new SkeletonHelper(new Object3DForHelper())],
@@ -559,6 +561,7 @@ const nodeScenarios = [
     ['node rendertarget 16 8', () => new RenderTarget(16, 8)],
     ['node rendertarget 1 1', () => new RenderTarget(1, 1)],
     ['node rendertarget 8 32', () => new RenderTarget(8, 32)],
+    ['node rendertarget 256 1', () => new RenderTarget(256, 1)],
     ['node rendertarget3d 4 4 2', () => new RenderTarget3D(4, 4, 2)],
     ['node rendertarget3d 2 2 1', () => new RenderTarget3D(2, 2, 1)],
 ];
@@ -614,6 +617,7 @@ const textureScenarios = [
     ['texture data 1 1', () => new DataTexture(new Uint8Array(1 * 1 * 4), 1, 1)],
     ['texture data 8 8', () => new DataTexture(new Uint8Array(8 * 8 * 4), 8, 8)],
     ['texture data 3 5', () => new DataTexture(new Uint8Array(3 * 5 * 4), 3, 5)],
+    ['texture data 16 2', () => new DataTexture(new Uint8Array(16 * 2 * 4), 16, 2)],
     ['texture depth 4 2', () => new DepthTexture(4, 2)],
     ['texture depth 1 1', () => new DepthTexture(1, 1)],
     ['texture depth 2 8', () => new DepthTexture(2, 8)],
@@ -798,6 +802,7 @@ const curvePathScenarios = [
     ['curvepath 0 0 1 0 2 0', [[0, 0], [1, 0], [2, 0]]],
     ['curvepath 0 0 0 0 0 0', [[0, 0], [0, 0], [0, 0]]],
     ['curvepath 1 1 1 1 1 1', [[1, 1], [1, 1], [1, 1]]],
+    ['curvepath 0 0 0 1 1 1', [[0, 0], [0, 1], [1, 1]]],
     ['curvepath 0 0 1 1 2 2', [[0, 0], [1, 1], [2, 2]]],
     ['curvepath 0 0 2 0 1 1', [[0, 0], [2, 0], [1, 1]]],
 ];
