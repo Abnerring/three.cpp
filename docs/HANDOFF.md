@@ -151,6 +151,11 @@
    - 中间还踩了两个工具坑：`$t.Replace(...)` 里用反斜杠转义双引号在 PowerShell 里**直接语法错误**（整段脚本没执行，文件未被改动——事后 `git status` 确认过）；补 include 时又因为之前回退把 `<cstdio>` 一起撤掉而先失败一次。
    - **结论与下一步**：不要再"改完就信"。下次插桩后**先 `Select-String` 那个 exe 里有没有那段字面量**（或用 `strings`），确认代码真的进了二进制；再跑。如果字面量在、输出仍无，才去怀疑运行路径。
    - **本轮无代码变更**（插桩已 `git checkout` 撤回），核心 738 / 205,626、`primitive-geometry`、`port-audit` 全绿，树干净。
+64. **第 244 轮：`object()` 里的插桩确认进了二进制（grep 到了字面量）却一次都没执行——这是一个还没解释清楚的矛盾**。
+   - 严格按第 63 条的纪律执行：先在 `JSValue::object()` 里插桩（三段计时，`[objstage]` 前缀），编译后用 `Select-String -Path <exe> -Pattern 'objstage'` **在二进制里搜到了那段字面量**（`marker in binary: True`），确认改动真的链接进去了；然后跑 `timing2`（无输出，合理，因为它不调 `object()`），再跑 `timing3`（**每轮显式调用 1000 次 `JSValue::object()`**）——**仍然一行 `[objstage]` 都没有**。
+   - 这排除了"没编译进去""没链接进去""环境变量""stderr 重定向"这些解释。剩下的可能只有：调用被内联到别处、或者 `timing3` 里那个循环被优化掉了、或者 `object()` 存在第二个定义（但全文搜索只找到一处 `JSValue::object()` 定义，头文件里只有声明）。
+   - **处理**：回退插桩，树保持干净，核心 738 / 205,626、`primitive-geometry`、`port-audit` 全绿。
+   - **下一轮的路线（走已验证可行的路）**：不要继续在 `object()` 上纠缠。改在 `JSHeap` 的**类内**方法里插桩——`allocate`（885）、`record`（893）、`release`（1655）这三处都在同一个类里，而且**之前 `allocate` 里的 `[heap]` 打印确实生效过**，说明这条路线能出数据。把三段耗时分别累计在这三处，跑 `timing3`，就能知道 130 微秒落在哪一段。
 62. **第 242 轮：分段计时的实现尝试失败在两处工程细节上，方法本身仍然有效**。
    - 想在 `JSValue::object()`（`JSValue.cpp:1733`）里分三段计时（`current()` / `allocate()` / `record(...).prototype = …`），受 `THREECPP_GC_TRACE` 控制每 1000 次打印一行均值。两次编译失败：一次是 `#include <chrono>` 缺失（因为回退把之前加的 `<cstdio>` 一起撤了），补上 `<chrono>/<cstdio>/<cstdlib>` 后编译通过；但运行时**一行输出都没有**，说明子进程没有继承到那个环境变量。
    - **处理**：回退这次插桩（`git checkout src/core/JSValue.cpp`），保持树干净。核心 738 / 205,626 与 `primitive-geometry`、`port-audit` 依旧全绿。
