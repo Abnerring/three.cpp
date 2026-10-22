@@ -551,6 +551,18 @@
    - **最可能的原因**：`drawPmremBlurFace` 里 `vkCmdPushConstants(..., VERTEX|FRAGMENT, 0, sizeof(float)*block.size(), ...)` 推了 **196 字节**，但 `pmremBlurPipelineLayout` 的推常量范围可能只有 **192**（顶点阶段声明的是三个矩阵；第 63 轮我在顶点着色器里加了 `sigmaGuard` 让两阶段都引用 `sigma`，但**着色器已重编译、布局是在构造期从反射建的**，需要确认反射结果真的变成 196 了）。另一个可能是 cube 视图的 `levelCount`/`layerCount` 与六层 barrier 的组合。
    - **当前状态**：真正的 `blurCube` **保留在代码里**（编译通过、未被任何测试调用），`blurCubeTests` 从 `--cube` 列表移除；核心 **747 / 205,735**、`primitive-geometry`、`port-audit`、Vulkan 构建 0 错误、`--cube` 0，树干净。
    - **下一步**：打印 `pmremBlurReflectedLayout` 里推常量范围的实际 `offset/size`，与 `block.size()*4 = 196` 对比；这一步**只读不改**，用探针把数字拿到再决定改哪里。
+135. **第 74 轮：设备丢失的病因**确诊**了——每个管线布局里有三个相互重叠的推常量范围**。
+   - **探针**：在 `VulkanPipelineLayout.cpp` 里"把范围写进 `result.pushConstants`"之后加一行打印，输出每个范围的 `stageFlags/offset/size`。启动命令 `--cube` 就打印（布局是构造期建的），得到成组的三行：
+     ```
+     layout pushConstant stage=17 offset=0 size=128
+     layout pushConstant stage=1  offset=0 size=192
+     layout pushConstant stage=17 offset=0 size=196
+     ```
+     `stage=17` 是 `VERTEX|FRAGMENT`，`stage=1` 是 `VERTEX`，**三者 offset 全是 0、size 各不相同、范围互相重叠**——这违反 Vulkan 对 `VkPipelineLayoutCreateInfo::pPushConstantRanges` 的要求（范围不得重叠），会直接让设备丢失。**这就是 blur 一跑就 `VK_ERROR_DEVICE_LOST` 的根因。**
+   - **为什么第 63 轮的 `sigmaGuard` 没用**：我写的是 `float sigmaGuard = transforms.sigma - transforms.sigma;`，**编译器把它常量折叠成 0 并删掉了整个引用**，所以顶点阶段反射出来的仍然是 192 字节。**"引用一下防止被优化"这种做法在着色器里不可靠**。
+   - **尝试过的修法（未生效）**：在 `VulkanPipelineLayout.cpp` 里按 `offset` 合并、`size` 取最大、`stageFlags` 或起来。文件确实改对了（合并块在 103–114 行、旧的整体发射行已不在），但运行输出**仍是三条**——说明**编译产物没有更新**（强制 touch 后重新构建也没有变化）。可能是 `build-vkdebug` 里 `VulkanPipelineLayout.cpp` 的增量规则或另一个同名目标也在链接。
+   - **状态**：已把 `VulkanPipelineLayout.cpp` 回退到 HEAD；核心 **747 / 205,735**、`primitive-geometry`、`port-audit`、Vulkan 构建 0 错误、`--cube` 0，树干净。
+   - **下一步**：① 先确认 `build-vkdebug` 到底有没有重新编译这个文件（删掉它的 `.obj` 再建）；② 确认后把合并逻辑重新加上；③ 若合并仍不够，就在**着色器层面**把两阶段的推常量块写成**完全相同的大小**（例如顶点阶段也真正用到 `sigma`，而不是写一个会被折叠成 0 的表达式）。
 70. **第 520 轮：完整 Vulkan 套件 211/211 全绿，耗时 270.72 秒**。
    - 命令：`ctest --test-dir build-vulkan -j 4 -E "lights-states" --output-on-failure`（仍排除第 46 条那个已知项；它在 Vulkan 构建里同样慢）。
    - 结果：**100% tests passed, 0 tests failed out of 211**，总耗时 **270.72 秒**。对比同一套件在 **Debug** 配置下的 **3784.56 秒 / 2 失败**，差了约 14 倍——再次印证第 69 条"是构建类型不是代码"的结论。
