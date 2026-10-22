@@ -194,8 +194,8 @@
     "note": "Accepted port scope is src and examples/jsm, including tracked third-party dependencies. Editor/manual web applications are excluded from native application rewrites. Native host behavior, packaging and all three platforms require separate implementation and verification evidence."
   },
   "counts": {
-    "partial-unverified": 305,
-    "missing": 636,
+    "partial-unverified": 307,
+    "missing": 634,
     "vulkan-port-pending": 290,
     "dependency-unverified": 20
   },
@@ -203,8 +203,8 @@
     "src": {
       "modules": 755,
       "counts": {
-        "partial-unverified": 221,
-        "missing": 244,
+        "partial-unverified": 223,
+        "missing": 242,
         "vulkan-port-pending": 290
       }
     },
@@ -803,7 +803,7 @@
       "path": "src/nodes/core",
       "upstreamFiles": 42,
       "moduleCount": 42,
-      "modulesWithCppFiles": 2,
+      "modulesWithCppFiles": 4,
       "verifiedComplete": 0
     },
     {
@@ -9040,11 +9040,11 @@
       "scope": "src",
       "kind": "core",
       "upstreamSha256": "7bf1198cd6e7c90661b98fda3f101190088f2b8abdb227fab9df7042e04faeaf",
-      "header": null,
-      "implementation": null,
+      "header": "src/nodes/core/NodeCode.h",
+      "implementation": "src/nodes/core/NodeCode.cpp",
       "expectedHeader": "src/nodes/core/NodeCode.h",
       "expectedImplementation": "src/nodes/core/NodeCode.cpp",
-      "status": "missing",
+      "status": "partial-unverified",
       "verifiedComplete": false,
       "apiExtraction": "partial-static",
       "verification": {
@@ -9148,11 +9148,11 @@
       "scope": "src",
       "kind": "core",
       "upstreamSha256": "2b1d89d3c53c218fdbffd6da95e559ffd297f9df269e7868351c25f541a4d035",
-      "header": null,
-      "implementation": null,
+      "header": "src/nodes/core/NodeFunctionInput.h",
+      "implementation": "src/nodes/core/NodeFunctionInput.cpp",
       "expectedHeader": "src/nodes/core/NodeFunctionInput.h",
       "expectedImplementation": "src/nodes/core/NodeFunctionInput.cpp",
-      "status": "missing",
+      "status": "partial-unverified",
       "verifiedComplete": false,
       "apiExtraction": "static-only",
       "verification": {

@@ -123,6 +123,8 @@ target_sources(threecpp PRIVATE
     src/extras/ImageUtils.cpp
     src/extras/PMREMGenerator.cpp
     src/nodes/core/StackTrace.cpp
+    src/nodes/core/NodeCode.cpp
+    src/nodes/core/NodeFunctionInput.cpp
     src/loaders/DataTextureLoader.cpp
     src/loaders/CompressedTextureLoader.cpp src/loaders/MaterialLoader.cpp src/loaders/FileLoader.cpp
     src/loaders/ObjectLoader.cpp

@@ -576,6 +576,13 @@
    - **测试（4 个用例、24 条断言）**：Chrome 与 Firefox 两种帧格式、忽略规则（`Node.js` 被丢弃）、查询串与路径剥离、`getLocation()`/`getError()` 的格式、`NodeError` 的 `name` 与可选栈。
    - **一个诚实记下的怪癖**：Firefox 形式下 `fn` 会带**前导空格**（`"    userFn"`），因为上游正则 `(?:(.+?)@)?` 是懒匹配、从行首开始吃。**我的第一版测试期望写成了 `"userFn"`，测试失败后打印实际帧才发现上游也是这个行为**——于是改的是**测试**，不是实现。
    - **过程**：新测试一开始没被编译（`cmake -S . -B build` 的输出被我重定向到 nul，reconfigure 其实失败）；Catch2 的头是项目内的 `#include "catch.hpp"`（不是 `catch2/catch_test_macros.hpp`）。两个都修好后：核心 **751 用例 / 205,759 断言**（+4 / +24）、`primitive-geometry`、`port-audit` 全绿。
+138. **第 77 轮：TSL 再添两个数据类——`NodeCode` 与 `NodeFunctionInput`**。
+   - **`NodeCode`**（46 行）：`name`、`type`、`code`（默认空）、静态 `isNodeCode = true`。上游用 `Object.defineProperty` 把它设成**不可枚举**属性；C++ 里用 `static constexpr bool` 表达"这是这个类的标记"。
+   - **`NodeFunctionInput`**（61 行）：`type`、`name`、`count`（上游默认 `null`，这里用 `std::optional<double>`）、`qualifier`（`in`/`out`/`inout`，GLSL 专用）、`isConst`（GLSL 专用）、静态 `isNodeFunctionInput = true`。
+   - **为什么分两个 .cpp**：两个类都只有头文件里的内联构造函数，但项目的三类源码（`src/`、`test/`、CMake 的源列表）都是**显式列文件**的，所以各留一个只有 `#include` 的 `.cpp` 让构建系统有编译单元可列——省得以后加方法时再改 CMake。
+   - **测试（2 个用例、15 条断言）**：默认构造的字段值（`count` 为空 optional、`qualifier` 空串、`isConst` 为假）、带全部参数构造（`count = 4`、`qualifier = "inout"`、`isConst = true`）、两个静态标记。
+   - **验证**：核心 **753 用例 / 205,774 断言**（+2 / +15）、`primitive-geometry`、`port-audit` 全绿；审计 `missing` **634**（-2）、`partial-unverified` **307**（+2）。
+   - **下一步**：`src/nodes/core` 里接下来最独立的是 `NodeCache`（75 行）、`NodeVar`（69 行）、`NodeVarying`（63 行）、`NodeUniform`（91 行）——前两个只依赖基类，可以先做；`NodeVarying`/`NodeUniform` 会碰到 `Node`，需要等基类。
 70. **第 520 轮：完整 Vulkan 套件 211/211 全绿，耗时 270.72 秒**。
    - 命令：`ctest --test-dir build-vulkan -j 4 -E "lights-states" --output-on-failure`（仍排除第 46 条那个已知项；它在 Vulkan 构建里同样慢）。
    - 结果：**100% tests passed, 0 tests failed out of 211**，总耗时 **270.72 秒**。对比同一套件在 **Debug** 配置下的 **3784.56 秒 / 2 失败**，差了约 14 倍——再次印证第 69 条"是构建类型不是代码"的结论。
