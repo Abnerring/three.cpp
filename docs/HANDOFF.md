@@ -1496,6 +1496,12 @@
    - **测试（6 个用例、22 条断言）**：两级一面的完整游走（首块 68、第二级 172）；**101 字节需要 3 字节填充**（第二级 176）；**键值对 16 字节 → 首块 84**；**六面一級**（68 / 84 / 148）；**`loadMipmaps` 开关**（1 与 3）；**无效头部返回空**。
    - **验证**：核心 **1272 用例 / 209,270 断言**（+6 / +22）、addons、`primitive-geometry`、`port-audit`、Vulkan 全绿。
    - **KTX 的诚实状态**：**头部 ✓ + 图像表 ✓**；剩下 `glInternalFormat` 到 three.js 枚举的映射（与 DDS 的格式层同类）。
+269. **第 208 轮：`KTXLoader` 收尾核验 + `LUTImageLoader` 第一层**。
+   - **KTX 的核验**：上游 `parse` 里 `format: ktx.glInternalFormat` 是**原样透传**，**没有任何枚举映射**，所以端口不需要再补一层——**KTX 头部 ✓ + 图像表 ✓ = 完整**（载荷仍需 GPU 压缩格式）。
+   - **`LUTImageLoader` 的两块**：`_getImageData`（要图片解码，端口没有）与 **`_horz2Vert`**（**纯排布**，可做）。上游用 canvas 的 `drawImage` 做条带搬运，端口**用普通数组直接搬**，逻辑等价：**`width = 源的高`**、**`height = 源的宽`**，每 `i` 把源里 `(i·w, 0, w, w)` 这个方块搬到目标 `(0, dy, w, w)`，`flip` 时 `dy = height − i·w`。
+   - **测试（4 个用例、12 条断言）**：两方块（四宽两高 → 两宽四高）的首两行像素值；**flip 与不 flip 的首块不同**；尺寸非法与源太短都返回空；**1×1 的像素四字节原样保留**。
+   - **验证**：核心 **1276 用例 / 209,282 断言**（+4 / +12）、addons、`primitive-geometry`、`port-audit`、Vulkan 全绿。
+   - **还剩**：`parse` 的纹理参数（`size³`、`RGBAFormat`、`UnsignedByteType`、`LinearFilter`、`ClampToEdge`、`generateMipmaps = false`）与 `_getImageData`（要解码器）。
 70. **第 520 轮：完整 Vulkan 套件 211/211 全绿，耗时 270.72 秒**。
    - 命令：`ctest --test-dir build-vulkan -j 4 -E "lights-states" --output-on-failure`（仍排除第 46 条那个已知项；它在 Vulkan 构建里同样慢）。
    - 结果：**100% tests passed, 0 tests failed out of 211**，总耗时 **270.72 秒**。对比同一套件在 **Debug** 配置下的 **3784.56 秒 / 2 失败**，差了约 14 倍——再次印证第 69 条"是构建类型不是代码"的结论。

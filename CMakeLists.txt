@@ -151,6 +151,7 @@ target_sources(threecpp PRIVATE
     src/loaders/PVRLoader.cpp
     src/loaders/DDSLoader.cpp
     src/loaders/KTXLoader.cpp
+    src/loaders/LUTImageLoader.cpp
     src/loaders/CubeTextureLoader.cpp
     src/extras/ImageUtils.cpp
     src/extras/PMREMGenerator.cpp
