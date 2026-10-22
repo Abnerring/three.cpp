@@ -3,7 +3,9 @@
 #include <map>
 #include <variant>
 #include <optional>
+#include <memory>
 #include <string>
+class BufferGeometry;
 #include <vector>
 
 // Port of the header half of examples/jsm/loaders/PLYLoader.js at the pinned revision. The
@@ -110,4 +112,9 @@ class PLYLoader {
 
     // Whether a type is one of the floating spellings.
     static bool isFloatType(const std::string& type);
+
+    // Turns the accumulated streams into a geometry: the index first, then each attribute
+    // the file supplied. Upstream does not compute missing normals, so a file without them
+    // yields a geometry without a normal attribute.
+    static std::shared_ptr<BufferGeometry> buildGeometry(const Buffer& buffer);
 };

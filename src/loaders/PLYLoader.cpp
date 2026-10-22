@@ -1,6 +1,7 @@
 #include "loaders/PLYLoader.h"
 
 #include <cstdlib>
+#include "core/BufferGeometry.h"
 #include "math/Color.h"
 #include "math/ColorManagement.h"
 #include <cmath>
@@ -318,4 +319,23 @@ void PLYLoader::handleFace(Buffer& buffer, const std::vector<double>& vertexIndi
         buffer.indices.push_back(asIndex(vertexIndices[2]));
         buffer.indices.push_back(asIndex(vertexIndices[3]));
     }
+}
+
+std::shared_ptr<BufferGeometry> PLYLoader::buildGeometry(const Buffer& buffer) {
+    auto geometry = std::make_shared<BufferGeometry>();
+    if (!buffer.indices.empty()) geometry->setIndex(buffer.indices);
+    // Only the streams the file actually carried become attributes.
+    if (!buffer.vertices.empty())
+        geometry->setAttribute("position",
+                               std::make_shared<TypedBufferAttribute<float>>(buffer.vertices, 3));
+    if (!buffer.normals.empty())
+        geometry->setAttribute("normal",
+                               std::make_shared<TypedBufferAttribute<float>>(buffer.normals, 3));
+    if (!buffer.uvs.empty())
+        geometry->setAttribute("uv",
+                               std::make_shared<TypedBufferAttribute<float>>(buffer.uvs, 2));
+    if (!buffer.colors.empty())
+        geometry->setAttribute("color",
+                               std::make_shared<TypedBufferAttribute<float>>(buffer.colors, 3));
+    return geometry;
 }

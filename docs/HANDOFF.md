@@ -884,6 +884,12 @@
    - **测试（4 个用例、24 条断言）**：三角形；**四边形按规范拆成 `0,1,2` 与 `0,2,3`**（用 `4,5,6,7` 输入，逐项核对 6 个索引）；2 个和 5 个索引的面**不产生三角形**；按描述符顺序装配位置与 UV 且未启用的流为空；整数颜色的往返（255 保持 255、0 保持 0、中间值落在区间内）。
    - **验证**：核心 **882 用例 / 206,563 断言**（+4 / +24）、`primitive-geometry`、`port-audit` 全绿。
    - **PLY 现状**：头解析 ✓ / 类型映射 ✓ / ASCII 体 ✓ / 二进制体 ✓ / 元素处理 ✓ **五层齐备**；剩下把 `Buffer` 装成 `BufferGeometry`（`setIndex` + 四个属性）这最后一步，与 OBJ 的 `buildObjects` 同形。
+180. **第 119 轮：`PLYLoader` 收尾——`Buffer` → `BufferGeometry`，PLY 完整**。
+   - **一个先查证再动手的点**：我原以为缺 `normal` 时上游会 `computeVertexNormals()`，**grep 了才发现根本没有**——PLY 的几何就只是 `setIndex` + 逐条 `setAttribute`，**文件里没有的法线就没有**。所以端口也不算法线，注释写明这一点。
+   - **实现 `buildGeometry(Buffer)`**：索引非空才 `setIndex`；`position`/`normal`/`uv`/`color` 四条流各自非空才建属性（位置与法线 `itemSize` 3、UV 2、颜色 3）。
+   - **测试（2 个用例、11 条断言）**：完整缓冲（索引 + 四个属性）全部就位；只有位置时，**`normal`/`uv`/`color`/索引都为空**——这条直接钉住"不算法线"的行为。
+   - **验证**：核心 **884 用例 / 206,574 断言**（+2 / +11）、`primitive-geometry`、`port-audit` 全绿。
+   - **三个五层以上的 loader 全部完整**：`MTLLoader`（5 层）、`OBJLoader`（5 层）、`PLYLoader`（6 层：头解析/类型映射/ASCII/二进制/元素处理/几何构建）。
 70. **第 520 轮：完整 Vulkan 套件 211/211 全绿，耗时 270.72 秒**。
    - 命令：`ctest --test-dir build-vulkan -j 4 -E "lights-states" --output-on-failure`（仍排除第 46 条那个已知项；它在 Vulkan 构建里同样慢）。
    - 结果：**100% tests passed, 0 tests failed out of 211**，总耗时 **270.72 秒**。对比同一套件在 **Debug** 配置下的 **3784.56 秒 / 2 失败**，差了约 14 倍——再次印证第 69 条"是构建类型不是代码"的结论。
