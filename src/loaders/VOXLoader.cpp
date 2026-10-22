@@ -354,3 +354,41 @@ VOXLoader::MeshGeometry VOXLoader::buildMesh(const std::vector<Voxel>& voxels, c
     }
     return geometry;
 }
+
+VOXLoader::StringValue VOXLoader::readString(const std::vector<std::uint8_t>& buffer,
+                                             std::size_t offset) {
+    if (offset + 4 > buffer.size())
+        throw std::runtime_error("THREE.VOXLoader: String runs past the chunk");
+    const std::uint32_t length = readUint32LE(buffer, offset);
+    if (offset + 4 + static_cast<std::size_t>(length) > buffer.size())
+        throw std::runtime_error("THREE.VOXLoader: String runs past the chunk");
+
+    StringValue out;
+    out.value.assign(reinterpret_cast<const char*>(buffer.data() + offset + 4), length);
+    // The size includes the four length bytes, which is what the caller advances by.
+    out.size = 4 + static_cast<std::size_t>(length);
+    return out;
+}
+
+std::map<std::string, std::string> VOXLoader::readDict(const std::vector<std::uint8_t>& buffer,
+                                                       std::size_t offset, std::size_t& bytesRead) {
+    if (offset + 4 > buffer.size())
+        throw std::runtime_error("THREE.VOXLoader: Dictionary runs past the chunk");
+    const std::uint32_t count = readUint32LE(buffer, offset);
+    std::size_t cursor = offset + 4;
+    // The count's own four bytes are part of what the caller consumed.
+    std::size_t total = 4;
+
+    std::map<std::string, std::string> dict;
+    for (std::uint32_t i = 0; i < count; ++i) {
+        const auto key = readString(buffer, cursor);
+        cursor += key.size;
+        total += key.size;
+        const auto value = readString(buffer, cursor);
+        cursor += value.size;
+        total += value.size;
+        dict[key.value] = value.value;
+    }
+    bytesRead = total;
+    return dict;
+}

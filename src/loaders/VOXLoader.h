@@ -1,6 +1,7 @@
 #pragma once
 #include <array>
 #include <cstdint>
+#include <map>
 #include <string>
 #include <vector>
 
@@ -127,4 +128,17 @@ class VOXLoader {
     // value, since the sign only carried the facing.
     static MeshGeometry buildMesh(const std::vector<Voxel>& voxels, const Size& size,
                                   const std::vector<std::array<std::uint8_t, 4>>& palette);
+
+    // A length prefixed string: four bytes of length then that many bytes of text.
+    struct StringValue {
+        std::string value;
+        std::size_t size = 0;
+    };
+    static StringValue readString(const std::vector<std::uint8_t>& buffer, std::size_t offset);
+
+    // A dictionary: four bytes of entry count then that many key and value strings, all
+    // length prefixed. The transform chunks carry their attributes this way.
+    static std::map<std::string, std::string> readDict(const std::vector<std::uint8_t>& buffer,
+                                                       std::size_t offset,
+                                                       std::size_t& bytesRead);
 };

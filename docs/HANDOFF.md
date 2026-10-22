@@ -1213,6 +1213,13 @@
    - **验证**：核心 **1091 用例 / 208,661 断言**（+5 / +14）、`primitive-geometry`、`port-audit` 全绿。
    - **一处工具问题**：这一轮的头部插入用 `$insert = @('...','...')` 写，PowerShell **解析报错**（数组里某处引号被吞），改成 **here-string 再 split** 就好了。**以后多行代码插入一律用 here-string。**
    - **VOX 只剩 transform 层次**（`nTRN`/`nGRP`/`nSHP`）。
+229. **第 168 轮：`VOXLoader` 第七层——字符串与字典读取**。
+   - **两种基础结构**：**长度前缀字符串**（四字节小端长度 + 若干字节 ASCII）与**字典**（四字节条目数 + 每项"键字符串 + 值字符串"）。`nTRN`/`nGRP`/`nSHP` 的属性全都用字典承载，所以这一层是 transform 层次的地基。
+   - **`size` 的含义**：`StringValue.size` **包含那四个长度字节**（`4 + length`），调用方直接拿它前进；字典的 `bytesRead` 同样把条目数那四字节算进去。
+   - **越界检查**：字符串长度声明超出缓冲时抛 `String runs past the chunk`。
+   - **测试（4 个用例、9 条断言）**：`"abc"` → 值正确且 `size == 7`；两项目字典（`_name` = `root`、**`_t` = `0 1 2`**，值里可以有空格）；空字典 `consumed == 4`；**声明五字节却只有两个字符**抛错。
+   - **验证**：核心 **1095 用例 / 208,670 断言**（+4 / +9）、`primitive-geometry`、`port-audit` 全绿。
+   - **VOX 还剩**：把字典里的 `_t`/`_r`/`_name` 变成矩阵与层次（`nTRN`/`nGRP`/`nSHP` 的组装），以及把 `Group` 树装出来。
 70. **第 520 轮：完整 Vulkan 套件 211/211 全绿，耗时 270.72 秒**。
    - 命令：`ctest --test-dir build-vulkan -j 4 -E "lights-states" --output-on-failure`（仍排除第 46 条那个已知项；它在 Vulkan 构建里同样慢）。
    - 结果：**100% tests passed, 0 tests failed out of 211**，总耗时 **270.72 秒**。对比同一套件在 **Debug** 配置下的 **3784.56 秒 / 2 失败**，差了约 14 倍——再次印证第 69 条"是构建类型不是代码"的结论。
