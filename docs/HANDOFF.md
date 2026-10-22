@@ -262,6 +262,12 @@
    - **验证**：`cmake --build build-vkdebug --target threecpp_vulkan VulkanRendererTests` 通过，`VulkanRendererTests --cube` 在**真实 GPU** 上通过（说明两套布局能同时创建、互不干扰，且 mipmap 之外的路径没被破坏）。核心 **745 / 205,728**、`primitive-geometry`、`port-audit` 全绿。
    - **还差的**：① 用 `pmremPipelineLayout` 建一条 `VkPipeline`（需要在 `vkCreateGraphicsPipelines` 调用点旁边复制一份建法，并把顶点输入状态设成 PMREM 需要的形状——它只吃 `position` 一个 vec3 属性）；② 给 `PMREMGenerator` 一个走这条管线的入口（把等距柱状纹理当采样图、box mesh 当几何、`updateCubeCamera` 那种六面流程）；③ 着色器里 `Transforms` 块的字段名要与 `VulkanUniformBuffer` 的反射字段对齐。
    - **注意**：这次没有碰渲染主路径，所以风险远低于第 19–20 轮那两次混改；下一条管线也应当照这个"并列加法"的思路做，直到 PMREM 真的能画出来，再考虑是否合并成 map。
+90. **第 27 轮：把"建 PMREM 管线"的精确规格摸出来了——它和 basic 的顶点输入方式根本不同**。
+   - **管线创建函数长什么样**：`VulkanRenderer.cpp:2145` 的 `VkPipeline pipeline(const MeshBasicMaterial& material, int side, bool mirrored, bool reverse, uint32_t positionStride, ...)`，把材质与绘制选项打包成 `uint64` 位键 + 后缀字符串作缓存键（2157–2168），命中就返回（2169）；否则用 `shaderModules->pipelineStages()`（2171）搭各固定状态，**第 2256 行 `create.layout = pipelineLayout` 写死**成 basic 的布局，最后 2259 行 `vkCreateGraphicsPipelines` 并按 key 存进 `pipelines`（2261）。
+   - **关键差异（决定不能简单复用）**：basic 的顶点阶段**没有顶点缓冲输入**——它靠 `gl_VertexIndex`/`gl_InstanceIndex` 加 `std430` 缓冲区做 **vertex pulling**（`binding=3..10` 那些 buffer）。而 PMREM 的等距柱状顶点着色器是**经典输入**：`layout(location = 0) in vec3 position`。所以 PMREM 管线必须提供 `VkVertexInputBindingDescription{0, sizeof(float)*3, VK_VERTEX_INPUT_RATE_VERTEX}` 与 `VkVertexInputAttributeDescription{0, 0, VK_FORMAT_R32G32B32_SFLOAT, 0}`，并且绘制时要**真的绑定一个位置顶点缓冲**——这又需要和 `VulkanBindingCommands` 走不同的绑法。
+   - **渲染通道可以复用**：PMREM 也是"一个颜色附件 + 一个深度附件"，直接借现有 `renderPass` ✓。
+   - **下一轮的落法**：加一个 `VkPipeline pmremPipeline()`（惰性建、单独缓存），stages 用 `pmremModules->pipelineStages()`、layout 用 `pmremPipelineLayout`、顶点输入用上面那对描述、其余固定状态照 `pipeline()` 里的中位值（不混合、不写深度、背面剔除关）；然后给生成器一个**自绘**入口：把 box 的 36 个顶点位置上传到一个临时缓冲，按 `updateCubeCamera` 的六面流程逐面 `bind + push uniform + draw`。
+   - **本轮无代码变更**（只读代码与记录），门禁：核心 **745 / 205,728**、`primitive-geometry`、`port-audit` 全绿，树干净。
 70. **第 520 轮：完整 Vulkan 套件 211/211 全绿，耗时 270.72 秒**。
    - 命令：`ctest --test-dir build-vulkan -j 4 -E "lights-states" --output-on-failure`（仍排除第 46 条那个已知项；它在 Vulkan 构建里同样慢）。
    - 结果：**100% tests passed, 0 tests failed out of 211**，总耗时 **270.72 秒**。对比同一套件在 **Debug** 配置下的 **3784.56 秒 / 2 失败**，差了约 14 倍——再次印证第 69 条"是构建类型不是代码"的结论。
