@@ -715,6 +715,13 @@
    - **测试（5 个用例、31 条断言）**：identity 协方差逐项、45° 旋转协方差逐项、颜色/激活函数、用合成 2 行缓冲（`pushFloat32LE` + `pushRow` 手工拼）验证中心/颜色/协方差量级、以及坏长度抛错。
    - **一处设计选择**：`createGaussianSplatGeometry` 那一半需要 `BufferGeometry.setAttribute` 的属性管线，本轮**没有移植**（`parse` 直接返回 `centers`/`covariances`/`colors` 三个数组），头文件写明"几何构建留给调用方"。这是**显式声明的范围**，不是静默缺失。
    - **验证**：核心 **801 用例 / 206,149 断言**（+5 / +31）、`primitive-geometry`、`port-audit` 全绿。addon loader **5 / 52 → 6 / 52**（连 `utils` 一起算是两个模块）。
+159. **第 98 轮：`PDBLoader` 落地——118 项 CPK 颜色表用脚本从上游提取，避免手抄**。
+   - **做法**：CPK 表有 **118 项**，手抄必错。用一段正则从固定版本的 `PDBLoader.js` 里抽 `const CPK = { … }` 块、逐项转成 C++ 初始化列表再写进 `.cpp`（脚本打印 `entries = 118` 确认）。**能自动提取的数据就自动提取**。
+   - **解析要点**：`ATOM`/`HETATM` 用**固定列**切片（坐标 30–38/38–46/46–54、序号 6–11、元素 76–78，空则回退到 12–14）；`CONECT` 从第 11 列起每 5 列一个邻居（11/16/21/26）；键是 `s{min}e{max}`，**重复的键只记一次**（上游那段"bonds[bhash[h]][2] += 1"是注释掉的，所以多重键实际不会被合并——端口照此）；存进去的是**序号减一**。
+   - **两处语义细节**：元素符号先 `trim` 再 `toLowerCase`，展示名再 `capitalize`（首字母大写其余小写）；CPK 表里没有的元素，`cpk` 是**空数组**（不是默认色），调用方需要自己兜底。
+   - **范围声明**：和 `SPLATLoader` 一样，`buildGeometry` 那一段（两个 `BufferGeometry` + `Color.setRGB(…, SRGBColorSpace)`）**没有移植**，`parse` 返回 `atoms`（含 `cpk` 与 `element`）与 `bonds`（三元组）两个原始数组；头文件写明。
+   - **测试（4 个用例、26 条断言）**：坐标/序号/元素（`n` / `N`）；CPK 查表（氮 `48,80,248`、碳 `144,144,144`）与**表大小 118**；**重复 CONECT 去重**（3 行 `CONECT` 只留 2 条键）且索引从 0 开始；元素列为空时**回退到原子名列**。
+   - **验证**：核心 **805 用例 / 206,175 断言**（+4 / +26）、`primitive-geometry`、`port-audit` 全绿。addon loader **6 / 52 → 7 / 52**。
 70. **第 520 轮：完整 Vulkan 套件 211/211 全绿，耗时 270.72 秒**。
    - 命令：`ctest --test-dir build-vulkan -j 4 -E "lights-states" --output-on-failure`（仍排除第 46 条那个已知项；它在 Vulkan 构建里同样慢）。
    - 结果：**100% tests passed, 0 tests failed out of 211**，总耗时 **270.72 秒**。对比同一套件在 **Debug** 配置下的 **3784.56 秒 / 2 失败**，差了约 14 倍——再次印证第 69 条"是构建类型不是代码"的结论。

@@ -124,6 +124,7 @@ target_sources(threecpp PRIVATE
     src/loaders/MDDLoader.cpp
     src/loaders/GaussianSplatUtils.cpp
     src/loaders/SPLATLoader.cpp
+    src/loaders/PDBLoader.cpp
     src/loaders/CubeTextureLoader.cpp
     src/extras/ImageUtils.cpp
     src/extras/PMREMGenerator.cpp
