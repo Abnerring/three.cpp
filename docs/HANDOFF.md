@@ -291,6 +291,11 @@
    - **现状**：PMREM 程序现在只剩"**一个** `COMBINED_IMAGE_SAMPLER`（等距柱状纹理，`binding=1`）"需要描述符；绘制时只要 `vkCmdPushConstants(VERTEX, 0, 192, block)` 即可。
    - **验证**：`threecpp_vulkan` 与 `VulkanRendererTests` 构建通过，`--cube` 在真实 GPU 上通过。核心 **745 / 205,728**、`primitive-geometry`、`port-audit` 全绿。
    - **偏差记录**：上游用的是 `ShaderMaterial` 的 `uniforms`（等价于 UBO 语义）；这里用 push constant 承载同样的三个矩阵，**数值语义一致**，只是绑定机制不同——属于本项目"内置程序"路线的实现细节，已在着色器注释里写明。
+95. **第 32 轮：PMREM 的逐面绘制原语 `drawPmremFace` 写出来了，但**还没有被任何路径调用**（重要：它未经验证）**。
+   - **内容**：`VulkanRenderer.cpp` 里新增 `void drawPmremFace(const TextureRef& source, const std::array<float, 48>& transforms)`——照 `textureDescriptor` 的池重试模式分配一套 `pmremTextureLayout` 的描述符集，写入 `binding=1` 的 `COMBINED_IMAGE_SAMPLER`（源纹理，`SHADER_READ_ONLY_OPTIMAL`），然后 `vkCmdBindPipeline` + `vkCmdBindVertexBuffers(0, pmremVertices)` + `vkCmdBindDescriptorSets` + `vkCmdPushConstants(VERTEX, 0, 192)` + `vkCmdDraw(36)`。
+   - **已验证的部分**：编译通过；`--cube` 仍通过（说明这次改动没有破坏任何现有路径）；核心 **745 / 205,728**、`primitive-geometry`、`port-audit` 全绿。
+   - ****未**验证的部分（务必注意）**：`drawPmremFace` 目前**没有调用者**，所以它的绘制结果**一次都没有被观察过**。矩阵、纹理布局、描述符绑定是否正确，**全部未知**。这不是"已完成"，只是"可编译"。
+   - **下一轮要做的**：写一个 `renderEquirectangular(...)` 公有入口，用 `updateTexture` 把 `DataTexture` 上传成 `TextureRef`，用六面的 view/projection 组成 6 个 `std::array<float,48>`，逐面 `beginFrame` → `drawPmremFace` → `endFrame`；然后用一张纯色等距柱状图做验收：六个面读回都应为该色。
 70. **第 520 轮：完整 Vulkan 套件 211/211 全绿，耗时 270.72 秒**。
    - 命令：`ctest --test-dir build-vulkan -j 4 -E "lights-states" --output-on-failure`（仍排除第 46 条那个已知项；它在 Vulkan 构建里同样慢）。
    - 结果：**100% tests passed, 0 tests failed out of 211**，总耗时 **270.72 秒**。对比同一套件在 **Debug** 配置下的 **3784.56 秒 / 2 失败**，差了约 14 倍——再次印证第 69 条"是构建类型不是代码"的结论。

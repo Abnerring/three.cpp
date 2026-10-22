@@ -2273,6 +2273,56 @@ struct VulkanRenderer::Impl {
 
     // The PMREM pass draws a box through a classic vec3 position input, which the vertex
     // pulling pipeline above cannot express. Same render pass and dynamic state.
+    // Records one PMREM box draw into whatever render pass is currently open. The
+    // descriptor set is allocated per draw: the pool hands them out cheaply and the
+    // equirectangular source only becomes known at draw time.
+    void drawPmremFace(const TextureRef& source, const std::array<float, 48>& transforms) {
+        VkDescriptorSet set = VK_NULL_HANDLE;
+        for (;;) {
+            if (activeDescriptorPool == descriptorPools.size()) {
+                VkDescriptorPoolSize sizes[] = {{VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, 12288},
+                    {VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, 4096},
+                    {VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, 32768}};
+                VkDescriptorPoolCreateInfo create{VK_STRUCTURE_TYPE_DESCRIPTOR_POOL_CREATE_INFO};
+                create.maxSets = 4096;
+                create.poolSizeCount = 3;
+                create.pPoolSizes = sizes;
+                VkDescriptorPool pool;
+                check(api.vkCreateDescriptorPool(device, &create, nullptr, &pool),
+                      "vkCreateDescriptorPool(pmrem)");
+                descriptorPools.push_back(pool);
+            }
+            VkDescriptorSetAllocateInfo allocate{VK_STRUCTURE_TYPE_DESCRIPTOR_SET_ALLOCATE_INFO};
+            allocate.descriptorPool = descriptorPools[activeDescriptorPool];
+            allocate.descriptorSetCount = 1;
+            allocate.pSetLayouts = &pmremTextureLayout;
+            const auto result = api.vkAllocateDescriptorSets(device, &allocate, &set);
+            if (result == VK_ERROR_OUT_OF_POOL_MEMORY || result == VK_ERROR_FRAGMENTED_POOL) {
+                ++activeDescriptorPool;
+                continue;
+            }
+            check(result, "vkAllocateDescriptorSets(pmrem)");
+            break;
+        }
+        const VkDescriptorImageInfo image{source->sampler, source->image.view,
+                                          VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL};
+        VkWriteDescriptorSet write{VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET};
+        write.dstSet = set;
+        write.dstBinding = 1;
+        write.descriptorCount = 1;
+        write.descriptorType = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
+        write.pImageInfo = &image;
+        api.vkUpdateDescriptorSets(device, 1, &write, 0, nullptr);
+        api.vkCmdBindPipeline(commandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, pmremPipelineHandle);
+        const VkDeviceSize offset = 0;
+        api.vkCmdBindVertexBuffers(commandBuffer, 0, 1, &pmremVertices.buffer, &offset);
+        api.vkCmdBindDescriptorSets(commandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS,
+                                    pmremPipelineLayout, 0, 1, &set, 0, nullptr);
+        api.vkCmdPushConstants(commandBuffer, pmremPipelineLayout, VK_SHADER_STAGE_VERTEX_BIT,
+                               0, sizeof(float) * transforms.size(), transforms.data());
+        api.vkCmdDraw(commandBuffer, 36, 1, 0, 0);
+    }
+
     void createPmremPipeline() {
         const auto stages = pmremModules->pipelineStages();
         VkVertexInputBindingDescription binding{0, sizeof(float) * 3, VK_VERTEX_INPUT_RATE_VERTEX};
