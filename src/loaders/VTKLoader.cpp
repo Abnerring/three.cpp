@@ -1,6 +1,7 @@
 #include "loaders/VTKLoader.h"
 
 #include <cmath>
+#include <stdexcept>
 #include <cstdlib>
 
 std::size_t VTKLoader::wordLength(const std::string& line) {
@@ -156,4 +157,67 @@ void VTKLoader::applyKeyword(const std::string& line, Sections& sections) {
         sections.polygons = false;
         sections.triangleStrips = false;
     }
+}
+
+VTKLoader::Mesh VTKLoader::parseAscii(const std::string& text) {
+    Mesh mesh;
+    Sections sections;
+
+    // The file is read line by line.
+    std::size_t at = 0;
+    while (at <= text.size()) {
+        std::size_t end = text.find('\n', at);
+        if (end == std::string::npos) end = text.size();
+        // The line is trimmed before anything looks at it.
+        std::string line = text.substr(at, end - at);
+        std::size_t begin = 0;
+        while (begin < line.size() && (line[begin] == ' ' || line[begin] == '\t' ||
+                                       line[begin] == '\r')) {
+            ++begin;
+        }
+        std::size_t last = line.size();
+        while (last > begin && (line[last - 1] == ' ' || line[last - 1] == '\t' ||
+                                line[last - 1] == '\r')) {
+            --last;
+        }
+        line = line.substr(begin, last - begin);
+        at = end + 1;
+        if (end == text.size()) break;
+
+        // A dataset line names the kind of data; only polygonal data is understood.
+        if (line.compare(0, 7, "DATASET") == 0) {
+            const std::size_t space = line.find(' ');
+            const std::string dataset = space == std::string::npos ? std::string()
+                                                                   : line.substr(space + 1);
+            if (dataset != "POLYDATA") {
+                throw std::runtime_error("Unsupported DATASET type: " + dataset);
+            }
+            continue;
+        }
+
+        // The section handling comes before the keyword handling, and the branches are
+        // exclusive, so a keyword line met inside a section is dealt with as that section sees
+        // it rather than as the section it opens.
+        if (sections.points) {
+            if (isNumberLine(line)) {
+                const auto values = parseFloats(line);
+                // Only whole triples count.
+                for (std::size_t k = 0; k + 2 < values.size(); k += 3) {
+                    mesh.positions.push_back(values[k]);
+                    mesh.positions.push_back(values[k + 1]);
+                    mesh.positions.push_back(values[k + 2]);
+                }
+            }
+        } else if (sections.polygons) {
+            Connectivity connectivity;
+            if (parseConnectivity(line, connectivity)) {
+                const auto triangles = triangulateFan(connectivity.indices, connectivity.numVertices);
+                mesh.indices.insert(mesh.indices.end(), triangles.begin(), triangles.end());
+            }
+        }
+
+        // Every line then possibly opens a new section.
+        applyKeyword(line, sections);
+    }
+    return mesh;
 }

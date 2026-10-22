@@ -51,4 +51,17 @@ class VTKLoader {
     // order, each enabling its own flag and clearing only the ones it names. A line that names
     // no section leaves the flags alone.
     static void applyKeyword(const std::string& line, Sections& sections);
+
+    // What a text file describes: positions in threes, triangle indices, and the optional
+    // per vertex colours and normals.
+    struct Mesh {
+        std::vector<double> positions;
+        std::vector<int> indices;
+        std::vector<double> colors;
+        std::vector<double> normals;
+    };
+
+    // Reads a whole text form file. Throws std::runtime_error for a dataset other than POLYDATA,
+    // naming the one it found.
+    static Mesh parseAscii(const std::string& text);
 };

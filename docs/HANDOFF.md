@@ -1528,6 +1528,12 @@
    - **`POINT_DATA` 不会误开 points 段**：因为匹配的是 `"POINTS "`（带空格），而 `"POINT_DATA "` 在第五个字符处是下划线，两者不会互相前缀。
    - **测试（5 个用例、21 条断言）**：points → polygons → strips 的依次接管；**`NORMALS` 之后 `POINT_DATA` 两个都真**、**`COLOR_SCALARS` 清掉 normals 但保留 pointData**；无关键字的行与裸词都不改状态；`CELL_DATA`；**`POINT_DATA` 不误开 points**。
    - **验证**：核心 **1296 用例 / 209,362 断言**（+5 / +21）、addons、`primitive-geometry`、`port-audit`、Vulkan 全绿。
+274. **第 213 轮：`VTKLoader` 第四层——主循环装配**。
+   - **顺序是关键**：上游**先**按当前段处理这一行，**后**才判断它是不是新段关键字，而且段处理的三支是 **`else if`**。结果是：在 points 段里遇到 `POLYGONS 1 5` 时，points 支先跑、发现不是数字行、**什么都不做**，polygons 支**因为 `else if` 被跳过**，然后关键字分发才切段。测试里专门放了一个这样的文件钉住。
+   - **`DATASET` 校验**：只认 `POLYDATA`，其它类型抛 `Unsupported DATASET type: X`。
+   - **每行先 trim**（与第 211 轮那个 `isNumberLine` 的修正同源）。
+   - **测试（5 个用例、15 条断言）**：一个完整四边形文件（4 点 12 个数、2 个三角形 6 个索引）；**点跨多行**；**非 POLYDATA 抛错**；**points 段里的关键字行被忽略但随后切段成功**；空文件读出空。
+   - **验证**：核心 **1301 用例 / 209,377 断言**（+5 / +15）、addons、`primitive-geometry`、`port-audit`、Vulkan 全绿。
 70. **第 520 轮：完整 Vulkan 套件 211/211 全绿，耗时 270.72 秒**。
    - 命令：`ctest --test-dir build-vulkan -j 4 -E "lights-states" --output-on-failure`（仍排除第 46 条那个已知项；它在 Vulkan 构建里同样慢）。
    - 结果：**100% tests passed, 0 tests failed out of 211**，总耗时 **270.72 秒**。对比同一套件在 **Debug** 配置下的 **3784.56 秒 / 2 失败**，差了约 14 倍——再次印证第 69 条"是构建类型不是代码"的结论。
