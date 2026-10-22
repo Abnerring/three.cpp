@@ -466,6 +466,13 @@
    - **主要嫌疑**：`drawPmremBlurFace` 的 push constant 与管线布局。`pmremBlurReflectedLayout` 由 `VulkanPipelineLayout` 从**反射**构造，而等距柱状那条路同样 push 三个矩阵却能正常工作——差别在于 blur 的 push 块是 **196 字节**（多一个 `float sigma`），如果布局里的 push constant 范围只覆盖 192 字节，`vkCmdPushConstants` 就会越界写入。**下一轮第一步就该打印反射出来的 push constant 范围**（`VkPushConstantRange::size`），看它是否 ≥ 196。
    - **第二嫌疑**：`imageBarrier` 对**已 park 的源目标**做布局转换时，`activeCubeFace` 传 0、而源图有 6 层——barrier 的 `layerCount = 1`，只转了第 0 层，其余 5 层仍是 `COLOR_ATTACHMENT_OPTIMAL`，采样时会读到未定义布局。正确做法是对**全部 6 层**做一次转换（`baseArrayLayer = 0, layerCount = 6`）。
    - **状态**：三个文件已回退；核心 **747 / 205,735**、`primitive-geometry`、`port-audit`、Vulkan 构建 0 错误、`--cube` 0，树干净。
+124. **第 63 轮：push constant 范围假设被证伪；着色器修复单独保留**。
+   - **假设与检验**：第 123 条怀疑"blur 的 push 块 196 字节但布局只覆盖 192"。我读了 `VulkanPipelineLayout.cpp`，它按 `std::map<std::pair<uint32_t,uint32_t>, VkShaderStageFlags>` 合并 push 范围——键是 `(offset, size)`，同键才合并 stage。blur 的**顶点**阶段只用三个矩阵（192 字节），**片元**阶段用 196 字节，键不同 → 两个**重叠**范围 → 理论上非法。
+   - **采取的修复**：在 `pmrem_blur.vert.glsl` 里让顶点阶段也引用 `sigma`（`float sigmaGuard = transforms.sigma - transforms.sigma;` 再乘 `(1.0 + sigmaGuard)`），使两阶段都反射出 196 字节、合并成一个范围。着色器编译通过，`.vert.spv` 从 **1724 → 1968 B**（变大，印证确实引用了新字段）。
+   - **结果：仍然崩溃**（`0xC0000005`，退出码 `-1073741819`）。所以**至少还有别的原因**，push constant 不是（唯一）元凶。**这个假设被证伪**。
+   - **保留与回退**：着色器改动**保留**（它独立可验证：编译通过、体积变化合理、且不改变任何运行路径的行为）；`blurCube` 与验收用例**回退**，因为它们是导致崩溃的调用方。
+   - **下一个怀疑对象**：`drawPmremBlurFace` 的**描述符集**。它用 `pmremBlurTextureLayout`（从 blur 着色器反射出来的布局）分配描述符集，但**用的是 `pmremSampler` + 源 cube 视图**；如果反射出来的布局里 binding 0 的类型/数量与写入的 `COMBINED_IMAGE_SAMPLER` 不一致，`vkUpdateDescriptorSets` 会越界。下一轮应当在 `drawPmremBlurFace` 里**先打印反射布局的 binding 数量与类型**，再决定是否写入。
+   - **状态**：三个文件已回退，着色器改动保留；核心 **747 / 205,735**、`primitive-geometry`、`port-audit`、Vulkan 构建 0 错误、`--cube` 0，树干净。
 70. **第 520 轮：完整 Vulkan 套件 211/211 全绿，耗时 270.72 秒**。
    - 命令：`ctest --test-dir build-vulkan -j 4 -E "lights-states" --output-on-failure`（仍排除第 46 条那个已知项；它在 Vulkan 构建里同样慢）。
    - 结果：**100% tests passed, 0 tests failed out of 211**，总耗时 **270.72 秒**。对比同一套件在 **Debug** 配置下的 **3784.56 秒 / 2 失败**，差了约 14 倍——再次印证第 69 条"是构建类型不是代码"的结论。
