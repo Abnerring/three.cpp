@@ -1564,6 +1564,13 @@
    - **`LWOLoader` 第一层**：LWO 是**块树**（4 字符标识 + **大端字节数** + 内容），整文件包在 `FORM` 里。端口实现了 `readChunkHeader`（标识去掉尾部空格、大端 size、内容起点）与 `extractParentUrl`（`indexOf` 找不到目录时返回 `'./'`，否则取前缀）。
    - **测试（5 个用例、11 条断言）**：块头的标识与大小；**短标识的尾部空格被去掉**（`"AB  "` → `"AB"`）；**带偏移读取**（`dataOffset == 12`）；过短抛错；**路径切分三种情形**（`models/` / `./` / 空前缀）。
    - **验证**：核心 **1317 用例 / 209,436 断言**（+5 / +11）、addons、`primitive-geometry`、`port-audit`、Vulkan 全绿。
+279. **第 218 轮：子模块依赖的发现 + `TDSLoader` 尝试失败，已回退**。
+   - **又一处旧判断被推翻**：`LWOLoader` 的 `IFFParser` 来自 `./lwo/IFFParser.js`，**不在** `../libs/`，所以上一轮那个"只查 `../libs/`"的脚本把它算成了"无依赖"。补查**子模块**后：`LWOLoader` = 1051 + **1217**；`ColladaLoader` = 153 + **5028**；而 **`TDSLoader` 1142、`3DMLoader` 1937、`LDrawLoader` 2510、`SVGLoader` 3323、`GLTFLoader` 4979 都真的没有子模块**。所以下一个目标应该是 **`TDSLoader`**，不是 LWO。
+   - **3DS 的块头是 6 字节**：word 标识 + double word 长度，**位置从 `offset + 6` 开始**（不是 8——我一开始写错，`readWord`/`readDWord` 自己会推进，所以头部字段必须算进去）。守卫也应写 `offset + 6`。
+   - **但测试我连错了三次**：① 把 `position` 期望成 8（实为 6）；② 缓冲只给了 10 字节而 `size` 声明 12，于是 `readFloat` 走守卫返回 0；③ 修完又有一处 `position` 期望错。**三次都是"没按 `size` 字段把缓冲补齐"**——这个格式的每个测试缓冲都必须**至少有 `size` 那么多字节**，否则守卫会把读取变成 0。
+   - **一件工具事故**：我用 `git checkout ... 2>&1 | Out-Null` 回退，管道把 `fatal: not a git repository` 吞掉了，我因此**以为回退了**，实际两个 CMakeLists 仍是改过的、两个新文件也还在。后来先 `git checkout` 再单独 `Remove-Item`，并**打印 `git status`** 才确认干净。**回退之后必须打印状态**。
+   - **验证**：回退后核心 **1317 用例 / 209,436 断言**、addons、`primitive-geometry`、`port-audit`、Vulkan 全部为 0，工作树干净。
+   - **下一轮**：照上面的记录重做 `TDSLoader` 的块游标——`position = offset + 6`、守卫 `offset + 6`、**测试缓冲按 `size` 补齐**。
 70. **第 520 轮：完整 Vulkan 套件 211/211 全绿，耗时 270.72 秒**。
    - 命令：`ctest --test-dir build-vulkan -j 4 -E "lights-states" --output-on-failure`（仍排除第 46 条那个已知项；它在 Vulkan 构建里同样慢）。
    - 结果：**100% tests passed, 0 tests failed out of 211**，总耗时 **270.72 秒**。对比同一套件在 **Debug** 配置下的 **3784.56 秒 / 2 失败**，差了约 14 倍——再次印证第 69 条"是构建类型不是代码"的结论。
