@@ -963,6 +963,13 @@
    - **一个端口细节**：`AnimationClip::name` 是 **`JSValue`**，比较要 `.toString() == "stand"`，不能直接和字符串字面量比。
    - **验证**：核心 **928 用例 / 206,890 断言**（+4 / +8）、`primitive-geometry`、`port-audit` 全绿。addon loader **32 → 33 / 52**。
    - **六个完整 loader**：`MTLLoader`（5 层）、`OBJLoader`（5 层）、`PLYLoader`（6 层）、`FontLoader`（3 层）、`HDRCubeTextureLoader`（1 层）、`MD2Loader`（5 层）。
+192. **第 131 轮：`BVHLoader` 第一层——骨骼层级解析**。
+   - **格式**：文本。`HIERARCHY` 之后是递归的节点树——`ROOT <name>` 或 `JOINT <name>` 后跟 `{`、`OFFSET x y z`、`CHANNELS n <名字...>`、然后若干子节点，最后 `}`；叶子写成 `End Site { OFFSET ... }`。
+   - **三条与上游一致的规则**：① **`End Site` 没有名字**，上游把 `type` 与 `name` 都写成 `ENDSITE`；② **`OFFSET` 必须正好四段**（`OFFSET` + 三个数），少一段上游只 `console.error`，端口改成抛错；③ **`ENDSITE` 没有 `CHANNELS` 行**，所以那一行只在非叶子节点上读。
+   - **两处端口取舍**：上游把每个节点在解析时 `list.push(node)` 收集成**扁平数组**，端口同样返回 `list`（**父在前、文档序**），后面建骨骼要用；上游对格式错误只打日志继续跑，端口抛 `std::runtime_error`（**宁可明确失败**，与项目规则一致）。
+   - **测试（5 个用例、27 条断言）**：`splitLines` 去掉 `\r`；三层树逐层核对（根 6 通道、关节 3 通道、端点为 `ENDSITE` 且**无通道无子节点**）；**扁平列表 3 个且父在前**；缺 `HIERARCHY` 抛错；`OFFSET` 只有两段抛错。
+   - **验证**：核心 **933 用例 / 206,917 断言**（+5 / +27）、`primitive-geometry`、`port-audit` 全绿。
+   - **BVH 剩余**：`MOTION`/`Frames:`/`Frame Time:` 的读取、逐帧通道数据、以及最终的 `Skeleton` + `AnimationClip` 构建。
 70. **第 520 轮：完整 Vulkan 套件 211/211 全绿，耗时 270.72 秒**。
    - 命令：`ctest --test-dir build-vulkan -j 4 -E "lights-states" --output-on-failure`（仍排除第 46 条那个已知项；它在 Vulkan 构建里同样慢）。
    - 结果：**100% tests passed, 0 tests failed out of 211**，总耗时 **270.72 秒**。对比同一套件在 **Debug** 配置下的 **3784.56 秒 / 2 失败**，差了约 14 倍——再次印证第 69 条"是构建类型不是代码"的结论。
