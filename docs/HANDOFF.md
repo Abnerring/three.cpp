@@ -824,6 +824,15 @@
    - **退化三角形的处理**：三点共线时叉积为零，上游会除以零长度；端口显式判零并写入**三个 0**，测试遍历九个值都为 0。
    - **测试（3 个用例、18 条断言）**：面法线三项（`(0,0,1)`）且**追加三次**；放大五倍的相似三角形仍是单位法线（验证归一化）；退化三角形得到全零。
    - **验证**：核心 **850 用例 / 206,398 断言**（+3 / +18）、`primitive-geometry`、`port-audit` 全绿。
+172. **第 111 轮：`OBJLoader` 第三层——材质分组（多材质区间）**。
+   - **新文件**：`src/loaders/OBJMaterialGroups.{h,cpp}`，把上游 `ParserState` 里的 `startMaterial` / `currentMaterial` / `_finalize` 单独抬出来。一个对象按 `usemtl` 的**连续段**累积多个材质，每个材质记录 `[groupStart, groupEnd)` 的顶点区间，后面就是几何的 group。
+   - **三条规则（逐条照上游）**：
+     1. `startMaterial` 先 `_finalize(false)` 收口上一个材质，然后**如果上一个材质是 inherited 或覆盖 0 个顶点就把它删掉**（这就是"多材质连续段"能保持连续的原因）；
+     2. `_finalize` 在 `groupEnd === -1` 时把它补成 `顶点数 / 3`，并算出 `groupCount`，同时把 `inherited` 置假；
+     3. 结束时（`end`）**删掉所有 `groupCount <= 0` 的尾随材质**，**若一个都不剩就塞一个空占位材质**——这样调用方永远有东西可以挂 group。
+   - **`mtllib` 的取值**：`libraries[length - 1]`，即**最后一个**材质库。
+   - **测试（5 个用例、21 条断言）**：两段连续区间（A 覆盖 0–3、B 从 3 起、B 覆盖到 5）；**尾随空材质被丢弃**（A 之后再 `usemtl B` 却没有任何面 → 关闭时只剩 A）；**空对象得到占位材质**；`mtllib` 取最后一个 `two.mtl`、空列表时为空串；`currentMaterial` 跟随最近一次 `startMaterial`。
+   - **验证**：核心 **855 用例 / 206,419 断言**（+5 / +21）、`primitive-geometry`、`port-audit` 全绿。
 70. **第 520 轮：完整 Vulkan 套件 211/211 全绿，耗时 270.72 秒**。
    - 命令：`ctest --test-dir build-vulkan -j 4 -E "lights-states" --output-on-failure`（仍排除第 46 条那个已知项；它在 Vulkan 构建里同样慢）。
    - 结果：**100% tests passed, 0 tests failed out of 211**，总耗时 **270.72 秒**。对比同一套件在 **Debug** 配置下的 **3784.56 秒 / 2 失败**，差了约 14 倍——再次印证第 69 条"是构建类型不是代码"的结论。

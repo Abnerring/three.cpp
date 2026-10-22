@@ -46,6 +46,7 @@ add_executable(THREECPPTests
         unit/src/loaders/MTLCreate.tests.cpp
         unit/src/loaders/OBJLoader.tests.cpp
         unit/src/loaders/OBJFaceNormal.tests.cpp
+        unit/src/loaders/OBJMaterialGroups.tests.cpp
         unit/src/cameras/StereoCamera.tests.cpp
         unit/src/audio/AudioContext.tests.cpp
         unit/src/audio/Audio.tests.cpp

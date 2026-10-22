@@ -130,6 +130,7 @@ target_sources(threecpp PRIVATE
     src/loaders/RGBELoader.cpp
     src/loaders/MTLLoader.cpp
     src/loaders/OBJLoader.cpp
+    src/loaders/OBJMaterialGroups.cpp
     src/loaders/CubeTextureLoader.cpp
     src/extras/ImageUtils.cpp
     src/extras/PMREMGenerator.cpp
