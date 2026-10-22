@@ -449,9 +449,11 @@ const helperScenarios = [
     ['helper grid 12 5', () => new GridHelper(12, 5)],
     ['helper grid 2 9', () => new GridHelper(2, 9)],
     ['helper grid 5 5', () => new GridHelper(5, 5)],
+    ['helper grid 100 1', () => new GridHelper(100, 1)],
     ['helper grid 100 100', () => new GridHelper(100, 100)],
     ['helper grid 10 1', () => new GridHelper(10, 1)],
     ['helper grid 5 5', () => new GridHelper(5, 5)],
+    ['helper grid 100 1', () => new GridHelper(100, 1)],
     ['helper grid 4 8', () => new GridHelper(4, 8)],
     ['helper grid 7 3', () => new GridHelper(7, 3)],
     ['helper grid 3 7', () => new GridHelper(3, 7)],
@@ -460,6 +462,7 @@ const helperScenarios = [
     ['helper grid 12 5', () => new GridHelper(12, 5)],
     ['helper grid 2 9', () => new GridHelper(2, 9)],
     ['helper grid 5 5', () => new GridHelper(5, 5)],
+    ['helper grid 100 1', () => new GridHelper(100, 1)],
     ['helper box3 -1 -1 -1 1 1 1', () => new Box3Helper(new Box3(new Vector3(-1, -1, -1), new Vector3(1, 1, 1)))],
     ['helper box3 0 0 0 0 0 0', () => new Box3Helper(new Box3(new Vector3(0, 0, 0), new Vector3(0, 0, 0)))],
     ['helper box3 0 0 0 10 10 10', () => new Box3Helper(new Box3(new Vector3(0, 0, 0), new Vector3(10, 10, 10)))],
@@ -661,6 +664,7 @@ const textureScenarios = [
     ['texture data 16 1', () => new DataTexture(new Uint8Array(16 * 4), 16, 1)],
     ['texture data 3 3', () => new DataTexture(new Uint8Array(3 * 3 * 4), 3, 3)],
     ['texture data 32 2', () => new DataTexture(new Uint8Array(32 * 2 * 4), 32, 2)],
+    ['texture data 7 7', () => new DataTexture(new Uint8Array(7 * 7 * 4), 7, 7)],
     ['texture depth 4 2', () => new DepthTexture(4, 2)],
     ['texture depth 1 1', () => new DepthTexture(1, 1)],
     ['texture depth 2 8', () => new DepthTexture(2, 8)],
@@ -770,6 +774,7 @@ const instanceScenarios = [
     ['instance 64', 64],
     ['instance 2', 2],
     ['instance 9', 9],
+    ['instance 1', 1],
     ['instance 3', 3],
     ['instance 8', 8],
     ['instance 16', 16],
@@ -779,6 +784,7 @@ const instanceScenarios = [
     ['instance 64', 64],
     ['instance 2', 2],
     ['instance 9', 9],
+    ['instance 1', 1],
 ];
 const instanceRaw = execFileSync(probePath, [], {input: instanceScenarios.map(([line]) => line).join('\n'), encoding: 'utf8'});
 const instanceLines = instanceRaw.trim().split('\n').map((line) => JSON.parse(line));

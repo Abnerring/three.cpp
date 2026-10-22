@@ -689,6 +689,15 @@
    - **一个我自己写错的测试期望**：第一版用 `parse("0 0 0\n")` 期望抛"缺少网格"，但 `"0 0 0"` **本身就是合法的网格行**（三个数字、步长 0、自洽），**上游也不会抛错**。改成 `parse("no grid here\n")` 才真正覆盖"没有网格行"的分支。**又一次印证：测试失败先怀疑测试。**
    - **两个端口 API 细节**：`TypedArray` **没有 `.vector()`**，要用 `operator[]` 与 `size()`；`texture->image` 是 `ImageProperty`，`.get()` 拿 `TextureImage*` 之后才能取 `->data`。
    - **验证**：核心 **793 用例 / 206,105 断言**（+3 / +41）、`primitive-geometry`、`port-audit` 全绿。addon loader **3 / 52 → 4 / 52**。
+156. **第 95 轮：`MDDLoader` 卡在端口自己的类型别名上——记下四个 `Array` 的命名陷阱**。
+   - **想做的事**：MDD 是纯二进制点缓存（大端：帧数 uint32、顶点数 uint32、每帧一个 float 时间、每帧每顶点三个 float），解析逻辑很短（147 行），而且 `AnimationClip`、`NumberKeyframeTrack`、`BufferAttribute` 在端口里**都有**。
+   - **卡住的三个地方**：
+     1. `Array` 这个别名在端口里有**四个不同定义**：`animation/KeyframeTrack.h` 里是 `AnimationArray`、`animation/PropertyMixer.h` 里也是 `AnimationArray`、`core/BufferAttribute.h` 里是 `BufferAttributeArray`、`core/JsonValue.h` 里是 `std::vector<JsonValue>`。**同一份源码里 `Array` 到底指哪个，取决于 include 顺序**，这就是为什么我写 `Array timeArray;` 会飘。
+     2. 换成 `AnimationArray` 后，`push_back` 报错说它是 **`InterpolantArray`**——说明 `AnimationArray` 本身又是另一个别名，且解析到了插值器数组。
+     3. `BufferAttribute` **不是模板类**（是 `class BufferAttribute : public EventDispatcher, public VertexAttribute`），模板版叫 **`TypedBufferAttribute<T, Clamped>`**；我写 `BufferAttribute<float>` 直接语法错误。
+   - **处理**：本轮**回退** MDD，不提交半成品；把三条写清楚留给下次。本轮实际交付是差分 **320 → 326 场景**（新增 7×7 纹理、100×1 网格、1 实例）。
+   - **下次的正确做法**：① 在 `MDDLoader.cpp` 里**显式 include** `animation/tracks/NumberKeyframeTrack.h`（`NumberKeyframeTrack` 未声明就是因为缺它）；② 用 **`AnimationArray` 的真实底层类型**（去 `animation/Interpolant.h` 或 `KeyframeTrack.h` 里看 `using AnimationArray = ...` 到底是什么），必要时**直接用 `std::vector<JSValue>`** 构造；③ `BufferAttribute` 用 **`TypedBufferAttribute<float>`**。
+   - **验证**：核心 **793 / 206,105**、`primitive-geometry`、`port-audit` 全绿，差分 **326 场景 / 22 组 / exit=0**。
 70. **第 520 轮：完整 Vulkan 套件 211/211 全绿，耗时 270.72 秒**。
    - 命令：`ctest --test-dir build-vulkan -j 4 -E "lights-states" --output-on-failure`（仍排除第 46 条那个已知项；它在 Vulkan 构建里同样慢）。
    - 结果：**100% tests passed, 0 tests failed out of 211**，总耗时 **270.72 秒**。对比同一套件在 **Debug** 配置下的 **3784.56 秒 / 2 失败**，差了约 14 倍——再次印证第 69 条"是构建类型不是代码"的结论。
