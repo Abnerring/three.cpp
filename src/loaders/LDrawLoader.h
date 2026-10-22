@@ -116,4 +116,24 @@ class LDrawLoader {
     // row and the position follows, so the four by four is written out in the column major
     // order the engine stores.
     static std::array<double, 16> referenceMatrix(const ReferenceLine& reference);
+
+    // A ray with a unit direction and its origin at the foot of the perpendicular from the
+    // origin of the world, which is what lets two segments along the same line be compared
+    // regardless of which end each was written from.
+    struct NormalizedRay {
+        std::array<double, 3> origin{};
+        std::array<double, 3> direction{};
+    };
+
+    static NormalizedRay toNormalizedRay(const std::array<double, 3>& v0,
+                                        const std::array<double, 3>& v1);
+
+    // One vertex as a key: each coordinate scaled by the multiplier and truncated towards zero
+    // as a thirty two bit value, joined by commas.
+    static std::string hashVertex(const std::array<double, 3>& v, double multiplier);
+
+    // Two vertices as a key. The pair is joined with an underscore in the order given, so the
+    // same edge read from the other end gives a different key and both have to be recorded.
+    static std::string hashEdge(const std::array<double, 3>& v0, const std::array<double, 3>& v1,
+                                double multiplier);
 };

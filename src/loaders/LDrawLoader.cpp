@@ -1,5 +1,6 @@
 #include "loaders/LDrawLoader.h"
 
+#include <cmath>
 #include <cstdlib>
 #include <stdexcept>
 #include <utility>
@@ -233,4 +234,51 @@ std::array<double, 16> LDrawLoader::referenceMatrix(const ReferenceLine& referen
     matrix[14] = reference.position[2];
     matrix[15] = 1;
     return matrix;
+}
+
+namespace {
+// A double truncated towards zero and taken as a thirty two bit integer, wrapping the way the
+// double bitwise not of the source language does.
+std::int32_t truncateToInt32(double value) {
+    const double truncated = value < 0 ? -std::floor(-value) : std::floor(value);
+    // The conversion below wraps rather than saturating, which is what the source does.
+    const auto wrapped = static_cast<std::uint32_t>(static_cast<std::int64_t>(truncated));
+    return static_cast<std::int32_t>(wrapped);
+}
+std::string joinNumbers(const std::array<double, 3>& v, double multiplier) {
+    return std::to_string(truncateToInt32(v[0] * multiplier)) + "," +
+           std::to_string(truncateToInt32(v[1] * multiplier)) + "," +
+           std::to_string(truncateToInt32(v[2] * multiplier));
+}
+}  // namespace
+
+LDrawLoader::NormalizedRay LDrawLoader::toNormalizedRay(const std::array<double, 3>& v0,
+                                                       const std::array<double, 3>& v1) {
+    NormalizedRay ray;
+    // The direction is the segment narrowed to unit length.
+    std::array<double, 3> direction{v1[0] - v0[0], v1[1] - v0[1], v1[2] - v0[2]};
+    const double length = std::sqrt(direction[0] * direction[0] +
+                                    direction[1] * direction[1] +
+                                    direction[2] * direction[2]);
+    if (length > 0.0) {
+        for (double& component : direction) component /= length;
+    }
+    ray.direction = direction;
+
+    // The origin is the foot of the perpendicular from the world origin onto the line, which is
+    // the first vertex moved back along the direction by its own projection.
+    const double scalar = v0[0] * direction[0] + v0[1] * direction[1] + v0[2] * direction[2];
+    ray.origin = {v0[0] - direction[0] * scalar, v0[1] - direction[1] * scalar,
+                  v0[2] - direction[2] * scalar};
+    return ray;
+}
+
+std::string LDrawLoader::hashVertex(const std::array<double, 3>& v, double multiplier) {
+    return joinNumbers(v, multiplier);
+}
+
+std::string LDrawLoader::hashEdge(const std::array<double, 3>& v0, const std::array<double, 3>& v1,
+                                  double multiplier) {
+    // The order matters, so an edge and its reverse are two keys.
+    return hashVertex(v0, multiplier) + "_" + hashVertex(v1, multiplier);
 }
