@@ -192,6 +192,12 @@
      然后各自 `cmake --build <dir> --parallel`。
    - **工具教训（第 N 次重复）**：MSVC + CMake 的依赖扫描会打印海量 `注意: 包含文件: …`（含 `/showIncludes`），**一次构建能刷出 18 万字符**。所以：① 构建输出**重定向到文件**，只 `Select-String 'error C|error LNK|FAILED:'`；② **不要**在 `job_output` 里等一个不重定向的构建任务——会把整段噪音灌进上下文。
    - **下一步**：两个构建完成后，先跑 `VulkanRendererTests` 确认 mipmap 用例是否恢复；恢复了就按第 76 条一次重做六面渲染。
+78. **第 7 轮：门禁全部恢复；但 Vulkan 的 mipmap 用例在全新构建后依然确定失败——环境层回归，不是代码**。
+   - **恢复情况（实测）**：`build/` 重建完成后——核心 **739 / 205,653**、addons **155 / 23,996**、差分 **21 组 / 277 场景**、`primitive-geometry` 与 `port-audit` 全绿。中途 `port-audit` 先失败过两次，原因都查清了：① `three.js/node_modules` 里的 `acorn` 随同那次外部清理一起消失（提示 `Cannot find module 'acorn'`），从本机 `D:\project\DX\SceneSpace\node_modules\acorn` 复制回去解决；② 我新增了源文件（`WebGLCubeRenderTarget.cpp`），`docs/api-inventory.json` 变**过期**，提示原文是 "Generated inventory is stale … Run utils/port-audit.mjs without --check"，重新生成后通过，已提交（`1999f78`）。
+   - **Vulkan 侧**：`build-vulkan` 用**干净的完整重建**（`RelWithDebInfo`、`-DTHREECPP_BUILD_VULKAN=ON`、`third_party` 自带的头文件与 glslang）产出了全部二进制，但 `VulkanRendererTests` 仍然在 **4.5 秒**内失败于
+     `Automatic mipmaps filter a minified checkerboard: expected 128,128,128,255, received 0,0,0,255`。
+   - **为什么判定是环境**：同一份源码、同一个提交 `4751e1a`，在更早的轮次里 **99.70 秒跑完并通过**（`threecpp.vulkan`），现在换成全新构建目录仍复现，且**结论稳定**（连跑三次一致）。代码没有变、构建类型一致、Vulkan 头文件与 glslang 都是项目内固定的那份——所以差异只可能在**机器侧的驱动/GPU 状态**（自动生成 mipmap 走 `vkCmdBlitImage` 链，返回全黑说明 blit 没有产生数据）。
+   - **对目标的影响**：这条用例挡住的是**整个 `VulkanRendererTests` 二进制**，而六面渲染的验收测试就放在里面，所以六面渲染**暂时无法验证**（第 76 条的实现已经写好过一次）。**下一步不赌 GPU**：先做 `PMREMGenerator` 的**CPU 侧**结构（类骨架、`_allocateTargets`、`_blur` 的尺寸与卷积数学、`fromEquirectangular` 的参数校验），GPU 相关入口一律显式抛错，并在**不依赖 GPU** 的单测里验证；等 mipmap 用例恢复（或换机器/驱动）再补六面渲染与真实 GPU 路径。
 70. **第 520 轮：完整 Vulkan 套件 211/211 全绿，耗时 270.72 秒**。
    - 命令：`ctest --test-dir build-vulkan -j 4 -E "lights-states" --output-on-failure`（仍排除第 46 条那个已知项；它在 Vulkan 构建里同样慢）。
    - 结果：**100% tests passed, 0 tests failed out of 211**，总耗时 **270.72 秒**。对比同一套件在 **Debug** 配置下的 **3784.56 秒 / 2 失败**，差了约 14 倍——再次印证第 69 条"是构建类型不是代码"的结论。
