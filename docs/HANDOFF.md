@@ -1355,6 +1355,13 @@
    - **测试（5 个用例、7 条断言）**：步长公式与"块加倍则步长加倍"；**量程为 0 时步长为 0**（不做除法）；**中间值 `32767` 恰好落在桶坐标上**；**`0` 得 `bucket − 2`、`65534` 得 `bucket + 2`**；同一个存储值在两个桶里只差桶坐标。
    - **验证**：核心 **1189 用例 / 208,995 断言**（+5 / +7）、addons、`primitive-geometry`、`port-audit`、Vulkan 全绿。
    - **剩余**：`readCompressedFloat`（缩放与旋转的压缩浮点）、`writeSphericalHarmonicsFromRest` 的带内还原、以及 `getBucketIndex` 的桶寻址。
+249. **第 188 轮：`KSPLATLoader` 第三层（中）——三种解码器与桶寻址**。
+   - **`readCompressedFloat`**：向量宽 12 或 16 时是**裸 float32**；更窄的是**半浮点**——直接复用第 173 轮 `SPZLoader::fromHalfFloat`，没有重写。
+   - **`readCompressedHarmonic`**：4 字节 float32、2 字节半浮点、**1 字节是线性量化** `min + (byte/255) × (max − min)`。
+   - **`bucketIndex`** 的三段逻辑：`bucketCount == 0` 时**全在 0 号桶**；`splatIndex < fullBucketSplats` 时是**整除桶大小**；之后按**半满桶长度表**逐个走，走到头还找不到就抛 `Invalid KSPLAT bucket data.`。
+   - **测试（7 个用例、20 条断言）**：12/16 宽的浮点；6 宽的半浮点；**1 字节谐波的三个端点**（0 → 最小值、255 → 最大值、128 → 按比例的中点）；4/2 字节谐波；**满桶的整除**（0、3 → 桶 0，4、7 → 桶 1）；**半满桶行走**（8、10 → 桶 2，11、12 → 桶 3，且 `partialBase` 为 11）；**超出所有桶抛错**。
+   - **验证**：核心 **1196 用例 / 209,015 断言**（+7 / +20）、addons、`primitive-geometry`、`port-audit`、Vulkan 全绿。
+   - **剩余**：球谐带内还原与最终装配。
 70. **第 520 轮：完整 Vulkan 套件 211/211 全绿，耗时 270.72 秒**。
    - 命令：`ctest --test-dir build-vulkan -j 4 -E "lights-states" --output-on-failure`（仍排除第 46 条那个已知项；它在 Vulkan 构建里同样慢）。
    - 结果：**100% tests passed, 0 tests failed out of 211**，总耗时 **270.72 秒**。对比同一套件在 **Debug** 配置下的 **3784.56 秒 / 2 失败**，差了约 14 倍——再次印证第 69 条"是构建类型不是代码"的结论。

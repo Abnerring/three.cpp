@@ -88,4 +88,27 @@ class KSPLATLoader {
     // middle of the range, and the bucket supplies the offset that brings it back into place.
     static double decodeCenter(std::uint32_t stored, const SectionHeader& section,
                                double bucketCoordinate);
+
+    // Reads one scale or rotation component. A vector of twelve or sixteen bytes is stored as
+    // plain floats; the compressed levels use half floats, which are two bytes each.
+    static double readCompressedFloat(const std::vector<std::uint8_t>& buffer, std::size_t offset,
+                                      int bytesPerVector);
+
+    // Reads one harmonic component. Four bytes is a float, two a half float, and one a byte
+    // scaled linearly between the range the header declares.
+    static double readCompressedHarmonic(const std::vector<std::uint8_t>& buffer,
+                                         std::size_t offset, int bytesPerComponent,
+                                         double minCoefficient, double maxCoefficient);
+
+    // Which bucket a splat falls in. With no buckets everything is bucket zero; while the full
+    // buckets last, the index is the splat divided by the bucket size; after that the partial
+    // bucket lengths are walked in order.
+    struct BucketPosition {
+        std::uint32_t value = 0;
+        std::uint32_t partialIndex = 0;
+        std::uint32_t partialBase = 0;
+    };
+    static BucketPosition bucketIndex(std::uint32_t splatIndex, const SectionHeader& section,
+                                      std::uint32_t fullBucketSplats,
+                                      const std::vector<std::uint32_t>& partialLengths);
 };

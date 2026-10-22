@@ -1,5 +1,6 @@
 #include "loaders/KSPLATLoader.h"
 
+#include "loaders/SPZLoader.h"
 #include <cstring>
 #include <stdexcept>
 
@@ -135,4 +136,65 @@ double KSPLATLoader::decodeCenter(std::uint32_t stored, const SectionHeader& sec
         static_cast<double>(static_cast<std::int64_t>(stored) -
                             static_cast<std::int64_t>(section.compressionScaleRange));
     return offset * compressionScaleFactor(section) + bucketCoordinate;
+}
+
+double KSPLATLoader::readCompressedFloat(const std::vector<std::uint8_t>& buffer,
+                                         std::size_t offset, int bytesPerVector) {
+    if (offset + 2 > buffer.size()) return 0.0;
+    // A whole float vector is stored as it is.
+    if (bytesPerVector == 12 || bytesPerVector == 16) {
+        if (offset + 4 > buffer.size()) return 0.0;
+        return readFloat32(buffer, offset);
+    }
+    // Anything narrower is a half float, which the splat loader already decodes.
+    return SPZLoader::fromHalfFloat(static_cast<std::uint16_t>(readUint16(buffer, offset)));
+}
+
+double KSPLATLoader::readCompressedHarmonic(const std::vector<std::uint8_t>& buffer,
+                                            std::size_t offset, int bytesPerComponent,
+                                            double minCoefficient, double maxCoefficient) {
+    if (offset >= buffer.size()) return 0.0;
+    if (bytesPerComponent == 4) {
+        if (offset + 4 > buffer.size()) return 0.0;
+        return readFloat32(buffer, offset);
+    }
+    if (bytesPerComponent == 2) {
+        if (offset + 2 > buffer.size()) return 0.0;
+        return SPZLoader::fromHalfFloat(static_cast<std::uint16_t>(readUint16(buffer, offset)));
+    }
+    // A single byte is a fraction of the declared range.
+    const double t = buffer[offset] / 255.0;
+    return minCoefficient + t * (maxCoefficient - minCoefficient);
+}
+
+KSPLATLoader::BucketPosition KSPLATLoader::bucketIndex(
+    std::uint32_t splatIndex, const SectionHeader& section, std::uint32_t fullBucketSplats,
+    const std::vector<std::uint32_t>& partialLengths) {
+    BucketPosition position;
+    // Without buckets everything belongs to the first one.
+    if (section.bucketCount == 0) return position;
+
+    // While the full buckets last, the splat divides evenly across them.
+    if (splatIndex < fullBucketSplats) {
+        if (section.bucketSize != 0) position.value = splatIndex / section.bucketSize;
+        return position;
+    }
+
+    // Past those, the partial bucket lengths are walked in order.
+    std::uint32_t bucket = section.fullBucketCount;
+    std::uint32_t base = fullBucketSplats;
+    std::size_t at = 0;
+    while (bucket < section.bucketCount) {
+        const std::uint32_t length = at < partialLengths.size() ? partialLengths[at++] : 0;
+        if (splatIndex < base + length) {
+            position.value = bucket;
+            position.partialIndex = bucket;
+            position.partialBase = base;
+            return position;
+        }
+        ++bucket;
+        base += length;
+    }
+    // Running out of buckets means the file disagrees with itself.
+    throw std::runtime_error("THREE.KSPLATLoader: Invalid KSPLAT bucket data.");
 }
