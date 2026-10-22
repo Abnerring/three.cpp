@@ -1829,6 +1829,7 @@ void blurCubeTests(bool validation) {
     require(face[middle] > 200, "clear only blurCube fills the face red");
     renderer.setRenderTarget(nullptr);
 }
+
 int main(int argc, char** argv) {
     try {
         const bool validation = argc > 1 && std::string(argv[1]) == "--validation";

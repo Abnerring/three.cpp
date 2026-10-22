@@ -530,6 +530,13 @@
    - **结论**：`parkedTargets` 为空**不是 bug 的证据**，而是"当前 HEAD 里的 `blurCube` 根本没有需要 park 的场景"。要验证 park 机制本身，需要一个**真正切换两个不同目标**的用例（例如 `setRenderTarget(A)` → `setRenderTarget(B)` → 检查 A 是否进了 map）。
    - **状态**：全部回退；核心 **747 / 205,735**、`primitive-geometry`、`port-audit`、Vulkan 构建 0 错误、`--cube` 0，树干净。
    - **下一步**：先写一个**专门验证 park/restore 的单元测试**（A→B→A，检查两个目标各有一个 `GpuTarget`、且切回 A 时拿到的是同一个句柄）。把这块基建钉死之后，再回到 blur。
+132. **第 71 轮：试图用公开 API 验证 park/restore，结果证明"跨目标回读"根本不成立——这暴露了 `readRenderTargetPixels` 的全局缓冲问题**。
+   - **测试设计**：目标 A 渲绿色 → 目标 B 渲蓝色 → 再切回 A → 读 A，期望**绿色**（证明 A 的存储被 park 并恢复）。
+   - **实测**：`park probe first = 0,0,255`——读到的是**蓝色**，也就是 **B 最后一次渲染的结果**。
+   - **原因**：`VulkanRenderer::readRenderTargetPixels` 读的是 `Impl::pixels` 这个**全局回读缓冲**，它只保存"最后一次 `endFrame` 拷回来的内容"，**与传入的 `target` 无关**（第 43 轮加的守卫只校验"传入的是不是当前绑定的目标"，并不做"按目标取像素"）。所以这个测试**在语义上就不可能通过**——它测的不是存储是否被 park，而是"最后渲染了谁"。
+   - **这同时说明**：要让 ping-pong 真正可用，还需要让 `readRenderTargetPixels` **按目标**取像素（即每个 `GpuTarget` 各自保留一份 CPU 回读缓冲），或者提供一个"把某个目标的内容读出来"的新接口。**这是第 43 轮那个潜在缺陷的完整版本**，之前只修了"明确报错"这一半。
+   - **本轮处理**：这个无效测试已删除（不留红）；树回到绿点。
+   - **状态**：核心 **747 / 205,735**、`primitive-geometry`、`port-audit`、Vulkan 构建 0 错误、`--cube` 0。
 70. **第 520 轮：完整 Vulkan 套件 211/211 全绿，耗时 270.72 秒**。
    - 命令：`ctest --test-dir build-vulkan -j 4 -E "lights-states" --output-on-failure`（仍排除第 46 条那个已知项；它在 Vulkan 构建里同样慢）。
    - 结果：**100% tests passed, 0 tests failed out of 211**，总耗时 **270.72 秒**。对比同一套件在 **Debug** 配置下的 **3784.56 秒 / 2 失败**，差了约 14 倍——再次印证第 69 条"是构建类型不是代码"的结论。
