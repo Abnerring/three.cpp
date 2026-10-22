@@ -155,3 +155,34 @@ std::array<double, 16> TDSLoader::meshMatrix(const std::array<double, 12>& value
     matrix[15] = 1;
     return matrix;
 }
+
+TDSLoader::Faces TDSLoader::readFaces(const std::vector<std::uint8_t>& buffer, Chunk& chunk) {
+    Faces faces;
+    faces.faceCount = readWord(buffer, chunk);
+    // Every face is four words: three nodes and a word of visibility flags.
+    for (std::uint16_t i = 0; i < faces.faceCount; ++i) {
+        faces.indices.push_back(readWord(buffer, chunk));
+        faces.indices.push_back(readWord(buffer, chunk));
+        faces.indices.push_back(readWord(buffer, chunk));
+        // The visibility word is read so the cursor moves past it, then dropped.
+        readWord(buffer, chunk);
+    }
+    return faces;
+}
+
+std::vector<TDSLoader::GroupRange> TDSLoader::groupRanges(
+    const std::vector<std::size_t>& facesPerGroup) {
+    std::vector<GroupRange> ranges;
+    std::size_t start = 0;
+    for (std::size_t i = 0; i < facesPerGroup.size(); ++i) {
+        GroupRange range;
+        range.start = start;
+        // The upstream count assumes the group's indices are successive, so it is the face
+        // count times three rather than the span between the lowest and highest.
+        range.count = facesPerGroup[i] * 3;
+        range.materialIndex = static_cast<int>(i);
+        ranges.push_back(range);
+        start += range.count;
+    }
+    return ranges;
+}

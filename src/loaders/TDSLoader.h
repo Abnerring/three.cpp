@@ -63,4 +63,26 @@ class TDSLoader {
     // three by four; the arrangement below places each value, transposes, and the result is
     // what the loader applies to the geometry and then decomposes onto the mesh.
     static std::array<double, 16> meshMatrix(const std::array<double, 12>& values);
+
+    // The triangles a face array chunk holds. Every face is three node numbers followed by a
+    // fourth word of visibility flags that the loader reads and discards.
+    struct Faces {
+        std::vector<std::uint16_t> indices;
+        std::uint16_t faceCount = 0;
+    };
+
+    // Reads the faces, leaving the cursor just past them and ready for the sub chunks that
+    // follow.
+    static Faces readFaces(const std::vector<std::uint8_t>& buffer, Chunk& chunk);
+
+    // Where one material group's triangles sit. Each group covers as many indices as it names
+    // times three, laid end to end in the order the groups appear.
+    struct GroupRange {
+        std::size_t start = 0;
+        std::size_t count = 0;
+        int materialIndex = 0;
+    };
+
+    // Turns the face counts of successive groups into the ranges the geometry wants.
+    static std::vector<GroupRange> groupRanges(const std::vector<std::size_t>& facesPerGroup);
 };
