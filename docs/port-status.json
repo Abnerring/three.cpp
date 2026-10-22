@@ -194,8 +194,8 @@
     "note": "Accepted port scope is src and examples/jsm, including tracked third-party dependencies. Editor/manual web applications are excluded from native application rewrites. Native host behavior, packaging and all three platforms require separate implementation and verification evidence."
   },
   "counts": {
-    "partial-unverified": 302,
-    "missing": 639,
+    "partial-unverified": 303,
+    "missing": 638,
     "vulkan-port-pending": 290,
     "dependency-unverified": 20
   },
@@ -203,8 +203,8 @@
     "src": {
       "modules": 755,
       "counts": {
-        "partial-unverified": 218,
-        "missing": 247,
+        "partial-unverified": 219,
+        "missing": 246,
         "vulkan-port-pending": 290
       }
     },
@@ -677,7 +677,7 @@
       "path": "src/extras",
       "upstreamFiles": 7,
       "moduleCount": 7,
-      "modulesWithCppFiles": 6,
+      "modulesWithCppFiles": 7,
       "verifiedComplete": 0
     },
     {
@@ -2732,11 +2732,11 @@
       "scope": "src",
       "kind": "core",
       "upstreamSha256": "c4a0c105bf6eef43c87dda4a0a6c9a4a5ce8f9017c736511d2943054103eadc5",
-      "header": null,
-      "implementation": null,
+      "header": "src/extras/PMREMGenerator.h",
+      "implementation": "src/extras/PMREMGenerator.cpp",
       "expectedHeader": "src/extras/PMREMGenerator.h",
       "expectedImplementation": "src/extras/PMREMGenerator.cpp",
-      "status": "missing",
+      "status": "partial-unverified",
       "verifiedComplete": false,
       "apiExtraction": "static-only",
       "verification": {
@@ -2745,7 +2745,9 @@
           "pointer": "/modules/54"
         },
         "upstreamUnitTests": [],
-        "cppUnitTests": [],
+        "cppUnitTests": [
+          "test/unit/src/extras/PMREMGenerator.tests.cpp"
+        ],
         "reviewedImplementation": [],
         "differentialResults": [],
         "renderingResults": [],
