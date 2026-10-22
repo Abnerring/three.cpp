@@ -354,6 +354,12 @@
    - **验证**：构建通过；`--cube` 退出码 **0**——`vkCreateGraphicsPipelines` 失败会抛异常，所以通过说明 blur 管线在真实 GPU 上**建成了**，且既有的六面渲染、方向断言、cube 视图都没被破坏。核心 **745 / 205,728**、`primitive-geometry`、`port-audit` 全绿。
    - **还差的三件事**：① `drawPmremFace` 目前只服务等距柱状程序（绑 `pmremPipelineHandle`、push 192 字节），blur 需要变体——绑 `pmremBlurPipelineHandle`、push **196** 字节（三个矩阵 + `sigma`）、描述符用 **cube 视图**而不是 2D 视图；② 逐级 lod 的降采样链（上游 `_blur(sigma)` 与 `_applyPMREM` 的 lod 循环）；③ GGX 与积分材质。
    - **下一步建议**：先做 `drawPmremFace` 的 blur 变体，并用"**纯色立方体源 + blur → 输出仍是该色**"做验收（纯色在卷积下不变，和之前选纯色测等距柱状是同一个理由：一次只验一条链）。
+105. **第 42 轮：发现一个结构性限制——渲染器只有"一张"GPU 颜色图，PMREM 的 ping-pong 卷积无法进行**。
+   - **证据**：`VulkanRenderer.cpp` 里只有一处 `createImage(colorImage, ...)`（2109 行），即整个渲染器**只有一张** GPU 颜色图；`setRenderTarget` 只是按 `renderTarget->width/height` 去 `resize` 这张图，并记录 `activeCubeFace`。更直接的是 `readRenderTargetPixels(RenderTarget& target, ...)` 里有一句 **(void) target;** ——它**根本不用**传入的目标，读的是渲染器内部那份**唯一**的回读缓冲。
+   - **为什么这是 PMREM 的硬阻塞**：上游 `_blur` 是**读一个立方体贴图、写另一个**（`_getSourceTarget()` → `_allocateTarget()` 的各 lod），`_applyPMREM` 也是逐级 lod 来回采样。端口这边第二张 GPU 图**不存在**，所以要么读和写撞在同一张图上（未定义行为），要么根本画不出来。
+   - **顺带发现的潜在缺陷**：`readRenderTargetPixels` 忽略 `target` 参数这件事，本身就是一个语义缺陷——它返回的是"最后一次渲染的结果"，而不是"这个目标上的像素"。目前所有测试都恰好只在上次渲染的同一个目标上读取，所以没暴露出来；但一旦有多个 GPU 目标，这个 API 就是错的。
+   - **要走的路（下一阶段的大件）**：给 `RenderTarget` 配**每目标一份 GPU 存储**——`Impl` 里加 `std::unordered_map<RenderTarget*, GpuTarget>`（颜色图 + 深度图 + framebuffer + cube 视图），`setRenderTarget` 时切换 `activeGpuTarget`，`readRenderTargetPixels` 从 `target` 对应的存储回读；`resize` 改为只作用于当前 `GpuTarget`。
+   - **状态**：本轮**无代码变更**（只读代码 + 记录），核心 **745 / 205,728**、`primitive-geometry`、`port-audit`、`--cube` 全绿。
 70. **第 520 轮：完整 Vulkan 套件 211/211 全绿，耗时 270.72 秒**。
    - 命令：`ctest --test-dir build-vulkan -j 4 -E "lights-states" --output-on-failure`（仍排除第 46 条那个已知项；它在 Vulkan 构建里同样慢）。
    - 结果：**100% tests passed, 0 tests failed out of 211**，总耗时 **270.72 秒**。对比同一套件在 **Debug** 配置下的 **3784.56 秒 / 2 失败**，差了约 14 倍——再次印证第 69 条"是构建类型不是代码"的结论。
