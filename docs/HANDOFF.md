@@ -344,6 +344,11 @@
    - **编译**：CMake 的程序列表改成 `foreach(program basic pmrem_equirect pmrem_blur)`，`glslang` 通过，产出 `pmrem_blur.vert.spv` **1724 B**、`pmrem_blur.frag.spv` **3996 B**。
    - **下一步的硬骨头**：`samplerCube` 需要 **`VK_IMAGE_VIEW_TYPE_CUBE`** 的视图，而当前立方体目标是按 `2D_ARRAY` 建的（虽然 `createImage` 已带 `VK_IMAGE_CREATE_CUBE_COMPATIBLE_BIT`，所以**同一张图可以再建一个 cube 视图**）。所以下一轮要先给立方体目标加一个 cube 视图（`baseArrayLayer=0, layerCount=6`、`viewType=CUBE`），才能在 blur 里采样它。
    - **状态**：核心 **745 / 205,728**、`primitive-geometry`、`port-audit`、`--cube` 全绿。
+103. **第 40 轮：立方体目标现在多一个 `VK_IMAGE_VIEW_TYPE_CUBE` 视图，blur 可以采样它了**。
+   - **改动**：`struct Image` 增加 `VkImageView cubeView`；`createImage` 在**建好 2D/2D_ARRAY 视图之后**，若 `layers == 6` 就再建一个同 `subresourceRange`、但 `viewType = VK_IMAGE_VIEW_TYPE_CUBE` 的视图（`createImage` 本来就在 `layers > 1` 时置 `VK_IMAGE_CREATE_CUBE_COMPATIBLE_BIT`，所以同一张图合法地拥有两个视图）；销毁处也一并 `vkDestroyImageView(image.cubeView)`。
+   - **为什么需要**：blur 的片元阶段是 `layout(set=0, binding=0) uniform samplerCube envMap`，而立方体目标原本只有 `2D_ARRAY` 视图——`samplerCube` 必须配 cube 视图。
+   - **验证**：`threecpp_vulkan` 与 `VulkanRendererTests` 构建通过；`--cube` 退出码 **0**（视图创建失败会抛异常，所以通过即说明 cube 视图真的建出来了，且没破坏六面渲染与方向断言）。核心 **745 / 205,728**、`primitive-geometry`、`port-audit` 全绿。
+   - **下一步**：建 blur 程序（着色器模块 + 反射布局 + 管线，照 `pmrem_equirect` 那套），然后写"逐级 lod 的降采样 + 两级卷积"的编排——上游顺序是 `_blur(sigma≈0.04)` 若干次、`_applyPMREM` 里对每个 lod 用 GGX 或积分材质。
 70. **第 520 轮：完整 Vulkan 套件 211/211 全绿，耗时 270.72 秒**。
    - 命令：`ctest --test-dir build-vulkan -j 4 -E "lights-states" --output-on-failure`（仍排除第 46 条那个已知项；它在 Vulkan 构建里同样慢）。
    - 结果：**100% tests passed, 0 tests failed out of 211**，总耗时 **270.72 秒**。对比同一套件在 **Debug** 配置下的 **3784.56 秒 / 2 失败**，差了约 14 倍——再次印证第 69 条"是构建类型不是代码"的结论。

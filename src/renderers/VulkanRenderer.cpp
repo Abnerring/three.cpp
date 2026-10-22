@@ -387,6 +387,8 @@ struct VulkanRenderer::Impl {
         VkImage image = VK_NULL_HANDLE;
         VkDeviceMemory memory = VK_NULL_HANDLE;
         VkImageView view = VK_NULL_HANDLE;
+        // A cube view over the same six layers, so the blur can sample it as a cubemap.
+        VkImageView cubeView = VK_NULL_HANDLE;
     } colorImage, depthImage;
     struct Buffer {
         VkBuffer buffer = VK_NULL_HANDLE;
@@ -2013,10 +2015,17 @@ struct VulkanRenderer::Impl {
         view.subresourceRange.levelCount = 1;
         view.subresourceRange.layerCount = layers;
         check(api.vkCreateImageView(device, &view, nullptr, &result.view), "vkCreateImageView");
+        if (layers == 6) {
+            VkImageViewCreateInfo cube = view;
+            cube.viewType = VK_IMAGE_VIEW_TYPE_CUBE;
+            check(api.vkCreateImageView(device, &cube, nullptr, &result.cubeView),
+                  "vkCreateImageView(cube)");
+        }
     }
     void destroyImage(Image& image) {
         if (image.view)
             api.vkDestroyImageView(device, image.view, nullptr);
+        if (image.cubeView) api.vkDestroyImageView(device, image.cubeView, nullptr);
         if (image.image)
             api.vkDestroyImage(device, image.image, nullptr);
         if (image.memory)
