@@ -63,6 +63,7 @@ add_executable(THREECPPTests
         unit/src/loaders/MD2Triangles.tests.cpp
         unit/src/loaders/MD2Vertices.tests.cpp
         unit/src/loaders/MD2Morph.tests.cpp
+        unit/src/loaders/MD2Animations.tests.cpp
         unit/src/cameras/StereoCamera.tests.cpp
         unit/src/audio/AudioContext.tests.cpp
         unit/src/audio/Audio.tests.cpp

@@ -343,3 +343,16 @@ MD2Loader::MorphTargets MD2Loader::buildMorphTargets(const std::vector<Frame>& f
     }
     return targets;
 }
+
+AnimationClip::Clips MD2Loader::createAnimations(const std::vector<std::string>& frameNames,
+                                                 double fps) {
+    // The helper takes an array of objects with a name, so the names are boxed first.
+    auto targets = JSValue::array();
+    for (std::size_t i = 0; i < frameNames.size(); ++i) {
+        auto target = JSValue::object();
+        target.set("name", JSValue(frameNames[i]));
+        targets.set(std::to_string(i), target);
+    }
+    // Ten frames per second and looping clips, which is what the loader passes.
+    return AnimationClip::CreateClipsFromMorphTargetSequences(targets, fps, false);
+}

@@ -1,4 +1,5 @@
 #pragma once
+#include "animation/AnimationClip.h"
 #include <array>
 #include <cstdint>
 #include <string>
@@ -101,4 +102,11 @@ class MD2Loader {
     };
     static MorphTargets buildMorphTargets(const std::vector<Frame>& frames,
                                           const std::vector<Triangle>& triangles);
+
+    // Groups the frame names into clips the way upstream does: names are split into a
+    // prefix and trailing digits, and each prefix becomes one clip whose tracks are the
+    // frames in name order. A name without trailing digits joins no group, so a model whose
+    // frames are named "a" and "b" produces no clips at all, which is upstream behaviour.
+    static AnimationClip::Clips createAnimations(const std::vector<std::string>& frameNames,
+                                                 double fps = 10);
 };

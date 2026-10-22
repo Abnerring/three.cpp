@@ -956,6 +956,13 @@
    - **测试（4 个用例、20 条断言）**：两帧 → 两个目标、名字 `a`/`b`、每个 **9 个数**（3 顶点 × 3 分量）；**三角形索引乱序**（`2,0,1`）时展开顺序**跟着三角形走**（首个数是顶点 2 的 x）；法线逐顶点带过来；空帧被跳过。
    - **一个顺手的发现**：端口里**已经有** `AnimationClip::CreateClipsFromMorphTargetSequences(morphTargets, fps, noLoop)`（第 24 行），所以 MD2 最后那一步 `geometry.animations = ...(frames, 10, false)` 是**可以做的**，只是 `morphPositions` 要按 `JSValue` 数组传。
    - **验证**：核心 **924 用例 / 206,882 断言**（+4 / +20）、`primitive-geometry`、`port-audit` 全绿。
+191. **第 130 轮：`MD2Loader` 收尾——动画，MD2 完整**。
+   - **复用而非重写**：端口里**已经有** `AnimationClip::CreateClipsFromMorphTargetSequences(JSValue targets, double fps, bool noLoop)`，它按正则 **`^([\w-]*?)([\d]+)$`** 把每个目标的名字拆成「前缀 + 尾部数字」，同前缀归成一个 clip。所以我只写了 `createAnimations(frameNames, fps = 10)`：把名字装箱成「带 `name` 字段的对象数组」，再交给那个函数。
+   - **一个必须知道的上游行为**：**名字必须带尾部数字才会进组**。所以 `{"stand01","stand02"}` 得到 **1 个** clip（名 `stand`），而 `{"a","b"}` 得到 **0 个** clip——这不是 bug，是那个正则的直接后果，测试专门钉住。
+   - **测试（4 个用例、8 条断言）**：两帧同前缀 → 1 个 clip 且名为 `stand`；两个前缀 → 2 个 clip 且都能找到；**无数字的名字 → 0 个 clip**；空输入 → 0 个。
+   - **一个端口细节**：`AnimationClip::name` 是 **`JSValue`**，比较要 `.toString() == "stand"`，不能直接和字符串字面量比。
+   - **验证**：核心 **928 用例 / 206,890 断言**（+4 / +8）、`primitive-geometry`、`port-audit` 全绿。addon loader **32 → 33 / 52**。
+   - **六个完整 loader**：`MTLLoader`（5 层）、`OBJLoader`（5 层）、`PLYLoader`（6 层）、`FontLoader`（3 层）、`HDRCubeTextureLoader`（1 层）、`MD2Loader`（5 层）。
 70. **第 520 轮：完整 Vulkan 套件 211/211 全绿，耗时 270.72 秒**。
    - 命令：`ctest --test-dir build-vulkan -j 4 -E "lights-states" --output-on-failure`（仍排除第 46 条那个已知项；它在 Vulkan 构建里同样慢）。
    - 结果：**100% tests passed, 0 tests failed out of 211**，总耗时 **270.72 秒**。对比同一套件在 **Debug** 配置下的 **3784.56 秒 / 2 失败**，差了约 14 倍——再次印证第 69 条"是构建类型不是代码"的结论。
