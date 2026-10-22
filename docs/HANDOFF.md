@@ -210,6 +210,11 @@
    - **已经排除的**：`--cube` 位置（第一次放太靠后，mipmap 先跑；移到最前面才真正执行）、链接失效（头文件改了但测试 obj 是旧的，要删 obj 强制重编）、`threecpp_vulkan` 未重编（要先编库再编测试）。
    - **下一步（诊断顺序）**：① 只跑 **face 0**，确认单面正确——若单面就对，问题在"切面"逻辑（`selectFace` 的早退条件或 `initializedLayers` 位）；② 若单面也不对，问题在**首帧布局转换**（`beginFrame` 里 `VK_IMAGE_LAYOUT_UNDEFINED → COLOR_ATTACHMENT_OPTIMAL` 只对当前层做，但整图是 6 层，需要每层各做一次——现在正是这么做的，但 `initializedLayers` 的位可能在 `endFrame` 之后才置，导致第二轮又按 UNDEFINED 转换）；③ 打印每个面读回的首像素，和预期的 `{1,0,0}`/`{0,1,0}`/… 逐个对照。
    - **本轮处理**：所有未验证改动**已回退**，树保持干净（核心 745 / 205,728、差分 22 组 / 287 场景、`primitive-geometry` 与 `port-audit` 全绿）。
+81. **第 15 轮：确认了一个具体 bug（`endFrame` 的 barrier 没带层），但补丁又引入新回归，已全部回退**。
+   - **确认的 bug**：`VulkanRenderer.cpp` 的 `endFrame()` 里两个 `imageBarrier` 调用（`COLOR_ATTACHMENT_OPTIMAL → TRANSFER_SRC_OPTIMAL` 与反向）**没有传 `layer` 参数**，于是它们作用在 **layer 0**，而紧跟着的 `vkCmdCopyImageToBuffer` 用的是 `baseArrayLayer = activeCubeFace`。面 ≥ 1 时布局与拷贝目标不一致——这正是"每个面读回来不是自己的颜色"的最直接嫌疑。`beginFrame` 里那次初始化转换**已经**带了 `activeCubeFace`（第 2235 行），只有 `endFrame` 这两处漏了。
+   - **基线（提交 `4751e1a`）里已经有的**（别重复加）：`initializedLayers`、`activeCubeFace/activeMipmapLevel/targetLayers`、`imageBarrier(..., layer = 0)` 的 `baseArrayLayer`、`beginFrame` 的逐层初始化与 barrier、`copy.imageSubresource.baseArrayLayer = activeCubeFace`、`initializedLayers |= 1u << activeCubeFace`。**缺的只有五处**：`resize` 接层数、颜色图按层创建、`render.framebuffer` 按面选择、`selectFace` 助手、`setRenderTarget` 的 face 参数，外加上述两个 barrier 的层参数。
+   - **本轮为什么又回退**：补这五处时连续踩到重复插入（`faceView`/`faceFramebuffer`/`auto cube` 各出现过两次，因为锚点行在补丁后位移）和一次行号错位，最后跑 `--cube` 时报 `target size adopted`——连**二维**目标都不生效了，说明补丁把 `setRenderTarget` 的结构改坏了。按纪律**全部回退**，树留在 `4751e1a` 绿状态（核心 745 / 205,728、差分 22 组 / 287 场景、`primitive-geometry` 与 `port-audit` 通过）。
+   - **下一轮的正确做法**：不要再用"整文件多次正则替换"来打这个补丁。改用**逐处小改 + 每改一处立即构建**：① 先只给 `endFrame` 的两个 barrier 加 `activeCubeFace`（两行，独立构建，跑 `--cube` 看是否只剩颜色问题）；② 再单独加 `resize` 的层数；③ 再单独加 `selectFace`；④ 最后接 `setRenderTarget`。每步都能独立验证，出错立刻知道是哪一步。
 70. **第 520 轮：完整 Vulkan 套件 211/211 全绿，耗时 270.72 秒**。
    - 命令：`ctest --test-dir build-vulkan -j 4 -E "lights-states" --output-on-failure`（仍排除第 46 条那个已知项；它在 Vulkan 构建里同样慢）。
    - 结果：**100% tests passed, 0 tests failed out of 211**，总耗时 **270.72 秒**。对比同一套件在 **Debug** 配置下的 **3784.56 秒 / 2 失败**，差了约 14 倍——再次印证第 69 条"是构建类型不是代码"的结论。
