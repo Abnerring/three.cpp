@@ -500,6 +500,12 @@
    - **现在的确定结论**：六面的 render pass、逐面 framebuffer、`clearAttachments`、`endFrame` 的拷贝、`readRenderTargetPixels` 的回读——**整条链都正常**。问题**只在绘制/采样**那一小段。
    - **状态**：五项门禁全绿（核心 **747 / 205,735**、`primitive-geometry`、`port-audit`、Vulkan 构建 0 错误、`--cube` 0）。
    - **下一步（继续保持单步）**：在这个**已经验证为绿**的 `blurCube` 上，**只加 draw 一行**（连同必需的 barrier），其余不动；跑一次看红是否变黑。这样"变黑"就能**唯一地**归因到 draw/采样。
+129. **第 68 轮：确认 blur 的 draw 与 clear 顺序被写反了（clear 在 draw 之后，把结果擦掉），但修正时插错位置，已回退**。
+   - **顺序问题（已确认，重要）**：第 67 轮那个"只清红"的 `blurCube` 里，本轮我把 barrier + draw 插在了**原来那行 clear 之前**——于是执行顺序变成 **draw → clear**，红色把绘制结果**整个擦掉**。这解释了为什么"加上 draw 之后仍然读到纯红"：不是绘制没发生，而是**被后面的 clear 覆盖了**。从文件里的行号可以直接看到：`impl->drawPmremBlurFace(...)` 在 **2858**，`impl->clearAttachments(true, false, Color(1, 0, 0), 1, false);` 在 **2860**。
+   - **第二个教训**：修这个顺序时，我用"找到第一处 `impl->activeClearSRGB);` 然后插入"的办法——但 `renderEquirectangularToCube` 里也有同样的一行，而且**在文件里更靠前**。结果 clear 被插进了**等距柱状那条路**，把它的绘制擦成黑色，`blurCubeTests` 立刻失败（`clear probe centre = 0,0,0`）。**定位插入点时用了不唯一的锚点**，这是本轮的直接错误。
+   - **正确的做法**：先定位 `void VulkanRenderer::blurCube` 的起始行，**再在它的范围内**（`for` 循环体内）找 `beginFrame` 的收尾行，而不是全文件找第一处。
+   - **当前状态**：全部回退；核心 **747 / 205,735**、`primitive-geometry`、`port-audit`、Vulkan 构建 0 错误、`--cube` 0，树干净。
+   - **下一步**：重做 `blurCube`（clear 在 draw **之前**），并且**这次用 `blurCube` 函数体内的相对位置**来定位插入点，插完立刻打印该函数的前 30 行确认顺序。
 70. **第 520 轮：完整 Vulkan 套件 211/211 全绿，耗时 270.72 秒**。
    - 命令：`ctest --test-dir build-vulkan -j 4 -E "lights-states" --output-on-failure`（仍排除第 46 条那个已知项；它在 Vulkan 构建里同样慢）。
    - 结果：**100% tests passed, 0 tests failed out of 211**，总耗时 **270.72 秒**。对比同一套件在 **Debug** 配置下的 **3784.56 秒 / 2 失败**，差了约 14 倍——再次印证第 69 条"是构建类型不是代码"的结论。
