@@ -297,3 +297,28 @@ PCDLoader::Points PCDLoader::parseBinaryPoints(const std::vector<std::uint8_t>& 
     }
     return points;
 }
+
+PCDLoader::Points PCDLoader::parseCompressedPoints(const std::vector<std::uint8_t>& data,
+                                                   std::size_t start, int pointCount,
+                                                   const Header& header, const FieldLayout& layout,
+                                                   bool littleEndian) {
+    if (start + 8 > data.size())
+        throw std::runtime_error("THREE.PCDLoader: Invalid compressed data");
+
+    // Two little endian lengths precede the payload in this form.
+    const auto readLength = [&data](std::size_t at) {
+        return static_cast<std::size_t>(data[at]) | (static_cast<std::size_t>(data[at + 1]) << 8) |
+               (static_cast<std::size_t>(data[at + 2]) << 16) |
+               (static_cast<std::size_t>(data[at + 3]) << 24);
+    };
+    const std::size_t compressedSize = readLength(start);
+    const std::size_t uncompressedSize = readLength(start + 4);
+    if (start + 8 + compressedSize > data.size())
+        throw std::runtime_error("THREE.PCDLoader: Invalid compressed data");
+
+    std::vector<std::uint8_t> compressed(data.begin() + static_cast<std::ptrdiff_t>(start + 8),
+                                        data.begin() + static_cast<std::ptrdiff_t>(start + 8 + compressedSize));
+    const auto plain = decompressLZF(compressed, uncompressedSize);
+    // The decompressed block is plain binary from then on.
+    return parseBinaryPoints(plain, 0, pointCount, header, layout, littleEndian);
+}

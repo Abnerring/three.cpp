@@ -68,18 +68,31 @@ TEST_CASE("PCDLoader reads rows at the row stride") {
 }
 
 TEST_CASE("PCDLoader respects the requested endianness") {
-    // Write 1.0 as big endian instead, and read it with the flag off.
-    std::vector<std::uint8_t> data{0x3f, 0x80, 0x00, 0x00};
+    // All three position fields are declared, so the row really produces a position.
     PCDLoader::Header header;
-    header.fields = {"x"};
-    header.size = {4};
-    header.type = {"f"};
-    header.count = {1};
+    header.fields = {"x", "y", "z"};
+    header.size = {4, 4, 4};
+    header.type = {"f", "f", "f"};
+    header.count = {1, 1, 1};
     header.data = "binary";
     const auto layout = PCDLoader::computeOffsets(header);
-    const auto points = PCDLoader::parseBinaryPoints(data, 0, 1, header, layout, false);
-    // Only two of the three position components exist, so no position is recorded.
-    REQUIRE(points.positions.empty());
+
+    // 1.0, 2.0 and 3.0 written big endian.
+    const std::vector<std::uint8_t> big{0x3f, 0x80, 0x00, 0x00, 0x40, 0x00, 0x00, 0x00,
+                                        0x40, 0x40, 0x00, 0x00};
+    const auto bigRead = PCDLoader::parseBinaryPoints(big, 0, 1, header, layout, false);
+    REQUIRE(bigRead.positions.size() == 3);
+    REQUIRE(bigRead.positions[0] == 1.0);
+    REQUIRE(bigRead.positions[1] == 2.0);
+    REQUIRE(bigRead.positions[2] == 3.0);
+
+    // The same values written little endian read back identically with the flag on.
+    const std::vector<std::uint8_t> little{0x00, 0x00, 0x80, 0x3f, 0x00, 0x00, 0x00, 0x40,
+                                           0x00, 0x00, 0x40, 0x40};
+    const auto littleRead = PCDLoader::parseBinaryPoints(little, 0, 1, header, layout, true);
+    REQUIRE(littleRead.positions.size() == 3);
+    REQUIRE(littleRead.positions[0] == 1.0);
+    REQUIRE(littleRead.positions[2] == 3.0);
 }
 
 TEST_CASE("PCDLoader stops when a row runs past the data") {
@@ -93,4 +106,53 @@ TEST_CASE("PCDLoader stops when a row runs past the data") {
     const auto points = PCDLoader::parseBinaryPoints(data, 0, 1, header, layout, true);
     REQUIRE(points.positions.size() == 3);
     REQUIRE(points.colors.empty());
+}
+TEST_CASE("PCDLoader reads a compressed block after its two lengths") {
+    // Compress three floats with literal runs only, which the decompressor accepts.
+    std::vector<std::uint8_t> plain;
+    for (const float value : {1.0f, 2.0f, 3.0f}) {
+        std::uint32_t bits = 0;
+        std::memcpy(&bits, &value, sizeof(bits));
+        for (int i = 0; i < 4; ++i) plain.push_back(std::uint8_t((bits >> (i * 8)) & 0xff));
+    }
+    // Twelve literal bytes in one run: control byte eleven, then the bytes.
+    std::vector<std::uint8_t> compressed;
+    compressed.push_back(std::uint8_t(plain.size() - 1));
+    for (const auto byte : plain) compressed.push_back(byte);
+
+    std::vector<std::uint8_t> block;
+    const auto pushLength = [&block](std::size_t value) {
+        for (int i = 0; i < 4; ++i) block.push_back(std::uint8_t((value >> (i * 8)) & 0xff));
+    };
+    pushLength(compressed.size());
+    pushLength(plain.size());
+    for (const auto byte : compressed) block.push_back(byte);
+
+    PCDLoader::Header header;
+    header.fields = {"x", "y", "z"};
+    header.size = {4, 4, 4};
+    header.type = {"f", "f", "f"};
+    header.count = {1, 1, 1};
+    header.data = "binary_compressed";
+    const auto layout = PCDLoader::computeOffsets(header);
+
+    const auto points = PCDLoader::parseCompressedPoints(block, 0, 1, header, layout, true);
+    REQUIRE(points.positions.size() == 3);
+    REQUIRE(points.positions[0] == 1.0);
+    REQUIRE(points.positions[1] == 2.0);
+    REQUIRE(points.positions[2] == 3.0);
+}
+
+TEST_CASE("PCDLoader rejects a compressed block that is too short") {
+    const std::vector<std::uint8_t> tiny{1, 2, 3};
+    PCDLoader::Header header;
+    header.fields = {"x"};
+    header.size = {4};
+    header.type = {"f"};
+    header.count = {1};
+    header.data = "binary_compressed";
+    const auto layout = PCDLoader::computeOffsets(header);
+    REQUIRE_THROWS_WITH(
+        PCDLoader::parseCompressedPoints(tiny, 0, 1, header, layout, true),
+        "THREE.PCDLoader: Invalid compressed data");
 }

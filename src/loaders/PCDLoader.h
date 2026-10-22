@@ -70,4 +70,10 @@ class PCDLoader {
     static Points parseBinaryPoints(const std::vector<std::uint8_t>& data, std::size_t start,
                                     int pointCount, const Header& header,
                                     const FieldLayout& layout, bool littleEndian);
+
+    // Reads a compressed binary block. The first eight bytes are the compressed and the
+    // uncompressed sizes, then the LZF data; the result is passed to the binary reader.
+    static Points parseCompressedPoints(const std::vector<std::uint8_t>& data, std::size_t start,
+                                        int pointCount, const Header& header,
+                                        const FieldLayout& layout, bool littleEndian);
 };
