@@ -914,6 +914,14 @@
    - **测试（5 个用例、12 条断言）**：两个字符 → 两条路径；**夹一个无字形字符只产出两条**（说明中间那个被跳过）；`rtl` 与 `ltr` 都产两条但**顺序不同**（用指针比较确认第一条不是同一条）；`generateShapes` 至少产出两个形状且都不是空指针；空字符串两处都返回空。
    - **验证**：核心 **901 用例 / 206,629 断言**（+5 / +12）、`primitive-geometry`、`port-audit` 全绿。addon loader **30 → 31 / 52**。
    - **四个完整 loader**：`MTLLoader`（5 层）、`OBJLoader`（5 层）、`PLYLoader`（6 层）、`FontLoader`（3 层）。Font 的 `TTFLoader` 因为依赖 CDN 上的 opentype.js 而**明确不做**（第 181 条已记）。
+185. **第 124 轮：把剩余 38 个 loader 的依赖扫清楚了——只有 2 个是外部依赖，之前的判断是错的**。
+   - **第一版扫描全错**：我用正则抓 `from '...'`，结果把 JSDoc 里的 `@three_import import { X } from 'three/addons/loaders/X.js'` 也算成 import，**38 个里 37 个都被标成 EXTERNAL**，只有 `USDZLoader` 显示 pure。**先剥掉 `/* */` 与行注释再抓**，结论完全反转。
+   - **真正的结果**：剩余 38 个 loader 里 **37 个只 import `'three'`**（pure），**只有 2 个是外部依赖**：
+     - `TTFLoader` → `https://cdn.jsdelivr.net/npm/opentype.js@1.3.4/+esm`（CDN 库，**明确不做**）；
+     - `MaterialXLoader` → `three/webgpu`（依赖 WebGPU 那一套）。
+   - **一个重要区分**：**"import 干净"不等于"可移植"**。像 `DRACOLoader`/`KTX2Loader` 的 import 是干净的，但它们**运行时去加载 WASM 解码器**，仍然属于外部依赖，不能算可移植。所以这个扫描只回答"源码层面有没有第三方 import"，还要再看运行时。
+   - **按行数排序后的现实**：`ColladaLoader` 154 行、`KMZLoader` 164、`HDRCubeTextureLoader` 165、`LUTImageLoader` 191、`KTXLoader` 200、`MD2Loader` 436、`BVHLoader` 485、`AMFLoader` 542、`TGALoader` 540、`SPZLoader` 562、`PCDLoader` 623、`NRRDLoader` 719、`VOXLoader` 920……**其中 `HDRCubeTextureLoader`（165 行）的依赖（`HDRLoader`）我们已经有了**，是最顺手的下一个目标。
+   - **本轮实际交付**：差分 **334 → 343 场景**（64×2 纹理、8×4 网格、128 实例）。核心 **901 / 206,629**、`primitive-geometry`、`port-audit` 全绿。
 70. **第 520 轮：完整 Vulkan 套件 211/211 全绿，耗时 270.72 秒**。
    - 命令：`ctest --test-dir build-vulkan -j 4 -E "lights-states" --output-on-failure`（仍排除第 46 条那个已知项；它在 Vulkan 构建里同样慢）。
    - 结果：**100% tests passed, 0 tests failed out of 211**，总耗时 **270.72 秒**。对比同一套件在 **Debug** 配置下的 **3784.56 秒 / 2 失败**，差了约 14 倍——再次印证第 69 条"是构建类型不是代码"的结论。
