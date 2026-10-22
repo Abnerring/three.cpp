@@ -1,6 +1,7 @@
 #include "loaders/LDrawLoader.h"
 
 #include <cstdlib>
+#include <stdexcept>
 #include <utility>
 
 LDrawLoader::LineParser::LineParser(std::string line, int lineNumber)
@@ -115,4 +116,35 @@ std::vector<std::string> LDrawLoader::parseKeywords(const std::string& rest) {
     }
     // Splitting always gives at least one piece, even an empty rest.
     return keywords;
+}
+
+namespace {
+// The suffix a diagnostic appends to name its line, empty when the line has no number.
+std::string lineSuffix(int lineNumber) {
+    if (lineNumber < 0) return std::string();
+    return " at line " + std::to_string(lineNumber);
+}
+}  // namespace
+
+std::string LDrawLoader::normalizeColour(const std::string& token, int lineNumber) {
+    // The hex form with a leading zero x is the other way the format writes a colour.
+    if (token.rfind("0x", 0) == 0) return "#" + token.substr(2);
+    // A token already in the hash form is kept as it stands.
+    if (!token.empty() && token[0] == '#') return token;
+    // Anything else is not a colour at all.
+    throw std::runtime_error("THREE.LDrawLoader: Invalid color while parsing material" +
+                             lineSuffix(lineNumber) + ".");
+}
+
+double LDrawLoader::alphaFromByte(int value) {
+    // The byte is divided by its range and then clamped, so both ends saturate.
+    const double fraction = value / 255.0;
+    if (fraction < 0.0) return 0.0;
+    if (fraction > 1.0) return 1.0;
+    return fraction;
+}
+
+bool LDrawLoader::isTransparentAlpha(double alpha) {
+    // Only an alpha below fully opaque is transparent.
+    return alpha < 1.0;
 }

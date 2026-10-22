@@ -72,4 +72,16 @@ class LDrawLoader {
     // piece trimmed. A piece is produced even when the rest is empty, because splitting an
     // empty string gives one empty piece rather than none.
     static std::vector<std::string> parseKeywords(const std::string& rest);
+
+    // A colour token from a value or edge tag, rewritten in the form the port keeps colours
+    // in. A leading 0x becomes a hash; a token that already starts with one is left alone.
+    // Anything else is not a colour and is reported, naming the line when it has a number.
+    static std::string normalizeColour(const std::string& token, int lineNumber);
+
+    // An alpha byte turned into a fraction, clamped to the range. A value above the byte range
+    // reads as fully opaque and a negative one as fully transparent.
+    static double alphaFromByte(int value);
+
+    // Whether an alpha below fully opaque makes the material transparent.
+    static bool isTransparentAlpha(double alpha);
 };
