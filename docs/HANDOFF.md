@@ -278,6 +278,13 @@
    - **验证**：`--cube` 在真实 GPU 上通过；上传失败会抛异常，所以通过即说明这三十六个顶点确实进了显存。核心 **745 / 205,728**、`primitive-geometry`、`port-audit` 全绿。
    - **顺手确认**：又跑了一次完整 `VulkanRendererTests`，仍然在 mipmap 用例失败（52.9 秒），环境没恢复——这条验证通道（`--cube`）还得继续用。
    - **下一轮**：把 descriptor set 与采样图接上——`pmremTextureLayout` 已就绪，需要从 `descriptorPools` 分一套、绑定等距柱状纹理、`vkCmdPushConstants` 传 `Transforms`，然后 `vkCmdBindPipeline + vkCmdBindVertexBuffers + vkCmdDraw(36)`，逐面写进立方体目标。这是 `fromEquirectangular` 出图的最后一步。
+93. **第 30 轮：把 PMREM 出图的最后一块（descriptor + draw）写成可直接照做的规格**。
+   - **可复用的分配模式**：`VulkanRenderer.cpp:1685` 的 `textureDescriptor(...)` 展示了本项目分配描述符集的标准写法——一个 `for (;;)` 循环里，若 `activeDescriptorPool == descriptorPools.size()` 就建池（`COMBINED_IMAGE_SAMPLER` 12288、`UNIFORM_BUFFER` 4096、`STORAGE_BUFFER` 32768、`maxSets` 4096），然后 `vkAllocateDescriptorSets`，遇到 `VK_ERROR_OUT_OF_POOL_MEMORY`/`VK_ERROR_FRAGMENTED_POOL` 就 `++activeDescriptorPool` 重试。PMREM 只需要**一个** `COMBINED_IMAGE_SAMPLER`（等距柱状纹理）与**一个** `UNIFORM_BUFFER`（`Transforms`），可以照抄这个循环，把 `pSetLayouts` 换成 `pmremTextureLayout`。
+   - **绘制点在哪**：`beginFrame()` 已经开了 render pass 并设好 viewport/scissor；`endFrame()` 做 barrier + `vkCmdCopyImageToBuffer`。所以 PMREM 的绘制应当在**两者之间**执行，且逐面重复（`selectFace(face)` 之后 `beginFrame` 之前设好面，然后 `beginFrame` → 绑定 → 绘制 → `endFrame`）。
+   - **具体指令序列**（每面一次）：`vkCmdBindPipeline(cmd, GRAPHICS, pmremPipelineHandle)`；`VkDeviceSize offset = 0; vkCmdBindVertexBuffers(cmd, 0, 1, &pmremVertices.buffer, &offset)`；`vkCmdBindDescriptorSets(cmd, GRAPHICS, pmremPipelineLayout, 0, 1, &set, 0, nullptr)`；`vkCmdPushConstants(cmd, pmremPipelineLayout, VERTEX|FRAGMENT, 0, sizeof(block), block.data())`；`vkCmdDraw(cmd, 36, 1, 0, 0)`。
+   - **`Transforms` 块内容**：`modelMatrix`（盒子恒等）、`modelViewMatrix`（等于该面的 view 矩阵）、`projectionMatrix`（该眼的投影）。因为着色器里是 `layout(set=0, binding=0, std140)`，字段顺序必须与着色器声明一致（`mat4 modelMatrix; mat4 modelViewMatrix; mat4 projectionMatrix;`），总大小 192 字节。
+   - **等距柱状纹理怎么来**：`PMREMGenerator::fromEquirectangular` 拿到的是 `DataTexture`；需要把它上传成设备纹理（项目里 `TextureRef` + `createImage` 那条路已经存在，`textureDescriptor` 里 `map->sampler`/`map->image.view` 就是它），然后在 descriptor 写入时用 `VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL`。
+   - **本轮无代码变更**（只读代码 + 记录），门禁：核心 **745 / 205,728**、`primitive-geometry`、`port-audit` 全绿，树干净。
 70. **第 520 轮：完整 Vulkan 套件 211/211 全绿，耗时 270.72 秒**。
    - 命令：`ctest --test-dir build-vulkan -j 4 -E "lights-states" --output-on-failure`（仍排除第 46 条那个已知项；它在 Vulkan 构建里同样慢）。
    - 结果：**100% tests passed, 0 tests failed out of 211**，总耗时 **270.72 秒**。对比同一套件在 **Debug** 配置下的 **3784.56 秒 / 2 失败**，差了约 14 倍——再次印证第 69 条"是构建类型不是代码"的结论。
