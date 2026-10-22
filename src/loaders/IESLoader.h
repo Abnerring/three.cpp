@@ -1,4 +1,4 @@
-﻿#pragma once
+#pragma once
 #include <string>
 #include <vector>
 
@@ -33,4 +33,31 @@ class IESLoader {
 
     // Splits text into lines, dropping a trailing carriage return from each.
     static std::vector<std::string> splitLines(const std::string& text);
+
+    // The ten values the lamp block carries, in the order the format writes them.
+    struct LampValues {
+        int count = 0;
+        double lumens = 0;
+        double multiplier = 0;
+        int numVerticalAngles = 0;
+        int numHorizontalAngles = 0;
+        int gonioType = 0;
+        int units = 0;
+        double width = 0;
+        double length = 0;
+        double height = 0;
+    };
+
+    // The three factors that follow the angle tables.
+    struct LampFactors {
+        double ballast = 0;
+        double ballastLightOutput = 0;
+        double inputWatts = 0;
+    };
+
+    // Reads the ten lamp values as a single table spread over as many lines as needed.
+    static LampValues readLampValues(const std::vector<std::string>& lines, std::size_t& cursor);
+
+    // Reads the three factors the same way.
+    static LampFactors readLampFactors(const std::vector<std::string>& lines, std::size_t& cursor);
 };

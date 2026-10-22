@@ -1278,6 +1278,13 @@
    - **测试（6 个用例、25 条断言）**：三种文本方言 + 空行；**跨行表格**（4 个数用两行，游标停在 2）；**只要 2 个数**；完整 tilt 块（几何 1.0、3 个角度、乘子 0.25、游标 4）；**无角度的 tilt**；`splitLines` 去 `\r`。
    - **验证**：核心 **1132 用例 / 208,792 断言**（+6 / +25）、addons、`primitive-geometry`、`port-audit`、Vulkan 全绿。
    - **IES 剩余**：`readLampValues`/`readLampFactors`、竖直与水平角度表、candela 值矩阵、以及 `parse`/`_getIESValues` 的装配。
+238. **第 177 轮：`IESLoader` 第二层——灯的参数块与因子**。
+   - **`readLampValues` 的十个数**（顺序固定）：`count`、`lumens`、`multiplier`、`numVerAngles`、`numHorAngles`、`gonioType`、`units`、`width`、`length`、`height`。**不足十个数时整块按全零处理**（而不是部分填）。
+   - **`readLampFactors` 的三个数**：`ballast`、`ballastLightOutput`、`inputWatts`，同样不足三个就全零。
+   - **TIET 块的判定**（上游的实现细节）：一直在找包含 `TILT` 的行；该行**不含 `NONE`** 时，若含 `INCLUDE` 就读 tilt；**否则是 TODO**——上游**静默跳过**，端口照抄这个行为（不额外报错），并在注释里标出这是上游未实现的分支。
+   - **测试（5 个用例、21 条断言）**：十个数一行（十个字段逐个核对）；**十个数分三行**且游标停在 3；**只有两个数时全零**；三个因子；**只有一个数时全零**。
+   - **验证**：核心 **1137 用例 / 208,813 断言**（+5 / +21）、addons、`primitive-geometry`、`port-audit`、Vulkan 全绿。
+   - **IES 剩余**：竖直与水平角度表、candela 值矩阵、`parse`/`_getIESValues` 的装配。
 70. **第 520 轮：完整 Vulkan 套件 211/211 全绿，耗时 270.72 秒**。
    - 命令：`ctest --test-dir build-vulkan -j 4 -E "lights-states" --output-on-failure`（仍排除第 46 条那个已知项；它在 Vulkan 构建里同样慢）。
    - 结果：**100% tests passed, 0 tests failed out of 211**，总耗时 **270.72 秒**。对比同一套件在 **Debug** 配置下的 **3784.56 秒 / 2 失败**，差了约 14 倍——再次印证第 69 条"是构建类型不是代码"的结论。

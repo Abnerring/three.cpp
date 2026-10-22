@@ -1,4 +1,4 @@
-﻿#include "loaders/IESLoader.h"
+#include "loaders/IESLoader.h"
 
 #include <cctype>
 #include <cstdlib>
@@ -68,4 +68,36 @@ IESLoader::Tilt IESLoader::readTilt(const std::vector<std::string>& lines, std::
     tilt.multipliers = readNumbers(lines, cursor, static_cast<std::size_t>(tilt.numAngles));
     tilt.present = true;
     return tilt;
+}
+
+IESLoader::LampValues IESLoader::readLampValues(const std::vector<std::string>& lines,
+                                                 std::size_t& cursor) {
+    LampValues values;
+    const auto numbers = readNumbers(lines, cursor, 10);
+    if (numbers.size() < 10) return values;
+
+    // The order is fixed by the format.
+    values.count = static_cast<int>(numbers[0]);
+    values.lumens = numbers[1];
+    values.multiplier = numbers[2];
+    values.numVerticalAngles = static_cast<int>(numbers[3]);
+    values.numHorizontalAngles = static_cast<int>(numbers[4]);
+    values.gonioType = static_cast<int>(numbers[5]);
+    values.units = static_cast<int>(numbers[6]);
+    values.width = numbers[7];
+    values.length = numbers[8];
+    values.height = numbers[9];
+    return values;
+}
+
+IESLoader::LampFactors IESLoader::readLampFactors(const std::vector<std::string>& lines,
+                                                   std::size_t& cursor) {
+    LampFactors factors;
+    const auto numbers = readNumbers(lines, cursor, 3);
+    if (numbers.size() < 3) return factors;
+
+    factors.ballast = numbers[0];
+    factors.ballastLightOutput = numbers[1];
+    factors.inputWatts = numbers[2];
+    return factors;
 }
