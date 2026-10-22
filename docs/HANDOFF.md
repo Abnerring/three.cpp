@@ -1107,6 +1107,13 @@
    - **测试（6 个用例、15 条断言）**：空格分隔四值；**制表/换行/回车混用**且连续分隔符；**整数截断 1.9→1**；浮点保留 1.5；`ff 10` → 255/16；**多余数字被丢弃**。
    - **验证**：核心 **1023 用例 / 207,277 断言**（+6 / +15）、`primitive-geometry`、`port-audit` 全绿。
    - **NRRD 剩余**：`raw` 与 `gzip` 的体数据读取、装成体积数据。
+214. **第 153 轮：`NRRDLoader` 第四层——二进制体数据**。
+   - **一个必须照抄的上游行为**：上游把 `const _littleEndian = true` **写死**，**从不读 `endian:` 头字段**。所以"大端文件"在这个 loader 里会被读错——端口**照样写死小端**并在注释里说明原因（与第 101 轮 `LUT3dlLoader` 那个 255→254 是同类决定：**复现上游行为，而不是悄悄修正**）。
+   - **类型宽度**：`uchar`/`schar`/`char` 1、`ushort`/`sshort`/`short` 2、`uint`/`sint`/`int`/`float` 4、`double` 8；未知类型抛 `Unknown type <name>`。
+   - **符号处理**：`schar` 走 `int8_t`、`sshort` 走 `int16_t`、`sint` 走 `int32_t`，所以 `0xff` 读成 **−1**；无符号与 `float`/`double` 直接按位重解释。字节仍按"最高有效字节在前"装配、**倒着取**（小端），与第 117 轮 PLY 的教训一致。
+   - **测试（8 个用例、22 条断言）**：八种类型的宽度 + 未知为 0；`uchar` 的 255 与 **`schar` 的 −1**；`0x3412` 小端读成 `0x1234`；`sshort`/`sint` 的 −1；float 的 1.0；double 的 2.5；**数据不足时少读**；未知类型抛错。
+   - **验证**：核心 **1031 用例 / 207,299 断言**（+8 / +22）、`primitive-geometry`、`port-audit` 全绿。
+   - **NRRD 剩余**：`gzip` 解压、装成 `Volume`（`xLength`/`yLength`/`zLength` + 体素数组）。
 70. **第 520 轮：完整 Vulkan 套件 211/211 全绿，耗时 270.72 秒**。
    - 命令：`ctest --test-dir build-vulkan -j 4 -E "lights-states" --output-on-failure`（仍排除第 46 条那个已知项；它在 Vulkan 构建里同样慢）。
    - 结果：**100% tests passed, 0 tests failed out of 211**，总耗时 **270.72 秒**。对比同一套件在 **Debug** 配置下的 **3784.56 秒 / 2 失败**，差了约 14 倍——再次印证第 69 条"是构建类型不是代码"的结论。

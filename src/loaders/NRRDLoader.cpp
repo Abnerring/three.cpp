@@ -2,6 +2,7 @@
 
 #include <array>
 #include <cctype>
+#include <cstring>
 #include <cstdlib>
 #include <sstream>
 #include <stdexcept>
@@ -156,5 +157,51 @@ std::vector<double> NRRDLoader::parseTextData(const std::string& text,
         else flush();
     }
     flush();
+    return out;
+}
+
+int NRRDLoader::typeWidth(const std::string& type) {
+    if (type == "uchar" || type == "schar" || type == "char") return 1;
+    if (type == "ushort" || type == "sshort" || type == "short") return 2;
+    if (type == "uint" || type == "sint" || type == "int" || type == "float") return 4;
+    if (type == "double") return 8;
+    return 0;
+}
+
+std::vector<double> NRRDLoader::parseBinaryData(const std::vector<std::uint8_t>& data,
+                                                std::size_t start, std::size_t count,
+                                                const std::string& type) {
+    const int width = typeWidth(type);
+    if (width == 0) throw std::runtime_error("THREE.NRRDLoader: Unknown type " + type);
+
+    std::vector<double> out;
+    out.reserve(count);
+    for (std::size_t i = 0; i < count; ++i) {
+        const std::size_t at = start + i * static_cast<std::size_t>(width);
+        if (at + static_cast<std::size_t>(width) > data.size()) break;
+
+        // Values assemble most significant byte first; the body is little endian, so the
+        // bytes are read backwards.
+        std::uint64_t raw = 0;
+        for (int k = 0; k < width; ++k)
+            raw = (raw << 8) | data[at + static_cast<std::size_t>(width - 1 - k)];
+
+        if (type == "uchar" || type == "char") out.push_back(static_cast<double>(raw));
+        else if (type == "schar") out.push_back(static_cast<double>(static_cast<std::int8_t>(raw)));
+        else if (type == "ushort" || type == "short") out.push_back(static_cast<double>(raw));
+        else if (type == "sshort") out.push_back(static_cast<double>(static_cast<std::int16_t>(raw)));
+        else if (type == "uint" || type == "int") out.push_back(static_cast<double>(raw));
+        else if (type == "sint") out.push_back(static_cast<double>(static_cast<std::int32_t>(raw)));
+        else if (type == "float") {
+            const std::uint32_t bits = static_cast<std::uint32_t>(raw);
+            float value = 0.0f;
+            std::memcpy(&value, &bits, sizeof(float));
+            out.push_back(static_cast<double>(value));
+        } else {
+            double value = 0.0;
+            std::memcpy(&value, &raw, sizeof(double));
+            out.push_back(value);
+        }
+    }
     return out;
 }

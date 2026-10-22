@@ -1,5 +1,6 @@
 #pragma once
 #include <array>
+#include <cstdint>
 #include <map>
 #include <string>
 #include <vector>
@@ -38,4 +39,14 @@ class NRRDLoader {
     static std::vector<double> parseTextData(const std::string& text,
                                              const std::vector<double>& sizes,
                                              bool floating, bool hex);
+
+    // Bytes per voxel for a NRRD type name, or zero when the name is unknown.
+    static int typeWidth(const std::string& type);
+
+    // Reads count voxels of the given type from the binary body. Upstream hard codes little
+    // endian and never consults the endian field, so the same is done here rather than
+    // silently differing from it. An unknown type throws.
+    static std::vector<double> parseBinaryData(const std::vector<std::uint8_t>& data,
+                                               std::size_t start, std::size_t count,
+                                               const std::string& type);
 };
