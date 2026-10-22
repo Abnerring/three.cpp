@@ -1133,6 +1133,13 @@
    - **测试（5 个用例、20 条断言）**：嵌套两子元素与文本、`child`/`childrenNamed` 查找；属性（双引号与单引号）与 `attributeOr` 回退、自闭合无子节点；**跳过声明与注释**；**文本 trim**；四种畸形文档都抛错。
    - **验证**：核心 **1044 用例 / 207,343 断言**（+5 / +20）、`primitive-geometry`、`port-audit` 全绿。
    - **下一步**：用这个读取器把 AMF 的 `<vertices>`/`<triangles>`/`<material>` 读出来。
+218. **第 157 轮：`AMFLoader` 第三层——顶点与体积**。
+   - **`<vertex>` 的两个子节点**：`<coordinates><x><y><z>` 与可选的 `<normal><nx><ny><nz>`。**法线是独立的流**，缺了就少三个数（上游也是两个数组分开 push）。
+   - **`<volume>`**：`materialid` 是**属性**；`<metadata type="name">` 的文本给体积命名（**只有 `type="name"` 才算**，其它类型忽略）；`<triangle>` 的 `v1`/`v2`/`v3` 按**文档顺序**展平成索引数组。
+   - **取值**：坐标与法线用 `strtod`，三角形索引用 `atoi`；**缺元素时取 0**（而不是中止整份文件）。
+   - **测试（4 个用例、17 条断言）**：两个顶点（六个分量，第二个**没有法线**所以法线只有三个数）；一个体积（名字 `Body`、材质 `9`、六个索引且首尾正确）；**`metadata type="other"` 不算名字**且无 `materialid` 时为空串；空 `<vertices/>`。
+   - **验证**：核心 **1048 用例 / 207,360 断言**（+4 / +17）、`primitive-geometry`、`port-audit` 全绿。
+   - **AMF 剩余**：多对象/多体积的装配（`object` → `mesh` → `volume` → `Group`/`Mesh`）、`PK` 路径的明确报错、以及材质颜色。
 70. **第 520 轮：完整 Vulkan 套件 211/211 全绿，耗时 270.72 秒**。
    - 命令：`ctest --test-dir build-vulkan -j 4 -E "lights-states" --output-on-failure`（仍排除第 46 条那个已知项；它在 Vulkan 构建里同样慢）。
    - 结果：**100% tests passed, 0 tests failed out of 211**，总耗时 **270.72 秒**。对比同一套件在 **Debug** 配置下的 **3784.56 秒 / 2 失败**，差了约 14 倍——再次印证第 69 条"是构建类型不是代码"的结论。
