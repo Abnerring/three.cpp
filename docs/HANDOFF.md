@@ -296,6 +296,15 @@
    - **已验证的部分**：编译通过；`--cube` 仍通过（说明这次改动没有破坏任何现有路径）；核心 **745 / 205,728**、`primitive-geometry`、`port-audit` 全绿。
    - ****未**验证的部分（务必注意）**：`drawPmremFace` 目前**没有调用者**，所以它的绘制结果**一次都没有被观察过**。矩阵、纹理布局、描述符绑定是否正确，**全部未知**。这不是"已完成"，只是"可编译"。
    - **下一轮要做的**：写一个 `renderEquirectangular(...)` 公有入口，用 `updateTexture` 把 `DataTexture` 上传成 `TextureRef`，用六面的 view/projection 组成 6 个 `std::array<float,48>`，逐面 `beginFrame` → `drawPmremFace` → `endFrame`；然后用一张纯色等距柱状图做验收：六个面读回都应为该色。
+96. **第 33 轮：写编排入口时踩到 `Texture::image` 是 variant，回退；但找到了正确的字节来源**。
+   - **犯的错**：`VulkanRenderer.h/cpp` 里加了 `renderEquirectangularToCube(const std::shared_ptr<Texture>&, const std::shared_ptr<RenderTarget>&)`，把 `source->image` 当成"有 `data`/`width`/`height` 的结构"直接用（`image.data.get()`、`image.get()`）。编译报了三类错：头文件里 `Texture` 未声明；`Texture::ImageProperty` 是 **variant**（`std::variant<std::nullptr_t, Int8Array, Uint16Array, …>`），没有 `operator!`；`variant` 没有 `.get()`。
+   - **正确做法（下一轮照这个写）**：看现有 `updateTexture`（`VulkanRenderer.cpp:1519`）——它读的是 **`texture->source->data`**，不是 `texture->image`。配套还有 `textureConfig(*texture, *image)`（把 `Texture` 与 `Source` 变成 `TextureConfig`）和 `textureKey(*texture)`。所以编排入口应当：
+     1. `std::shared_ptr<TextureEntry> binding; auto ref = impl->updateTexture(source, binding);` —— 直接复用项目的纹理上传、缓存与 mipmap 逻辑，**不要**自己拼 `TextureConfig`/`TextureUpload`；
+     2. 从 `source->source->data` 拿宽高（或直接用 `ref->config.width/height`）；
+     3. 六面循环：`setRenderTarget(cube, face)` → `impl->beginFrame(...)` → `impl->drawPmremFace(ref, block)` → `impl->endFrame()`；
+     4. 恢复 `previous/previousFace/previousMip`。
+   - **矩阵**：`block` 是 48 个 float（`model`、`modelView`、`projection` 各 16）。纯色源对变换不敏感，所以第一版验收只看"六面是否都是该色"，矩阵可以先用单位阵 + 一个 fov 90、aspect 1 的投影，等管线通了再校正。
+   - **本轮处理**：所有改动已 `git checkout` 回退，树干净；核心 **745 / 205,728**、`primitive-geometry`、`port-audit` 全绿。
 70. **第 520 轮：完整 Vulkan 套件 211/211 全绿，耗时 270.72 秒**。
    - 命令：`ctest --test-dir build-vulkan -j 4 -E "lights-states" --output-on-failure`（仍排除第 46 条那个已知项；它在 Vulkan 构建里同样慢）。
    - 结果：**100% tests passed, 0 tests failed out of 211**，总耗时 **270.72 秒**。对比同一套件在 **Debug** 配置下的 **3784.56 秒 / 2 失败**，差了约 14 倍——再次印证第 69 条"是构建类型不是代码"的结论。
