@@ -337,6 +337,7 @@ const lightScenarios = [
     ['light rectarea 1 1 1 1 0 0', () => new RectAreaLight(new Color(1, 1, 1), 1, 0, 0)],
     ['light rectarea 0 0 0 0 1 1', () => new RectAreaLight(new Color(0, 0, 0), 0, 1, 1)],
     ['light rectarea 1 1 1 50 100 200', () => new RectAreaLight(new Color(1, 1, 1), 50, 100, 200)],
+    ['light rectarea 0.3 0.6 0.9 1 1 1', () => new RectAreaLight(new Color(0.3, 0.6, 0.9), 1, 1, 1)],
     ['light probe 2', () => new LightProbe(undefined, 2)],
     ['light probe 0', () => new LightProbe(undefined, 0)],
 ];
@@ -462,6 +463,7 @@ const helperScenarios = [
     ['helper polargrid 3 5 4 10', () => new PolarGridHelper(3, 5, 4, 10)],
     ['helper polargrid 7 12 6 24', () => new PolarGridHelper(7, 12, 6, 24)],
     ['helper polargrid 20 32 16 128', () => new PolarGridHelper(20, 32, 16, 128)],
+    ['helper polargrid 0.5 2 1 2', () => new PolarGridHelper(0.5, 2, 1, 2)],
     ['helper polargrid 2 4 2 8', () => new PolarGridHelper(2, 4, 2, 8)],
     ['helper camerahelper', () => new CameraHelper(new PerspectiveCameraForHelper())],
     ['helper skeletonhelper', () => new SkeletonHelper(new Object3DForHelper())],
@@ -562,6 +564,7 @@ const nodeScenarios = [
     ['node perspective 180 1 0.1 100', () => new PerspectiveCamera(180, 1, 0.1, 100)],
     ['node perspective 75 1.7777777777777777 0.1 1000', () => new PerspectiveCamera(75, 16 / 9, 0.1, 1000)],
     ['node perspective 45 1.3333333333333333 0.5 500', () => new PerspectiveCamera(45, 4 / 3, 0.5, 500)],
+    ['node perspective 60 2.35 1 2000', () => new PerspectiveCamera(60, 2.35, 1, 2000)],
     ['node ortho -2 2 1 -1 0.1 50', () => new OrthographicCamera(-2, 2, 1, -1, 0.1, 50)],
     ['node ortho -5 5 5 -5 1 100', () => new OrthographicCamera(-5, 5, 5, -5, 1, 100)],
     ['node ortho 0 0 0 0 0 0', () => new OrthographicCamera(0, 0, 0, 0, 0, 0)],
@@ -644,6 +647,7 @@ const textureScenarios = [
     ['texture data 128 1', () => new DataTexture(new Uint8Array(128 * 1 * 4), 128, 1)],
     ['texture data 32 32', () => new DataTexture(new Uint8Array(32 * 32 * 4), 32, 32)],
     ['texture data 7 3', () => new DataTexture(new Uint8Array(7 * 3 * 4), 7, 3)],
+    ['texture data 2 9', () => new DataTexture(new Uint8Array(2 * 9 * 4), 2, 9)],
     ['texture depth 4 2', () => new DepthTexture(4, 2)],
     ['texture depth 1 1', () => new DepthTexture(1, 1)],
     ['texture depth 2 8', () => new DepthTexture(2, 8)],
@@ -727,6 +731,7 @@ const shScenarios = [
     ['sh 12 1 0 0 0 1 0 0 0 1 2 2 2', [1, 0, 0, 0, 1, 0, 0, 0, 1, 2, 2, 2]],
     ['sh 24 1 2 3 4 5 6 7 8 9 10 11 12 13 14 15 16 17 18 19 20 21 22 23 24', [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23, 24]],
     ['sh 6 -1 -2 -3 -4 -5 -6', [-1, -2, -3, -4, -5, -6]],
+    ['sh 3 0.5 0.25 0.125', [0.5, 0.25, 0.125]],
     ['sh 0', []],
 ];
 const shRaw = execFileSync(probePath, [], {input: shScenarios.map(([line]) => line).join('\n'), encoding: 'utf8'});
@@ -752,6 +757,7 @@ const instanceScenarios = [
     ['instance 8', 8],
     ['instance 16', 16],
     ['instance 32', 32],
+    ['instance 1', 1],
 ];
 const instanceRaw = execFileSync(probePath, [], {input: instanceScenarios.map(([line]) => line).join('\n'), encoding: 'utf8'});
 const instanceLines = instanceRaw.trim().split('\n').map((line) => JSON.parse(line));

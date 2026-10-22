@@ -253,6 +253,10 @@
      4. 渲染路径里凡是用 `pipelineLayout` / `textureLayout` / `textureUniformTemplate` 的地方改成 `activeProgram->...`。
    - **验证手段（都不需要新功能）**：改完之后现有 16 个 Vulkan 测试必须**全部保持通过**（尤其 `threecpp.vulkan` 主用例与三个差分 trace），`--cube` 也一样；这相当于"重构不改变行为"的证明。然后才加 PMREM 程序。
    - **风险与顺序**：这是**行为中性的重构**，但动的是渲染主路径；建议**一次只做一步**（每步都跑 `--cube` + `threecpp.vulkan`），不要像第 19–20 轮那样一口气把多件事混在一起——那两次的崩溃就是混改的代价。
+88. **第 25 轮：确认"让 PMREM 复用 basic 的绑定布局"这条路彻底不通；差分扩到 299 场景**。
+   - **现状（`meshbasic.{vert,frag}.glsl` 的真实布局）**：顶点阶段 `binding=2` 是 `std140` 的 `TextureTransforms`（含 `instanceLayout`、`inputLayout[4]`），`binding=3..10` 分别是实例矩阵/颜色/变形目标缓冲、morph 权重采样器、位置/顶点色/UV 缓冲；片元阶段 `binding=0/1` 是 `mapTexture`/`alphaTexture`，`binding=11` 是裁剪面缓冲；两者都还有 `layout(push_constant) uniform Draw`。这套布局是**为 MeshBasic 定制的**，PMREM 只用到"一个变换块 + 一张采样图"，硬凑过去要么声明一堆用不到的绑定（`glslang` 会把未用绑定裁掉，反射结果照样不同），要么改 basic 的着色器——两条都不可接受。**结论：每程序一套布局是必需的，第 87 条的方案成立。**
+   - **本轮交付（差分）**：新增 2×9 纹理、2.35 宽高比相机、最小极地网格（半径 0.5 / 2 扇区 / 1 环 / 2 分段）、低亮度面光、单实例、3 个球谐系数（非零小数）。全部与上游逐位一致：**22 组 / 299 场景 / exit=0**。
+   - **状态**：核心 **745 / 205,728**、`primitive-geometry`、`port-audit` 全绿；PMREM 的着色器已就绪（第 86 条），阻塞只剩第 87 条那次"行为中性的多程序重构"。
 70. **第 520 轮：完整 Vulkan 套件 211/211 全绿，耗时 270.72 秒**。
    - 命令：`ctest --test-dir build-vulkan -j 4 -E "lights-states" --output-on-failure`（仍排除第 46 条那个已知项；它在 Vulkan 构建里同样慢）。
    - 结果：**100% tests passed, 0 tests failed out of 211**，总耗时 **270.72 秒**。对比同一套件在 **Debug** 配置下的 **3784.56 秒 / 2 失败**，差了约 14 倍——再次印证第 69 条"是构建类型不是代码"的结论。
