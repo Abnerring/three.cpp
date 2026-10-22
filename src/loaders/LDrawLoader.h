@@ -241,4 +241,22 @@ class LDrawLoader {
     // marker from wherever the caller keeps it, both cleared as they are read. A second call
     // straight afterwards therefore gives two quiet flags.
     static ReferenceFlags consumeReferenceFlags(BfcState& state, bool& startingBuildingStep);
+
+    // A reference ready to place: the part, where it goes, how it is turned, and the two flags
+    // that belong to this reference alone.
+    struct Reference {
+        std::string colorCode;
+        std::array<double, 16> matrix{};
+        std::string fileName;
+        bool inverted = false;
+        bool startingBuildingStep = false;
+    };
+
+    // Builds a reference from a line whose directive the caller has already read. The part name
+    // is tidied and then resolved, the matrix is arranged from the numbers on the line, and the
+    // two flags are taken from the state, which clears them for the reference after this one.
+    static Reference buildReference(LineParser& parser, BfcState& state,
+                                    bool& startingBuildingStep,
+                                    const std::vector<std::string>& mappedNames,
+                                    const std::vector<std::string>& mappedPaths);
 };

@@ -459,3 +459,23 @@ LDrawLoader::ReferenceFlags LDrawLoader::consumeReferenceFlags(BfcState& state,
     startingBuildingStep = false;
     return flags;
 }
+
+LDrawLoader::Reference LDrawLoader::buildReference(LineParser& parser, BfcState& state,
+                                                   bool& startingBuildingStep,
+                                                   const std::vector<std::string>& mappedNames,
+                                                   const std::vector<std::string>& mappedPaths) {
+    Reference reference;
+    // The line itself carries the colour, the position, the rotation and the part name.
+    const ReferenceLine line = parseReferenceLine(parser);
+    reference.colorCode = line.colorCode;
+    reference.matrix = referenceMatrix(line);
+    // The name is tidied first and only then looked up, so a mapped name has to be written the
+    // tidied way.
+    reference.fileName =
+        resolveFileName(normalizeFileName(line.fileName), mappedNames, mappedPaths);
+    // The flags belong to this reference and are cleared for the next one.
+    const ReferenceFlags flags = consumeReferenceFlags(state, startingBuildingStep);
+    reference.inverted = flags.inverted;
+    reference.startingBuildingStep = flags.startingBuildingStep;
+    return reference;
+}
