@@ -1,4 +1,4 @@
-﻿#pragma once
+#pragma once
 #include "core/RenderTarget.h"
 
 // Upstream WebGLCubeRenderTarget (r187): a render target whose texture is a six
@@ -10,7 +10,25 @@ class WebGLCubeRenderTarget : public RenderTarget {
     const bool isWebGLCubeRenderTarget = true;
     // Upstream renders an equirectangular texture into the six faces with a shader.
     WebGLCubeRenderTarget& fromEquirectangularTexture(JSValue renderer, JSValue texture);
-    // Upstream clears face by face through renderer.setRenderTarget(this, face).
+    // Upstream remembers the current target, clears each of the six faces through
+    // renderer.setRenderTarget(this, face) plus renderer.clear(), then restores the
+    // previous target. The renderer type is a template parameter so this header does
+    // not need to know about any particular backend.
+    template <class Renderer>
+    WebGLCubeRenderTarget& clear(Renderer& renderer, const std::shared_ptr<WebGLCubeRenderTarget>& self,
+                                 bool color = true, bool depth = true, bool stencil = true) {
+        const auto current = renderer.getRenderTarget();
+        for (std::uint32_t face = 0; face < 6; ++face) {
+            renderer.setRenderTarget(self, face);
+            // The backend has no stencil attachment yet, so stencil is accepted for
+            // signature fidelity but not passed on.
+            renderer.clear(color, depth);
+        }
+        renderer.setRenderTarget(current);
+        return *this;
+    }
+    // A JS renderer handle cannot be unwrapped into a backend, so this overload reports
+    // that instead of doing nothing.
     WebGLCubeRenderTarget& clear(JSValue renderer, bool color = true, bool depth = true,
                                  bool stencil = true);
 };

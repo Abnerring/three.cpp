@@ -1704,6 +1704,22 @@ void cubeRenderTargetTests(bool validation) {
         require(want[0] == got[0] && want[1] == got[1] && want[2] == got[2],
                 "cube face carries its own colour");
     }
+    // The target's own clear() drives the renderer face by face and restores the target.
+    renderer.setRenderTarget(cube);
+    renderer.setClearColor(Color(0, 1, 0), 1);
+    cube->clear(renderer, cube);
+    {
+        const auto face = renderer.readRenderTargetPixels(*cube, 0, 0, 16, 16);
+        require(face[1] > 200 && face[0] < 60 && face[2] < 60, "clear paints every face");
+    }
+    require(renderer.getRenderTarget() == cube, "clear restores the previous target");
+    renderer.setClearColor(Color(0, 0, 1), 1);
+    cube->clear(renderer, cube);
+    {
+        // Read a different face than the first to prove all six were repainted.
+        const auto face = renderer.readRenderTargetPixels(*cube, 0, 0, 16, 16);
+        require(face[2] > 200 && face[0] < 60 && face[1] < 60, "clear repaints all faces");
+    }
     renderer.setRenderTarget(nullptr);
     require(renderer.getWidth() == 64 && renderer.getHeight() == 64, "size restored after cube");
 }

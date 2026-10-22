@@ -1,4 +1,4 @@
-﻿#include "core/WebGLCubeRenderTarget.h"
+#include "core/WebGLCubeRenderTarget.h"
 #include "textures/CubeTexture.h"
 WebGLCubeRenderTarget::WebGLCubeRenderTarget(double size, JSValue options)
     : RenderTarget(size, size, options) {
@@ -21,6 +21,6 @@ WebGLCubeRenderTarget& WebGLCubeRenderTarget::fromEquirectangularTexture(JSValue
 }
 WebGLCubeRenderTarget& WebGLCubeRenderTarget::clear(JSValue, bool, bool, bool) {
     throw std::logic_error(
-        "WebGLCubeRenderTarget.clear needs per face render target binding, which is not "
-        "implemented yet");
+        "WebGLCubeRenderTarget.clear cannot unwrap a JS renderer handle; pass the backend "
+        "renderer to the templated overload");
 }
