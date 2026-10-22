@@ -614,6 +614,13 @@
    - **`getNodeType` 这一组也不能独立移植**：`getNodeType`、`generateNodeType`、`getElementType` 的签名都带 `builder`，内部要 `builder.getDataFromNode`/`getNodeProperties`/`getElementType`——都落在 `NodeBuilder`（3544 行）里。只有 `getMemberType` 是基类常量返回。
    - **验证**：核心 **766 用例 / 205,856 断言**（+1 / +6）、`primitive-geometry`、`port-audit` 全绿。
    - **对 TSL 推进路线的修正**：既然 `_getChildren` 与 `getNodeType` 都卡在 builder/反射上，`Node` 剩余的可移植面已经不多（`dispose` 需要 `EventDispatcher`、`traverse` 需要子节点登记、`serialize` 需要序列化协议）。**下一段更适合转去港口里其它自成体系的模块**，例如 `src/nodes/utils`（31 个文件 4260 行）里纯数学的辅助函数，或者回到差分扩充。
+144. **第 83 轮：查清 TSL 为何不能继续往下做——`nodes/utils` 里最小的模块也全是节点图构建器**。
+   - **证据**：`MatcapUV.js`（22 行）`import { Fn, vec2, vec3 } from '../tsl/TSLBase.js'`，函数体是 `vec3(...).normalize()`、`positionViewDirection.cross( x )`、`vec2(...).mul( 0.495 ).add( 0.5 )`——**全是节点运算**。`ViewportUtils.js`（26 行）同理：`linearDepth()`、`viewportDepthTexture( uv )`、`depthDiff.lessThan( 0 ).select( screenUV, uv )`。**没有一个是可以脱离节点系统独立求值的纯函数。**
+   - **结论**：TSL 的**最小可移植面就是那些叶子数据类**（`StackTrace`、`NodeError`、`NodeCode`、`NodeFunctionInput`、`NodeCache`、`NodeVar`、`NodeUtils` 的哈希、`NodeConstants`、`Node` 的身份/访问器）——**这 9 个文件已经全部移植完**。再往下必须要有 **`NodeBuilder`（3544 行）** 与 `Node` 的**子节点反射机制**（`Object.getOwnPropertyNames`，C++ 无等价物）。
+   - **为什么不硬做**：把 `Node` 的算子（`.cross()`、`.dot()`、`.mul()`、`.select()`）实现出来，等于自己发明一套 C++ 版的算子 DSL；而"和 three.js 一模一样"要求的是**同样的建图顺序、同样的类型推导、同样的代码生成**——这些都在 `NodeBuilder` 里，且依赖 JS 反射。**在没有 builder 的情况下造一个能跑的算子层，只会得到一个"看起来像 TSL 但不是 TSL"的东西**，这违反项目"不假装实现"的规则。
+   - **本轮实际交付（回到差分）**：新增 16×1 纹理、12×5 网格、64 实例、4 边长立方纹理、`CubeCamera(0.5, 50)` 五个场景；另试了一个 `CubicInterpolant` 场景，但探针没有 `smooth` 这种插值类型（报 `unknown interpolant`），已移除。差分现在是 **22 组 / 309 场景 / exit=0**。
+   - **验证**：核心 **766 用例 / 205,856 断言**、`primitive-geometry`、`port-audit` 全绿。
+   - **下一步建议**：TSL 这条线到此为止（除非专门安排一次"`NodeBuilder` + 算子层"的大工程）。剩余时间更适合：① 继续扩差分；② 回到 PMREM 的最小管线实验（固定颜色 + 单矩阵推常量）；③ 检查 `src/` 下还有没有**自成体系**且**纯 CPU**的模块没做。
 70. **第 520 轮：完整 Vulkan 套件 211/211 全绿，耗时 270.72 秒**。
    - 命令：`ctest --test-dir build-vulkan -j 4 -E "lights-states" --output-on-failure`（仍排除第 46 条那个已知项；它在 Vulkan 构建里同样慢）。
    - 结果：**100% tests passed, 0 tests failed out of 211**，总耗时 **270.72 秒**。对比同一套件在 **Debug** 配置下的 **3784.56 秒 / 2 失败**，差了约 14 倍——再次印证第 69 条"是构建类型不是代码"的结论。

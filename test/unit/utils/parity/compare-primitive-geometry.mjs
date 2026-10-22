@@ -445,6 +445,7 @@ const helperScenarios = [
     ['helper grid 6 3', () => new GridHelper(6, 3)],
     ['helper grid 2 2', () => new GridHelper(2, 2)],
     ['helper grid 1 1', () => new GridHelper(1, 1)],
+    ['helper grid 12 5', () => new GridHelper(12, 5)],
     ['helper grid 100 100', () => new GridHelper(100, 100)],
     ['helper grid 10 1', () => new GridHelper(10, 1)],
     ['helper grid 5 5', () => new GridHelper(5, 5)],
@@ -453,6 +454,7 @@ const helperScenarios = [
     ['helper grid 3 7', () => new GridHelper(3, 7)],
     ['helper grid 9 4', () => new GridHelper(9, 4)],
     ['helper grid 1 1', () => new GridHelper(1, 1)],
+    ['helper grid 12 5', () => new GridHelper(12, 5)],
     ['helper box3 -1 -1 -1 1 1 1', () => new Box3Helper(new Box3(new Vector3(-1, -1, -1), new Vector3(1, 1, 1)))],
     ['helper box3 0 0 0 0 0 0', () => new Box3Helper(new Box3(new Vector3(0, 0, 0), new Vector3(0, 0, 0)))],
     ['helper box3 0 0 0 10 10 10', () => new Box3Helper(new Box3(new Vector3(0, 0, 0), new Vector3(10, 10, 10)))],
@@ -651,6 +653,7 @@ const textureScenarios = [
     ['texture data 7 3', () => new DataTexture(new Uint8Array(7 * 3 * 4), 7, 3)],
     ['texture data 2 9', () => new DataTexture(new Uint8Array(2 * 9 * 4), 2, 9)],
     ['texture data 1 1', () => new DataTexture(new Uint8Array(4), 1, 1)],
+    ['texture data 16 1', () => new DataTexture(new Uint8Array(16 * 4), 16, 1)],
     ['texture depth 4 2', () => new DepthTexture(4, 2)],
     ['texture depth 1 1', () => new DepthTexture(1, 1)],
     ['texture depth 2 8', () => new DepthTexture(2, 8)],
@@ -757,12 +760,14 @@ const {MeshBasicMaterial: BasicForInstancing} = await import(pathToFileURL(path.
 const instanceScenarios = [
     ['instance 1', 1],
     ['instance 7', 7],
+    ['instance 64', 64],
     ['instance 3', 3],
     ['instance 8', 8],
     ['instance 16', 16],
     ['instance 32', 32],
     ['instance 1', 1],
     ['instance 7', 7],
+    ['instance 64', 64],
 ];
 const instanceRaw = execFileSync(probePath, [], {input: instanceScenarios.map(([line]) => line).join('\n'), encoding: 'utf8'});
 const instanceLines = instanceRaw.trim().split('\n').map((line) => JSON.parse(line));
