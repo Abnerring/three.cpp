@@ -233,3 +233,23 @@ void TDSLoader::applyMapChunk(const std::vector<std::uint8_t>& buffer, Chunk& su
         transform.repeatY = readFloat(buffer, sub);
     }
 }
+
+namespace {
+// The three magic numbers that can open a file, the version chunk and the mesh data chunk.
+constexpr std::uint16_t kM3dMagic = 0x4D4D;
+constexpr std::uint16_t kMlibMagic = 0x3DAA;
+constexpr std::uint16_t kCMagic = 0xC23D;
+constexpr std::uint16_t kM3dVersion = 0x0002;
+constexpr std::uint16_t kMData = 0x3D3D;
+}  // namespace
+
+bool TDSLoader::acceptsMagic(std::uint16_t id) {
+    return id == kM3dMagic || id == kMlibMagic || id == kCMagic;
+}
+
+TDSLoader::MainChunk TDSLoader::mainChunkKind(std::uint16_t id) {
+    if (id == kM3dVersion) return MainChunk::Version;
+    if (id == kMData) return MainChunk::MeshData;
+    // Everything else in the main body is skipped.
+    return MainChunk::Unknown;
+}

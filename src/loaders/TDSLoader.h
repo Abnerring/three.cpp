@@ -118,4 +118,14 @@ class TDSLoader {
     // caller can feed them one at a time as it walks the sub chunks.
     static void applyMapChunk(const std::vector<std::uint8_t>& buffer, Chunk& sub,
                               MapTransform& transform);
+
+    // Whether an identifier begins a file the loader accepts. Three magic numbers open a 3DS
+    // file; anything else makes the reader give up without a word.
+    static bool acceptsMagic(std::uint16_t id);
+
+    // What a main chunk is: the file format version, the mesh data, or something this loader
+    // ignores.
+    enum class MainChunk { Version, MeshData, Unknown };
+
+    static MainChunk mainChunkKind(std::uint16_t id);
 };
