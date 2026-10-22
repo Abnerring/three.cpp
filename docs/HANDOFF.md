@@ -460,6 +460,12 @@
    - **另一个教训**：**去重要整块删，不能只删半行**。删一个 `check(...)` 的收尾而不删开头，会把文件变成语法错误，反而比重复定义更难定位。
    - **当前状态**：文件与 `HEAD`（第 60 轮的 `4f40e7a`）**完全一致**，构建 0 错误、`--cube` 0，树干净——本轮没有净代码变更，但把"哪些东西其实还在"搞清楚了。
    - **下一步**：只加 `blurCube`（第 59 轮写过、逻辑没变），加之前先 `Select-String blurCube` 确认它确实不在。
+123. **第 62 轮：`blurCube` 干净地加进去了，但一跑就访问违例（`0xC0000005`），已回退——崩溃稳定出现在 blur 路径**。
+   - **本轮做对的**：先 `Select-String` 确认 `blurCube` 不存在（cpp 与 h 都是 0）再插入；按行号插在 `getActiveCubeFace` 之前；插入后大括号平衡 **0**、定义数 **1**；构建 **0 错误**、`--cube` **0**。验收用例也用同样的预检查加上（`void blurCubeTests` 出现 1 次）。
+   - **然后崩了**：加上验收用例后 `--cube` 退出码变成 `-1073741819`（`0xC0000005`）。与第 57 轮那次崩溃**完全一样**——所以崩溃**不是**大括号或插入位置的问题，而是 **blur 路径本身的运行时问题**。
+   - **主要嫌疑**：`drawPmremBlurFace` 的 push constant 与管线布局。`pmremBlurReflectedLayout` 由 `VulkanPipelineLayout` 从**反射**构造，而等距柱状那条路同样 push 三个矩阵却能正常工作——差别在于 blur 的 push 块是 **196 字节**（多一个 `float sigma`），如果布局里的 push constant 范围只覆盖 192 字节，`vkCmdPushConstants` 就会越界写入。**下一轮第一步就该打印反射出来的 push constant 范围**（`VkPushConstantRange::size`），看它是否 ≥ 196。
+   - **第二嫌疑**：`imageBarrier` 对**已 park 的源目标**做布局转换时，`activeCubeFace` 传 0、而源图有 6 层——barrier 的 `layerCount = 1`，只转了第 0 层，其余 5 层仍是 `COLOR_ATTACHMENT_OPTIMAL`，采样时会读到未定义布局。正确做法是对**全部 6 层**做一次转换（`baseArrayLayer = 0, layerCount = 6`）。
+   - **状态**：三个文件已回退；核心 **747 / 205,735**、`primitive-geometry`、`port-audit`、Vulkan 构建 0 错误、`--cube` 0，树干净。
 70. **第 520 轮：完整 Vulkan 套件 211/211 全绿，耗时 270.72 秒**。
    - 命令：`ctest --test-dir build-vulkan -j 4 -E "lights-states" --output-on-failure`（仍排除第 46 条那个已知项；它在 Vulkan 构建里同样慢）。
    - 结果：**100% tests passed, 0 tests failed out of 211**，总耗时 **270.72 秒**。对比同一套件在 **Debug** 配置下的 **3784.56 秒 / 2 失败**，差了约 14 倍——再次印证第 69 条"是构建类型不是代码"的结论。
