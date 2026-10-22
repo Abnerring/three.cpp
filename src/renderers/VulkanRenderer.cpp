@@ -395,7 +395,7 @@ struct VulkanRenderer::Impl {
         VkImageView view = VK_NULL_HANDLE;
         // A cube view over the same six layers, so the blur can sample it as a cubemap.
         VkImageView cubeView = VK_NULL_HANDLE;
-    } colorImage, depthImage;
+    };
     struct Buffer {
         VkBuffer buffer = VK_NULL_HANDLE;
         VkDeviceMemory memory = VK_NULL_HANDLE;
@@ -663,16 +663,15 @@ struct VulkanRenderer::Impl {
     std::uint64_t recordingEpoch = 0;
     std::uint32_t maxVertexStride = 0;
     VkDeviceSize maxStorageBufferRange = 0;
-    VkFramebuffer framebuffer = VK_NULL_HANDLE;
-    VkImageView faceView = VK_NULL_HANDLE;
+
     VkFramebuffer faceFramebuffer = VK_NULL_HANDLE;
     VkImage faceImage = VK_NULL_HANDLE;
     std::uint32_t width = 0, height = 0;
-    bool initialized = false;
+
     bool recording = false;
     bool rendering = false;
     std::shared_ptr<RenderTarget> renderTarget;
-    std::uint32_t activeCubeFace = 0, activeMipmapLevel = 0, targetLayers = 1;
+    std::uint32_t activeCubeFace = 0, activeMipmapLevel = 0;
     std::uint32_t savedWidth = 0, savedHeight = 0;
     bool disposing = false;
     bool colorWrite = true;
@@ -2074,12 +2073,12 @@ struct VulkanRenderer::Impl {
         image = {};
     }
     void destroyTargets() {
-        if (framebuffer)
-            api.vkDestroyFramebuffer(device, framebuffer, nullptr);
-        framebuffer = VK_NULL_HANDLE;
+
+        // The per target teardown releases its own framebuffer.
+
         if (active) { destroyGpuTarget(*active); active.reset(); }
-        destroyImage(colorImage);
-        destroyImage(depthImage);
+
+
         destroyBuffer(readback);
     }
     // One 2D view and framebuffer per cube face, rebuilt when the active face changes.
@@ -2548,7 +2547,7 @@ struct VulkanRenderer::Impl {
         api.vkCmdBeginRenderPass(commandBuffer, &render, VK_SUBPASS_CONTENTS_INLINE);
         recording = true;
         ++recordingEpoch;
-        clearAttachments(clearColorAttachment || !initialized, clearDepthAttachment || !initialized,
+        clearAttachments(clearColorAttachment || !active->initialized, clearDepthAttachment || !active->initialized,
                          color, alpha, srgb);
         VkViewport viewport{0, 0, static_cast<float>(width), static_cast<float>(height), 0, 1};
         VkRect2D scissor{{0, 0}, {width, height}};

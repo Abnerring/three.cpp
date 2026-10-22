@@ -417,6 +417,11 @@
    - **好消息**：因为 `beginFrame`/`endFrame`/`selectFace` 早已只用 `active->`，`resize` 不再建旧图之后**一切正常**——`--cube` 退出码 0，说明旧成员已经彻底不影响行为。
    - **验证（五项门禁）**：核心 **747 / 205,735** ✓、`primitive-geometry` ✓、`port-audit` ✓、`threecpp_vulkan` **0 错误** ✓、`--cube` **0** ✓。
    - **下一步**：删旧成员。按第 114 条的规矩：**原位替换**（`} colorImage, depthImage;` → `};`）而不是整行删，并且**一次只删一个成员、删完就构建**。
+116. **第 55 轮：多目标重构完成——`Impl` 上的单份颜色图/深度图/framebuffer/面视图/层数/初始化标志全部删除**。
+   - **最终形态**：`Impl` 只剩 `std::unique_ptr<GpuTarget> active`（以及一个构造时用来自检的 `spareTarget`）。`GpuTarget` 拥有 `color`、`depth`、`framebuffer`、`faceView`、`faceFramebuffer`、`initializedLayers`、`initialized`、`width`、`height`、`layers`；`resize` 只调 `createGpuTarget`，`destroyTargets` 只拆 `active`，`beginFrame`/`endFrame`/`selectFace` 全部走 `active->`。
+   - **删除顺序（按第 114 条规矩）**：先 `framebuffer`（含 `destroyTargets` 里的两处使用）→ 构建 0 错误；再 `faceView`、`faceFramebuffer`、`targetLayers`、`initialized`（含 `beginFrame` 里 `!initialized` 的两处使用）、最后 `colorImage`/`depthImage`（`} colorImage, depthImage;` **原位替换**成 `};`，再删 `destroyImage` 两行）。中途发现 `faceView`/`initialized`/`destroyImage` 四项因为上一个脚本的异常没执行，用**行号索引 + 从大到小**一次性补齐，构建仍是 0 错误。
+   - **验证（五项门禁）**：核心 **747 / 205,735** ✓、`primitive-geometry` ✓、`port-audit` ✓、`threecpp_vulkan` **0 错误** ✓、`--cube` **0** ✓。
+   - **意义**：这是 PMREM 卷积的**最后一块基建**——现在渲染器持有的是"每目标一份"的 GPU 存储，`spareTarget` 证明可以同时存在第二套。下一步就是让 `setRenderTarget` 按 `RenderTarget*` 缓存/切换不同的 `GpuTarget`，从而让 blur 能"读一个立方体、写另一个"。
 70. **第 520 轮：完整 Vulkan 套件 211/211 全绿，耗时 270.72 秒**。
    - 命令：`ctest --test-dir build-vulkan -j 4 -E "lights-states" --output-on-failure`（仍排除第 46 条那个已知项；它在 Vulkan 构建里同样慢）。
    - 结果：**100% tests passed, 0 tests failed out of 211**，总耗时 **270.72 秒**。对比同一套件在 **Debug** 配置下的 **3784.56 秒 / 2 失败**，差了约 14 倍——再次印证第 69 条"是构建类型不是代码"的结论。
