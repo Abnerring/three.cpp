@@ -1,4 +1,5 @@
 #pragma once
+#include <array>
 #include <cstdint>
 #include <string>
 #include <vector>
@@ -67,4 +68,21 @@ class MD2Loader {
     };
     static std::vector<FrameHeader> parseFrameHeaders(const std::vector<std::uint8_t>& buffer,
                                                       const Header& header);
+
+    // The 162 entry normal table, indexed by the byte stored with each vertex. It is the
+    // Quake 2 table, extracted from the upstream source rather than retyped.
+    static const std::array<std::array<double, 3>, 162>& normalTable();
+
+    // One decoded vertex: a quantised position scaled and translated, then reordered to
+    // Y-up by swapping the last two components, with a table normal treated the same way.
+    struct Vertex {
+        double position[3] = {0, 0, 0};
+        double normal[3] = {0, 0, 0};
+    };
+
+    // Decodes num_vertices records starting at at: three bytes of position then one normal
+    // index. Returns how many bytes were consumed.
+    static std::size_t decodeVertices(const std::vector<std::uint8_t>& buffer, std::size_t at,
+                                      int count, const double scale[3],
+                                      const double translation[3], std::vector<Vertex>& out);
 };
