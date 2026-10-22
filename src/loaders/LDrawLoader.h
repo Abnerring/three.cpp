@@ -173,4 +173,26 @@ class LDrawLoader {
     // The code an edge takes when its face asked for the containing colour: the main colour
     // becomes the main edge colour and every other code is left alone.
     static std::string edgeColourCode(const std::string& code);
+
+    // The lines of a file, with the two character line endings of one platform reduced to the
+    // single character of the other first. A single character ending is left as it is, and no
+    // trailing empty line is invented.
+    static std::vector<std::string> splitLines(const std::string& text);
+
+    // An embedded file: the name it declares and the text that follows.
+    struct EmbeddedFile {
+        std::string name;
+        std::string text;
+    };
+
+    // Splits a file that carries others inside it. The body is everything before the first
+    // embedded header after the opening line; everything from there on belongs to the embedded
+    // files, each beginning with a header that names it. The text of a file keeps the newlines
+    // that separated its lines, so it ends with one whenever it had any lines at all.
+    struct EmbeddedSplit {
+        std::size_t bodyLineCount = 0;
+        std::vector<EmbeddedFile> files;
+    };
+
+    static EmbeddedSplit splitEmbeddedFiles(const std::vector<std::string>& lines);
 };

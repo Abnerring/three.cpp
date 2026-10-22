@@ -332,3 +332,66 @@ std::string LDrawLoader::edgeColourCode(const std::string& code) {
     if (code == kMainColourCode) return kMainEdgeColourCode;
     return code;
 }
+
+std::vector<std::string> LDrawLoader::splitLines(const std::string& text) {
+    // The two character ending is the only thing rewritten, and only when it appears at all.
+    std::string normalised = text;
+    if (normalised.find("\r\n") != std::string::npos) {
+        std::string collapsed;
+        collapsed.reserve(normalised.size());
+        for (std::size_t i = 0; i < normalised.size(); ++i) {
+            if (normalised[i] == '\r' && i + 1 < normalised.size() && normalised[i + 1] == '\n') {
+                continue;
+            }
+            collapsed.push_back(normalised[i]);
+        }
+        normalised = std::move(collapsed);
+    }
+
+    std::vector<std::string> lines;
+    std::size_t at = 0;
+    while (true) {
+        const std::size_t newline = normalised.find('\n', at);
+        if (newline == std::string::npos) {
+            lines.push_back(normalised.substr(at));
+            break;
+        }
+        lines.push_back(normalised.substr(at, newline - at));
+        at = newline + 1;
+    }
+    return lines;
+}
+
+LDrawLoader::EmbeddedSplit LDrawLoader::splitEmbeddedFiles(const std::vector<std::string>& lines) {
+    EmbeddedSplit split;
+    // A header only begins the embedded section when it is not the first line, because the
+    // first one names the file being read rather than a file inside it.
+    const std::string header = "0 FILE ";
+    bool parsing = false;
+    for (std::size_t i = 0; i < lines.size(); ++i) {
+        const std::string& line = lines[i];
+        if (!parsing) {
+            if (i > 0 && line.compare(0, header.size(), header) == 0) {
+                parsing = true;
+                EmbeddedFile file;
+                file.name = line.substr(header.size());
+                split.files.push_back(file);
+            } else {
+                // Everything up to here is the body.
+                split.bodyLineCount = i + 1;
+            }
+            continue;
+        }
+        if (line.compare(0, header.size(), header) == 0) {
+            // A header closes the previous file and opens the next.
+            EmbeddedFile file;
+            file.name = line.substr(header.size());
+            split.files.push_back(file);
+        } else {
+            // The line is kept together with the newline that followed it.
+            split.files.back().text += line;
+            split.files.back().text += '\n';
+        }
+    }
+    return split;
+}
