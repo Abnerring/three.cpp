@@ -441,6 +441,12 @@
    - **`drawPmremBlurFace` 内容**：按池重试分配描述符（`pmremBlurTextureLayout`），写 `binding=0` 的 `COMBINED_IMAGE_SAMPLER`——sampler 是新的 `pmremSampler`，视图是**源目标的 cube 视图**；然后绑 `pmremBlurPipelineHandle`、`pmremVertices`、`pmremBlurPipelineLayout`，push 196 字节（三矩阵 + sigma），`vkCmdDraw(36)`。
    - **验证（五项门禁）**：核心 **747 / 205,735** ✓、`primitive-geometry` ✓、`port-audit` ✓、`threecpp_vulkan` 0 错误 ✓、`--cube` 0 ✓（不再崩溃）。
    - **下一步**：写编排 `blurCube(sourceTarget, destinationTarget, sigma)`——源目标 park 起来后用它的 `color.cubeView` 采样，目标目标成为 `active` 并逐面绘制；然后用**纯色立方体源 + blur**做验收（纯色在卷积下不变）。
+120. **第 59 轮：`blurCube` 编排写出来了，但发现源目标的 `layers` 变成了 1（失去 cube 视图），已回退**。
+   - **做了什么**：`VulkanRenderer::blurCube(source, destination, sigma)`——绑目标（这会自动 park 源）、从 `parkedTargets` 取源的 `color.cubeView`、对源图做 `COLOR_ATTACHMENT_OPTIMAL → SHADER_READ_ONLY_OPTIMAL` 的 barrier、六面用 `CubeCamera` 的 view + 显式 90 度投影 + `sigma` 组成 49 个 float、`beginFrame(false,false,…)` → `drawPmremBlurFace` → `endFrame`，最后恢复原目标。另外写了验收用例：纯色等距柱状源 → 立方体 → blur 到第二个立方体 → 读回仍应是该色。
+   - **结果**：编译 **0 错误**、大括号平衡 0；运行到 `blurCube source has no cube view` 抛错。
+   - **关键线索（探针输出）**：`layers=1 cubeView=0000000000000000 view=0x…750 image=0x…8D0`——parked 的源目标**只有 1 层**，所以 `createImage` 根本没走 `layers == 6` 那条分支、也就没有 cube 视图。而 `view`/`image` 都有效，说明这个 `GpuTarget` 确实被创建过，只是**用 1 层创建**的。
+   - **下一步的排查方向**：`resize(w, h)` 的 `layers` 默认值是 **1**，而 `setRenderTarget(nullptr)` 解绑时正是调 `impl->resize(impl->savedWidth, impl->savedHeight)`（**不传 layers**）。若此时 `active` 已被 park 成 nullptr，`resize` 会**新建**一个 1 层的 `active`；虽然它的 key 是 `nullptr`、理论上不该覆盖源目标，但 `useTarget` 的 park/erase 顺序值得逐行核对——尤其是"同一个目标被 park 两次"或"park 时 `active` 已空、把空指针塞进 map"的情况。
+   - **状态**：三个文件已 `git checkout` 回退；核心 **747 / 205,735**、`primitive-geometry`、`port-audit`、Vulkan 构建 0 错误、`--cube` 0，树干净。
 70. **第 520 轮：完整 Vulkan 套件 211/211 全绿，耗时 270.72 秒**。
    - 命令：`ctest --test-dir build-vulkan -j 4 -E "lights-states" --output-on-failure`（仍排除第 46 条那个已知项；它在 Vulkan 构建里同样慢）。
    - 结果：**100% tests passed, 0 tests failed out of 211**，总耗时 **270.72 秒**。对比同一套件在 **Debug** 配置下的 **3784.56 秒 / 2 失败**，差了约 14 倍——再次印证第 69 条"是构建类型不是代码"的结论。
