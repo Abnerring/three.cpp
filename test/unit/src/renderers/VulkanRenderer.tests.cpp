@@ -1769,6 +1769,7 @@ void equirectangularToCubeTests(bool validation) {
             "cube face carries the equirectangular colour");
     renderer.setRenderTarget(nullptr);
 }
+
 int main(int argc, char** argv) {
     try {
         const bool validation = argc > 1 && std::string(argv[1]) == "--validation";

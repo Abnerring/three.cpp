@@ -2588,14 +2588,25 @@ void VulkanRenderer::renderEquirectangularToCube(const std::shared_ptr<Texture>&
     const auto previous = getRenderTarget();
     const auto previousFace = getActiveCubeFace();
     const auto previousMip = getActiveMipmapLevel();
-    // The unit box spans exactly the clip volume, so the identity matrices make each face
-    // fully covered; proper per face views come with the convolution passes.
-    const float identity[16] = {1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1};
-    std::array<float, 48> block{};
-    std::copy(std::begin(identity), std::end(identity), block.begin());
-    std::copy(std::begin(identity), std::end(identity), block.begin() + 16);
-    std::copy(std::begin(identity), std::end(identity), block.begin() + 32);
+    // The box is the same for every face; what differs is which inner wall the camera sees,
+    // because the vertex stage derives vWorldDirection from the model matrix alone.
+    const float model[16] = {1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1};
+    // fov 90, aspect 1, near 0.1, far 100, mapping depth to Vulkan's zero-to-one range.
+    const float projection[16] = {1, 0, 0, 0, 0, 1, 0, 0, 0, 0, -1.001f, -1, 0, 0, -0.1001f, 0};
+    // Column major views looking down +x, -x, +y, -y, +z, -z with the same up rules as
+    // the cube camera rig.
+    const float views[6][16] = {
+        {0, 0, -1, 0, 0, 1, 0, 0, 1, 0, 0, 0, 0, 0, 0, 1},
+        {0, 0, 1, 0, 0, 1, 0, 0, -1, 0, 0, 0, 0, 0, 0, 1},
+        {-1, 0, 0, 0, 0, 0, 1, 0, 0, 1, 0, 0, 0, 0, 0, 1},
+        {-1, 0, 0, 0, 0, 0, -1, 0, 0, -1, 0, 0, 0, 0, 0, 1},
+        {1, 0, 0, 0, 0, 1, 0, 0, 0, 0, -1, 0, 0, 0, 0, 1},
+        {-1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1}};
     for (std::uint32_t face = 0; face < 6; ++face) {
+        std::array<float, 48> block{};
+        std::copy(std::begin(model), std::end(model), block.begin());
+        std::copy(std::begin(views[face]), std::end(views[face]), block.begin() + 16);
+        std::copy(std::begin(projection), std::end(projection), block.begin() + 32);
         setRenderTarget(cube, face);
         impl->beginFrame(false, false, impl->activeClearColor, impl->activeClearAlpha,
                          impl->activeClearSRGB);
