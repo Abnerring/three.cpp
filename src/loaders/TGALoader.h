@@ -66,6 +66,21 @@ class TGALoader {
     // is in the order the rest of the port uses. The 32 bit form keeps its alpha byte.
     static std::vector<std::uint8_t> toRGBA(const std::vector<std::uint8_t>& pixels, int pixelSize);
 
+    // Eight bit grey: one byte per pixel, copied into all three channels with full alpha.
+    static std::vector<std::uint8_t> toRGBAFromGrey8(const std::vector<std::uint8_t>& pixels);
+
+    // Sixteen bit grey: two little endian bytes per pixel, the luminance taken from the high
+    // byte and copied into all three channels.
+    static std::vector<std::uint8_t> toRGBAFromGrey16(const std::vector<std::uint8_t>& pixels);
+
+    // Sixteen bit colour: five bits per channel packed little endian, expanded to eight bits
+    // by shifting left three so the full range is covered.
+    static std::vector<std::uint8_t> toRGBAFrom16(const std::vector<std::uint8_t>& pixels);
+
+    // Reorders an RGBA image so the first row and column are the top left one. The two upper
+    // origins need the rows reversed and the two right origins the columns.
+    static void flipToOrigin(std::vector<std::uint8_t>& pixels, int width, int height, int origin);
+
     // Whether a type is one of the run length encoded ones.
     static bool isRle(int imageType);
 };

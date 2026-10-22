@@ -138,3 +138,68 @@ std::vector<std::uint8_t> TGALoader::toRGBA(const std::vector<std::uint8_t>& pix
     }
     return out;
 }
+
+std::vector<std::uint8_t> TGALoader::toRGBAFromGrey8(const std::vector<std::uint8_t>& pixels) {
+    std::vector<std::uint8_t> out(pixels.size() * 4, 0);
+    for (std::size_t i = 0; i < pixels.size(); ++i) {
+        // A grey sample feeds all three channels.
+        out[i * 4 + 0] = pixels[i];
+        out[i * 4 + 1] = pixels[i];
+        out[i * 4 + 2] = pixels[i];
+        out[i * 4 + 3] = 255;
+    }
+    return out;
+}
+
+std::vector<std::uint8_t> TGALoader::toRGBAFromGrey16(const std::vector<std::uint8_t>& pixels) {
+    const std::size_t count = pixels.size() / 2;
+    std::vector<std::uint8_t> out(count * 4, 0);
+    for (std::size_t i = 0; i < count; ++i) {
+        // Two little endian bytes per sample; the high byte carries the luminance.
+        const std::uint8_t value = pixels[i * 2 + 1];
+        out[i * 4 + 0] = value;
+        out[i * 4 + 1] = value;
+        out[i * 4 + 2] = value;
+        out[i * 4 + 3] = 255;
+    }
+    return out;
+}
+
+std::vector<std::uint8_t> TGALoader::toRGBAFrom16(const std::vector<std::uint8_t>& pixels) {
+    const std::size_t count = pixels.size() / 2;
+    std::vector<std::uint8_t> out(count * 4, 0);
+    for (std::size_t i = 0; i < count; ++i) {
+        const int packed = int(pixels[i * 2]) | (int(pixels[i * 2 + 1]) << 8);
+        // Five bits per channel, expanded by shifting left three so one becomes two hundred
+        // and forty eight rather than one.
+        out[i * 4 + 0] = static_cast<std::uint8_t>(((packed >> 10) & 0x1f) << 3);
+        out[i * 4 + 1] = static_cast<std::uint8_t>(((packed >> 5) & 0x1f) << 3);
+        out[i * 4 + 2] = static_cast<std::uint8_t>((packed & 0x1f) << 3);
+        // The top bit is a one bit alpha in some writers, but the port treats every sixteen
+        // bit pixel as opaque, which is what the common files mean.
+        out[i * 4 + 3] = 255;
+    }
+    return out;
+}
+
+void TGALoader::flipToOrigin(std::vector<std::uint8_t>& pixels, int width, int height, int origin) {
+    const bool flipRows = origin >= kOriginTopLeft;
+    const bool flipColumns = (origin & 1) != 0;
+    if (!flipRows && !flipColumns) return;
+
+    const std::size_t w = static_cast<std::size_t>(width);
+    const std::size_t h = static_cast<std::size_t>(height);
+    if (pixels.size() < w * h * 4) return;
+
+    std::vector<std::uint8_t> copy = pixels;
+    for (std::size_t y = 0; y < h; ++y) {
+        for (std::size_t x = 0; x < w; ++x) {
+            // Both flips are mirrorings around the middle of their axis.
+            const std::size_t sourceY = flipRows ? h - 1 - y : y;
+            const std::size_t sourceX = flipColumns ? w - 1 - x : x;
+            const std::size_t from = (sourceY * w + sourceX) * 4;
+            const std::size_t to = (y * w + x) * 4;
+            for (int k = 0; k < 4; ++k) pixels[to + k] = copy[from + k];
+        }
+    }
+}
