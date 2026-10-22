@@ -404,6 +404,13 @@
    - **自己造成的一次惊险**：用 `$L[414] = ...` 单行赋值时**覆盖了 `width/height/layers` 那一行**并留下多余 `};`，瞬间变成 98 个错误；按行重写整个 `GpuTarget` 块后回到 0；接着又出现 `initializedLayers` 重复定义（去重时把两处都算了），用"保留第一次出现"的去重才干净。
    - **验证（五项门禁）**：核心 **747 / 205,735** ✓、`primitive-geometry` ✓、`port-audit` ✓、`threecpp_vulkan` **0 错误** ✓、`--cube` **0** ✓。
    - **下一步**：还剩 `readRenderTargetPixels`、`destroyTargets`、`resize` 三处要切，然后才能删掉 `Impl` 上的旧成员（`colorImage`/`depthImage`/`framebuffer`/`faceView`/`faceFramebuffer`/`targetLayers`/`initialized`/`initializedLayers`）。删旧成员那一步必须最后做，而且要一次性删干净，否则会出现"改了一半"的编译错误海。
+114. **第 53 轮：切最后三处时把结构改坏两次，已回退到 `5fd78af`（第 52 轮的绿点）**。
+   - **尝试**：把 `resize` 改成只建 `active`（`active = createGpuTarget(newWidth, newHeight, layers)`），`destroyTargets` 改成只拆 `active`，然后**一次性删掉** `Impl` 上的旧成员（`colorImage`/`depthImage`/`framebuffer`/`faceView`/`faceFramebuffer`/`targetLayers`/`initialized`）。
+   - **第一次失败（74 错误）**：`} colorImage, depthImage;` 这一行**既是 `struct Image` 的闭合大括号，又是成员声明**——我把它整行删掉，等于把结构体的大括号也删了，于是 `Image` 变成未定义、`GpuTarget`/`TextureResource` 全部连带报错。
+   - **第二次失败（99 错误）**：补回 `};` 之后，`destroyTargets` 的重写**丢了闭合大括号**，报 `"VulkanRenderer::Impl" 后面接 "void" 是非法的`——这是"函数体没关上"的典型信号，但错误列表里同时混着 `active` 未声明之类的噪音，很容易被误导。
+   - **教训**：**大括号不能靠整行删除来维护**。正确做法是把 `struct Image { ... } colorImage, depthImage;` **原位替换**成 `struct Image { ... };`（保留大括号、只删成员名），而且每删一个成员就构建一次——本轮一次删了七个，四个错误源头混在一起，定位成本陡增。
+   - **当前状态**：`git checkout -- src/renderers/VulkanRenderer.cpp` 回退到 `5fd78af`；Vulkan 构建 **0 错误**，`--cube` **0**，核心 **747 / 205,735**、`primitive-geometry`、`port-audit` 全绿，树干净。
+   - **续做建议**：`resize`/`destroyTargets` 只改函数体（不动成员），**先构建一次**确认绿；然后再**分七次**逐个删成员，每次删一个就构建。这样每一步的失败都能一眼定位。
 70. **第 520 轮：完整 Vulkan 套件 211/211 全绿，耗时 270.72 秒**。
    - 命令：`ctest --test-dir build-vulkan -j 4 -E "lights-states" --output-on-failure`（仍排除第 46 条那个已知项；它在 Vulkan 构建里同样慢）。
    - 结果：**100% tests passed, 0 tests failed out of 211**，总耗时 **270.72 秒**。对比同一套件在 **Debug** 配置下的 **3784.56 秒 / 2 失败**，差了约 14 倍——再次印证第 69 条"是构建类型不是代码"的结论。
