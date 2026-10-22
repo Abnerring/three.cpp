@@ -164,4 +164,20 @@ class KSPLATLoader {
     static std::vector<Row> decodeSection(const std::vector<std::uint8_t>& buffer,
                                           const SectionHeader& section, const Compression& layout,
                                           std::size_t sectionBase);
+
+    // Everything a file decodes into, in the layout the splat geometry expects.
+    struct Decoded {
+        std::vector<double> centers;
+        // The splat utilities write floats, so this buffer is float.
+        std::vector<float> covariances;
+        std::vector<std::uint8_t> colors;
+        // One byte buffer per degree, each holding count times the band stride.
+        std::vector<std::vector<std::uint8_t>> harmonicBands;
+        int degree = 0;
+        std::size_t count = 0;
+    };
+
+    // Reads a whole file: the header, the checks, then every section in order, carrying the
+    // section base forward by each section's own storage size.
+    static Decoded parse(const std::vector<std::uint8_t>& buffer);
 };

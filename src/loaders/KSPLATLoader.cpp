@@ -1,5 +1,6 @@
 #include "loaders/KSPLATLoader.h"
 
+#include "loaders/GaussianSplatUtils.h"
 #include "loaders/SPZLoader.h"
 #include <cstring>
 #include <stdexcept>
@@ -379,4 +380,62 @@ std::vector<KSPLATLoader::Row> KSPLATLoader::decodeSection(
         rows.push_back(decodeRow(buffer, rowOffset, section, layout, bucketCoordinate));
     }
     return rows;
+}
+
+KSPLATLoader::Decoded KSPLATLoader::parse(const std::vector<std::uint8_t>& buffer) {
+    Decoded decoded;
+    if (buffer.size() < static_cast<std::size_t>(kHeaderSizeBytes))
+        throw std::runtime_error("THREE.KSPLATLoader: Invalid KSPLAT header.");
+
+    const Header header = parseHeader(buffer);
+    validateFile(buffer, header);
+    const Compression layout = compression(header.compressionLevel);
+
+    // Every possible section header sits between the file header and the section data.
+    const std::size_t sectionDataOffset =
+        static_cast<std::size_t>(kHeaderSizeBytes) +
+        static_cast<std::size_t>(header.maxSectionCount) * kSectionHeaderSizeBytes;
+
+    decoded.count = header.splatCount;
+    decoded.centers.reserve(header.splatCount * 3);
+    decoded.covariances.reserve(header.splatCount * 6);
+    decoded.colors.reserve(header.splatCount * 4);
+
+    int degree = 0;
+    std::size_t sectionBase = sectionDataOffset;
+
+    for (std::uint32_t index = 0; index < header.maxSectionCount; ++index) {
+        const auto section = parseSectionHeader(
+            buffer, static_cast<std::size_t>(kHeaderSizeBytes) +
+                        static_cast<std::size_t>(index) * kSectionHeaderSizeBytes,
+            layout);
+        const SectionLayout sizes = sectionLayout(section, layout);
+        if (sectionBase + sizes.storageSize > buffer.size())
+            throw std::runtime_error("THREE.KSPLATLoader: Invalid KSPLAT byte length.");
+
+        // The highest degree any section asks for decides the band buffers.
+        if (section.sphericalHarmonicsDegree > degree) degree = section.sphericalHarmonicsDegree;
+        if (section.splatCount > 0) {
+            const auto rows = decodeSection(buffer, section, layout, sectionBase);
+            for (const auto& row : rows) {
+                for (int axis = 0; axis < 3; ++axis) decoded.centers.push_back(row.center[axis]);
+
+                // The covariance buffer is grown first, then the six components written at the
+                // offset they belong to.
+                const std::size_t covarianceOffset = decoded.covariances.size();
+                decoded.covariances.resize(covarianceOffset + 6);
+                GaussianSplatUtils::writeCovariance(decoded.covariances.data(), covarianceOffset,
+                                                    row.scale[0], row.scale[1], row.scale[2],
+                                                    row.rotation[1], row.rotation[2],
+                                                    row.rotation[3], row.rotation[0]);
+
+                // The colour is already four bytes here, so it is copied rather than computed
+                // from a harmonic coefficient the way the PLY form has to.
+                for (int i = 0; i < 4; ++i) decoded.colors.push_back(row.color[i]);
+            }
+        }
+        sectionBase += sizes.storageSize;
+    }
+    decoded.degree = degree;
+    return decoded;
 }

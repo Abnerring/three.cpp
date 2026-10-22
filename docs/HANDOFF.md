@@ -1387,6 +1387,13 @@
    - **两处错误都是我的**：① **测试名与第 186 轮重名**（`reads a section at an offset`），Catch2 又是 `exit 255`——这已是**第二次**，所以这一轮加了一个**扫描全部 496 个测试名的查重步骤**（结果 0 重复）；② 压缩段的测试里我给了 `bucketCount = 1` 却**忘了 `fullBucketCount`**，于是 `bucketIndex` 走半满桶路径、找不到 splat 0 而抛错。补上 `fullBucketCount = 1` 与 `bucketSize = 1` 后通过。
    - **验证**：核心 **1215 用例 / 209,064 断言**（+4 / +9）、addons、`primitive-geometry`、`port-audit`、Vulkan 全绿。
    - **剩余**：顶层 `parse` 的段循环与最终装配。
+254. **第 193 轮：`KSPLATLoader` 收尾——顶层 `parse`，KSPLAT 完整**。
+   - **串联方式**：读文件头 → 校验 → 取压缩档位 → 段头表起点 `4096 + maxSectionCount × 1024` → 逐段读段头、算预算、**再校验一次越界**（`Invalid KSPLAT byte length.`）→ 解出该段的全部行 → 中心直接追加、协方差先扩容再写入、颜色四个字节直接拷贝 → **`sectionBase += storageSize`**。
+   - **一处必须与 PLY 版区分的地方**：`KSPLAT` 的颜色已经是**四个字节**，所以**直接拷贝**；`GaussianSplatPLYLoader` 那边是从 `f_dc` + `sigmoid(opacity)` **算**出来的。我一开始想复用 `writeColorBytes`，但那个函数**不存在**（第 84 轮只有 `writeColorBytesFromSH0`），正好说明这两条路径本来就不同。
+   - **协方差的写法**：先把 `covariances` 扩容 6，再拿 `data() + offset` 交给 `writeCovariance`——因为 `writeCovariance` 写的是**固定六个位置**，不能对一个还在增长的缓冲区直接用 `size()` 当下标。
+   - **测试（3 个用例、11 条断言）**：**最小完整文件**（4096 头 + 1024 段头 + 44 行 = 5164 字节）解析出 1 个中心、6 个协方差、4 个颜色；**段声明两个 splat 但只给一行** → `Invalid KSPLAT byte length.`；**截断文件** → `Invalid KSPLAT header.`。
+   - **验证**：核心 **1218 用例 / 209,075 断言**（+3 / +11）、addons、`primitive-geometry`、`port-audit`、Vulkan 全绿。addon loader **28 → 29 / 52**。
+   - **十六个完整 loader**：MTL、OBJ、PLY、Font、HDRCubeTexture、MD2、BVH、PCD、TGA、NRRD、AMF、VOX、SPZ、IES、GaussianSplatPLY、**KSPLAT**。
 70. **第 520 轮：完整 Vulkan 套件 211/211 全绿，耗时 270.72 秒**。
    - 命令：`ctest --test-dir build-vulkan -j 4 -E "lights-states" --output-on-failure`（仍排除第 46 条那个已知项；它在 Vulkan 构建里同样慢）。
    - 结果：**100% tests passed, 0 tests failed out of 211**，总耗时 **270.72 秒**。对比同一套件在 **Debug** 配置下的 **3784.56 秒 / 2 失败**，差了约 14 倍——再次印证第 69 条"是构建类型不是代码"的结论。
