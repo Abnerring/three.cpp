@@ -3,7 +3,9 @@
 #include "math/Color.h"
 #include "math/ColorManagement.h"
 
+#include "core/BufferGeometry.h"
 #include "math/Vector3.h"
+#include "objects/Mesh.h"
 #include <cmath>
 #include <cstdlib>
 #include <sstream>
@@ -355,7 +357,8 @@ std::vector<OBJLoader::Object> OBJLoader::parseObjects(const std::string& text) 
         } else if (first == 'o' || first == 'g') {
             startObject(trim(line.substr(1)), true);
         } else if (line.rfind("usemtl", 0) == 0) {
-            objects.back().groups.startMaterial(trim(line.substr(6)), objects.back().materialLibraries);
+            objects.back().groups.startMaterial(trim(line.substr(6)), objects.back().materialLibraries,
+                                                      static_cast<int>(objects.back().vertices.size()));
         } else if (line.rfind("mtllib", 0) == 0) {
             objects.back().materialLibraries.push_back(trim(line.substr(6)));
         } else if (first == 's') {
@@ -368,4 +371,39 @@ std::vector<OBJLoader::Object> OBJLoader::parseObjects(const std::string& text) 
     for (auto& object : objects)
         object.groups.finalize(true, static_cast<int>(object.vertices.size()));
     return objects;
+}
+
+std::shared_ptr<Group> OBJLoader::buildObjects(const std::string& text,
+                                              double materialCountHint) const {
+    const auto objects = parseObjects(text);
+    auto group = std::make_shared<Group>();
+    group->name = "OBJLoader";
+
+    for (const auto& object : objects) {
+        auto geometry = std::make_shared<BufferGeometry>();
+        // An empty stream still gets its attribute, matching upstream's unconditional calls.
+        geometry->setAttribute("position",
+                               std::make_shared<TypedBufferAttribute<float>>(object.vertices, 3));
+        if (!object.normals.empty())
+            geometry->setAttribute("normal",
+                                   std::make_shared<TypedBufferAttribute<float>>(object.normals, 3));
+        if (!object.uvs.empty())
+            geometry->setAttribute("uv",
+                                   std::make_shared<TypedBufferAttribute<float>>(object.uvs, 2));
+        if (!object.colors.empty())
+            geometry->setAttribute("color",
+                                   std::make_shared<TypedBufferAttribute<float>>(object.colors, 3));
+
+        // Each material run becomes a geometry group covering its vertex range.
+        for (const auto& material : object.groups.materials()) {
+            if (material.groupCount <= 0) continue;
+            geometry->addGroup(material.groupStart, material.groupCount, material.index);
+        }
+
+        auto mesh = std::make_shared<Mesh>(geometry, nullptr);
+        mesh->name = object.name;
+        group->add(mesh);
+    }
+    (void)materialCountHint;
+    return group;
 }

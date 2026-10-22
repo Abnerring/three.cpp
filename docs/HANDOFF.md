@@ -842,6 +842,14 @@
    - **测试（4 个用例、20 条断言）**：两个 `o` 得到 2 个对象且第一个被改名（`fromDeclaration` 为真）；每个对象一段材质（A 覆盖 0–3、B 是第二个对象）；**没有 `o` 的文件只有 1 个空名对象**且自动补一个空名占位材质；`s off` 让对象与材质都是**非平滑**。
    - **验证**：核心 **859 用例 / 206,439 断言**（+4 / +20）、`primitive-geometry`、`port-audit` 全绿。
    - **OBJ 现状**：`parseGeometry` ✓ / `addFaceNormal` ✓ / `OBJMaterialGroups` ✓ / `parseObjects` ✓ 四层齐备；剩下的是把 `Object` 变成真正的 `BufferGeometry` + `Object3D`（含 `Object3D` 的层级与多材质 group），那是渲染对象层。
+174. **第 113 轮：`OBJLoader` 第五层——真正的 `BufferGeometry` + `Mesh`，五层齐备**。
+   - **新增 `buildObjects(text)`**：每个 OBJ 对象一个 `Mesh`，几何上挂 `position`/`normal`/`uv`/`color` 四个属性（空的流不建属性），每个材质段一个 `addGroup(start, count, materialIndex)`，最后装进一个名为 `"OBJLoader"` 的 `Group`。
+   - **发现并修掉一个真实 bug**：`startMaterial` 内部调 `finalize(false, 0)`，**把顶点数硬编码成 0**，于是"上一段材质"的 `groupEnd` 永远是 0、`groupCount` 也是 0，**被当成空段删掉**——结果是两个 `usemtl` 却只生成 **1 个** geometry group。修法：`startMaterial` 增加 `vertexCount` 参数（默认 0 保持旧调用可用），`parseObjects` 传 `objects.back().vertices.size()`。
+   - **两个端口 API 的坑**：① `Mesh::userData` 不能赋 `JSValue::object()`（类型不同），删掉即可；② `BufferGeometry::setAttribute` 收 `shared_ptr<VertexAttribute>`，而 `count`/`itemSize` **不在** `VertexAttribute` 上（在具体的 typed 子类上），测试只能断言"属性存在"。
+   - **一次链接失败（值得记）**：给 `startMaterial` 加默认参数后，**测试的旧 `.obj` 没有重编**，仍然引用两参数版本，`LNK2019`。`touch` 测试文件强制重编后解决。**默认参数改的是头文件，用它的翻译单元必须重编**。
+   - **测试（3 个用例、16 条断言）**：两个 `o` → `Group` 里 2 个 `Mesh`、名字与几何都在；四个属性按存在的流建立；**两个 `usemtl` → 两个 group**（`start 0 / count 3` 与 `start 3 / count 3`）——这条正是上面那个 bug 的回归测试。
+   - **验证**：核心 **862 用例 / 206,455 断言**（+3 / +16）、`primitive-geometry`、`port-audit` 全绿。
+   - **OBJ 现状**：`parseGeometry` ✓ / `addFaceNormal` ✓ / `OBJMaterialGroups` ✓ / `parseObjects` ✓ / `buildObjects` ✓ **五层齐备**；与 `MTLLoader` 一样，缺的只有纹理与材质绑定（需要 MTL 数据 + 宿主 I/O）。
 70. **第 520 轮：完整 Vulkan 套件 211/211 全绿，耗时 270.72 秒**。
    - 命令：`ctest --test-dir build-vulkan -j 4 -E "lights-states" --output-on-failure`（仍排除第 46 条那个已知项；它在 Vulkan 构建里同样慢）。
    - 结果：**100% tests passed, 0 tests failed out of 211**，总耗时 **270.72 秒**。对比同一套件在 **Debug** 配置下的 **3784.56 秒 / 2 失败**，差了约 14 倍——再次印证第 69 条"是构建类型不是代码"的结论。

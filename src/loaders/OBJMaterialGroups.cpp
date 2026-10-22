@@ -1,8 +1,10 @@
-﻿#include "loaders/OBJMaterialGroups.h"
+#include "loaders/OBJMaterialGroups.h"
 
 OBJMaterialGroups::Material& OBJMaterialGroups::startMaterial(
-    const std::string& name, const std::vector<std::string>& libraries) {
-    Material* previous = finalize(false, 0);
+    const std::string& name, const std::vector<std::string>& libraries, int vertexCount) {
+    // The previous run ends at the current vertex count, which the caller supplies because a
+    // zero here would make every earlier run look empty and get dropped.
+    Material* previous = finalize(false, vertexCount);
 
     // An inherited material, or one that covered no faces, is replaced by this declaration.
     if (previous != nullptr && (previous->inherited || previous->groupCount <= 0)) {

@@ -1,4 +1,4 @@
-﻿#pragma once
+#pragma once
 #include <string>
 #include <vector>
 
@@ -22,7 +22,8 @@ class OBJMaterialGroups {
     // Opens a material. The previous one is finalised first, and it is dropped again when it
     // was inherited or covered no vertices, which is how upstream keeps multi material runs
     // contiguous.
-    Material& startMaterial(const std::string& name, const std::vector<std::string>& libraries);
+    Material& startMaterial(const std::string& name, const std::vector<std::string>& libraries,
+                             int vertexCount = 0);
 
     // The most recently opened material, or nullptr when there is none.
     Material* currentMaterial();

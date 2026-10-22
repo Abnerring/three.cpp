@@ -1,5 +1,7 @@
 #pragma once
 #include "loaders/OBJMaterialGroups.h"
+#include "objects/Group.h"
+#include "objects/Mesh.h"
 #include <array>
 #include <string>
 #include <vector>
@@ -59,4 +61,9 @@ class OBJLoader {
     // opens a material run, mtllib records a library, faces fan into the current object. The
     // first object starts undeclared so the first o or g renames it instead of adding one.
     std::vector<Object> parseObjects(const std::string& text) const;
+
+    // One mesh per object, each geometry carrying position, normal and colour attributes and
+    // one group per material run. Upstream returns a Group holding those meshes, and so does
+    // this. Textures and materials are not attached, because that needs the MTL data.
+    std::shared_ptr<Group> buildObjects(const std::string& text, double materialCountHint = 0) const;
 };
