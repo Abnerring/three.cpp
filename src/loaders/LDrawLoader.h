@@ -152,4 +152,25 @@ class LDrawLoader {
     // Whether two faces meeting at an edge should be smoothed across it. The comparison is on
     // the absolute value of the dot product, so a face and its opposite count as smooth.
     static bool isSmoothPair(double dotOfFaceNormals);
+
+    // The two codes that stand for "use the colour of whatever contains me", one for faces and
+    // one for edges. They are written as text because that is how the file spells them and
+    // because a code may also be a name.
+    static constexpr const char* kMainColourCode = "16";
+    static constexpr const char* kMainEdgeColourCode = "24";
+
+    // The key a file is cached under, which is its name lower cased so that lookups ignore case.
+    static std::string cacheKey(const std::string& fileName);
+
+    // Whether a code asks for the containing colour. A face asks with sixteen and an edge with
+    // twenty four, so the same number means different things depending on what it is on.
+    static bool isPassthroughCode(const std::string& code, bool forEdge);
+
+    // The code to look a material up by, with a passthrough replaced by the parent's.
+    static std::string resolveColourCode(const std::string& code, const std::string& parentCode,
+                                         bool forEdge);
+
+    // The code an edge takes when its face asked for the containing colour: the main colour
+    // becomes the main edge colour and every other code is left alone.
+    static std::string edgeColourCode(const std::string& code);
 };

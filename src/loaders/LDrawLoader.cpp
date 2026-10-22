@@ -1,5 +1,6 @@
 #include "loaders/LDrawLoader.h"
 
+#include <cctype>
 #include <cmath>
 #include <cstdlib>
 #include <stdexcept>
@@ -304,4 +305,30 @@ bool LDrawLoader::isSmoothPair(double dotOfFaceNormals) {
     // The absolute value is compared, so two faces that face apart still smooth together.
     const double magnitude = dotOfFaceNormals < 0 ? -dotOfFaceNormals : dotOfFaceNormals;
     return magnitude >= kHardEdgeCosine;
+}
+
+std::string LDrawLoader::cacheKey(const std::string& fileName) {
+    // Lookups ignore case, so the key is the name lower cased.
+    std::string key = fileName;
+    for (char& c : key) c = static_cast<char>(std::tolower(static_cast<unsigned char>(c)));
+    return key;
+}
+
+bool LDrawLoader::isPassthroughCode(const std::string& code, bool forEdge) {
+    // A face asks with sixteen, an edge with twenty four; the other one is an ordinary code.
+    if (forEdge) return code == kMainEdgeColourCode;
+    return code == kMainColourCode;
+}
+
+std::string LDrawLoader::resolveColourCode(const std::string& code, const std::string& parentCode,
+                                           bool forEdge) {
+    // A passthrough takes the colour of whatever contains it.
+    if (isPassthroughCode(code, forEdge)) return parentCode;
+    return code;
+}
+
+std::string LDrawLoader::edgeColourCode(const std::string& code) {
+    // The edge of a face that inherits its colour inherits the edge colour instead.
+    if (code == kMainColourCode) return kMainEdgeColourCode;
+    return code;
 }

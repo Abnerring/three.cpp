@@ -158,6 +158,7 @@ add_executable(THREECPPTests
         unit/src/loaders/LDrawPart.tests.cpp
         unit/src/loaders/LDrawRay.tests.cpp
         unit/src/loaders/LDrawSmooth.tests.cpp
+        unit/src/loaders/LDrawCache.tests.cpp
         unit/src/cameras/StereoCamera.tests.cpp
         unit/src/audio/AudioContext.tests.cpp
         unit/src/audio/Audio.tests.cpp
