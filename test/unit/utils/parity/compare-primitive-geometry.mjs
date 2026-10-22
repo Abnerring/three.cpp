@@ -224,6 +224,7 @@ const interpolantScenarios = [
     ['interp discrete 1 2 0 1 2 5 7', () => new DiscreteInterpolant([0, 1], [5, 7], 1)],
     ['interp discrete 4 2 0 1 8 0 1 2 3 4 5 6 7', () => new DiscreteInterpolant([0, 1], [0, 1, 2, 3, 4, 5, 6, 7], 4)],
     ['interp discrete 4 3 0 1 2 12 0 1 2 3 4 5 6 7 8 9 10 11', () => new DiscreteInterpolant([0, 1, 2], [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11], 4)],
+    ['interp discrete 2 2 0 1 4 3 9 4 2', () => new DiscreteInterpolant([0, 1], [3, 9, 4, 2], 2)],
     ['interp cubic 1 2 0 1 6 0 10 1 20 0 1', () => new CubicInterpolant([0, 1], [0, 10, 1, 20, 0, 1], 1)],
     ['interp cubic 2 2 0 1 12 0 0 1 1 2 0 0 3 1 4 0 0', () => new CubicInterpolant([0, 1], [0, 0, 1, 1, 2, 0, 0, 3, 1, 4, 0, 0], 2)],
     ['interp cubic 1 3 0 1 2 9 0 10 1 20 0 1 30 2 0', () => new CubicInterpolant([0, 1, 2], [0, 10, 1, 20, 0, 1, 30, 2, 0], 1)],
@@ -445,6 +446,7 @@ const helperScenarios = [
     ['helper grid 5 5', () => new GridHelper(5, 5)],
     ['helper grid 4 8', () => new GridHelper(4, 8)],
     ['helper grid 7 3', () => new GridHelper(7, 3)],
+    ['helper grid 3 7', () => new GridHelper(3, 7)],
     ['helper box3 -1 -1 -1 1 1 1', () => new Box3Helper(new Box3(new Vector3(-1, -1, -1), new Vector3(1, 1, 1)))],
     ['helper box3 0 0 0 0 0 0', () => new Box3Helper(new Box3(new Vector3(0, 0, 0), new Vector3(0, 0, 0)))],
     ['helper box3 0 0 0 10 10 10', () => new Box3Helper(new Box3(new Vector3(0, 0, 0), new Vector3(10, 10, 10)))],
@@ -636,6 +638,7 @@ const textureScenarios = [
     ['texture data 16 2', () => new DataTexture(new Uint8Array(16 * 2 * 4), 16, 2)],
     ['texture data 64 64', () => new DataTexture(new Uint8Array(64 * 64 * 4), 64, 64)],
     ['texture data 128 1', () => new DataTexture(new Uint8Array(128 * 1 * 4), 128, 1)],
+    ['texture data 32 32', () => new DataTexture(new Uint8Array(32 * 32 * 4), 32, 32)],
     ['texture depth 4 2', () => new DepthTexture(4, 2)],
     ['texture depth 1 1', () => new DepthTexture(1, 1)],
     ['texture depth 2 8', () => new DepthTexture(2, 8)],
@@ -835,6 +838,7 @@ const curvePathScenarios = [
     ['curvepath 0 0 1 1 2 2', [[0, 0], [1, 1], [2, 2]]],
     ['curvepath 0 0 2 0 1 1', [[0, 0], [2, 0], [1, 1]]],
     ['curvepath 4 4 5 4 5 5', [[4, 4], [5, 4], [5, 5]]],
+    ['curvepath -1 -1 0 0 1 1', [[-1, -1], [0, 0], [1, 1]]],
 ];
 const curvePathRaw = execFileSync(probePath, [], {input: curvePathScenarios.map(([line]) => line).join('\n'), encoding: 'utf8'});
 const curvePathLines = curvePathRaw.trim().split('\n').map((line) => JSON.parse(line));
@@ -871,7 +875,7 @@ for (let i = 0; i < shapePathScenarios.length; i += 1) {
 console.log(`shape path parity: ${shapePathScenarios.length} scenarios`);
 // Cube render targets: type flags, size and the six face cube texture.
 const {WebGLCubeRenderTarget} = await import(pathToFileURL(path.join(sourceDir, 'src/renderers/WebGLCubeRenderTarget.js')).href);
-const cubeTargetScenarios = [8, 32, 1, 300];
+const cubeTargetScenarios = [8, 32, 1, 300, 16, 256];
 const cubeTargetRaw = execFileSync(probePath, [], {input: cubeTargetScenarios.map((size) => `node cubetarget ${size}`).join('\n'), encoding: 'utf8'});
 const cubeTargetLines = cubeTargetRaw.trim().split('\n').map((line) => JSON.parse(line));
 for (let i = 0; i < cubeTargetScenarios.length; i += 1) {
