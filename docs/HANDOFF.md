@@ -649,6 +649,12 @@
    - **两个转换类的端口方法与上游一一对应**（set/copy/makeSafe/setFromVector3/setFromCartesianCoords/clone），没有多余也没有缺失。
    - **测试（3 个用例、30 条断言）**；核心 **784 / 206,007**、`primitive-geometry`、`port-audit` 全绿。
    - **工具坑**：把 `Set-Location` 与相对路径写在同一行时，相对路径仍按会话工作目录解析，导致 `docs\HANDOFF.md` 找不到——**文档路径要写绝对路径**。
+150. **第 89 轮：`Matrix2`、`Euler`、`Quaternion` 补上 29 条断言**。
+   - **一个和预想完全不同的发现**：r187 的 `Matrix2` **只有** `constructor/identity/fromArray/set/isMatrix2`——**没有 `determinant`、没有 `invert`、没有 `multiply`**。我第一版参考脚本直接调 `determinant()` 就抛了 `not a function`。**先列 `Object.getOwnPropertyNames(X.prototype)` 再写测试**，比凭印象写更靠谱。
+   - **参考值**：`Matrix2(1,2,3,4)` 的 `elements` 是 **1,3,2,4**（构造参数按**行主序**、存储按**列主序**）；`Euler(0.1,0.2,0.3,'XYZ')` → `Quaternion.setFromEuler` = (0.064071347706071, 0.091157549342991, 0.153439302024223, 0.981856172866081)，再 `setFromQuaternion` 回到 (0.1,0.2,0.3)；绕 Y 轴 π/2 的四元数 = (0, **0.707106781186547**, 0, 0.707106781186548)；再乘绕 X 轴 π/2 = (0.5, 0.5, −0.5, 0.5)；`(1,0,0)` 施加该四元数 → (**2.22e−16, 0, −1**)（+X 转到 −Z）。
+   - **精度教训（本轮花了不少时间）**：端口用 `HIGH_PRECISION` 存这些量，**中间计算也有舍入**，所以"double 结果再 `Math.fround`"并不等于端口算出来的 float。最终用 **1e−6 相对容差** 比较计算型断言，而**结构型断言（0、1、2 这类精确值）仍用 `==`**。这是诚实的边界：不是放水，是承认 float 与 double 的差异。
+   - **两处端口命名差异**：`Euler` 的顺序枚举是**顶层的 `EulerOrder`**，不是 `Euler::Order`；`Box3` 字段是 `min`/`max`。
+   - **验证**：核心 **787 用例 / 206,036 断言**（+3 / +29）、`primitive-geometry`、`port-audit` 全绿（后两者一度报 1，单独重跑即通过——是构建尚未结束时的瞬时状态）。
 70. **第 520 轮：完整 Vulkan 套件 211/211 全绿，耗时 270.72 秒**。
    - 命令：`ctest --test-dir build-vulkan -j 4 -E "lights-states" --output-on-failure`（仍排除第 46 条那个已知项；它在 Vulkan 构建里同样慢）。
    - 结果：**100% tests passed, 0 tests failed out of 211**，总耗时 **270.72 秒**。对比同一套件在 **Debug** 配置下的 **3784.56 秒 / 2 失败**，差了约 14 倍——再次印证第 69 条"是构建类型不是代码"的结论。
