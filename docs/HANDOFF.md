@@ -1319,6 +1319,13 @@
    - **测试（5 个用例、17 条断言）**：四个阶数（0/9/24/45）；**9 → 1 且 restComponents = 9**、**5 → 0 但 restComponents = 5**；缺 `opacity` 时 `missing` 只有它；属性名收集（`x`、`z`、末尾 `f_rest_8`）；缺魔数或缺 `end_header` 都不算 PLY。
    - **验证**：核心 **1161 用例 / 208,888 断言**（+5 / +17）、addons、`primitive-geometry`、`port-audit`、Vulkan 全绿。
    - **剩余**：把扫描结果交给 `PLYLoader` 与 `GaussianSplatUtils` 组装出高斯泼溅几何。
+244. **第 183 轮：`GaussianSplatPLYLoader` 第二层——自定义属性映射**。
+   - **`parse` 的三步**：先 `detectSphericalHarmonicsDegree`（第 182 轮的扫描），再 `setCustomPropertyNameMapping(getPropertyMapping(degree))`，最后 `convertPLYGeometry(plyLoader.parse(data))`。本轮做的是**中间那步**。
+   - **映射的形状**：`scale` 3 个名字、`rotation` 4 个、`f_dc` 3 个、`opacity` 1 个，**这四个与阶数无关**；只有 `f_rest` 随阶数增长，用的是**与头部扫描同一张表** `[0, 9, 24, 45]`，名字按 `f_rest_0…f_rest_{N-1}` 生成。
+   - **越界阶数**（例如 9 或 −1）**列空**而不是猜一个；负数也安全。
+   - **测试（4 个用例、17 条断言）**：四个固定字段的名字与个数；**四个阶数的 f_rest 长度 0/9/24/45**；**有序命名**（第一个 `f_rest_0`、第二个 `f_rest_1`、最后一个 `f_rest_23`）；**阶数 9 与 −1 都为空**。
+   - **验证**：核心 **1165 用例 / 208,905 断言**（+4 / +17）、addons、`primitive-geometry`、`port-audit`、Vulkan 全绿。
+   - **剩余**：`convertPLYGeometry` —— 把 `PLYLoader` 读出的属性转成高斯泼溅几何（复用第 84 轮的 `GaussianSplatUtils`）。
 70. **第 520 轮：完整 Vulkan 套件 211/211 全绿，耗时 270.72 秒**。
    - 命令：`ctest --test-dir build-vulkan -j 4 -E "lights-states" --output-on-failure`（仍排除第 46 条那个已知项；它在 Vulkan 构建里同样慢）。
    - 结果：**100% tests passed, 0 tests failed out of 211**，总耗时 **270.72 秒**。对比同一套件在 **Debug** 配置下的 **3784.56 秒 / 2 失败**，差了约 14 倍——再次印证第 69 条"是构建类型不是代码"的结论。

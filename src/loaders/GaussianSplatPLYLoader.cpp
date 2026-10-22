@@ -1,4 +1,4 @@
-﻿#include "loaders/GaussianSplatPLYLoader.h"
+#include "loaders/GaussianSplatPLYLoader.h"
 
 #include <cctype>
 #include <sstream>
@@ -61,4 +61,23 @@ GaussianSplatPLYLoader::Header GaussianSplatPLYLoader::scanHeader(const std::str
         if (!found) header.missing.push_back(required);
     }
     return header;
+}
+
+std::map<std::string, std::vector<std::string>> GaussianSplatPLYLoader::propertyMapping(
+    int degree) {
+    std::map<std::string, std::vector<std::string>> mapping;
+    // The four fixed fields have as many names as components.
+    mapping["scale"] = {"scale_0", "scale_1", "scale_2"};
+    mapping["rotation"] = {"rot_0", "rot_1", "rot_2", "rot_3"};
+    mapping["f_dc"] = {"f_dc_0", "f_dc_1", "f_dc_2"};
+    mapping["opacity"] = {"opacity"};
+
+    // The rest band is the only part that depends on the degree, and the table is the same
+    // one the header scan uses.
+    const int components = degree >= 0 && degree < 4 ? kDegreeComponents[degree] : 0;
+    std::vector<std::string> rest;
+    rest.reserve(static_cast<std::size_t>(components));
+    for (int i = 0; i < components; ++i) rest.push_back("f_rest_" + std::to_string(i));
+    mapping["f_rest"] = std::move(rest);
+    return mapping;
 }

@@ -1,4 +1,5 @@
-﻿#pragma once
+#pragma once
+#include <map>
 #include <string>
 #include <vector>
 
@@ -28,4 +29,9 @@ class GaussianSplatPLYLoader {
     // the parsed geometry, because the PLY reader creates an attribute for any declared custom
     // property even when the file has no such data.
     static Header scanHeader(const std::string& text);
+
+    // The custom property mapping a PLY reader needs to expose the splat fields: each logical
+    // field names the file properties that carry it. The rest band grows with the degree, so a
+    // degree of one lists nine names and a degree of three lists forty five.
+    static std::map<std::string, std::vector<std::string>> propertyMapping(int degree);
 };
