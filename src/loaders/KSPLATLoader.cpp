@@ -198,3 +198,42 @@ KSPLATLoader::BucketPosition KSPLATLoader::bucketIndex(
     // Running out of buckets means the file disagrees with itself.
     throw std::runtime_error("THREE.KSPLATLoader: Invalid KSPLAT bucket data.");
 }
+
+void KSPLATLoader::writeHarmonicBand(std::vector<std::uint8_t>& target, std::size_t splatIndex,
+                                     int bandComponents, int byteStride,
+                                     const std::vector<int>& componentIndexes,
+                                     const std::vector<std::uint8_t>& source,
+                                     std::size_t rowOffset, int bytesPerComponent,
+                                     double minCoefficient, double maxCoefficient) {
+    const std::size_t targetOffset = splatIndex * static_cast<std::size_t>(byteStride);
+    if (target.size() < targetOffset + static_cast<std::size_t>(bandComponents)) return;
+
+    for (int i = 0; i < bandComponents; ++i) {
+        // The component index table says which slot of the row holds this component.
+        const int slot = i < static_cast<int>(componentIndexes.size()) ? componentIndexes[i] : -1;
+        if (slot < 0) continue;
+        const std::size_t at = rowOffset + static_cast<std::size_t>(slot) *
+                                               static_cast<std::size_t>(bytesPerComponent);
+        const double value = readCompressedHarmonic(source, at, bytesPerComponent, minCoefficient,
+                                                    maxCoefficient);
+        // The byte holds the value shifted from minus one through one into zero through two
+        // hundred and fifty six, truncated to a byte.
+        target[targetOffset + static_cast<std::size_t>(i)] =
+            static_cast<std::uint8_t>(value * 128.0 + 128.0);
+    }
+}
+
+namespace {
+// The component order per degree, matching harmonicIndex.
+std::vector<int> bandIndexes(int degree) {
+    static const int kIndex[3][21] = {
+        {0, 3, 6, 1, 4, 7, 2, 5, 8},
+        {9, 14, 19, 10, 15, 20, 11, 16, 21, 12, 17, 22, 13, 18, 23},
+        {24, 31, 38, 25, 32, 39, 26, 33, 40, 27, 34, 41, 28, 35, 42, 29, 36, 43, 30, 37, 44}};
+    std::vector<int> out;
+    if (degree < 1 || degree > 3) return out;
+    const int count = KSPLATLoader::kDegreeComponents[degree];
+    for (int i = 0; i < count; ++i) out.push_back(kIndex[degree - 1][i]);
+    return out;
+}
+}  // namespace

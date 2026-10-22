@@ -111,4 +111,16 @@ class KSPLATLoader {
     static BucketPosition bucketIndex(std::uint32_t splatIndex, const SectionHeader& section,
                                       std::uint32_t fullBucketSplats,
                                       const std::vector<std::uint32_t>& partialLengths);
+
+    // Writes one band of harmonic components for one splat. The source components are stored
+    // out of order, so each is read at the slot the index table gives it, then scaled from the
+    // minus one to one range into a byte by multiplying by one hundred and twenty eight and
+    // adding the same. A component above one overflows the byte, which is the upstream
+    // behaviour and the reason the declared range matters.
+    static void writeHarmonicBand(std::vector<std::uint8_t>& target, std::size_t splatIndex,
+                                  int bandComponents, int byteStride,
+                                  const std::vector<int>& componentIndexes,
+                                  const std::vector<std::uint8_t>& source,
+                                  std::size_t rowOffset, int bytesPerComponent,
+                                  double minCoefficient, double maxCoefficient);
 };
