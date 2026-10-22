@@ -143,6 +143,7 @@ target_sources(threecpp PRIVATE
     src/loaders/XmlDocument.cpp
     src/loaders/VOXLoader.cpp
     src/loaders/SPZLoader.cpp
+    src/loaders/IESLoader.cpp
     src/loaders/CubeTextureLoader.cpp
     src/extras/ImageUtils.cpp
     src/extras/PMREMGenerator.cpp

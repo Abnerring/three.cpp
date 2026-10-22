@@ -1,0 +1,71 @@
+﻿#include "loaders/IESLoader.h"
+
+#include <cctype>
+#include <cstdlib>
+
+std::vector<std::string> IESLoader::splitLines(const std::string& text) {
+    std::vector<std::string> lines;
+    std::size_t start = 0;
+    while (start <= text.size()) {
+        const std::size_t end = text.find('\n', start);
+        std::string line = end == std::string::npos ? text.substr(start) : text.substr(start, end - start);
+        if (!line.empty() && line.back() == '\r') line.pop_back();
+        lines.push_back(line);
+        if (end == std::string::npos) break;
+        start = end + 1;
+    }
+    return lines;
+}
+
+std::vector<double> IESLoader::textToNumbers(const std::string& text) {
+    // Trim, treat a comma as a separator, then collapse runs of whitespace before splitting.
+    std::size_t first = text.find_first_not_of(" \t\r\n");
+    if (first == std::string::npos) return {};
+    std::size_t last = text.find_last_not_of(" \t\r\n");
+    std::string cleaned = text.substr(first, last - first + 1);
+    for (auto& c : cleaned)
+        if (c == ',') c = ' ';
+
+    std::vector<double> numbers;
+    std::size_t at = 0;
+    while (at < cleaned.size()) {
+        while (at < cleaned.size() && std::isspace(static_cast<unsigned char>(cleaned[at]))) ++at;
+        if (at >= cleaned.size()) break;
+        const std::size_t begin = at;
+        while (at < cleaned.size() && !std::isspace(static_cast<unsigned char>(cleaned[at]))) ++at;
+        numbers.push_back(std::strtod(cleaned.substr(begin, at - begin).c_str(), nullptr));
+    }
+    return numbers;
+}
+
+std::vector<double> IESLoader::readNumbers(const std::vector<std::string>& lines,
+                                           std::size_t& cursor, std::size_t count) {
+    std::vector<double> numbers;
+    // Keep taking whole lines until the count is reached, so a table may be wrapped.
+    while (numbers.size() < count && cursor < lines.size()) {
+        const auto values = textToNumbers(lines[cursor++]);
+        for (const double value : values) numbers.push_back(value);
+    }
+    // A table with more values than asked for keeps only the count.
+    if (numbers.size() > count) numbers.resize(count);
+    return numbers;
+}
+
+IESLoader::Tilt IESLoader::readTilt(const std::vector<std::string>& lines, std::size_t& cursor) {
+    Tilt tilt;
+    if (cursor >= lines.size()) return tilt;
+
+    // The first line is the lamp to luminaire geometry value.
+    const auto geometry = textToNumbers(lines[cursor++]);
+    tilt.lampToLuminaireGeometry = geometry.empty() ? 0.0 : geometry[0];
+
+    if (cursor >= lines.size()) return tilt;
+    const auto count = textToNumbers(lines[cursor++]);
+    tilt.numAngles = count.empty() ? 0 : static_cast<int>(count[0]);
+    if (tilt.numAngles <= 0) return tilt;
+
+    tilt.angles = readNumbers(lines, cursor, static_cast<std::size_t>(tilt.numAngles));
+    tilt.multipliers = readNumbers(lines, cursor, static_cast<std::size_t>(tilt.numAngles));
+    tilt.present = true;
+    return tilt;
+}

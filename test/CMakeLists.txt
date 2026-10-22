@@ -105,6 +105,7 @@ add_executable(THREECPPTests
         unit/src/loaders/SPZQuaternion.tests.cpp
         unit/src/loaders/SPZCenters.tests.cpp
         unit/src/loaders/SPZHarmonics.tests.cpp
+        unit/src/loaders/IESLoader.tests.cpp
         unit/src/cameras/StereoCamera.tests.cpp
         unit/src/audio/AudioContext.tests.cpp
         unit/src/audio/Audio.tests.cpp

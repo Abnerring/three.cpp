@@ -1269,6 +1269,15 @@
    - **真正缺的 29 个**：`GLTFLoader`（最大，约 2500 行）、`ColladaLoader`、`FBXLoader`、`USDLoader`、`USDZLoader`、`KMZLoader`、`VRMLLoader`、`LWOLoader`、`3DMLoader`、`LDrawLoader`、`3MFLoader`、`EXRLoader`、`TIFFLoader`、`DDSLoader`、`PVRLoader`、`KTXLoader`、`KTX2Loader`、`IESLoader`、`UltraHDRLoader`、`SVGLoader`、`TDSLoader`、`VTKLoader`、`LUTImageLoader`、`TTFLoader`、`MaterialXLoader`、`DRACOLoader`、`GaussianSplatPLYLoader`、`GLTFGaussianSplatLoaderExtension`、`KSPLATLoader`。
    - **教训（两条）**：① **开工前必须查清单**——查 `src/loaders/` 与 `examples/jsm/loaders/` **两个目录**，或直接看 `docs/port-status.json`，**不能凭记忆**；② **进度数字必须来自文件系统枚举**，我这几轮报的"40/52"是**累加记忆**的结果，与实际差了一倍，这种数字一旦写进汇报就是**失实**。
    - **验证**：删除多余文件后工作树干净；核心 **1126 用例 / 208,767 断言**（与第 174 轮一致，本轮没有改代码）。
+237. **第 176 轮：`IESLoader` 第一层——文本助手与 TILT 块**。
+   - **先按第 236 条做验证**：`src/loaders/EXRLoader.*` 与 `examples/jsm/loaders/EXRLoader.*` 都**不存在**，`port-status` 里也只是 `expectedHeader` 的待办，确认未移植后才开工。**这一步以后每轮都做**。
+   - **换目标的原因**：`EXRLoader` 上游 **3411 行**（比 VOX 的 920 还大），按"一轮一层、每层 5–6 个测试"的判据不合适现在做；改挑 **`IESLoader`（411 行、纯文本、自包含）**。
+   - **`textToNumbers`**：**trim** → **逗号变空格** → **按空白切分**，所以 `"1 2 3"`、`"1, 2,   3"`、`"   4 5  "` 都能读成同一形式。
+   - **`readNumbers`**：按**整行**累加直到凑够 count（表格可以换行），**超出的部分截断**，游标停在用过的行之后。
+   - **`readTilt`**：第一行是 `lampToLuminaireGeometry`，第二行是 `numAngles`，随后读 angles 与 multipliers 两张同长度的表；**`numAngles <= 0` 时不标记 present**。
+   - **测试（6 个用例、25 条断言）**：三种文本方言 + 空行；**跨行表格**（4 个数用两行，游标停在 2）；**只要 2 个数**；完整 tilt 块（几何 1.0、3 个角度、乘子 0.25、游标 4）；**无角度的 tilt**；`splitLines` 去 `\r`。
+   - **验证**：核心 **1132 用例 / 208,792 断言**（+6 / +25）、addons、`primitive-geometry`、`port-audit`、Vulkan 全绿。
+   - **IES 剩余**：`readLampValues`/`readLampFactors`、竖直与水平角度表、candela 值矩阵、以及 `parse`/`_getIESValues` 的装配。
 70. **第 520 轮：完整 Vulkan 套件 211/211 全绿，耗时 270.72 秒**。
    - 命令：`ctest --test-dir build-vulkan -j 4 -E "lights-states" --output-on-failure`（仍排除第 46 条那个已知项；它在 Vulkan 构建里同样慢）。
    - 结果：**100% tests passed, 0 tests failed out of 211**，总耗时 **270.72 秒**。对比同一套件在 **Debug** 配置下的 **3784.56 秒 / 2 失败**，差了约 14 倍——再次印证第 69 条"是构建类型不是代码"的结论。
