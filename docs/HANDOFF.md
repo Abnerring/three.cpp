@@ -1312,6 +1312,13 @@
    - **测试（6 个用例、14 条断言）**：小端 `640×480`；**大端 `300×200`**；**短整数类型的 bitsPerSample**（重写条目数并插入新条目）；三种非 TIFF；**目录偏移超出文件**；`requireDecoder` 抛错。
    - **验证**：核心 **1156 用例 / 208,871 断言**（+6 / +14）、addons、`primitive-geometry`、`port-audit`、Vulkan 全绿。
    - **口径说明**：`TIFFLoader` 的"完成"指**头可读、像素明确报错**，与 `TTFLoader`（CDN 依赖）、`NRRD gzip`、`AMF zip`、`SPZ zstd` 同一处置。
+243. **第 182 轮：`GaussianSplatPLYLoader` 第一层——头部扫描与阶数推导**。
+   - **为什么选它而不是 `PVRLoader`**：`PVRLoader` 是 `CompressedTextureLoader`，处理的是 **PVRTC 压缩纹理**，端口没有 GPU 压缩格式这一层；而 `GaussianSplatPLYLoader` 是**纯文本扫描**，并且**复用已经移植的 `PLYLoader` 与 `GaussianSplatUtils`**（第 110、84 轮）。
+   - **阶数不是声明出来的**：它由 `f_rest_N` 属性的**个数**决定，表是 **`[0, 9, 24, 45]` → 阶 0/1/2/3**。**个数不匹配任何一项时阶为 0**（而不是就近取整）。
+   - **为什么扫文本而不是扫几何**：上游注释说得很清楚——`PLYLoader` 对"声明了但文件里没有数据"的自定义属性**仍会建一个填满垃圾的属性**，所以必须**在解析前的文本里**核对必需属性。端口照这个做法，`missing` 列出缺失的名字。
+   - **测试（5 个用例、17 条断言）**：四个阶数（0/9/24/45）；**9 → 1 且 restComponents = 9**、**5 → 0 但 restComponents = 5**；缺 `opacity` 时 `missing` 只有它；属性名收集（`x`、`z`、末尾 `f_rest_8`）；缺魔数或缺 `end_header` 都不算 PLY。
+   - **验证**：核心 **1161 用例 / 208,888 断言**（+5 / +17）、addons、`primitive-geometry`、`port-audit`、Vulkan 全绿。
+   - **剩余**：把扫描结果交给 `PLYLoader` 与 `GaussianSplatUtils` 组装出高斯泼溅几何。
 70. **第 520 轮：完整 Vulkan 套件 211/211 全绿，耗时 270.72 秒**。
    - 命令：`ctest --test-dir build-vulkan -j 4 -E "lights-states" --output-on-failure`（仍排除第 46 条那个已知项；它在 Vulkan 构建里同样慢）。
    - 结果：**100% tests passed, 0 tests failed out of 211**，总耗时 **270.72 秒**。对比同一套件在 **Debug** 配置下的 **3784.56 秒 / 2 失败**，差了约 14 倍——再次印证第 69 条"是构建类型不是代码"的结论。
