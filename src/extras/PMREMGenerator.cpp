@@ -1,6 +1,8 @@
 #include "extras/PMREMGenerator.h"
 #include "cameras/CubeCamera.h"
 #include "core/RenderTarget.h"
+#include "core/WebGLCubeRenderTarget.h"
+#include "constants.h"
 #include "geometries/BoxGeometry.h"
 #include "math/MathUtils.h"
 #include "objects/Mesh.h"
@@ -25,6 +27,29 @@ void PMREMGenerator::_setSize(double cubeSize) {
 void PMREMGenerator::_needsRenderer(const char* what) {
     throw std::logic_error(std::string("PMREMGenerator::") + what +
                            " needs the renderer's PMREM shader passes, which are not implemented yet");
+}
+
+std::shared_ptr<RenderTarget> PMREMGenerator::_createRenderTarget(double size, bool generateMipmaps,
+                                                                  bool depthBuffer) {
+    // Upstream options, in the same order: minFilter, generateMipmaps, type, colorSpace,
+    // depthBuffer. The cube render target applies them to its texture.
+    auto options = JSValue::object();
+    options.set("minFilter", LinearMipmapLinearFilter);
+    options.set("generateMipmaps", generateMipmaps);
+    options.set("type", HalfFloatType);
+    options.set("colorSpace", LinearSRGBColorSpace);
+    options.set("depthBuffer", depthBuffer);
+    return std::make_shared<WebGLCubeRenderTarget>(size, options);
+}
+
+std::shared_ptr<RenderTarget> PMREMGenerator::_getSourceTarget(bool depthBuffer) {
+    const auto size = _cubeSize;
+    const auto sourceTarget = _sourceTarget;
+    if (sourceTarget == nullptr || sourceTarget->width != size ||
+        (depthBuffer && !sourceTarget->depthBuffer)) {
+        _sourceTarget = _createRenderTarget(size, true, depthBuffer);
+    }
+    return _sourceTarget;
 }
 
 std::shared_ptr<RenderTarget> PMREMGenerator::allocateTarget() {

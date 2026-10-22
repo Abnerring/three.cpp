@@ -1,5 +1,6 @@
 #include "catch.hpp"
 #include "core/RenderTarget.h"
+#include "constants.h"
 #include "extras/PMREMGenerator.h"
 #include "textures/Texture.h"
 #include <cmath>
@@ -70,4 +71,30 @@ TEST_CASE("PMREMGenerator derives the size from fromScene options before renderi
     small.set("size", 64);   // below the 256 floor, upsampled
     REQUIRE_THROWS_AS(generator.fromScene(JSValue::object(), 0, 0.1, 100, small), std::logic_error);
     REQUIRE(generator.cubeSize() == 256);
+}
+TEST_CASE("PMREMGenerator caches one source target per size and depth need") {
+    PMREMGenerator generator;
+    generator._setSize(512);
+    auto plain = generator._getSourceTarget();
+    REQUIRE(plain != nullptr);
+    REQUIRE(plain->width == 512);
+    REQUIRE(plain->depthBuffer == false);
+    auto texture = plain->texture.get();
+    REQUIRE(texture->generateMipmaps);
+    REQUIRE(texture->minFilter == LinearMipmapLinearFilter);
+    REQUIRE(texture->type == HalfFloatType);
+    REQUIRE(texture->colorSpace == LinearSRGBColorSpace);
+    // The same request reuses the same target.
+    REQUIRE(generator._getSourceTarget() == plain);
+    // Asking for a depth buffer replaces it.
+    auto withDepth = generator._getSourceTarget(true);
+    REQUIRE(withDepth != plain);
+    REQUIRE(withDepth->depthBuffer == true);
+    // Upstream asymmetry: going back to no depth keeps the depth capable target.
+    REQUIRE(generator._getSourceTarget(false) == withDepth);
+    // A size change replaces it again.
+    generator._setSize(256);
+    auto resized = generator._getSourceTarget();
+    REQUIRE(resized != withDepth);
+    REQUIRE(resized->width == 256);
 }

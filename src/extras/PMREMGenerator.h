@@ -39,14 +39,20 @@ class PMREMGenerator {
 
     JSValue _renderer;
     double _cubeSize = 0;
-    JSValue _sourceTarget;
+    std::shared_ptr<RenderTarget> _sourceTarget;
     std::shared_ptr<CubeCamera> _cubeCamera;
     std::shared_ptr<Mesh> _boxMesh;
 
   private:
   public:
-    // Named like the upstream private helper; public here so the derivation is testable.
+    // Named like the upstream private helpers; public here so the rules are testable.
     void _setSize(double cubeSize);
+    // Reuses the cached source target unless the size changed, or a depth buffer is
+    // requested and the cached one has none. Note the asymmetry upstream has: a cached
+    // target with a depth buffer is kept even when the caller no longer needs one.
+    std::shared_ptr<RenderTarget> _getSourceTarget(bool depthBuffer = false);
+    static std::shared_ptr<RenderTarget> _createRenderTarget(double size, bool generateMipmaps,
+                                                             bool depthBuffer);
 
   private:
     std::vector<std::uint32_t> _lodSizes;
