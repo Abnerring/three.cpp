@@ -39,4 +39,19 @@ class AMFLoader {
     // Reads a vertices element, taking x y z from each coordinates child and n x n y n z from
     // each normal child.
     static MeshVertices parseMeshVertices(const XmlNode& node);
+
+    // One mesh element: its vertices are shared and each volume holds its own triangle
+    // indices into that shared list, which is how upstream sets the geometry up.
+    struct Mesh {
+        MeshVertices vertices;
+        std::vector<MeshVolume> volumes;
+    };
+
+    // Rejects a buffer that is not plain XML. The zip form needs a decompressor the port
+    // does not carry, so it is named rather than decoded into nonsense.
+    static void requirePlainXml(const std::vector<std::uint8_t>& buffer);
+
+    // Reads the meshes of an amf document. Every object contributes the meshes it declares,
+    // and the unit scale is applied to the positions as they are read.
+    static std::vector<Mesh> parseMeshes(const XmlNode& root, double scale);
 };

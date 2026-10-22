@@ -88,6 +88,7 @@ add_executable(THREECPPTests
         unit/src/loaders/AMFLoader.tests.cpp
         unit/src/loaders/XmlDocument.tests.cpp
         unit/src/loaders/AMFMesh.tests.cpp
+        unit/src/loaders/AMFAssemble.tests.cpp
         unit/src/cameras/StereoCamera.tests.cpp
         unit/src/audio/AudioContext.tests.cpp
         unit/src/audio/Audio.tests.cpp

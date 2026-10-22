@@ -3,6 +3,7 @@
 #include "loaders/XmlDocument.h"
 #include <cctype>
 #include <cstdlib>
+#include <stdexcept>
 
 bool AMFLoader::isZip(const std::vector<std::uint8_t>& buffer) {
     // The archive signature is the two characters PK.
@@ -69,4 +70,30 @@ AMFLoader::MeshVertices AMFLoader::parseMeshVertices(const XmlNode& node) {
         }
     }
     return vertices;
+}
+
+void AMFLoader::requirePlainXml(const std::vector<std::uint8_t>& buffer) {
+    if (isZip(buffer))
+        throw std::runtime_error("THREE.AMFLoader: Compressed AMF is not supported");
+}
+
+std::vector<AMFLoader::Mesh> AMFLoader::parseMeshes(const XmlNode& root, double scale) {
+    std::vector<Mesh> meshes;
+    for (const auto& object : root.children) {
+        if (!object || object->name != "object") continue;
+        for (const auto& meshNode : object->children) {
+            if (!meshNode || meshNode->name != "mesh") continue;
+
+            Mesh mesh;
+            if (const auto vertices = meshNode->child("vertices"))
+                mesh.vertices = parseMeshVertices(*vertices);
+            // The scale converts the file's unit to millimetres, applied to each component.
+            for (auto& component : mesh.vertices.positions) component *= scale;
+
+            for (const auto& volume : meshNode->children)
+                if (volume && volume->name == "volume") mesh.volumes.push_back(parseMeshVolume(*volume));
+            meshes.push_back(std::move(mesh));
+        }
+    }
+    return meshes;
 }

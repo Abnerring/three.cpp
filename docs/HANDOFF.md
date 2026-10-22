@@ -1140,6 +1140,14 @@
    - **测试（4 个用例、17 条断言）**：两个顶点（六个分量，第二个**没有法线**所以法线只有三个数）；一个体积（名字 `Body`、材质 `9`、六个索引且首尾正确）；**`metadata type="other"` 不算名字**且无 `materialid` 时为空串；空 `<vertices/>`。
    - **验证**：核心 **1048 用例 / 207,360 断言**（+4 / +17）、`primitive-geometry`、`port-audit` 全绿。
    - **AMF 剩余**：多对象/多体积的装配（`object` → `mesh` → `volume` → `Group`/`Mesh`）、`PK` 路径的明确报错、以及材质颜色。
+219. **第 158 轮：`AMFLoader` 收尾——单位缩放、共享顶点、压缩拒绝，AMF 完整**。
+   - **单位缩放的位置**：`parseMeshes(root, scale)` 在读完顶点后**把每个分量乘上比例**——`unit="inch"` 的顶点 `1 2 3` 变成 `25.4 50.8 76.2`。
+   - **顶点是"每个 mesh 一份、各 volume 共享"**：上游 `geometry.setAttribute('position', vertices)` 用整份顶点表，而每个 volume 只提供自己的索引，所以端口把 `vertices` 放在 `Mesh` 上、`triangles` 放在各 `MeshVolume` 上。
+   - **`PK` 路径**：`requirePlainXml` 明确抛 `Compressed AMF is not supported`——与 `NRRD gzip`、`TTFLoader` 同一处置原则。
+   - **测试（4 个用例、11 条断言）**：`inch` 缩放后 `25.4/50.8/76.2`；**两个 volume 共享六个分量**且各自索引正确；**两个 `<mesh>` 得到两个 Mesh**；`PK` 抛错而纯 XML 通过。
+   - **验证**：核心 **1052 用例 / 207,371 断言**（+4 / +11）、`primitive-geometry`、`port-audit` 全绿。addon loader **37 → 38 / 52**。
+   - **AMF 五层**：容器与单位 ✓ / XML 读取器 ✓ / 顶点与体积 ✓ / 装配与缩放 ✓ / 压缩拒绝 ✓。
+   - **十一个完整 loader**：MTL、OBJ、PLY、Font、HDRCube、MD2、BVH、PCD、TGA、NRRD、**AMF**。
 70. **第 520 轮：完整 Vulkan 套件 211/211 全绿，耗时 270.72 秒**。
    - 命令：`ctest --test-dir build-vulkan -j 4 -E "lights-states" --output-on-failure`（仍排除第 46 条那个已知项；它在 Vulkan 构建里同样慢）。
    - 结果：**100% tests passed, 0 tests failed out of 211**，总耗时 **270.72 秒**。对比同一套件在 **Debug** 配置下的 **3784.56 秒 / 2 失败**，差了约 14 倍——再次印证第 69 条"是构建类型不是代码"的结论。
