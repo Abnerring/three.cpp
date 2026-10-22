@@ -1,6 +1,7 @@
-﻿#include "cameras/CubeCamera.h"
+#include "cameras/CubeCamera.h"
 
 #include "cameras/PerspectiveCamera.h"
+#include "core/RenderTarget.h"
 #include <stdexcept>
 
 namespace {
@@ -9,7 +10,13 @@ constexpr double kFov = -90.0;
 constexpr double kAspect = 1.0;
 }
 
-CubeCamera::CubeCamera(double near, double far, JSValue renderTarget) : renderTarget(std::move(renderTarget)) {
+// A JS handle cannot be unwrapped into a backend target, so it does not set one; the rig
+// is still built, and update() reports the mismatch (same policy as its JS overload).
+CubeCamera::CubeCamera(double near, double far, JSValue)
+    : CubeCamera(near, far, std::shared_ptr<RenderTarget>{}) {}
+
+CubeCamera::CubeCamera(double near, double far, std::shared_ptr<RenderTarget> renderTarget)
+    : renderTarget(std::move(renderTarget)) {
     type = "CubeCamera";
     coordinateSystem = JSValue(nullptr);
     // The six faces are added in the upstream order: positive and negative x, y, then z.
