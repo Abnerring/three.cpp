@@ -1,4 +1,4 @@
-﻿#include "loaders/VTKLoader.h"
+#include "loaders/VTKLoader.h"
 
 #include <cmath>
 #include <cstdlib>
@@ -48,4 +48,66 @@ std::vector<double> VTKLoader::parseFloats(const std::string& line) {
         }
     }
     return values;
+}
+
+bool VTKLoader::isNumberLine(const std::string& line) {
+    // Upstream trims the line before testing it, so leading whitespace is skipped here.
+    std::size_t at = 0;
+    while (at < line.size() && (line[at] == ' ' || line[at] == '\t' ||
+                                line[at] == '\r' || line[at] == '\n')) {
+        ++at;
+    }
+    // A line that begins with a word is a keyword line; one that begins with a number
+    // is not.
+    return wordLength(line.substr(at)) == 0;
+}
+
+bool VTKLoader::parseConnectivity(const std::string& line, Connectivity& out) {
+    out.numVertices = 0;
+    out.indices.clear();
+
+    // The line has to begin with a count, so leading whitespace is skipped first.
+    std::size_t at = 0;
+    while (at < line.size() && (line[at] == ' ' || line[at] == '\t')) ++at;
+    if (at >= line.size() || line[at] < '0' || line[at] > '9') return false;
+
+    // The count runs to the end of the digits.
+    std::size_t end = at;
+    while (end < line.size() && line[end] >= '0' && line[end] <= '9') ++end;
+    const std::string count = line.substr(at, end - at);
+    if (count.empty()) return false;
+    out.numVertices = std::atoi(count.c_str());
+
+    // Everything after the count is read as integers; anything that is not a number ends the
+    // list, which is what the upstream pattern effectively does by only allowing digits.
+    at = end;
+    while (at < line.size()) {
+        const char c = line[at];
+        if (c < '0' || c > '9') { ++at; continue; }
+        std::size_t stop = at;
+        while (stop < line.size() && line[stop] >= '0' && line[stop] <= '9') ++stop;
+        out.indices.push_back(std::atoi(line.substr(at, stop - at).c_str()));
+        at = stop;
+    }
+    return true;
+}
+
+std::vector<int> VTKLoader::triangulateFan(const std::vector<int>& indices, int numVertices) {
+    std::vector<int> triangles;
+    // Fewer than three nodes cannot form a triangle.
+    if (numVertices < 3) return triangles;
+
+    // Every triangle shares the first node.
+    const int first = indices.empty() ? 0 : indices[0];
+    int k = 1;
+    for (int j = 0; j < numVertices - 2; ++j) {
+        if (static_cast<std::size_t>(k + 1) >= indices.size()) break;
+        const int second = indices[static_cast<std::size_t>(k)];
+        const int third = indices[static_cast<std::size_t>(k + 1)];
+        triangles.push_back(first);
+        triangles.push_back(second);
+        triangles.push_back(third);
+        ++k;
+    }
+    return triangles;
 }
