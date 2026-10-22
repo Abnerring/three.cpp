@@ -3,6 +3,8 @@
 #include "constants.h"
 #include "extras/PMREMGenerator.h"
 #include "textures/Texture.h"
+#include "textures/DataTexture.h"
+#include "textures/CubeTexture.h"
 #include <cmath>
 
 TEST_CASE("PMREMGenerator derives cube size the way upstream does") {
@@ -97,4 +99,38 @@ TEST_CASE("PMREMGenerator caches one source target per size and depth need") {
     auto resized = generator._getSourceTarget();
     REQUIRE(resized != withDepth);
     REQUIRE(resized->width == 256);
+}
+TEST_CASE("PMREMGenerator sizes a cube target from the source texture") {
+    PMREMGenerator generator;
+    // Cubemap: the face width decides, rounded down and floored.
+    {
+        TextureImage::Faces faces;
+        for (int i = 0; i < 6; ++i) {
+            auto image = std::make_shared<TextureImage>();
+            image->width = 1024;
+            image->height = 1024;
+            faces.push_back(std::move(image));
+        }
+        CubeTexture cube(TextureImage::array(faces));
+        REQUIRE_THROWS_AS(generator._fromTexture(cube), std::logic_error);
+        REQUIRE(generator.cubeSize() == 1024);
+    }
+    // An empty cubemap falls back to MIN_SIZE.
+    {
+        CubeTexture empty(TextureImage::array(TextureImage::Faces{}));
+        REQUIRE_THROWS_AS(generator._fromTexture(empty), std::logic_error);
+        REQUIRE(generator.cubeSize() == PMREMGenerator::MIN_SIZE);
+    }
+    // Equirectangular: a quarter of the width.
+    {
+        DataTexture wide(Uint8Array(std::vector<std::uint8_t>(4096 * 2048 * 4, 0)), 4096, 2048);
+        REQUIRE_THROWS_AS(generator._fromTexture(wide), std::logic_error);
+        REQUIRE(generator.cubeSize() == 1024);
+    }
+    // A width that is not a multiple of four still halves twice and floors to the minimum.
+    {
+        DataTexture narrow(Uint8Array(std::vector<std::uint8_t>(300 * 150 * 4, 0)), 300, 150);
+        REQUIRE_THROWS_AS(generator._fromTexture(narrow), std::logic_error);
+        REQUIRE(generator.cubeSize() == PMREMGenerator::MIN_SIZE);
+    }
 }

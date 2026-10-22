@@ -52,6 +52,22 @@ std::shared_ptr<RenderTarget> PMREMGenerator::_getSourceTarget(bool depthBuffer)
     return _sourceTarget;
 }
 
+std::shared_ptr<RenderTarget> PMREMGenerator::_fromTexture(
+    const Texture& texture, const std::shared_ptr<RenderTarget>& renderTarget) {
+    const auto mapping = texture.mapping;
+    if (mapping == CubeReflectionMapping || mapping == CubeRefractionMapping) {
+        const auto& faces = texture.image.get()->faces;
+        // Upstream falls back to image[0].image.width for nested images; this model keeps
+        // the width on the descriptor itself, so that fallback has no reachable case.
+        _setSize(faces.empty() ? MIN_SIZE : faces.front()->width);
+    } else {  // Equirectangular
+        _setSize(texture.image.get()->width / 4.0);
+    }
+    auto pmremTarget = renderTarget ? renderTarget : allocateTarget();
+    (void) pmremTarget;
+    _needsRenderer("_fromTexture");
+}
+
 std::shared_ptr<RenderTarget> PMREMGenerator::allocateTarget() {
     const auto size = static_cast<std::uint32_t>(_cubeSize);
     auto pmremTarget = std::make_shared<RenderTarget>(size, size);

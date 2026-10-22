@@ -51,6 +51,10 @@ class PMREMGenerator {
     // requested and the cached one has none. Note the asymmetry upstream has: a cached
     // target with a depth buffer is kept even when the caller no longer needs one.
     std::shared_ptr<RenderTarget> _getSourceTarget(bool depthBuffer = false);
+    // Picks the cube size from the source texture (cube face width, or equirectangular
+    // width over four), then allocates the target before the GPU work upstream does.
+    std::shared_ptr<RenderTarget> _fromTexture(const Texture& texture,
+                                               const std::shared_ptr<RenderTarget>& renderTarget = {});
     static std::shared_ptr<RenderTarget> _createRenderTarget(double size, bool generateMipmaps,
                                                              bool depthBuffer);
 
