@@ -1779,6 +1779,11 @@
    - **一处编译错**：我在测试里写了 `commandKind('')`，C++ 的 `''` 是**空字符常量**（C2137），编译直接报错；删掉那行即可。**空串不是字符**这件事在 C++ 里和 JS 不同，值得记住。
    - **测试（5 个用例、67 条断言）**：十个大写字母各自对应；四个小写字母映射到同一命令；相对形式的三种与三种否定；非命令字母（`X`、空格、`0`）与"小写的非命令也不算相对"；**两轮循环把二十个字母全过一遍**。
    - **验证**：核心 **1488 用例 / 210,271 断言**（+5 / +67）、addons、`primitive-geometry`、`port-audit`、Vulkan 全绿。
+313. **第 254 轮：收尾核查——一处持续了很多轮的数字错误被纠正**。
+   - **核查结果**：五门禁全 0（核心 / `primitive-geometry` / `port-audit` / addons / Vulkan）；核心 **1488 用例 / 210,271 断言**；addons **155 / 23,996**；工作树干净；`docs/HANDOFF.md` **256 条**编号条目。
+   - **一处持续了很多轮的错误数字**：我一直说 "addon loader 29/52"。用**目录枚举**重算（把 `src/loaders` 与 `examples/jsm/loaders` 里**上游也存在**的 `.cpp` 逐个匹配）之后，真实是 **38 / 52**——因为 `src/loaders/` 里还有 `Loader`、`FileLoader`、`TextureLoader`、`MaterialLoader`、`ObjectLoader`、`BufferGeometryLoader`、`CubeTextureLoader`、`CompressedTextureLoader`、`DataTextureLoader`、`AnimationLoader`、`AudioLoader`、`ImageLoader`、`ImageBitmapLoader`、`Cache`、`LoaderUtils`、`LoadingManager` 这些**基础类**，它们**在上游的 loaders 目录里也是文件**，本来就该算进去。
+   - **只剩 14 个没做**：`3DMLoader`、`3MFLoader`、`ColladaLoader`、`DRACOLoader`、`EXRLoader`、`FBXLoader`、`GLTFLoader`、`KTZ2Loader`（应为 `KTX2Loader`）、`KMZLoader`、`MaterialXLoader`、`TTFLoader`、`USDLoader`、`USDZLoader`、`VRMLLoader`——其中 **10 个需要端口里没有的库**（fflate 解压、WASM、解析器生成器、CDN），**4 个是可移植的大文件**（`GLTFLoader`、`EXRLoader` 的一部分、`ColladaLoader` 的子目录、`LDrawLoader` 的剩余层）。
+   - **教训**：**进度数字必须来自目录枚举**（第 175 轮就记过），而**"算进去了哪些文件"**也要说清楚——这一轮之前我把基础类漏掉了，导致数字偏低 9 个。
 70. **第 520 轮：完整 Vulkan 套件 211/211 全绿，耗时 270.72 秒**。
    - 命令：`ctest --test-dir build-vulkan -j 4 -E "lights-states" --output-on-failure`（仍排除第 46 条那个已知项；它在 Vulkan 构建里同样慢）。
    - 结果：**100% tests passed, 0 tests failed out of 211**，总耗时 **270.72 秒**。对比同一套件在 **Debug** 配置下的 **3784.56 秒 / 2 失败**，差了约 14 倍——再次印证第 69 条"是构建类型不是代码"的结论。
