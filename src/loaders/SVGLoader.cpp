@@ -1,5 +1,6 @@
 #include "loaders/SVGLoader.h"
 
+#include <cctype>
 #include <cmath>
 #include <cstdlib>
 #include <stdexcept>
@@ -412,4 +413,32 @@ std::vector<SVGLoader::ArcSegment> SVGLoader::parseArcSegments(const std::vector
 bool SVGLoader::shouldSkipArc(const Point& start, const Point& end) {
     // An arc that goes nowhere is skipped, and the comparison is exact.
     return start.x == end.x && start.y == end.y;
+}
+
+SVGLoader::CommandKind SVGLoader::commandKind(char letter) {
+    // The case is ignored here; whether the command is relative is asked separately.
+    const char upper = static_cast<char>(std::toupper(static_cast<unsigned char>(letter)));
+    switch (upper) {
+        case 'M': return CommandKind::Move;
+        case 'L': return CommandKind::Line;
+        case 'H': return CommandKind::Horizontal;
+        case 'V': return CommandKind::Vertical;
+        case 'C': return CommandKind::Cubic;
+        case 'S': return CommandKind::SmoothCubic;
+        case 'Q': return CommandKind::Quadratic;
+        case 'T': return CommandKind::SmoothQuadratic;
+        case 'A': return CommandKind::Arc;
+        case 'Z': return CommandKind::Close;
+        default: return CommandKind::Unknown;
+    }
+}
+
+bool SVGLoader::isRelativeCommand(char letter) {
+    // Only a letter has forms, and the lowercase one is the relative form.
+    if (!isCommandLetter(letter)) return false;
+    return letter >= 'a' && letter <= 'z';
+}
+
+bool SVGLoader::isCommandLetter(char letter) {
+    return commandKind(letter) != CommandKind::Unknown;
 }

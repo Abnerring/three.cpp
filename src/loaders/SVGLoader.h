@@ -156,4 +156,29 @@ class SVGLoader {
     // arc that ends a hair away from where it began is still drawn; the source tests them with
     // the same exact comparison.
     static bool shouldSkipArc(const Point& start, const Point& end);
+
+    // The commands a path may carry. A lowercase letter is the relative form of the command
+    // its uppercase spells, which is a property of the letter rather than a separate command.
+    enum class CommandKind {
+        Move,
+        Line,
+        Horizontal,
+        Vertical,
+        Cubic,
+        SmoothCubic,
+        Quadratic,
+        SmoothQuadratic,
+        Arc,
+        Close,
+        Unknown,
+    };
+
+    // The command a letter names, ignoring case.
+    static CommandKind commandKind(char letter);
+
+    // Whether a letter is written in its relative form, which is what a lowercase letter marks.
+    static bool isRelativeCommand(char letter);
+
+    // Whether a letter names a command at all.
+    static bool isCommandLetter(char letter);
 };
