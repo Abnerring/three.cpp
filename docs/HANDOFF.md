@@ -387,6 +387,12 @@
    - **结论**：**纯文本批量替换不适合这种改动**。正确的做法是**逐处按行号替换 + 每处都打印确认**（第 108 轮那样），或者干脆手写整个 `Impl` 的新成员区与那几个函数。这需要一个**完整段落**的时间，不适合拆成每轮几分钟。
    - **当前状态**：已 `git checkout main`（分支保留供参考），`main` 上重新构建通过，核心 **747 / 205,735**、`primitive-geometry`、`port-audit` 全绿，树干净。
    - **下一步建议**：如果要继续这一步，先写一份"**逐行替换清单**"（哪些行号、改成什么），再一次性按行号执行并在每行替换后断言内容，最后构建；或者直接手工重写 `resize`/`destroyTargets`/`selectFace`/`beginFrame`/`endFrame`/`readRenderTargetPixels` 这六个函数体。
+111. **第 50 轮：发现上一轮把坏文件提交到了 `main`，并查明"门禁全绿"为什么没拦住——因为门禁里没有 Vulkan 构建**。
+   - **事故链**：第 49 轮我在分支上做了批量替换（编译不过），`git checkout main` 时工作区是**脏的**（当时输出 `dirty: 1`），随后 `git add -A` 把**改动过的 `VulkanRenderer.cpp` 一起提交到了 `main`**（提交 `cebc588`）。而我的门禁是「核心测试 + 差分 + 审计」——这三项都在 `build/` 里跑，而 `build/` 是 **`THREECPP_BUILD_VULKAN=OFF`**，**根本不会编译 `VulkanRenderer.cpp`**。于是 37 个编译错误就这样"全绿"地进了主干。
+   - **发现方式**：本轮为写"逐行替换清单"去打印成员区，结果看到 `std::unique_ptr<GpuTarget> active;` 已经在 `main` 上、而 `colorImage`/`faceView`/`targetLayers` 都没了——立刻反向验证：`cmake --build build-vkdebug --target threecpp_vulkan` 报 **37 个错误**。
+   - **修复**：`git checkout 11186cc -- src/renderers/VulkanRenderer.cpp`（`11186cc` 正是迁移前的提交），Vulkan 构建回到 **0 错误**，`--cube` 退出码 **0**。
+   - **教训与规则变更（重要）**：**门禁必须包含 `threecpp_vulkan` 的构建**。从今往后每轮提交前跑五项：① `build/` 核心测试 ② 差分 ③ `port-audit` ④ **`build-vkdebug` 的 `threecpp_vulkan` 构建** ⑤ **`--cube` 退出码**。只看前三项会在"改了 Vulkan 源码"时给出假绿。
+   - **另一条教训**：`git checkout <branch>` **不会**替你丢弃脏文件；切换分支前必须先 `git status`，**看到脏就停下来**，不能切完继续 `git add -A`。
 70. **第 520 轮：完整 Vulkan 套件 211/211 全绿，耗时 270.72 秒**。
    - 命令：`ctest --test-dir build-vulkan -j 4 -E "lights-states" --output-on-failure`（仍排除第 46 条那个已知项；它在 Vulkan 构建里同样慢）。
    - 结果：**100% tests passed, 0 tests failed out of 211**，总耗时 **270.72 秒**。对比同一套件在 **Debug** 配置下的 **3784.56 秒 / 2 失败**，差了约 14 倍——再次印证第 69 条"是构建类型不是代码"的结论。
