@@ -227,6 +227,12 @@
    - **我犯的提交纪律错误（比崩溃更值得记）**：验证脚本里的 `if` 条件用了 `$LASTEXITCODE`，而它当时已经是**后面那条 `ctest` 的退出码**，不是核心测试的；于是核心测试明明崩了，`if` 仍为真，**把崩溃提交进了仓库**。修法：**每个门禁的退出码必须先赋给独立变量**（`$ccode = $LASTEXITCODE`），`if` 里只判断这些变量，绝不复用 `$LASTEXITCODE`。
    - **已恢复**：`git revert` 掉那个提交（`c6affd5`），重建后核心 **745 / 205,728**、差分 **22 组 / 287 场景**、`primitive-geometry` 与 `port-audit` 全绿，树干净。
    - **下一轮**：先查清 `renderTarget` 类型变更为什么让核心测试崩溃（跑 `THREECPPTests` 并看是哪条用例；大概率在 `CoreCameraModules` 或 `renderTarget` 相关断言里），再决定是"保留 `JSValue` 另加类型化成员"还是"同步改用例"。
+84. **第 20 轮：`CubeCamera` 的类型化路线两次把核心测试打崩（一次 fast-fail、一次堆损坏），放弃这条路**。
+   - **两次实验**：① 把 `renderTarget` 直接改成 `std::shared_ptr<RenderTarget>`；② 保留 `JSValue renderTarget`、**另加**类型化成员 `target` 并把 `update` 写成头文件模板。两次都能编译、GPU 用例（`--cube`）也过，但 `THREECPPTests` 分别以 `0xC0000409`（fast-fail）和 `0xC0000374`（**堆损坏**）崩掉。
+   - **共同点**：两次都改了两件事——① `CubeCamera.h` 里出现**类型化目标**；② `update` 变成**头文件模板**，模板体里用 `std::dynamic_pointer_cast<PerspectiveCamera>(children[face])` 并把 `*eye` 传给 `renderer.render`。核心测试里**没有任何用例**读 `renderTarget` 作为对象（只有 `CubeCamera.tests.cpp` 传一个 `JSValue` 进构造函数），所以问题更可能出在**头文件模板/类型可见性**，而不是字段类型本身——但**未证实**。
+   - **已恢复**：`git checkout` 撤销这两处改动，核心 **745 / 205,728**、差分 **22 组 / 287 场景**、`primitive-geometry` 与 `port-audit` 全绿，树干净。
+   - **下一轮的做法（换位置，不换逻辑）**：不要在 `CubeCamera.h` 里写模板。改为把 `update` 的实现放进**能看到完整类型的编译单元**——例如 `src/renderers/vulkan/` 下一个 `CubeCameraVulkan.cpp`（或在 `VulkanRenderer.cpp` 里加一个非模板重载 `void renderCubeFaces(CubeCamera&, Scene&)`），由渲染器侧完成"保存/六面渲染/恢复"，`CubeCamera` 只暴露一个 `target` 的设置入口。这样 `CubeCamera.h` 只依赖前向声明，避免模板在头文件里拉入 `PerspectiveCamera` 的完整定义。
+   - **过程纪律再次强调**：本轮第一次崩溃时我用了 `$LASTEXITCODE` 覆盖后的值做判断，把崩溃提交了（第 83 条）。**现在每个门禁的退出码都单独存变量**，最后一次提交前确认了 `core=0 diff=0 primitive-geometry=0 audit=0`。
 70. **第 520 轮：完整 Vulkan 套件 211/211 全绿，耗时 270.72 秒**。
    - 命令：`ctest --test-dir build-vulkan -j 4 -E "lights-states" --output-on-failure`（仍排除第 46 条那个已知项；它在 Vulkan 构建里同样慢）。
    - 结果：**100% tests passed, 0 tests failed out of 211**，总耗时 **270.72 秒**。对比同一套件在 **Debug** 配置下的 **3784.56 秒 / 2 失败**，差了约 14 倍——再次印证第 69 条"是构建类型不是代码"的结论。
