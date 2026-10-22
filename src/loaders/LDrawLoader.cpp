@@ -148,3 +148,35 @@ bool LDrawLoader::isTransparentAlpha(double alpha) {
     // Only an alpha below fully opaque is transparent.
     return alpha < 1.0;
 }
+
+std::array<std::array<double, 3>, 3> LDrawLoader::readTriangle(LineParser& parser, bool ccw) {
+    std::array<std::array<double, 3>, 3> vertices{};
+    for (int i = 0; i < 3; ++i) vertices[static_cast<std::size_t>(i)] = parser.getVector();
+    // A clockwise listing is the same triangle written the other way round.
+    if (!ccw) {
+        std::swap(vertices[0], vertices[2]);
+    }
+    return vertices;
+}
+
+std::array<std::array<double, 3>, 4> LDrawLoader::readQuad(LineParser& parser, bool ccw) {
+    std::array<std::array<double, 3>, 4> vertices{};
+    for (int i = 0; i < 4; ++i) vertices[static_cast<std::size_t>(i)] = parser.getVector();
+    // The reversal turns the four around, which keeps the same quad wound the other way.
+    if (!ccw) {
+        std::swap(vertices[0], vertices[3]);
+        std::swap(vertices[1], vertices[2]);
+    }
+    return vertices;
+}
+
+bool LDrawLoader::isDoubleSided(bool certified, bool cull) {
+    // A file that never certified its winding cannot be culled safely, and neither can one that
+    // certified but asked not to cull.
+    return !certified || !cull;
+}
+
+int LDrawLoader::triangleFaceCount(bool doubleSided) {
+    // A face that shows from both sides contributes two records.
+    return doubleSided ? 2 : 1;
+}

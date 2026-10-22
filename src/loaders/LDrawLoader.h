@@ -84,4 +84,20 @@ class LDrawLoader {
 
     // Whether an alpha below fully opaque makes the material transparent.
     static bool isTransparentAlpha(double alpha);
+
+    // Three vertices read for a triangle. When the winding is not counter clockwise the format
+    // lists them the other way round, so the first one read becomes the last of the face and
+    // the order is reversed after reading.
+    static std::array<std::array<double, 3>, 3> readTriangle(LineParser& parser, bool ccw);
+
+    // Four vertices read for a quadrilateral, reversed the same way when the winding is not
+    // counter clockwise.
+    static std::array<std::array<double, 3>, 4> readQuad(LineParser& parser, bool ccw);
+
+    // Whether a face shows from both sides. A file that never certified its winding, or one
+    // that certified but does not cull, is visible from both.
+    static bool isDoubleSided(bool certified, bool cull);
+
+    // How many face records a triangle contributes, which is two when it shows from both sides.
+    static int triangleFaceCount(bool doubleSided);
 };
