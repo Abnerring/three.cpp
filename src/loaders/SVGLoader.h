@@ -57,9 +57,13 @@ class SVGLoader {
         Point point;
         Point control;
         Point firstPoint;
+        bool isFirstPoint = false;
+        // Whether any segment has been visited, which decides whether a close has anything to do.
         // Whether the first point of a command becomes the path's first point. When it is
         // set the first point is overwritten each time a command begins.
         bool setFirstPoint = true;
+        bool hasSegments = false;
+        // Whether the next command begins a fresh subpath, which closing sets.
     };
 
     // The straight line commands.
@@ -99,4 +103,9 @@ class SVGLoader {
     static std::vector<CurveSegment> applyCurveCommand(CurveCommand command,
                                                        const std::vector<double>& numbers,
                                                        PathCursor& cursor);
+
+    // Closes the current subpath. A path with no segments yet has nothing to close, so the
+    // cursor is left alone; otherwise the point returns to the first one and the next command
+    // is treated as the start of a fresh subpath. The return says whether anything closed.
+    static bool applyCloseCommand(PathCursor& cursor);
 };

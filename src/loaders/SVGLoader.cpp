@@ -218,6 +218,8 @@ std::vector<SVGLoader::Point> SVGLoader::applyStraightCommand(LineCommand comman
         next.y = y;
         cursor.point = next;
         cursor.control = next;
+        // Visiting anything means the path now has something to close.
+        cursor.hasSegments = true;
         if (cursor.setFirstPoint && points.empty()) {
             cursor.firstPoint = next;
         }
@@ -302,4 +304,13 @@ std::vector<SVGLoader::CurveSegment> SVGLoader::applyCurveCommand(
         segments.push_back(segment);
     }
     return segments;
+}
+
+bool SVGLoader::applyCloseCommand(PathCursor& cursor) {
+    // A path with nothing in it cannot be closed, so the cursor stays where it is.
+    if (!cursor.hasSegments) return false;
+    // The point returns to the first one and the next command starts a fresh subpath.
+    cursor.point = cursor.firstPoint;
+    cursor.isFirstPoint = true;
+    return true;
 }
