@@ -1432,6 +1432,13 @@
    - **测试（4 个用例、18 条断言）**：完整描述符（version、HDR 标志、`-1/2.5/1.5`、**offset 32 与 −16**、容量 0.5/3）；**缺属性时的默认值**；**容器描述符不覆盖原值**；**没有标记的文本不抛异常也不改值**。
    - **验证**：核心 **1231 用例 / 209,127 断言**（+4 / +18）、addons、`primitive-geometry`、`port-audit`、Vulkan 全绿。
    - **UltraHDR 的四层**：sRGB 三分支转换 ✓ / 增益合成 ✓ / ISO 21496-1 ✓ / **XMP** ✓。剩下 JPEG 解码需要编解码器，与 `TIFFLoader` 的 UTIF 同一处置。
+260. **第 199 轮：剩余 loader 的系统盘点 + `PVRLoader` 第一层**。
+   - **盘点方法**（这次是脚本做的，不是凭记忆）：对 24 个未移植的 loader **剥掉注释后**再抽 `import ... from '...'`，只看**真正的静态导入**——第 89 轮那次被 JSDoc 里的 `@three_import` 骗过，这次先去掉 `/* */` 与 `//`。
+   - **结论只有两条外部依赖**：`TTFLoader`（`https://cdn.jsdelivr.net/...`）与 `MaterialXLoader`（`three/webgpu`）。**其余 22 个没有外部 import**。但这不等于都能移植——`DRACOLoader`/`KTX2Loader` 是**运行期加载 WASM**，`KTXLoader`/`DDSLoader`/`PVRLoader` 需要 GPU 压缩纹理格式。
+   - **按行数排序（22 个无外部依赖的）**：`USDZLoader` 16、`ColladaLoader` 153、`KMZLoader` 163、`LUTImageLoader` 190、`KTXLoader` 199、**`PVRLoader` 270**、`USDLoader` 303、`GLTFGaussianSplatLoaderExtension` 330、`DDSLoader` 385、`DRACOLoader` 772、`LWOLoader` 1051、`TDSLoader` 1142、`VTKLoader` 1293、`KTX2Loader` 1306、`3MFLoader` 1822、`3DMLoader` 1937、`LDrawLoader` 2510、`SVGLoader` 3323、`EXRLoader` 3411、`VRMLLoader` 3646、`FBXLoader` 4656、`GLTFLoader` 4979。
+   - **`PVRLoader` 第一层**：容器有**两种磁盘布局**——第三版**开头**就是签名 `0x03525650`（`PVR` + `\3`），第二版把签名放在**头部末尾**（word 11，`0x21525650`，`PVR!`）。所以检测要**两处都看**。头是 13 个小端 word。
+   - **测试（3 个用例、7 条断言）**：第三版签名在 word 0、第二版在 word 11；全零与过短缓冲都返回 0；小端读取 word 0 与 word 12，越界返回 0。
+   - **验证**：核心 **1234 用例 / 209,134 断言**（+3 / +7）、addons、`primitive-geometry`、`port-audit`、Vulkan 全绿。
 70. **第 520 轮：完整 Vulkan 套件 211/211 全绿，耗时 270.72 秒**。
    - 命令：`ctest --test-dir build-vulkan -j 4 -E "lights-states" --output-on-failure`（仍排除第 46 条那个已知项；它在 Vulkan 构建里同样慢）。
    - 结果：**100% tests passed, 0 tests failed out of 211**，总耗时 **270.72 秒**。对比同一套件在 **Debug** 配置下的 **3784.56 秒 / 2 失败**，差了约 14 倍——再次印证第 69 条"是构建类型不是代码"的结论。
