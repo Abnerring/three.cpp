@@ -215,6 +215,12 @@
    - **基线（提交 `4751e1a`）里已经有的**（别重复加）：`initializedLayers`、`activeCubeFace/activeMipmapLevel/targetLayers`、`imageBarrier(..., layer = 0)` 的 `baseArrayLayer`、`beginFrame` 的逐层初始化与 barrier、`copy.imageSubresource.baseArrayLayer = activeCubeFace`、`initializedLayers |= 1u << activeCubeFace`。**缺的只有五处**：`resize` 接层数、颜色图按层创建、`render.framebuffer` 按面选择、`selectFace` 助手、`setRenderTarget` 的 face 参数，外加上述两个 barrier 的层参数。
    - **本轮为什么又回退**：补这五处时连续踩到重复插入（`faceView`/`faceFramebuffer`/`auto cube` 各出现过两次，因为锚点行在补丁后位移）和一次行号错位，最后跑 `--cube` 时报 `target size adopted`——连**二维**目标都不生效了，说明补丁把 `setRenderTarget` 的结构改坏了。按纪律**全部回退**，树留在 `4751e1a` 绿状态（核心 745 / 205,728、差分 22 组 / 287 场景、`primitive-geometry` 与 `port-audit` 通过）。
    - **下一轮的正确做法**：不要再用"整文件多次正则替换"来打这个补丁。改用**逐处小改 + 每改一处立即构建**：① 先只给 `endFrame` 的两个 barrier 加 `activeCubeFace`（两行，独立构建，跑 `--cube` 看是否只剩颜色问题）；② 再单独加 `resize` 的层数；③ 再单独加 `selectFace`；④ 最后接 `setRenderTarget`。每步都能独立验证，出错立刻知道是哪一步。
+82. **第 16 轮：六面渲染通过——一次只改一处、每处立即构建的做法奏效**。
+   - **根因（与第 81 条推断一致）**：`endFrame()` 里那两个 `imageBarrier` 没传 `activeCubeFace`，于是作用在 layer 0，而 `vkCmdCopyImageToBuffer` 读的是 `baseArrayLayer = activeCubeFace`。补上这两个参数后，配合 `resize(w,h,layers)` 建分层颜色图、`selectFace(face)` 逐面建 2D 视图与 framebuffer、`beginFrame` 在 `targetLayers > 1` 时改用 `faceFramebuffer`、以及 `setRenderTarget(target, activeCubeFace, activeMipmapLevel)`，六面测试**全新通过**。
+   - **验收证据**：`VulkanRendererTests --cube` 直接运行 `LASTEXITCODE=0`、**零输出**（测试里每个面都会在失败时打印 `face N wanted … got …`，现在一条都没有）。六个面分别用红、绿、蓝、黄、品红、青清屏，逐面 `readRenderTargetPixels` 校验，并且解绑后渲染器尺寸恢复 64×64。
+   - **过程中最有价值的一条诊断**：在只有"分层"没做之前跑出来的是 `face 1 wanted 010 got 255,0,0`——面 1 显示的是**面 0 的红色**，直接指向"所有面都渲染进 layer 0"。
+   - **再次踩到的坑（第 81 条已警告过）**：`faceView`/`faceFramebuffer` 在基线 `4751e1a` 里**已经有声明**，我又加了一遍 → 重定义；用"声明去重"后才通。教训：**动手前先 grep 目标标识符是否已存在**，不要假设上一轮回退意味着它不存在。
+   - **`--cube` 快路径现在保留在测试文件里**：`main` 最前面判断 `argv[1] == "--cube"` 时只跑 `renderTargetTests` 与 `cubeRenderTargetTests`，用于绕开仍然失败的 mipmap 用例（第 76/78/79 条）。正常跑 `threecpp.vulkan` 时它仍会在 mipmap 处中止，所以这条路目前只是**验证通道**。
 70. **第 520 轮：完整 Vulkan 套件 211/211 全绿，耗时 270.72 秒**。
    - 命令：`ctest --test-dir build-vulkan -j 4 -E "lights-states" --output-on-failure`（仍排除第 46 条那个已知项；它在 Vulkan 构建里同样慢）。
    - 结果：**100% tests passed, 0 tests failed out of 211**，总耗时 **270.72 秒**。对比同一套件在 **Debug** 配置下的 **3784.56 秒 / 2 失败**，差了约 14 倍——再次印证第 69 条"是构建类型不是代码"的结论。

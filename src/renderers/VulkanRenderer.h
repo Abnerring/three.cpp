@@ -62,7 +62,8 @@ class VulkanRenderer {
     void render(Scene& scene, Camera& camera);
     // Rendering into an offscreen target follows WebGL: the renderer temporarily takes
     // the target size, and restoring a null target restores the previous size.
-    void setRenderTarget(std::shared_ptr<RenderTarget> target);
+    void setRenderTarget(std::shared_ptr<RenderTarget> target, std::uint32_t activeCubeFace = 0,
+                          std::uint32_t activeMipmapLevel = 0);
     std::shared_ptr<RenderTarget> getRenderTarget() const;
     // Rows are top to bottom, matching readPixels() on this renderer.
     std::vector<std::uint8_t> readRenderTargetPixels(RenderTarget& target, std::uint32_t x,

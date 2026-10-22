@@ -5,6 +5,7 @@
 #include "extras/DataUtils.h"
 #include "core/NativeObject.h"
 #include "core/RenderTarget.h"
+#include "core/WebGLCubeRenderTarget.h"
 #include "core/JSJobs.h"
 #include "materials/MeshBasicMaterial.h"
 #include "objects/Group.h"
@@ -1681,9 +1682,35 @@ void renderTargetTests(bool validation) {
     require(renderer.getWidth() == 64 && renderer.getHeight() == 64, "size restored");
     require(renderer.getRenderTarget() == nullptr, "target cleared");
 }
+
+void cubeRenderTargetTests(bool validation) {
+    VulkanRenderer renderer({64, 64, validation});
+    auto cube = std::make_shared<WebGLCubeRenderTarget>(16);
+    const std::array<std::array<double, 3>, 6> colours{{
+        {{1, 0, 0}}, {{0, 1, 0}}, {{0, 0, 1}}, {{1, 1, 0}}, {{1, 0, 1}}, {{0, 1, 1}}}};
+    for (std::uint32_t face = 0; face < 6; ++face) {
+        renderer.setRenderTarget(cube, face);
+        require(renderer.getWidth() == 16 && renderer.getHeight() == 16, "cube face size adopted");
+        renderer.setClearColor(Color(colours[face][0], colours[face][1], colours[face][2]), 1);
+        renderer.clear(true, true);
+        const auto pixels = renderer.readRenderTargetPixels(*cube, 0, 0, 16, 16);
+        require(pixels.size() == static_cast<std::size_t>(16) * 16 * 4, "cube pixel count");
+        const int want[3] = {colours[face][0] > 0, colours[face][1] > 0, colours[face][2] > 0};
+        const int got[3] = {pixels[0] > 127, pixels[1] > 127, pixels[2] > 127};
+        if (want[0] != got[0] || want[1] != got[1] || want[2] != got[2])
+            std::cerr << "face " << face << " wanted " << want[0] << want[1] << want[2] << " got "
+                      << static_cast<int>(pixels[0]) << "," << static_cast<int>(pixels[1]) << ","
+                      << static_cast<int>(pixels[2]) << "\n";
+        require(want[0] == got[0] && want[1] == got[1] && want[2] == got[2],
+                "cube face carries its own colour");
+    }
+    renderer.setRenderTarget(nullptr);
+    require(renderer.getWidth() == 64 && renderer.getHeight() == 64, "size restored after cube");
+}
 int main(int argc, char** argv) {
     try {
         const bool validation = argc > 1 && std::string(argv[1]) == "--validation";
+        if (argc > 1 && std::string(argv[1]) == "--cube") { renderTargetTests(validation); cubeRenderTargetTests(validation); return 0; }
         unsupportedMeshTests(validation);
         unsupportedPrimitiveTests(validation);
         instancingTests(validation);
