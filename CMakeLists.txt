@@ -153,6 +153,7 @@ target_sources(threecpp PRIVATE
     src/loaders/KTXLoader.cpp
     src/loaders/LUTImageLoader.cpp
     src/loaders/GLTFGaussianSplatLoaderExtension.cpp
+    src/loaders/VTKLoader.cpp
     src/loaders/CubeTextureLoader.cpp
     src/extras/ImageUtils.cpp
     src/extras/PMREMGenerator.cpp

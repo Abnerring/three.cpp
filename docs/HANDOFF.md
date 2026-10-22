@@ -1509,6 +1509,13 @@
    - **测试（3 个用例、12 条断言）**：六个语义的映射（含下划线）；四种扩展名组合；两条文案的逐字比对。
    - **验证**：核心 **1279 用例 / 209,294 断言**（+3 / +12）、addons、`primitive-geometry`、`port-audit`、Vulkan 全绿。
    - **剩余**：`createGaussianSplat` 与球谐属性构建——它们依赖 `GaussianSplat` 对象（`../objects/GaussianSplat.js`，需要 WebGPU 渲染器），端口没有；能做的只是把属性按语义取出并按 `GaussianSplatUtils` 的约定写入。
+271. **第 210 轮：`VTKLoader` 第一层——文本数值扫描**。
+   - **两条路径**：ASCII（纯文本，可移植）与**二进制（需要 fflate 的 `unzlibSync`，端口没有）**。所以这一层只做文本那条。
+   - **`parseFloats`**：按空白切分后逐 token 转换。关键在于**前缀语义**——`1.5abc` 读出 `1.5`（与 `parseFloat` 一致），而**完全不以数字开头的 token 读出 `NaN`**（`strtod` 会返回 0 并把指针留在原地，所以端口的实现显式区分这两种情况）。
+   - **`wordLength`**：上游的 `patWord = /^[^\d.\s-]+/` 用来找"一串数字在哪里结束"，端口写成逐字符判断（数字、点、负号、空白都算数字侧）。
+   - **测试（6 个用例、20 条断言）**：四种空白分隔；**前缀 `1.5abc`**；**`abc` 读出 NaN**；指数 `1e3` 与 `-2.5E-2`；`wordLength` 的四种情形（关键字 6、纯数字 0、负号前 3、点前 1）；空行与纯空白行返回空。
+   - **验证**：核心 **1285 用例 / 209,314 断言**（+6 / +20）、addons、`primitive-geometry`、`port-audit`、Vulkan 全绿。
+   - **剩余**：ASCII 的关键字段读取（`POINTS`/`POLYGONS`/`VERTICES`/`LINES`/`TRIANGLE_STRIPS`/`COLOR_SCALARS`/`NORMALS`/`POINT_DATA`）与二进制路径（需 zlib）。
 70. **第 520 轮：完整 Vulkan 套件 211/211 全绿，耗时 270.72 秒**。
    - 命令：`ctest --test-dir build-vulkan -j 4 -E "lights-states" --output-on-failure`（仍排除第 46 条那个已知项；它在 Vulkan 构建里同样慢）。
    - 结果：**100% tests passed, 0 tests failed out of 211**，总耗时 **270.72 秒**。对比同一套件在 **Debug** 配置下的 **3784.56 秒 / 2 失败**，差了约 14 倍——再次印证第 69 条"是构建类型不是代码"的结论。

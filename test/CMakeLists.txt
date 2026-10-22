@@ -134,6 +134,7 @@ add_executable(THREECPPTests
         unit/src/loaders/KTXImages.tests.cpp
         unit/src/loaders/LUTImageLoader.tests.cpp
         unit/src/loaders/GLTFGaussianSplat.tests.cpp
+        unit/src/loaders/VTKLoader.tests.cpp
         unit/src/cameras/StereoCamera.tests.cpp
         unit/src/audio/AudioContext.tests.cpp
         unit/src/audio/Audio.tests.cpp
