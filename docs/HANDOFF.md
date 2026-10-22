@@ -596,6 +596,12 @@
    - **测试（4 个用例、9 条断言）**：字符串哈希**逐位相等**、空串、字符换序后不同；`hashArray` 与 `hash` 相等且等于上游值；**ToInt32 语义**（负数、小数、超过 int32 的值）；`nodeImul` 的回绕（`0x7fffffff * 2 == -2`、`-1 * 1 == -1`、`65536 * 65536 == 0`）。
    - **过程**：先写了带占位断言的一版（末尾有个无意义的 `2654435761u == 2654435761u ? ...`），发现后整段重写；`NodeUtils.cpp` 一开始漏了 `#include <cmath>`（`std::floor`/`std::fmod`），补上后通过。
    - **验证**：核心 **760 用例 / 205,800 断言**（+4 / +9）、`primitive-geometry`、`port-audit` 全绿。
+141. **第 80 轮：移植 `nodes/core/constants.js`；同时确认 `Node` 的依赖在端口里**都已具备**（只差 `NodeBuilder`）**。
+   - **依赖盘点（重要）**：`Node.js` 的六个导入里，`EventDispatcher` 已有（`src/core/EventDispatcher.h`）、`generateUUID` 已有（`MathUtils::generateUUID`，`BufferGeometry` 已在用）、`hash*` 刚移植、`StackTrace` 刚移植、`NodeUpdateType` 本轮移植、`warn/error` 是 `utils.js`（端口有对应）。**也就是说 `Node.js` 的依赖链已经全部打通，唯一缺口是 `build()` 需要的 `NodeBuilder`（3544 行）。**
+   - **本轮内容**：`src/nodes/core/NodeConstants.h`——`NodeShaderStage`（`vertex`/`fragment`）、`NodeUpdateType`（`none`/`frame`/`render`/`object`）、`NodeType`（`bool`/`int`/`float`/`vec2..vec4`/`mat2..mat4`）、`NodeAccess`（`readOnly`/`writeOnly`/`readWrite`）四个名字空间，加上 `defaultShaderStages`、`defaultBuildStages`、`shaderStages`、`vectorComponents` 四个数组。全部 `inline constexpr`，字符串用 `std::string_view`。
+   - **测试（2 个用例、31 条断言）**：18 个枚举值逐个比对（`bool` 而不是 `boolean`、`readOnly` 而不是 `readonly` 这类大小写都按上游原样），四个数组的**长度与顺序**（`shaderStages` 是 `defaultShaderStages` 后面追加 `compute`，`vectorComponents` 末尾是 `w`）。
+   - **验证**：核心 **762 用例 / 205,831 断言**（+2 / +31）、`primitive-geometry`、`port-audit` 全绿。
+   - **下一步**：`Node.js` 本体可以做**部分移植**——`isCacheable`、`getCacheKey`、`customCacheKey`、`getScope`、`getHash`、`getUpdateType*`、`getElementType`、`getMemberType`、`getNodeType`（45 行）、`generateNodeType`、`getShared`、`getArrayCount`、`traverse`、`_getChildren`、`dispose`、`serialize`/`deserialize`/`toJSON` 都是纯逻辑；而 `setup`/`analyze`/`generate`/`build` 依赖 builder，按项目规则**显式抛错**。
 70. **第 520 轮：完整 Vulkan 套件 211/211 全绿，耗时 270.72 秒**。
    - 命令：`ctest --test-dir build-vulkan -j 4 -E "lights-states" --output-on-failure`（仍排除第 46 条那个已知项；它在 Vulkan 构建里同样慢）。
    - 结果：**100% tests passed, 0 tests failed out of 211**，总耗时 **270.72 秒**。对比同一套件在 **Debug** 配置下的 **3784.56 秒 / 2 失败**，差了约 14 倍——再次印证第 69 条"是构建类型不是代码"的结论。

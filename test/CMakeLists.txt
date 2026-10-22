@@ -15,6 +15,7 @@ add_executable(THREECPPTests
         unit/src/nodes/core/NodeData.tests.cpp
         unit/src/nodes/core/NodeCacheVar.tests.cpp
         unit/src/nodes/core/NodeUtils.tests.cpp
+        unit/src/nodes/core/NodeConstants.tests.cpp
         unit/src/loaders/DataTextureLoader.tests.cpp
         unit/src/loaders/CompressedTextureLoader.tests.cpp
         unit/src/core/BufferGeometryLookAt.tests.cpp

@@ -128,6 +128,7 @@ target_sources(threecpp PRIVATE
     src/nodes/core/NodeCache.cpp
     src/nodes/core/NodeVar.cpp
     src/nodes/core/NodeUtils.cpp
+    src/nodes/core/NodeConstants.cpp
     src/loaders/DataTextureLoader.cpp
     src/loaders/CompressedTextureLoader.cpp src/loaders/MaterialLoader.cpp src/loaders/FileLoader.cpp
     src/loaders/ObjectLoader.cpp
