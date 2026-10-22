@@ -780,6 +780,13 @@
    - **测试（4 个用例、17 条断言）**：两条记录、`name` 也在记录里；四个颜色键各自三个数（含全零的 `Ks 0 0 0`）；`Ns` 与 `map_Kd` **仍是字符串**；键**大小写归一**（`NEWMTL`/`MAP_KD`）与**值两端 trim**。
    - **验证**：核心 **822 用例 / 206,263 断言**（+4 / +17）、`primitive-geometry`、`port-audit` 全绿。
    - **下一轮**：`MaterialCreator.convert`（选项 `normalizeRGB`/`ignoreZeroRGBs` 与 `side`/`wrap` 默认值），以及 `getAsArray`/`create` 与真正构建材质。
+166. **第 105 轮：`MTLLoader` 的 `convert` 落地——材质选项的归一化语义**。
+   - **语义（逐条照上游）**：对每个材质的每个属性，输出键取 **小写**（`lprop`）；只有 `kd`/`ka`/`ks` 参与选项处理——`normalizeRGB` 时三个分量**各除以 255**，`ignoreZeroRGBs` 时**全零就整条丢弃**（不是存成零色）；其余属性**原样透传**。
+   - **`MaterialOptions` 的四个字段与默认值**：`side = FrontSide`、`wrap = RepeatWrapping`、`normalizeRGB = false`、`ignoreZeroRGBs = false`（上游文档里写明的默认值）。
+   - **一处顺序上的差别**：上游先判 `ignoreZeroRGBs` 再决定 `save`，端口也是先算 `scaled` 再判 `save`，**但归一化在丢弃之前做**——所以即使最终丢弃，除以 255 也已经发生了。这对结果没有影响（丢弃就是丢弃），但顺序照抄上游能避免将来加分支时出错。
+   - **测试（5 个用例、17 条断言）**：默认（颜色不变、零色保留、字符串透传）；`normalizeRGB`（`255→1.0`、`128→128/255`）；`ignoreZeroRGBs`（`ks 0 0 0` **整条消失**、`kd` 仍在）；输出键**小写化**（`Kd`→`kd`、`Ns`→`ns`）；四个默认值。
+   - **验证**：核心 **827 用例 / 206,280 断言**（+5 / +17）、`primitive-geometry`、`port-audit` 全绿。
+   - **下一轮**：`getAsArray`/`create`/`createMaterial_` 与真正构建 `MeshPhongMaterial`（含 `resolveURL`、`setMapForType`、`setGeneric`/`setColor` 等辅助函数）。
 70. **第 520 轮：完整 Vulkan 套件 211/211 全绿，耗时 270.72 秒**。
    - 命令：`ctest --test-dir build-vulkan -j 4 -E "lights-states" --output-on-failure`（仍排除第 46 条那个已知项；它在 Vulkan 构建里同样慢）。
    - 结果：**100% tests passed, 0 tests failed out of 211**，总耗时 **270.72 秒**。对比同一套件在 **Debug** 配置下的 **3784.56 秒 / 2 失败**，差了约 14 倍——再次印证第 69 条"是构建类型不是代码"的结论。

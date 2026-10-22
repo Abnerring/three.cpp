@@ -1,4 +1,4 @@
-﻿#include "loaders/MTLLoader.h"
+#include "loaders/MTLLoader.h"
 
 #include <cctype>
 #include <cstdlib>
@@ -69,4 +69,33 @@ MTLLoader::MaterialsInfo MTLLoader::parse(const std::string& text) const {
         }
     }
     return materials;
+}
+
+MTLLoader::MaterialsInfo MTLLoader::convert(const MaterialsInfo& materialsInfo,
+                                            const MaterialOptions& options) {
+    MaterialsInfo converted;
+    for (const auto& [name, info] : materialsInfo) {
+        MaterialInfo covmat;
+        for (const auto& [prop, raw] : info) {
+            const std::string lprop = lower(prop);
+            bool save = true;
+            Value value = raw;
+
+            // Only the three colour keys take part in the option handling upstream.
+            if (lprop == "kd" || lprop == "ka" || lprop == "ks") {
+                if (const auto* color = std::get_if<Color>(&value)) {
+                    Color scaled = *color;
+                    if (options.normalizeRGB)
+                        scaled = {scaled[0] / 255.0, scaled[1] / 255.0, scaled[2] / 255.0};
+                    if (options.ignoreZeroRGBs && scaled[0] == 0 && scaled[1] == 0 && scaled[2] == 0)
+                        save = false;
+                    value = scaled;
+                }
+            }
+
+            if (save) covmat[lprop] = value;
+        }
+        converted[name] = covmat;
+    }
+    return converted;
 }
