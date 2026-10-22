@@ -1,5 +1,6 @@
 #include "loaders/MTLLoader.h"
 
+#include "materials/MeshPhongMaterial.h"
 #include "math/ColorManagement.h"
 #include <cctype>
 #include <cstdlib>
@@ -254,4 +255,51 @@ MTLLoader::MaterialParams MTLLoader::createMaterialParams(const MaterialInfo& ma
         }
     }
     return params;
+}
+
+std::shared_ptr<MeshPhongMaterial> MTLLoader::create(const std::string& materialName,
+                                                     const MaterialsInfo& converted,
+                                                     const MaterialOptions& options) {
+    const auto existing = _materials.find(materialName);
+    if (existing != _materials.end()) return existing->second;
+
+    const auto found = converted.find(materialName);
+    if (found == converted.end()) return nullptr;
+
+    const MaterialParams params = createMaterialParams(found->second, options);
+    auto material = std::make_shared<MeshPhongMaterial>();
+    material->name = materialName;
+    material->side = options.side;
+    material->transparent = params.transparent;
+    material->opacity = params.opacity;
+    if (params.hasColor) material->color = params.color;
+    if (params.hasSpecular) material->specular = params.specular;
+    if (params.hasEmissive) material->emissive = params.emissive;
+    material->shininess = params.shininess;
+    if (params.bumpScale) material->bumpScale = params.bumpScale.value();
+    if (params.displacementBias) material->displacementBias = params.displacementBias.value();
+    if (params.displacementScale) material->displacementScale = params.displacementScale.value();
+
+    _materials[materialName] = material;
+    return material;
+}
+
+std::vector<std::shared_ptr<MeshPhongMaterial>> MTLLoader::getAsArray(const MaterialsInfo& converted,
+                                                                     const MaterialOptions& options) {
+    std::vector<std::shared_ptr<MeshPhongMaterial>> materials;
+    int index = 0;
+    for (const auto& [name, info] : converted) {
+        auto material = create(name, converted, options);
+        if (material) {
+            materials.push_back(material);
+            _nameLookup[name] = index;
+        }
+        ++index;
+    }
+    return materials;
+}
+
+int MTLLoader::getIndex(const std::string& materialName) const {
+    const auto found = _nameLookup.find(materialName);
+    return found == _nameLookup.end() ? -1 : found->second;
 }

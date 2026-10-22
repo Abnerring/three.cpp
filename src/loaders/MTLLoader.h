@@ -5,6 +5,9 @@
 #include <string>
 #include "constants.h"
 #include "math/Color.h"
+#include <memory>
+#include <unordered_map>
+class MeshPhongMaterial;
 #include <variant>
 
 // Port of the parsing half of examples/jsm/loaders/MTLLoader.js at the pinned revision. The
@@ -75,4 +78,21 @@ class MTLLoader {
     // transparent flag, and the first texture seen for a slot is the one kept.
     static MaterialParams createMaterialParams(const MaterialInfo& materialInfo,
                                                const MaterialOptions& options);
+
+    // Builds one material from an already converted record. Texture slots stay empty because
+    // loading them is host work; the urls remain in the params for a caller that wants them.
+    std::shared_ptr<MeshPhongMaterial> create(const std::string& materialName,
+                                              const MaterialsInfo& converted,
+                                              const MaterialOptions& options);
+
+    // Builds every material, remembering the index of each name.
+    std::vector<std::shared_ptr<MeshPhongMaterial>> getAsArray(const MaterialsInfo& converted,
+                                                               const MaterialOptions& options);
+
+    // The index recorded by getAsArray, or -1 when the name was never built.
+    int getIndex(const std::string& materialName) const;
+
+  private:
+    std::unordered_map<std::string, std::shared_ptr<MeshPhongMaterial>> _materials;
+    std::unordered_map<std::string, int> _nameLookup;
 };

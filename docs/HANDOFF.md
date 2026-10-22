@@ -803,6 +803,12 @@
    - **测试（5 个用例、23 条断言）**：三个颜色键都被读到（`hasColor`/`hasSpecular`/`hasEmissive` + 非黑）；`ns` 250；`d 0.5` → opacity 0.5 且 transparent，`d 1` → 不透明；`tr 0.3` → opacity **0.7**，`invertTrProperty` → **0.3**；第一个纹理保留 + `map_d` 强制透明；`-bm`/`-mm` 选项被提到 `bumpScale`/`displacementBias`/`displacementScale`。
    - **验证**：核心 **838 用例 / 206,333 断言**（+5 / +23）、`primitive-geometry`、`port-audit` 全绿。
    - **MTL 现状**：`parse` ✓、`convert` ✓、`getTextureParams` ✓、`createMaterialParams` ✓ 四层齐了；剩下 `TextureLoader` 与 `MeshPhongMaterial` 的实际构造（`getAsArray`/`create`/`preload`）——前者是宿主 I/O，后者可以直接做。
+169. **第 108 轮：`MTLLoader` 端到端可用——第一个"从文本到真实材质"完整闭环的 addon loader**。
+   - **新增**：`create(name, converted, options)`（带缓存，重复调用返回**同一实例**）、`getAsArray(converted, options)`（按 map 顺序构建全部材质并记录 `nameLookup` 的下标）、`getIndex(name)`（未构建时返回 **-1**）。
+   - **构造方式**：`MeshPhongMaterial` 的字段**全是 public**，所以不需要走它的 `JsonValue` 参数构造，直接 `make_shared` 再逐字段赋值：`name`/`side`/`transparent`/`opacity`/`shininess`，以及**仅在 `has*` 为真时**才覆盖 `color`/`specular`/`emissive`（保留材质默认值），`bumpScale`/`displacementBias`/`displacementScale` 同理用 optional 判断。**纹理槽位保持为空**，因为 url 仍在 params 里，加载是宿主职责。
+   - **测试（4 个用例、15 条断言）**：两条记录构建两个材质（**map 顺序让 Blue 排在 Red 前面**，`getIndex` 分别是 0/1，缺失名返回 -1）；数值落到材质上（`shininess == 250`、`d 0.25` → opacity 0.25 且 transparent、`Ks` 的绿分量 > 0、`Kd` 的红分量 > 0——因为做过 sRGB→working 转换）；**重复 `create` 返回同一指针**、不存在的名字返回 `nullptr`；`side` 选项（`DoubleSide`）作用到材质。
+   - **验证**：核心 **842 用例 / 206,348 断言**（+4 / +15）、`primitive-geometry`、`port-audit` 全绿。addon loader **28 → 29 / 52**（MTL 计为完成，纹理加载部分在头文件里写明是宿主职责）。
+   - **MTL 的最终形态**：`parse` ✓ → `convert` ✓ → `getTextureParams` ✓ → `createMaterialParams` ✓ → `create`/`getAsArray`/`getIndex` ✓，**五层齐备**；缺的只有 `TextureLoader`（宿主 I/O）与 `preload`（逐个 `create`，可一行加上）。
 70. **第 520 轮：完整 Vulkan 套件 211/211 全绿，耗时 270.72 秒**。
    - 命令：`ctest --test-dir build-vulkan -j 4 -E "lights-states" --output-on-failure`（仍排除第 46 条那个已知项；它在 Vulkan 构建里同样慢）。
    - 结果：**100% tests passed, 0 tests failed out of 211**，总耗时 **270.72 秒**。对比同一套件在 **Debug** 配置下的 **3784.56 秒 / 2 失败**，差了约 14 倍——再次印证第 69 条"是构建类型不是代码"的结论。

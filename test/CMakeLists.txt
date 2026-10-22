@@ -43,6 +43,7 @@ add_executable(THREECPPTests
         unit/src/loaders/MTLConvert.tests.cpp
         unit/src/loaders/MTLTextureParams.tests.cpp
         unit/src/loaders/MTLMaterialParams.tests.cpp
+        unit/src/loaders/MTLCreate.tests.cpp
         unit/src/cameras/StereoCamera.tests.cpp
         unit/src/audio/AudioContext.tests.cpp
         unit/src/audio/Audio.tests.cpp
