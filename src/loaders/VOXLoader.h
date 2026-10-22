@@ -74,4 +74,12 @@ class VOXLoader {
     // which writes a flat two hundred and fifty five and is for the texture path.
     static std::vector<std::uint8_t> buildColorVolume(const std::vector<Voxel>& voxels,
                                                       const Size& size);
+
+    // Builds the face mask for one slice of one axis. For each cell of the slice plane the
+    // mask records the palette index when only the cell behind is solid (a negative facing
+    // face), minus the index when only the cell in front is solid (a positive facing face),
+    // and zero when both sides agree. The plane is walked with v outer and u inner, where u
+    // and v are the two axes after d.
+    static std::vector<int> buildMask(const std::vector<std::uint8_t>& volume, const Size& size,
+                                      int d, int slice);
 };

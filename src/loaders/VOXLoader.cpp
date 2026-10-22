@@ -159,3 +159,45 @@ std::vector<std::uint8_t> VOXLoader::buildColorVolume(const std::vector<Voxel>& 
     }
     return volume;
 }
+
+std::vector<int> VOXLoader::buildMask(const std::vector<std::uint8_t>& volume, const Size& size,
+                                      int d, int slice) {
+    const int dims[3] = {size.x, size.y, size.z};
+    if (d < 0 || d > 2) return {};
+    const int axisU = (d + 1) % 3;
+    const int axisV = (d + 2) % 3;
+    const int dimsD = dims[d];
+    const int dimsU = dims[axisU];
+    const int dimsV = dims[axisV];
+    if (dimsU <= 0 || dimsV <= 0) return {};
+
+    const std::size_t plane = static_cast<std::size_t>(size.x);
+    const std::size_t sliceSize = plane * static_cast<std::size_t>(size.y);
+    const auto indexAt = [&](int x, int y, int z) -> std::size_t {
+        return static_cast<std::size_t>(x) + static_cast<std::size_t>(y) * plane +
+               static_cast<std::size_t>(z) * sliceSize;
+    };
+
+    std::vector<int> mask(static_cast<std::size_t>(dimsU) * static_cast<std::size_t>(dimsV), 0);
+    int n = 0;
+    for (int vv = 0; vv < dimsV; ++vv) {
+        for (int uu = 0; uu < dimsU; ++uu) {
+            int pos[3] = {0, 0, 0};
+            pos[d] = slice;
+            pos[axisU] = uu;
+            pos[axisV] = vv;
+
+            // The cells on each side of the face this slice sits on.
+            const int behind = slice > 0
+                                   ? volume[indexAt(pos[0], pos[1], pos[2]) -
+                                            (d == 2 ? static_cast<int>(sliceSize) : (d == 1 ? size.x : 1))]
+                                   : 0;
+            const int infront = slice < dimsD ? volume[indexAt(pos[0], pos[1], pos[2])] : 0;
+
+            if (behind > 0 && infront == 0) mask[static_cast<std::size_t>(n)] = behind;
+            else if (infront > 0 && behind == 0) mask[static_cast<std::size_t>(n)] = -infront;
+            ++n;
+        }
+    }
+    return mask;
+}
