@@ -1,5 +1,6 @@
 #pragma once
 #include <cstdint>
+#include <string>
 #include <vector>
 
 // Port of the arithmetic in examples/jsm/loaders/UltraHDRLoader.js at the pinned revision.
@@ -44,9 +45,16 @@ class UltraHDRLoader {
         double offsetSdr = 0;
         double offsetHdr = 0;
         double hdrCapacityMin = 0;
+        // The XMP form carries these two directly rather than as direction bits.
+        bool baseRenditionIsHDR = false;
+        std::string version;
         double hdrCapacityMax = 0;
     };
 
     // Reads the block. Throws when it is too short for the fields its flags say are present.
+    // Reads the gain map description carried by XMP metadata, the older of the two forms.
+    // The two offsets are stored in sixty fourths; a container descriptor is left alone.
+    static void parseXmpMetadata(const std::string& text, IsoMetadata& metadata);
+
     static IsoMetadata parseIsoMetadata(const std::vector<std::uint8_t>& buffer);
 };

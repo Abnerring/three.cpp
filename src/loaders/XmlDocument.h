@@ -1,4 +1,4 @@
-﻿#pragma once
+#pragma once
 #include <map>
 #include <memory>
 #include <string>
@@ -30,3 +30,4 @@ class XmlDocument {
     // when a closing tag does not match the open one, or when no element is found.
     static std::shared_ptr<XmlNode> parse(const std::string& text);
 };
+

@@ -123,6 +123,7 @@ add_executable(THREECPPTests
         unit/src/loaders/KSPLATSectionRows.tests.cpp
         unit/src/loaders/KSPLATParse.tests.cpp
         unit/src/loaders/UltraHDRLoader.tests.cpp
+        unit/src/loaders/UltraHDRXmp.tests.cpp
         unit/src/cameras/StereoCamera.tests.cpp
         unit/src/audio/AudioContext.tests.cpp
         unit/src/audio/Audio.tests.cpp

@@ -1,7 +1,9 @@
 #include "loaders/UltraHDRLoader.h"
 
+#include "loaders/XmlDocument.h"
 #include <algorithm>
 #include <cmath>
+#include <cstdlib>
 #include <stdexcept>
 
 namespace {
@@ -127,4 +129,59 @@ double UltraHDRLoader::composeHdr(double sdrValue, double gainBoost, double weig
     // The result is converted to linear and clamped to the half float maximum.
     const double linear = srgbToLinear(hdrValue);
     return std::min(std::max(linear, 0.0), 65504.0);
+}
+
+namespace {
+// Finds the first description anywhere under a node, and reports whether a container
+// descriptor appears at all.
+void scanXmp(const XmlNode& node, std::shared_ptr<XmlNode>& description, bool& isContainer) {
+    if (node.name == "Container:Directory") isContainer = true;
+    if (!description && node.name == "rdf:Description") {
+        // A copy is kept because the tree itself is only borrowed here.
+        description = std::make_shared<XmlNode>(node);
+    }
+    for (const auto& child : node.children)
+        if (child) scanXmp(*child, description, isContainer);
+}
+}  // namespace
+
+void UltraHDRLoader::parseXmpMetadata(const std::string& text, IsoMetadata& metadata) {
+    // The packet wraps the XML, so only the part between the first and the last angle bracket
+    // is markup.
+    const std::size_t open = text.find('<');
+    const std::size_t close = text.rfind('>');
+    if (open == std::string::npos || close == std::string::npos || close < open) return;
+
+    std::shared_ptr<XmlNode> root;
+    try {
+        root = XmlDocument::parse(text.substr(open, close - open + 1));
+    } catch (const std::runtime_error&) {
+        // A parse failure leaves the metadata as it was rather than failing the whole load.
+        return;
+    }
+    if (!root) return;
+
+    std::shared_ptr<XmlNode> description;
+    bool isContainer = false;
+    scanXmp(*root, description, isContainer);
+    // The container descriptor describes the file rather than the gain map.
+    if (isContainer || !description) return;
+
+    // An absent attribute takes the fallback, which is how upstream treats an empty string.
+    const auto number = [&description](const char* key, double fallback) -> double {
+        const std::string value = description->attributeOr(key);
+        return value.empty() ? fallback : std::strtod(value.c_str(), nullptr);
+    };
+
+    const std::string version = description->attributeOr("hdrgm:Version");
+    if (!version.empty()) metadata.version = version;
+    metadata.baseRenditionIsHDR = description->attributeOr("hdrgm:BaseRenditionIsHDR") == "True";
+    metadata.gainMapMin = number("hdrgm:GainMapMin", 0.0);
+    metadata.gainMapMax = number("hdrgm:GainMapMax", 1.0);
+    metadata.gamma = number("hdrgm:Gamma", 1.0);
+    // The two offsets are written in sixty fourths, so they are multiplied by that.
+    metadata.offsetSdr = number("hdrgm:OffsetSDR", 0.0) * 64.0;
+    metadata.offsetHdr = number("hdrgm:OffsetHDR", 0.0) * 64.0;
+    metadata.hdrCapacityMin = number("hdrgm:HDRCapacityMin", 0.0);
+    metadata.hdrCapacityMax = number("hdrgm:HDRCapacityMax", 1.0);
 }
