@@ -71,4 +71,9 @@ class VTKLoader {
 
     // The normals on one line, copied as they are, three at a time.
     static std::vector<double> parseNormals(const std::string& line);
+
+    // Splits a triangle strip. Unlike the fan, no node is fixed: every triangle takes three
+    // consecutive nodes, and every other one swaps its last two so the winding stays the same
+    // way round as the strip turns. Fewer than three nodes produce nothing.
+    static std::vector<int> triangulateStrip(const std::vector<int>& indices, int numVertices);
 };

@@ -217,6 +217,13 @@ VTKLoader::Mesh VTKLoader::parseAscii(const std::string& text) {
                 mesh.indices.insert(mesh.indices.end(), triangles.begin(), triangles.end());
             }
 
+        } else if (sections.triangleStrips) {
+            Connectivity connectivity;
+            if (parseConnectivity(line, connectivity)) {
+                const auto triangles =
+                    triangulateStrip(connectivity.indices, connectivity.numVertices);
+                mesh.indices.insert(mesh.indices.end(), triangles.begin(), triangles.end());
+            }
         } else if (sections.pointData || sections.cellData) {
             // Inside point or cell data the colours come first, then the normals; only one
             // of the two flags can be set at a time because each clears the other.
@@ -265,4 +272,27 @@ std::vector<double> VTKLoader::parseNormals(const std::string& line) {
         normals.push_back(values[k + 2]);
     }
     return normals;
+}
+
+std::vector<int> VTKLoader::triangulateStrip(const std::vector<int>& indices, int numVertices) {
+    std::vector<int> triangles;
+    if (numVertices < 3) return triangles;
+
+    // Each triangle takes three consecutive nodes.
+    for (int j = 0; j < numVertices - 2; ++j) {
+        const std::size_t base = static_cast<std::size_t>(j);
+        if (base + 2 >= indices.size()) break;
+        if (j % 2 == 1) {
+            // Every other triangle swaps its last two, which keeps the winding consistent with
+            // the one before it.
+            triangles.push_back(indices[base]);
+            triangles.push_back(indices[base + 2]);
+            triangles.push_back(indices[base + 1]);
+        } else {
+            triangles.push_back(indices[base]);
+            triangles.push_back(indices[base + 1]);
+            triangles.push_back(indices[base + 2]);
+        }
+    }
+    return triangles;
 }
