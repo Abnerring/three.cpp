@@ -1,4 +1,4 @@
-﻿#pragma once
+#pragma once
 #include <cstdint>
 #include <string>
 #include <vector>
@@ -37,4 +37,23 @@ class TDSLoader {
     static float readFloat(const std::vector<std::uint8_t>& buffer, Chunk& chunk);
     // A null terminated string, which consumes the terminator.
     static std::string readString(const std::vector<std::uint8_t>& buffer, Chunk& chunk);
+
+    // A colour read from a sub chunk. The byte form divides by the byte range; the float form
+    // is taken as it stands. Both go through the colour helper with the default space, so no
+    // conversion happens and the numbers are the ones in the file.
+    struct Rgb {
+        double r = 1;
+        double g = 1;
+        double b = 1;
+        // False when the sub chunk named a form the reader does not know, in which case the
+        // colour stays at the helper's default of white.
+        bool known = false;
+    };
+
+    // Reads the colour held in the sub chunk the parent points at.
+    static Rgb readColor(const std::vector<std::uint8_t>& buffer, Chunk& parent);
+
+    // Reads a percentage, which is a short divided by a hundred or a float taken as it stands.
+    // An unknown form reads as zero.
+    static double readPercentage(const std::vector<std::uint8_t>& buffer, Chunk& parent);
 };

@@ -1,4 +1,4 @@
-﻿#include "loaders/TDSLoader.h"
+#include "loaders/TDSLoader.h"
 
 #include <cstring>
 #include <stdexcept>
@@ -81,4 +81,51 @@ std::string TDSLoader::readString(const std::vector<std::uint8_t>& buffer, Chunk
         c = readByte(buffer, chunk);
     }
     return text;
+}
+
+namespace {
+// The sub chunk identifiers the readers below understand.
+constexpr std::uint16_t kColorF = 0x0010;
+constexpr std::uint16_t kColor24 = 0x0011;
+constexpr std::uint16_t kLinColor24 = 0x0012;
+constexpr std::uint16_t kLinColorF = 0x0013;
+constexpr std::uint16_t kIntPercentage = 0x0030;
+constexpr std::uint16_t kFloatPercentage = 0x0031;
+}  // namespace
+
+TDSLoader::Rgb TDSLoader::readColor(const std::vector<std::uint8_t>& buffer, Chunk& parent) {
+    Rgb colour;
+    // The colour lives in a sub chunk that begins wherever the parent has reached.
+    Chunk sub = readChunk(buffer, parent.position);
+    parent.position += sub.size;
+
+    if (sub.id == kColor24 || sub.id == kLinColor24) {
+        // Three bytes over the byte range.
+        colour.r = readByte(buffer, sub) / 255.0;
+        colour.g = readByte(buffer, sub) / 255.0;
+        colour.b = readByte(buffer, sub) / 255.0;
+        colour.known = true;
+    } else if (sub.id == kColorF || sub.id == kLinColorF) {
+        // Three floats taken as they stand.
+        colour.r = readFloat(buffer, sub);
+        colour.g = readFloat(buffer, sub);
+        colour.b = readFloat(buffer, sub);
+        colour.known = true;
+    }
+    return colour;
+}
+
+double TDSLoader::readPercentage(const std::vector<std::uint8_t>& buffer, Chunk& parent) {
+    Chunk sub = readChunk(buffer, parent.position);
+    parent.position += sub.size;
+
+    if (sub.id == kIntPercentage) {
+        // A short over a hundred.
+        return readShort(buffer, sub) / 100.0;
+    }
+    if (sub.id == kFloatPercentage) {
+        return readFloat(buffer, sub);
+    }
+    // An unknown form reads as nothing.
+    return 0.0;
 }
