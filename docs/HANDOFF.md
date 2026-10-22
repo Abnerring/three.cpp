@@ -360,6 +360,11 @@
    - **顺带发现的潜在缺陷**：`readRenderTargetPixels` 忽略 `target` 参数这件事，本身就是一个语义缺陷——它返回的是"最后一次渲染的结果"，而不是"这个目标上的像素"。目前所有测试都恰好只在上次渲染的同一个目标上读取，所以没暴露出来；但一旦有多个 GPU 目标，这个 API 就是错的。
    - **要走的路（下一阶段的大件）**：给 `RenderTarget` 配**每目标一份 GPU 存储**——`Impl` 里加 `std::unordered_map<RenderTarget*, GpuTarget>`（颜色图 + 深度图 + framebuffer + cube 视图），`setRenderTarget` 时切换 `activeGpuTarget`，`readRenderTargetPixels` 从 `target` 对应的存储回读；`resize` 改为只作用于当前 `GpuTarget`。
    - **状态**：本轮**无代码变更**（只读代码 + 记录），核心 **745 / 205,728**、`primitive-geometry`、`port-audit`、`--cube` 全绿。
+106. **第 43 轮：`readRenderTargetPixels` 不再静默忽略目标参数（第 105 条那个潜在缺陷修掉了一半）**。
+   - **改动**：`readRenderTargetPixels` 里原来的 `(void) target;` 换成显式校验——若传入的目标不是当前绑定的那个，就抛 `std::logic_error("readRenderTargetPixels needs the currently bound target; per target GPU storage is not implemented yet")`。这样"读错目标"从**静默返回错误像素**变成**明确报错**，符合项目"未实现的能力必须显式报错"的规则。
+   - **验收**：`cubeRenderTargetTests` 里新增一段——绑好 cube 之后，用一个**从未绑定过**的 `WebGLCubeRenderTarget(8)` 去读，必须抛 `std::logic_error`，`require(reported, "readback needs the bound target")`。现有所有读取路径都不受影响（它们读的正是绑定目标）。
+   - **过程教训（又一次）**：第一次插入测试时我的锚点字符串没匹配上，**测试根本没加进去**，但因为核心/差分/审计三个退出码都是 0，提交照样过了——**提交信息里那句"the cube case asserts the error"当时是不成立的**。发现后用**行号定位**（找到 `cubeRenderTargetTests` 的结尾花括号）把测试插进去，重跑 `--cube` 通过，再 `git commit --amend` 改正信息。**教训：锚点式替换必须先验证"是否真的替换成功"，不能只看后面的退出码。**
+   - **状态**：核心 **745 / 205,728**、`primitive-geometry`、`port-audit`、`--cube` 全绿。
 70. **第 520 轮：完整 Vulkan 套件 211/211 全绿，耗时 270.72 秒**。
    - 命令：`ctest --test-dir build-vulkan -j 4 -E "lights-states" --output-on-failure`（仍排除第 46 条那个已知项；它在 Vulkan 构建里同样慢）。
    - 结果：**100% tests passed, 0 tests failed out of 211**，总耗时 **270.72 秒**。对比同一套件在 **Debug** 配置下的 **3784.56 秒 / 2 失败**，差了约 14 倍——再次印证第 69 条"是构建类型不是代码"的结论。
