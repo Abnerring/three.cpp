@@ -282,3 +282,26 @@ std::string LDrawLoader::hashEdge(const std::array<double, 3>& v0, const std::ar
     // The order matters, so an edge and its reverse are two keys.
     return hashVertex(v0, multiplier) + "_" + hashVertex(v1, multiplier);
 }
+
+std::array<double, 3> LDrawLoader::faceNormal(const std::array<double, 3>& v0,
+                                             const std::array<double, 3>& v1,
+                                             const std::array<double, 3>& v2) {
+    // The two edges leaving the first vertex.
+    const std::array<double, 3> a{v1[0] - v0[0], v1[1] - v0[1], v1[2] - v0[2]};
+    const std::array<double, 3> b{v2[0] - v0[0], v2[1] - v0[1], v2[2] - v0[2]};
+    // Their cross product is perpendicular to the face.
+    std::array<double, 3> normal{a[1] * b[2] - a[2] * b[1], a[2] * b[0] - a[0] * b[2],
+                                 a[0] * b[1] - a[1] * b[0]};
+    const double length = std::sqrt(normal[0] * normal[0] + normal[1] * normal[1] +
+                                    normal[2] * normal[2]);
+    // A face with no area has no direction.
+    if (length == 0.0) return {0.0, 0.0, 0.0};
+    for (double& component : normal) component /= length;
+    return normal;
+}
+
+bool LDrawLoader::isSmoothPair(double dotOfFaceNormals) {
+    // The absolute value is compared, so two faces that face apart still smooth together.
+    const double magnitude = dotOfFaceNormals < 0 ? -dotOfFaceNormals : dotOfFaceNormals;
+    return magnitude >= kHardEdgeCosine;
+}

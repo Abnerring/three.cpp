@@ -136,4 +136,20 @@ class LDrawLoader {
     // same edge read from the other end gives a different key and both have to be recorded.
     static std::string hashEdge(const std::array<double, 3>& v0, const std::array<double, 3>& v1,
                                 double multiplier);
+
+    // The cosine below which two faces meeting at an edge are treated as a hard edge rather
+    // than a smooth one. The source comment calls this sixty seven and a half degrees, which
+    // would be about three eighths; a quarter is nearer seventy five and a half, so the number
+    // is what the port follows.
+    static constexpr double kHardEdgeCosine = 0.25;
+
+    // The normal of the face three vertices describe: the cross product of the two edge
+    // vectors, narrowed to unit length. A degenerate face has no normal and returns zero.
+    static std::array<double, 3> faceNormal(const std::array<double, 3>& v0,
+                                           const std::array<double, 3>& v1,
+                                           const std::array<double, 3>& v2);
+
+    // Whether two faces meeting at an edge should be smoothed across it. The comparison is on
+    // the absolute value of the dot product, so a face and its opposite count as smooth.
+    static bool isSmoothPair(double dotOfFaceNormals);
 };
