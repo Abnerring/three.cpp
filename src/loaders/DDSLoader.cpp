@@ -1,4 +1,4 @@
-﻿#include "loaders/DDSLoader.h"
+#include "loaders/DDSLoader.h"
 
 #include <stdexcept>
 
@@ -46,4 +46,38 @@ DDSLoader::Header DDSLoader::readHeader(const std::vector<std::uint8_t>& buffer)
     header.isCubemap = (header.caps2 & kCaps2Cubemap) != 0 &&
                        (header.caps2 & kCaps2AllFaces) == kCaps2AllFaces;
     return header;
+}
+
+std::vector<DDSLoader::Level> DDSLoader::mipmapChain(const Header& header, int mipmapCount,
+                                                     std::size_t firstOffset, int blockBytes,
+                                                     int bytesPerPixel) {
+    std::vector<Level> levels;
+    if (mipmapCount <= 0 || header.width == 0 || header.height == 0) return levels;
+
+    std::uint32_t width = header.width;
+    std::uint32_t height = header.height;
+    std::size_t offset = firstOffset;
+    for (int i = 0; i < mipmapCount; ++i) {
+        Level level;
+        level.width = width;
+        level.height = height;
+        level.offset = offset;
+
+        if (blockBytes > 0) {
+            // A block covers four by four pixels, so the counts round up.
+            const std::size_t blocksWide = (width + 3) / 4;
+            const std::size_t blocksHigh = (height + 3) / 4;
+            level.length = blocksWide * blocksHigh * static_cast<std::size_t>(blockBytes);
+        } else {
+            level.length = static_cast<std::size_t>(width) * height *
+                           static_cast<std::size_t>(bytesPerPixel);
+        }
+
+        levels.push_back(level);
+        offset += level.length;
+        // Each step halves the size but never reaches zero.
+        width = width > 1 ? width / 2 : 1;
+        height = height > 1 ? height / 2 : 1;
+    }
+    return levels;
 }

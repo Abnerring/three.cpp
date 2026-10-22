@@ -1,4 +1,4 @@
-﻿#pragma once
+#pragma once
 #include <cstdint>
 #include <string>
 #include <vector>
@@ -41,4 +41,19 @@ class DDSLoader {
     // Reads the header. Throws std::runtime_error when the magic is wrong or the buffer is too
     // short, both with the upstream message.
     static Header readHeader(const std::vector<std::uint8_t>& buffer);
+
+    // One level of the chain: its size, the bytes it occupies and where it starts.
+    struct Level {
+        std::uint32_t width = 0;
+        std::uint32_t height = 0;
+        std::size_t length = 0;
+        std::size_t offset = 0;
+    };
+
+    // Works out the chain. A compressed level holds one block per four by four tile, so the
+    // tile counts round up; an uncompressed level is three or four bytes per pixel. Each step
+    // halves the size but never goes below one.
+    static std::vector<Level> mipmapChain(const Header& header, int mipmapCount,
+                                          std::size_t firstOffset, int blockBytes,
+                                          int bytesPerPixel);
 };
