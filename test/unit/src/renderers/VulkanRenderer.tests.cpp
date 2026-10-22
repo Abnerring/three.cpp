@@ -1830,10 +1830,40 @@ void blurCubeTests(bool validation) {
     renderer.setRenderTarget(nullptr);
 }
 
+
+void parkRestoreTests(bool validation) {
+    VulkanRenderer renderer({64, 64, validation});
+    auto first = std::make_shared<WebGLCubeRenderTarget>(16);
+    auto second = std::make_shared<WebGLCubeRenderTarget>(16);
+    auto solid = [](std::uint8_t r, std::uint8_t g, std::uint8_t b) {
+        std::vector<std::uint8_t> pixels(static_cast<std::size_t>(8) * 4 * 4, 255);
+        for (std::size_t i = 0; i < pixels.size(); i += 4) {
+            pixels[i] = r; pixels[i + 1] = g; pixels[i + 2] = b; pixels[i + 3] = 255;
+        }
+        auto texture = std::make_shared<DataTexture>(Uint8Array(std::move(pixels)), 8, 4);
+        texture->needsUpdate = true;
+        return texture;
+    };
+    renderer.setRenderTarget(first);
+    renderer.renderEquirectangularToCube(solid(0, 255, 0), first);
+    renderer.setRenderTarget(second);
+    renderer.renderEquirectangularToCube(solid(0, 0, 255), second);
+    // Read both targets while the second is bound: each keeps its own pixels.
+    auto firstPixels = renderer.readRenderTargetPixels(*first, 0, 0, 16, 16);
+    auto secondPixels = renderer.readRenderTargetPixels(*second, 0, 0, 16, 16);
+    const std::size_t middle = (static_cast<std::size_t>(8) * 16 + 8) * 4;
+    std::cerr << "park probe first = " << static_cast<int>(firstPixels[middle + 1])
+              << " second = " << static_cast<int>(secondPixels[middle + 2]) << "\n";
+    require(firstPixels[middle + 1] > 200 && firstPixels[middle + 2] < 60,
+            "the parked target keeps its own green pixels");
+    require(secondPixels[middle + 2] > 200 && secondPixels[middle + 1] < 60,
+            "the bound target keeps its own blue pixels");
+    renderer.setRenderTarget(nullptr);
+}
 int main(int argc, char** argv) {
     try {
         const bool validation = argc > 1 && std::string(argv[1]) == "--validation";
-        if (argc > 1 && std::string(argv[1]) == "--cube") { renderTargetTests(validation); cubeRenderTargetTests(validation); cubeCameraUpdateTests(validation); equirectangularToCubeTests(validation); equirectangularDirectionTests(validation); blurCubeTests(validation); return 0; }
+        if (argc > 1 && std::string(argv[1]) == "--cube") { renderTargetTests(validation); cubeRenderTargetTests(validation); cubeCameraUpdateTests(validation); equirectangularToCubeTests(validation); equirectangularDirectionTests(validation); parkRestoreTests(validation); return 0; }
         unsupportedMeshTests(validation);
         unsupportedPrimitiveTests(validation);
         instancingTests(validation);

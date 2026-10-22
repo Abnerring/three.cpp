@@ -415,6 +415,8 @@ struct VulkanRenderer::Impl {
         std::uint32_t initializedLayers = 0;
         bool initialized = false;
         std::uint32_t width = 0, height = 0, layers = 1;
+        // CPU copy of the last frame copied out of this target, so readback is per target.
+        std::vector<std::uint8_t> pixels;
     };
     std::unique_ptr<GpuTarget> spareTarget;
     // Mirrors the active target while the draw path is migrated onto it.
@@ -2187,7 +2189,7 @@ struct VulkanRenderer::Impl {
         selectFace(activeCubeFace);
         readback = createBuffer(static_cast<VkDeviceSize>(width) * height * 4,
                                 VK_BUFFER_USAGE_TRANSFER_DST_BIT);
-        pixels.assign(static_cast<std::size_t>(width) * height * 4, 0);
+        active->pixels.assign(static_cast<std::size_t>(width) * height * 4, 0);
     }
     void createRenderPass() {
         VkAttachmentDescription attachments[2]{};
@@ -2698,7 +2700,7 @@ struct VulkanRenderer::Impl {
         void* mapped;
         check(api.vkMapMemory(device, readback.memory, 0, readback.size, 0, &mapped),
               "vkMapMemory");
-        std::memcpy(pixels.data(), mapped, pixels.size());
+        std::memcpy(active->pixels.data(), mapped, active->pixels.size());
         api.vkUnmapMemory(device, readback.memory);
         active->initialized = true;
         active->initializedLayers |= 1u << activeCubeFace;
@@ -2843,16 +2845,21 @@ std::uint32_t VulkanRenderer::getActiveMipmapLevel() const { return impl->active
 std::vector<std::uint8_t> VulkanRenderer::readRenderTargetPixels(RenderTarget& target, std::uint32_t x,
                                                                   std::uint32_t y, std::uint32_t width,
                                                                   std::uint32_t height) {
-    const auto source = readPixels();
-    const auto rowBytes = static_cast<std::size_t>(impl->width) * 4;
-    if (width == 0 || height == 0 || x + width > impl->width || y + height > impl->height ||
-        source.size() < rowBytes * impl->height)
+    // Each GPU target keeps its own copy, so a target can be read even after being parked.
+    const Impl::GpuTarget* gt = nullptr;
+    if (impl->activeKey == &target) {
+        gt = impl->active.get();
+    } else {
+        const auto found = impl->parkedTargets.find(&target);
+        if (found != impl->parkedTargets.end()) gt = found->second.get();
+    }
+    if (!gt || gt->pixels.empty())
+        throw std::logic_error("readRenderTargetPixels: that target has no pixels yet");
+    const auto& source = gt->pixels;
+    const auto rowBytes = static_cast<std::size_t>(gt->width) * 4;
+    if (width == 0 || height == 0 || x + width > gt->width || y + height > gt->height ||
+        source.size() < rowBytes * gt->height)
         throw std::out_of_range("readRenderTargetPixels outside the render target");
-    // The renderer currently keeps one GPU target, so only the bound target can be read.
-    if (impl->renderTarget.get() != &target)
-        throw std::logic_error(
-            "readRenderTargetPixels needs the currently bound target; per target GPU"
-            " storage is not implemented yet");
     std::vector<std::uint8_t> out(static_cast<std::size_t>(width) * height * 4);
     for (std::uint32_t row = 0; row < height; ++row)
         std::memcpy(out.data() + static_cast<std::size_t>(row) * width * 4,

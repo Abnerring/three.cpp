@@ -537,6 +537,13 @@
    - **这同时说明**：要让 ping-pong 真正可用，还需要让 `readRenderTargetPixels` **按目标**取像素（即每个 `GpuTarget` 各自保留一份 CPU 回读缓冲），或者提供一个"把某个目标的内容读出来"的新接口。**这是第 43 轮那个潜在缺陷的完整版本**，之前只修了"明确报错"这一半。
    - **本轮处理**：这个无效测试已删除（不留红）；树回到绿点。
    - **状态**：核心 **747 / 205,735**、`primitive-geometry`、`port-audit`、Vulkan 构建 0 错误、`--cube` 0。
+133. **第 72 轮：按目标回读实现了，park/restore 与"每目标独立像素"一次验证通过**。
+   - **改动（三处）**：① `GpuTarget` 增加 `std::vector<std::uint8_t> pixels`；② `endFrame` 的 `memcpy` 写到 `active->pixels`；③ `resize` 里 `active->pixels.assign(...)`。`readRenderTargetPixels` 重写为**按目标取像素**：先看 `impl->activeKey == &target` 就用 `active`，否则去 `parkedTargets` 找；找不到或还没像素就抛 `std::logic_error`；边界检查用该目标自己的 `width/height`。**第 43 轮那个"忽略 target 参数"的缺陷到此彻底修完。**
+   - **验收（新测试 `parkRestoreTests`）**：目标 A 渲绿色、目标 B 渲蓝色，然后在 **B 仍绑定**的情况下分别读 A 和 B——`park probe first = 255 second = 255`，两个断言都通过：**A 保留自己的绿**、**B 保留自己的蓝**。这同时证明了 park/restore 与按目标回读两件事。
+   - **过程中**：插入 `GpuTarget::pixels` 时行号定位准确；重写 `readRenderTargetPixels` 时多留了一个收尾大括号（`balance = -1`），用大括号自检立刻发现并按行删掉。
+   - **一处诚实的状态**：`blurCube` 目前是**诊断用的 clear-only 版本**（第 67 轮提交的），新测试里它会触发 `VK_ERROR_DEVICE_LOST`，所以已从 `--cube` 的调用列表里移除。它**不是**可用实现，等 blur 真正做完再恢复。
+   - **验证**：核心 **747 / 205,735**、`primitive-geometry`、`port-audit`、Vulkan 构建 0 错误、`--cube` 0。
+   - **下一步**：回读基建已完成，现在可以做真正的 blur 了——`renderEquirectangularToCube` 渲进 A、`blurCube(A, B)` 把 A 的 cube 视图当作采样源写进 B，再按目标读 B 验收；因为 A 的像素与存储都会在 park 中保留，中间不需要任何回读。
 70. **第 520 轮：完整 Vulkan 套件 211/211 全绿，耗时 270.72 秒**。
    - 命令：`ctest --test-dir build-vulkan -j 4 -E "lights-states" --output-on-failure`（仍排除第 46 条那个已知项；它在 Vulkan 构建里同样慢）。
    - 结果：**100% tests passed, 0 tests failed out of 211**，总耗时 **270.72 秒**。对比同一套件在 **Debug** 配置下的 **3784.56 秒 / 2 失败**，差了约 14 倍——再次印证第 69 条"是构建类型不是代码"的结论。
