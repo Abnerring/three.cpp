@@ -1,4 +1,5 @@
 #pragma once
+#include <array>
 #include <cstdint>
 #include <string>
 #include <vector>
@@ -56,4 +57,10 @@ class TDSLoader {
     // Reads a percentage, which is a short divided by a hundred or a float taken as it stands.
     // An unknown form reads as zero.
     static double readPercentage(const std::vector<std::uint8_t>& buffer, Chunk& parent);
+
+    // The twelve floats a MESH_MATRIX chunk holds, arranged into the sixteen elements of a
+    // four by four matrix in the order the engine stores them. The chunk stores a row major
+    // three by four; the arrangement below places each value, transposes, and the result is
+    // what the loader applies to the geometry and then decomposes onto the mesh.
+    static std::array<double, 16> meshMatrix(const std::array<double, 12>& values);
 };

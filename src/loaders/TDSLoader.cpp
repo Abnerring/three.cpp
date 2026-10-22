@@ -129,3 +129,29 @@ double TDSLoader::readPercentage(const std::vector<std::uint8_t>& buffer, Chunk&
     // An unknown form reads as nothing.
     return 0.0;
 }
+
+std::array<double, 16> TDSLoader::meshMatrix(const std::array<double, 12>& values) {
+    // The engine stores a matrix in column major order, so element r of column c sits at
+    // r + 4c. The chunk is placed into that layout first and then transposed, which means
+    // the value that ends up at row r, column c is the one first placed at row c, column r.
+    // Written out, that is the table below.
+    std::array<double, 16> matrix{};
+    matrix[0] = values[0];
+    matrix[1] = values[2];
+    matrix[2] = values[1];
+    matrix[3] = 0;
+    matrix[4] = values[6];
+    matrix[5] = values[8];
+    matrix[6] = values[7];
+    matrix[7] = 0;
+    matrix[8] = values[3];
+    matrix[9] = values[5];
+    matrix[10] = values[4];
+    matrix[11] = 0;
+    // The last column holds the translation, which the chunk puts at the end of its third row.
+    matrix[12] = values[9];
+    matrix[13] = values[11];
+    matrix[14] = values[10];
+    matrix[15] = 1;
+    return matrix;
+}
