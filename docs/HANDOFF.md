@@ -707,6 +707,14 @@
    - **测试（3 个用例、13 条断言）**：用 C++ 手工拼一个**大端**字节缓冲（2 帧 / 3 点 / 帧时间 0 与 0.5 / 帧 0 是 0..8 / 帧 1 是 1 后跟 2），断言 morph target 数量、`itemSize == 3`（**是属性不是方法**）、`count == 3`、`getX(0) == 0`（**精确比较**，因为相对容差表达不了零）、`getY(1) == 4`、`getZ(2) == 8`、第二帧首点 1.0、clip 时长 0.5（`name.toString() == "default"`）、以及截断输入抛错。
    - **两个自造错误**：`Approx(0.0).epsilon(1e-6)` **对零无效**（它是相对容差）；我第一版把帧 0 的三个点当成 `(0,0,0)`/`(1,2,3)` 算了，实际数据是 0..8 连续，`getY(1)` 应为 **4** 而不是 2。**又一次：失败先怀疑测试。**
    - **验证**：核心 **796 用例 / 206,118 断言**（+3 / +13）、`primitive-geometry`、`port-audit` 全绿。addon loader **4 / 52 → 5 / 52**。
+158. **第 97 轮：`SPLATLoader` + `GaussianSplatUtils` 两个模块一起落地**。
+   - **本轮的关键差异**：MDD 是**大端**，SPLAT 是**小端**（`view.getFloat32(offset, true)` 带了 `true`）。同一批 loader 里两种字节序并存，最容易抄错。
+   - **`GaussianSplatUtils`（229 行）的数学部分**：`SH_C0 = 0.2820947917738781`、`SH_BAND_COMPONENTS = [0,9,15,21]`、`SH_BAND_WORDS = [0,3,4,6]`、`sigmoid`、`sh0ToLinear = c*SH_C0+0.5`、`linearToSH0 = (c-0.5)/SH_C0`、`writeColorBytesFromSH0`（写入时按 clamped byte 四舍五入并夹紧）、以及核心的 **`writeCovariance`**：四元数归一化 → `Matrix4.compose(zero, q, scale)` → `Matrix3.setFromMatrix4` → `copy().transpose()` → `multiply` → 只取上三角的 `elements[0], [3], [6], [4], [7], [8]` 六个值。
+   - **`SPLATLoader.parse`**：32 字节一行 —— 3 float 中心（小端）、3 float 缩放、4 字节 RGBA、4 字节**带偏置的四元数（w,x,y,z 顺序，`(b-128)/128`）**；字节长度不是 32 的倍数就抛 `THREE.SPLATLoader: Invalid .splat byte length.`。
+   - **参考值来自上游**：`writeCovariance(scale 2,3,4, identity)` = **4,0,0,9,0,16**（对角线就是缩放平方）；`rot45` = **1,0,0,1,0,1**；`sigmoid(0) = 0.5`、`sigmoid(2) = 0.880797077978`；`sh0ToLinear(0) = 0.5`、`linearToSH0(0.5) = 0`。
+   - **测试（5 个用例、31 条断言）**：identity 协方差逐项、45° 旋转协方差逐项、颜色/激活函数、用合成 2 行缓冲（`pushFloat32LE` + `pushRow` 手工拼）验证中心/颜色/协方差量级、以及坏长度抛错。
+   - **一处设计选择**：`createGaussianSplatGeometry` 那一半需要 `BufferGeometry.setAttribute` 的属性管线，本轮**没有移植**（`parse` 直接返回 `centers`/`covariances`/`colors` 三个数组），头文件写明"几何构建留给调用方"。这是**显式声明的范围**，不是静默缺失。
+   - **验证**：核心 **801 用例 / 206,149 断言**（+5 / +31）、`primitive-geometry`、`port-audit` 全绿。addon loader **5 / 52 → 6 / 52**（连 `utils` 一起算是两个模块）。
 70. **第 520 轮：完整 Vulkan 套件 211/211 全绿，耗时 270.72 秒**。
    - 命令：`ctest --test-dir build-vulkan -j 4 -E "lights-states" --output-on-failure`（仍排除第 46 条那个已知项；它在 Vulkan 构建里同样慢）。
    - 结果：**100% tests passed, 0 tests failed out of 211**，总耗时 **270.72 秒**。对比同一套件在 **Debug** 配置下的 **3784.56 秒 / 2 失败**，差了约 14 倍——再次印证第 69 条"是构建类型不是代码"的结论。
