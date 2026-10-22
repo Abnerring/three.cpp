@@ -312,6 +312,12 @@
    - **这条验收的聪明之处**：纯色对任何变换都不敏感，所以它**只**验证"管线 + 采样器 + 描述符 + 绘制 + 回读"这条链，把"矩阵是否正确"完全隔离出去——一次只验一件事。
    - **状态**：核心 **745 / 205,728**、`primitive-geometry`、`port-audit` 全绿。
    - **下一步**：把逐面 view/projection 做对（六面各自的方向），然后用**渐变**或**棋盘**等距柱状图验收方向性；之后才是卷积（模糊 + GGX）那两级 lod。
+98. **第 35 轮：纠正了一个我记错的重大事实——PMREM 的六面方向来自"相机"，不是"模型矩阵"**。
+   - **错的记忆**：我一直以为上游有个 `_renderToCubeFaces()`，也以为六面是靠旋转盒子（`modelMatrix`）区分出来的。**固定的 r187 版里根本没有这个方法**，真实方法清单是：`fromScene`/`fromEquirectangular`/`fromCubemap`/`compileCubemapShader`/`compileEquirectangularShader`/`dispose`/`_setSize`/`_fromTexture`/`_allocateTarget`/`_getSourceTarget`/`_compileMaterial`/`_renderCube`/`_textureToCubemap`/`_applyPMREM`/`_blur`，加上模块级的 `_createRenderTarget`/`_getMaterial`/`_getGGXMaterial`/`_getIntegrationMaterial`/`_getBlurMaterial`/`_getEquirectMaterial`/`_getCubemapMaterial`。
+   - **真实机制**（`_renderCube(target, lod, material)`，326 行）：设 `boxMesh.material`、把 `cubeCamera.renderTarget = target` 与 `activeMipmapLevel = lod` 设好、按 `size = target.width >> lod` 设 `target.viewport`，然后 **`cubeCamera.update(this._renderer, boxMesh)`**——即用**立方体相机的六个视点**把盒子渲染进六个面，最后恢复 viewport。`_textureToCubemap` 挑好材质（立方贴图 vs 等距柱状）后调用 `this._renderCube(this._getSourceTarget(), 0, material)`。
+   - **为什么六面会不同**：顶点着色器里 `vWorldDirection = transformDirection(position, modelMatrix)` 对六个面**确实一样**，但**每个相机看到的是盒子的不同内侧**（+X 面看到的是盒子 +X 内壁），逐像素插值出来的 `vWorldDirection` 就分别指向 ±X/±Y/±Z。**所以逐面差异完全来自相机的 view/projection，而不是模型矩阵。**
+   - **对第 97 轮的后果**：现在用单位阵，六面**必然完全一样**——纯色验收**恰好测不出这个问题**（这正是当初选纯色的理由：一次只验一条链）。下一轮要补的正是"六面的 view/projection"。
+   - **本轮无代码变更**，门禁：核心 **745 / 205,728**、`primitive-geometry`、`port-audit` 全绿，树干净。
 70. **第 520 轮：完整 Vulkan 套件 211/211 全绿，耗时 270.72 秒**。
    - 命令：`ctest --test-dir build-vulkan -j 4 -E "lights-states" --output-on-failure`（仍排除第 46 条那个已知项；它在 Vulkan 构建里同样慢）。
    - 结果：**100% tests passed, 0 tests failed out of 211**，总耗时 **270.72 秒**。对比同一套件在 **Debug** 配置下的 **3784.56 秒 / 2 失败**，差了约 14 倍——再次印证第 69 条"是构建类型不是代码"的结论。
