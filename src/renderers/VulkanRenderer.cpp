@@ -2770,6 +2770,9 @@ void VulkanRenderer::setRenderTarget(std::shared_ptr<RenderTarget> target,
         impl->selectFace(activeCubeFace);
     } else if (impl->renderTarget) {
         impl->renderTarget.reset();
+        // Park the target before resizing back, otherwise resize rebuilds it at one
+        // layer: the unbind path has no target to derive a layer count from.
+        impl->useTarget(nullptr);
         impl->resize(impl->savedWidth, impl->savedHeight);
     }
 }

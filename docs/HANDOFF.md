@@ -447,6 +447,12 @@
    - **关键线索（探针输出）**：`layers=1 cubeView=0000000000000000 view=0x…750 image=0x…8D0`——parked 的源目标**只有 1 层**，所以 `createImage` 根本没走 `layers == 6` 那条分支、也就没有 cube 视图。而 `view`/`image` 都有效，说明这个 `GpuTarget` 确实被创建过，只是**用 1 层创建**的。
    - **下一步的排查方向**：`resize(w, h)` 的 `layers` 默认值是 **1**，而 `setRenderTarget(nullptr)` 解绑时正是调 `impl->resize(impl->savedWidth, impl->savedHeight)`（**不传 layers**）。若此时 `active` 已被 park 成 nullptr，`resize` 会**新建**一个 1 层的 `active`；虽然它的 key 是 `nullptr`、理论上不该覆盖源目标，但 `useTarget` 的 park/erase 顺序值得逐行核对——尤其是"同一个目标被 park 两次"或"park 时 `active` 已空、把空指针塞进 map"的情况。
    - **状态**：三个文件已 `git checkout` 回退；核心 **747 / 205,735**、`primitive-geometry`、`port-audit`、Vulkan 构建 0 错误、`--cube` 0，树干净。
+121. **第 60 轮：找到了"层数变 1"的根因并修好——解绑时漏了 `useTarget(nullptr)`**。
+   - **根因**：`setRenderTarget(nullptr)` 的分支只做了 `renderTarget.reset()` + `resize(savedWidth, savedHeight)`，**没有先把当前目标 park 起来**。于是 `active` 仍然指向刚才那个立方体目标，而 `resize` 的 `layers` 默认是 **1**——直接把**源的 6 层存储重建成 1 层**，连同 cube 视图一起消失。这与第 59 轮探针打印的 `layers=1`、`cubeView=0`、`view`/`image` 有效**完全吻合**。
+   - **修复**：在解绑分支 `resize` 之前插入 `impl->useTarget(nullptr);`（附注释说明"必须先 park，否则 resize 会把它按 1 层重建"）。
+   - **为什么这行会丢**：第 57 轮崩溃后我用 `git checkout -- src/renderers/VulkanRenderer.cpp` 整体回退，而第 56 轮加的 `useTarget(nullptr)` 就在这次回退里一起没了——**回退是整文件的，不会区分"哪些是我想要的、哪些是刚坏的"**。这是"回退以后再继续"这条路线的固有代价。
+   - **验证（五项门禁）**：核心 **747 / 205,735** ✓、`primitive-geometry` ✓、`port-audit` ✓、`threecpp_vulkan` 0 错误 ✓、`--cube` 0 ✓；大括号平衡 0 ✓。
+   - **下一步**：重新加回 `blurCube` 与 `drawPmremBlurFace`（第 59 轮已经写好过、逻辑没变），这次源目标的层数应当正确，验收用例（纯色源 → blur → 仍是该色）应该能通过。
 70. **第 520 轮：完整 Vulkan 套件 211/211 全绿，耗时 270.72 秒**。
    - 命令：`ctest --test-dir build-vulkan -j 4 -E "lights-states" --output-on-failure`（仍排除第 46 条那个已知项；它在 Vulkan 构建里同样慢）。
    - 结果：**100% tests passed, 0 tests failed out of 211**，总耗时 **270.72 秒**。对比同一套件在 **Debug** 配置下的 **3784.56 秒 / 2 失败**，差了约 14 倍——再次印证第 69 条"是构建类型不是代码"的结论。
