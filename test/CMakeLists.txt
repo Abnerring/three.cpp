@@ -55,6 +55,7 @@ add_executable(THREECPPTests
         unit/src/loaders/PLYBinary.tests.cpp
         unit/src/loaders/PLYHandle.tests.cpp
         unit/src/loaders/PLYBuild.tests.cpp
+        unit/src/loaders/FontLoader.tests.cpp
         unit/src/cameras/StereoCamera.tests.cpp
         unit/src/audio/AudioContext.tests.cpp
         unit/src/audio/Audio.tests.cpp

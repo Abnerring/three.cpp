@@ -896,6 +896,12 @@
    - **`FontLoader`（260 行）相反**：只 import `FileLoader`/`Loader`/`ShapePath`，**全部来自 'three'**，所以它是**纯 JSON → Font 的解析器**，端到端可移植，是接下来比 TTF 更值得做的目标。
    - **本轮无代码改动**（只有文档），树保持干净：HEAD 仍是 `2f5f4b6`，五项门禁全绿。
    - **累计进度**：addon loader **29 / 52**；三个大型 loader（MTL 5 层、OBJ 5 层、PLY 6 层）全部完整；TSL 的 210 个 node 模块仍是最大缺口（需要 `NodeBuilder` + 运行时反射）。
+182. **第 121 轮：`FontLoader` 第一层——`Font` 数据模型与文本排版**。
+   - **范围**：`Font`（`isFont`、`type`、`data`、`lineHeight`、`layoutText`、`codePoints`）。`FontLoader.parse` 本身就是一行 `new Font(json)`；`createPaths` 里把字形命令串解释成 `ShapePath` 的那一半需要 `ShapePath` 层，留给下一层。
+   - **排版算术（逐条照上游）**：`scale = size / resolution`；`line_height = (yMax - yMin + underlineThickness) * scale`；**`rtl` 与 `tb` 都先把字符序列反转**；`\n` 把 `offsetX` 归零并 `offsetY -= line_height`；**`tb` 方向改成 `offsetY += ascender * scale` 且 `offsetX` 归零**，其余方向 `offsetX += glyph.ha * scale`；找不到字形时**回退到 `?`**，连 `?` 都没有就跳过（上游 `console.error` 后返回 undefined）。
+   - **一个必须自己补的实现细节**：上游 `Array.from(text)` 按**码点**切分，C++ 侧写了一个最小 UTF-8 解码器（前导字节决定后续字节数），保证多字节字符算**一个**字形。
+   - **测试（6 个用例、28 条断言）**：类型与数据；行高（100 号 → **105**、50 号 → **52.5**）；左到右按 `ha` 前进（B 在 **x = 50**）；换行后回到左边缘并下降**一整行**（**y = -105**）；`rtl` **反转字符序**（B 排第一）、`tb` **竖向按 ascender 前进**（y = 90）；未知字符回退 `?` 但**保留自己的字符名**、两个未知字符按回退 advances 前进到 10；UTF-8 两字节字符算**一个**码点。
+   - **验证**：核心 **890 用例 / 206,602 断言**（+6 / +28）、`primitive-geometry`、`port-audit` 全绿。addon loader **29 → 30 / 52**。
 70. **第 520 轮：完整 Vulkan 套件 211/211 全绿，耗时 270.72 秒**。
    - 命令：`ctest --test-dir build-vulkan -j 4 -E "lights-states" --output-on-failure`（仍排除第 46 条那个已知项；它在 Vulkan 构建里同样慢）。
    - 结果：**100% tests passed, 0 tests failed out of 211**，总耗时 **270.72 秒**。对比同一套件在 **Debug** 配置下的 **3784.56 秒 / 2 失败**，差了约 14 倍——再次印证第 69 条"是构建类型不是代码"的结论。
