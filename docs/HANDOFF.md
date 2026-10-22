@@ -1326,6 +1326,13 @@
    - **测试（4 个用例、17 条断言）**：四个固定字段的名字与个数；**四个阶数的 f_rest 长度 0/9/24/45**；**有序命名**（第一个 `f_rest_0`、第二个 `f_rest_1`、最后一个 `f_rest_23`）；**阶数 9 与 −1 都为空**。
    - **验证**：核心 **1165 用例 / 208,905 断言**（+4 / +17）、addons、`primitive-geometry`、`port-audit`、Vulkan 全绿。
    - **剩余**：`convertPLYGeometry` —— 把 `PLYLoader` 读出的属性转成高斯泼溅几何（复用第 84 轮的 `GaussianSplatUtils`）。
+245. **第 184 轮：`GaussianSplatPLYLoader` 收尾——几何转换，GSPL 完整**。
+   - **转换逻辑**：位置直接成为中心；**`scale` 存的是对数**，所以取 `exp`；**旋转的存储顺序是 `w x y z`**（GraphDECO/INRIA 的约定），读出来时第一个分量就是 `w`；协方差交给第 84 轮的 `writeCovariance`，颜色交给 `writeColorBytesFromSH0` 并把 **`sigmoid(opacity)`** 当 alpha。
+   - **三项校验**（与上游逐字一致）：五个属性**缺一个就抛错**；**宽度必须是 3/3/4/3/1**；**五个流的元素数必须相同**。
+   - **两处踩到的坑**：① `GaussianSplatUtils` 的函数在**命名空间**里，且 `writeCovariance` 要 **`float*`** 而不是 `double*`——我一开始用了 `double`，报 `找不到标识符`；② 改完头文件后**增量构建留下了陈旧对象**，测试仍报 `covariances.size() == 3`（应为 6），怎么查代码都对，最后 `touch` 三个文件强制重编才通过。**这两条都不是逻辑错，而是"没先看清楚就动手"与"构建缓存"**。
+   - **测试（7 个用例、16 条断言）**：单 splat 的尺寸与中心；**`log` 尺度**（`ln 2` → 协方差对角 4）；**`w` 在前的旋转**（90° 绕 z）；**alpha 约 128**（`sigmoid(0)`）；缺流 / 宽度错 / 数量不匹配三种错误。
+   - **验证**：核心 **1172 用例 / 208,921 断言**（+7 / +16）、addons、`primitive-geometry`、`port-audit`、Vulkan 全绿。addon loader **27 → 28 / 52**。
+   - **十五个完整 loader**：MTL、OBJ、PLY、Font、HDRCubeTexture、MD2、BVH、PCD、TGA、NRRD、AMF、VOX、SPZ、IES、**GaussianSplatPLY**。
 70. **第 520 轮：完整 Vulkan 套件 211/211 全绿，耗时 270.72 秒**。
    - 命令：`ctest --test-dir build-vulkan -j 4 -E "lights-states" --output-on-failure`（仍排除第 46 条那个已知项；它在 Vulkan 构建里同样慢）。
    - 结果：**100% tests passed, 0 tests failed out of 211**，总耗时 **270.72 秒**。对比同一套件在 **Debug** 配置下的 **3784.56 秒 / 2 失败**，差了约 14 倍——再次印证第 69 条"是构建类型不是代码"的结论。

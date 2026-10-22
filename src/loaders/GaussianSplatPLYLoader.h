@@ -1,4 +1,5 @@
 #pragma once
+#include <cstdint>
 #include <map>
 #include <string>
 #include <vector>
@@ -34,4 +35,31 @@ class GaussianSplatPLYLoader {
     // field names the file properties that carry it. The rest band grows with the degree, so a
     // degree of one lists nine names and a degree of three lists forty five.
     static std::map<std::string, std::vector<std::string>> propertyMapping(int degree);
+
+    // The five attribute streams a splat PLY must provide, each three or one components wide
+    // except the rotation which is four.
+    struct Attributes {
+        std::vector<double> position;
+        std::vector<double> scale;
+        std::vector<double> rotation;
+        std::vector<double> fDc;
+        std::vector<double> opacity;
+    };
+
+    // The geometry the conversion produces: a centre and six covariance components per splat,
+    // plus four colour bytes.
+    struct Converted {
+        std::vector<double> centers;
+        // The utility writes floats, so the buffer is float rather than double.
+        std::vector<float> covariances;
+        std::vector<std::uint8_t> colors;
+        std::size_t count = 0;
+    };
+
+    // Converts the attribute streams. The scale is stored as a logarithm, so it is raised by e
+    // to the stored value; the rotation is stored as w x y z even though it is read by
+    // component position, so the first component is w. Throws when a stream is missing, has
+    // the wrong width, or disagrees on the count.
+    static Converted convertGeometry(const Attributes& attributes);
 };
+
