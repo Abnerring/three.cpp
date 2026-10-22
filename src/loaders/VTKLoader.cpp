@@ -216,8 +216,22 @@ VTKLoader::Mesh VTKLoader::parseAscii(const std::string& text) {
                 const auto triangles = triangulateFan(connectivity.indices, connectivity.numVertices);
                 mesh.indices.insert(mesh.indices.end(), triangles.begin(), triangles.end());
             }
-        }
 
+        } else if (sections.pointData || sections.cellData) {
+            // Inside point or cell data the colours come first, then the normals; only one
+            // of the two flags can be set at a time because each clears the other.
+            if (sections.colors) {
+                if (isNumberLine(line)) {
+                    const auto values = parseColors(line);
+                    mesh.colors.insert(mesh.colors.end(), values.begin(), values.end());
+                }
+            } else if (sections.normals) {
+                if (isNumberLine(line)) {
+                    const auto values = parseNormals(line);
+                    mesh.normals.insert(mesh.normals.end(), values.begin(), values.end());
+                }
+            }
+        }
         // Every line then possibly opens a new section.
         applyKeyword(line, sections);
     }

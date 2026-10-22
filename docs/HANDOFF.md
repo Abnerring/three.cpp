@@ -1540,6 +1540,12 @@
    - **段条件**：颜色与法线在 `inPointDataSection || inCellDataSection` 之下，且颜色优先（`if inColorSection` / `else if inNormalsSection`）；两者都要求这一行**不以字母开头**，然后按三个一组取。
    - **测试（3 个用例、13 条断言）**：中灰与白（**0.214** / 1.0）；法线原样（含负值）；**半个三元组被丢弃**；**0.04 转成约 0.003**（证明转换确实发生）；纯黑仍为零。
    - **验证**：核心 **1304 用例 / 209,390 断言**（+3 / +13）、addons、`primitive-geometry`、`port-audit`、Vulkan 全绿。
+276. **第 215 轮：`VTKLoader` 第六层——颜色与法线接进主循环**。
+   - **第四层加一支**：`else if (sections.pointData || sections.cellData)`，其内**先颜色后法线**（`if colors ... else if normals`），两者都要求**不以字母开头**的行。
+   - **插入时多留了一个闭合括号**：我按"在 `applyKeyword` 那行之前插入"的方式加代码，结果多边形分支的 `}` 没有删掉，变成 `}` 后面紧跟 `} else if`。**库编译直接报错**，我用"找 `}` 且下一行是空行再下一行是 `} else if`"的方式删掉那一行，编译通过、区域打印确认无误。
+   - **测试（4 个用例、11 条断言）**：点数据里的两行颜色（**0.214 / 1.0**，且法线为空）；点数据里的法线（颜色为空）；**先 `NORMALS` 再 `COLOR_SCALARS` 时两者都读到**（因为标志会残留，颜色分支先试）；**没有点数据段时颜色行被忽略**。
+   - **验证**：核心 **1308 用例 / 209,401 断言**（+4 / +11）、addons、`primitive-geometry`、`port-audit`、Vulkan 全绿。
+   - **还差**：`TRIANGLE_STRIPS` 那一支（第 222–255 行，条带三角化与扇形不同——要交替绕序）；二进制路径需要 zlib。
 70. **第 520 轮：完整 Vulkan 套件 211/211 全绿，耗时 270.72 秒**。
    - 命令：`ctest --test-dir build-vulkan -j 4 -E "lights-states" --output-on-failure`（仍排除第 46 条那个已知项；它在 Vulkan 构建里同样慢）。
    - 结果：**100% tests passed, 0 tests failed out of 211**，总耗时 **270.72 秒**。对比同一套件在 **Debug** 配置下的 **3784.56 秒 / 2 失败**，差了约 14 倍——再次印证第 69 条"是构建类型不是代码"的结论。
