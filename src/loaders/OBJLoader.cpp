@@ -3,6 +3,8 @@
 #include "math/Color.h"
 #include "math/ColorManagement.h"
 
+#include "math/Vector3.h"
+#include <cmath>
 #include <cstdlib>
 #include <sstream>
 
@@ -171,4 +173,38 @@ OBJLoader::Geometry OBJLoader::parseGeometry(const std::string& text) const {
         }
     }
     return result;
+}
+
+void OBJLoader::addFaceNormal(const std::vector<double>& vertices, int a, int b, int c,
+                              std::vector<double>& out) {
+    // Upstream builds the normal from (C - B) crossed with (A - B), then normalises it.
+    const auto component = [&vertices](int index) {
+        const auto i = static_cast<std::size_t>(index);
+        return i + 2 < vertices.size() ? Vector3(vertices[i], vertices[i + 1], vertices[i + 2])
+                                       : Vector3();
+    };
+    const Vector3 vA = component(a);
+    const Vector3 vB = component(b);
+    const Vector3 vC = component(c);
+
+    const Vector3 cb = vC.clone().sub(vB);
+    const Vector3 ab = vA.clone().sub(vB);
+    Vector3 normal = cb.clone().cross(ab);
+    const double length = std::sqrt(normal.x * normal.x + normal.y * normal.y +
+                                    normal.z * normal.z);
+    // A degenerate triangle has no direction; upstream divides anyway and ends up with zeroes
+    // when the length is zero, which is what the guard reproduces.
+    if (length != 0) {
+        normal.x /= length;
+        normal.y /= length;
+        normal.z /= length;
+    } else {
+        normal.set(0, 0, 0);
+    }
+
+    for (int i = 0; i < 3; ++i) {
+        out.push_back(normal.x);
+        out.push_back(normal.y);
+        out.push_back(normal.z);
+    }
 }

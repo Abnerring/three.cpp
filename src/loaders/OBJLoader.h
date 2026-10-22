@@ -1,4 +1,4 @@
-﻿#pragma once
+#pragma once
 #include <array>
 #include <string>
 #include <vector>
@@ -34,4 +34,10 @@ class OBJLoader {
     // continuations are joined, comments and blank lines are skipped, faces are fanned from
     // their first vertex, and a face corner with a missing index contributes zero.
     Geometry parseGeometry(const std::string& text) const;
+
+    // Computes one face normal from three vertices and appends it three times, which is what
+    // upstream does when a face carries no normal indices. The three indices a, b and c point
+    // into vertices; the result is appended to out.
+    static void addFaceNormal(const std::vector<double>& vertices, int a, int b, int c,
+                              std::vector<double>& out);
 };
