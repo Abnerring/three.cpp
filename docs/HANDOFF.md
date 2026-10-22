@@ -602,6 +602,12 @@
    - **测试（2 个用例、31 条断言）**：18 个枚举值逐个比对（`bool` 而不是 `boolean`、`readOnly` 而不是 `readonly` 这类大小写都按上游原样），四个数组的**长度与顺序**（`shaderStages` 是 `defaultShaderStages` 后面追加 `compute`，`vectorComponents` 末尾是 `w`）。
    - **验证**：核心 **762 用例 / 205,831 断言**（+2 / +31）、`primitive-geometry`、`port-audit` 全绿。
    - **下一步**：`Node.js` 本体可以做**部分移植**——`isCacheable`、`getCacheKey`、`customCacheKey`、`getScope`、`getHash`、`getUpdateType*`、`getElementType`、`getMemberType`、`getNodeType`（45 行）、`generateNodeType`、`getShared`、`getArrayCount`、`traverse`、`_getChildren`、`dispose`、`serialize`/`deserialize`/`toJSON` 都是纯逻辑；而 `setup`/`analyze`/`generate`/`build` 依赖 builder，按项目规则**显式抛错**。
+142. **第 81 轮：`Node` 基类的第一个切片——构造函数、身份、哈希与更新类型访问器**。
+   - **范围**：构造函数里的**全部字段**（`nodeType` 可空、三个 `update*Type` 默认 `NONE`、`version = 0`、`name` 空、`global`/`parents` 假、`isNode` 真、`id` 自增）+ `isCacheable`（默认 `true`）+ `customCacheKey`（返回 `id`）+ `getScope`（返回自身）+ `getHash`（`String(id)`）+ `getUpdateType`/`getUpdateBeforeType`/`getUpdateAfterType`。三个可覆写的方法都写成 `virtual`，测试里用一个派生类验证覆写生效、未覆写的仍走默认。
+   - **两处诚实的映射**：① `nodeType = null` → `std::optional<std::string>`；② 上游 `Node.captureStackTrace` 为真时会 `new StackTrace()` 抓 JS 栈——C++ 没有等价物，所以保留同名静态开关但**默认 `false`**，且头文件写明"没有引擎栈可抓，除非调用方自己传入"。
+   - **测试（3 个用例、19 条断言）**：id 严格递增（`second.id() == first.id() + 1`）、全部默认值、`nodeType` 可选；三个 `getUpdateType*` 都是 `none`、`isCacheable` 为真、`customCacheKey() == id`、`getHash() == std::to_string(id)`、`getScope() == &node`；派生类覆写 `isCacheable`/`customCacheKey` 后生效，而 `getHash` 仍走默认。
+   - **验证**：核心 **765 用例 / 205,850 断言**（+3 / +19）、`primitive-geometry`、`port-audit` 全绿。
+   - **下一步（同一个类，继续切片）**：`getCacheKey` 需要 `_getChildren(ignores)`（383–449 行），而后者默认返回空列表、派生类才会填；接着是 `getElementType`/`getMemberType`/`getNodeType`（45 行的类型推导）/`generateNodeType`/`getShared`/`getArrayCount`/`traverse`/`dispose`；最后才是 `serialize`/`deserialize`/`toJSON`（它们依赖 `getSerializeChildren`）。`setup`/`analyze`/`generate`/`build` 按规则显式抛错。
 70. **第 520 轮：完整 Vulkan 套件 211/211 全绿，耗时 270.72 秒**。
    - 命令：`ctest --test-dir build-vulkan -j 4 -E "lights-states" --output-on-failure`（仍排除第 46 条那个已知项；它在 Vulkan 构建里同样慢）。
    - 结果：**100% tests passed, 0 tests failed out of 211**，总耗时 **270.72 秒**。对比同一套件在 **Debug** 配置下的 **3784.56 秒 / 2 失败**，差了约 14 倍——再次印证第 69 条"是构建类型不是代码"的结论。
