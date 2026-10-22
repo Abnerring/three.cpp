@@ -2575,6 +2575,35 @@ void VulkanRenderer::setRenderTarget(std::shared_ptr<RenderTarget> target,
     }
 }
 std::shared_ptr<RenderTarget> VulkanRenderer::getRenderTarget() const { return impl->renderTarget; }
+void VulkanRenderer::renderEquirectangularToCube(const std::shared_ptr<Texture>& source,
+                                                 const std::shared_ptr<RenderTarget>& target) {
+    if (!source) throw std::invalid_argument("equirectangular source needed");
+    auto cube = std::dynamic_pointer_cast<WebGLCubeRenderTarget>(target);
+    if (!cube) throw std::invalid_argument("only cube render targets have six faces");
+    // Reuse the renderer's own upload, caching and mipmap path rather than assembling a
+    // texture config here.
+    std::shared_ptr<Impl::TextureEntry> binding;
+    const auto texture = impl->updateTexture(source, binding);
+    if (!texture) throw std::runtime_error("equirectangular source could not be uploaded");
+    const auto previous = getRenderTarget();
+    const auto previousFace = getActiveCubeFace();
+    const auto previousMip = getActiveMipmapLevel();
+    // The unit box spans exactly the clip volume, so the identity matrices make each face
+    // fully covered; proper per face views come with the convolution passes.
+    const float identity[16] = {1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1};
+    std::array<float, 48> block{};
+    std::copy(std::begin(identity), std::end(identity), block.begin());
+    std::copy(std::begin(identity), std::end(identity), block.begin() + 16);
+    std::copy(std::begin(identity), std::end(identity), block.begin() + 32);
+    for (std::uint32_t face = 0; face < 6; ++face) {
+        setRenderTarget(cube, face);
+        impl->beginFrame(false, false, impl->activeClearColor, impl->activeClearAlpha,
+                         impl->activeClearSRGB);
+        impl->drawPmremFace(texture, block);
+        impl->endFrame();
+    }
+    setRenderTarget(previous, previousFace, previousMip);
+}
 std::uint32_t VulkanRenderer::getActiveCubeFace() const { return impl->activeCubeFace; }
 std::uint32_t VulkanRenderer::getActiveMipmapLevel() const { return impl->activeMipmapLevel; }
 std::vector<std::uint8_t> VulkanRenderer::readRenderTargetPixels(RenderTarget& target, std::uint32_t x,

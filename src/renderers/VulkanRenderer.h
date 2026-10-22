@@ -34,6 +34,7 @@ struct VulkanRendererInfo {
 
 // Offscreen Vulkan graphics renderer. Pixel rows are returned from top to bottom.
 // The scene API follows three.js; presentation/swapchains are not implemented yet.
+class Texture;
 class VulkanRenderer {
   public:
     explicit VulkanRenderer(const VulkanRendererParameters& parameters = {});
@@ -68,6 +69,10 @@ class VulkanRenderer {
     void setRenderTarget(std::shared_ptr<RenderTarget> target, std::uint32_t activeCubeFace = 0,
                           std::uint32_t activeMipmapLevel = 0);
     // The active face and mip level of the bound target, as upstream exposes them.
+    // Upstream _equirectToCubeUV: draws an equirectangular source into all six faces of a
+    // cube target through the PMREM program. The convolution passes are not part of this.
+    void renderEquirectangularToCube(const std::shared_ptr<Texture>& source,
+                                     const std::shared_ptr<RenderTarget>& target);
     std::uint32_t getActiveCubeFace() const;
     std::uint32_t getActiveMipmapLevel() const;
     std::shared_ptr<RenderTarget> getRenderTarget() const;

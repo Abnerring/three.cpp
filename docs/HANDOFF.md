@@ -305,6 +305,13 @@
      4. 恢复 `previous/previousFace/previousMip`。
    - **矩阵**：`block` 是 48 个 float（`model`、`modelView`、`projection` 各 16）。纯色源对变换不敏感，所以第一版验收只看"六面是否都是该色"，矩阵可以先用单位阵 + 一个 fov 90、aspect 1 的投影，等管线通了再校正。
    - **本轮处理**：所有改动已 `git checkout` 回退，树干净；核心 **745 / 205,728**、`primitive-geometry`、`port-audit` 全绿。
+97. **第 34 轮：PMREM 的"等距柱状 → 立方体"在真实 GPU 上出图了（第一个真正的 GPU 步骤）**。
+   - **实现**：`VulkanRenderer::renderEquirectangularToCube(source, target)`——不自己拼纹理配置，而是**复用** `impl->updateTexture(source, binding)`（项目的上传/缓存/mipmap 路径）；保存 `previous/previousFace/previousMip`；六面循环里 `setRenderTarget(cube, face)` → `impl->beginFrame(false, false, activeClearColor, activeClearAlpha, activeClearSRGB)`（**不清屏**，因为盒子会铺满整面）→ `impl->drawPmremFace(texture, block)` → `impl->endFrame()`；最后恢复。矩阵先用单位阵——**单位盒子正好张满 `[-1,1]³`，投影后铺满整个视口**，所以纯色源必然整面都是该色。
+   - **踩的坑**：头文件里 `Texture` 没声明，补了 `class Texture;`；编译报错还会连带出一串"`getRenderTarget` 需要对象"之类的假错误，其实都是这一条引起的。
+   - **验收（GPU）**：`equirectangularToCubeTests` 造一张 **8×4 纯绿**的 `DataTexture`（`needsUpdate = true`），`setRenderTarget(cube)` 后调用入口，然后 `readRenderTargetPixels`：**面里读到的是绿色**（`g > 200 && r < 60 && b < 60`），并且调用后目标仍是 `cube`。`--cube` 无 stderr 输出即通过。
+   - **这条验收的聪明之处**：纯色对任何变换都不敏感，所以它**只**验证"管线 + 采样器 + 描述符 + 绘制 + 回读"这条链，把"矩阵是否正确"完全隔离出去——一次只验一件事。
+   - **状态**：核心 **745 / 205,728**、`primitive-geometry`、`port-audit` 全绿。
+   - **下一步**：把逐面 view/projection 做对（六面各自的方向），然后用**渐变**或**棋盘**等距柱状图验收方向性；之后才是卷积（模糊 + GGX）那两级 lod。
 70. **第 520 轮：完整 Vulkan 套件 211/211 全绿，耗时 270.72 秒**。
    - 命令：`ctest --test-dir build-vulkan -j 4 -E "lights-states" --output-on-failure`（仍排除第 46 条那个已知项；它在 Vulkan 构建里同样慢）。
    - 结果：**100% tests passed, 0 tests failed out of 211**，总耗时 **270.72 秒**。对比同一套件在 **Debug** 配置下的 **3784.56 秒 / 2 失败**，差了约 14 倍——再次印证第 69 条"是构建类型不是代码"的结论。

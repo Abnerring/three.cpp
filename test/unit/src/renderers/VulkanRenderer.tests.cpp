@@ -1750,10 +1750,29 @@ void cubeCameraUpdateTests(bool validation) {
     require(pixels[2] > 200 && pixels[2] > pixels[1] && pixels[1] > pixels[0] && pixels[0] > 60,
             "face carries the clear colour");
 }
+
+void equirectangularToCubeTests(bool validation) {
+    VulkanRenderer renderer({64, 64, validation});
+    auto cube = std::make_shared<WebGLCubeRenderTarget>(16);
+    // A solid green equirectangular source: solid colour is invariant under any transform,
+    // so this asks only whether the pass, the sampler and the readback path work.
+    std::vector<std::uint8_t> pixels(static_cast<std::size_t>(8) * 4 * 4, 0);
+    for (std::size_t i = 0; i < pixels.size(); i += 4) { pixels[i + 1] = 255; pixels[i + 3] = 255; }
+    auto source = std::make_shared<DataTexture>(Uint8Array(std::move(pixels)), 8, 4);
+    source->needsUpdate = true;
+    renderer.setRenderTarget(cube);
+    renderer.renderEquirectangularToCube(source, cube);
+    require(renderer.getRenderTarget() == cube, "equirectangular keeps the bound target");
+    auto face = renderer.readRenderTargetPixels(*cube, 0, 0, 16, 16);
+    require(face.size() == static_cast<std::size_t>(16) * 16 * 4, "face pixel count");
+    require(face[1] > 200 && face[0] < 60 && face[2] < 60,
+            "cube face carries the equirectangular colour");
+    renderer.setRenderTarget(nullptr);
+}
 int main(int argc, char** argv) {
     try {
         const bool validation = argc > 1 && std::string(argv[1]) == "--validation";
-        if (argc > 1 && std::string(argv[1]) == "--cube") { renderTargetTests(validation); cubeRenderTargetTests(validation); cubeCameraUpdateTests(validation); return 0; }
+        if (argc > 1 && std::string(argv[1]) == "--cube") { renderTargetTests(validation); cubeRenderTargetTests(validation); cubeCameraUpdateTests(validation); equirectangularToCubeTests(validation); return 0; }
         unsupportedMeshTests(validation);
         unsupportedPrimitiveTests(validation);
         instancingTests(validation);
