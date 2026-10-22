@@ -683,6 +683,12 @@
    - **测试（3 个用例、28 条断言）**：标题/尺寸/域解析；**字节级**断言——第 1 个点 `(0,0,0,255)`、第 2 个点 `(255,0,0,255)`、最后一个点 `(255,255,255,255)`、总长度 `2³×4 = 32`、`image` 的 `width/height/depth` 都是 2；两个 `REQUIRE_THROWS_WITH` 校验**完整错误文本**。
    - **两个小坑**：`texture->image` 是 `Texture::ImageProperty`，要 `.get()` 才能取 `TextureImage*`（不能用 `*`）；`Data3DTexture` 的尺寸不在 `image` 上而在构造函数里。
    - **验证**：核心 **790 用例 / 206,064 断言**（+3 / +28）、`primitive-geometry`、`port-audit` 全绿。addon loader 从 **2 / 52** 变成 **3 / 52**。
+155. **第 94 轮：第二个 addon loader——`LUT3dlLoader`，含 32 字节整数组断言**。
+   - **实现要点**（全部照上游）：网格行用 `^[\d ]+$`（multiline）抓，**行内数字个数就是 LUT 尺寸**，相邻差必须恒定（否则 `Inconsistent grid size`）；数据点重排是 **B 增长最快、然后 G、然后 R**，落位公式 `d4 = (bLayer*size² + gLayer*size + rLayer)*4`；缩放用 **`bits = max(0, ceil(log2(maxValue)))`**、`maxBitValue = 2^bits`；`UnsignedByteType` 乘 255、`FloatType` 乘 1；alpha 写 `scale`；纹理设 `RGBAFormat` + `LinearFilter` + 三轴 `ClampToEdgeWrapping` + 不生成 mipmap。
+   - **一个只有跑起来才会发现的细节**：输入里最大是 255，`ceil(log2(255)) = 8`、`maxBitValue = 256`，所以 `255/256*255 = 254.0…` **截断成 254**——**255 会变成 254**，不是 255。参考数组（node 跑上游得到）是 `0,0,0,255, 0,0,254,255, 0,254,0,255, 0,254,254,255, 254,0,0,255, 254,0,254,255, 254,254,0,255, 254,254,254,255`，**32 个字节逐个断言**。
+   - **一个我自己写错的测试期望**：第一版用 `parse("0 0 0\n")` 期望抛"缺少网格"，但 `"0 0 0"` **本身就是合法的网格行**（三个数字、步长 0、自洽），**上游也不会抛错**。改成 `parse("no grid here\n")` 才真正覆盖"没有网格行"的分支。**又一次印证：测试失败先怀疑测试。**
+   - **两个端口 API 细节**：`TypedArray` **没有 `.vector()`**，要用 `operator[]` 与 `size()`；`texture->image` 是 `ImageProperty`，`.get()` 拿 `TextureImage*` 之后才能取 `->data`。
+   - **验证**：核心 **793 用例 / 206,105 断言**（+3 / +41）、`primitive-geometry`、`port-audit` 全绿。addon loader **3 / 52 → 4 / 52**。
 70. **第 520 轮：完整 Vulkan 套件 211/211 全绿，耗时 270.72 秒**。
    - 命令：`ctest --test-dir build-vulkan -j 4 -E "lights-states" --output-on-failure`（仍排除第 46 条那个已知项；它在 Vulkan 构建里同样慢）。
    - 结果：**100% tests passed, 0 tests failed out of 211**，总耗时 **270.72 秒**。对比同一套件在 **Debug** 配置下的 **3784.56 秒 / 2 失败**，差了约 14 倍——再次印证第 69 条"是构建类型不是代码"的结论。
