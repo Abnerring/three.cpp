@@ -393,6 +393,8 @@ struct VulkanRenderer::Impl {
         VkDeviceSize size = 0;
         std::uint64_t usedEpoch = 0;
     } readback;
+    // The PMREM box positions, uploaded once at construction.
+    Buffer pmremVertices;
     using BufferRef = std::shared_ptr<Buffer>;
     // The command adapter owns the upload buffers independently of the decoded
     // float/uint32 draw buffers. Reads below come from mapped Vulkan memory.
@@ -855,6 +857,7 @@ struct VulkanRenderer::Impl {
             throw std::runtime_error("PMREM shader requires one descriptor set");
         pmremTextureLayout = pmremReflectedLayout->setLayouts()[0];
         pmremPipelineLayout = pmremReflectedLayout->handle();
+        createPmremGeometry();
         createPmremPipeline();
         pipelineLayout = reflectedLayout->handle();
         createRenderPass();
@@ -2262,6 +2265,20 @@ struct VulkanRenderer::Impl {
               "vkCreateGraphicsPipelines");
         pipelines.emplace(key, result);
         return result;
+    }
+
+    // Upstream draws a BoxGeometry(1, 1, 1) through the PMREM pass. Its twelve triangles
+    // are a constant, so they ship as one vertex buffer built at construction.
+    void createPmremGeometry() {
+        const std::array<float, 108> boxPositions{
+            1, -1, -1, 1, 1, -1, 1, 1, 1, 1, -1, -1, 1, 1, 1, 1, -1, 1,
+            -1, -1, 1, -1, 1, 1, -1, 1, -1, -1, -1, 1, -1, 1, -1, -1, -1, -1,
+            -1, 1, -1, -1, 1, 1, 1, 1, 1, -1, 1, -1, 1, 1, 1, 1, 1, -1,
+            -1, -1, 1, -1, -1, -1, 1, -1, -1, -1, -1, 1, 1, -1, -1, 1, -1, 1,
+            -1, -1, 1, 1, -1, 1, 1, 1, 1, -1, -1, 1, 1, 1, 1, -1, 1, 1,
+            1, -1, -1, -1, -1, -1, -1, 1, -1, 1, -1, -1, -1, 1, -1, 1, 1, -1};
+        pmremVertices = createBuffer(sizeof(float) * boxPositions.size(),
+                                     VK_BUFFER_USAGE_VERTEX_BUFFER_BIT, boxPositions.data());
     }
 
     // The PMREM pass draws a box through a classic vec3 position input, which the vertex

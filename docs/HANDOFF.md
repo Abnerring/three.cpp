@@ -273,6 +273,11 @@
    - **验证**：`threecpp_vulkan` 与 `VulkanRendererTests` 构建通过；`VulkanRendererTests --cube` 在真实 GPU 上通过——`vkCreateGraphicsPipelines` 失败会抛异常，所以通过即说明**这条管线是合法的**。核心 **745 / 205,728**、`primitive-geometry`、`port-audit` 全绿。
    - **一处刻意的"不修"**：现有实现里 `pipelines` 这个 map 持有一堆 `VkPipeline`，但析构并**没有**显式 `vkDestroyPipeline`。为了不和既有行为打架（也可能别处已经处理），我没有单独给 `pmremPipelineHandle` 加销毁——保持一致性，等以后统一处理管线生命周期时一起做。
    - **下一轮**：给生成器一个**自绘入口**——把 box 的 36 个顶点位置放进临时缓冲，按 `updateCubeCamera` 的六面流程逐面 `bind pipeline + bind vertex buffer + push uniform + draw`，把等距柱状纹理当采样图传进去。这是 `fromEquirectangular` 真正能出图前的最后一段。
+92. **第 29 轮：PMREM 的 box 顶点缓冲建好（最后一段的几何部分）**。
+   - **本轮**：`createPmremGeometry()` 把上游 `BoxGeometry(1, 1, 1)` 的十二个三角形、三十六个顶点位置（`std::array<float, 108>`）通过现成的 `createBuffer(sizeof(float)*108, VK_BUFFER_USAGE_VERTEX_BUFFER_BIT, data)` 一次上传；`Buffer pmremVertices;` 成员住在 `struct Buffer`（391 行）**之后**——第一次放在 `Impl` 成员区前部会报"未知重写说明符"，因为 `Buffer` 那时还没声明。构造函数里在 `createPmremPipeline()` 之前调用它。
+   - **验证**：`--cube` 在真实 GPU 上通过；上传失败会抛异常，所以通过即说明这三十六个顶点确实进了显存。核心 **745 / 205,728**、`primitive-geometry`、`port-audit` 全绿。
+   - **顺手确认**：又跑了一次完整 `VulkanRendererTests`，仍然在 mipmap 用例失败（52.9 秒），环境没恢复——这条验证通道（`--cube`）还得继续用。
+   - **下一轮**：把 descriptor set 与采样图接上——`pmremTextureLayout` 已就绪，需要从 `descriptorPools` 分一套、绑定等距柱状纹理、`vkCmdPushConstants` 传 `Transforms`，然后 `vkCmdBindPipeline + vkCmdBindVertexBuffers + vkCmdDraw(36)`，逐面写进立方体目标。这是 `fromEquirectangular` 出图的最后一步。
 70. **第 520 轮：完整 Vulkan 套件 211/211 全绿，耗时 270.72 秒**。
    - 命令：`ctest --test-dir build-vulkan -j 4 -E "lights-states" --output-on-failure`（仍排除第 46 条那个已知项；它在 Vulkan 构建里同样慢）。
    - 结果：**100% tests passed, 0 tests failed out of 211**，总耗时 **270.72 秒**。对比同一套件在 **Debug** 配置下的 **3784.56 秒 / 2 失败**，差了约 14 倍——再次印证第 69 条"是构建类型不是代码"的结论。
