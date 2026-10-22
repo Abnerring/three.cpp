@@ -643,6 +643,12 @@
    - **测试（3 个用例、25 条断言）**：球体的包含/距离/与盒相交/与平面相交；平面的法线与常数、点到平面距离、投影；三角形的退化面积、面积、重心坐标、包含性、法线、中点。
    - **两个值得记的语义点**：① **球内点的距离是负数**（不是绝对值）；② **默认三角形是退化的**，`getArea()` 返回 0 而不是 NaN。
    - **验证**：核心 **777 用例 / 205,955 断言**（+3 / +25）、`primitive-geometry`、`port-audit` 全绿。
+149. **第 88 轮：`Line3`、`Box2`、`Cylindrical`、`Spherical` 四个模块补上 30 条逐位断言**。
+   - **参考值来自上游**：`Line3((0,0,0),(2,2,2))` 的 center (1,1,1)、delta (2,2,2)、`distance()` = **3.4641016151377544**（2√3）；`closestPointToPoint((2,0,0), clamp=true)` = **(0.6666… ×3)**、`((0,5,0), clamp=false)` = **(1.6666… ×3)**——**钳制与否结果不同**，最容易实现错的一处。`Box2((-1,-2),(3,4))` 的 center (1,1)、size (4,6)、`clampPoint((9,9))` = (3,4)、`distanceToPoint` = **7.810249675906654**（√61）。`Cylindrical.setFromVector3((0,3,5))` → radius 5、theta 0、y 3。`Spherical.setFromVector3((0,0,5))` → radius 5、phi **π/2**、theta 0；极点 (0,5,0) → phi **0**。
+   - **一处端口与上游的 API 差异（记下来）**：端口的 `Line3` 有 `distanceToPoint`，而**上游 `Line3` 没有这个方法**（上游是 set/copy/getCenter/delta/distanceSq/distance/at/closestPointToPointParameter/closestPointToPoint/distanceSqToLine3/applyMatrix4/equals/clone）。这是端口多出来的便利方法，**不该被当作上游 API**，测试里不碰它。
+   - **两个转换类的端口方法与上游一一对应**（set/copy/makeSafe/setFromVector3/setFromCartesianCoords/clone），没有多余也没有缺失。
+   - **测试（3 个用例、30 条断言）**；核心 **784 / 206,007**、`primitive-geometry`、`port-audit` 全绿。
+   - **工具坑**：把 `Set-Location` 与相对路径写在同一行时，相对路径仍按会话工作目录解析，导致 `docs\HANDOFF.md` 找不到——**文档路径要写绝对路径**。
 70. **第 520 轮：完整 Vulkan 套件 211/211 全绿，耗时 270.72 秒**。
    - 命令：`ctest --test-dir build-vulkan -j 4 -E "lights-states" --output-on-failure`（仍排除第 46 条那个已知项；它在 Vulkan 构建里同样慢）。
    - 结果：**100% tests passed, 0 tests failed out of 211**，总耗时 **270.72 秒**。对比同一套件在 **Debug** 配置下的 **3784.56 秒 / 2 失败**，差了约 14 倍——再次印证第 69 条"是构建类型不是代码"的结论。
