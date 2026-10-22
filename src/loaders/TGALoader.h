@@ -44,6 +44,13 @@ class TGALoader {
     // non positive size is rejected. Throws std::runtime_error with the upstream message.
     static void checkHeader(const Header& header);
 
+    // Expands run length encoded pixels into a flat buffer of pixelTotal bytes. A control byte
+    // whose high bit is set repeats one pixel count times, otherwise count pixels follow
+    // literally. Throws when the data ends early.
+    static std::vector<std::uint8_t> decodeRle(const std::vector<std::uint8_t>& data,
+                                               std::size_t offset, std::size_t pixelTotal,
+                                               int pixelSizeBytes);
+
     // Whether a type is one of the run length encoded ones.
     static bool isRle(int imageType);
 };

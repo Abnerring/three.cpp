@@ -76,6 +76,7 @@ add_executable(THREECPPTests
         unit/src/loaders/PCDBuild.tests.cpp
         unit/src/loaders/TGALoader.tests.cpp
         unit/src/loaders/TGAHeader.tests.cpp
+        unit/src/loaders/TGARle.tests.cpp
         unit/src/cameras/StereoCamera.tests.cpp
         unit/src/audio/AudioContext.tests.cpp
         unit/src/audio/Audio.tests.cpp
