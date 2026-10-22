@@ -628,6 +628,13 @@
    - **测试（3 个用例、21 条断言）**：投影矩阵逐位相等、离轴项对称、眼睛矩阵的平移、`matrixWorldNeedsUpdate` 被置位；默认值（`aspect = 1`、`eyeSep = 0.064`、`type = "StereoCamera"`）与层分配（左眼 layer 1、右眼 layer 2、`matrixAutoUpdate = false`）；**缓存命中**——只移动相机不改投影，但眼睛矩阵仍跟随。
    - **验证**：核心 **769 用例 / 205,877 断言**（+3 / +21）、`primitive-geometry`、`port-audit` 全绿。
    - **过程小坑**：测试文件第一次没被注册（锚点没匹配）；`Layers` 的方法名是 `isEnabled(n)` 而不是 `test(n)`。
+146. **第 85 轮：`Box3` 从"无测试"变成 53 条逐位断言**。
+   - **怎么找到的**：把 `src/**/*.cpp` 与 `test/**/*.tests.cpp` 的基名做差集，得到 **310 个没有专属测试文件**的模块（很多被 `primitive-geometry` 差分间接覆盖，但没有针对自身方法的断言）。挑纯数学、方法多、下游用得广的 `Box3`（端口 36 个方法、308 行）。
+   - **参考值全部来自上游**：用 `node` 直接 `import` 固定版本的 `Box3.js`/`Vector3.js`/`Matrix4.js` 跑真实调用并打印，得到：`setFromPoints` 后的 min(-1,-3,1)/max(2,2,5)、center(0.5,-0.5,3)、size(3,5,4)、`clampPoint(10,10,10)` → (2,2,5)、`distanceToPoint` = **12.36931687685298**、`getParameter(0,0,4)` → (1/3, 0.6, 0.75)、`union` → min(-1,-3,0)/max(4,4,5)、`intersect` → min(0,0,1)/max(2,2,4)、`applyMatrix4(平移 5)` → min(4,-1,-1)/max(6,1,1)。
+   - **测试（5 个用例、53 条断言）**：空盒与 `setFromPoints`；center/size/clamp/distance/parameter；包含性（含**边界点算包含**）；union 与 intersect（含"空盒求交仍为空"）；applyMatrix4/translate/expandByScalar/equals。
+   - **顺手发现一处命名适配**：上游方法名是 **`union`**，而 `union` 是 **C++ 关键字**，端口用 `unionWith`——这是**合理的语言适配**（不是瞎改名），已在测试注释里说明。
+   - **两个小坑**：端口 `Box3` 的字段叫 `min`/`max`（不是 `minimum`/`maximum`）；`getBoundingSphere()` 上游**必须传 target**，我第一版没传，`node` 直接抛 `Cannot read properties of undefined`。
+   - **验证**：核心 **774 用例 / 205,930 断言**（+5 / +53）、`primitive-geometry`、`port-audit` 全绿。
 70. **第 520 轮：完整 Vulkan 套件 211/211 全绿，耗时 270.72 秒**。
    - 命令：`ctest --test-dir build-vulkan -j 4 -E "lights-states" --output-on-failure`（仍排除第 46 条那个已知项；它在 Vulkan 构建里同样慢）。
    - 结果：**100% tests passed, 0 tests failed out of 211**，总耗时 **270.72 秒**。对比同一套件在 **Debug** 配置下的 **3784.56 秒 / 2 失败**，差了约 14 倍——再次印证第 69 条"是构建类型不是代码"的结论。

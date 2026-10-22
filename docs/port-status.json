@@ -6474,7 +6474,9 @@
         "upstreamUnitTests": [
           "test/unit/src/math/Box3.tests.js"
         ],
-        "cppUnitTests": [],
+        "cppUnitTests": [
+          "test/unit/src/math/Box3.tests.cpp"
+        ],
         "reviewedImplementation": [],
         "differentialResults": [],
         "renderingResults": [],
