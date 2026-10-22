@@ -1,4 +1,4 @@
-﻿#pragma once
+#pragma once
 #include <array>
 #include <string>
 
@@ -46,4 +46,18 @@ class LDrawLoader {
         std::size_t index_ = 0;
         int lineNumber_ = -1;
     };
+
+    // A reference line, the first kind of directive. It names a colour, a position, a three by
+    // three rotation written row by row and the part file to place.
+    struct ReferenceLine {
+        std::string colorCode;
+        std::array<double, 3> position{};
+        std::array<double, 9> rotation{};
+        std::string fileName;
+    };
+
+    // Reads a reference line. The colour token is kept as it was written, since it may be a
+    // number or a name, and the nine rotation numbers are read one at a time in the order the
+    // format writes them. The file name is whatever follows, taken as one token.
+    static ReferenceLine parseReferenceLine(LineParser& parser);
 };

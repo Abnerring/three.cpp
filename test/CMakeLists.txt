@@ -151,6 +151,7 @@ add_executable(THREECPPTests
         unit/src/loaders/TDSMain.tests.cpp
         unit/src/loaders/TDSMeshData.tests.cpp
         unit/src/loaders/LDrawLoader.tests.cpp
+        unit/src/loaders/LDrawReference.tests.cpp
         unit/src/cameras/StereoCamera.tests.cpp
         unit/src/audio/AudioContext.tests.cpp
         unit/src/audio/Audio.tests.cpp

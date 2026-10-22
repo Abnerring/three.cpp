@@ -1,4 +1,4 @@
-﻿#include "loaders/LDrawLoader.h"
+#include "loaders/LDrawLoader.h"
 
 #include <cstdlib>
 #include <utility>
@@ -60,4 +60,27 @@ std::string LDrawLoader::LineParser::getLineNumberString() const {
     // Only a line that knows its number names it.
     if (lineNumber_ < 0) return std::string();
     return " at line " + std::to_string(lineNumber_);
+}
+
+namespace {
+// A token read as a number, with an empty token standing for nothing.
+double toNumber(const std::string& token) {
+    return token.empty() ? 0.0 : std::strtod(token.c_str(), nullptr);
+}
+}  // namespace
+
+LDrawLoader::ReferenceLine LDrawLoader::parseReferenceLine(LineParser& parser) {
+    ReferenceLine reference;
+    // The colour is kept as text because it may be a number or a name.
+    reference.colorCode = parser.getToken();
+    // Three numbers for the position, then nine for the rotation, written a row at a time.
+    for (int i = 0; i < 3; ++i) {
+        reference.position[static_cast<std::size_t>(i)] = toNumber(parser.getToken());
+    }
+    for (int i = 0; i < 9; ++i) {
+        reference.rotation[static_cast<std::size_t>(i)] = toNumber(parser.getToken());
+    }
+    // Whatever remains is the part file.
+    reference.fileName = parser.getToken();
+    return reference;
 }
