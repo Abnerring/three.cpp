@@ -1401,6 +1401,16 @@
    - **测试（4 个用例、13 条断言）**：表的两端公式值、单调性、黑接近 0、白大于 1（**表在高端过冲**）、**索引被夹紧**（5000 → 1023、−3 → 0）、增益的三个端点、**指数 2 时 0.25 → 0.0625**。
    - **验证**：核心 **1222 用例 / 209,088 断言**（+4 / +13）、addons、`primitive-geometry`、`port-audit`、Vulkan 全绿。
    - **剩余**：`_parseISOMetadata`（ISO 盒子）、`_parseXMPMetadata`、`_applyGainmapToSDR` 的逐像素合成；JPEG 解码本身需要编解码器，端口没有。
+256. **第 195 轮：`UltraHDRLoader` 第二层——ISO 21496-1 元数据**。
+   - **两条路径**：`flags` 的第 3 位（`0x8`）是**公共分母**——一个 uint32 除以所有值；否则每个值都是**分子分母对**。第 2 位（`0x4`）是 `backwardDirection`。开头**跳过 4 字节**（最小版本 2 + 写者版本 2）。
+   - **全部大端**（`getUint32(offset, false)`）——与端口里多数格式相反，所以单独抽了 `readUint32BE`/`readInt32BE`。
+   - **公式**：`hdrCapacityMin/Max = log2(N / D)`；`gainMapMin/Max = N / D`；`gamma = N / D`；**两个 offset 额外乘 255**（它们以字节范围为尺度）。
+   - **三个真实的 C++ 坑**（都不是逻辑错）：
+     1. **三元运算符的类型提升**：`signed ? readInt32BE(...) : readUint32BE(...)` 的公共类型是**无符号**，所以 `-3` 变成了 **4294967293**，断言里直接显示 `2147483646.5`。修法是**两个分支都显式 `static_cast<double>`**。
+     2. **按 5 行替换只占 1 行的代码**：我第一次修三元时覆盖了后面的 `denominator` 读取与 `return`，编译通过但结果变成 0.0。修法是把**整个 lambda 重写**并打印总行数确认。
+     3. **测试缓冲区太短**：`records the backward direction flag` 只给了 5 字节，但配对路径要读完 56 字节，于是走了"长度不足"分支。补零到 61 字节。
+   - **测试（4 个用例、15 条断言）**：公共分母路径（`log2(0.5) = -1`、`log2(2) = 1`、`gamma 2`、`offset ±25.5`）；**配对路径**（`-1.5`、`1.5`、`2`、`63.75`）；`backwardDirection` 位；块太短抛错。
+   - **验证**：核心 **1226 用例 / 209,103 断言**（+4 / +15）、addons、`primitive-geometry`、`port-audit`、Vulkan 全绿。
 70. **第 520 轮：完整 Vulkan 套件 211/211 全绿，耗时 270.72 秒**。
    - 命令：`ctest --test-dir build-vulkan -j 4 -E "lights-states" --output-on-failure`（仍排除第 46 条那个已知项；它在 Vulkan 构建里同样慢）。
    - 结果：**100% tests passed, 0 tests failed out of 211**，总耗时 **270.72 秒**。对比同一套件在 **Debug** 配置下的 **3784.56 秒 / 2 失败**，差了约 14 倍——再次印证第 69 条"是构建类型不是代码"的结论。
