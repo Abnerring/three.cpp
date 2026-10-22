@@ -367,6 +367,13 @@ struct VulkanRenderer::Impl {
     VkFence fence = VK_NULL_HANDLE;
     std::unordered_map<std::string, VkPipeline> pipelines;
     VkDescriptorSetLayout textureLayout = VK_NULL_HANDLE;
+    // PMREM builds its own reflected layout, template and shader modules; a second program
+    // needs its own set because the basic vertex stage uses a different binding split.
+    std::unique_ptr<VulkanShaderModules> pmremModules;
+    std::unique_ptr<VulkanPipelineLayout> pmremReflectedLayout;
+    std::unique_ptr<VulkanUniformBuffer> pmremUniformTemplate;
+    VkDescriptorSetLayout pmremTextureLayout = VK_NULL_HANDLE;
+    VkPipelineLayout pmremPipelineLayout = VK_NULL_HANDLE;
     std::vector<VkDescriptorPool> descriptorPools;
     std::size_t activeDescriptorPool = 0;
     VkCommandBuffer textureCommandBuffer = VK_NULL_HANDLE;
@@ -824,6 +831,29 @@ struct VulkanRenderer::Impl {
         if (reflectedLayout->setLayouts().size() != 1)
             throw std::runtime_error("MeshBasic shader requires one descriptor set");
         textureLayout = reflectedLayout->setLayouts()[0];
+        // Second program: the PMREM equirectangular pass, same construction path.
+        const auto pmremVertexWords = readShader("pmrem_equirect.vert.spv");
+        const auto pmremFragmentWords = readShader("pmrem_equirect.frag.spv");
+        const std::array<VulkanShaderModules::Stage, 2> pmremStages{{{pmremVertexWords}, {pmremFragmentWords}}};
+        pmremModules = std::make_unique<VulkanShaderModules>(device,
+            VulkanShaderModules::Dispatch{api.vkCreateShaderModule, api.vkDestroyShaderModule}, pmremStages);
+        const auto& pmremVertexInterface = pmremModules->interfaces().front();
+        const auto pmremTransforms = std::find_if(pmremVertexInterface.descriptors.begin(),
+            pmremVertexInterface.descriptors.end(), [](const auto& descriptor) {
+                return descriptor.type == VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
+            });
+        if (pmremTransforms == pmremVertexInterface.descriptors.end() ||
+            pmremTransforms->count != 1)
+            throw std::runtime_error("PMREM shader requires one reflected uniform block");
+        pmremUniformTemplate = std::make_unique<VulkanUniformBuffer>(pmremTransforms->block);
+        pmremReflectedLayout = std::make_unique<VulkanPipelineLayout>(device,
+            VulkanPipelineLayout::Dispatch{api.vkCreateDescriptorSetLayout, api.vkDestroyDescriptorSetLayout,
+                api.vkCreatePipelineLayout, api.vkDestroyPipelineLayout},
+            pmremModules->interfaces(), shaderProperties.limits, VulkanPipelineLayout::DescriptorCounts{}, 1);
+        if (pmremReflectedLayout->setLayouts().size() != 1)
+            throw std::runtime_error("PMREM shader requires one descriptor set");
+        pmremTextureLayout = pmremReflectedLayout->setLayouts()[0];
+        pmremPipelineLayout = pmremReflectedLayout->handle();
         pipelineLayout = reflectedLayout->handle();
         createRenderPass();
         resize(parameters.width, parameters.height);

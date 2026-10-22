@@ -257,6 +257,11 @@
    - **现状（`meshbasic.{vert,frag}.glsl` 的真实布局）**：顶点阶段 `binding=2` 是 `std140` 的 `TextureTransforms`（含 `instanceLayout`、`inputLayout[4]`），`binding=3..10` 分别是实例矩阵/颜色/变形目标缓冲、morph 权重采样器、位置/顶点色/UV 缓冲；片元阶段 `binding=0/1` 是 `mapTexture`/`alphaTexture`，`binding=11` 是裁剪面缓冲；两者都还有 `layout(push_constant) uniform Draw`。这套布局是**为 MeshBasic 定制的**，PMREM 只用到"一个变换块 + 一张采样图"，硬凑过去要么声明一堆用不到的绑定（`glslang` 会把未用绑定裁掉，反射结果照样不同），要么改 basic 的着色器——两条都不可接受。**结论：每程序一套布局是必需的，第 87 条的方案成立。**
    - **本轮交付（差分）**：新增 2×9 纹理、2.35 宽高比相机、最小极地网格（半径 0.5 / 2 扇区 / 1 环 / 2 分段）、低亮度面光、单实例、3 个球谐系数（非零小数）。全部与上游逐位一致：**22 组 / 299 场景 / exit=0**。
    - **状态**：核心 **745 / 205,728**、`primitive-geometry`、`port-audit` 全绿；PMREM 的着色器已就绪（第 86 条），阻塞只剩第 87 条那次"行为中性的多程序重构"。
+89. **第 26 轮：渲染器现在会建 PMREM 程序的反射布局与 uniform 模板（加法式，行为中性）**。
+   - **做法（比第 87 条的完整重构更省风险）**：不动现有单一程序路径，而是**并列**加一套资源——`pmremModules`、`pmremReflectedLayout`、`pmremUniformTemplate`、`pmremTextureLayout`、`pmremPipelineLayout`——在 `Impl` 里紧随 basic 那五个成员声明，构造时在 basic 建完之后用 `readShader("pmrem_equirect.{vert,frag}.spv")` 走**同样的**构造链（`VulkanShaderModules` → 反射里找唯一的 `VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER` → `VulkanUniformBuffer` → `VulkanPipelineLayout` → 取 `setLayouts()[0]` 与 `handle()`）。
+   - **验证**：`cmake --build build-vkdebug --target threecpp_vulkan VulkanRendererTests` 通过，`VulkanRendererTests --cube` 在**真实 GPU** 上通过（说明两套布局能同时创建、互不干扰，且 mipmap 之外的路径没被破坏）。核心 **745 / 205,728**、`primitive-geometry`、`port-audit` 全绿。
+   - **还差的**：① 用 `pmremPipelineLayout` 建一条 `VkPipeline`（需要在 `vkCreateGraphicsPipelines` 调用点旁边复制一份建法，并把顶点输入状态设成 PMREM 需要的形状——它只吃 `position` 一个 vec3 属性）；② 给 `PMREMGenerator` 一个走这条管线的入口（把等距柱状纹理当采样图、box mesh 当几何、`updateCubeCamera` 那种六面流程）；③ 着色器里 `Transforms` 块的字段名要与 `VulkanUniformBuffer` 的反射字段对齐。
+   - **注意**：这次没有碰渲染主路径，所以风险远低于第 19–20 轮那两次混改；下一条管线也应当照这个"并列加法"的思路做，直到 PMREM 真的能画出来，再考虑是否合并成 map。
 70. **第 520 轮：完整 Vulkan 套件 211/211 全绿，耗时 270.72 秒**。
    - 命令：`ctest --test-dir build-vulkan -j 4 -E "lights-states" --output-on-failure`（仍排除第 46 条那个已知项；它在 Vulkan 构建里同样慢）。
    - 结果：**100% tests passed, 0 tests failed out of 211**，总耗时 **270.72 秒**。对比同一套件在 **Debug** 配置下的 **3784.56 秒 / 2 失败**，差了约 14 倍——再次印证第 69 条"是构建类型不是代码"的结论。
