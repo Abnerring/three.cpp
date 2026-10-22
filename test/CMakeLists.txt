@@ -39,6 +39,7 @@ add_executable(THREECPPTests
         unit/src/loaders/GCodeLoader.tests.cpp
         unit/src/loaders/HDRLoader.tests.cpp
         unit/src/loaders/RGBELoader.tests.cpp
+        unit/src/loaders/MTLLoader.tests.cpp
         unit/src/cameras/StereoCamera.tests.cpp
         unit/src/audio/AudioContext.tests.cpp
         unit/src/audio/Audio.tests.cpp

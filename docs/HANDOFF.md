@@ -772,6 +772,14 @@
    - **`HDRCubeTextureLoader`（164 行）没有移植**：它除了 `setDataType` 转发之外，全是 `FileLoader` 取六个面 + `CubeTexture.images[i]` 的 I/O 与纹理配置，属于宿主职责；本轮已在第 162/163 条记录了这个判断。
    - **测试（2 个用例、11 条断言）**：`RGBELoader` 的警告文案逐字比对、**继承来的 `parse` 解码结果与 `HDRLoader` 相同**（`128/255`、alpha 1、黑像素 0）；`HDRLoader` 的 `dataType` 默认 `HalfFloatType`、改成 `FloatType` 后能读回、`setDataType` 返回自身引用（链式）、派生实例各自持有设置。
    - **验证**：核心 **818 用例 / 206,246 断言**（+2 / +11）、`primitive-geometry`、`port-audit` 全绿。addon loader **26 → 27 / 52**。
+165. **第 104 轮：`MTLLoader` 的文本解析落地（`MaterialCreator` 那一半留待下轮）**。
+   - **剩余 loader 的规模**：`MTLLoader` 593 行、`PLYLoader` 990 行、`OBJLoader` 955 行、`PCDLoader` 622 行——**都超过一轮的合理体量**。所以按"切出最纯的那一层"来做：MTL 的 `parse()` 只有 65 行，产出"每个材质一条记录"的结构；真正把记录变成 `MeshPhongMaterial` 的 `MaterialCreator` 是另一半。
+   - **`MTLLoader::parse` 的语义**（逐条照上游）：整行 `trim`；空行或 `#` 开头跳过；**第一个空格**分键值（键转小写、值再 `trim`）；`newmtl` 开一条新记录并把 `name` 存进去；**`ka`/`kd`/`ks`/`ke` 四个键按空白切成最多三段转成三个数**；其余键一律存**字符串**（所以 `Ns 250.0` 存的是 `"250.0"` 而不是数字，`map_Kd texture.png` 存的是路径字符串）。
+   - **端口结构**：`MTLLoader::Value = std::variant<std::string, Color>`（`Color = std::array<double,3>`），`MaterialsInfo = std::map<std::string, MaterialInfo>`。用 map 而不是数组：上游的 `materialsInfo` 是普通对象、按插入顺序遍历，C++ 侧用 map 保证**查找确定**；顺序差异只影响 `getAsArray()` 的次序，而那一半本轮没做。
+   - **一处显式取舍**：`newmtl` 之前的属性行**没有归属**，上游会写到当时那个空 `info` 上（等于丢弃），端口直接跳过。
+   - **测试（4 个用例、17 条断言）**：两条记录、`name` 也在记录里；四个颜色键各自三个数（含全零的 `Ks 0 0 0`）；`Ns` 与 `map_Kd` **仍是字符串**；键**大小写归一**（`NEWMTL`/`MAP_KD`）与**值两端 trim**。
+   - **验证**：核心 **822 用例 / 206,263 断言**（+4 / +17）、`primitive-geometry`、`port-audit` 全绿。
+   - **下一轮**：`MaterialCreator.convert`（选项 `normalizeRGB`/`ignoreZeroRGBs` 与 `side`/`wrap` 默认值），以及 `getAsArray`/`create` 与真正构建材质。
 70. **第 520 轮：完整 Vulkan 套件 211/211 全绿，耗时 270.72 秒**。
    - 命令：`ctest --test-dir build-vulkan -j 4 -E "lights-states" --output-on-failure`（仍排除第 46 条那个已知项；它在 Vulkan 构建里同样慢）。
    - 结果：**100% tests passed, 0 tests failed out of 211**，总耗时 **270.72 秒**。对比同一套件在 **Debug** 配置下的 **3784.56 秒 / 2 失败**，差了约 14 倍——再次印证第 69 条"是构建类型不是代码"的结论。
