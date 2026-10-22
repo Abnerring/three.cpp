@@ -428,6 +428,12 @@
    - **验证（五项门禁）**：核心 **747 / 205,735** ✓、`primitive-geometry` ✓、`port-audit` ✓、`threecpp_vulkan` **0 错误** ✓、`--cube` **0** ✓——而 `--cube` 本身就会在立方体目标与 `nullptr` 之间来回切换，等于顺手验证了 park/restore。
    - **现在的意义**：PMREM 的 ping-pong 前提**全部就绪**——两个不同的立方体目标可以各自持有 GPU 存储，一个在 `active` 里被写、另一个停在 `parkedTargets` 里被采样。
    - **下一步**：给 `drawPmremFace` 增加 blur 变体（绑 `pmremBlurPipelineHandle`、push 三个矩阵 + `sigma`、描述符用**源目标**的 `cubeView` 而不是 2D 视图），然后写"源立方体 → 逐级 lod 模糊"的编排，用纯色源做验收。
+118. **第 57 轮：加 blur 绘制变体与 PMREM 采样器时先是多打了一个大括号（101 错误），修好后又运行崩溃（0xC0000005），已回退**。
+   - **做了什么**：在 `drawPmremFace` 之后插入 `drawPmremBlurFace(VkImageView sourceCubeView, const std::array<float,49>& block)`——绑 `pmremBlurPipelineHandle`、`pmremBlurPipelineLayout`、`pmremBlurTextureLayout`，描述符写 `binding=0` 的 `COMBINED_IMAGE_SAMPLER`（用**源目标的 cubeView**），push 196 字节；另加 `VkSampler pmremSampler`（线性 + clamp）并在构造时创建。
+   - **第一次失败**：我的插入脚本在 `vkCmdDraw` 之后**自己加了一个 `}`**，而原函数本来就有收尾的 `}`，于是变成"多一个右括号"——`Impl` 提前结束，报 `"Impl" 后面接 "void" 是非法的` + 101 个错误。删掉第 2468 行那个多余的 `}` 后编译通过。
+   - **第二次失败**：编译 0 错误，但 `--cube` **运行崩溃**（`-1073741819` = `0xC0000005` 访问违例）。原因未查明——嫌疑是构造期新增的 `pmremSampler` 创建块插错了位置（我的插入点是 `createPmremBlurPipeline();` 之后，但那段可能落在某个 `if`/lambda 里），或者 `drawPmremBlurFace` 虽然没被调用、其插入仍然破坏了某个结构。
+   - **处理**：`git checkout -- src/renderers/VulkanRenderer.cpp` 回退；核心 **747 / 205,735** ✓、`primitive-geometry` ✓、`port-audit` ✓、Vulkan 构建 0 错误 ✓、`--cube` **0** ✓，树干净。
+   - **教训（第三次同类）**：**插入函数时必须把"原函数的收尾大括号"算进去**。正确做法是定位"原函数的 `}`"，**在它之后**插入新函数的同时**不新增**额外的大括号；并且插入后立刻用**大括号计数**（`{` 与 `}` 的净差）自检，而不是等编译器报 101 个错。
 70. **第 520 轮：完整 Vulkan 套件 211/211 全绿，耗时 270.72 秒**。
    - 命令：`ctest --test-dir build-vulkan -j 4 -E "lights-states" --output-on-failure`（仍排除第 46 条那个已知项；它在 Vulkan 构建里同样慢）。
    - 结果：**100% tests passed, 0 tests failed out of 211**，总耗时 **270.72 秒**。对比同一套件在 **Debug** 配置下的 **3784.56 秒 / 2 失败**，差了约 14 倍——再次印证第 69 条"是构建类型不是代码"的结论。
