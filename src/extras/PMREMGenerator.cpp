@@ -68,6 +68,10 @@ std::shared_ptr<RenderTarget> PMREMGenerator::_fromTexture(
     _needsRenderer("_fromTexture");
 }
 
+double PMREMGenerator::lodToRoughness(double lod, double maxLod) {
+    return maxLod > 0 ? 1 - std::sqrt(1 - lod / maxLod) : 0;
+}
+
 std::shared_ptr<RenderTarget> PMREMGenerator::allocateTarget() {
     const auto size = static_cast<std::uint32_t>(_cubeSize);
     auto pmremTarget = std::make_shared<RenderTarget>(size, size);

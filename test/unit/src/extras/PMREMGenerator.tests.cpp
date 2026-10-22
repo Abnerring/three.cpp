@@ -134,3 +134,12 @@ TEST_CASE("PMREMGenerator sizes a cube target from the source texture") {
         REQUIRE(generator.cubeSize() == PMREMGenerator::MIN_SIZE);
     }
 }
+TEST_CASE("PMREMGenerator maps a mip level to the roughness it was filtered for") {
+    // The first level is mirror sharp and the last is fully rough.
+    REQUIRE(PMREMGenerator::lodToRoughness(0, 5) == 0.0);
+    REQUIRE(PMREMGenerator::lodToRoughness(5, 5) == 1.0);
+    // No last level means no roughness to report.
+    REQUIRE(PMREMGenerator::lodToRoughness(5, 0) == 0.0);
+    // 1 - sqrt(1 - 2/8) = 1 - sqrt(0.75).
+    REQUIRE(PMREMGenerator::lodToRoughness(2, 8) == Approx(1.0 - std::sqrt(0.75)).epsilon(1e-15));
+}

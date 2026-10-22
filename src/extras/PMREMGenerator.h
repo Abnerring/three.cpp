@@ -20,6 +20,10 @@ class PMREMGenerator {
     // Log2 of the face size of the roughest mip level.
     static constexpr double LOD_MIN = 3;
 
+    // Roughness a mip level of a PMREM has been prefiltered for; renderers use the
+    // inverse mapping when sampling. Upstream returns zero when there is no last level.
+    static double lodToRoughness(double lod, double maxLod);
+
     explicit PMREMGenerator(JSValue renderer = {});
     ~PMREMGenerator();
 
