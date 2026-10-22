@@ -81,6 +81,7 @@ add_executable(THREECPPTests
         unit/src/loaders/TGAVariants.tests.cpp
         unit/src/loaders/TGAIndexed.tests.cpp
         unit/src/loaders/NRRDLoader.tests.cpp
+        unit/src/loaders/NRRDDirections.tests.cpp
         unit/src/cameras/StereoCamera.tests.cpp
         unit/src/audio/AudioContext.tests.cpp
         unit/src/audio/Audio.tests.cpp

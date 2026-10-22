@@ -1,5 +1,6 @@
-﻿#include "loaders/NRRDLoader.h"
+#include "loaders/NRRDLoader.h"
 
+#include <array>
 #include <cctype>
 #include <cstdlib>
 #include <sstream>
@@ -19,6 +20,44 @@ std::vector<std::string> splitWhitespace(const std::string& text) {
     std::string token;
     while (stream >> token) parts.push_back(token);
     return parts;
+}
+
+// Reads a space directions value: per axis either a parenthesised triple or a word such as
+// none, which leaves that axis as the identity row.
+std::vector<std::array<double, 3>> parseDirections(const std::string& value) {
+    std::vector<std::array<double, 3>> out;
+    std::size_t i = 0;
+    while (i < value.size() && out.size() < 3) {
+        while (i < value.size() && std::isspace(static_cast<unsigned char>(value[i]))) ++i;
+        if (i >= value.size()) break;
+        if (value[i] == '(') {
+            const std::size_t close = value.find(')', i);
+            if (close == std::string::npos) break;
+            std::array<double, 3> triple{0, 0, 0};
+            std::size_t part = 0;
+            std::size_t at = i + 1;
+            while (at < close && part < 3) {
+                const std::size_t comma = value.find(',', at);
+                const std::size_t end = (comma == std::string::npos || comma > close) ? close : comma;
+                if (end <= at) break;
+                triple[part++] = std::strtod(value.substr(at, end - at).c_str(), nullptr);
+                at = end + 1;
+            }
+            out.push_back(triple);
+            i = close + 1;
+        } else {
+            const std::size_t space = value.find(' ', i);
+            const std::size_t stop = space == std::string::npos ? value.size() : space;
+            const std::string word = value.substr(i, stop - i);
+            // A word such as none leaves this axis pointing along itself.
+            std::array<double, 3> row{0, 0, 0};
+            row[out.size() < 3 ? out.size() : 2] = 1.0;
+            out.push_back(row);
+            (void)word;
+            i = stop + 1;
+        }
+    }
+    return out;
 }
 }  // namespace
 
@@ -56,6 +95,9 @@ NRRDLoader::Header NRRDLoader::parseHeader(const std::string& text) {
             header.sizes.clear();
             for (const auto& token : splitWhitespace(value))
                 header.sizes.push_back(std::strtod(token.c_str(), nullptr));
+        } else if (key == "space directions") {
+            // Explicit directions replace the identity, so the spacings do not apply.
+            header.vectors = parseDirections(value);
         } else if (key == "spacings") {
             header.spacings.clear();
             for (const auto& token : splitWhitespace(value))
