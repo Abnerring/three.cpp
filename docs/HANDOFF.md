@@ -621,6 +621,13 @@
    - **本轮实际交付（回到差分）**：新增 16×1 纹理、12×5 网格、64 实例、4 边长立方纹理、`CubeCamera(0.5, 50)` 五个场景；另试了一个 `CubicInterpolant` 场景，但探针没有 `smooth` 这种插值类型（报 `unknown interpolant`），已移除。差分现在是 **22 组 / 309 场景 / exit=0**。
    - **验证**：核心 **766 用例 / 205,856 断言**、`primitive-geometry`、`port-audit` 全绿。
    - **下一步建议**：TSL 这条线到此为止（除非专门安排一次"`NodeBuilder` + 算子层"的大工程）。剩余时间更适合：① 继续扩差分；② 回到 PMREM 的最小管线实验（固定颜色 + 单矩阵推常量）；③ 检查 `src/` 下还有没有**自成体系**且**纯 CPU**的模块没做。
+145. **第 84 轮：盘点剩余可移植面，并给一个从未被测试过的模块补上逐位验收——`StereoCamera`**。
+   - **盘点结果**：`dependency-unverified` 那 20 个**全是** `examples/jsm/libs/*`（draco、basis、fflate、ktx-parse、meshopt、zstddec……），**是第三方库不是 three.js 代码**；`partial-unverified` 那 311 个是**已经移植过**的模块（审计无法完全验证而已）。所以**可移植的核心面基本完成**，剩下三大块：TSL 的 builder、PMREM 的 GPU 卷积、examples 插件。
+   - **本轮做的事**：`src/cameras/StereoCamera.js` 在端口里**有实现但没有测试**。读过端口实现，确认它忠实上游（模块级共享矩阵用 `thread_local`、`elements[12]` 平移、`needsUpdate` 缓存判断都对），于是补测试。
+   - **参考值来自上游**：用 `node` 直接 `import` 固定版本的 `StereoCamera.js` 与 `PerspectiveCamera.js`，构造 `PerspectiveCamera(50, 16/9, 0.1, 100)`、`focus = 10`、`zoom = 2`，跑一次 `update` 并把 `elements` 逐项 `Math.fround`，得到左眼投影 `[0] = 2.4125702381134033`、`[5] = 2.1445069313049316`、`[8] = +0.007720225024968386`、`[10] = -1.0020020008087158`、`[14] = -0.20020020008087158`，右眼 `[8] = -0.007720225024968386`（**离轴项左右对称**），两只眼睛的 `matrix[12]` 分别是 `∓0.032`。
+   - **测试（3 个用例、21 条断言）**：投影矩阵逐位相等、离轴项对称、眼睛矩阵的平移、`matrixWorldNeedsUpdate` 被置位；默认值（`aspect = 1`、`eyeSep = 0.064`、`type = "StereoCamera"`）与层分配（左眼 layer 1、右眼 layer 2、`matrixAutoUpdate = false`）；**缓存命中**——只移动相机不改投影，但眼睛矩阵仍跟随。
+   - **验证**：核心 **769 用例 / 205,877 断言**（+3 / +21）、`primitive-geometry`、`port-audit` 全绿。
+   - **过程小坑**：测试文件第一次没被注册（锚点没匹配）；`Layers` 的方法名是 `isEnabled(n)` 而不是 `test(n)`。
 70. **第 520 轮：完整 Vulkan 套件 211/211 全绿，耗时 270.72 秒**。
    - 命令：`ctest --test-dir build-vulkan -j 4 -E "lights-states" --output-on-failure`（仍排除第 46 条那个已知项；它在 Vulkan 构建里同样慢）。
    - 结果：**100% tests passed, 0 tests failed out of 211**，总耗时 **270.72 秒**。对比同一套件在 **Debug** 配置下的 **3784.56 秒 / 2 失败**，差了约 14 倍——再次印证第 69 条"是构建类型不是代码"的结论。

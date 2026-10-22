@@ -2039,7 +2039,9 @@
         "upstreamUnitTests": [
           "test/unit/src/cameras/StereoCamera.tests.js"
         ],
-        "cppUnitTests": [],
+        "cppUnitTests": [
+          "test/unit/src/cameras/StereoCamera.tests.cpp"
+        ],
         "reviewedImplementation": [],
         "differentialResults": [],
         "renderingResults": [],
