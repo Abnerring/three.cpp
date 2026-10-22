@@ -137,6 +137,7 @@ target_sources(threecpp PRIVATE
     src/loaders/MD2Loader.cpp
     src/loaders/BVHLoader.cpp
     src/loaders/PCDLoader.cpp
+    src/loaders/TGALoader.cpp
     src/loaders/CubeTextureLoader.cpp
     src/extras/ImageUtils.cpp
     src/extras/PMREMGenerator.cpp
