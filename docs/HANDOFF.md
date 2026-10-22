@@ -151,6 +151,12 @@
    - 中间还踩了两个工具坑：`$t.Replace(...)` 里用反斜杠转义双引号在 PowerShell 里**直接语法错误**（整段脚本没执行，文件未被改动——事后 `git status` 确认过）；补 include 时又因为之前回退把 `<cstdio>` 一起撤掉而先失败一次。
    - **结论与下一步**：不要再"改完就信"。下次插桩后**先 `Select-String` 那个 exe 里有没有那段字面量**（或用 `strings`），确认代码真的进了二进制；再跑。如果字面量在、输出仍无，才去怀疑运行路径。
    - **本轮无代码变更**（插桩已 `git checkout` 撤回），核心 738 / 205,626、`primitive-geometry`、`port-audit` 全绿，树干净。
+69. **解锁 Vulkan 之后立刻暴露的两个问题：一个是测试里的悬空引用（真 bug），一个是我的构建配置错误（Debug）**。
+   - **问题一（真 bug，已修）**：`test/unit/addons/math/MeshSurfaceSampler.tests.cpp` 的 `makeSampler` 里写的是
+     `std::size_t cursor = 0; sampler.setRandomGenerator([&cursor]{...}); return sampler;`
+     —— lambda **按引用捕获了局部变量 `cursor`**，函数返回后 `cursor` 已销毁，而生成器在之后每次 `sample()` 时还在读写那块**已失效的栈内存**，属于未定义行为。表现就是同一个测试时而过、时而报 `REQUIRE(position.x == 0.5)` 得到 **-0.5**。修法：改成 `auto cursor = std::make_shared<std::size_t>(0);` 并按值捕获（`[cursor]`），让计数器与生成器同寿；同文件第 86 行那处是同作用域内的局部变量，保持 `[&cursor]` 即可（但 `draws` 是命名空间级变量，不能写进捕获列表）。
+   - **问题二（我的错，不是代码问题）**：给 `build-vulkan` 配置时**没传 `CMAKE_BUILD_TYPE`**，Ninja 是单配置生成器，于是整个 Vulkan 构建是 **Debug** 的；而 `build/` 是 `RelWithDebInfo`。同一个 addon 测试在两个目录里跑出 **916 秒 vs 33.6 秒**（约 17–20 倍差距），`threejs-webgl-programs-parity` 更是因此撞上 ctest 默认 **1500 秒**超时。补上 `-DCMAKE_BUILD_TYPE=RelWithDebInfo` 重新配置并全量重建后：`addons-unit` **961 → 39.9 秒**、`webgl-programs-parity` **超时 → 165.2 秒**，两者均通过。
+   - **教训**：① 单配置生成器**必须显式给 `CMAKE_BUILD_TYPE`**，否则"性能问题"可能只是没开优化；② 测试里的 lambda 捕获生命周期要跟着被测对象走，**按引用捕获局部变量再返回持有该 lambda 的对象**是典型陷阱；③ 反向也成立——之前那些"Vulkan 测试很慢（635 秒）"的观感同样是 Debug 造成的，优化后重跑才是有意义的数字。
 68. **更正：这个环境其实有可用的 Vulkan，之前"You must install the SDK"的结论是错的——SDK 已经被塞进 `third_party/vulkan`**（第 517 轮）。
    - 起因：用户问"项目中不能放个第三方库的文件夹吗，然后放入 vulkan 的 sdk"。查下来发现所需要的只有**两样**（`CMakeLists.txt:317-318`）：`vulkan/vulkan.h` 头文件，以及一个 `glslangValidator` 兼容的编译器；**运行时**用的是 `LoadLibraryA("vulkan-1.dll")`（`VulkanRenderer.cpp:207`），而 `C:\Windows\System32\vulkan-1.dll` **本来就存在**。
    - 机内已有资产：`D:\project\goblin\Computational\vulkan\include\vulkan\` 是完整的 Vulkan-Headers（含 `vk_video/`），`...\lib\vulkan\glslang.exe`（Glslang 11:16.1.0，新版把 `glslangValidator` 改名为 `glslang`）。

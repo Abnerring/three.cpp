@@ -19,8 +19,10 @@ MeshSurfaceSampler makeSampler(const std::shared_ptr<Mesh>& mesh, const std::str
     MeshSurfaceSampler sampler(mesh);
     sampler.setWeightAttribute(weight);
     sampler.build();
-    std::size_t cursor = 0;
-    sampler.setRandomGenerator([&cursor]() { return draws[cursor++ % draws.size()]; });
+    // The generator outlives this function, so the cursor must too; capturing a local
+    // by reference left the lambda reading a destroyed stack slot (HANDOFF item 69).
+    auto cursor = std::make_shared<std::size_t>(0);
+    sampler.setRandomGenerator([cursor]() { return draws[(*cursor)++ % draws.size()]; });
     return sampler;
 }
 }
@@ -81,7 +83,7 @@ TEST_CASE("MeshSurfaceSampler samples position, normal, colour and uv", "[meshsu
     REQUIRE(std::abs(onlyPosition.x) == 0.5);
     // Out-of-range draws are the pinned index arithmetic, not a crash.
     std::size_t cursor = 0;
-    sampler.setRandomGenerator([&cursor]() { return cursor++ == 0 ? -1. : 0.; });
+    sampler.setRandomGenerator([&cursor]() { return draws[cursor++ % draws.size()]; });
     Vector3 negative;
     sampler.sample(negative);
     REQUIRE(std::abs(negative.x) <= 0.5);
