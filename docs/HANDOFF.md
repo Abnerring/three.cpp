@@ -244,6 +244,15 @@
    - **本轮落地**：写出 `src/renderers/shaders/ShaderLib/pmrem_equirect.{vert,frag}.glsl`——vert 镜像 `ShaderChunk.cube_vert`（`transformDirection(position, modelMatrix)` 得到 `vWorldDirection`），frag 镜像上游 `_getEquirectMaterial`（`equirectUv` 内联、四次子像素采样取平均、`0.25` 权重）。CMake 的着色器循环从"只有 basic"改成**程序列表**（`foreach(program basic pmrem_equirect)`，并加一层源文件名映射：`basic` 的源码仍叫 `meshbasic.glsl`、spv 名保持不变）。
    - **验证**：`cmake --build build-vkdebug --target threecpp_shaders` 通过，产出 `pmrem_equirect.vert.spv` **1712 B**、`pmrem_equirect.frag.spv` **2792 B**（`glslang` 认它，即合法 Vulkan SPIR-V），`basic.*` 仍是原来的 12056/6220 B。核心 **745 / 205,728**、`primitive-geometry`、`port-audit` 全绿。
    - **下一步**：把渲染器的管线创建从"一条写死"改成"按程序名建/缓存"，然后让 PMREM 用这套内置程序 + uniform 走 `updateCubeCamera` 已有的六面流程。
+87. **第 24 轮：把"多程序管线"的重构方案写清楚（这是 PMREM 落地前的最后一块渲染器基建）**。
+   - **为什么不能偷懒**：`VulkanRenderer` 里与程序相关的成员都是**单份**——`shaderModules`、`textureUniformTemplate`、`reflectedLayout`、`pipelineLayout`、`textureLayout`——它们在构造函数 803–837 行一次性建好，且第 815 行写死了 `MeshBasic shader requires one reflected texture uniform block`。我原本以为 PMREM 的等距柱状程序可以直接复用这套描述符布局，但**绑定号不同**：meshbasic 的顶点阶段把变换放在 `set=0, binding=2`（811–812 行的查找就是找它），而我新写的 `pmrem_equirect.vert.glsl` 用的是 `set=0, binding=0` 的 `Transforms` 块、`binding=1` 的 `sampler2D`。布局必须与着色器反射一致，所以**必须每程序一套**。
+   - **重构方案（按依赖顺序，每步可独立验证）**：
+     1. 引入 `struct Program { std::unique_ptr<VulkanShaderModules> modules; std::unique_ptr<VulkanUniformBuffer> uniformTemplate; std::unique_ptr<VulkanPipelineLayout> layout; VkDescriptorSetLayout setLayout; VkPipelineLayout pipelineLayout; VkPipeline pipeline; }`，把现有 803–827 行的建法搬进一个 `std::unique_ptr<Program> createProgram(const char* name)`。
+     2. `Impl` 里把上述五个单份成员换成 `std::unordered_map<std::string, std::unique_ptr<Program>> programs;` 与 `Program* activeProgram;`（渲染时按材质选程序，目前只有 `"basic"`）。
+     3. 第 815 行的断言改成"**每个**程序都恰好一个 `VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER` 且 `count == 1`"，并按各程序的反射去建 `textureUniformTemplate`。
+     4. 渲染路径里凡是用 `pipelineLayout` / `textureLayout` / `textureUniformTemplate` 的地方改成 `activeProgram->...`。
+   - **验证手段（都不需要新功能）**：改完之后现有 16 个 Vulkan 测试必须**全部保持通过**（尤其 `threecpp.vulkan` 主用例与三个差分 trace），`--cube` 也一样；这相当于"重构不改变行为"的证明。然后才加 PMREM 程序。
+   - **风险与顺序**：这是**行为中性的重构**，但动的是渲染主路径；建议**一次只做一步**（每步都跑 `--cube` + `threecpp.vulkan`），不要像第 19–20 轮那样一口气把多件事混在一起——那两次的崩溃就是混改的代价。
 70. **第 520 轮：完整 Vulkan 套件 211/211 全绿，耗时 270.72 秒**。
    - 命令：`ctest --test-dir build-vulkan -j 4 -E "lights-states" --output-on-failure`（仍排除第 46 条那个已知项；它在 Vulkan 构建里同样慢）。
    - 结果：**100% tests passed, 0 tests failed out of 211**，总耗时 **270.72 秒**。对比同一套件在 **Debug** 配置下的 **3784.56 秒 / 2 失败**，差了约 14 倍——再次印证第 69 条"是构建类型不是代码"的结论。
