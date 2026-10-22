@@ -635,6 +635,14 @@
    - **顺手发现一处命名适配**：上游方法名是 **`union`**，而 `union` 是 **C++ 关键字**，端口用 `unionWith`——这是**合理的语言适配**（不是瞎改名），已在测试注释里说明。
    - **两个小坑**：端口 `Box3` 的字段叫 `min`/`max`（不是 `minimum`/`maximum`）；`getBoundingSphere()` 上游**必须传 target**，我第一版没传，`node` 直接抛 `Cannot read properties of undefined`。
    - **验证**：核心 **774 用例 / 205,930 断言**（+5 / +53）、`primitive-geometry`、`port-audit` 全绿。
+147. **第 86 轮：`Sphere`、`Plane`、`Triangle` 三个模块从"无专属测试"变成 25 条逐位断言**。
+   - **参考值同样全部来自上游**（`node` 直接 `import` 固定版本的三个模块）：
+     - `Sphere(Vector3(1,2,3), 5)`：`containsPoint((1,2,7))` = **true**、`distanceToPoint` = **-1**（**内部的点距离为负**，这是上游的符号约定）、`intersectsBox(0..4 立方体)` = **true**、`intersectsPlane(y = 2) ` = **true**。
+     - `Plane(normal(0,1,0), -2)`：`distanceToPoint((0,5,0))` = **3**、`projectPoint((3,5,4))` = **(3,2,4)**。
+     - `Triangle`：默认**退化**（`getArea() = 0`）；`set` 成单位直角三角形后 `getArea() = 0.5`；`getBarycoord((0.25,0.25,0))` = **(0.5, 0.25, 0.25)**；`containsPoint` 内真外假；`getNormal` = **(0,0,1)**；`getMidpoint` = **(1/3, 1/3, 0)**。
+   - **测试（3 个用例、25 条断言）**：球体的包含/距离/与盒相交/与平面相交；平面的法线与常数、点到平面距离、投影；三角形的退化面积、面积、重心坐标、包含性、法线、中点。
+   - **两个值得记的语义点**：① **球内点的距离是负数**（不是绝对值）；② **默认三角形是退化的**，`getArea()` 返回 0 而不是 NaN。
+   - **验证**：核心 **777 用例 / 205,955 断言**（+3 / +25）、`primitive-geometry`、`port-audit` 全绿。
 70. **第 520 轮：完整 Vulkan 套件 211/211 全绿，耗时 270.72 秒**。
    - 命令：`ctest --test-dir build-vulkan -j 4 -E "lights-states" --output-on-failure`（仍排除第 46 条那个已知项；它在 Vulkan 构建里同样慢）。
    - 结果：**100% tests passed, 0 tests failed out of 211**，总耗时 **270.72 秒**。对比同一套件在 **Debug** 配置下的 **3784.56 秒 / 2 失败**，差了约 14 倍——再次印证第 69 条"是构建类型不是代码"的结论。
