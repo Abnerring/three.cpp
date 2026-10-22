@@ -728,6 +728,25 @@
    - **测试（6 个用例、28 条断言）**：空程序；第一次挤出成一段（`vertex` 6 个数、`pathVertex` 空）；**换 Z 挤出开新层**（两层、拼接 12 个数）；`G91` 相对移动累加；**`M82` 覆盖**（轴相对但挤出回到绝对，`e == 1`）；`G92` 只改状态不出线段；注释被剥离后仍能解析。
    - **一处测试内的怪写法**：`REQUIRE_FALSE(relativeMove.finalState.relative == false)` 其实等价于断言为真，下轮可改成 `REQUIRE(relativeMove.finalState.relative)`。功能没错，只是可读性差。
    - **验证**：核心 **811 用例 / 206,203 断言**（+6 / +28）、`primitive-geometry`、`port-audit` 全绿。addon loader **7 / 52 → 8 / 52**。
+161. **第 100 轮：里程碑核验——五项门禁全绿，并给出"目标是否达成"的诚实结论**。
+   - **五项门禁实测**（全部为 0）：
+     - 核心 `THREECPPTests`：**811 用例 / 206,203 断言**；
+     - addons `THREECPPAddonTests`：**155 用例 / 23,996 断言**；
+     - 差分 `threejs-primitive-geometry-parity`：**22 组 / 326 场景**；
+     - `threecpp.port-audit`：通过；
+     - Vulkan：`build-vkdebug` 的 `threecpp_vulkan` 构建 **0 错误**、`VulkanRendererTests --cube` **exit 0**。
+   - **第 76–99 轮（这 24 轮）做了什么**：
+     - **TSL 叶子层**（9 个模块）：`StackTrace`、`NodeError`、`NodeCode`、`NodeFunctionInput`、`NodeCache`、`NodeVar`、`NodeUtils` 的 cyrb53 哈希（**逐位对齐上游**）、`NodeConstants`、`Node` 的身份/哈希/访问器；
+     - **数学模块逐位验收**（13 个）：`Box3`、`Sphere`、`Plane`、`Triangle`、`Ray`、`Frustum`、`Line3`、`Box2`、`Cylindrical`、`Spherical`、`Matrix2`、`Euler`、`Quaternion`；
+     - **addon loader（9 个模块）**：`LUTCubeLoader`、`LUT3dlLoader`、`MDDLoader`、`SPLATLoader` + `GaussianSplatUtils`、`PDBLoader`、`GCodeLoader`；
+     - **差分**：304 → **326 场景**。
+   - **仍然没做到的（诚实列出）**：
+     1. **TSL 的 210 个模块**——需要 `NodeBuilder`（3544 行）与 `Node` 的**运行时属性反射**（`Object.getOwnPropertyNames`），C++ 没有等价物；
+     2. **PMREM 的 GPU 卷积**——blur 管线一运行就 `VK_ERROR_DEVICE_LOST`，已试 6 种假设、暂停；
+     3. **addon loader 还剩 44 个**——多数依赖 WebGL 渲染器行为或第三方解码库（draco/basis/ktx）；
+     4. **23 个 node 材质**——全部依赖 TSL。
+   - **结论：目标（"实现和 three.js 一模一样的一切功能"）尚未达成**，因此**不把目标标为完成**，继续保持 active。可移植的**核心**（数学、几何、材质、动画、加载器基础、WebGL 侧的多数模块）已经完整并有逐位/差分双重验证；缺口集中在 **TSL**、**PMREM 的 GPU 卷积**、**examples 插件**这三块。
+   - **下一阶段方向**：继续按"每轮一个自包含模块 + node 取参考值 + 精确断言 + 五项门禁"的节奏推进 addon loader（还剩 44 个里挑不依赖第三方解码库的），以及尝试 PMREM 的最小管线实验。
 70. **第 520 轮：完整 Vulkan 套件 211/211 全绿，耗时 270.72 秒**。
    - 命令：`ctest --test-dir build-vulkan -j 4 -E "lights-states" --output-on-failure`（仍排除第 46 条那个已知项；它在 Vulkan 构建里同样慢）。
    - 结果：**100% tests passed, 0 tests failed out of 211**，总耗时 **270.72 秒**。对比同一套件在 **Debug** 配置下的 **3784.56 秒 / 2 失败**，差了约 14 倍——再次印证第 69 条"是构建类型不是代码"的结论。
