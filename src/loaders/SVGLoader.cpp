@@ -390,3 +390,26 @@ SVGLoader::Matrix SVGLoader::multiply(const Matrix& left, const Matrix& right) {
     product.f = left.b * right.e + left.d * right.f + left.f;
     return product;
 }
+
+std::vector<SVGLoader::ArcSegment> SVGLoader::parseArcSegments(const std::vector<double>& numbers) {
+    std::vector<ArcSegment> arcs;
+    // Seven numbers per arc, and a run that does not fill one leaves its tail unread.
+    for (std::size_t i = 0; i + 6 < numbers.size(); i += 7) {
+        ArcSegment arc;
+        arc.rx = numbers[i];
+        arc.ry = numbers[i + 1];
+        arc.rotation = numbers[i + 2];
+        // The two flags are any nonzero value, not just one.
+        arc.largeArc = numbers[i + 3] != 0.0;
+        arc.sweep = numbers[i + 4] != 0.0;
+        arc.end.x = numbers[i + 5];
+        arc.end.y = numbers[i + 6];
+        arcs.push_back(arc);
+    }
+    return arcs;
+}
+
+bool SVGLoader::shouldSkipArc(const Point& start, const Point& end) {
+    // An arc that goes nowhere is skipped, and the comparison is exact.
+    return start.x == end.x && start.y == end.y;
+}

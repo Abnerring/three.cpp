@@ -135,4 +135,25 @@ class SVGLoader {
     // One transform followed by another. A point is moved by the right hand one first, which is
     // why the transform list is read from its right end.
     static Matrix multiply(const Matrix& left, const Matrix& right);
+
+    // The seven numbers an arc carries: two radii, a rotation, two flags and an end point.
+    struct ArcSegment {
+        double rx = 0;
+        double ry = 0;
+        double rotation = 0;
+        // Whether the arc takes the longer way round, which is any value other than zero.
+        bool largeArc = false;
+        // Whether the arc goes the way the coordinates run, which is likewise any nonzero.
+        bool sweep = false;
+        Point end;
+    };
+
+    // Groups a flat run of numbers into arcs. A run that does not fill a group leaves the rest
+    // unread.
+    static std::vector<ArcSegment> parseArcSegments(const std::vector<double>& numbers);
+
+    // Whether an arc from one point to another is skipped. The two are compared exactly, so an
+    // arc that ends a hair away from where it began is still drawn; the source tests them with
+    // the same exact comparison.
+    static bool shouldSkipArc(const Point& start, const Point& end);
 };
