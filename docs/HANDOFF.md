@@ -990,6 +990,12 @@
    - **测试（4 个用例、20 条断言）**：三层链（根 `(0,1,2)` 父 −1、关节 `(5,0,0)` 父 0、端点 `(10,0,0)` 父 1 且 `isEndSite`）；空层级；**两个兄弟节点**都挂在根下且**保持声明顺序**（A 在 B 前）。
    - **验证**：核心 **949 用例 / 206,975 断言**（+4 / +20）、`primitive-geometry`、`port-audit` 全绿。
    - **BVH 只剩轨迹构建**：把每根骨骼的键帧变成 `VectorKeyframeTrack`（位置）与 `QuaternionKeyframeTrack`（旋转），属性路径分别是 `.position` 与 `.quaternion`。
+196. **第 135 轮：`BVHLoader` 收尾——轨迹构建，BVH 完整**。
+   - **语义**：每根**非 `ENDSITE`** 骨骼产出**两条轨迹**——`<name>.position`（3 个值/键）与 `<name>.quaternion`（4 个值/键，xyzw），时间轴就是帧时间。**位置要加上骨骼的 `offset`**，因为动画驱动的是 `position` 属性本身（上游注释写得很清楚）。clip 名 `"animation"`、**duration 传 −1**（让 clip 自己从轨迹推长度）。
+   - **两个开关**：`animateBonePositions` / `animateBoneRotations`（上游默认都是真），端口做成参数，测试各关一次验证只出一条轨迹。
+   - **测试（4 个用例、22 条断言）**：一骨两帧 → 2 条轨迹、名字与类型、6/8 个值；**偏移加入位置**（骨骼在 x=5、帧值 x=1/4 → 输出 6/9）；`ENDSITE` 与无帧骨骼被跳过（三骨只出两条轨迹）；两个开关各关一次。
+   - **验证**：核心 **953 用例 / 206,997 断言**（+4 / +22）、`primitive-geometry`、`port-audit` 全绿。addon loader **33 → 34 / 52**。
+   - **七个完整 loader**：MTL（5 层）、OBJ（5 层）、PLY（6 层）、Font（3 层）、HDRCube（1 层）、MD2（5 层）、**BVH（5 层）**。
 70. **第 520 轮：完整 Vulkan 套件 211/211 全绿，耗时 270.72 秒**。
    - 命令：`ctest --test-dir build-vulkan -j 4 -E "lights-states" --output-on-failure`（仍排除第 46 条那个已知项；它在 Vulkan 构建里同样慢）。
    - 结果：**100% tests passed, 0 tests failed out of 211**，总耗时 **270.72 秒**。对比同一套件在 **Debug** 配置下的 **3784.56 秒 / 2 失败**，差了约 14 倍——再次印证第 69 条"是构建类型不是代码"的结论。

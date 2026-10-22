@@ -73,4 +73,28 @@ class BVHLoader {
     // Walks the hierarchy in the same order as the parse list, so every parent appears
     // before its children. An end site is included, as upstream creates a Bone for it too.
     static std::vector<BoneInfo> buildSkeleton(const Hierarchy& hierarchy);
+
+    // A finished track: a name like "Hips.position", the frame times and the values, either
+    // three per key for a position or four for a quaternion.
+    struct Track {
+        std::string name;
+        bool isQuaternion = false;
+        std::vector<double> times;
+        std::vector<double> values;
+    };
+
+    struct Clip {
+        std::string name = "animation";
+        // Upstream passes minus one, which lets the clip work its duration out from the
+        // tracks rather than from a declared length.
+        double duration = -1;
+        std::vector<Track> tracks;
+    };
+
+    // Builds one position and one quaternion track per non end site bone. The bone offset is
+    // added to every position because the animation drives the position property, so the
+    // rest offset has to be part of the values.
+    static Clip buildAnimation(const std::vector<BoneInfo>& bones,
+                               const std::vector<std::vector<Keyframe>>& framesPerBone,
+                               bool animatePositions = true, bool animateRotations = true);
 };

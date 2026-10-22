@@ -213,3 +213,44 @@ std::vector<BVHLoader::BoneInfo> BVHLoader::buildSkeleton(const Hierarchy& hiera
     }
     return bones;
 }
+
+BVHLoader::Clip BVHLoader::buildAnimation(const std::vector<BoneInfo>& bones,
+                                          const std::vector<std::vector<Keyframe>>& framesPerBone,
+                                          bool animatePositions, bool animateRotations) {
+    Clip clip;
+    for (std::size_t i = 0; i < bones.size(); ++i) {
+        // End sites carry no motion data and get no tracks.
+        if (bones[i].isEndSite) continue;
+        if (i >= framesPerBone.size() || framesPerBone[i].empty()) continue;
+
+        std::vector<double> times;
+        std::vector<double> positions;
+        std::vector<double> rotations;
+        for (const auto& frame : framesPerBone[i]) {
+            times.push_back(frame.time);
+            // The offset joins the position, since the track animates the property itself.
+            positions.push_back(frame.position[0] + bones[i].position[0]);
+            positions.push_back(frame.position[1] + bones[i].position[1]);
+            positions.push_back(frame.position[2] + bones[i].position[2]);
+            for (int k = 0; k < 4; ++k) rotations.push_back(frame.rotation[k]);
+        }
+
+        if (animatePositions) {
+            Track track;
+            track.name = bones[i].name + ".position";
+            track.isQuaternion = false;
+            track.times = times;
+            track.values = std::move(positions);
+            clip.tracks.push_back(std::move(track));
+        }
+        if (animateRotations) {
+            Track track;
+            track.name = bones[i].name + ".quaternion";
+            track.isQuaternion = true;
+            track.times = times;
+            track.values = std::move(rotations);
+            clip.tracks.push_back(std::move(track));
+        }
+    }
+    return clip;
+}

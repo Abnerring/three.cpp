@@ -68,6 +68,7 @@ add_executable(THREECPPTests
         unit/src/loaders/BVHMotion.tests.cpp
         unit/src/loaders/BVHChannels.tests.cpp
         unit/src/loaders/BVHSkeleton.tests.cpp
+        unit/src/loaders/BVHTracks.tests.cpp
         unit/src/cameras/StereoCamera.tests.cpp
         unit/src/audio/AudioContext.tests.cpp
         unit/src/audio/Audio.tests.cpp
