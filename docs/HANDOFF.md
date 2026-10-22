@@ -850,6 +850,13 @@
    - **测试（3 个用例、16 条断言）**：两个 `o` → `Group` 里 2 个 `Mesh`、名字与几何都在；四个属性按存在的流建立；**两个 `usemtl` → 两个 group**（`start 0 / count 3` 与 `start 3 / count 3`）——这条正是上面那个 bug 的回归测试。
    - **验证**：核心 **862 用例 / 206,455 断言**（+3 / +16）、`primitive-geometry`、`port-audit` 全绿。
    - **OBJ 现状**：`parseGeometry` ✓ / `addFaceNormal` ✓ / `OBJMaterialGroups` ✓ / `parseObjects` ✓ / `buildObjects` ✓ **五层齐备**；与 `MTLLoader` 一样，缺的只有纹理与材质绑定（需要 MTL 数据 + 宿主 I/O）。
+175. **第 114 轮：`PLYLoader` 第一层——头解析**。
+   - **实现**：`src/loaders/PLYLoader.{h,cpp}` 的 `parseHeader` —— 从 `ply` 魔数到 `end_header` 之间逐行解析：`format <format> <version>`、`comment <text>`（存进数组）、`element <name> <count>`（遇到下一个 element 时把上一个推进列表）、`property <type> <name>` 或 **`property list <countType> <itemType> <name>`**、`obj_info <text>`。其它行类型忽略（上游只 `console.log`）。
+   - **`propertyNameMapping`**：上游在构造 property 时按映射表**改名**；端口做成 `PLYLoader` 的成员 `std::map<std::string,std::string>`，`parseHeader` 里查表替换，命中才改。
+   - **`end_header` 的定位**：上游用 `/^ply([\s\S]*)end_header(\r\n|\r|\n)/` 抓整块，端口改为「必须以 `ply` 开头」+「找 `end_header` 子串」两条检查，分别抛 `Missing ply header` 与 `Missing ply header terminator`。
+   - **测试（4 个用例、24 条断言）**：format/version/comments/obj_info；两个 element 按名字与数量分组、list 属性的三个字段（`uchar` / `int` / `vertex_indices`）；**重命名映射**生效且未命中的名字不变；两个错误路径**逐字比对文案**。
+   - **验证**：核心 **866 用例 / 206,479 断言**（+4 / +24）、`primitive-geometry`、`port-audit` 全绿。
+   - **PLY 剩余四层**：属性类型映射（`char/uchar/short/ushort/int/uint/float/double` 与 `int8…float64` 两组别名）、ASCII 体读取、二进制体读取（含 `binary_little_endian`/`binary_big_endian`）、以及 `BufferGeometry` 构建（含 `normal` 缺省时的面法线计算）。
 70. **第 520 轮：完整 Vulkan 套件 211/211 全绿，耗时 270.72 秒**。
    - 命令：`ctest --test-dir build-vulkan -j 4 -E "lights-states" --output-on-failure`（仍排除第 46 条那个已知项；它在 Vulkan 构建里同样慢）。
    - 结果：**100% tests passed, 0 tests failed out of 211**，总耗时 **270.72 秒**。对比同一套件在 **Debug** 配置下的 **3784.56 秒 / 2 失败**，差了约 14 倍——再次印证第 69 条"是构建类型不是代码"的结论。
