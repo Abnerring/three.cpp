@@ -1522,6 +1522,12 @@
    - **`POINTS` 的续行判定**：上游把行 **`trim()`** 之后看 `patWord` 是否**不匹配**（即这行以数字开头）。端口一开始漏了这层 trim——`wordLength` 把空格当数字侧，于是 `"   POINTS 8 float"` 被误判成数字行。**失败断言一次打印就定位到了**（第 267 条那条经验这轮见效），修法是 `isNumberLine` 先跳过前导空白再判断。
    - **测试（6 个用例、27 条断言）**：四节点连通性行；**关键字行与空行都不是连通性行**；**四边形出 2 个三角形且第二个是 `(0,2,3)`**；**两节点被丢弃、三角形原样**；**数字行 vs 关键字行（含前导空白）**；**六节点出 4 个三角形**。
    - **验证**：核心 **1291 用例 / 209,341 断言**（+6 / +27）、addons、`primitive-geometry`、`port-audit`、Vulkan 全绿。
+273. **第 212 轮：`VTKLoader` 第三层——段切换状态机**。
+   - **七个关键字**，按上游顺序：`POLYGONS`、`POINTS`、`TRIANGLE_STRIPS`、`POINT_DATA`、`CELL_DATA`、`COLOR_SCALARS`、`NORMALS`。每个都**带一个尾随空格**，所以裸词 `POINTS` 不算。
+   - **标志并非互斥**——这是本轮最需要忠实的一处：每个分支只**清掉它列出的那几个**。`POINT_DATA` 不清 `inNormals`，所以"先 `NORMALS` 再 `POINT_DATA`"之后**两个标志同时为真**；`COLOR_SCALARS` 与 `NORMALS` 互相清对方，但都不清 `inPointData`。测试专门钉住了这种**残留**。
+   - **`POINT_DATA` 不会误开 points 段**：因为匹配的是 `"POINTS "`（带空格），而 `"POINT_DATA "` 在第五个字符处是下划线，两者不会互相前缀。
+   - **测试（5 个用例、21 条断言）**：points → polygons → strips 的依次接管；**`NORMALS` 之后 `POINT_DATA` 两个都真**、**`COLOR_SCALARS` 清掉 normals 但保留 pointData**；无关键字的行与裸词都不改状态；`CELL_DATA`；**`POINT_DATA` 不误开 points**。
+   - **验证**：核心 **1296 用例 / 209,362 断言**（+5 / +21）、addons、`primitive-geometry`、`port-audit`、Vulkan 全绿。
 70. **第 520 轮：完整 Vulkan 套件 211/211 全绿，耗时 270.72 秒**。
    - 命令：`ctest --test-dir build-vulkan -j 4 -E "lights-states" --output-on-failure`（仍排除第 46 条那个已知项；它在 Vulkan 构建里同样慢）。
    - 结果：**100% tests passed, 0 tests failed out of 211**，总耗时 **270.72 秒**。对比同一套件在 **Debug** 配置下的 **3784.56 秒 / 2 失败**，差了约 14 倍——再次印证第 69 条"是构建类型不是代码"的结论。

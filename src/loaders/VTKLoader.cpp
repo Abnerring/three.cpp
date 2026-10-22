@@ -111,3 +111,49 @@ std::vector<int> VTKLoader::triangulateFan(const std::vector<int>& indices, int 
     }
     return triangles;
 }
+
+void VTKLoader::applyKeyword(const std::string& line, Sections& sections) {
+    // Every keyword is its word followed by a space, so a bare word does not count.
+    const auto has = [&line](const char* keyword) {
+        const std::string prefix(keyword);
+        return line.compare(0, prefix.size(), prefix) == 0;
+    };
+
+    // The order matters only in that the first match wins, as it does upstream.
+    if (has("POLYGONS ")) {
+        sections.polygons = true;
+        sections.points = false;
+        sections.triangleStrips = false;
+    } else if (has("POINTS ")) {
+        sections.polygons = false;
+        sections.points = true;
+        sections.triangleStrips = false;
+    } else if (has("TRIANGLE_STRIPS ")) {
+        sections.polygons = false;
+        sections.points = false;
+        sections.triangleStrips = true;
+    } else if (has("POINT_DATA ")) {
+        // Note that the normals and colours flags are left as they were.
+        sections.pointData = true;
+        sections.points = false;
+        sections.polygons = false;
+        sections.triangleStrips = false;
+    } else if (has("CELL_DATA ")) {
+        sections.cellData = true;
+        sections.points = false;
+        sections.polygons = false;
+        sections.triangleStrips = false;
+    } else if (has("COLOR_SCALARS ")) {
+        sections.colors = true;
+        sections.normals = false;
+        sections.points = false;
+        sections.polygons = false;
+        sections.triangleStrips = false;
+    } else if (has("NORMALS ")) {
+        sections.normals = true;
+        sections.colors = false;
+        sections.points = false;
+        sections.polygons = false;
+        sections.triangleStrips = false;
+    }
+}
