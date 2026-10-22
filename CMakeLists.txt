@@ -314,8 +314,15 @@ add_executable(animation_keyframes examples/animation_keyframes.cpp)
 target_link_libraries(animation_keyframes PRIVATE threecpp::threecpp)
 
 if(THREECPP_BUILD_VULKAN)
-    find_path(THREECPP_VULKAN_INCLUDE_DIR vulkan/vulkan.h HINTS "$ENV{VULKAN_SDK}" PATH_SUFFIXES Include include)
-    find_program(THREECPP_GLSLANG_VALIDATOR NAMES glslangValidator HINTS "$ENV{VULKAN_SDK}" PATH_SUFFIXES Bin bin)
+    # The SDK may also be vendored in the tree (third_party/vulkan), so a checkout
+    # builds without installing anything or setting an environment variable.
+    set(THREECPP_VENDORED_VULKAN "${CMAKE_CURRENT_SOURCE_DIR}/third_party/vulkan")
+    find_path(THREECPP_VULKAN_INCLUDE_DIR vulkan/vulkan.h
+        HINTS "${THREECPP_VENDORED_VULKAN}/include" "$ENV{VULKAN_SDK}"
+        PATH_SUFFIXES Include include)
+    find_program(THREECPP_GLSLANG_VALIDATOR NAMES glslangValidator glslang
+        HINTS "${THREECPP_VENDORED_VULKAN}/bin" "$ENV{VULKAN_SDK}"
+        PATH_SUFFIXES Bin bin)
     if(NOT THREECPP_VULKAN_INCLUDE_DIR OR NOT THREECPP_GLSLANG_VALIDATOR)
         message(FATAL_ERROR "Vulkan requires headers and glslangValidator. Set THREECPP_VULKAN_INCLUDE_DIR and THREECPP_GLSLANG_VALIDATOR, or install the Vulkan SDK.")
     endif()

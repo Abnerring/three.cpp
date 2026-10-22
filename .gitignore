@@ -44,3 +44,9 @@
 # Local IDE configuration
 /.vs/
 .vscode/
+
+# Vendored Vulkan SDK (headers + glslang). The rules above ignore *.dll/*.exe/*.lib
+# for build output, but these files are checked in on purpose so a clean checkout
+# builds the renderer without installing the SDK.
+!third_party/vulkan/bin/*.exe
+!third_party/vulkan/bin/*.dll
