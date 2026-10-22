@@ -1,5 +1,7 @@
 #include "loaders/VTKLoader.h"
 
+#include "math/Color.h"
+
 #include <cmath>
 #include <stdexcept>
 #include <cstdlib>
@@ -220,4 +222,33 @@ VTKLoader::Mesh VTKLoader::parseAscii(const std::string& text) {
         applyKeyword(line, sections);
     }
     return mesh;
+}
+
+std::vector<double> VTKLoader::parseColors(const std::string& line) {
+    std::vector<double> colors;
+    const auto values = parseFloats(line);
+    for (std::size_t k = 0; k + 2 < values.size(); k += 3) {
+        // The colour helper does the display to working space conversion for each channel, so
+        // the values that come out are not the ones in the file.
+        Color color;
+        color.setRGB(static_cast<HIGH_PRECISION>(values[k]),
+                     static_cast<HIGH_PRECISION>(values[k + 1]),
+                     static_cast<HIGH_PRECISION>(values[k + 2]), SRGBColorSpace);
+        colors.push_back(static_cast<double>(color.r));
+        colors.push_back(static_cast<double>(color.g));
+        colors.push_back(static_cast<double>(color.b));
+    }
+    return colors;
+}
+
+std::vector<double> VTKLoader::parseNormals(const std::string& line) {
+    std::vector<double> normals;
+    const auto values = parseFloats(line);
+    // Normals are copied as they are, with no conversion of any kind.
+    for (std::size_t k = 0; k + 2 < values.size(); k += 3) {
+        normals.push_back(values[k]);
+        normals.push_back(values[k + 1]);
+        normals.push_back(values[k + 2]);
+    }
+    return normals;
 }

@@ -1534,6 +1534,12 @@
    - **每行先 trim**（与第 211 轮那个 `isNumberLine` 的修正同源）。
    - **测试（5 个用例、15 条断言）**：一个完整四边形文件（4 点 12 个数、2 个三角形 6 个索引）；**点跨多行**；**非 POLYDATA 抛错**；**points 段里的关键字行被忽略但随后切段成功**；空文件读出空。
    - **验证**：核心 **1301 用例 / 209,377 断言**（+5 / +15）、addons、`primitive-geometry`、`port-audit`、Vulkan 全绿。
+275. **第 214 轮：`VTKLoader` 第五层——颜色与法线**。
+   - **颜色要经过色彩空间转换**：上游用 `color.setRGB( r, g, b, SRGBColorSpace )` 再取 `color.r/g/b`，所以**文件里的数值不是最终数值**——中灰 `0.5` 变成约 `0.214`，`0.04` 变成约 `0.003`。端口直接复用 `Color::setRGB(..., SRGBColorSpace)`，与上游走同一条路径，而不是自己写近似公式。`SRGBColorSpace` 在端口里是 `"srgb"`。
+   - **法线原样拷贝**，没有任何转换——这两者放在一起正好说明"不是所有属性都要转换"。
+   - **段条件**：颜色与法线在 `inPointDataSection || inCellDataSection` 之下，且颜色优先（`if inColorSection` / `else if inNormalsSection`）；两者都要求这一行**不以字母开头**，然后按三个一组取。
+   - **测试（3 个用例、13 条断言）**：中灰与白（**0.214** / 1.0）；法线原样（含负值）；**半个三元组被丢弃**；**0.04 转成约 0.003**（证明转换确实发生）；纯黑仍为零。
+   - **验证**：核心 **1304 用例 / 209,390 断言**（+3 / +13）、addons、`primitive-geometry`、`port-audit`、Vulkan 全绿。
 70. **第 520 轮：完整 Vulkan 套件 211/211 全绿，耗时 270.72 秒**。
    - 命令：`ctest --test-dir build-vulkan -j 4 -E "lights-states" --output-on-failure`（仍排除第 46 条那个已知项；它在 Vulkan 构建里同样慢）。
    - 结果：**100% tests passed, 0 tests failed out of 211**，总耗时 **270.72 秒**。对比同一套件在 **Debug** 配置下的 **3784.56 秒 / 2 失败**，差了约 14 倍——再次印证第 69 条"是构建类型不是代码"的结论。

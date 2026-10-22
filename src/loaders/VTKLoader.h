@@ -64,4 +64,11 @@ class VTKLoader {
     // Reads a whole text form file. Throws std::runtime_error for a dataset other than POLYDATA,
     // naming the one it found.
     static Mesh parseAscii(const std::string& text);
+
+    // The colours on one line, converted from the display space the file uses into the working
+    // space exactly as the upstream colour helper does, three at a time.
+    static std::vector<double> parseColors(const std::string& line);
+
+    // The normals on one line, copied as they are, three at a time.
+    static std::vector<double> parseNormals(const std::string& line);
 };
