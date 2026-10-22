@@ -221,6 +221,12 @@
    - **过程中最有价值的一条诊断**：在只有"分层"没做之前跑出来的是 `face 1 wanted 010 got 255,0,0`——面 1 显示的是**面 0 的红色**，直接指向"所有面都渲染进 layer 0"。
    - **再次踩到的坑（第 81 条已警告过）**：`faceView`/`faceFramebuffer` 在基线 `4751e1a` 里**已经有声明**，我又加了一遍 → 重定义；用"声明去重"后才通。教训：**动手前先 grep 目标标识符是否已存在**，不要假设上一轮回退意味着它不存在。
    - **`--cube` 快路径现在保留在测试文件里**：`main` 最前面判断 `argv[1] == "--cube"` 时只跑 `renderTargetTests` 与 `cubeRenderTargetTests`，用于绕开仍然失败的 mipmap 用例（第 76/78/79 条）。正常跑 `threecpp.vulkan` 时它仍会在 mipmap 处中止，所以这条路目前只是**验证通道**。
+83. **第 19 轮：`CubeCamera::update` 模板版写出来了、GPU 用例也过了，但把核心测试打崩了，已回退；同时暴露我一个提交纪律错误**。
+   - **做了什么**：把 `CubeCamera::renderTarget` 从 `JSValue` 改成 `std::shared_ptr<RenderTarget>`，新增类型化构造函数（JS 构造改为委托，因为 JS 句柄无法解包），并把 `update` 写成模板：父节点为空则 `updateMatrixWorld`；坐标系不同则 `updateCoordinateSystem`；保存当前目标/面/mip；六面 `setRenderTarget` + `render(scene, eye)`；最后恢复。GPU 侧 `--cube` 通过（绑好立方目标后 update，目标仍绑定、尺寸不变、最后一面带着清屏色且 sRGB 通道有序）。
+   - **为什么回退**：`THREECPPTests` 直接**崩溃**（退出码 `-1073740791` = `0xC0000409`，fast-fail / 栈检查），不是断言失败。最可能是 `CoreCameraModules.tests.cpp` 之类的既有用例依赖 `renderTarget` 原本的 `JSValue` 语义（比如把它当对象读属性），改成 `shared_ptr` 后行为变了。**具体原因还没查**。
+   - **我犯的提交纪律错误（比崩溃更值得记）**：验证脚本里的 `if` 条件用了 `$LASTEXITCODE`，而它当时已经是**后面那条 `ctest` 的退出码**，不是核心测试的；于是核心测试明明崩了，`if` 仍为真，**把崩溃提交进了仓库**。修法：**每个门禁的退出码必须先赋给独立变量**（`$ccode = $LASTEXITCODE`），`if` 里只判断这些变量，绝不复用 `$LASTEXITCODE`。
+   - **已恢复**：`git revert` 掉那个提交（`c6affd5`），重建后核心 **745 / 205,728**、差分 **22 组 / 287 场景**、`primitive-geometry` 与 `port-audit` 全绿，树干净。
+   - **下一轮**：先查清 `renderTarget` 类型变更为什么让核心测试崩溃（跑 `THREECPPTests` 并看是哪条用例；大概率在 `CoreCameraModules` 或 `renderTarget` 相关断言里），再决定是"保留 `JSValue` 另加类型化成员"还是"同步改用例"。
 70. **第 520 轮：完整 Vulkan 套件 211/211 全绿，耗时 270.72 秒**。
    - 命令：`ctest --test-dir build-vulkan -j 4 -E "lights-states" --output-on-failure`（仍排除第 46 条那个已知项；它在 Vulkan 构建里同样慢）。
    - 结果：**100% tests passed, 0 tests failed out of 211**，总耗时 **270.72 秒**。对比同一套件在 **Debug** 配置下的 **3784.56 秒 / 2 失败**，差了约 14 倍——再次印证第 69 条"是构建类型不是代码"的结论。
