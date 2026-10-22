@@ -125,4 +125,14 @@ class SVGLoader {
     static Matrix translateMatrix(const std::vector<double>& args);
     static Matrix scaleMatrix(const std::vector<double>& args);
     static Matrix rotateMatrix(const std::vector<double>& args);
+
+    // A skew along one axis. The angle is in degrees and leans the axis it names, so a
+    // horizontal skew moves a point sideways in proportion to its height and leaves the height
+    // alone.
+    static Matrix skewXMatrix(const std::vector<double>& args);
+    static Matrix skewYMatrix(const std::vector<double>& args);
+
+    // One transform followed by another. A point is moved by the right hand one first, which is
+    // why the transform list is read from its right end.
+    static Matrix multiply(const Matrix& left, const Matrix& right);
 };

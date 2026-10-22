@@ -363,3 +363,30 @@ SVGLoader::Matrix SVGLoader::rotateMatrix(const std::vector<double>& args) {
     }
     return matrix;
 }
+
+SVGLoader::Matrix SVGLoader::skewXMatrix(const std::vector<double>& args) {
+    Matrix matrix;
+    if (args.empty()) return matrix;
+    // The leaning is the tangent of the angle, so a quarter turn has no finite skew.
+    matrix.c = std::tan(args[0] * 3.14159265358979323846 / 180.0);
+    return matrix;
+}
+
+SVGLoader::Matrix SVGLoader::skewYMatrix(const std::vector<double>& args) {
+    Matrix matrix;
+    if (args.empty()) return matrix;
+    matrix.b = std::tan(args[0] * 3.14159265358979323846 / 180.0);
+    return matrix;
+}
+
+SVGLoader::Matrix SVGLoader::multiply(const Matrix& left, const Matrix& right) {
+    Matrix product;
+    // The two stretches compose, and the translation accumulates.
+    product.a = left.a * right.a + left.c * right.b;
+    product.b = left.b * right.a + left.d * right.b;
+    product.c = left.a * right.c + left.c * right.d;
+    product.d = left.b * right.c + left.d * right.d;
+    product.e = left.a * right.e + left.c * right.f + left.e;
+    product.f = left.b * right.e + left.d * right.f + left.f;
+    return product;
+}
