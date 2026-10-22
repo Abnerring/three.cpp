@@ -141,4 +141,22 @@ class VOXLoader {
     static std::map<std::string, std::string> readDict(const std::vector<std::uint8_t>& buffer,
                                                        std::size_t offset,
                                                        std::size_t& bytesRead);
+
+    // One transform node as the file writes it: a name, an optional whole voxel translation
+    // and an optional rotation byte. The dictionary keys are the ones the format uses.
+    struct Transform {
+        int nodeId = -1;
+        std::string name;
+        double translation[3] = {0, 0, 0};
+        bool hasTranslation = false;
+        int rotation = 0;
+        bool hasRotation = false;
+    };
+
+    // Reads the attributes of an nTRN dictionary. A value that is not a number is treated as
+    // absent rather than as zero, so a malformed file leaves the node untransformed.
+    static Transform parseTransform(const std::map<std::string, std::string>& dict);
+
+    // Reads the child list of an nGRP or nSHP dictionary.
+    static std::vector<int> parseChildren(const std::map<std::string, std::string>& dict);
 };

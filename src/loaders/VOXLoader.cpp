@@ -392,3 +392,62 @@ std::map<std::string, std::string> VOXLoader::readDict(const std::vector<std::ui
     bytesRead = total;
     return dict;
 }
+
+VOXLoader::Transform VOXLoader::parseTransform(const std::map<std::string, std::string>& dict) {
+    Transform transform;
+    const auto field = [&dict](const char* key) -> std::string {
+        const auto found = dict.find(key);
+        return found == dict.end() ? std::string() : found->second;
+    };
+
+    // The node id is written as a plain number.
+    const std::string idText = field("node_id");
+    if (!idText.empty()) transform.nodeId = std::atoi(idText.c_str());
+    transform.name = field("_name");
+
+    // A translation is three numbers separated by spaces.
+    const std::string translation = field("_t");
+    if (!translation.empty()) {
+        std::size_t at = 0;
+        bool ok = true;
+        for (int i = 0; i < 3; ++i) {
+            while (at < translation.size() && translation[at] == ' ') ++at;
+            const std::size_t space = translation.find(' ', at);
+            const std::size_t end = space == std::string::npos ? translation.size() : space;
+            if (end <= at) {
+                ok = false;
+                break;
+            }
+            transform.translation[i] = std::strtod(translation.substr(at, end - at).c_str(), nullptr);
+            at = end;
+        }
+        transform.hasTranslation = ok;
+    }
+
+    // The rotation is one byte holding the encoding the matrix builder understands.
+    const std::string rotation = field("_r");
+    if (!rotation.empty()) {
+        transform.rotation = std::atoi(rotation.c_str());
+        transform.hasRotation = true;
+    }
+    return transform;
+}
+
+std::vector<int> VOXLoader::parseChildren(const std::map<std::string, std::string>& dict) {
+    std::vector<int> children;
+    const auto found = dict.find("_c");
+    if (found == dict.end()) return children;
+
+    // The child list is numbers separated by spaces.
+    std::size_t at = 0;
+    const std::string& text = found->second;
+    while (at < text.size()) {
+        while (at < text.size() && text[at] == ' ') ++at;
+        if (at >= text.size()) break;
+        const std::size_t space = text.find(' ', at);
+        const std::size_t end = space == std::string::npos ? text.size() : space;
+        children.push_back(std::atoi(text.substr(at, end - at).c_str()));
+        at = end;
+    }
+    return children;
+}

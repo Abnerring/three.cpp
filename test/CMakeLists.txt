@@ -99,6 +99,7 @@ add_executable(THREECPPTests
         unit/src/loaders/VOXQuad.tests.cpp
         unit/src/loaders/VOXMesh.tests.cpp
         unit/src/loaders/VOXDict.tests.cpp
+        unit/src/loaders/VOXTransform.tests.cpp
         unit/src/cameras/StereoCamera.tests.cpp
         unit/src/audio/AudioContext.tests.cpp
         unit/src/audio/Audio.tests.cpp
