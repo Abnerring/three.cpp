@@ -30,6 +30,7 @@ add_executable(THREECPPTests
         unit/src/math/SpherePlaneTriangle.tests.cpp
         unit/src/math/RayFrustum.tests.cpp
         unit/src/math/LineBox2Cyl.tests.cpp
+        unit/src/math/Matrix2EulerQuat.tests.cpp
         unit/src/cameras/StereoCamera.tests.cpp
         unit/src/audio/AudioContext.tests.cpp
         unit/src/audio/Audio.tests.cpp
