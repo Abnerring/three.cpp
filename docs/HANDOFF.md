@@ -398,6 +398,12 @@
    - **为什么要这么绕**：第 49 轮的教训是"批量替换会误伤、且替换失败时错误列表不变"。镜像法把"引入新结构"和"切换调用点"彻底拆开：这一轮只做前者，且不需要改任何现有代码。
    - **验证（五项门禁，按第 111 条新规矩）**：核心 **747 / 205,735** ✓、`primitive-geometry` ✓、`port-audit` ✓、`build-vkdebug` 的 `threecpp_vulkan` **0 错误** ✓、`--cube` 退出码 **0** ✓。
    - **下一步**：逐个函数把调用点从旧成员切到 `active->...`，**每切一个函数跑一次五项门禁**——顺序建议 `beginFrame` → `endFrame` → `selectFace` → `readRenderTargetPixels` → `destroyTargets` → `resize`（最后删旧成员）。每次切换都是"读的是同一个对象"，所以门禁应当全绿；一旦某项变红，就立刻知道是哪个函数切错了。
+113. **第 52 轮：`beginFrame`/`endFrame`/`selectFace` 三个函数已切到 `active`，门禁全绿**。
+   - **顺序与连锁**：先切 `beginFrame`，`--cube` 立刻报 **face 1 got 0,0,0**——因为 `initializedLayers` 改成读 `active->` 而 `endFrame` 还在写 `Impl::`，于是每帧都从 `UNDEFINED` 转换、内容被丢弃。切了 `endFrame` 后仍是黑面，因为 `active` 的 `faceFramebuffer` 还没人建——`selectFace` 仍在写 `Impl::faceFramebuffer`。把 `selectFace` 也切过去，**`--cube` 退出码 0**。
+   - **`GpuTarget` 补齐的字段**：`faceView`、`faceFramebuffer`、`initializedLayers`、`initialized`（原来的定义只有 `color/depth/framebuffer/width/height/layers`）。
+   - **自己造成的一次惊险**：用 `$L[414] = ...` 单行赋值时**覆盖了 `width/height/layers` 那一行**并留下多余 `};`，瞬间变成 98 个错误；按行重写整个 `GpuTarget` 块后回到 0；接着又出现 `initializedLayers` 重复定义（去重时把两处都算了），用"保留第一次出现"的去重才干净。
+   - **验证（五项门禁）**：核心 **747 / 205,735** ✓、`primitive-geometry` ✓、`port-audit` ✓、`threecpp_vulkan` **0 错误** ✓、`--cube` **0** ✓。
+   - **下一步**：还剩 `readRenderTargetPixels`、`destroyTargets`、`resize` 三处要切，然后才能删掉 `Impl` 上的旧成员（`colorImage`/`depthImage`/`framebuffer`/`faceView`/`faceFramebuffer`/`targetLayers`/`initialized`/`initializedLayers`）。删旧成员那一步必须最后做，而且要一次性删干净，否则会出现"改了一半"的编译错误海。
 70. **第 520 轮：完整 Vulkan 套件 211/211 全绿，耗时 270.72 秒**。
    - 命令：`ctest --test-dir build-vulkan -j 4 -E "lights-states" --output-on-failure`（仍排除第 46 条那个已知项；它在 Vulkan 构建里同样慢）。
    - 结果：**100% tests passed, 0 tests failed out of 211**，总耗时 **270.72 秒**。对比同一套件在 **Debug** 配置下的 **3784.56 秒 / 2 失败**，差了约 14 倍——再次印证第 69 条"是构建类型不是代码"的结论。
