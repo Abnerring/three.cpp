@@ -50,3 +50,7 @@
 # builds the renderer without installing the SDK.
 !third_party/vulkan/bin/*.exe
 !third_party/vulkan/bin/*.dll
+
+# Build logs kept next to the tree while rebuilding
+*-rebuild.log
+build-*.log
