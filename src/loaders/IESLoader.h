@@ -79,4 +79,20 @@ class IESLoader {
     // horizontal angles so the first one is zero, returning the largest scaled reading.
     static double normalizeTables(Tables& tables, double multiplier, double ballast,
                                   double ballastLightOutput);
+
+    // Everything one lamp file describes.
+    struct Lamp {
+        bool hasTilt = false;
+        Tilt tilt;
+        LampValues values;
+        LampFactors factors;
+        Tables tables;
+        // The largest candela reading after scaling, or minus one when there were no tables.
+        double maximum = -1;
+    };
+
+    // Reads a whole lamp: scans for the line naming the tilt, reads the optional tilt block,
+    // then the ten values, the three factors and the tables, and finally scales them. Throws
+    // std::runtime_error when the file has no tilt keyword at all.
+    static Lamp parse(const std::string& text);
 };

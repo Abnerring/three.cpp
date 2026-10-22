@@ -2,6 +2,7 @@
 
 #include <cctype>
 #include <cstdlib>
+#include <stdexcept>
 
 std::vector<std::string> IESLoader::splitLines(const std::string& text) {
     std::vector<std::string> lines;
@@ -138,4 +139,36 @@ double IESLoader::normalizeTables(Tables& tables, double multiplier, double ball
             if (value > maximum) maximum = value;
     }
     return maximum;
+}
+
+IESLoader::Lamp IESLoader::parse(const std::string& text) {
+    Lamp lamp;
+    const auto lines = splitLines(text);
+    std::size_t cursor = 0;
+
+    // Find the line that names the tilt: everything before it is metadata the port ignores.
+    bool foundTilt = false;
+    while (cursor < lines.size()) {
+        const std::string& line = lines[cursor++];
+        if (line.find("TILT") != std::string::npos) {
+            foundTilt = true;
+            // The keyword itself is the only tilt information when it says none.
+            if (line.find("NONE") == std::string::npos && line.find("INCLUDE") != std::string::npos) {
+                lamp.tilt = readTilt(lines, cursor);
+                lamp.hasTilt = lamp.tilt.present;
+            }
+            // Upstream ignores a tilt that names a file, so nothing more is read here either.
+            break;
+        }
+    }
+    if (!foundTilt) throw std::runtime_error("THREE.IESLoader: TILT keyword not found");
+
+    // The blocks follow in a fixed order.
+    lamp.values = readLampValues(lines, cursor);
+    lamp.factors = readLampFactors(lines, cursor);
+    lamp.tables = readTables(lines, cursor, lamp.values.numVerticalAngles,
+                             lamp.values.numHorizontalAngles);
+    lamp.maximum = normalizeTables(lamp.tables, lamp.values.multiplier, lamp.factors.ballast,
+                                   lamp.factors.ballastLightOutput);
+    return lamp;
 }
