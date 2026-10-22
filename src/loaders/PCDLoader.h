@@ -1,6 +1,7 @@
 #pragma once
 #include <cstdint>
 #include <map>
+#include <memory>
 #include <string>
 #include <vector>
 
@@ -8,6 +9,8 @@
 // the pinned revision. PCD is a point cloud format: an ascii header, then ascii, binary or
 // LZF compressed binary point data. This slice covers the decompressor and the header; the
 // point decoding is the layer above.
+class BufferGeometry;
+
 class PCDLoader {
   public:
     struct Header {
@@ -76,4 +79,9 @@ class PCDLoader {
     static Points parseCompressedPoints(const std::vector<std::uint8_t>& data, std::size_t start,
                                         int pointCount, const Header& header,
                                         const FieldLayout& layout, bool littleEndian);
+
+    // Assembles the decoded streams into a geometry. Position, normal and colour become
+    // three component attributes and the scalar streams become one component ones, each
+    // only when it holds data, since the format allows any subset of the fields.
+    static std::shared_ptr<BufferGeometry> buildGeometry(const Points& points);
 };

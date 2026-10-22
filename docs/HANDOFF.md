@@ -1034,6 +1034,12 @@
    - **测试（新增 2 个用例、11 条断言）**：大端/小端两份字节各读一回（真正的端序断言）；**手工构造压缩块**（12 个字面字节用控制字节 11 打包）→ 解压后得到 `(1,2,3)`；块头过短抛错。
    - **验证**：核心 **977 用例 / 207,094 断言**（+2 / +11）、`primitive-geometry`、`port-audit` 全绿。
    - **PCD 只剩装配**：把 `Points` 的三条流装成 `BufferGeometry` 与 `Points` 对象。之后 PCD 就完整了。
+203. **第 142 轮：`PCDLoader` 收尾——几何装配，PCD 完整**。
+   - **`buildGeometry`**：`position`/`normal`/`color` 三个三分量属性、`intensity`/`label` 两个一分量属性，**各自有数据才建**（格式允许字段的任意子集）。空 `Points` 得到空几何而不是崩溃。
+   - **一个编译顺序的坑**：我在头文件里只加了 `class BufferGeometry;` 的前置声明，却**没加 `<memory>`**（因为守卫条件把整个替换跳过了），报 `shared_ptr 不是 std 的成员`。**前置声明与前缀 include 要分开检查**。
+   - **测试（3 个用例、11 条断言）**：位置 + 颜色（无 normal/intensity）；位置 + 法线 + 强度 + 标签（标量流是一分量属性）；**空 `Points`** → 几何非空但**没有任何属性**。
+   - **验证**：核心 **980 用例 / 207,105 断言**（+3 / +11）、`primitive-geometry`、`port-audit` 全绿。addon loader **34 → 35 / 52**。
+   - **八个完整 loader**：MTL（5 层）、OBJ（5 层）、PLY（6 层）、Font（3 层）、HDRCube（1 层）、MD2（5 层）、BVH（5 层）、**PCD（6 层）**。
 70. **第 520 轮：完整 Vulkan 套件 211/211 全绿，耗时 270.72 秒**。
    - 命令：`ctest --test-dir build-vulkan -j 4 -E "lights-states" --output-on-failure`（仍排除第 46 条那个已知项；它在 Vulkan 构建里同样慢）。
    - 结果：**100% tests passed, 0 tests failed out of 211**，总耗时 **270.72 秒**。对比同一套件在 **Debug** 配置下的 **3784.56 秒 / 2 失败**，差了约 14 倍——再次印证第 69 条"是构建类型不是代码"的结论。

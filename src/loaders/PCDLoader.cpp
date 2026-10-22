@@ -1,5 +1,6 @@
 #include "loaders/PCDLoader.h"
 
+#include "core/BufferGeometry.h"
 #include "math/Color.h"
 #include "math/ColorManagement.h"
 #include <cstring>
@@ -321,4 +322,25 @@ PCDLoader::Points PCDLoader::parseCompressedPoints(const std::vector<std::uint8_
     const auto plain = decompressLZF(compressed, uncompressedSize);
     // The decompressed block is plain binary from then on.
     return parseBinaryPoints(plain, 0, pointCount, header, layout, littleEndian);
+}
+
+std::shared_ptr<BufferGeometry> PCDLoader::buildGeometry(const Points& points) {
+    auto geometry = std::make_shared<BufferGeometry>();
+    // Each stream becomes an attribute only when it has data.
+    if (!points.positions.empty())
+        geometry->setAttribute("position",
+                               std::make_shared<TypedBufferAttribute<float>>(points.positions, 3));
+    if (!points.normals.empty())
+        geometry->setAttribute("normal",
+                               std::make_shared<TypedBufferAttribute<float>>(points.normals, 3));
+    if (!points.colors.empty())
+        geometry->setAttribute("color",
+                               std::make_shared<TypedBufferAttribute<float>>(points.colors, 3));
+    if (!points.intensity.empty())
+        geometry->setAttribute("intensity",
+                               std::make_shared<TypedBufferAttribute<float>>(points.intensity, 1));
+    if (!points.label.empty())
+        geometry->setAttribute("label",
+                               std::make_shared<TypedBufferAttribute<float>>(points.label, 1));
+    return geometry;
 }
