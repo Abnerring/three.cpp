@@ -1349,6 +1349,12 @@
    - **测试（6 个用例、24 条断言）**：完整文件头九个字段；**存 0 时取默认 ±1.5**；头过短抛错；段头十个字段；**段头存 0 时取档位表的 32767**；**带偏移读取**（1024 处）。
    - **验证**：核心 **1184 用例 / 208,988 断言**（+6 / +24）、addons、`primitive-geometry`、`port-audit`、Vulkan 全绿。
    - **剩余**：`readSection` 的三档解压与装配。
+248. **第 187 轮：`KSPLATLoader` 第三层（上）——压缩步长与中心解码**。
+   - **步长**：`compressionScaleFactor = bucketBlockSize / 2 / compressionScaleRange`。当 `bucketBlockSize = 4`、`scaleRange = 32767` 时，**一个完整量程正好覆盖 2 个世界单位**，所以"半个桶块"是 ±2。
+   - **中心解码**：`(stored − compressionScaleRange) × factor + bucketCoordinate`——**减去量程**把零点挪到块中央，乘步长得到块内偏移，再加桶坐标把块放到世界位置。
+   - **测试（5 个用例、7 条断言）**：步长公式与"块加倍则步长加倍"；**量程为 0 时步长为 0**（不做除法）；**中间值 `32767` 恰好落在桶坐标上**；**`0` 得 `bucket − 2`、`65534` 得 `bucket + 2`**；同一个存储值在两个桶里只差桶坐标。
+   - **验证**：核心 **1189 用例 / 208,995 断言**（+5 / +7）、addons、`primitive-geometry`、`port-audit`、Vulkan 全绿。
+   - **剩余**：`readCompressedFloat`（缩放与旋转的压缩浮点）、`writeSphericalHarmonicsFromRest` 的带内还原、以及 `getBucketIndex` 的桶寻址。
 70. **第 520 轮：完整 Vulkan 套件 211/211 全绿，耗时 270.72 秒**。
    - 命令：`ctest --test-dir build-vulkan -j 4 -E "lights-states" --output-on-failure`（仍排除第 46 条那个已知项；它在 Vulkan 构建里同样慢）。
    - 结果：**100% tests passed, 0 tests failed out of 211**，总耗时 **270.72 秒**。对比同一套件在 **Debug** 配置下的 **3784.56 秒 / 2 失败**，差了约 14 倍——再次印证第 69 条"是构建类型不是代码"的结论。

@@ -119,3 +119,20 @@ KSPLATLoader::SectionHeader KSPLATLoader::parseSectionHeader(
     header.sphericalHarmonicsDegree = static_cast<int>(readUint16(buffer, offset + 40));
     return header;
 }
+
+double KSPLATLoader::compressionScaleFactor(const SectionHeader& section) {
+    // A range of zero would divide by nothing, so the caller is protected here rather than at
+    // every call site.
+    if (section.compressionScaleRange == 0) return 0.0;
+    return section.bucketBlockSize / 2.0 / static_cast<double>(section.compressionScaleRange);
+}
+
+double KSPLATLoader::decodeCenter(std::uint32_t stored, const SectionHeader& section,
+                                  double bucketCoordinate) {
+    // Shifting by the range puts zero at the middle of the block, then the step scales it and
+    // the bucket's own coordinate places the block.
+    const double offset =
+        static_cast<double>(static_cast<std::int64_t>(stored) -
+                            static_cast<std::int64_t>(section.compressionScaleRange));
+    return offset * compressionScaleFactor(section) + bucketCoordinate;
+}

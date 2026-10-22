@@ -78,4 +78,14 @@ class KSPLATLoader {
     // the stored value is zero.
     static SectionHeader parseSectionHeader(const std::vector<std::uint8_t>& buffer,
                                             std::size_t offset, const Compression& layout);
+
+    // The step one stored unit covers: half a bucket block divided by the range a coordinate is
+    // allowed to span. A block size of four over a range of 32767 makes a full range span two
+    // units.
+    static double compressionScaleFactor(const SectionHeader& section);
+
+    // Decodes one compressed centre component. The stored unsigned value is measured from the
+    // middle of the range, and the bucket supplies the offset that brings it back into place.
+    static double decodeCenter(std::uint32_t stored, const SectionHeader& section,
+                               double bucketCoordinate);
 };

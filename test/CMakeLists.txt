@@ -115,6 +115,7 @@ add_executable(THREECPPTests
         unit/src/loaders/GaussianSplatPLYConvert.tests.cpp
         unit/src/loaders/KSPLATLoader.tests.cpp
         unit/src/loaders/KSPLATHeader.tests.cpp
+        unit/src/loaders/KSPLATSection.tests.cpp
         unit/src/cameras/StereoCamera.tests.cpp
         unit/src/audio/AudioContext.tests.cpp
         unit/src/audio/Audio.tests.cpp
