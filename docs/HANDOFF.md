@@ -1008,6 +1008,13 @@
    - **为什么记下来**：`computeOffsets` **没有被任何地方调用**（纯新增代码），崩溃却出现在**完整套件**里、而新测试单独跑又不崩。最可疑的是给 `Header` 加的那个 `std::map` 成员——它改变了结构体大小与拷贝语义，而 `parseHeader` 是**按值返回**的。**没有继续深挖**是因为这一层不是必须的（`offset` 只是解析点数据时的查表），而每次试错都要跑一次完整套件。
    - **下次的正确做法**：不要把 `offset` 塞进 `Header`。**改成 `computeOffsets(const Header&)` 返回一个独立的 `std::map`**，`Header` 保持纯 POD 式（只有 vector/int/string），这样结构体大小与拷贝行为都不变。这也符合前面几轮的经验：**结构体里加容器成员要谨慎**。
    - **验证**：回退后核心 **960 用例 / 207,024 断言**（与第 136 轮一致）、`primitive-geometry`、`port-audit` 全绿，树干净。
+199. **第 138 轮：`PCDLoader` 第二层重做成功——`offset` 表改成"返回值"就没有崩溃了**。
+   - **做法的差别**：上一轮把 `std::map offset` 与 `int rowSize` 塞进 `Header`，完整套件 `0xC0000409`；这一轮改成 **`FieldLayout{offset, rowSize}` 由 `computeOffsets(const Header&)` 返回**，`Header` **一个成员都没加**，结果**一次通过、零崩溃**。第 197 条的猜测（**给值类型加容器成员破坏了它的布局与拷贝行为**）得到了直接验证。
+   - **语义**（与上游一致）：**ascii** 的偏移是 **token 序号**，按 `count` 累加；**binary 与 binary_compressed** 的偏移是**字节偏移**，按 `size × count` 累加；`rowSize` 只在非 ascii 时非零。**元数据列表比字段少**时，缺的那些按 `size = 1`、`count = 1` 兜底（不越界读）。
+   - **测试（5 个用例、20 条断言）**：ascii 的 0/1/2/3 与 `rowSize = 0`；binary 的 0/4/8/12 与 `rowSize = 16`；`count = 3` 时 binary 的 `rowSize = 24`、ascii 仍为 0；`binary_compressed` 与 binary 同构；**短元数据**（`count = {2}`、`size = {2}`）时只有第一个字段是 2×2、其余按 1 兜底，`rowSize = 7`。
+   - **一处我写错的期望**：我以为短元数据会"沿用第一个值"（那样 `rowSize` 是 8），实际是**逐字段兜底为 1**（`rowSize` 是 7）。改成 7 并通过——**又一次"测试跟着实现对"**。
+   - **验证**：核心 **965 用例 / 207,044 断言**（+5 / +20）、`primitive-geometry`、`port-audit` 全绿。
+   - **PCD 剩余**：`ascii`/`binary` 的点数据读取（按这张表取 `x`/`y`/`z`/`rgb`/法线/强度/标签）与 `binary_compressed`（先 `decompressLZF` 再按 binary 读）。
 70. **第 520 轮：完整 Vulkan 套件 211/211 全绿，耗时 270.72 秒**。
    - 命令：`ctest --test-dir build-vulkan -j 4 -E "lights-states" --output-on-failure`（仍排除第 46 条那个已知项；它在 Vulkan 构建里同样慢）。
    - 结果：**100% tests passed, 0 tests failed out of 211**，总耗时 **270.72 秒**。对比同一套件在 **Debug** 配置下的 **3784.56 秒 / 2 失败**，差了约 14 倍——再次印证第 69 条"是构建类型不是代码"的结论。

@@ -1,5 +1,6 @@
-﻿#pragma once
+#pragma once
 #include <cstdint>
+#include <map>
 #include <string>
 #include <vector>
 
@@ -32,4 +33,15 @@ class PCDLoader {
     // Reads the ascii header up to and including the data line. Throws when the header ends
     // before a data type is declared.
     static Header parseHeader(const std::vector<std::uint8_t>& buffer);
+
+    // The per field lookup a point parser needs: for ascii an offset is a token index and
+    // grows by the field count, for the binary forms it is a byte offset and grows by size
+    // times count. Returned rather than stored on the header, so the header value type keeps
+    // its plain layout.
+    struct FieldLayout {
+        std::map<std::string, int> offset;
+        // Bytes per point; only meaningful for the binary forms.
+        int rowSize = 0;
+    };
+    static FieldLayout computeOffsets(const Header& header);
 };

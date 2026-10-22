@@ -1,4 +1,4 @@
-﻿#include "loaders/PCDLoader.h"
+#include "loaders/PCDLoader.h"
 
 #include <cctype>
 #include <cstdlib>
@@ -117,4 +117,29 @@ PCDLoader::Header PCDLoader::parseHeader(const std::vector<std::uint8_t>& buffer
     header.headerLength = i;
     if (header.data.empty()) throw std::runtime_error("THREE.PCDLoader: Missing data declaration");
     return header;
+}
+
+PCDLoader::FieldLayout PCDLoader::computeOffsets(const Header& header) {
+    FieldLayout layout;
+    int sizeSum = 0;
+    int countSum = 0;
+    const bool ascii = header.data == "ascii";
+
+    for (std::size_t i = 0; i < header.fields.size(); ++i) {
+        const std::string& field = header.fields[i];
+        const int fieldCount = i < header.count.size() ? header.count[i] : 1;
+        if (ascii) {
+            // Ascii offsets count tokens, so a field starts after the previous field's values.
+            layout.offset[field] = countSum;
+            countSum += fieldCount;
+        } else {
+            // Binary offsets count bytes, so a field starts after the previous field's storage.
+            layout.offset[field] = sizeSum;
+            const int fieldSize = i < header.size.size() ? header.size[i] : 1;
+            sizeSum += fieldSize * fieldCount;
+        }
+    }
+    // The row size only describes the binary forms.
+    layout.rowSize = sizeSum;
+    return layout;
 }
