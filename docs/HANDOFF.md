@@ -890,6 +890,12 @@
    - **测试（2 个用例、11 条断言）**：完整缓冲（索引 + 四个属性）全部就位；只有位置时，**`normal`/`uv`/`color`/索引都为空**——这条直接钉住"不算法线"的行为。
    - **验证**：核心 **884 用例 / 206,574 断言**（+2 / +11）、`primitive-geometry`、`port-audit` 全绿。
    - **三个五层以上的 loader 全部完整**：`MTLLoader`（5 层）、`OBJLoader`（5 层）、`PLYLoader`（6 层：头解析/类型映射/ASCII/二进制/元素处理/几何构建）。
+181. **第 120 轮：里程碑核验 + 查清 `TTFLoader` 为什么不可移植、`FontLoader` 为什么可以**。
+   - **五项门禁实测（全部 0）**：核心 **884 用例 / 206,574 断言**；addons **155 用例 / 23,996 断言**；差分 **22 组 / 334 场景**；`port-audit` 通过；Vulkan 构建 **0 错误**、`--cube` **exit 0**。
+   - **`TTFLoader` 的真相**：文件第一行就 `import opentype from 'https://cdn.jsdelivr.net/npm/opentype.js@1.3.4/+esm'`——**整个 TTF 解析都交给第三方库**，这个 loader 只做 `convert(font, reversed)`：把 opentype 解析出的 `glyphIndexMap` / `glyphs` / `unitsPerEm` 转成 three.js 的 typeface JSON（`scale = 100000 / (unitsPerEm * 72)`、每条命令 `round` 到整数、`reversed` 时把命令序列倒序）。**要移植就得先重写 opentype.js**，超出合理范围；这也解释了为什么它属于"依赖第三方解码"那一类。
+   - **`FontLoader`（260 行）相反**：只 import `FileLoader`/`Loader`/`ShapePath`，**全部来自 'three'**，所以它是**纯 JSON → Font 的解析器**，端到端可移植，是接下来比 TTF 更值得做的目标。
+   - **本轮无代码改动**（只有文档），树保持干净：HEAD 仍是 `2f5f4b6`，五项门禁全绿。
+   - **累计进度**：addon loader **29 / 52**；三个大型 loader（MTL 5 层、OBJ 5 层、PLY 6 层）全部完整；TSL 的 210 个 node 模块仍是最大缺口（需要 `NodeBuilder` + 运行时反射）。
 70. **第 520 轮：完整 Vulkan 套件 211/211 全绿，耗时 270.72 秒**。
    - 命令：`ctest --test-dir build-vulkan -j 4 -E "lights-states" --output-on-failure`（仍排除第 46 条那个已知项；它在 Vulkan 构建里同样慢）。
    - 结果：**100% tests passed, 0 tests failed out of 211**，总耗时 **270.72 秒**。对比同一套件在 **Debug** 配置下的 **3784.56 秒 / 2 失败**，差了约 14 倍——再次印证第 69 条"是构建类型不是代码"的结论。
