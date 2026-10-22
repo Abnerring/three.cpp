@@ -1765,15 +1765,60 @@ void equirectangularToCubeTests(bool validation) {
     require(renderer.getRenderTarget() == cube, "equirectangular keeps the bound target");
     auto face = renderer.readRenderTargetPixels(*cube, 0, 0, 16, 16);
     require(face.size() == static_cast<std::size_t>(16) * 16 * 4, "face pixel count");
-    require(face[1] > 200 && face[0] < 60 && face[2] < 60,
+    // Rows start at the top of the image, so index the centre explicitly.
+    const std::size_t middle = (static_cast<std::size_t>(8) * 16 + 8) * 4;
+    require(face[middle + 1] > 200 && face[middle] < 60 && face[middle + 2] < 60,
             "cube face carries the equirectangular colour");
     renderer.setRenderTarget(nullptr);
 }
 
+
+void encodeProbeTests(bool validation) {
+    VulkanRenderer renderer({64, 64, validation});
+    auto renderSolid = [&](std::uint8_t r, std::uint8_t g, std::uint8_t b) {
+        auto cube = std::make_shared<WebGLCubeRenderTarget>(16);
+        std::vector<std::uint8_t> pixels(static_cast<std::size_t>(4) * 4 * 4, 255);
+        for (std::size_t i = 0; i < pixels.size(); i += 4) {
+            pixels[i] = r; pixels[i + 1] = g; pixels[i + 2] = b; pixels[i + 3] = 255;
+        }
+        auto source = std::make_shared<DataTexture>(Uint8Array(std::move(pixels)), 4, 4);
+        source->needsUpdate = true;
+        renderer.setRenderTarget(cube);
+        renderer.renderEquirectangularToCube(source, cube);
+        auto face = renderer.readRenderTargetPixels(*cube, 0, 0, 16, 16);
+        renderer.setRenderTarget(nullptr);
+        return std::array<int, 3>{face[0], face[1], face[2]};
+    };
+    const auto white = renderSolid(255, 255, 255);
+    std::cerr << "encode probe: white=" << white[0] << "," << white[1] << "," << white[2] << "\n";
+    // Gradient probe: red ramps with u, blue with 1-u, so r+b should stay near 255 and the
+    // ratio tells us which u the centre of the last face sampled.
+    auto cube = std::make_shared<WebGLCubeRenderTarget>(16);
+    constexpr int width = 32, height = 4;
+    std::vector<std::uint8_t> pixels(static_cast<std::size_t>(width) * height * 4, 255);
+    for (int y = 0; y < height; ++y) {
+        for (int x = 0; x < width; ++x) {
+            const std::size_t i = (static_cast<std::size_t>(y) * width + x) * 4;
+            pixels[i] = static_cast<std::uint8_t>(x * 255 / (width - 1));
+            pixels[i + 1] = 0;
+            pixels[i + 2] = static_cast<std::uint8_t>(255 - pixels[i]);
+        }
+    }
+    auto source = std::make_shared<DataTexture>(Uint8Array(std::move(pixels)), width, height);
+    source->needsUpdate = true;
+    renderer.setRenderTarget(cube);
+    renderer.renderEquirectangularToCube(source, cube);
+    auto face = renderer.readRenderTargetPixels(*cube, 0, 0, 16, 16);
+    const std::size_t centre = (static_cast<std::size_t>(8) * 16 + 8) * 4;
+    std::cerr << "gradient probe centre = " << static_cast<int>(face[centre]) << ","
+              << static_cast<int>(face[centre + 1]) << "," << static_cast<int>(face[centre + 2])
+              << "  corner = " << static_cast<int>(face[0]) << "\n";
+    renderer.setRenderTarget(nullptr);
+}
 int main(int argc, char** argv) {
     try {
         const bool validation = argc > 1 && std::string(argv[1]) == "--validation";
-        if (argc > 1 && std::string(argv[1]) == "--cube") { renderTargetTests(validation); cubeRenderTargetTests(validation); cubeCameraUpdateTests(validation); equirectangularToCubeTests(validation); return 0; }
+        if (argc > 1 && std::string(argv[1]) == "--cube") { renderTargetTests(validation); cubeRenderTargetTests(validation); cubeCameraUpdateTests(validation); equirectangularToCubeTests(validation); encodeProbeTests(validation); return 0; }
         unsupportedMeshTests(validation);
         unsupportedPrimitiveTests(validation);
         instancingTests(validation);
