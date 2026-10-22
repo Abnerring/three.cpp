@@ -198,6 +198,12 @@
      `Automatic mipmaps filter a minified checkerboard: expected 128,128,128,255, received 0,0,0,255`。
    - **为什么判定是环境**：同一份源码、同一个提交 `4751e1a`，在更早的轮次里 **99.70 秒跑完并通过**（`threecpp.vulkan`），现在换成全新构建目录仍复现，且**结论稳定**（连跑三次一致）。代码没有变、构建类型一致、Vulkan 头文件与 glslang 都是项目内固定的那份——所以差异只可能在**机器侧的驱动/GPU 状态**（自动生成 mipmap 走 `vkCmdBlitImage` 链，返回全黑说明 blit 没有产生数据）。
    - **对目标的影响**：这条用例挡住的是**整个 `VulkanRendererTests` 二进制**，而六面渲染的验收测试就放在里面，所以六面渲染**暂时无法验证**（第 76 条的实现已经写好过一次）。**下一步不赌 GPU**：先做 `PMREMGenerator` 的**CPU 侧**结构（类骨架、`_allocateTargets`、`_blur` 的尺寸与卷积数学、`fromEquirectangular` 的参数校验），GPU 相关入口一律显式抛错，并在**不依赖 GPU** 的单测里验证；等 mipmap 用例恢复（或换机器/驱动）再补六面渲染与真实 GPU 路径。
+79. **新目标第 12–13 轮：确认 Vulkan 的 mipmap 失败与优化级别无关，是机器侧；同时把差分扩到 22 组 / 287 场景**。
+   - **决定性实验**：怀疑"此前 99.70 秒通过"那次是 Debug 构建、之后换 RelWithDebInfo 才失败（即**优化暴露的真实 bug**）。于是单独建了 `build-vkdebug`（`CMAKE_BUILD_TYPE=Debug`，Vulkan ON），只编 `VulkanRendererTests` 并运行：**同样失败**，同样是 `Automatic mipmaps … expected 128,128,128,255, received 0,0,0,255`，耗时 49.7 秒。→ **优化假设被推翻**，两种构建类型都失败，因此结论回到"机器/驱动状态"（第 76/78 条）。这条已两次独立验证，不再重复尝试。
+   - **差分扩展（本轮交付）**：新增 `node cubetarget <size>` 探针分支（输出 `isWebGLCubeRenderTarget`、`width`/`height` 位模式、`faces`、`face0Width`、`renderTargetTexture`、`mapping`），脚本侧新增 "cube target parity" 组，六个尺寸（8/32/1/300/16/256）全部与上游逐位一致。另加 4 条既有组场景（网格交换分段、32×32 纹理、2 分量 2 采样离散插值、过原点的对角曲线路径）。
+   - **现状**：差分 **22 组 / 287 场景 / exit=0**；核心 **745 / 205,728**；addons **155 / 23,996**；`primitive-geometry` 与 `port-audit` 通过。
+   - **一个意外收获**：上游 `WebGLCubeRenderTarget` **没有 `type` 属性**，探针第一次编译时就因此报错；把它输出出来反而会制造假的差异。所以差分字段必须**照着上游真实存在的属性选**，不能顺手加。
+   - **下一步**：GPU 侧（六面渲染、PMREM 的 `_textureToCubemap`/`_applyPMREM`）在 mipmap 用例恢复前无法验证；在此期间继续做**纯 CPU 且可差分**的部分，或开始评估 TSL（`src/nodes`）里可以先做的纯 CPU 子集（生成 GLSL 字符串，用 `third_party/vulkan/bin/glslang.exe` 编译验证——这条**不需要 GPU**）。
 70. **第 520 轮：完整 Vulkan 套件 211/211 全绿，耗时 270.72 秒**。
    - 命令：`ctest --test-dir build-vulkan -j 4 -E "lights-states" --output-on-failure`（仍排除第 46 条那个已知项；它在 Vulkan 构建里同样慢）。
    - 结果：**100% tests passed, 0 tests failed out of 211**，总耗时 **270.72 秒**。对比同一套件在 **Debug** 配置下的 **3784.56 秒 / 2 失败**，差了约 14 倍——再次印证第 69 条"是构建类型不是代码"的结论。
