@@ -2,6 +2,7 @@
 
 #include <cmath>
 #include <limits>
+#include <stdexcept>
 
 std::int32_t SPZLoader::readInt24(const std::vector<std::uint8_t>& bytes, std::size_t offset) {
     if (offset + 3 > bytes.size()) return 0;
@@ -141,4 +142,31 @@ double SPZLoader::colorLut(int byte) {
     // back into a linear value.
     const double scale = 0.2820947917738781 / 0.15;
     return ((byte / 255.0 - 0.5) * scale + 0.5) * 255.0;
+}
+
+int SPZLoader::degreeToVectors(int degree) {
+    // A degree holds one more vector than the previous, and each band adds its own count.
+    switch (degree) {
+        case 0:
+            return 0;
+        case 1:
+            return 3;
+        case 2:
+            return 8;
+        case 3:
+            return 15;
+        default:
+            return 15;
+    }
+}
+
+int SPZLoader::harmonicsSourceStride(int degree) {
+    // Three channels per vector.
+    return degreeToVectors(degree) * 3;
+}
+
+void SPZLoader::requireUncompressed(std::uint8_t firstByte, std::uint8_t secondByte) {
+    // The zstd frame magic starts with 0x28 0xb5, which is what a compressed file begins with.
+    if (firstByte == 0x28 && secondByte == 0xb5)
+        throw std::runtime_error("THREE.SPZLoader: Compressed SPZ is not supported");
 }

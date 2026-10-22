@@ -1255,6 +1255,13 @@
    - **测试（7 个用例、19 条断言）**：半浮点的 1、2、−1、0、0.5；v1 两个 splat；v2 的 `256/256 = 1`；`fractionalBits = 9` 时变 0.5；**全 `ff` 是 −1**；**声明两个 splat 但只有一份字节时只读出一份**；颜色表的线性与超界。
    - **验证**：核心 **1123 用例 / 208,755 断言**（+7 / +19）、addons、`primitive-geometry`、`port-audit`、Vulkan 全绿。
    - **SPZ 只剩**：`readSphericalHarmonics`（球谐系数）与 **zstd 容器**（明确报错）。
+235. **第 174 轮：`SPZLoader` 收尾——球谐步长与压缩拒绝，SPZ 完整**。
+   - **`SH_DEGREE_TO_VECTORS`**：0 → **0**、1 → **3**、2 → **8**、3 → **15**（每级比上一级多 3、5、7 个向量）；超过 3 按 15 处理。因为**每个向量三个通道**，一个 splat 的球谐**源步长**是 `vectors * 3` = 0/9/24/45。
+   - **分带表复用第 84 轮**：`GaussianSplatUtils` 里已经有 `SH_BAND_COMPONENTS {0,9,15,21}` 与 `SH_BAND_WORDS {0,3,4,6}`，SPZ 的球谐打包用的是**同一套约定**，所以这一轮只补了"每级多少个向量"这一张表。
+   - **压缩拒绝**：zstd 帧魔数是 **`28 b5`**，`requireUncompressed` 遇到就抛 `Compressed SPZ is not supported`——与 `NRRD gzip`、`AMF zip`、`TGA` 之外的同类处置一致。
+   - **测试（3 个用例、12 条断言）**：四个等级的向量数 + 越界回退 15；三个等级的源步长 0/9/24/45；`28 b5` 抛错而 `PK` 与 `00 00` 放行。
+   - **验证**：核心 **1126 用例 / 208,767 断言**（+3 / +12）、addons、`primitive-geometry`、`port-audit`、Vulkan 全绿。addon loader **39 → 40 / 52**。
+   - **十三个完整 loader**：MTL、OBJ、PLY、Font、HDRCube、MD2、BVH、PCD、TGA、NRRD、AMF、VOX、**SPZ**。
 70. **第 520 轮：完整 Vulkan 套件 211/211 全绿，耗时 270.72 秒**。
    - 命令：`ctest --test-dir build-vulkan -j 4 -E "lights-states" --output-on-failure`（仍排除第 46 条那个已知项；它在 Vulkan 构建里同样慢）。
    - 结果：**100% tests passed, 0 tests failed out of 211**，总耗时 **270.72 秒**。对比同一套件在 **Debug** 配置下的 **3784.56 秒 / 2 失败**，差了约 14 倍——再次印证第 69 条"是构建类型不是代码"的结论。

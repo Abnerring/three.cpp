@@ -42,4 +42,15 @@ class SPZLoader {
     // The colour table entry for a byte. The scale is the spherical harmonic constant over a
     // fifteenth, which maps a byte to a colour.
     static double colorLut(int byte);
+
+    // How many colour vectors a degree holds: none, three, eight or fifteen.
+    static int degreeToVectors(int degree);
+
+    // The bytes one splat of harmonics occupies at the given degree, which is the vector count
+    // times three channels.
+    static int harmonicsSourceStride(int degree);
+
+    // Rejects a compressed container. The file is zstd compressed and the port carries no
+    // decoder, so this is reported rather than read as if it were plain.
+    static void requireUncompressed(std::uint8_t firstByte, std::uint8_t secondByte);
 };
