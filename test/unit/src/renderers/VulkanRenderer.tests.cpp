@@ -4,6 +4,7 @@
 #include "geometries/PlaneGeometry.h"
 #include "extras/DataUtils.h"
 #include "core/NativeObject.h"
+#include "core/RenderTarget.h"
 #include "core/JSJobs.h"
 #include "materials/MeshBasicMaterial.h"
 #include "objects/Group.h"
@@ -1655,6 +1656,31 @@ void geometryObjectProtocolTests(bool validation) {
 
 } // namespace
 
+void renderTargetTests(bool validation) {
+    VulkanRenderer renderer({64, 64, validation});
+    require(renderer.getWidth() == 64 && renderer.getHeight() == 64, "initial size");
+    auto target = std::make_shared<RenderTarget>(32, 16);
+    renderer.setRenderTarget(target);
+    require(renderer.getWidth() == 32 && renderer.getHeight() == 16, "target size adopted");
+    require(renderer.getRenderTarget() == target, "target retained");
+    renderer.setClearColor(Color(1, 0, 0), 1);
+    renderer.clear(true, true);
+    const auto pixels = renderer.readRenderTargetPixels(*target, 0, 0, 32, 16);
+    require(pixels.size() == static_cast<std::size_t>(32) * 16 * 4, "pixel count");
+    bool red = true;
+    for (std::size_t i = 0; i < pixels.size(); i += 4)
+        if (pixels[i] < 200) { red = false; break; }
+    require(red, "cleared target is red");
+    const auto corner = renderer.readRenderTargetPixels(*target, 8, 4, 2, 2);
+    require(corner.size() == static_cast<std::size_t>(2) * 2 * 4, "sub rectangle size");
+    bool threw = false;
+    try { (void) renderer.readRenderTargetPixels(*target, 31, 0, 2, 1); }
+    catch (const std::out_of_range&) { threw = true; }
+    require(threw, "out of range rectangle rejected");
+    renderer.setRenderTarget(nullptr);
+    require(renderer.getWidth() == 64 && renderer.getHeight() == 64, "size restored");
+    require(renderer.getRenderTarget() == nullptr, "target cleared");
+}
 int main(int argc, char** argv) {
     try {
         const bool validation = argc > 1 && std::string(argv[1]) == "--validation";
@@ -1671,6 +1697,7 @@ int main(int argc, char** argv) {
         attributeManagedUploadTests(validation);
         attributeStorageAndReentryTests(validation);
         geometryObjectProtocolTests(validation);
+        renderTargetTests(validation);
         VulkanRenderer renderer({64, 64, validation});
         OrthographicCamera camera(-1, 1, 1, -1, 0.1, 20);
         camera.position.set(0, 0, 5);

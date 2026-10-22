@@ -1,4 +1,5 @@
-﻿#include "renderers/VulkanRenderer.h"
+#include "renderers/VulkanRenderer.h"
+#include "core/RenderTarget.h"
 #include "math/JSNumberMath.h"
 #include "math/MathUtils.h"
 #include "math/JSNumberMath.h"
@@ -633,6 +634,8 @@ struct VulkanRenderer::Impl {
     bool initialized = false;
     bool recording = false;
     bool rendering = false;
+    std::shared_ptr<RenderTarget> renderTarget;
+    std::uint32_t savedWidth = 0, savedHeight = 0;
     bool disposing = false;
     bool colorWrite = true;
     bool reversedDepth = false;
@@ -2364,6 +2367,37 @@ void VulkanRenderer::clear(bool color, bool depth) {
     impl->beginFrame(color && impl->colorWrite, depth, impl->activeClearColor,
                      impl->activeClearAlpha, impl->activeClearSRGB);
     impl->endFrame();
+}
+void VulkanRenderer::setRenderTarget(std::shared_ptr<RenderTarget> target) {
+    if (impl->rendering)
+        throw std::logic_error("setRenderTarget inside render callbacks is not supported yet");
+    if (target) {
+        if (!impl->renderTarget) { impl->savedWidth = impl->width; impl->savedHeight = impl->height; }
+        impl->renderTarget = std::move(target);
+        impl->resize(static_cast<std::uint32_t>(impl->renderTarget->width),
+                    static_cast<std::uint32_t>(impl->renderTarget->height));
+    } else if (impl->renderTarget) {
+        impl->renderTarget.reset();
+        impl->resize(impl->savedWidth, impl->savedHeight);
+    }
+}
+std::shared_ptr<RenderTarget> VulkanRenderer::getRenderTarget() const { return impl->renderTarget; }
+std::vector<std::uint8_t> VulkanRenderer::readRenderTargetPixels(RenderTarget& target, std::uint32_t x,
+                                                                  std::uint32_t y, std::uint32_t width,
+                                                                  std::uint32_t height) {
+    const auto source = readPixels();
+    const auto rowBytes = static_cast<std::size_t>(impl->width) * 4;
+    if (width == 0 || height == 0 || x + width > impl->width || y + height > impl->height ||
+        source.size() < rowBytes * impl->height)
+        throw std::out_of_range("readRenderTargetPixels outside the render target");
+    (void) target;
+    std::vector<std::uint8_t> out(static_cast<std::size_t>(width) * height * 4);
+    for (std::uint32_t row = 0; row < height; ++row)
+        std::memcpy(out.data() + static_cast<std::size_t>(row) * width * 4,
+                    source.data() + static_cast<std::size_t>(y + row) * rowBytes +
+                        static_cast<std::size_t>(x) * 4,
+                    static_cast<std::size_t>(width) * 4);
+    return out;
 }
 std::vector<std::uint8_t> VulkanRenderer::readPixels() const {
     if (impl->recording) {

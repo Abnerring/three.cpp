@@ -162,6 +162,11 @@
    - **我试的修法（节流到每 256 次分配）→ 回退**：它把性能提升 90–255 倍（`timing3` 从 130,190 µs → 1,559 µs；k=11 从 2,079,615 µs → 8,159 µs），`lights-states-parity` 也从"永不结束"变成 8.31 秒通过。但**两个测试立刻失败**：`threecpp.native-heap-exit`（"isolated check failed"，两处）与 `threecpp.webgl-program-unit`，两个构建都失败，都是秒级逻辑失败。这说明 **native host 的 retirement 语义依赖"每次分配都进 safepoint"**，节流改变了契约，不是位置问题（第 60/61 条我把阈值放错位置是另一回事）。**已回退（`a06d95f`）**，两个测试恢复通过，核心 738 / 205,626 与 addons 155 / 23,996 不变。
    - **正确的修法（下一步）**：保留"每次分配都问一次"的语义，但让那个问题**变便宜**。做法是脏标记：在 `retain()`/`release()`（root 计数变化处，见 `release()` 1655 行）与任何会新增/移除 native ownership 记录的地方置 `nativeDirty = true`；`safepoint()` 里只有 `nativeDirty` 为真时才调用 `hasNativeApplicationRoots()`，调用后清标记。这样"每次分配都检查"仍在，但只有**状态真的变过**才做全图审计——既不动语义，又能去掉 O(N) 扫描。
    - **验收标准（三条都要过）**：① `threecpp.native-heap-exit` 与 `threecpp.webgl-program-unit` 通过；② `timing4` 里 `object()` 与 `object(proto)` 都平坦（约 1 ms/1000）；③ 核心 738 / 205,626、addons 155 / 23,996 断言数不减少。
+73. **第 1 轮（新目标）：渲染到纹理的第一刀——`VulkanRenderer` 现在能绑定渲染目标**。
+   - 背景：`PMREMGenerator.js` 上游 770 行，端口**完全没有**；它依赖 `setRenderTarget` 渲染到二维/立方体目标（第 35、36 条的计划）。原来 `VulkanRenderer` 只有自己的离屏窗口，没有目标概念。
+   - 本次实现（`src/renderers/VulkanRenderer.{h,cpp}`）：`setRenderTarget(std::shared_ptr<RenderTarget>)`、`getRenderTarget()`、`readRenderTargetPixels(target, x, y, width, height)`。语义照 WebGL：绑定目标时渲染器**临时采用目标尺寸**，绑定 `nullptr` 时恢复原尺寸；`readRenderTargetPixels` 的行序与既有 `readPixels()` 一致（**自上而下**，头文件里已注明），越界矩形抛 `std::out_of_range`。
+   - **验证**：在既有 `VulkanRendererTests` 里加了 `renderTargetTests`——绑定 32×16 目标后尺寸变为 32×16、清除为红色后整幅读回都是红（r ≥ 200）、子矩形读回尺寸正确、越界抛异常、解绑后尺寸恢复 64×64 且 `getRenderTarget()` 为空。`threecpp.vulkan` **通过（30.5 秒）**。
+   - **下一步**：① 立方体目标（六个 face / 六次绘制 + 图层），这是 PMREM 的必需前提；② 然后把 `PMREMGenerator` 的 CPU 侧逻辑（`_fromScene`/`_blur`/`_allocateTargets`、LodPlanes 与模糊链）移植过来，GPU 侧的 fullscreen pass 复用现有管线；③ 验收方式需要设计——Node 里没有 WebGL，所以 PMREM **不能**做像素级差分，只能用"确定性输入 → 结构断言"（例如黑体环境 → 全黑、单点光源 → 峰值位置）加固定 golden。
 70. **第 520 轮：完整 Vulkan 套件 211/211 全绿，耗时 270.72 秒**。
    - 命令：`ctest --test-dir build-vulkan -j 4 -E "lights-states" --output-on-failure`（仍排除第 46 条那个已知项；它在 Vulkan 构建里同样慢）。
    - 结果：**100% tests passed, 0 tests failed out of 211**，总耗时 **270.72 秒**。对比同一套件在 **Debug** 配置下的 **3784.56 秒 / 2 失败**，差了约 14 倍——再次印证第 69 条"是构建类型不是代码"的结论。
