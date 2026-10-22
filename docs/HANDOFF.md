@@ -1078,6 +1078,13 @@
    - **验证**：核心 **1008 用例 / 207,228 断言**（+3 / +20）、`primitive-geometry`、`port-audit` 全绿。addon loader **35 → 36 / 52**。
    - **TGA 的六层**：头部校验 ✓ / 读 18 字节头部 ✓ / RLE 解码 ✓ / 原点与 BGRA→RGBA ✓ / 灰度与 16 位与翻转 ✓ / **索引颜色表** ✓。**剩下只有"把上述各步按文件头的分支串起来"**（`parse()` 的调度），属于装配层。
    - **九个完整 loader**：MTL、OBJ、PLY、Font、HDRCube、MD2、BVH、PCD、**TGA**。
+210. **第 149 轮：`NRRDLoader` 第一层——头部与方向向量**。
+   - **格式**：`NRRD0005` 魔数行、`#` 注释、其余是 **`key: value`**（按**第一个冒号**切），另有一行空格分隔的数值列表（`sizes`、`spacings`）。几个键有**类型化处理**（`encoding` 存字符串、`dimension` 存整数、`sizes`/`spacings` 存数组），同时**保留在自由字段表里**，方便上层按需取。
+   - **两条强制检查**：没有魔数抛 `Not an NRRD file`；`encoding` 是 **`bz2`/`bzip2`** 时抛 `Bzip is not supported`（端口没有 bzip 解压器）。
+   - **方向向量的推导**（上游逻辑）：文件没给 `space directions` 时**用单位阵**，然后**按 `spacings` 缩放对应行**——`spacings: 10 20 30` 得到 `(10,0,0)`、`(0,20,0)`、`(0,0,30)`。`spacings` 里的 **NaN 项被跳过**。
+   - **测试（5 个用例、21 条断言）**：完整头（`type`/`dimension`/`sizes`/`encoding`，且类型化键仍在自由字段里）；**默认单位向量**；**按 spacing 缩放**；`bz2` 与 `bzip2` 都抛错；无魔数抛错。
+   - **验证**：核心 **1013 用例 / 207,249 断言**（+5 / +21）、`primitive-geometry`、`port-audit` 全绿。
+   - **NRRD 剩余**：`space directions` 的显式解析（含 `none` 项）、`text`/`ascii` 与 `raw`/`gzip` 三种编码的体数据、以及装成体积数据。
 70. **第 520 轮：完整 Vulkan 套件 211/211 全绿，耗时 270.72 秒**。
    - 命令：`ctest --test-dir build-vulkan -j 4 -E "lights-states" --output-on-failure`（仍排除第 46 条那个已知项；它在 Vulkan 构建里同样慢）。
    - 结果：**100% tests passed, 0 tests failed out of 211**，总耗时 **270.72 秒**。对比同一套件在 **Debug** 配置下的 **3784.56 秒 / 2 失败**，差了约 14 倍——再次印证第 69 条"是构建类型不是代码"的结论。
