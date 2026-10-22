@@ -29,4 +29,17 @@ class SPZLoader {
 
     // The scale table the format uses for Gaussian sizes: an exponential over a byte.
     static double scaleFromByte(int byte);
+
+    // Reads the splat centres. Version one stores three half floats per splat; later versions
+    // store three twenty four bit integers scaled down by two to the fractional bits.
+    static std::vector<double> readCenters(const std::vector<std::uint8_t>& bytes,
+                                           std::size_t offset, int count, int version,
+                                           int fractionalBits);
+
+    // Converts a half float bit pattern to a double.
+    static double fromHalfFloat(std::uint16_t half);
+
+    // The colour table entry for a byte. The scale is the spherical harmonic constant over a
+    // fifteenth, which maps a byte to a colour.
+    static double colorLut(int byte);
 };

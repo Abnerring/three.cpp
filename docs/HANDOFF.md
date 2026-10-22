@@ -1248,6 +1248,13 @@
    - **测试（7 个用例、22 条断言）**：分量端点（0、511、带符号位、255 的中点）；**全部字段为 0 时补回单位四元数**；**最低字段落到索引 2**（largest 为 3）；**中间字段落到索引 1**；**largest 为 0 时索引 3 拿到最低字段**；三个满幅时补回值不取负；尺寸表 `exp(-10)`、`exp(0) = 1`（字节 160）、字节 255。
    - **验证**：核心 **1116 用例 / 208,736 断言**（+7 / +22）、addons、`primitive-geometry`、`port-audit`、Vulkan 全绿（**均以退出码判定**）。
    - **SPZ 剩余**：`readCenters`（`fractionalBits`）、`readSphericalHarmonics`、`COLOR_LUT` 的常量、以及 **zstd 容器**（端口没有，明确报错）。
+234. **第 173 轮：`SPZLoader` 第三层——中心点与半浮点**。
+   - **两个版本的中心点格式**：**v1** 每个 splat 三个**半浮点**（各两字节小端）；**v2+** 每个 splat 三个 **int24**（**每行九字节**），乘上 **`1 / (1 << fractionalBits)`**。
+   - **`fromHalfFloat` 的三种情形**：指数为 0 是**次正规数**（`ldexp(fraction/1024, -14)`）；指数 31 是**无穷或 NaN**；其余 `ldexp(1 + fraction/1024, exponent - 15)`。符号位最后取负。
+   - **`SPZ_COLOR_SCALE = SH_C0 / 0.15`**（`SH_C0 = 0.2820947917738781`，第 84 轮已有），所以 `COLOR_LUT[i] = ((i/255 - 0.5) * 1.8806… + 0.5) * 255`——**范围超出 0..255**（低端小于 0、高端大于 255），这一点用三条断言钉住。
+   - **测试（7 个用例、19 条断言）**：半浮点的 1、2、−1、0、0.5；v1 两个 splat；v2 的 `256/256 = 1`；`fractionalBits = 9` 时变 0.5；**全 `ff` 是 −1**；**声明两个 splat 但只有一份字节时只读出一份**；颜色表的线性与超界。
+   - **验证**：核心 **1123 用例 / 208,755 断言**（+7 / +19）、addons、`primitive-geometry`、`port-audit`、Vulkan 全绿。
+   - **SPZ 只剩**：`readSphericalHarmonics`（球谐系数）与 **zstd 容器**（明确报错）。
 70. **第 520 轮：完整 Vulkan 套件 211/211 全绿，耗时 270.72 秒**。
    - 命令：`ctest --test-dir build-vulkan -j 4 -E "lights-states" --output-on-failure`（仍排除第 46 条那个已知项；它在 Vulkan 构建里同样慢）。
    - 结果：**100% tests passed, 0 tests failed out of 211**，总耗时 **270.72 秒**。对比同一套件在 **Debug** 配置下的 **3784.56 秒 / 2 失败**，差了约 14 倍——再次印证第 69 条"是构建类型不是代码"的结论。

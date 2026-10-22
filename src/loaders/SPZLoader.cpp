@@ -1,6 +1,7 @@
 #include "loaders/SPZLoader.h"
 
 #include <cmath>
+#include <limits>
 
 std::int32_t SPZLoader::readInt24(const std::vector<std::uint8_t>& bytes, std::size_t offset) {
     if (offset + 3 > bytes.size()) return 0;
@@ -80,4 +81,64 @@ double SPZLoader::scaleFromByte(int byte) {
     // A byte maps to a size on a geometric scale: sixteen steps per unit of exponent, offset by
     // ten so the range runs from about four hundredths of a unit up to two thousand.
     return std::exp(byte / 16.0 - 10.0);
+}
+
+double SPZLoader::fromHalfFloat(std::uint16_t half) {
+    // The half float has a five bit exponent biased by fifteen and a ten bit fraction.
+    const int sign = (half >> 15) & 0x1;
+    const int exponent = (half >> 10) & 0x1f;
+    const int fraction = half & 0x3ff;
+
+    double value = 0.0;
+    if (exponent == 0) {
+        // A zero exponent with a fraction is a subnormal, scaled by two to the minus fourteen.
+        value = std::ldexp(fraction / 1024.0, -14);
+    } else if (exponent == 31) {
+        // The largest exponent means infinity or, with a fraction, not a number.
+        value = fraction == 0 ? std::numeric_limits<double>::infinity()
+                              : std::numeric_limits<double>::quiet_NaN();
+    } else {
+        value = std::ldexp(1.0 + fraction / 1024.0, exponent - 15);
+    }
+    return sign ? -value : value;
+}
+
+std::vector<double> SPZLoader::readCenters(const std::vector<std::uint8_t>& bytes,
+                                           std::size_t offset, int count, int version,
+                                           int fractionalBits) {
+    std::vector<double> centers;
+    if (count <= 0) return centers;
+    centers.reserve(static_cast<std::size_t>(count) * 3);
+
+    if (version == 1) {
+        // Three half floats per splat, two bytes each, little endian.
+        for (int i = 0; i < count; ++i) {
+            const std::size_t row = offset + static_cast<std::size_t>(i) * 6;
+            for (int axis = 0; axis < 3; ++axis) {
+                const std::size_t at = row + static_cast<std::size_t>(axis) * 2;
+                if (at + 2 > bytes.size()) return centers;
+                const std::uint16_t bits = static_cast<std::uint16_t>(
+                    bytes[at] | (static_cast<std::uint16_t>(bytes[at + 1]) << 8));
+                centers.push_back(fromHalfFloat(bits));
+            }
+        }
+        return centers;
+    }
+
+    // A fixed point format: the scale is one over two to the fractional bits.
+    const double fixedScale = 1.0 / static_cast<double>(1 << fractionalBits);
+    for (int i = 0; i < count; ++i) {
+        const std::size_t row = offset + static_cast<std::size_t>(i) * 9;
+        for (int axis = 0; axis < 3; ++axis) {
+            centers.push_back(readInt24(bytes, row + static_cast<std::size_t>(axis) * 3) * fixedScale);
+        }
+    }
+    return centers;
+}
+
+double SPZLoader::colorLut(int byte) {
+    // The spherical harmonic constant over a fifteenth, which is what turns the encoded colour
+    // back into a linear value.
+    const double scale = 0.2820947917738781 / 0.15;
+    return ((byte / 255.0 - 0.5) * scale + 0.5) * 255.0;
 }
