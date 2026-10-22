@@ -589,6 +589,13 @@
    - **测试（3 个用例、17 条断言）**：`NodeCache` 的 id **严格递增**、新建缓存**没有父**、未设键时返回 **undefined**；父链回退（父有、子无 → 读到父）、**子层覆盖**（子在同名键上写值后，子读新值、父读旧值）；`NodeVar` 的默认值与全参数构造。
    - **验证**：核心 **756 用例 / 205,791 断言**（+3 / +17）、`primitive-geometry`、`port-audit` 全绿。
    - **下一步**：`NodeUniform`（91 行）会引用 `NodeUniformGroup`（`UniformGroupNode` 174 行）；`NodeVarying`（63 行）与 `NodeAttribute`（53 行）都很小、只依赖 `Node` 基类，可以等基类落地后一起做。
+140. **第 79 轮：移植 `NodeUtils` 的哈希部分，并与上游**逐位**对齐**。
+   - **为什么挑这一块**：`Node.js` 有 1298 行、`build()` 一段就依赖 `NodeBuilder`（3544 行），短期内无法整体移植；但它的六个导入（`NodeUpdateType`、`hash*`、`EventDispatcher`、`generateUUID`、`warn/error`、`StackTrace`）**全都是可移植的**。其中 `NodeUtils` 的 `cyrb53` 是**纯数值哈希**，可以做到**逐位一致**。
+   - **移植要点**：`Math.imul` 用"无符号 32 位乘法再按有符号解释"实现（`nodeImul`）；`>>> 16` 等无符号右移直接用 `uint32_t`；`h1 ^ val` 里的 `val` 走了 **JavaScript 的 ToInt32**（截断取整 + 取模 2³² + 区间回绕），单独写成 `toInt32`；返回值 `4294967296 * (h2 & 2097151) + (h1 >>> 0)` 用 `double` 承载（53 位足够）。
+   - **参考值来自上游本身**：用 `node --input-type=module` 直接 `import` 固定版本的 `NodeUtils.js` 并打印，得到 `hashString('abc') = 5059922895146125`、`hashString('') = 3338908027751811`、`hashArray([1,2,3]) = hash(1,2,3) = 4235446385759781`、`hashArray([-5,0.5,1e9]) = 2529312072353790`。**测试断言的是这些精确整数**，不是"差不多"。
+   - **测试（4 个用例、9 条断言）**：字符串哈希**逐位相等**、空串、字符换序后不同；`hashArray` 与 `hash` 相等且等于上游值；**ToInt32 语义**（负数、小数、超过 int32 的值）；`nodeImul` 的回绕（`0x7fffffff * 2 == -2`、`-1 * 1 == -1`、`65536 * 65536 == 0`）。
+   - **过程**：先写了带占位断言的一版（末尾有个无意义的 `2654435761u == 2654435761u ? ...`），发现后整段重写；`NodeUtils.cpp` 一开始漏了 `#include <cmath>`（`std::floor`/`std::fmod`），补上后通过。
+   - **验证**：核心 **760 用例 / 205,800 断言**（+4 / +9）、`primitive-geometry`、`port-audit` 全绿。
 70. **第 520 轮：完整 Vulkan 套件 211/211 全绿，耗时 270.72 秒**。
    - 命令：`ctest --test-dir build-vulkan -j 4 -E "lights-states" --output-on-failure`（仍排除第 46 条那个已知项；它在 Vulkan 构建里同样慢）。
    - 结果：**100% tests passed, 0 tests failed out of 211**，总耗时 **270.72 秒**。对比同一套件在 **Debug** 配置下的 **3784.56 秒 / 2 失败**，差了约 14 倍——再次印证第 69 条"是构建类型不是代码"的结论。

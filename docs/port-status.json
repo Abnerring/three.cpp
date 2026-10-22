@@ -194,8 +194,8 @@
     "note": "Accepted port scope is src and examples/jsm, including tracked third-party dependencies. Editor/manual web applications are excluded from native application rewrites. Native host behavior, packaging and all three platforms require separate implementation and verification evidence."
   },
   "counts": {
-    "partial-unverified": 309,
-    "missing": 632,
+    "partial-unverified": 310,
+    "missing": 631,
     "vulkan-port-pending": 290,
     "dependency-unverified": 20
   },
@@ -203,8 +203,8 @@
     "src": {
       "modules": 755,
       "counts": {
-        "partial-unverified": 225,
-        "missing": 240,
+        "partial-unverified": 226,
+        "missing": 239,
         "vulkan-port-pending": 290
       }
     },
@@ -803,7 +803,7 @@
       "path": "src/nodes/core",
       "upstreamFiles": 42,
       "moduleCount": 42,
-      "modulesWithCppFiles": 6,
+      "modulesWithCppFiles": 7,
       "verifiedComplete": 0
     },
     {
@@ -9229,11 +9229,11 @@
       "scope": "src",
       "kind": "core",
       "upstreamSha256": "8c47a6c276dccce416a76ba102a6a558a1139cfbbb2cb7cf37dcd97d6c24ee00",
-      "header": null,
-      "implementation": null,
+      "header": "src/nodes/core/NodeUtils.h",
+      "implementation": "src/nodes/core/NodeUtils.cpp",
       "expectedHeader": "src/nodes/core/NodeUtils.h",
       "expectedImplementation": "src/nodes/core/NodeUtils.cpp",
-      "status": "missing",
+      "status": "partial-unverified",
       "verifiedComplete": false,
       "apiExtraction": "static-only",
       "verification": {
@@ -9242,7 +9242,9 @@
           "pointer": "/modules/283"
         },
         "upstreamUnitTests": [],
-        "cppUnitTests": [],
+        "cppUnitTests": [
+          "test/unit/src/nodes/core/NodeUtils.tests.cpp"
+        ],
         "reviewedImplementation": [],
         "differentialResults": [],
         "renderingResults": [],
