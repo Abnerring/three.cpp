@@ -395,3 +395,27 @@ LDrawLoader::EmbeddedSplit LDrawLoader::splitEmbeddedFiles(const std::vector<std
     }
     return split;
 }
+
+bool LDrawLoader::applyBfcToken(const std::string& token, BfcState& state) {
+    if (token == "CERTIFY" || token == "NOCERTIFY") {
+        // Either word sets the flag to what it says and, whatever that is, puts the winding
+        // back to counter clockwise.
+        state.certified = token == "CERTIFY";
+        state.ccw = true;
+        return true;
+    }
+    if (token == "CW" || token == "CCW") {
+        state.ccw = token == "CCW";
+        return true;
+    }
+    if (token == "INVERTNEXT") {
+        state.inverted = true;
+        return true;
+    }
+    if (token == "CLIP" || token == "NOCLIP") {
+        state.cull = token == "CLIP";
+        return true;
+    }
+    // Anything else is reported rather than silently ignored.
+    return false;
+}

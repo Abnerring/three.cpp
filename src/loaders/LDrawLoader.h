@@ -195,4 +195,22 @@ class LDrawLoader {
     };
 
     static EmbeddedSplit splitEmbeddedFiles(const std::vector<std::string>& lines);
+
+    // The back face culling state a file carries as it is read.
+    struct BfcState {
+        // Whether the file has declared its winding at all.
+        bool certified = false;
+        // Whether the winding is counter clockwise, which is the state a certification resets
+        // to even when it certifies nothing.
+        bool ccw = true;
+        // Whether the next sub object alone is turned inside out.
+        bool inverted = false;
+        // Whether faces are culled at all.
+        bool cull = true;
+    };
+
+    // Applies one word of a bfc directive. Returns false for a word the state does not know,
+    // which the caller reports. Certifying and decertifying both reset the winding, so the one
+    // call changes two fields.
+    static bool applyBfcToken(const std::string& token, BfcState& state);
 };
