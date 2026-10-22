@@ -859,21 +859,11 @@ class JSHeap : public std::enable_shared_from_this<JSHeap> {
                 return true;
         return false;
     }
-    static constexpr std::size_t kSafepointInterval = 256;
-    std::size_t safepointTicks = 0;
     std::size_t safepoint() {
         if (collecting || initializing || executionDepth != 0) return 0;
         // Without described native fields every owning handle is an application
         // root. This exact fast path does not inspect shared_ptr::use_count().
         if (nativeOwnershipRecords == 0 && totalRoots != 0) return 0;
-        // hasNativeApplicationRoots audits the whole native ownership graph, and it used to
-        // run on every single allocation whenever any described native field existed. That
-        // made plain object creation cost a hundred and thirty microseconds and grow with
-        // the heap (HANDOFF item 71). Engines reach a safepoint after a number of
-        // allocations rather than on each one, so throttle the whole attempt, audit
-        // included, and keep the interval small enough that collection stays prompt.
-        if (++safepointTicks < kSafepointInterval) return 0;
-        safepointTicks = 0;
         if (nativeOwnershipRecords != 0 && hasNativeApplicationRoots()) return 0;
         return collect(true);
     }

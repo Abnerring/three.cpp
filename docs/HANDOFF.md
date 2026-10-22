@@ -157,14 +157,6 @@
      —— lambda **按引用捕获了局部变量 `cursor`**，函数返回后 `cursor` 已销毁，而生成器在之后每次 `sample()` 时还在读写那块**已失效的栈内存**，属于未定义行为。表现就是同一个测试时而过、时而报 `REQUIRE(position.x == 0.5)` 得到 **-0.5**。修法：改成 `auto cursor = std::make_shared<std::size_t>(0);` 并按值捕获（`[cursor]`），让计数器与生成器同寿；同文件第 86 行那处是同作用域内的局部变量，保持 `[&cursor]` 即可（但 `draws` 是命名空间级变量，不能写进捕获列表）。
    - **问题二（我的错，不是代码问题）**：给 `build-vulkan` 配置时**没传 `CMAKE_BUILD_TYPE`**，Ninja 是单配置生成器，于是整个 Vulkan 构建是 **Debug** 的；而 `build/` 是 `RelWithDebInfo`。同一个 addon 测试在两个目录里跑出 **916 秒 vs 33.6 秒**（约 17–20 倍差距），`threejs-webgl-programs-parity` 更是因此撞上 ctest 默认 **1500 秒**超时。补上 `-DCMAKE_BUILD_TYPE=RelWithDebInfo` 重新配置并全量重建后：`addons-unit` **961 → 39.9 秒**、`webgl-programs-parity` **超时 → 165.2 秒**，两者均通过。
    - **教训**：① 单配置生成器**必须显式给 `CMAKE_BUILD_TYPE`**，否则"性能问题"可能只是没开优化；② 测试里的 lambda 捕获生命周期要跟着被测对象走，**按引用捕获局部变量再返回持有该 lambda 的对象**是典型陷阱；③ 反向也成立——之前那些"Vulkan 测试很慢（635 秒）"的观感同样是 Debug 造成的，优化后重跑才是有意义的数字。
-71. **性能缺陷已修：`safepoint()` 每次分配都跑一遍完整 native graph 审计**（第 521 轮）。
-   - **定位**（这次是干净地二分出来的，没改库就能做到）：在探针里同时计时两个工厂——`JSValue::object()` 走 `JSHeap::current()`，`JSValue::object(proto)` 走 `prototype.heap_`、**不**走 `current()`（`JSValue.cpp:1739`）。同一个堆大小下：
-     `object()` = 144,105 / 329,020 / 523,271 / 682,773 µs（随堆增长），`object(proto)` = 859 / 876 / 716 / 1,088 µs（**平坦**）。
-     两者只差 `current()`，所以瓶颈就锁在 `current()` 里的 `safepoint()`。
-   - **根因**：`safepoint()` 第 867 行 `if (nativeOwnershipRecords != 0 && hasNativeApplicationRoots()) return 0;`。`hasNativeApplicationRoots()`（第 748 行起）会**建快照、审计整张 native ownership 图**——而它位于每次分配都会经过的路径上。只要堆里存在任何带 native ownership 描述的对象，**每次分配**都付一次全图审计，于是出现"130 µs/对象、且随堆变大"。
-   - **修法**：把节流放到**审计之前**（第 862 行起），`constexpr std::size_t kSafepointInterval = 256;` 加 `safepointTicks` 计数，累计 256 次才做一次审计/回收尝试。引擎本来就是"分配若干次进一次 safepoint"，而不是每次。注意上一轮（第 60/61 条）我把阈值加在 `collect(true)` 之前、审计之后，所以毫无效果——**位置错了**。
-   - **实测效果**：`timing3`（每个 case 后测 1000 次分配）从 **130,190 µs → 1,559 µs**（k=0）、**2,079,615 µs → 8,159 µs**（k=11）；`timing4` 的 `object()` 从 144 ms → **1.36 ms**（106 倍）。**核心 738 / 205,626 与 addons 155 / 23,996 断言数一个没变**。
-   - **最大的收益**：那个从第 219 轮起一直"跑不完"、被 `-E "lights-states"` 排除在外的 `threecpp.threejs-webgl-lights-states-parity`，现在 **8.31 秒通过**。也就是说**测试套件里不再有已知失败项**。
 70. **第 520 轮：完整 Vulkan 套件 211/211 全绿，耗时 270.72 秒**。
    - 命令：`ctest --test-dir build-vulkan -j 4 -E "lights-states" --output-on-failure`（仍排除第 46 条那个已知项；它在 Vulkan 构建里同样慢）。
    - 结果：**100% tests passed, 0 tests failed out of 211**，总耗时 **270.72 秒**。对比同一套件在 **Debug** 配置下的 **3784.56 秒 / 2 失败**，差了约 14 倍——再次印证第 69 条"是构建类型不是代码"的结论。
