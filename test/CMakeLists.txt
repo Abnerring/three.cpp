@@ -125,6 +125,7 @@ add_executable(THREECPPTests
         unit/src/loaders/UltraHDRLoader.tests.cpp
         unit/src/loaders/UltraHDRXmp.tests.cpp
         unit/src/loaders/PVRLoader.tests.cpp
+        unit/src/loaders/PVRHeader.tests.cpp
         unit/src/cameras/StereoCamera.tests.cpp
         unit/src/audio/AudioContext.tests.cpp
         unit/src/audio/Audio.tests.cpp

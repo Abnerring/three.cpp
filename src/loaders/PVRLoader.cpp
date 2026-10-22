@@ -1,4 +1,7 @@
-﻿#include "loaders/PVRLoader.h"
+#include "loaders/PVRLoader.h"
+
+#include <stdexcept>
+#include <string>
 
 // The third layout starts with the characters PVR followed by a three.
 static constexpr std::uint32_t kMagicVersion3 = 0x03525650;
@@ -22,4 +25,44 @@ int PVRLoader::detectVersion(const std::vector<std::uint8_t>& buffer) {
     // The second keeps it at the end of the header, so the check is at word eleven.
     if (headerWord(buffer, 11) == kMagicVersion2) return 2;
     return 0;
+}
+
+PVRLoader::Header PVRLoader::parseVersion3(const std::vector<std::uint8_t>& buffer) {
+    Header header;
+    // The fields sit at fixed words: the format at two, the height at six, the width at seven,
+    // the face count at ten, the mipmap count at eleven and the metadata length at twelve.
+    header.pixelFormat = headerWord(buffer, 2);
+    header.height = headerWord(buffer, 6);
+    header.width = headerWord(buffer, 7);
+    header.numFaces = headerWord(buffer, 10);
+    header.numMipmaps = headerWord(buffer, 11);
+    header.metadataLength = headerWord(buffer, 12);
+
+    // The four formats the loader understands, two of two bits per pixel and two of four.
+    switch (header.pixelFormat) {
+        case 0:
+            header.bitsPerPixel = 2;
+            header.formatName = "RGB_PVRTC_2BPPV1";
+            break;
+        case 1:
+            header.bitsPerPixel = 2;
+            header.formatName = "RGBA_PVRTC_2BPPV1";
+            break;
+        case 2:
+            header.bitsPerPixel = 4;
+            header.formatName = "RGB_PVRTC_4BPPV1";
+            break;
+        case 3:
+            header.bitsPerPixel = 4;
+            header.formatName = "RGBA_PVRTC_4BPPV1";
+            break;
+        default:
+            throw std::runtime_error("THREE.PVRLoader: Unsupported PVR format: " +
+                                     std::to_string(header.pixelFormat));
+    }
+
+    // The payload starts after the thirteen header words and any metadata.
+    header.dataOffset = 13 * 4 + header.metadataLength;
+    header.isCubemap = header.numFaces == 6;
+    return header;
 }
