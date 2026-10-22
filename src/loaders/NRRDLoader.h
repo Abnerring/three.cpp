@@ -49,4 +49,17 @@ class NRRDLoader {
     static std::vector<double> parseBinaryData(const std::vector<std::uint8_t>& data,
                                                std::size_t start, std::size_t count,
                                                const std::string& type);
+
+    // A parsed volume: the three axis lengths taken from the sizes and the voxels in the
+    // order the body held them.
+    struct Volume {
+        int xLength = 0;
+        int yLength = 0;
+        int zLength = 0;
+        std::vector<double> data;
+    };
+
+    // Builds the volume from the header sizes. A two dimensional file leaves z at one, and
+    // any missing dimension stays at one rather than zero.
+    static Volume buildVolume(const Header& header, std::vector<double> data);
 };

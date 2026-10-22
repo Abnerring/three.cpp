@@ -110,6 +110,10 @@ NRRDLoader::Header NRRDLoader::parseHeader(const std::string& text) {
     // The bzip encodings need a decompressor the loader does not carry.
     if (header.encoding == "bz2" || header.encoding == "bzip2")
         throw std::runtime_error("THREE.NRRDLoader: Bzip is not supported");
+    // The gzip encoding needs a decompressor the loader does not carry, so it is refused
+    // rather than decoded as if the body were plain.
+    if (header.encoding == "gzip")
+        throw std::runtime_error("THREE.NRRDLoader: Gzip is not supported");
     return header;
 }
 
@@ -204,4 +208,18 @@ std::vector<double> NRRDLoader::parseBinaryData(const std::vector<std::uint8_t>&
         }
     }
     return out;
+}
+
+NRRDLoader::Volume NRRDLoader::buildVolume(const Header& header, std::vector<double> data) {
+    Volume volume;
+    // A missing dimension is a length of one, so a two dimensional file has a depth of one.
+    const auto lengthAt = [&header](std::size_t index) -> int {
+        if (index >= header.sizes.size()) return 1;
+        return static_cast<int>(header.sizes[index]);
+    };
+    volume.xLength = lengthAt(0);
+    volume.yLength = lengthAt(1);
+    volume.zLength = lengthAt(2);
+    volume.data = std::move(data);
+    return volume;
 }

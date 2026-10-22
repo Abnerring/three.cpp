@@ -1114,6 +1114,13 @@
    - **测试（8 个用例、22 条断言）**：八种类型的宽度 + 未知为 0；`uchar` 的 255 与 **`schar` 的 −1**；`0x3412` 小端读成 `0x1234`；`sshort`/`sint` 的 −1；float 的 1.0；double 的 2.5；**数据不足时少读**；未知类型抛错。
    - **验证**：核心 **1031 用例 / 207,299 断言**（+8 / +22）、`primitive-geometry`、`port-audit` 全绿。
    - **NRRD 剩余**：`gzip` 解压、装成 `Volume`（`xLength`/`yLength`/`zLength` + 体素数组）。
+215. **第 154 轮：`NRRDLoader` 收尾——`gzip` 明确拒绝与 `Volume` 装配，NRRD 完整**。
+   - **`gzip` 的处置**：端口没有 zlib，所以**明确抛 `Gzip is not supported`**，而不是把压缩体当明文读（那样会得到一堆垃圾数字而看不出错）。这一条与 `bz2` 的处理并列，位置在 `isNrrd` 检查之后。
+   - **`Volume` 装配**：三个轴长取自 `sizes`；**缺失的维度按 1 补齐**（二维文件 `sizes: 4 5` → `4/5/1`；完全没有 `sizes` → `1/1/1`），而不是 0。
+   - **测试（4 个用例、11 条断言）**：三维 `2/3/4` 加六个数据；**二维补 1**；**无 sizes 全 1**；`gzip` 抛错。
+   - **验证**：核心 **1035 用例 / 207,310 断言**（+4 / +11）、`primitive-geometry`、`port-audit` 全绿。addon loader **36 → 37 / 52**。
+   - **NRRD 六层**：头部与方向向量 ✓ / `space directions` ✓ / 文本体数据 ✓ / 二进制体数据 ✓ / `gzip` 拒绝 ✓ / `Volume` 装配 ✓。
+   - **十个完整 loader**：MTL、OBJ、PLY、Font、HDRCube、MD2、BVH、PCD、TGA、**NRRD**。
 70. **第 520 轮：完整 Vulkan 套件 211/211 全绿，耗时 270.72 秒**。
    - 命令：`ctest --test-dir build-vulkan -j 4 -E "lights-states" --output-on-failure`（仍排除第 46 条那个已知项；它在 Vulkan 构建里同样慢）。
    - 结果：**100% tests passed, 0 tests failed out of 211**，总耗时 **270.72 秒**。对比同一套件在 **Debug** 配置下的 **3784.56 秒 / 2 失败**，差了约 14 倍——再次印证第 69 条"是构建类型不是代码"的结论。

@@ -84,6 +84,7 @@ add_executable(THREECPPTests
         unit/src/loaders/NRRDDirections.tests.cpp
         unit/src/loaders/NRRDText.tests.cpp
         unit/src/loaders/NRRDBinary.tests.cpp
+        unit/src/loaders/NRRDVolume.tests.cpp
         unit/src/cameras/StereoCamera.tests.cpp
         unit/src/audio/AudioContext.tests.cpp
         unit/src/audio/Audio.tests.cpp
