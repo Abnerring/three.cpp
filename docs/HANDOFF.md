@@ -1046,6 +1046,12 @@
    - **测试（6 个用例、18 条断言）**：四种直接色类型都通过；索引型的三个条件各失败一次（表太长、表项宽度错、没有表），合法情况通过；直接色类型带颜色表被拒；无数据与未知类型；宽为 0 与高为负；`isRle` 对三种 RLE 为真、对两种非 RLE 为假。
    - **验证**：核心 **986 用例 / 207,123 断言**（+6 / +18）、`primitive-geometry`、`port-audit` 全绿。
    - **TGA 剩余**：读那 18 字节头部、索引型颜色表读取、未压缩与 RLE 的像素解码（含 `descriptor` 的**原点方向**与 alpha 位）、以及最后装成纹理数据。
+205. **第 144 轮：`TGALoader` 第二层——读 18 字节头部**。
+   - **布局**（固定）：`idLength`(1) / `colormapType`(1) / `imageType`(1) / `colormapFirst`(2) / `colormapLength`(2) / `colormapSize`(1) / `xOrigin`(2) / `yOrigin`(2) / `width`(2) / `height`(2) / `pixelSize`(1) / `descriptor`(1)，**多字节字段全是小端**。
+   - **给 `Header` 加了两个 `int`**（`xOrigin`/`yOrigin`）——**只加整型，不加容器**，所以不受第 137 轮那个崩溃的影响。
+   - **测试（3 个用例、14 条断言）**：手工拼 18 字节，十二个字段逐个核对（含 `descriptor = 0x28`）；**宽度 `0x1234` 小端**（低字节在前）读出 0x1234；不足 18 字节抛 `Invalid header length.`。
+   - **验证**：核心 **989 用例 / 207,137 断言**（+3 / +14）、`primitive-geometry`、`port-audit` 全绿。
+   - **TGA 剩余**：索引型颜色表、未压缩像素（按 `pixelSize` 的 8/15/16/24/32 分支）、RLE 像素、`descriptor` 的**原点方向**（左下/左上）与 alpha 位数。
 70. **第 520 轮：完整 Vulkan 套件 211/211 全绿，耗时 270.72 秒**。
    - 命令：`ctest --test-dir build-vulkan -j 4 -E "lights-states" --output-on-failure`（仍排除第 46 条那个已知项；它在 Vulkan 构建里同样慢）。
    - 结果：**100% tests passed, 0 tests failed out of 211**，总耗时 **270.72 秒**。对比同一套件在 **Debug** 配置下的 **3784.56 秒 / 2 失败**，差了约 14 倍——再次印证第 69 条"是构建类型不是代码"的结论。
