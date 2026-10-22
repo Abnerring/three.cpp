@@ -172,6 +172,11 @@
    - **本轮实现（`src/renderers/VulkanRenderer.cpp`）**：`createImage` 增加 `std::uint32_t layers = 1` 参数——`arrayLayers = layers`、`layers > 1` 时置 `VK_IMAGE_CREATE_CUBE_COMPATIBLE_BIT`、视图类型在多层时用 `VK_IMAGE_VIEW_TYPE_2D_ARRAY` 且 `subresourceRange.layerCount = layers`。`Impl` 增加 `activeCubeFace`、`activeMipmapLevel`、`targetLayers` 状态位。**默认仍为 1 层，行为零变化**：`threecpp.vulkan` 仍通过（36.71 秒），核心 739 / 205,653 不变。
    - **本轮踩的坑**：`create.arrayLayers = layers;` 和 `view.viewType` 的替换**误命中了纹理创建函数**（那里没有 `layers` 变量），编译报 `layers 未声明`；按行号精确修正（纹理路径保持 1 层、`createImage` 里改对视图类型与 `layerCount`）。教训同第 63 条：**改共享代码里的同名语句必须按行号或按函数定位，不能靠字符串替换**。
    - **下一步**：① 每层一个 `VkImageView` + 每层一个 framebuffer，`setRenderTarget(target, activeCubeFace)` 选层；② readback 用 `vkCmdCopyImageToBuffer` 的 `baseArrayLayer = activeCubeFace`；③ 然后 `WebGLCubeRenderTarget::clear` 才能真正实现（不再抛错）；④ 最后才是 `PMREMGenerator` 本体。
+75. **第 4 轮：把逐面渲染的"可变部分"改成以 `activeCubeFace` 为准（安全中间态，行为未变）**。
+   - 改动：`imageBarrier` 增加 `std::uint32_t layer = 0` 参数并写 `baseArrayLayer`；`beginFrame` 的首次布局转换与 `endFrame` 的 `vkCmdCopyImageToBuffer` 都改用 `activeCubeFace`；`initialized` 之外新增 `initializedLayers` 位掩码（每层单独做一次 UNDEFINED → ATTACHMENT 转换）；`Impl` 预留 `faceView`/`faceImage`/`faceFramebuffer` 三个成员。
+   - **为什么现在仍然安全**：`activeCubeFace` 目前只可能是 0（`resize` 还没有接层数、`setRenderTarget` 还没接 face 参数），所以所有新代码路径都退化成原来的单层行为。`threecpp.vulkan` 仍通过，核心 **739 / 205,653** 不变。
+   - **还差的三步（下一轮）**：① `resize(w, h, layers)` 用层数建颜色图并在多层时建 `faceView`/`faceFramebuffer`（每层一个 2D 视图 + 每层一个 framebuffer）；② `beginFrame` 在 `targetLayers > 1` 时用 `faceFramebuffer` 而不是 `framebuffer`；③ `setRenderTarget(target, activeCubeFace = 0, activeMipmapLevel = 0)` 公开到 `VulkanRenderer`，`WebGLCubeRenderTarget::clear` 改用 `setRenderTarget(this, face)`。
+   - **验收设计**：`clear` 六个面用不同颜色 → 逐面 `readRenderTargetPixels` 得到对应颜色 → 六面互不串色；再验证解绑后渲染器尺寸恢复。
 70. **第 520 轮：完整 Vulkan 套件 211/211 全绿，耗时 270.72 秒**。
    - 命令：`ctest --test-dir build-vulkan -j 4 -E "lights-states" --output-on-failure`（仍排除第 46 条那个已知项；它在 Vulkan 构建里同样慢）。
    - 结果：**100% tests passed, 0 tests failed out of 211**，总耗时 **270.72 秒**。对比同一套件在 **Debug** 配置下的 **3784.56 秒 / 2 失败**，差了约 14 倍——再次印证第 69 条"是构建类型不是代码"的结论。

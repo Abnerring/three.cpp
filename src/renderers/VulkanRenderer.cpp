@@ -630,8 +630,12 @@ struct VulkanRenderer::Impl {
     std::uint32_t maxVertexStride = 0;
     VkDeviceSize maxStorageBufferRange = 0;
     VkFramebuffer framebuffer = VK_NULL_HANDLE;
+    VkImageView faceView = VK_NULL_HANDLE;
+    VkImage faceImage = VK_NULL_HANDLE;
+    VkFramebuffer faceFramebuffer = VK_NULL_HANDLE;
     std::uint32_t width = 0, height = 0;
     bool initialized = false;
+    std::uint32_t initializedLayers = 0;
     bool recording = false;
     bool rendering = false;
     std::shared_ptr<RenderTarget> renderTarget;
@@ -2199,7 +2203,7 @@ struct VulkanRenderer::Impl {
     void imageBarrier(VkImage image, VkImageAspectFlags aspect, VkImageLayout oldLayout,
                       VkImageLayout newLayout, VkAccessFlags sourceAccess,
                       VkAccessFlags destinationAccess, VkPipelineStageFlags sourceStage,
-                      VkPipelineStageFlags destinationStage) {
+                      VkPipelineStageFlags destinationStage, std::uint32_t layer = 0) {
         VkImageMemoryBarrier barrier{VK_STRUCTURE_TYPE_IMAGE_MEMORY_BARRIER};
         barrier.srcAccessMask = sourceAccess;
         barrier.dstAccessMask = destinationAccess;
@@ -2209,6 +2213,7 @@ struct VulkanRenderer::Impl {
         barrier.image = image;
         barrier.subresourceRange.aspectMask = aspect;
         barrier.subresourceRange.levelCount = 1;
+        barrier.subresourceRange.baseArrayLayer = layer;
         barrier.subresourceRange.layerCount = 1;
         api.vkCmdPipelineBarrier(commandBuffer, sourceStage, destinationStage, 0, 0, nullptr, 0,
                                  nullptr, 1, &barrier);
@@ -2222,12 +2227,12 @@ struct VulkanRenderer::Impl {
         VkCommandBufferBeginInfo begin{VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO};
         begin.flags = VK_COMMAND_BUFFER_USAGE_ONE_TIME_SUBMIT_BIT;
         check(api.vkBeginCommandBuffer(commandBuffer, &begin), "vkBeginCommandBuffer");
-        if (!initialized) {
+        if ((initializedLayers & (1u << activeCubeFace)) == 0) {
             imageBarrier(colorImage.image, VK_IMAGE_ASPECT_COLOR_BIT, VK_IMAGE_LAYOUT_UNDEFINED,
                          VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL, 0,
                          VK_ACCESS_COLOR_ATTACHMENT_READ_BIT | VK_ACCESS_COLOR_ATTACHMENT_WRITE_BIT,
                          VK_PIPELINE_STAGE_TOP_OF_PIPE_BIT,
-                         VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT);
+                         VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT, activeCubeFace);
             imageBarrier(depthImage.image, VK_IMAGE_ASPECT_DEPTH_BIT, VK_IMAGE_LAYOUT_UNDEFINED,
                          VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL, 0,
                          VK_ACCESS_DEPTH_STENCIL_ATTACHMENT_READ_BIT |
@@ -2292,6 +2297,7 @@ struct VulkanRenderer::Impl {
                      VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT, VK_PIPELINE_STAGE_TRANSFER_BIT);
         VkBufferImageCopy copy{};
         copy.imageSubresource.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
+        copy.imageSubresource.baseArrayLayer = activeCubeFace;
         copy.imageSubresource.layerCount = 1;
         copy.imageExtent = {width, height, 1};
         api.vkCmdCopyImageToBuffer(commandBuffer, colorImage.image,
@@ -2320,6 +2326,7 @@ struct VulkanRenderer::Impl {
         std::memcpy(pixels.data(), mapped, pixels.size());
         api.vkUnmapMemory(device, readback.memory);
         initialized = true;
+        initializedLayers |= 1u << activeCubeFace;
     }
 };
 
