@@ -787,6 +787,13 @@
    - **测试（5 个用例、17 条断言）**：默认（颜色不变、零色保留、字符串透传）；`normalizeRGB`（`255→1.0`、`128→128/255`）；`ignoreZeroRGBs`（`ks 0 0 0` **整条消失**、`kd` 仍在）；输出键**小写化**（`Kd`→`kd`、`Ns`→`ns`）；四个默认值。
    - **验证**：核心 **827 用例 / 206,280 断言**（+5 / +17）、`primitive-geometry`、`port-audit` 全绿。
    - **下一轮**：`getAsArray`/`create`/`createMaterial_` 与真正构建 `MeshPhongMaterial`（含 `resolveURL`、`setMapForType`、`setGeneric`/`setColor` 等辅助函数）。
+167. **第 106 轮：`MTLLoader::getTextureParams` 落地，并**复刻**了一个真实的 upstream bug**。
+   - **功能**：把 MTL 纹理行拆成"选项 + url"。四个选项：`-bm`（bump 缩放，删 2 个 token）、`-mm`（位移 bias 与 scale，删 3 个）、`-s`（重复，**删 4 个**）、`-o`（偏移，**删 4 个**）；剩下的 token 用空格拼回 url。`bumpScale`/`displacementBias`/`displacementScale` 上游是写进材质参数的，端口用三个 `std::optional` 带回来。
+   - **发现的 upstream bug**：`-s` 与 `-o` 的 `splice(pos, 4)` **只读了两个值却删了四个 token**。当 `-s` 后面紧跟 `-o` 时，`-o` 这个标记和它的第一个数值被一起吃掉，剩下的数字落进 url。实测 `"wall.png -s 2 3 -o 0.5 0.25"` 得到 `url = "wall.png 0.5 0.25"`、`scale = (2,3)`、**offset 保持 (0,0)**。**这不是我的实现错，上游就是这样**——所以测试**照实断言这个行为**（注释写明"reproduce the upstream token loss rather than fixing it"）。
+   - **两个测试拆开写**：单独一行 `-s 2 3` 或 `-o 0.5 0.25` 时 url 是干净的（因为删 4 个时后面没有别的 token，越界部分被 `std::min` 夹住）；两者**同时**出现才触发丢 token。
+   - **测试（6 个用例、30 条断言）**：裸 url 默认值；`-bm`；单独 `-s`；单独 `-o`；`-mm`；以及**同时出现时复刻丢 token**（url 含残留数字、offset 仍为 0）。
+   - **验证**：核心 **833 用例 / 206,310 断言**（+6 / +30）、`primitive-geometry`、`port-audit` 全绿。
+   - **MTL 剩余**：`createMaterial_` 里把记录变成 `MeshPhongMaterial` 的部分（`ColorManagement.colorSpaceToWorking` + `TextureLoader`）以及 `getAsArray`/`create`/`preload`，都依赖纹理加载与材质构建，属于下一段工作。
 70. **第 520 轮：完整 Vulkan 套件 211/211 全绿，耗时 270.72 秒**。
    - 命令：`ctest --test-dir build-vulkan -j 4 -E "lights-states" --output-on-failure`（仍排除第 46 条那个已知项；它在 Vulkan 构建里同样慢）。
    - 结果：**100% tests passed, 0 tests failed out of 211**，总耗时 **270.72 秒**。对比同一套件在 **Debug** 配置下的 **3784.56 秒 / 2 失败**，差了约 14 倍——再次印证第 69 条"是构建类型不是代码"的结论。

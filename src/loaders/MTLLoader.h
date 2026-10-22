@@ -1,6 +1,7 @@
 #pragma once
 #include <array>
 #include <map>
+#include <optional>
 #include <string>
 #include "constants.h"
 #include <variant>
@@ -33,4 +34,22 @@ class MTLLoader {
     // two hundred and fifty five when normalizeRGB is set, and all zero colours are dropped
     // when ignoreZeroRGBs is set. Output keys are lower cased, as upstream does.
     static MaterialsInfo convert(const MaterialsInfo& materialsInfo, const MaterialOptions& options);
+
+    // A texture reference in an MTL file can carry trailing options: -bm for bump scale, -mm
+    // for displacement bias and scale, -s for repeat and -o for offset. Whatever is left
+    // after removing them is the url.
+    struct TextureParams {
+        double scaleU = 1, scaleV = 1;
+        double offsetU = 0, offsetV = 0;
+        std::string url;
+        // Set only when the corresponding option was present.
+        std::optional<double> bumpScale;
+        std::optional<double> displacementBias;
+        std::optional<double> displacementScale;
+    };
+
+    // Splits a texture line into its options and its url. Upstream also writes bumpScale,
+    // displacementBias and displacementScale into the material params, which the three
+    // optionals carry back instead.
+    static TextureParams getTextureParams(const std::string& value);
 };

@@ -17,6 +17,19 @@ std::string lower(std::string text) {
     return text;
 }
 
+std::vector<std::string> splitWhitespaceAll(const std::string& text) {
+    std::vector<std::string> parts;
+    std::size_t i = 0;
+    while (i < text.size()) {
+        while (i < text.size() && std::isspace(static_cast<unsigned char>(text[i]))) ++i;
+        if (i >= text.size()) break;
+        const std::size_t start = i;
+        while (i < text.size() && !std::isspace(static_cast<unsigned char>(text[i]))) ++i;
+        parts.push_back(text.substr(start, i - start));
+    }
+    return parts;
+}
+
 std::vector<std::string> splitWhitespace(const std::string& text, std::size_t limit) {
     std::vector<std::string> parts;
     std::size_t i = 0;
@@ -98,4 +111,61 @@ MTLLoader::MaterialsInfo MTLLoader::convert(const MaterialsInfo& materialsInfo,
         converted[name] = covmat;
     }
     return converted;
+}
+
+MTLLoader::TextureParams MTLLoader::getTextureParams(const std::string& value) {
+    TextureParams result;
+    std::vector<std::string> items = splitWhitespaceAll(value);
+
+    const auto indexOf = [&items](const std::string& token) -> std::ptrdiff_t {
+        for (std::size_t i = 0; i < items.size(); ++i)
+            if (items[i] == token) return std::ptrdiff_t(i);
+        return -1;
+    };
+    const auto erase = [&items](std::size_t at, std::size_t count) {
+        if (at >= items.size()) return;
+        const std::size_t end = std::min(items.size(), at + count);
+        items.erase(items.begin() + std::ptrdiff_t(at), items.begin() + std::ptrdiff_t(end));
+    };
+
+    std::ptrdiff_t pos = indexOf("-bm");
+    if (pos >= 0) {
+        if (std::size_t(pos) + 1 < items.size())
+            result.bumpScale = std::strtod(items[std::size_t(pos) + 1].c_str(), nullptr);
+        erase(std::size_t(pos), 2);
+    }
+
+    pos = indexOf("-mm");
+    if (pos >= 0) {
+        if (std::size_t(pos) + 2 < items.size()) {
+            result.displacementBias = std::strtod(items[std::size_t(pos) + 1].c_str(), nullptr);
+            result.displacementScale = std::strtod(items[std::size_t(pos) + 2].c_str(), nullptr);
+        }
+        erase(std::size_t(pos), 3);
+    }
+
+    pos = indexOf("-s");
+    if (pos >= 0) {
+        if (std::size_t(pos) + 2 < items.size()) {
+            result.scaleU = std::strtod(items[std::size_t(pos) + 1].c_str(), nullptr);
+            result.scaleV = std::strtod(items[std::size_t(pos) + 2].c_str(), nullptr);
+        }
+        // Upstream removes four tokens here even though only two values are read.
+        erase(std::size_t(pos), 4);
+    }
+
+    pos = indexOf("-o");
+    if (pos >= 0) {
+        if (std::size_t(pos) + 2 < items.size()) {
+            result.offsetU = std::strtod(items[std::size_t(pos) + 1].c_str(), nullptr);
+            result.offsetV = std::strtod(items[std::size_t(pos) + 2].c_str(), nullptr);
+        }
+        erase(std::size_t(pos), 4);
+    }
+
+    for (std::size_t i = 0; i < items.size(); ++i) {
+        if (i) result.url += ' ';
+        result.url += items[i];
+    }
+    return result;
 }
