@@ -677,6 +677,12 @@
    - **处理**：本轮**回退**这个 loader（不提交半成品），把上面两条写成结论留给下次；本轮实际交付是差分 **315 → 320 场景**（新增 32×2 纹理、5×5 网格、9 实例）。
    - **下次做 loader 的正确路径**：先看 `src/textures/TextureSource.h` 里 `TextureImage` 的构造方式与 `Uint8Array`/`Float32Array` 在端口里的真实类型，再写 `parse()`；`parse()` 本身是纯函数，可以**先只返回数据向量**、纹理包装作为第二步。
    - **验证**：核心 **787 / 206,036**、`primitive-geometry`、`port-audit` 全绿，差分 **320 场景 / 22 组 / exit=0**。
+154. **第 93 轮：第一个 addon loader 落地——`LUTCubeLoader` 全部通过（含字节级断言）**。
+   - **按第 153 条的三步走成功**：① 读 `TextureSource.h` → `TextureImage::Data` 是 `std::variant<std::nullptr_t, Int8Array, Uint8Array, …, JSValue>`，而 **`Uint8Array = TypedArray<std::uint8_t>`**（`src/core/TypedArray.h`）；② `TypedArray` 有 `explicit TypedArray(const std::vector<T>&)`，所以可以用一个 `std::vector<std::uint8_t>` 直接构造；③ `Data3DTexture(data, width, height, depth)` 的尺寸走**构造参数**，`image` 由构造函数自己建。
+   - **实现**：`src/loaders/LUTCubeLoader.{h,cpp}`，`parse(const std::string&)` 忠实上游：5 条正则（`TITLE` / `LUT_3D_SIZE` / `DOMAIN_MIN` / `DOMAIN_MAX` / 逐行三元组，最后一条带 **`std::regex::multiline`** 对应 JS 的 `m` 标志）、`UnsignedByteType` 乘 255 / `FloatType` 乘 1、每个点写 **RGBA 四字节且 alpha 就是 scale**、`size³×4` 的数据长度、纹理设置成 `LinearFilter` + 三轴 `ClampToEdgeWrapping` + `generateMipmaps = false` + `needsUpdate = true`。两个错误路径的**文案与上游逐字一致**。
+   - **测试（3 个用例、28 条断言）**：标题/尺寸/域解析；**字节级**断言——第 1 个点 `(0,0,0,255)`、第 2 个点 `(255,0,0,255)`、最后一个点 `(255,255,255,255)`、总长度 `2³×4 = 32`、`image` 的 `width/height/depth` 都是 2；两个 `REQUIRE_THROWS_WITH` 校验**完整错误文本**。
+   - **两个小坑**：`texture->image` 是 `Texture::ImageProperty`，要 `.get()` 才能取 `TextureImage*`（不能用 `*`）；`Data3DTexture` 的尺寸不在 `image` 上而在构造函数里。
+   - **验证**：核心 **790 用例 / 206,064 断言**（+3 / +28）、`primitive-geometry`、`port-audit` 全绿。addon loader 从 **2 / 52** 变成 **3 / 52**。
 70. **第 520 轮：完整 Vulkan 套件 211/211 全绿，耗时 270.72 秒**。
    - 命令：`ctest --test-dir build-vulkan -j 4 -E "lights-states" --output-on-failure`（仍排除第 46 条那个已知项；它在 Vulkan 构建里同样慢）。
    - 结果：**100% tests passed, 0 tests failed out of 211**，总耗时 **270.72 秒**。对比同一套件在 **Debug** 配置下的 **3784.56 秒 / 2 失败**，差了约 14 倍——再次印证第 69 条"是构建类型不是代码"的结论。
