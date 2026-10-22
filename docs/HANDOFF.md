@@ -349,6 +349,11 @@
    - **为什么需要**：blur 的片元阶段是 `layout(set=0, binding=0) uniform samplerCube envMap`，而立方体目标原本只有 `2D_ARRAY` 视图——`samplerCube` 必须配 cube 视图。
    - **验证**：`threecpp_vulkan` 与 `VulkanRendererTests` 构建通过；`--cube` 退出码 **0**（视图创建失败会抛异常，所以通过即说明 cube 视图真的建出来了，且没破坏六面渲染与方向断言）。核心 **745 / 205,728**、`primitive-geometry`、`port-audit` 全绿。
    - **下一步**：建 blur 程序（着色器模块 + 反射布局 + 管线，照 `pmrem_equirect` 那套），然后写"逐级 lod 的降采样 + 两级卷积"的编排——上游顺序是 `_blur(sigma≈0.04)` 若干次、`_applyPMREM` 里对每个 lod 用 GGX 或积分材质。
+104. **第 41 轮：blur 程序与管线建好（PMREM 的第二个卷积着色器已可执行）**。
+   - **改动**：`Impl` 增加 `pmremBlurModules`、`pmremBlurReflectedLayout`、`pmremBlurTextureLayout`、`pmremBlurPipelineLayout`、`pmremBlurPipelineHandle`；构造函数在 `createPmremPipeline()` 之后读 `pmrem_blur.{vert,frag}.spv`、建反射布局、再调 `createPmremBlurPipeline()`；该函数与 `createPmremPipeline()` 逐字段同构，只换成 blur 的 stages 与 layout。
+   - **验证**：构建通过；`--cube` 退出码 **0**——`vkCreateGraphicsPipelines` 失败会抛异常，所以通过说明 blur 管线在真实 GPU 上**建成了**，且既有的六面渲染、方向断言、cube 视图都没被破坏。核心 **745 / 205,728**、`primitive-geometry`、`port-audit` 全绿。
+   - **还差的三件事**：① `drawPmremFace` 目前只服务等距柱状程序（绑 `pmremPipelineHandle`、push 192 字节），blur 需要变体——绑 `pmremBlurPipelineHandle`、push **196** 字节（三个矩阵 + `sigma`）、描述符用 **cube 视图**而不是 2D 视图；② 逐级 lod 的降采样链（上游 `_blur(sigma)` 与 `_applyPMREM` 的 lod 循环）；③ GGX 与积分材质。
+   - **下一步建议**：先做 `drawPmremFace` 的 blur 变体，并用"**纯色立方体源 + blur → 输出仍是该色**"做验收（纯色在卷积下不变，和之前选纯色测等距柱状是同一个理由：一次只验一条链）。
 70. **第 520 轮：完整 Vulkan 套件 211/211 全绿，耗时 270.72 秒**。
    - 命令：`ctest --test-dir build-vulkan -j 4 -E "lights-states" --output-on-failure`（仍排除第 46 条那个已知项；它在 Vulkan 构建里同样慢）。
    - 结果：**100% tests passed, 0 tests failed out of 211**，总耗时 **270.72 秒**。对比同一套件在 **Debug** 配置下的 **3784.56 秒 / 2 失败**，差了约 14 倍——再次印证第 69 条"是构建类型不是代码"的结论。

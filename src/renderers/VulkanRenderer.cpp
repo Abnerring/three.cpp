@@ -376,6 +376,12 @@ struct VulkanRenderer::Impl {
     VkDescriptorSetLayout pmremTextureLayout = VK_NULL_HANDLE;
     VkPipelineLayout pmremPipelineLayout = VK_NULL_HANDLE;
     VkPipeline pmremPipelineHandle = VK_NULL_HANDLE;
+    // The blur program mirrors the equirectangular one; its push block adds sigma.
+    std::unique_ptr<VulkanShaderModules> pmremBlurModules;
+    std::unique_ptr<VulkanPipelineLayout> pmremBlurReflectedLayout;
+    VkDescriptorSetLayout pmremBlurTextureLayout = VK_NULL_HANDLE;
+    VkPipelineLayout pmremBlurPipelineLayout = VK_NULL_HANDLE;
+    VkPipeline pmremBlurPipelineHandle = VK_NULL_HANDLE;
     std::vector<VkDescriptorPool> descriptorPools;
     std::size_t activeDescriptorPool = 0;
     VkCommandBuffer textureCommandBuffer = VK_NULL_HANDLE;
@@ -853,6 +859,21 @@ struct VulkanRenderer::Impl {
         pmremPipelineLayout = pmremReflectedLayout->handle();
         createPmremGeometry();
         createPmremPipeline();
+        // Blur program: same construction path, its own reflected layout.
+        const auto blurVertexWords = readShader("pmrem_blur.vert.spv");
+        const auto blurFragmentWords = readShader("pmrem_blur.frag.spv");
+        const std::array<VulkanShaderModules::Stage, 2> blurStages{{{blurVertexWords}, {blurFragmentWords}}};
+        pmremBlurModules = std::make_unique<VulkanShaderModules>(device,
+            VulkanShaderModules::Dispatch{api.vkCreateShaderModule, api.vkDestroyShaderModule}, blurStages);
+        pmremBlurReflectedLayout = std::make_unique<VulkanPipelineLayout>(device,
+            VulkanPipelineLayout::Dispatch{api.vkCreateDescriptorSetLayout, api.vkDestroyDescriptorSetLayout,
+                api.vkCreatePipelineLayout, api.vkDestroyPipelineLayout},
+            pmremBlurModules->interfaces(), shaderProperties.limits, VulkanPipelineLayout::DescriptorCounts{}, 1);
+        if (pmremBlurReflectedLayout->setLayouts().size() != 1)
+            throw std::runtime_error("PMREM blur shader requires one descriptor set");
+        pmremBlurTextureLayout = pmremBlurReflectedLayout->setLayouts()[0];
+        pmremBlurPipelineLayout = pmremBlurReflectedLayout->handle();
+        createPmremBlurPipeline();
         pipelineLayout = reflectedLayout->handle();
         createRenderPass();
         resize(parameters.width, parameters.height);
@@ -2332,6 +2353,60 @@ struct VulkanRenderer::Impl {
         api.vkCmdPushConstants(commandBuffer, pmremPipelineLayout, VK_SHADER_STAGE_VERTEX_BIT,
                                0, sizeof(float) * transforms.size(), transforms.data());
         api.vkCmdDraw(commandBuffer, 36, 1, 0, 0);
+    }
+
+    // Same fixed function state as the equirect pass, but with the blur program.
+    void createPmremBlurPipeline() {
+        const auto stages = pmremBlurModules->pipelineStages();
+        VkVertexInputBindingDescription binding{0, sizeof(float) * 3, VK_VERTEX_INPUT_RATE_VERTEX};
+        VkVertexInputAttributeDescription attribute{0, 0, VK_FORMAT_R32G32B32_SFLOAT, 0};
+        VkPipelineVertexInputStateCreateInfo vertex{VK_STRUCTURE_TYPE_PIPELINE_VERTEX_INPUT_STATE_CREATE_INFO};
+        vertex.vertexBindingDescriptionCount = 1;
+        vertex.pVertexBindingDescriptions = &binding;
+        vertex.vertexAttributeDescriptionCount = 1;
+        vertex.pVertexAttributeDescriptions = &attribute;
+        VkPipelineInputAssemblyStateCreateInfo assembly{VK_STRUCTURE_TYPE_PIPELINE_INPUT_ASSEMBLY_STATE_CREATE_INFO};
+        assembly.topology = VK_PRIMITIVE_TOPOLOGY_TRIANGLE_LIST;
+        VkPipelineViewportStateCreateInfo viewport{VK_STRUCTURE_TYPE_PIPELINE_VIEWPORT_STATE_CREATE_INFO};
+        viewport.viewportCount = 1;
+        viewport.scissorCount = 1;
+        VkPipelineRasterizationStateCreateInfo rasterization{VK_STRUCTURE_TYPE_PIPELINE_RASTERIZATION_STATE_CREATE_INFO};
+        rasterization.polygonMode = VK_POLYGON_MODE_FILL;
+        rasterization.cullMode = VK_CULL_MODE_NONE;
+        rasterization.frontFace = VK_FRONT_FACE_COUNTER_CLOCKWISE;
+        rasterization.lineWidth = 1;
+        VkPipelineMultisampleStateCreateInfo multisample{VK_STRUCTURE_TYPE_PIPELINE_MULTISAMPLE_STATE_CREATE_INFO};
+        multisample.rasterizationSamples = VK_SAMPLE_COUNT_1_BIT;
+        VkPipelineDepthStencilStateCreateInfo depth{VK_STRUCTURE_TYPE_PIPELINE_DEPTH_STENCIL_STATE_CREATE_INFO};
+        depth.depthTestEnable = VK_FALSE;
+        depth.depthWriteEnable = VK_FALSE;
+        VkPipelineColorBlendAttachmentState blend{};
+        blend.blendEnable = VK_FALSE;
+        blend.colorWriteMask = VK_COLOR_COMPONENT_R_BIT | VK_COLOR_COMPONENT_G_BIT |
+                               VK_COLOR_COMPONENT_B_BIT | VK_COLOR_COMPONENT_A_BIT;
+        VkPipelineColorBlendStateCreateInfo colorBlend{VK_STRUCTURE_TYPE_PIPELINE_COLOR_BLEND_STATE_CREATE_INFO};
+        colorBlend.attachmentCount = 1;
+        colorBlend.pAttachments = &blend;
+        const VkDynamicState dynamicStates[] = {VK_DYNAMIC_STATE_VIEWPORT, VK_DYNAMIC_STATE_SCISSOR};
+        VkPipelineDynamicStateCreateInfo dynamic{VK_STRUCTURE_TYPE_PIPELINE_DYNAMIC_STATE_CREATE_INFO};
+        dynamic.dynamicStateCount = 2;
+        dynamic.pDynamicStates = dynamicStates;
+        VkGraphicsPipelineCreateInfo create{VK_STRUCTURE_TYPE_GRAPHICS_PIPELINE_CREATE_INFO};
+        create.stageCount = 2;
+        create.pStages = stages.data();
+        create.pVertexInputState = &vertex;
+        create.pInputAssemblyState = &assembly;
+        create.pViewportState = &viewport;
+        create.pRasterizationState = &rasterization;
+        create.pMultisampleState = &multisample;
+        create.pDepthStencilState = &depth;
+        create.pColorBlendState = &colorBlend;
+        create.pDynamicState = &dynamic;
+        create.layout = pmremBlurPipelineLayout;
+        create.renderPass = renderPass;
+        check(api.vkCreateGraphicsPipelines(device, VK_NULL_HANDLE, 1, &create, nullptr,
+                                           &pmremBlurPipelineHandle),
+              "vkCreateGraphicsPipelines(pmrem blur)");
     }
 
     void createPmremPipeline() {
