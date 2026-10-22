@@ -122,6 +122,7 @@ target_sources(threecpp PRIVATE
     src/loaders/CubeTextureLoader.cpp
     src/extras/ImageUtils.cpp
     src/extras/PMREMGenerator.cpp
+    src/nodes/core/StackTrace.cpp
     src/loaders/DataTextureLoader.cpp
     src/loaders/CompressedTextureLoader.cpp src/loaders/MaterialLoader.cpp src/loaders/FileLoader.cpp
     src/loaders/ObjectLoader.cpp

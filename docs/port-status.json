@@ -194,8 +194,8 @@
     "note": "Accepted port scope is src and examples/jsm, including tracked third-party dependencies. Editor/manual web applications are excluded from native application rewrites. Native host behavior, packaging and all three platforms require separate implementation and verification evidence."
   },
   "counts": {
-    "partial-unverified": 303,
-    "missing": 638,
+    "partial-unverified": 305,
+    "missing": 636,
     "vulkan-port-pending": 290,
     "dependency-unverified": 20
   },
@@ -203,8 +203,8 @@
     "src": {
       "modules": 755,
       "counts": {
-        "partial-unverified": 219,
-        "missing": 246,
+        "partial-unverified": 221,
+        "missing": 244,
         "vulkan-port-pending": 290
       }
     },
@@ -803,7 +803,7 @@
       "path": "src/nodes/core",
       "upstreamFiles": 42,
       "moduleCount": 42,
-      "modulesWithCppFiles": 0,
+      "modulesWithCppFiles": 2,
       "verifiedComplete": 0
     },
     {
@@ -9067,11 +9067,11 @@
       "scope": "src",
       "kind": "core",
       "upstreamSha256": "a536e678b8747b8693254dd27d213bd0c24416317c5586d1ba4c544c20cdd33f",
-      "header": null,
+      "header": "src/nodes/core/NodeError.h",
       "implementation": null,
       "expectedHeader": "src/nodes/core/NodeError.h",
       "expectedImplementation": "src/nodes/core/NodeError.cpp",
-      "status": "missing",
+      "status": "partial-unverified",
       "verifiedComplete": false,
       "apiExtraction": "static-only",
       "verification": {
@@ -9445,11 +9445,11 @@
       "scope": "src",
       "kind": "core",
       "upstreamSha256": "6cb2e2acd41258aa944705f91d7c9ef2c66f0de1ca08812203d51c379997f381",
-      "header": null,
-      "implementation": null,
+      "header": "src/nodes/core/StackTrace.h",
+      "implementation": "src/nodes/core/StackTrace.cpp",
       "expectedHeader": "src/nodes/core/StackTrace.h",
       "expectedImplementation": "src/nodes/core/StackTrace.cpp",
-      "status": "missing",
+      "status": "partial-unverified",
       "verifiedComplete": false,
       "apiExtraction": "static-only",
       "verification": {
@@ -9458,7 +9458,9 @@
           "pointer": "/modules/291"
         },
         "upstreamUnitTests": [],
-        "cppUnitTests": [],
+        "cppUnitTests": [
+          "test/unit/src/nodes/core/StackTrace.tests.cpp"
+        ],
         "reviewedImplementation": [],
         "differentialResults": [],
         "renderingResults": [],

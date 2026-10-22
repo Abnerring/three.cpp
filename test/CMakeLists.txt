@@ -11,6 +11,7 @@ add_executable(THREECPPTests
         unit/src/loaders/CubeTextureLoader.tests.cpp
         unit/src/extras/ImageUtils.tests.cpp
         unit/src/extras/PMREMGenerator.tests.cpp
+    unit/src/nodes/core/StackTrace.tests.cpp
         unit/src/loaders/DataTextureLoader.tests.cpp
         unit/src/loaders/CompressedTextureLoader.tests.cpp
         unit/src/core/BufferGeometryLookAt.tests.cpp

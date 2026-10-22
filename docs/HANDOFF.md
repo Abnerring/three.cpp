@@ -569,6 +569,13 @@
    - **诚实结论**：从第 65 轮到现在，blur 这条线已经消耗了 11 轮，尝试了 ①清除顺序 ②barrier 时机 ③六层转换 ④推常量 stage flags ⑤着色器引用 ⑥布局合并，**设备丢失依然存在**。继续在同一个点上试错，边际收益已经很低。
    - **暂停这条线，理由与做法**：把 `blurCube` 的真实实现**保留在源码里**（能编译、无人调用、不影响任何测试），`blurCubeTests` 从 `--cube` 列表移除；后续如果要继续，建议**换一个更小的可验证目标**——例如先用一个**最简单的片元着色器**（直接输出固定颜色、只用一个变换矩阵做推常量）把"第二套管线 + 推常量 + cube 采样"这条路走通，再逐步加回矩阵与 sigma。**先证明最小管线能跑，再增加复杂度**。
    - **状态**：全部回退；核心 **747 / 205,735**、`primitive-geometry`、`port-audit`、Vulkan 构建 0 错误、`--cube` 0，树干净。
+137. **第 76 轮：TSL 的第一个真实切片落地——`StackTrace` 与 `NodeError`（含 4 个测试用例）**。
+   - **为什么从这里开始**：`src/nodes`（TSL）共 219 个文件、约 4.5 万行，是个独立的大工程。先挑**自包含且纯字符串处理**的模块：`getFilteredStack` 解析 JS 栈字符串（Chrome `at fn (file.js:1:2)` / `at file.js:1:2`、Firefox `fn@file.js:1:2`），按四个忽略规则过滤（`StackTrace.js` / `TSLCore.js` / `*Node.js` / `three.webgpu*.js`），并剥掉查询串与目录。
+   - **实现**：`src/nodes/core/StackTrace.{h,cpp}` —— `struct NodeStackFrame { fn, file, line, column }`、`getFilteredStack(const std::string&)`（`std::regex` 与上游同一模式）、`class StackTrace`（`isStackTrace`、`stack()`、`getLocation()`、`getError()`）；`src/nodes/core/NodeError.h` —— 继承 `std::runtime_error`，带 `name = "NodeError"` 与 `std::optional<StackTrace>`。
+   - **一处无法照搬的地方（已在头文件写明）**：上游 `new StackTrace()` 会读 `new Error().stack`，那是 JS 引擎的东西；C++ 里没有等价物，所以构造函数**要求显式传入栈字符串**，无参时得到**空栈**而不是编造一个。
+   - **测试（4 个用例、24 条断言）**：Chrome 与 Firefox 两种帧格式、忽略规则（`Node.js` 被丢弃）、查询串与路径剥离、`getLocation()`/`getError()` 的格式、`NodeError` 的 `name` 与可选栈。
+   - **一个诚实记下的怪癖**：Firefox 形式下 `fn` 会带**前导空格**（`"    userFn"`），因为上游正则 `(?:(.+?)@)?` 是懒匹配、从行首开始吃。**我的第一版测试期望写成了 `"userFn"`，测试失败后打印实际帧才发现上游也是这个行为**——于是改的是**测试**，不是实现。
+   - **过程**：新测试一开始没被编译（`cmake -S . -B build` 的输出被我重定向到 nul，reconfigure 其实失败）；Catch2 的头是项目内的 `#include "catch.hpp"`（不是 `catch2/catch_test_macros.hpp`）。两个都修好后：核心 **751 用例 / 205,759 断言**（+4 / +24）、`primitive-geometry`、`port-audit` 全绿。
 70. **第 520 轮：完整 Vulkan 套件 211/211 全绿，耗时 270.72 秒**。
    - 命令：`ctest --test-dir build-vulkan -j 4 -E "lights-states" --output-on-failure`（仍排除第 46 条那个已知项；它在 Vulkan 构建里同样慢）。
    - 结果：**100% tests passed, 0 tests failed out of 211**，总耗时 **270.72 秒**。对比同一套件在 **Debug** 配置下的 **3784.56 秒 / 2 失败**，差了约 14 倍——再次印证第 69 条"是构建类型不是代码"的结论。
