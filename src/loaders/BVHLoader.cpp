@@ -1,4 +1,4 @@
-﻿#include "loaders/BVHLoader.h"
+#include "loaders/BVHLoader.h"
 
 #include <cctype>
 #include <cstdlib>
@@ -108,4 +108,39 @@ BVHLoader::Hierarchy BVHLoader::parseHierarchy(const std::vector<std::string>& l
     Hierarchy hierarchy;
     hierarchy.root = readNode(lines, cursor, hierarchy.list);
     return hierarchy;
+}
+
+BVHLoader::Motion BVHLoader::parseMotion(const std::vector<std::string>& lines, std::size_t& cursor,
+                                          std::size_t channelCount) {
+    if (cursor >= lines.size() || trim(lines[cursor]) != "MOTION") fail("MOTION expected.");
+    ++cursor;
+
+    // Frames: <count>
+    if (cursor >= lines.size()) fail("Failed to read number of frames.");
+    auto tokens = splitWhitespace(trim(lines[cursor++]));
+    if (tokens.size() < 2 || tokens[0] != "Frames:") fail("Failed to read number of frames.");
+    Motion motion;
+    motion.numFrames = std::atoi(tokens[1].c_str());
+    if (motion.numFrames < 0) fail("Failed to read number of frames.");
+
+    // Frame Time: <seconds>
+    if (cursor >= lines.size()) fail("Failed to read frame time.");
+    tokens = splitWhitespace(trim(lines[cursor++]));
+    if (tokens.size() < 3 || tokens[0] != "Frame" || tokens[1] != "Time:")
+        fail("Failed to read frame time.");
+    motion.frameTime = std::strtod(tokens[2].c_str(), nullptr);
+
+    motion.times.reserve(static_cast<std::size_t>(motion.numFrames));
+    motion.values.reserve(static_cast<std::size_t>(motion.numFrames) * channelCount);
+
+    for (int i = 0; i < motion.numFrames; ++i) {
+        if (cursor >= lines.size()) fail("Failed to read frame data.");
+        const auto frameTokens = splitWhitespace(trim(lines[cursor++]));
+        if (frameTokens.size() < channelCount) fail("Failed to read frame data.");
+        // The frame time is the index times the duration, as upstream computes it.
+        motion.times.push_back(i * motion.frameTime);
+        for (std::size_t k = 0; k < channelCount; ++k)
+            motion.values.push_back(std::strtod(frameTokens[k].c_str(), nullptr));
+    }
+    return motion;
 }

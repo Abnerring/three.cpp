@@ -970,6 +970,12 @@
    - **测试（5 个用例、27 条断言）**：`splitLines` 去掉 `\r`；三层树逐层核对（根 6 通道、关节 3 通道、端点为 `ENDSITE` 且**无通道无子节点**）；**扁平列表 3 个且父在前**；缺 `HIERARCHY` 抛错；`OFFSET` 只有两段抛错。
    - **验证**：核心 **933 用例 / 206,917 断言**（+5 / +27）、`primitive-geometry`、`port-audit` 全绿。
    - **BVH 剩余**：`MOTION`/`Frames:`/`Frame Time:` 的读取、逐帧通道数据、以及最终的 `Skeleton` + `AnimationClip` 构建。
+193. **第 132 轮：`BVHLoader` 第二层——`MOTION` 头与逐帧数据**。
+   - **三行头**：`MOTION`、`Frames: <n>`、`Frame Time: <秒>`。上游对三者只 `console.error`，端口**都抛错**，且**各自的文案与上游一致**（`MOTION expected.` / `Failed to read number of frames.` / `Failed to read frame time.`）。
+   - **逐帧**：每帧一行、按整个层级声明的**通道总数**取值；`times[i] = i * frameTime`；值按**行主序**存进一个扁平数组。某帧数字不够时抛 `Failed to read frame data.`
+   - **测试（6 个用例、17 条断言）**：两帧/六通道的完整读取（时间 `0` 与 `0.033`、值 12 个、游标停在 5）；缺 `MOTION`；`Frames` 行不完整；`Time:` 少了 `Frame` 前缀；帧值不足；**零帧**时两个数组都为空。
+   - **验证**：核心 **939 用例 / 206,934 断言**（+6 / +17）、`primitive-geometry`、`port-audit` 全绿。
+   - **BVH 只剩最后一层**：把层级 + 帧数据变成 `Skeleton`（骨骼与 Bone 的父子、每根骨骼的 position/quaternion）与 `AnimationClip`（按通道名分组成 `QuaternionKeyframeTrack`/`VectorKeyframeTrack`）。
 70. **第 520 轮：完整 Vulkan 套件 211/211 全绿，耗时 270.72 秒**。
    - 命令：`ctest --test-dir build-vulkan -j 4 -E "lights-states" --output-on-failure`（仍排除第 46 条那个已知项；它在 Vulkan 构建里同样慢）。
    - 结果：**100% tests passed, 0 tests failed out of 211**，总耗时 **270.72 秒**。对比同一套件在 **Debug** 配置下的 **3784.56 秒 / 2 失败**，差了约 14 倍——再次印证第 69 条"是构建类型不是代码"的结论。
