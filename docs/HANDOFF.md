@@ -1333,6 +1333,15 @@
    - **测试（7 个用例、16 条断言）**：单 splat 的尺寸与中心；**`log` 尺度**（`ln 2` → 协方差对角 4）；**`w` 在前的旋转**（90° 绕 z）；**alpha 约 128**（`sigmoid(0)`）；缺流 / 宽度错 / 数量不匹配三种错误。
    - **验证**：核心 **1172 用例 / 208,921 断言**（+7 / +16）、addons、`primitive-geometry`、`port-audit`、Vulkan 全绿。addon loader **27 → 28 / 52**。
    - **十五个完整 loader**：MTL、OBJ、PLY、Font、HDRCubeTexture、MD2、BVH、PCD、TGA、NRRD、AMF、VOX、SPZ、IES、**GaussianSplatPLY**。
+246. **第 185 轮：`KSPLATLoader` 第一层——压缩档位与谐波索引表**。
+   - **先按第 242 条打开看了 `KSPLATLoader` 与 `DDSLoader`**：KSPLAT 虽然 463 行，但**复用 `GaussianSplatUtils`**（第 84 轮），而且它的核心是**三张纯数据表**，很适合先做；`DDSLoader` 只处理压缩纹理，价值较低。
+   - **三档压缩**：档 0 全浮点（中心 12 / 缩放 12 / 旋转 16 / 颜色 4 / 谐波 4 字节，`scaleRange = 1`）；档 1 与档 2 都是中心 6 / 缩放 6 / 旋转 8 / 颜色 4，**只有谐波分量宽度不同**（档 1 是 2 字节、档 2 是 1 字节），`scaleRange = 32767`。
+   - **偏移是宽度的前缀和**：`scaleOffset = bytesPerCenter`、`rotationOffset = scaleOffset + bytesPerScale`、`colorOffset = rotationOffset + bytesPerRotation`。测试里把这**三条恒等式**分别断言，而不是硬编码数字——这样任何一档宽度写错都会被抓住。
+   - **谐波索引表**：三个带各 9/15/21 个分量，**存储顺序不是自然顺序**（第一带是 `0,3,6,1,4,7,2,5,8`），`harmonicIndex` 负责还原；越界返回 −1。
+   - **`splatStride`**：四个固定字段之和加上 `谐波分量数 × 宽度`——档 0 阶 0 是 **44** 字节，阶 1 是 44 + 9×4 = 80，档 2 阶 3 是 24 + 45 = **69**。
+   - **测试（6 个用例、43 条断言）**：档 0 的宽度与**三条偏移恒等式**；档 1/2 的宽度与恒等式 + 只有谐波宽度不同；未定义档位全零；**谐波索引表的 9 个值逐个核对** + 第二/三带的端点；越界四个；`splatStride` 四个取值。
+   - **验证**：核心 **1178 用例 / 208,964 断言**（+6 / +43）、addons、`primitive-geometry`、`port-audit`、Vulkan 全绿。
+   - **剩余**：`parseHeader`/`parseSectionHeader`/`readSection` 与三档解压到中心/协方差/颜色。
 70. **第 520 轮：完整 Vulkan 套件 211/211 全绿，耗时 270.72 秒**。
    - 命令：`ctest --test-dir build-vulkan -j 4 -E "lights-states" --output-on-failure`（仍排除第 46 条那个已知项；它在 Vulkan 构建里同样慢）。
    - 结果：**100% tests passed, 0 tests failed out of 211**，总耗时 **270.72 秒**。对比同一套件在 **Debug** 配置下的 **3784.56 秒 / 2 失败**，差了约 14 倍——再次印证第 69 条"是构建类型不是代码"的结论。

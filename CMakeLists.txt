@@ -146,6 +146,7 @@ target_sources(threecpp PRIVATE
     src/loaders/IESLoader.cpp
     src/loaders/TIFFLoader.cpp
     src/loaders/GaussianSplatPLYLoader.cpp
+    src/loaders/KSPLATLoader.cpp
     src/loaders/CubeTextureLoader.cpp
     src/extras/ImageUtils.cpp
     src/extras/PMREMGenerator.cpp

@@ -113,6 +113,7 @@ add_executable(THREECPPTests
         unit/src/loaders/GaussianSplatPLY.tests.cpp
         unit/src/loaders/GaussianSplatPLYMapping.tests.cpp
         unit/src/loaders/GaussianSplatPLYConvert.tests.cpp
+        unit/src/loaders/KSPLATLoader.tests.cpp
         unit/src/cameras/StereoCamera.tests.cpp
         unit/src/audio/AudioContext.tests.cpp
         unit/src/audio/Audio.tests.cpp
