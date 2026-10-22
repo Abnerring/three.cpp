@@ -655,6 +655,13 @@
    - **精度教训（本轮花了不少时间）**：端口用 `HIGH_PRECISION` 存这些量，**中间计算也有舍入**，所以"double 结果再 `Math.fround`"并不等于端口算出来的 float。最终用 **1e−6 相对容差** 比较计算型断言，而**结构型断言（0、1、2 这类精确值）仍用 `==`**。这是诚实的边界：不是放水，是承认 float 与 double 的差异。
    - **两处端口命名差异**：`Euler` 的顺序枚举是**顶层的 `EulerOrder`**，不是 `Euler::Order`；`Box3` 字段是 `min`/`max`。
    - **验证**：核心 **787 用例 / 206,036 断言**（+3 / +29）、`primitive-geometry`、`port-audit` 全绿（后两者一度报 1，单独重跑即通过——是构建尚未结束时的瞬时状态）。
+151. **第 90 轮：发现"差集找测试"这个方法有盲点，曲线家族其实已经被覆盖**。
+   - **本轮想做的事**：给曲线家族（`EllipseCurve`/`ArcCurve`/`SplineCurve`/`CatmullRomCurve3`）补测试。按第 89 条教训先列了 `Object.getOwnPropertyNames`，拿到 r187 的真实方法集（`EllipseCurve`: constructor/getPoint/copy/toJSON/fromJSON；`ArcCurve` 只有 constructor——它继承；`SplineCurve`/`CatmullRomCurve3` 同 `EllipseCurve`），并从 node 取到参考值：椭圆弧 p(0)=(2,0)、p(0.5)=(0,1)、p(1)=(−2,0)、`getLength()`=**4.844174307745**、`arcLengthDivisions`=**200**；`ArcCurve` 的 p(0.5)=(0,2)；样条与 CatmullRom 的中点恰为中间控制点。
+   - **结果写成测试后编译失败**：`SplineCurve::Points` 是 `std::vector<std::shared_ptr<Vector>>`，不是 `std::vector<Vector2>`——我的初始化列表类型不对。
+   - **更重要的发现**：列表里**已经存在** `test/unit/src/extras/curves/RemainingCurves.tests.cpp`（**177 行**），里面已经有 `EllipseCurve` 与 `ArcCurve` 的测试（`isEllipseCurve`、`type`、克隆类型、copy 语义、顺时针/环绕角度）。**我要写的东西基本已有。**
+   - **方法论的盲点（重要）**：第 85 轮那个"`src` 与 `test` 基名做差集"的扫描**会过度报告**——测试文件不一定叫 `<类名>.tests.cpp`，可以叫 `RemainingCurves.tests.cpp` 覆盖一整个家族。所以那份"310 个没有专属测试"的名单**偏大**，必须**再按内容 grep 一遍**（例如搜 `TEST_CASE` + 类名）才能确认真的没测。
+   - **处理**：删掉我这份冗余测试、`git checkout` 还原 `test/CMakeLists.txt`，树回到 **787 用例 / 206,036 断言**、`primitive-geometry`、`port-audit` 全绿（**没有丢任何东西**）。
+   - **下一轮的正确流程**：① 先 `grep -r "TEST_CASE" test --include=*.cpp` 找**内容层面**是否已有该类的用例；② 没有才写；③ 写之前先看类的真实构造签名（`Points` 是 `shared_ptr` 向量）。
 70. **第 520 轮：完整 Vulkan 套件 211/211 全绿，耗时 270.72 秒**。
    - 命令：`ctest --test-dir build-vulkan -j 4 -E "lights-states" --output-on-failure`（仍排除第 46 条那个已知项；它在 Vulkan 构建里同样慢）。
    - 结果：**100% tests passed, 0 tests failed out of 211**，总耗时 **270.72 秒**。对比同一套件在 **Debug** 配置下的 **3784.56 秒 / 2 失败**，差了约 14 倍——再次印证第 69 条"是构建类型不是代码"的结论。
