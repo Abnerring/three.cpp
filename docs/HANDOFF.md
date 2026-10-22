@@ -422,6 +422,12 @@
    - **删除顺序（按第 114 条规矩）**：先 `framebuffer`（含 `destroyTargets` 里的两处使用）→ 构建 0 错误；再 `faceView`、`faceFramebuffer`、`targetLayers`、`initialized`（含 `beginFrame` 里 `!initialized` 的两处使用）、最后 `colorImage`/`depthImage`（`} colorImage, depthImage;` **原位替换**成 `};`，再删 `destroyImage` 两行）。中途发现 `faceView`/`initialized`/`destroyImage` 四项因为上一个脚本的异常没执行，用**行号索引 + 从大到小**一次性补齐，构建仍是 0 错误。
    - **验证（五项门禁）**：核心 **747 / 205,735** ✓、`primitive-geometry` ✓、`port-audit` ✓、`threecpp_vulkan` **0 错误** ✓、`--cube` **0** ✓。
    - **意义**：这是 PMREM 卷积的**最后一块基建**——现在渲染器持有的是"每目标一份"的 GPU 存储，`spareTarget` 证明可以同时存在第二套。下一步就是让 `setRenderTarget` 按 `RenderTarget*` 缓存/切换不同的 `GpuTarget`，从而让 blur 能"读一个立方体、写另一个"。
+117. **第 56 轮：渲染器现在按渲染目标缓存 GPU 存储，`setRenderTarget` 会在目标之间真正切换**。
+   - **实现**：`Impl` 增加 `const RenderTarget* activeKey` 与 `std::unordered_map<const RenderTarget*, std::unique_ptr<GpuTarget>> parkedTargets`；`useTarget(key)` 用**移动语义**把当前 `active` 存进 map、再把请求的那个取出来——所以同一时刻只有一份在 `active` 里，其余安静地停在 map 中，**互不干扰**。`setRenderTarget` 在绑定/解绑时分别调 `useTarget(renderTarget.get())` 与 `useTarget(nullptr)`。
+   - **为什么这样设计**：`GpuTarget` 里有 `VkImage`/`VkFramebuffer` 这类不可拷贝资源，移动语义刚好合适；map 只在切换时参与，热路径（`beginFrame`/`endFrame`）仍然只碰 `active`，没有引入额外查找。
+   - **验证（五项门禁）**：核心 **747 / 205,735** ✓、`primitive-geometry` ✓、`port-audit` ✓、`threecpp_vulkan` **0 错误** ✓、`--cube` **0** ✓——而 `--cube` 本身就会在立方体目标与 `nullptr` 之间来回切换，等于顺手验证了 park/restore。
+   - **现在的意义**：PMREM 的 ping-pong 前提**全部就绪**——两个不同的立方体目标可以各自持有 GPU 存储，一个在 `active` 里被写、另一个停在 `parkedTargets` 里被采样。
+   - **下一步**：给 `drawPmremFace` 增加 blur 变体（绑 `pmremBlurPipelineHandle`、push 三个矩阵 + `sigma`、描述符用**源目标**的 `cubeView` 而不是 2D 视图），然后写"源立方体 → 逐级 lod 模糊"的编排，用纯色源做验收。
 70. **第 520 轮：完整 Vulkan 套件 211/211 全绿，耗时 270.72 秒**。
    - 命令：`ctest --test-dir build-vulkan -j 4 -E "lights-states" --output-on-failure`（仍排除第 46 条那个已知项；它在 Vulkan 构建里同样慢）。
    - 结果：**100% tests passed, 0 tests failed out of 211**，总耗时 **270.72 秒**。对比同一套件在 **Debug** 配置下的 **3784.56 秒 / 2 失败**，差了约 14 倍——再次印证第 69 条"是构建类型不是代码"的结论。

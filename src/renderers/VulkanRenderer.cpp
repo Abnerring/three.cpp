@@ -418,6 +418,21 @@ struct VulkanRenderer::Impl {
     std::unique_ptr<GpuTarget> spareTarget;
     // Mirrors the active target while the draw path is migrated onto it.
     std::unique_ptr<GpuTarget> active;
+    // Targets not currently bound keep their storage here, keyed by the render target.
+    const RenderTarget* activeKey = nullptr;
+    std::unordered_map<const RenderTarget*, std::unique_ptr<GpuTarget>> parkedTargets;
+    // Parks the bound target and brings the requested one in, transferring ownership.
+    void useTarget(const RenderTarget* key) {
+        if (activeKey == key) return;
+        if (activeKey) parkedTargets[activeKey] = std::move(active);
+        active.reset();
+        activeKey = key;
+        if (!key) return;
+        const auto found = parkedTargets.find(key);
+        if (found == parkedTargets.end()) return;
+        active = std::move(found->second);
+        parkedTargets.erase(found);
+    }
     using BufferRef = std::shared_ptr<Buffer>;
     // The command adapter owns the upload buffers independently of the decoded
     // float/uint32 draw buffers. Reads below come from mapped Vulkan memory.
@@ -2683,7 +2698,8 @@ void VulkanRenderer::setRenderTarget(std::shared_ptr<RenderTarget> target,
         throw std::logic_error("setRenderTarget inside render callbacks is not supported yet");
     if (target) {
         if (!impl->renderTarget) { impl->savedWidth = impl->width; impl->savedHeight = impl->height; }
-        impl->renderTarget = std::move(target);
+        impl->renderTarget = target;
+        impl->useTarget(impl->renderTarget.get());
         impl->activeCubeFace = activeCubeFace;
         if (activeMipmapLevel != 0)
             throw std::logic_error("render target mip levels are not implemented yet");
