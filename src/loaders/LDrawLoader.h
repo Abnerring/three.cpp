@@ -1,5 +1,6 @@
 #pragma once
 #include <array>
+#include <vector>
 #include <string>
 
 // Port of the line cursor in examples/jsm/loaders/LDrawLoader.js at the pinned revision. The
@@ -60,4 +61,15 @@ class LDrawLoader {
     // number or a name, and the nine rotation numbers are read one at a time in the order the
     // format writes them. The file name is whatever follows, taken as one token.
     static ReferenceLine parseReferenceLine(LineParser& parser);
+
+    // What a comment line names, if anything. A line that begins with a bare comment names
+    // nothing and is ignored.
+    enum class MetaKind { None, LDrawOrg, Colour, Category, Keywords, File, Bfc };
+
+    static MetaKind metaKind(const std::string& token);
+
+    // The keywords a keywords line carries: the rest of the line split on commas with each
+    // piece trimmed. A piece is produced even when the rest is empty, because splitting an
+    // empty string gives one empty piece rather than none.
+    static std::vector<std::string> parseKeywords(const std::string& rest);
 };

@@ -84,3 +84,35 @@ LDrawLoader::ReferenceLine LDrawLoader::parseReferenceLine(LineParser& parser) {
     reference.fileName = parser.getToken();
     return reference;
 }
+
+LDrawLoader::MetaKind LDrawLoader::metaKind(const std::string& token) {
+    // The six meta names the loader reacts to; every other comment names nothing.
+    if (token == "!LDRAW_ORG") return MetaKind::LDrawOrg;
+    if (token == "!COLOUR") return MetaKind::Colour;
+    if (token == "!CATEGORY") return MetaKind::Category;
+    if (token == "!KEYWORDS") return MetaKind::Keywords;
+    if (token == "FILE") return MetaKind::File;
+    if (token == "BFC") return MetaKind::Bfc;
+    return MetaKind::None;
+}
+
+std::vector<std::string> LDrawLoader::parseKeywords(const std::string& rest) {
+    std::vector<std::string> keywords;
+    std::size_t at = 0;
+    while (true) {
+        const std::size_t comma = rest.find(',', at);
+        const std::size_t stop = comma == std::string::npos ? rest.size() : comma;
+        std::string piece = rest.substr(at, stop - at);
+        // Each piece is trimmed of the whitespace around it.
+        std::size_t begin = 0;
+        while (begin < piece.size() && (piece[begin] == ' ' || piece[begin] == '\t')) ++begin;
+        std::size_t last = piece.size();
+        while (last > begin && (piece[last - 1] == ' ' || piece[last - 1] == '\t')) --last;
+        keywords.push_back(piece.substr(begin, last - begin));
+
+        if (comma == std::string::npos) break;
+        at = comma + 1;
+    }
+    // Splitting always gives at least one piece, even an empty rest.
+    return keywords;
+}
