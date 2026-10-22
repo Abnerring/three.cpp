@@ -155,6 +155,7 @@ add_executable(THREECPPTests
         unit/src/loaders/LDrawMeta.tests.cpp
         unit/src/loaders/LDrawColour.tests.cpp
         unit/src/loaders/LDrawGeometry.tests.cpp
+        unit/src/loaders/LDrawPart.tests.cpp
         unit/src/cameras/StereoCamera.tests.cpp
         unit/src/audio/AudioContext.tests.cpp
         unit/src/audio/Audio.tests.cpp

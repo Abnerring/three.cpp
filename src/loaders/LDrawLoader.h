@@ -100,4 +100,20 @@ class LDrawLoader {
 
     // How many face records a triangle contributes, which is two when it shows from both sides.
     static int triangleFaceCount(bool doubleSided);
+
+    // A part file name tidied for lookup: the whitespace around it removed and every backslash
+    // turned into a forward slash, since the format is written on systems that use the former.
+    static std::string normalizeFileName(const std::string& raw);
+
+    // Where a part actually lives. A name the caller mapped is used as given; otherwise the two
+    // standard folders are taken into account, so a name under s is looked for under parts and
+    // one under 48 under p, keeping the rest of the path as it was.
+    static std::string resolveFileName(const std::string& name,
+                                       const std::vector<std::string>& mappedNames,
+                                       const std::vector<std::string>& mappedPaths);
+
+    // The transform a reference places its part with. The nine rotation numbers arrive row by
+    // row and the position follows, so the four by four is written out in the column major
+    // order the engine stores.
+    static std::array<double, 16> referenceMatrix(const ReferenceLine& reference);
 };

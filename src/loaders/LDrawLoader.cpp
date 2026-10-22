@@ -180,3 +180,57 @@ int LDrawLoader::triangleFaceCount(bool doubleSided) {
     // A face that shows from both sides contributes two records.
     return doubleSided ? 2 : 1;
 }
+
+std::string LDrawLoader::normalizeFileName(const std::string& raw) {
+    // The whitespace around the name is not part of it.
+    std::size_t begin = 0;
+    while (begin < raw.size() && (raw[begin] == ' ' || raw[begin] == '\t')) ++begin;
+    std::size_t last = raw.size();
+    while (last > begin && (raw[last - 1] == ' ' || raw[last - 1] == '\t')) --last;
+
+    // Every backslash becomes a forward slash, since the files are written on systems that use
+    // the former as a separator.
+    std::string name = raw.substr(begin, last - begin);
+    for (char& c : name) {
+        if (c == '\\') c = '/';
+    }
+    return name;
+}
+
+std::string LDrawLoader::resolveFileName(const std::string& name,
+                                         const std::vector<std::string>& mappedNames,
+                                         const std::vector<std::string>& mappedPaths) {
+    // A name the caller mapped is used exactly as they gave it.
+    for (std::size_t i = 0; i < mappedNames.size() && i < mappedPaths.size(); ++i) {
+        if (mappedNames[i] == name) return mappedPaths[i];
+    }
+    // Otherwise the two standard folders are looked for, and the folder itself is kept as part
+    // of the path rather than replaced.
+    if (name.rfind("s/", 0) == 0) return "parts/" + name;
+    if (name.rfind("48/", 0) == 0) return "p/" + name;
+    return name;
+}
+
+std::array<double, 16> LDrawLoader::referenceMatrix(const ReferenceLine& reference) {
+    std::array<double, 16> matrix{};
+    // The nine numbers are a rotation written row by row, so a column of the stored matrix
+    // gathers one number from each row.
+    matrix[0] = reference.rotation[0];
+    matrix[1] = reference.rotation[3];
+    matrix[2] = reference.rotation[6];
+    matrix[3] = 0;
+    matrix[4] = reference.rotation[1];
+    matrix[5] = reference.rotation[4];
+    matrix[6] = reference.rotation[7];
+    matrix[7] = 0;
+    matrix[8] = reference.rotation[2];
+    matrix[9] = reference.rotation[5];
+    matrix[10] = reference.rotation[8];
+    matrix[11] = 0;
+    // The position is the fourth column.
+    matrix[12] = reference.position[0];
+    matrix[13] = reference.position[1];
+    matrix[14] = reference.position[2];
+    matrix[15] = 1;
+    return matrix;
+}
