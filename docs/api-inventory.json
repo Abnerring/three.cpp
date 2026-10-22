@@ -180,7 +180,7 @@
   },
   "parser": {
     "name": "acorn",
-    "version": "8.11.2",
+    "version": "8.8.2",
     "ecmaVersion": "latest",
     "sourceType": "module-with-script-fallback"
   },
