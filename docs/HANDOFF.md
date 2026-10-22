@@ -183,6 +183,15 @@
    - **确认与我的改动无关**：把未提交的改动全部 `git checkout` 掉、回到**之前通过过的提交 `4751e1a`**，重新构建后**同样失败**，且 `ctest -R "^threecpp\.vulkan$"` 这次只用 **2.68 秒**就失败（之前同一提交是 **99.70 秒通过**）。同一二进制、同一驱动，先前通过、现在失败，说明是**环境侧发生变化**（GPU 驱动状态、后台占用或设备重置），不是仓库里的代码。
    - **处理**：本轮改动**全部撤回**，仓库停留在已验证通过的 `4751e1a`（核心 739 / 205,653、差分与 audit 全绿）。六面渲染的实现细节写在这里，下一轮可直接重做：`resize` 接层数 → `selectFace` 建逐面视图/framebuffer → `beginFrame` 选 fb → `setRenderTarget` 接 face → 六面色测试。
    - **下次开工前先做一件事**：先单跑 `VulkanRendererTests` 确认 mipmap 用例恢复了，再动手；否则写了也验证不了。
+77. **第 6 轮：两个构建目录被外部清理删除，正在重建；顺带记下"不要捕获 /showIncludes 输出"**。
+   - 现象：第 5 轮结束时 `build/` 与 `build-vulkan/` **都不存在了**（不是 git 操作，`git status` 一直干净；`build/` 里连 `bin/THREECPPTests.exe` 都没了）。之前 `build/` 是被单独删过一次，这次是两个一起。
+   - 影响：所有门禁（核心、addons、差分探针、ctest）在重建完成前**无法验证**；`docs/HANDOFF.md` 里那些断言数因此只能引用删除前的实测值。
+   - 重建命令（两条，都需要 vcvars 且**必须显式给 `CMAKE_BUILD_TYPE=RelWithDebInfo`**，否则 Ninja 单配置会落到 Debug，慢十倍以上——见第 69 条）：
+     `cmake -S . -B build -G Ninja -DCMAKE_BUILD_TYPE=RelWithDebInfo -DTHREEJS_SOURCE_DIR=D:\project\DX\GitHub\three.js`
+     `cmake -S . -B build-vulkan -G Ninja -DCMAKE_BUILD_TYPE=RelWithDebInfo -DTHREEJS_SOURCE_DIR=D:\project\DX\GitHub\three.js -DTHREECPP_BUILD_VULKAN=ON`
+     然后各自 `cmake --build <dir> --parallel`。
+   - **工具教训（第 N 次重复）**：MSVC + CMake 的依赖扫描会打印海量 `注意: 包含文件: …`（含 `/showIncludes`），**一次构建能刷出 18 万字符**。所以：① 构建输出**重定向到文件**，只 `Select-String 'error C|error LNK|FAILED:'`；② **不要**在 `job_output` 里等一个不重定向的构建任务——会把整段噪音灌进上下文。
+   - **下一步**：两个构建完成后，先跑 `VulkanRendererTests` 确认 mipmap 用例是否恢复；恢复了就按第 76 条一次重做六面渲染。
 70. **第 520 轮：完整 Vulkan 套件 211/211 全绿，耗时 270.72 秒**。
    - 命令：`ctest --test-dir build-vulkan -j 4 -E "lights-states" --output-on-failure`（仍排除第 46 条那个已知项；它在 Vulkan 构建里同样慢）。
    - 结果：**100% tests passed, 0 tests failed out of 211**，总耗时 **270.72 秒**。对比同一套件在 **Debug** 配置下的 **3784.56 秒 / 2 失败**，差了约 14 倍——再次印证第 69 条"是构建类型不是代码"的结论。
