@@ -68,4 +68,10 @@ class VOXLoader {
     // voxel sits and left at zero elsewhere. The palette is not consulted, so the texture
     // records shape rather than colour. Cells outside the declared size are ignored.
     static std::vector<std::uint8_t> buildOccupancy(const std::vector<Voxel>& voxels, const Size& size);
+
+    // Builds the volume the mesher walks: one byte per cell holding the palette index of the
+    // voxel there, or zero when the cell is empty. Note this differs from the occupancy grid,
+    // which writes a flat two hundred and fifty five and is for the texture path.
+    static std::vector<std::uint8_t> buildColorVolume(const std::vector<Voxel>& voxels,
+                                                      const Size& size);
 };

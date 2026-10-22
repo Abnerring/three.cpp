@@ -139,3 +139,23 @@ std::vector<std::uint8_t> VOXLoader::buildOccupancy(const std::vector<Voxel>& vo
     }
     return array;
 }
+
+std::vector<std::uint8_t> VOXLoader::buildColorVolume(const std::vector<Voxel>& voxels,
+                                                      const Size& size) {
+    if (size.x <= 0 || size.y <= 0 || size.z <= 0) return {};
+    const std::size_t plane = static_cast<std::size_t>(size.x);
+    const std::size_t slice = plane * static_cast<std::size_t>(size.y);
+    std::vector<std::uint8_t> volume(slice * static_cast<std::size_t>(size.z), 0);
+
+    for (const auto& voxel : voxels) {
+        // A voxel outside the grid would land on another cell, so it is skipped.
+        if (voxel.x < 0 || voxel.y < 0 || voxel.z < 0) continue;
+        if (voxel.x >= size.x || voxel.y >= size.y || voxel.z >= size.z) continue;
+        const std::size_t index = static_cast<std::size_t>(voxel.x) +
+                                  static_cast<std::size_t>(voxel.y) * plane +
+                                  static_cast<std::size_t>(voxel.z) * slice;
+        // The mesher reads the palette index back out, so it is stored as it came.
+        volume[index] = static_cast<std::uint8_t>(voxel.colorIndex);
+    }
+    return volume;
+}
