@@ -63,4 +63,9 @@ class VOXLoader {
     // two hundred and fifty six entries, but the count is taken from the chunk size.
     static std::vector<std::array<std::uint8_t, 4>> readRgba(const std::vector<std::uint8_t>& buffer,
                                                              const Chunk& chunk);
+
+    // Builds the occupancy grid the 3D texture uses: one byte per cell, set to 255 where a
+    // voxel sits and left at zero elsewhere. The palette is not consulted, so the texture
+    // records shape rather than colour. Cells outside the declared size are ignored.
+    static std::vector<std::uint8_t> buildOccupancy(const std::vector<Voxel>& voxels, const Size& size);
 };

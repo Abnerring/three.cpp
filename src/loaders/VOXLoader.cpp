@@ -119,3 +119,23 @@ std::vector<std::array<std::uint8_t, 4>> VOXLoader::readRgba(const std::vector<s
     }
     return palette;
 }
+
+std::vector<std::uint8_t> VOXLoader::buildOccupancy(const std::vector<Voxel>& voxels,
+                                                    const Size& size) {
+    if (size.x <= 0 || size.y <= 0 || size.z <= 0) return {};
+    const std::size_t plane = static_cast<std::size_t>(size.x);
+    const std::size_t slice = plane * static_cast<std::size_t>(size.y);
+    std::vector<std::uint8_t> array(slice * static_cast<std::size_t>(size.z), 0);
+
+    for (const auto& voxel : voxels) {
+        // A voxel outside the declared grid would land on another cell, so it is skipped.
+        if (voxel.x < 0 || voxel.y < 0 || voxel.z < 0) continue;
+        if (voxel.x >= size.x || voxel.y >= size.y || voxel.z >= size.z) continue;
+        // Rows run along x, then y, then z, which is the order the texture expects.
+        const std::size_t index = static_cast<std::size_t>(voxel.x) +
+                                  static_cast<std::size_t>(voxel.y) * plane +
+                                  static_cast<std::size_t>(voxel.z) * slice;
+        array[index] = 255;
+    }
+    return array;
+}
