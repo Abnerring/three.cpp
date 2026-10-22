@@ -229,4 +229,16 @@ class LDrawLoader {
     // looks for the word anywhere in the declaration and ignores case, so a primitive written
     // as part of a longer name still counts, while the subpart word is still exact.
     static bool isPrimitiveType(const std::string& type);
+
+    // The two flags a reference line takes with it. Both are set by an earlier directive and
+    // belong to the next reference alone, so reading them clears them.
+    struct ReferenceFlags {
+        bool inverted = false;
+        bool startingBuildingStep = false;
+    };
+
+    // Takes the flags a reference line carries: the inversion from the state and the step
+    // marker from wherever the caller keeps it, both cleared as they are read. A second call
+    // straight afterwards therefore gives two quiet flags.
+    static ReferenceFlags consumeReferenceFlags(BfcState& state, bool& startingBuildingStep);
 };

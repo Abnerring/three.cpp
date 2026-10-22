@@ -448,3 +448,14 @@ bool LDrawLoader::isPrimitiveType(const std::string& type) {
     // The subpart word is exact and case sensitive.
     return type == "Subpart";
 }
+
+LDrawLoader::ReferenceFlags LDrawLoader::consumeReferenceFlags(BfcState& state,
+                                                              bool& startingBuildingStep) {
+    ReferenceFlags flags;
+    // Both are read and then cleared, so they belong to exactly one reference.
+    flags.inverted = state.inverted;
+    flags.startingBuildingStep = startingBuildingStep;
+    state.inverted = false;
+    startingBuildingStep = false;
+    return flags;
+}
