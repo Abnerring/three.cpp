@@ -1,4 +1,4 @@
-﻿#pragma once
+#pragma once
 #include <array>
 #include <map>
 #include <string>
@@ -29,4 +29,13 @@ class NRRDLoader {
     // Fills the direction vectors: the identity when the file gave no space directions, with
     // each row scaled by the matching spacing when spacings were declared.
     static void resolveVectors(Header& header);
+
+    // Reads the body when it is written as text. Numbers are separated by whitespace, tab
+    // through carriage return and the space character, and the count is the product of the
+    // sizes. A floating point type parses fractions while an integer type truncates them,
+    // which is the difference between parseFloat and parseInt upstream. The hex encoding
+    // reads base sixteen.
+    static std::vector<double> parseTextData(const std::string& text,
+                                             const std::vector<double>& sizes,
+                                             bool floating, bool hex);
 };

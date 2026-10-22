@@ -124,3 +124,37 @@ void NRRDLoader::resolveVectors(Header& header) {
         for (std::size_t j = 0; j < 3; ++j) header.vectors[i][j] *= spacing;
     }
 }
+
+std::vector<double> NRRDLoader::parseTextData(const std::string& text,
+                                              const std::vector<double>& sizes, bool floating,
+                                              bool hex) {
+    // The body holds one value per voxel, so the count is the product of the sizes.
+    std::size_t expected = 1;
+    for (const double size : sizes) {
+        if (size <= 0) continue;
+        expected *= static_cast<std::size_t>(size);
+    }
+
+    std::vector<double> out;
+    out.reserve(expected);
+    std::string number;
+
+    const auto flush = [&]() {
+        if (number.empty()) return;
+        if (out.size() < expected) {
+            // A floating point type keeps the fraction, an integer type stops at the point.
+            if (floating) out.push_back(std::strtod(number.c_str(), nullptr));
+            else out.push_back(static_cast<double>(std::strtoll(number.c_str(), nullptr, hex ? 16 : 10)));
+        }
+        number.clear();
+    };
+
+    for (const char character : text) {
+        const int code = static_cast<unsigned char>(character);
+        // Tab through carriage return and the space separate numbers; everything else joins.
+        if ((code < 9 || code > 13) && code != 32) number.push_back(character);
+        else flush();
+    }
+    flush();
+    return out;
+}
