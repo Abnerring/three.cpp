@@ -101,6 +101,7 @@ add_executable(THREECPPTests
         unit/src/loaders/VOXDict.tests.cpp
         unit/src/loaders/VOXTransform.tests.cpp
         unit/src/loaders/VOXScene.tests.cpp
+        unit/src/loaders/SPZLoader.tests.cpp
         unit/src/cameras/StereoCamera.tests.cpp
         unit/src/audio/AudioContext.tests.cpp
         unit/src/audio/Audio.tests.cpp
