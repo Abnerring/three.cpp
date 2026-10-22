@@ -70,3 +70,52 @@ TEST_CASE("IESLoader splits lines and strips carriage returns") {
     REQUIRE(lines[0] == "a");
     REQUIRE(lines[2] == "c");
 }
+TEST_CASE("IESLoader reads the three tables in file order") {
+    // Two vertical angles, two horizontal, then one row of readings per horizontal angle.
+    const std::vector<std::string> lines{"0 90", "0 45", "1 2", "3 4"};
+    std::size_t cursor = 0;
+    const auto tables = IESLoader::readTables(lines, cursor, 2, 2);
+    REQUIRE(tables.verticalAngles.size() == 2);
+    REQUIRE(tables.verticalAngles[1] == 90.0);
+    REQUIRE(tables.horizontalAngles.size() == 2);
+    REQUIRE(tables.horizontalAngles[1] == 45.0);
+    // The outer index is the horizontal angle, so there are two rows of two.
+    REQUIRE(tables.candela.size() == 2);
+    REQUIRE(tables.candela[0].size() == 2);
+    REQUIRE(tables.candela[0][0] == 1.0);
+    REQUIRE(tables.candela[1][0] == 3.0);
+    REQUIRE(tables.candela[1][1] == 4.0);
+    REQUIRE(cursor == 4);
+}
+
+TEST_CASE("IESLoader scales the readings and shifts the horizontal angles") {
+    std::vector<std::string> lines{"0 90", "10 55", "1 2", "3 4"};
+    std::size_t cursor = 0;
+    auto tables = IESLoader::readTables(lines, cursor, 2, 2);
+    // The multiplier and both ballast factors multiply every reading.
+    const double maximum = IESLoader::normalizeTables(tables, 2.0, 1.0, 1.0);
+    REQUIRE(tables.candela[0][0] == 2.0);
+    REQUIRE(tables.candela[1][1] == 8.0);
+    // The largest scaled reading is reported.
+    REQUIRE(maximum == 8.0);
+    // The horizontal angles now start at zero and keep their spacing.
+    REQUIRE(tables.horizontalAngles[0] == 0.0);
+    REQUIRE(tables.horizontalAngles[1] == 45.0);
+}
+
+TEST_CASE("IESLoader applies all three factors") {
+    std::vector<std::string> lines{"0", "0", "1"};
+    std::size_t cursor = 0;
+    auto tables = IESLoader::readTables(lines, cursor, 1, 1);
+    // Four tenths times five tenths times one is a fifth.
+    IESLoader::normalizeTables(tables, 1.0, 0.4, 0.5);
+    REQUIRE(tables.candela[0][0] == Approx(0.2).epsilon(1e-12));
+}
+
+TEST_CASE("IESLoader refuses empty tables") {
+    const std::vector<std::string> lines{"0"};
+    std::size_t cursor = 0;
+    // A zero count in either direction means there is nothing to read.
+    REQUIRE(IESLoader::readTables(lines, cursor, 0, 3).candela.empty());
+    REQUIRE(IESLoader::readTables(lines, cursor, 3, 0).candela.empty());
+}

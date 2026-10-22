@@ -101,3 +101,41 @@ IESLoader::LampFactors IESLoader::readLampFactors(const std::vector<std::string>
     factors.inputWatts = numbers[2];
     return factors;
 }
+
+IESLoader::Tables IESLoader::readTables(const std::vector<std::string>& lines,
+                                        std::size_t& cursor, int numVertical, int numHorizontal) {
+    Tables tables;
+    if (numVertical <= 0 || numHorizontal <= 0) return tables;
+
+    tables.verticalAngles = readNumbers(lines, cursor, static_cast<std::size_t>(numVertical));
+    tables.horizontalAngles = readNumbers(lines, cursor, static_cast<std::size_t>(numHorizontal));
+
+    // One row of vertical readings per horizontal angle.
+    tables.candela.reserve(static_cast<std::size_t>(numHorizontal));
+    for (int i = 0; i < numHorizontal; ++i)
+        tables.candela.push_back(readNumbers(lines, cursor, static_cast<std::size_t>(numVertical)));
+    return tables;
+}
+
+double IESLoader::normalizeTables(Tables& tables, double multiplier, double ballast,
+                                  double ballastLightOutput) {
+    // The readings are relative, so they scale by the lamp multiplier and both ballast factors.
+    const double scale = multiplier * ballast * ballastLightOutput;
+    for (auto& row : tables.candela)
+        for (auto& value : row) value *= scale;
+
+    // A missing horizontal table has no base angle to shift by.
+    if (tables.horizontalAngles.empty()) return -1.0;
+
+    // The measured range starts at its first angle, so shifting makes it begin at zero and lets
+    // the sampler mirror it across a full cycle.
+    const double baseAngle = tables.horizontalAngles[0];
+    double maximum = -1.0;
+    for (std::size_t i = 0; i < tables.horizontalAngles.size(); ++i) {
+        tables.horizontalAngles[i] -= baseAngle;
+        if (i >= tables.candela.size()) continue;
+        for (const double value : tables.candela[i])
+            if (value > maximum) maximum = value;
+    }
+    return maximum;
+}

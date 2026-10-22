@@ -60,4 +60,23 @@ class IESLoader {
 
     // Reads the three factors the same way.
     static LampFactors readLampFactors(const std::vector<std::string>& lines, std::size_t& cursor);
+
+    // The three tables of a lamp: the vertical angles, the horizontal angles and the candela
+    // readings. The readings are indexed by horizontal first and vertical second, which is the
+    // order the file writes them in and the opposite of what a row major reading would suggest.
+    struct Tables {
+        std::vector<double> verticalAngles;
+        std::vector<double> horizontalAngles;
+        std::vector<std::vector<double>> candela;
+    };
+
+    // Reads the vertical angles, then the horizontal ones, then one row of candela values per
+    // horizontal angle.
+    static Tables readTables(const std::vector<std::string>& lines, std::size_t& cursor,
+                             int numVertical, int numHorizontal);
+
+    // Scales every reading by the multiplier and the two ballast factors, then shifts the
+    // horizontal angles so the first one is zero, returning the largest scaled reading.
+    static double normalizeTables(Tables& tables, double multiplier, double ballast,
+                                  double ballastLightOutput);
 };
