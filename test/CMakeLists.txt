@@ -28,6 +28,7 @@ add_executable(THREECPPTests
         unit/src/cameras/CubeCamera.tests.cpp
         unit/src/math/Box3.tests.cpp
         unit/src/math/SpherePlaneTriangle.tests.cpp
+        unit/src/math/RayFrustum.tests.cpp
         unit/src/cameras/StereoCamera.tests.cpp
         unit/src/audio/AudioContext.tests.cpp
         unit/src/audio/Audio.tests.cpp
