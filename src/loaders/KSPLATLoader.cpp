@@ -293,3 +293,46 @@ KSPLATLoader::SectionLayout KSPLATLoader::sectionLayout(const SectionHeader& sec
     result.storageSize = result.bucketsStorageSize + result.splatDataSize;
     return result;
 }
+
+KSPLATLoader::Row KSPLATLoader::decodeRow(const std::vector<std::uint8_t>& buffer,
+                                          std::size_t rowOffset, const SectionHeader& section,
+                                          const Compression& layout,
+                                          double bucketCoordinate[3]) {
+    Row row;
+    if (rowOffset + static_cast<std::size_t>(layout.bytesPerCenter) > buffer.size()) return row;
+
+    if (layout.bytesPerCenter == 12) {
+        // Uncompressed: three plain floats, with no bucket to add.
+        for (int axis = 0; axis < 3; ++axis)
+            row.center[axis] = readFloat32(buffer, rowOffset + static_cast<std::size_t>(axis) * 4);
+    } else {
+        // Compressed: three unsigned shorts measured from the middle of the range, each placed
+        // by its own bucket coordinate.
+        for (int axis = 0; axis < 3; ++axis) {
+            const std::uint32_t stored =
+                readUint16(buffer, rowOffset + static_cast<std::size_t>(axis) * 2);
+            row.center[axis] = decodeCenter(stored, section, bucketCoordinate[axis]);
+        }
+    }
+
+    // Three scales and four rotation components, packed tight at their own offsets.
+    for (int axis = 0; axis < 3; ++axis) {
+        const std::size_t at = rowOffset + static_cast<std::size_t>(layout.scaleOffset) +
+                               static_cast<std::size_t>(axis) *
+                                   static_cast<std::size_t>(layout.bytesPerScale / 3);
+        row.scale[axis] = readCompressedFloat(buffer, at, layout.bytesPerScale);
+    }
+    for (int component = 0; component < 4; ++component) {
+        const std::size_t at = rowOffset + static_cast<std::size_t>(layout.rotationOffset) +
+                               static_cast<std::size_t>(component) *
+                                   static_cast<std::size_t>(layout.bytesPerRotation / 4);
+        row.rotation[component] = readCompressedFloat(buffer, at, layout.bytesPerRotation);
+    }
+
+    // The colour is four bytes as they are.
+    const std::size_t colorAt = rowOffset + static_cast<std::size_t>(layout.colorOffset);
+    for (int i = 0; i < 4; ++i)
+        if (colorAt + static_cast<std::size_t>(i) < buffer.size())
+            row.color[i] = buffer[colorAt + static_cast<std::size_t>(i)];
+    return row;
+}

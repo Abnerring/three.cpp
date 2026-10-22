@@ -1374,6 +1374,12 @@
    - **两处小坑**：① 用了 `std::to_string` 但忘了 `#include <string>`，编译报错；② **测试名与第 186 轮重名**（`rejects a short header`），Catch2 直接 `exit 255` 且 `No tests ran`——**改名后正常**。这条以后要记：给新测试起名前**先搜一下有没有同名**。
    - **验证**：核心 **1208 用例 / 209,038 断言**（+8 / +13）、addons、`primitive-geometry`、`port-audit`、Vulkan 全绿。
    - **里程碑（第 190 轮）**：核心 **1208 / 209,038**、addons **155 / 23,996**、差分 **22 组 / 343 场景**、`port-audit` 通过、Vulkan 构建 0 错误且重跑 `--cube` 为 0。**已移植 addon loader 28 / 52**。
+252. **第 191 轮：`KSPLATLoader` 第三层（末）——单行解码**。
+   - **一处必须记住的差异**：`KSPLAT` 的 **scale 是直接值**，不像 `GaussianSplatPLYLoader` 那样存的是**对数**（那个要 `exp`）。两者的协方差计算都交给第 84 轮的 `writeCovariance`，但**喂进去的 scale 来源不同**。
+   - **两条分支**：中心宽度 12 时是三个裸 float32，**完全不用桶坐标**；更窄时是三个 uint16，**每个分量减去量程、乘步长、再加自己的桶坐标**。缩放 3 个、旋转 4 个（**保持 w x y z 顺序**）按各自的偏移与分量宽度读取；颜色是**末尾四个字节**。
+   - **测试（3 个用例、17 条断言）**：完整未压缩行（中心 `1/2/3`、**scale `0.5/0.25/0.125` 原样**、旋转 `w=1`、颜色 `10/20/30/40`）；**压缩行**（中间值落在桶坐标 `10/20/30` 上、半浮点 scale 与旋转都是 1、颜色 7）；**行太短返回默认值**（中心 0、scale 1、旋转 1）而不是越界读。
+   - **验证**：核心 **1211 用例 / 209,055 断言**（+3 / +17）、addons、`primitive-geometry`、`port-audit`、Vulkan 全绿。
+   - **剩余**：把所有行串成段循环并交给 `createGaussianSplatGeometry`。
 70. **第 520 轮：完整 Vulkan 套件 211/211 全绿，耗时 270.72 秒**。
    - 命令：`ctest --test-dir build-vulkan -j 4 -E "lights-states" --output-on-failure`（仍排除第 46 条那个已知项；它在 Vulkan 构建里同样慢）。
    - 结果：**100% tests passed, 0 tests failed out of 211**，总耗时 **270.72 秒**。对比同一套件在 **Debug** 配置下的 **3784.56 秒 / 2 失败**，差了约 14 倍——再次印证第 69 条"是构建类型不是代码"的结论。

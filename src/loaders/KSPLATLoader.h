@@ -141,4 +141,20 @@ class KSPLATLoader {
     // Works out how many bytes one section occupies. The bucket storage counts the optional
     // per bucket coordinates as well as the buckets themselves.
     static SectionLayout sectionLayout(const SectionHeader& section, const Compression& layout);
+
+    // One decoded splat row, before the covariance and colour are computed.
+    struct Row {
+        double center[3] = {0, 0, 0};
+        // The scale is stored directly here, unlike the PLY form which stores its logarithm.
+        double scale[3] = {1, 1, 1};
+        // In w x y z order, as the file writes it.
+        double rotation[4] = {1, 0, 0, 0};
+        std::uint8_t color[4] = {0, 0, 0, 0};
+    };
+
+    // Decodes one splat row. A level whose centres are plain floats ignores the bucket
+    // coordinate, and every narrower level adds it to the quantised centre.
+    static Row decodeRow(const std::vector<std::uint8_t>& buffer, std::size_t rowOffset,
+                         const SectionHeader& section, const Compression& layout,
+                         double bucketCoordinate[3]);
 };
