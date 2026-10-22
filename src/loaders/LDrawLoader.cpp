@@ -419,3 +419,17 @@ bool LDrawLoader::applyBfcToken(const std::string& token, BfcState& state) {
     // Anything else is reported rather than silently ignored.
     return false;
 }
+
+LDrawLoader::FinishType LDrawLoader::finishTypeFromToken(const std::string& token) {
+    // The words are compared without regard to case, as the directive reader does.
+    std::string upper = token;
+    for (char& c : upper) c = static_cast<char>(std::toupper(static_cast<unsigned char>(c)));
+
+    if (upper == "CHROME") return FinishType::Chrome;
+    if (upper == "PEARLESCENT") return FinishType::Pearlescent;
+    if (upper == "RUBBER") return FinishType::Rubber;
+    if (upper == "MATTE_METALLIC") return FinishType::MatteMetallic;
+    if (upper == "METAL") return FinishType::Metal;
+    // A colour that names no finish has the plain one.
+    return FinishType::Default;
+}

@@ -213,4 +213,11 @@ class LDrawLoader {
     // which the caller reports. Certifying and decertifying both reset the winding, so the one
     // call changes two fields.
     static bool applyBfcToken(const std::string& token, BfcState& state);
+
+    // The surface finishes a colour may declare. Anything else is the plain finish.
+    enum class FinishType { Default, Chrome, Pearlescent, Rubber, MatteMetallic, Metal };
+
+    // The finish a word names. The comparison ignores case, and a word that names none gives
+    // the plain finish rather than an error, which is how a colour with no finish arrives.
+    static FinishType finishTypeFromToken(const std::string& token);
 };

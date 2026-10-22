@@ -1690,6 +1690,13 @@
    - **`INVERTNEXT` 没有反向词**：它只能由调用方在用完之后手动清掉，所以状态机里没有任何词能清它。
    - **测试（6 个用例、34 条断言）**：认证与取消认证；**两种认证词都重置绕序**；绕序词不动认证标志；反转只置位；剔除两种；未知词与空词都不改状态。
    - **验证**：核心 **1413 用例 / 209,879 断言**（+6 / +34）、addons、`primitive-geometry`、`port-audit`、Vulkan 全绿。
+299. **第 238 轮：`LDrawLoader` 第十二层——表面处理类型**。
+   - **六个枚举值**：`Default`(0)、`Chrome`(1)、`Pearlescent`(2)、`Rubber`(3)、`MatteMetallic`(4)、`Metal`(5)。
+   - **五个词**：`CHROME`、`PEARLESCENT`、`RUBBER`、`MATTE_METALLIC`、`METAL`；**比较时统一转大写**，所以小写也认。
+   - **认不出的词给 `Default` 而不是报错**——没有表面处理的颜色本来就不会出现这个词。
+   - **近似拼写不算**：`MATTE` 与 `MATTE METALLIC`（空格而不是下划线）都落到 `Default`，测试专门钉住。
+   - **测试（4 个用例、18 条断言）**：五个词；**三种大小写混写**；空串、`GLITTER` 与两个近似拼写都给 `Default`；**五个真实词两两不等且都不等于 `Default`**（防止映射退化成别名）。
+   - **验证**：核心 **1417 用例 / 209,897 断言**（+4 / +18）、addons、`primitive-geometry`、`port-audit`、Vulkan 全绿。
 70. **第 520 轮：完整 Vulkan 套件 211/211 全绿，耗时 270.72 秒**。
    - 命令：`ctest --test-dir build-vulkan -j 4 -E "lights-states" --output-on-failure`（仍排除第 46 条那个已知项；它在 Vulkan 构建里同样慢）。
    - 结果：**100% tests passed, 0 tests failed out of 211**，总耗时 **270.72 秒**。对比同一套件在 **Debug** 配置下的 **3784.56 秒 / 2 失败**，差了约 14 倍——再次印证第 69 条"是构建类型不是代码"的结论。
