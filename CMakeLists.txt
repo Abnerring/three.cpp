@@ -330,7 +330,7 @@ if(THREECPP_BUILD_VULKAN)
     endif()
     set(THREECPP_SHADER_OUTPUTS)
     # Every built-in program is compiled the same way; PMREM needs its own pair.
-    foreach(program basic pmrem_equirect)
+    foreach(program basic pmrem_equirect pmrem_blur)
     # The basic program is sourced from meshbasic.glsl but keeps its historical spv name.
     if(program STREQUAL "basic")
         set(program_source meshbasic)

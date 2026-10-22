@@ -338,6 +338,12 @@
    - **断言（全部通过）**：32×4 水平渐变源（red=u、blue=1−u）渲染进立方体后，读 -z 面**中心**像素：`r ∈ (55,75)`、`b ∈ (180,200)`、`g < 20`、`|r+b−255| ≤ 4`（互补自洽），并且**角像素与中心相差 > 15**（证明六个 view 确实让不同位置采样到不同方向）。
    - **两个本轮踩到的坑**：（1）`readRenderTargetPixels` 行序**从第一行开始**，`face[0..2]` 是**左上角**不是中心——纯色与渐变两个用例都因此要显式索引 `(8*16+8)*4`；（2）探针 `std::cerr` 输出会让"stderr 非空"看起来像失败，**只有退出码才算数**。
    - **状态**：核心 **745 / 205,728**、`primitive-geometry`、`port-audit`、`--cube`（含新的方向断言）全绿。
+102. **第 39 轮：PMREM 的球面高斯模糊着色器写出并编译通过**。
+   - **忠实移植**：`pmrem_blur.{vert,frag}.glsl`，对着上游 `_getBlurMaterial` 一行行来——`SAMPLES = 20`、`GOLDEN_ANGLE = 2.39996322973`；先用 `outputDirection` 构造正交基（`up` 在 `|z| < 0.999` 时取 (0,0,1)，否则取 (1,0,0)）；`thetaMax = min(3σ, π)`、`truncation = 1 − exp(−0.5·thetaMax²/σ²)`；循环里**分层逆 CDF 采样**（`stratum = (i+0.5)/SAMPLES`、`theta = σ·sqrt(−2·ln(1−stratum·truncation))`）+ **黄金角**（`phi = i·GOLDEN_ANGLE`）；权重 `sin(theta)/theta` 做平面密度到立体角的校正；最后 `accumColor/accumWeight`。
+   - **绑定**：片元阶段用 `layout(set=0, binding=0) uniform samplerCube envMap`；push constant 块在等距柱状那三个矩阵之后**追加一个 `float sigma`**（总 196 字节）。
+   - **编译**：CMake 的程序列表改成 `foreach(program basic pmrem_equirect pmrem_blur)`，`glslang` 通过，产出 `pmrem_blur.vert.spv` **1724 B**、`pmrem_blur.frag.spv` **3996 B**。
+   - **下一步的硬骨头**：`samplerCube` 需要 **`VK_IMAGE_VIEW_TYPE_CUBE`** 的视图，而当前立方体目标是按 `2D_ARRAY` 建的（虽然 `createImage` 已带 `VK_IMAGE_CREATE_CUBE_COMPATIBLE_BIT`，所以**同一张图可以再建一个 cube 视图**）。所以下一轮要先给立方体目标加一个 cube 视图（`baseArrayLayer=0, layerCount=6`、`viewType=CUBE`），才能在 blur 里采样它。
+   - **状态**：核心 **745 / 205,728**、`primitive-geometry`、`port-audit`、`--cube` 全绿。
 70. **第 520 轮：完整 Vulkan 套件 211/211 全绿，耗时 270.72 秒**。
    - 命令：`ctest --test-dir build-vulkan -j 4 -E "lights-states" --output-on-failure`（仍排除第 46 条那个已知项；它在 Vulkan 构建里同样慢）。
    - 结果：**100% tests passed, 0 tests failed out of 211**，总耗时 **270.72 秒**。对比同一套件在 **Debug** 配置下的 **3784.56 秒 / 2 失败**，差了约 14 倍——再次印证第 69 条"是构建类型不是代码"的结论。
