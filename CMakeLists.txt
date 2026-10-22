@@ -140,6 +140,7 @@ target_sources(threecpp PRIVATE
     src/loaders/TGALoader.cpp
     src/loaders/NRRDLoader.cpp
     src/loaders/AMFLoader.cpp
+    src/loaders/XmlDocument.cpp
     src/loaders/CubeTextureLoader.cpp
     src/extras/ImageUtils.cpp
     src/extras/PMREMGenerator.cpp
