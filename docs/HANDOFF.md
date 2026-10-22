@@ -177,6 +177,12 @@
    - **为什么现在仍然安全**：`activeCubeFace` 目前只可能是 0（`resize` 还没有接层数、`setRenderTarget` 还没接 face 参数），所以所有新代码路径都退化成原来的单层行为。`threecpp.vulkan` 仍通过，核心 **739 / 205,653** 不变。
    - **还差的三步（下一轮）**：① `resize(w, h, layers)` 用层数建颜色图并在多层时建 `faceView`/`faceFramebuffer`（每层一个 2D 视图 + 每层一个 framebuffer）；② `beginFrame` 在 `targetLayers > 1` 时用 `faceFramebuffer` 而不是 `framebuffer`；③ `setRenderTarget(target, activeCubeFace = 0, activeMipmapLevel = 0)` 公开到 `VulkanRenderer`，`WebGLCubeRenderTarget::clear` 改用 `setRenderTarget(this, face)`。
    - **验收设计**：`clear` 六个面用不同颜色 → 逐面 `readRenderTargetPixels` 得到对应颜色 → 六面互不串色；再验证解绑后渲染器尺寸恢复。
+76. **第 5 轮：六面渲染的实现写通了又撤回，原因是环境层面的 mipmap 失败把验证堵住了**。
+   - 本轮一度实现完成：`resize(w, h, layers)` 建分层颜色图、`selectFace(face)` 为当前面建 2D 视图与 framebuffer、`beginFrame` 在 `targetLayers > 1` 时改用 `faceFramebuffer`、公开 `setRenderTarget(target, activeCubeFace, activeMipmapLevel)`（`activeMipmapLevel != 0` 显式抛错）。**编译通过**，并写好了六面验收测试（六个面各用一种颜色 clear，逐面 `readRenderTargetPixels` 校验不串色 + 解绑后尺寸恢复）。
+   - **但验收跑不起来**：`VulkanRendererTests` 在更早的用例处失败——`Automatic mipmaps filter a minified checkerboard: expected 128,128,128,255, received 0,0,0,255`。
+   - **确认与我的改动无关**：把未提交的改动全部 `git checkout` 掉、回到**之前通过过的提交 `4751e1a`**，重新构建后**同样失败**，且 `ctest -R "^threecpp\.vulkan$"` 这次只用 **2.68 秒**就失败（之前同一提交是 **99.70 秒通过**）。同一二进制、同一驱动，先前通过、现在失败，说明是**环境侧发生变化**（GPU 驱动状态、后台占用或设备重置），不是仓库里的代码。
+   - **处理**：本轮改动**全部撤回**，仓库停留在已验证通过的 `4751e1a`（核心 739 / 205,653、差分与 audit 全绿）。六面渲染的实现细节写在这里，下一轮可直接重做：`resize` 接层数 → `selectFace` 建逐面视图/framebuffer → `beginFrame` 选 fb → `setRenderTarget` 接 face → 六面色测试。
+   - **下次开工前先做一件事**：先单跑 `VulkanRendererTests` 确认 mipmap 用例恢复了，再动手；否则写了也验证不了。
 70. **第 520 轮：完整 Vulkan 套件 211/211 全绿，耗时 270.72 秒**。
    - 命令：`ctest --test-dir build-vulkan -j 4 -E "lights-states" --output-on-failure`（仍排除第 46 条那个已知项；它在 Vulkan 构建里同样慢）。
    - 结果：**100% tests passed, 0 tests failed out of 211**，总耗时 **270.72 秒**。对比同一套件在 **Debug** 配置下的 **3784.56 秒 / 2 失败**，差了约 14 倍——再次印证第 69 条"是构建类型不是代码"的结论。
