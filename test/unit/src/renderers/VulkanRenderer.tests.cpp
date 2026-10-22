@@ -1728,6 +1728,16 @@ void cubeRenderTargetTests(bool validation) {
     require(renderer.coordinateSystem == WebGLCoordinateSystem,
             "renderer reports its coordinate system");
     renderer.setRenderTarget(nullptr);
+    // Reading a target that is not the bound one must report rather than silently
+    // returning whatever was rendered last.
+    auto other = std::make_shared<WebGLCubeRenderTarget>(8);
+    bool reported = false;
+    try {
+        renderer.readRenderTargetPixels(*other, 0, 0, 8, 8);
+    } catch (const std::logic_error&) {
+        reported = true;
+    }
+    require(reported, "readback needs the bound target");
     require(renderer.getWidth() == 64 && renderer.getHeight() == 64, "size restored after cube");
 }
 

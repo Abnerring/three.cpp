@@ -2712,7 +2712,11 @@ std::vector<std::uint8_t> VulkanRenderer::readRenderTargetPixels(RenderTarget& t
     if (width == 0 || height == 0 || x + width > impl->width || y + height > impl->height ||
         source.size() < rowBytes * impl->height)
         throw std::out_of_range("readRenderTargetPixels outside the render target");
-    (void) target;
+    // The renderer currently keeps one GPU target, so only the bound target can be read.
+    if (impl->renderTarget.get() != &target)
+        throw std::logic_error(
+            "readRenderTargetPixels needs the currently bound target; per target GPU"
+            " storage is not implemented yet");
     std::vector<std::uint8_t> out(static_cast<std::size_t>(width) * height * 4);
     for (std::uint32_t row = 0; row < height; ++row)
         std::memcpy(out.data() + static_cast<std::size_t>(row) * width * 4,
