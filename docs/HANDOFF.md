@@ -544,6 +544,13 @@
    - **一处诚实的状态**：`blurCube` 目前是**诊断用的 clear-only 版本**（第 67 轮提交的），新测试里它会触发 `VK_ERROR_DEVICE_LOST`，所以已从 `--cube` 的调用列表里移除。它**不是**可用实现，等 blur 真正做完再恢复。
    - **验证**：核心 **747 / 205,735**、`primitive-geometry`、`port-audit`、Vulkan 构建 0 错误、`--cube` 0。
    - **下一步**：回读基建已完成，现在可以做真正的 blur 了——`renderEquirectangularToCube` 渲进 A、`blurCube(A, B)` 把 A 的 cube 视图当作采样源写进 B，再按目标读 B 验收；因为 A 的像素与存储都会在 park 中保留，中间不需要任何回读。
+134. **第 73 轮：真正的 blur 实现装上了，但一跑就让 GPU 设备丢失（`VK_ERROR_DEVICE_LOST`）**。
+   - **实现**：把第 67 轮那个 clear-only 的 stub **整段替换**成真正的编排——`blurCube(source, destination, sigma)`：绑目标（自动 park 源）→ 取源的 `cubeView` → 六面循环里先 `beginFrame(true, false, Color(0,0,0), 1, false)`（**开帧即清**，保证回读看到的是绘制结果）→ 第 0 面时把源图**六层**统统转成 `SHADER_READ_ONLY_OPTIMAL` → 用 `CubeCamera` 的 view + 显式 90 度投影 + `sigma` 组成 49 个 float → `drawPmremBlurFace` → `endFrame`；最后恢复原目标。
+   - **验证**：编译 0 错误、大括号平衡 0、`--cube`（不含 blur 测试）通过、`park probe first = 255 second = 255` 仍然通过。
+   - **失败**：把 `blurCubeTests` 加进 `--cube` 后，前面几个用例跑完，`blurCubeTests` 里 `blurCube(...)` 一执行就让**整个 Vulkan 设备丢失**（`vkCreateDevice failed (VkResult -4)` 是后续用例创建新设备时看到的后果）。设备丢失意味着**提交给 GPU 的命令触发了硬件/驱动级错误**，不是普通的参数校验失败。
+   - **最可能的原因**：`drawPmremBlurFace` 里 `vkCmdPushConstants(..., VERTEX|FRAGMENT, 0, sizeof(float)*block.size(), ...)` 推了 **196 字节**，但 `pmremBlurPipelineLayout` 的推常量范围可能只有 **192**（顶点阶段声明的是三个矩阵；第 63 轮我在顶点着色器里加了 `sigmaGuard` 让两阶段都引用 `sigma`，但**着色器已重编译、布局是在构造期从反射建的**，需要确认反射结果真的变成 196 了）。另一个可能是 cube 视图的 `levelCount`/`layerCount` 与六层 barrier 的组合。
+   - **当前状态**：真正的 `blurCube` **保留在代码里**（编译通过、未被任何测试调用），`blurCubeTests` 从 `--cube` 列表移除；核心 **747 / 205,735**、`primitive-geometry`、`port-audit`、Vulkan 构建 0 错误、`--cube` 0，树干净。
+   - **下一步**：打印 `pmremBlurReflectedLayout` 里推常量范围的实际 `offset/size`，与 `block.size()*4 = 196` 对比；这一步**只读不改**，用探针把数字拿到再决定改哪里。
 70. **第 520 轮：完整 Vulkan 套件 211/211 全绿，耗时 270.72 秒**。
    - 命令：`ctest --test-dir build-vulkan -j 4 -E "lights-states" --output-on-failure`（仍排除第 46 条那个已知项；它在 Vulkan 构建里同样慢）。
    - 结果：**100% tests passed, 0 tests failed out of 211**，总耗时 **270.72 秒**。对比同一套件在 **Debug** 配置下的 **3784.56 秒 / 2 失败**，差了约 14 倍——再次印证第 69 条"是构建类型不是代码"的结论。

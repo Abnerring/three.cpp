@@ -2822,19 +2822,50 @@ void VulkanRenderer::renderEquirectangularToCube(const std::shared_ptr<Texture>&
 }
 void VulkanRenderer::blurCube(const std::shared_ptr<RenderTarget>& source,
                               const std::shared_ptr<RenderTarget>& destination, double sigma) {
-    static_cast<void>(source);
-    static_cast<void>(sigma);
+    auto sourceCube = std::dynamic_pointer_cast<WebGLCubeRenderTarget>(source);
     auto destinationCube = std::dynamic_pointer_cast<WebGLCubeRenderTarget>(destination);
-    if (!destinationCube) throw std::invalid_argument("blurCube needs a cube target");
+    if (!sourceCube || !destinationCube)
+        throw std::invalid_argument("blurCube needs cube render targets");
     const auto previous = getRenderTarget();
     const auto previousFace = getActiveCubeFace();
     const auto previousMip = getActiveMipmapLevel();
     setRenderTarget(destinationCube);
+    const auto parkedSource = impl->parkedTargets.find(sourceCube.get());
+    if (parkedSource == impl->parkedTargets.end() || !parkedSource->second)
+        throw std::logic_error("blurCube needs the source to have been rendered into first");
+    const auto sourceView = parkedSource->second->color.cubeView;
+    if (!sourceView) throw std::logic_error("blurCube source has no cube view");
+    CubeCamera rig(0.1, 100, JSValue::object());
+    rig.updateMatrixWorld();
+    PerspectiveCamera faceProjection(90, 1, 0.1, 100);
+    const auto projection = faceProjection.projectionMatrix.elements();
+    const float model[16] = {1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1};
     for (std::uint32_t face = 0; face < 6; ++face) {
+        auto eye = std::dynamic_pointer_cast<PerspectiveCamera>(rig.children[face]);
+        if (!eye) throw std::runtime_error("cube camera rig needs six eyes");
+        eye->updateMatrixWorld();
+        std::array<float, 49> block{};
+        std::copy(std::begin(model), std::end(model), block.begin());
+        const auto view = eye->matrixWorldInverse.elements();
+        for (int i = 0; i < 16; ++i)
+            block[16 + i] = static_cast<float>(view[static_cast<std::size_t>(i)]);
+        for (int i = 0; i < 16; ++i)
+            block[32 + i] = static_cast<float>(projection[static_cast<std::size_t>(i)]);
+        block[48] = static_cast<float>(sigma);
         setRenderTarget(destinationCube, face);
-        impl->beginFrame(false, false, impl->activeClearColor, impl->activeClearAlpha,
-                         impl->activeClearSRGB);
-        impl->clearAttachments(true, false, Color(1, 0, 0), 1, false);
+        // Clear on open so the draw is what the per target readback observes.
+        impl->beginFrame(true, false, Color(0, 0, 0), 1, false);
+        if (face == 0) {
+            for (std::uint32_t layer = 0; layer < parkedSource->second->layers; ++layer) {
+                impl->imageBarrier(parkedSource->second->color.image, VK_IMAGE_ASPECT_COLOR_BIT,
+                                   VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL,
+                                   VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL,
+                                   VK_ACCESS_COLOR_ATTACHMENT_WRITE_BIT, VK_ACCESS_SHADER_READ_BIT,
+                                   VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT,
+                                   VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT, layer);
+            }
+        }
+        impl->drawPmremBlurFace(sourceView, block);
         impl->endFrame();
     }
     setRenderTarget(previous, previousFace, previousMip);
