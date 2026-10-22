@@ -1262,6 +1262,13 @@
    - **测试（3 个用例、12 条断言）**：四个等级的向量数 + 越界回退 15；三个等级的源步长 0/9/24/45；`28 b5` 抛错而 `PK` 与 `00 00` 放行。
    - **验证**：核心 **1126 用例 / 208,767 断言**（+3 / +12）、addons、`primitive-geometry`、`port-audit`、Vulkan 全绿。addon loader **39 → 40 / 52**。
    - **十三个完整 loader**：MTL、OBJ、PLY、Font、HDRCube、MD2、BVH、PCD、TGA、NRRD、AMF、VOX、**SPZ**。
+236. **第 175 轮：一次重复劳动与一次账目更正（这轮没有新增代码，但必须记下来）**。
+   - **发生了什么**：我打算做 `STLLoader`，写完后才发现**它早就存在**——`examples/jsm/loaders/STLLoader.cpp` 不仅已有实现，还有 `test/unit/addons/loaders/STLLoader.tests.cpp` 与**差分探针** `ThreeJsSTLLoaderParityProbe`。我这轮新建的 `src/loaders/STLLoader.{h,cpp}` 与它**同名**，属于重复创建，已**全部删除**（工作树已恢复干净）。
+   - **更重要的更正**：我一直说"addon loader 40 / 52"，**那是错的**。实际查两个目录后：`src/loaders/` 有 **40 个 cpp**（其中包含 `Loader`/`FileLoader`/`TextureLoader` 这类**核心**类与 `Cache`/`XmlDocument` 这类辅助），`examples/jsm/loaders/` 有 **2 个**（`STLLoader`、`XYZLoader`）。与上游 52 个 addon loader 求差，**真正缺的是 29 个**，也就是**已移植 23 / 52 ≈ 44%**，而不是 77%。
+   - **已移植的 23 个**：AMF、BVH、Font、GCode、HDRCubeTexture、HDR、LUT3dl、LUTCube、MD2、MDD、MTL、NRRD、OBJ、PCD、PDB、PLY、RGBE、SPLAT、SPZ、TGA、VOX、**STL**、**XYZ**。
+   - **真正缺的 29 个**：`GLTFLoader`（最大，约 2500 行）、`ColladaLoader`、`FBXLoader`、`USDLoader`、`USDZLoader`、`KMZLoader`、`VRMLLoader`、`LWOLoader`、`3DMLoader`、`LDrawLoader`、`3MFLoader`、`EXRLoader`、`TIFFLoader`、`DDSLoader`、`PVRLoader`、`KTXLoader`、`KTX2Loader`、`IESLoader`、`UltraHDRLoader`、`SVGLoader`、`TDSLoader`、`VTKLoader`、`LUTImageLoader`、`TTFLoader`、`MaterialXLoader`、`DRACOLoader`、`GaussianSplatPLYLoader`、`GLTFGaussianSplatLoaderExtension`、`KSPLATLoader`。
+   - **教训（两条）**：① **开工前必须查清单**——查 `src/loaders/` 与 `examples/jsm/loaders/` **两个目录**，或直接看 `docs/port-status.json`，**不能凭记忆**；② **进度数字必须来自文件系统枚举**，我这几轮报的"40/52"是**累加记忆**的结果，与实际差了一倍，这种数字一旦写进汇报就是**失实**。
+   - **验证**：删除多余文件后工作树干净；核心 **1126 用例 / 208,767 断言**（与第 174 轮一致，本轮没有改代码）。
 70. **第 520 轮：完整 Vulkan 套件 211/211 全绿，耗时 270.72 秒**。
    - 命令：`ctest --test-dir build-vulkan -j 4 -E "lights-states" --output-on-failure`（仍排除第 46 条那个已知项；它在 Vulkan 构建里同样慢）。
    - 结果：**100% tests passed, 0 tests failed out of 211**，总耗时 **270.72 秒**。对比同一套件在 **Debug** 配置下的 **3784.56 秒 / 2 失败**，差了约 14 倍——再次印证第 69 条"是构建类型不是代码"的结论。
