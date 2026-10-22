@@ -864,6 +864,13 @@
    - **测试（3 个用例、23 条断言）**：八组两种拼写各自映射正确 + 未知类型为空；颜色缩放的四种宽度 + 默认回退；ASCII 数字解析的**整数截断**（`"3.7"` 以 `uchar` 解析得 **3**）与**浮点保留**（`"3.7"` 以 `float` 解析得 **3.7**）。
    - **验证**：核心 **869 用例 / 206,502 断言**（+3 / +23）、`primitive-geometry`、`port-audit` 全绿。
    - **PLY 剩余三层**：ASCII 体读取（`parseASCIIElement` 用 token 流）、二进制体读取（大小端 + `DataView`）、`BufferGeometry` 构建（属性装配 + 缺 `normal` 时的面法线）。
+177. **第 116 轮：`PLYLoader` 第三层——ASCII 体读取**。
+   - **实现**：`parseASCIIElement(properties, tokens, cursor)` —— 按属性声明顺序从 token 流里取值：标量读一个，**list 先读 count 再读 n 个 item**；任一时刻流空就返回 `std::nullopt`（上游返回 `null`）。游标按引用传入，一个元素读完后停在下一个元素的开头。
+   - **值类型**：`Value = std::variant<double, std::vector<double>>`，一条元素是 `ElementRecord = std::map<std::string, Value>`。
+   - **一个名字冲突（记下来）**：端口头文件里**已经有** `PLYLoader::Element`（表示头里的 element 声明：名字+数量+属性），我一开始把元素记录也命名成 `Element`，直接 `C2371` 重定义。改名成 **`ElementRecord`** 解决。**新增类型名之前先 grep 一下同名**。
+   - **测试（4 个用例、15 条断言）**：三个标量按序读出且游标停在 3；list 属性按 `3 0 1 2` 读出长度 3（游标停在 4）；**流不够时返回空**（标量缺一个、list 的 item 少一个都判失败，而不是返回短列表）；**标量与 list 混合**的声明。
+   - **验证**：核心 **873 用例 / 206,517 断言**（+4 / +15）、`primitive-geometry`、`port-audit` 全绿。
+   - **PLY 剩余两层**：二进制体读取（`binary_little_endian`/`binary_big_endian`，按 `getBufferAttributeClass` 选宽度、按属性类型累积）与 `BufferGeometry` 构建（属性装配 + 缺 `normal` 时用面法线）。
 70. **第 520 轮：完整 Vulkan 套件 211/211 全绿，耗时 270.72 秒**。
    - 命令：`ctest --test-dir build-vulkan -j 4 -E "lights-states" --output-on-failure`（仍排除第 46 条那个已知项；它在 Vulkan 构建里同样慢）。
    - 结果：**100% tests passed, 0 tests failed out of 211**，总耗时 **270.72 秒**。对比同一套件在 **Debug** 配置下的 **3784.56 秒 / 2 失败**，差了约 14 倍——再次印证第 69 条"是构建类型不是代码"的结论。

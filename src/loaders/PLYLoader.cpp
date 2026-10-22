@@ -132,3 +132,27 @@ double PLYLoader::parseASCIINumber(const std::string& text, const std::string& t
         return std::strtod(text.c_str(), nullptr);
     return 0.0;
 }
+
+std::optional<PLYLoader::ElementRecord> PLYLoader::parseASCIIElement(
+    const std::vector<Property>& properties, const std::vector<std::string>& tokens,
+    std::size_t& cursor) {
+    ElementRecord element;
+    for (const auto& property : properties) {
+        if (cursor >= tokens.size()) return std::nullopt;
+
+        if (property.isList()) {
+            const double countValue = parseASCIINumber(tokens[cursor++], property.countType);
+            const auto count = static_cast<std::size_t>(countValue < 0 ? 0 : countValue);
+            std::vector<double> list;
+            list.reserve(count);
+            for (std::size_t i = 0; i < count; ++i) {
+                if (cursor >= tokens.size()) return std::nullopt;
+                list.push_back(parseASCIINumber(tokens[cursor++], property.itemType));
+            }
+            element[property.name] = std::move(list);
+        } else {
+            element[property.name] = parseASCIINumber(tokens[cursor++], property.type);
+        }
+    }
+    return element;
+}

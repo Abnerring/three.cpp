@@ -1,5 +1,6 @@
 #pragma once
 #include <map>
+#include <variant>
 #include <optional>
 #include <string>
 #include <vector>
@@ -56,4 +57,14 @@ class PLYLoader {
 
     // Whether a type is one of the integer spellings.
     static bool isIntegerType(const std::string& type);
+
+    // A property value is one number, or a list of them for a list property.
+    using Value = std::variant<double, std::vector<double>>;
+    using ElementRecord = std::map<std::string, Value>;
+
+    // Consumes one element worth of whitespace separated tokens. Returns nothing when the
+    // stream runs out part way, which upstream signals by returning null.
+    static std::optional<ElementRecord> parseASCIIElement(const std::vector<Property>& properties,
+                                                    const std::vector<std::string>& tokens,
+                                                    std::size_t& cursor);
 };
