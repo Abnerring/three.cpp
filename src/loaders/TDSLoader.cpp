@@ -197,3 +197,39 @@ double TDSLoader::opacityFromTransparency(double transparency) {
     // The chunk counts how much light passes through, the material how much is kept.
     return 1.0 - transparency;
 }
+
+namespace {
+// The map sub chunk identifiers.
+constexpr std::uint16_t kMatMapName = 0xA300;
+constexpr std::uint16_t kMatMapUScale = 0xA354;
+constexpr std::uint16_t kMatMapVScale = 0xA356;
+constexpr std::uint16_t kMatMapUOffset = 0xA358;
+constexpr std::uint16_t kMatMapVOffset = 0xA35A;
+}  // namespace
+
+TDSLoader::MaterialGroup TDSLoader::readMaterialGroup(const std::vector<std::uint8_t>& buffer,
+                                                      Chunk& chunk) {
+    MaterialGroup group;
+    // The name is a null terminated string, the count a word, then that many face numbers.
+    group.name = readString(buffer, chunk);
+    const std::uint16_t faceCount = readWord(buffer, chunk);
+    for (std::uint16_t i = 0; i < faceCount; ++i) {
+        group.index.push_back(readWord(buffer, chunk));
+    }
+    return group;
+}
+
+void TDSLoader::applyMapChunk(const std::vector<std::uint8_t>& buffer, Chunk& sub,
+                              MapTransform& transform) {
+    if (sub.id == kMatMapName) {
+        transform.name = readString(buffer, sub);
+    } else if (sub.id == kMatMapUOffset) {
+        transform.offsetX = readFloat(buffer, sub);
+    } else if (sub.id == kMatMapVOffset) {
+        transform.offsetY = readFloat(buffer, sub);
+    } else if (sub.id == kMatMapUScale) {
+        transform.repeatX = readFloat(buffer, sub);
+    } else if (sub.id == kMatMapVScale) {
+        transform.repeatY = readFloat(buffer, sub);
+    }
+}

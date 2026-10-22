@@ -93,4 +93,29 @@ class TDSLoader {
     // The opacity a transparency chunk gives: one minus the transparency, since the chunk
     // counts how much light passes through rather than how much is kept.
     static double opacityFromTransparency(double transparency);
+
+    // A material group: the material's name and the face numbers it covers.
+    struct MaterialGroup {
+        std::string name;
+        std::vector<std::uint16_t> index;
+    };
+
+    // Reads a group, leaving the cursor past it.
+    static MaterialGroup readMaterialGroup(const std::vector<std::uint8_t>& buffer, Chunk& chunk);
+
+    // The four values a map chunk can carry. Each defaults to what a texture starts with, since
+    // a map that names none of them leaves the texture untouched.
+    struct MapTransform {
+        double offsetX = 0;
+        double offsetY = 0;
+        double repeatX = 1;
+        double repeatY = 1;
+        // The file name the map points at, empty when the chunk named no file.
+        std::string name;
+    };
+
+    // Reads the values the map sub chunks carry. The chunk ids are given in order so the
+    // caller can feed them one at a time as it walks the sub chunks.
+    static void applyMapChunk(const std::vector<std::uint8_t>& buffer, Chunk& sub,
+                              MapTransform& transform);
 };
