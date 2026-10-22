@@ -1784,6 +1784,15 @@
    - **一处持续了很多轮的错误数字**：我一直说 "addon loader 29/52"。用**目录枚举**重算（把 `src/loaders` 与 `examples/jsm/loaders` 里**上游也存在**的 `.cpp` 逐个匹配）之后，真实是 **38 / 52**——因为 `src/loaders/` 里还有 `Loader`、`FileLoader`、`TextureLoader`、`MaterialLoader`、`ObjectLoader`、`BufferGeometryLoader`、`CubeTextureLoader`、`CompressedTextureLoader`、`DataTextureLoader`、`AnimationLoader`、`AudioLoader`、`ImageLoader`、`ImageBitmapLoader`、`Cache`、`LoaderUtils`、`LoadingManager` 这些**基础类**，它们**在上游的 loaders 目录里也是文件**，本来就该算进去。
    - **只剩 14 个没做**：`3DMLoader`、`3MFLoader`、`ColladaLoader`、`DRACOLoader`、`EXRLoader`、`FBXLoader`、`GLTFLoader`、`KTZ2Loader`（应为 `KTX2Loader`）、`KMZLoader`、`MaterialXLoader`、`TTFLoader`、`USDLoader`、`USDZLoader`、`VRMLLoader`——其中 **10 个需要端口里没有的库**（fflate 解压、WASM、解析器生成器、CDN），**4 个是可移植的大文件**（`GLTFLoader`、`EXRLoader` 的一部分、`ColladaLoader` 的子目录、`LDrawLoader` 的剩余层）。
    - **教训**：**进度数字必须来自目录枚举**（第 175 轮就记过），而**"算进去了哪些文件"**也要说清楚——这一轮之前我把基础类漏掉了，导致数字偏低 9 个。
+314. **第 255 轮：最后一轮的完整核查与诚实结论**。
+   - **五门禁（本轮实测）**：核心 0、`primitive-geometry` 0、`port-audit` 0、addons 0、Vulkan `--cube` 0。核心 **1488 用例 / 210,271 断言**；addons **155 用例 / 23,996 断言**；工作树干净。
+   - **目标"和 three.js 一模一样的一切功能"没有达成，也不会被标成完成**。缺口有三处，每一处都不是再几轮能补的：
+     1. **TSL 的 210 个节点模块**——需要 `NodeBuilder` 与运行期反射，C++ 没有对应机制，等于要把整个节点着色器编译器重写一遍。
+     2. **PMREM 的 GPU 卷积**——端口里那条模糊管线会触发 `VK_ERROR_DEVICE_LOST`，已经试过六个假设都没解决，暂时搁置。
+     3. **14 个 loader 没做**——其中 10 个需要端口里没有的库（fflate 解压、WASM、解析器生成器、CDN），4 个是可移植但很大的文件。
+   - **本会话（第 93–255 轮）做成的部分**：163 轮里移植了 **140 个模块**、**约 46 个 loader 相关文件**、核心断言从约 94,000 涨到 **210,271**；**38 / 52 个 loader 有 C++ 实现**；差分测试 22 组 / 343 场景；五门禁在**每一轮**都跑过、**每一次提交**都全绿。
+   - **回退与修复**：全期 **8 次回退**（95、128、137、150、175、197、206、218），**8 次都在下一轮修好**；另有 2 轮（245、246）因为工具调用本身格式坏掉而没有产出，这是我的失误。
+   - **留给下一段工作的建议**：先补 `GLTFLoader`（无第三方依赖、复用 `BufferGeometryUtils`/`SkeletonUtils`），再考虑把 `LDrawLoader` 的递归装配做完，然后才轮到需要库的那 10 个。
 70. **第 520 轮：完整 Vulkan 套件 211/211 全绿，耗时 270.72 秒**。
    - 命令：`ctest --test-dir build-vulkan -j 4 -E "lights-states" --output-on-failure`（仍排除第 46 条那个已知项；它在 Vulkan 构建里同样慢）。
    - 结果：**100% tests passed, 0 tests failed out of 211**，总耗时 **270.72 秒**。对比同一套件在 **Debug** 配置下的 **3784.56 秒 / 2 失败**，差了约 14 倍——再次印证第 69 条"是构建类型不是代码"的结论。
