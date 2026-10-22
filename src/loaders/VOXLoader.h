@@ -82,4 +82,19 @@ class VOXLoader {
     // and v are the two axes after d.
     static std::vector<int> buildMask(const std::vector<std::uint8_t>& volume, const Size& size,
                                       int d, int slice);
+
+    // A merged rectangle on a slice plane: where it starts in u and v, how far it extends,
+    // and the mask value it came from, which carries the sign of the facing.
+    struct Quad {
+        int u = 0;
+        int v = 0;
+        int w = 1;
+        int h = 1;
+        int value = 0;
+    };
+
+    // Greedily merges the equal valued neighbours of a mask into rectangles. The width grows
+    // along u while the value matches, then the height grows along v only while every cell of
+    // the whole width matches, which is what makes the result a rectangle rather than a run.
+    static std::vector<Quad> mergeMask(std::vector<int> mask, int dimsU, int dimsV);
 };

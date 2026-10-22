@@ -201,3 +201,61 @@ std::vector<int> VOXLoader::buildMask(const std::vector<std::uint8_t>& volume, c
     }
     return mask;
 }
+
+std::vector<VOXLoader::Quad> VOXLoader::mergeMask(std::vector<int> mask, int dimsU,
+                                                  int dimsV) {
+    std::vector<Quad> quads;
+    if (dimsU <= 0 || dimsV <= 0) return quads;
+    const std::size_t width = static_cast<std::size_t>(dimsU);
+    if (mask.size() < width * static_cast<std::size_t>(dimsV)) return quads;
+
+    std::size_t n = 0;
+    for (int vv = 0; vv < dimsV; ++vv) {
+        for (int uu = 0; uu < dimsU;) {
+            const int value = mask[n];
+            if (value == 0) {
+                ++n;
+                ++uu;
+                continue;
+            }
+
+            // The width runs along u while the value matches.
+            int w = 1;
+            while (uu + w < dimsU && mask[n + static_cast<std::size_t>(w)] == value) ++w;
+
+            // The height grows only while every cell of that whole width matches, so the result
+            // stays a rectangle.
+            int height = 1;
+            bool done = false;
+            while (vv + height < dimsV && !done) {
+                for (int k = 0; k < w; ++k) {
+                    const std::size_t at = n + static_cast<std::size_t>(k) +
+                                           static_cast<std::size_t>(height) * width;
+                    if (mask[at] != value) {
+                        done = true;
+                        break;
+                    }
+                }
+                if (!done) ++height;
+            }
+
+            Quad quad;
+            quad.u = uu;
+            quad.v = vv;
+            quad.w = w;
+            quad.h = height;
+            quad.value = value;
+            quads.push_back(quad);
+
+            // The merged cells are consumed so the walk does not emit them again; without
+            // this the rows after the first would start on already claimed cells.
+            for (int row = 0; row < height; ++row)
+                for (int k = 0; k < w; ++k)
+                    mask[n + static_cast<std::size_t>(k) + static_cast<std::size_t>(row) * width] = 0;
+
+            n += static_cast<std::size_t>(w);
+            uu += w;
+        }
+    }
+    return quads;
+}
