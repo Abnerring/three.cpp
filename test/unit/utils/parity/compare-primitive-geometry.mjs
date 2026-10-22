@@ -869,3 +869,22 @@ for (let i = 0; i < shapePathScenarios.length; i += 1) {
     assert.deepEqual(shapePathLines[i], expected, `scenario ${line}`);
 }
 console.log(`shape path parity: ${shapePathScenarios.length} scenarios`);
+// Cube render targets: type flags, size and the six face cube texture.
+const {WebGLCubeRenderTarget} = await import(pathToFileURL(path.join(sourceDir, 'src/renderers/WebGLCubeRenderTarget.js')).href);
+const cubeTargetScenarios = [8, 32, 1, 300];
+const cubeTargetRaw = execFileSync(probePath, [], {input: cubeTargetScenarios.map((size) => `node cubetarget ${size}`).join('\n'), encoding: 'utf8'});
+const cubeTargetLines = cubeTargetRaw.trim().split('\n').map((line) => JSON.parse(line));
+for (let i = 0; i < cubeTargetScenarios.length; i += 1) {
+    const size = cubeTargetScenarios[i];
+    const target = new WebGLCubeRenderTarget(size);
+    const faces = target.texture.images;
+    const expected = {kind: 'node', which: 'cubetarget',
+        isWebGLCubeRenderTarget: target.isWebGLCubeRenderTarget,
+        width: bitOf(target.width), height: bitOf(target.height),
+        faces: faces.length,
+        face0Width: faces.length ? bitOf(faces[0].width) : 0,
+        renderTargetTexture: target.texture.isRenderTargetTexture === true,
+        mapping: bitOf(target.texture.mapping)};
+    assert.deepEqual(cubeTargetLines[i], expected, `cube target ${size}`);
+}
+console.log(`cube target parity: ${cubeTargetScenarios.length} scenarios`);

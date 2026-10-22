@@ -82,6 +82,7 @@
 #include "scenes/FogExp2.h"
 #include "math/SphericalHarmonics3.h"
 #include "textures/CubeTexture.h"
+#include "core/WebGLCubeRenderTarget.h"
 #include "textures/DataArrayTexture.h"
 #include "textures/Data3DTexture.h"
 #include "textures/CompressedTexture.h"
@@ -664,6 +665,18 @@ int main() {
                 node = std::make_shared<ArrayCamera>(cameras); }
             else if (which == "lod") node = std::make_shared<LOD>();
             else if (which == "cubecamera") { double near = 0, far = 0; in >> near >> far; if (in.fail() || !noTrailingTokens(in)) { std::cout << "{\"error\":\"short input or trailing tokens\"}" << std::endl; continue; } node = std::make_shared<CubeCamera>(near, far, JSValue::object()); }
+            else if (which == "cubetarget") { double size = 0; in >> size; if (in.fail() || !noTrailingTokens(in)) { std::cout << "{\"error\":\"short input or trailing tokens\"}" << std::endl; continue; }
+                auto cubeTarget = std::make_shared<WebGLCubeRenderTarget>(size);
+                auto cubeTex = std::dynamic_pointer_cast<CubeTexture>(cubeTarget->texture.get());
+                std::cout << "{\"kind\":\"node\",\"which\":\"cubetarget\"";
+                std::cout << ",\"isWebGLCubeRenderTarget\":" << (cubeTarget->isWebGLCubeRenderTarget ? "true" : "false");
+                std::cout << ",\"width\":" << bits(static_cast<float>(cubeTarget->width)) << ",\"height\":" << bits(static_cast<float>(cubeTarget->height));
+                std::cout << ",\"faces\":" << (cubeTex ? cubeTex->images.get()->faces.size() : 0);
+                std::cout << ",\"face0Width\":" << (cubeTex && !cubeTex->images.get()->faces.empty() ? bits(static_cast<float>(cubeTex->images.get()->faces[0]->width)) : 0);
+                std::cout << ",\"renderTargetTexture\":" << (cubeTex && cubeTex->isRenderTargetTexture ? "true" : "false");
+                std::cout << ",\"mapping\":" << bits(static_cast<float>(cubeTex ? cubeTex->mapping : 0));
+                std::cout << "}" << std::endl;
+                continue; }
             else if (which == "rendertarget") { double width = 0, height = 0; in >> width >> height; if (in.fail() || !noTrailingTokens(in)) { std::cout << "{\"error\":\"short input or trailing tokens\"}" << std::endl; continue; } target = std::make_shared<RenderTarget>(width, height); }
             else if (which == "rendertarget3d") { double width = 0, height = 0, depth = 0; in >> width >> height >> depth; if (in.fail() || !noTrailingTokens(in)) { std::cout << "{\"error\":\"short input or trailing tokens\"}" << std::endl; continue; } target = std::make_shared<RenderTarget3D>(width, height, depth); }
             else { std::cout << "{\"error\":\"unknown node\"}" << std::endl; continue; }
