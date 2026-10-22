@@ -186,3 +186,14 @@ std::vector<TDSLoader::GroupRange> TDSLoader::groupRanges(
     }
     return ranges;
 }
+
+double TDSLoader::shininessFromPercentage(double percentage) {
+    // The percentage reader divides by a hundred, so this puts it back: a chunk value of fifty
+    // hundredths reaches the material as fifty.
+    return percentage * 100.0;
+}
+
+double TDSLoader::opacityFromTransparency(double transparency) {
+    // The chunk counts how much light passes through, the material how much is kept.
+    return 1.0 - transparency;
+}

@@ -85,4 +85,12 @@ class TDSLoader {
 
     // Turns the face counts of successive groups into the ranges the geometry wants.
     static std::vector<GroupRange> groupRanges(const std::vector<std::size_t>& facesPerGroup);
+
+    // The value a shininess chunk gives. The percentage reader already divides by a hundred,
+    // so it is multiplied back to reach the range the material expects.
+    static double shininessFromPercentage(double percentage);
+
+    // The opacity a transparency chunk gives: one minus the transparency, since the chunk
+    // counts how much light passes through rather than how much is kept.
+    static double opacityFromTransparency(double transparency);
 };

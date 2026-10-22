@@ -146,6 +146,7 @@ add_executable(THREECPPTests
         unit/src/loaders/TDSColor.tests.cpp
         unit/src/loaders/TDSMatrix.tests.cpp
         unit/src/loaders/TDSFaces.tests.cpp
+        unit/src/loaders/TDSMaterial.tests.cpp
         unit/src/cameras/StereoCamera.tests.cpp
         unit/src/audio/AudioContext.tests.cpp
         unit/src/audio/Audio.tests.cpp
