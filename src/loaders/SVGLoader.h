@@ -108,4 +108,21 @@ class SVGLoader {
     // cursor is left alone; otherwise the point returns to the first one and the next command
     // is treated as the start of a fresh subpath. The return says whether anything closed.
     static bool applyCloseCommand(PathCursor& cursor);
+
+    // A two by three affine transform, written the way the format writes one: the first two
+    // numbers are the first column, the next two the second, and the last two the translation.
+    struct Matrix {
+        double a = 1, b = 0, c = 0, d = 1, e = 0, f = 0;
+    };
+
+    // A point moved by a transform. The first two numbers stretch the two axes, so x picks a
+    // and c while y picks b and d, and the last two are added afterwards.
+    static Point transformPoint(const Matrix& matrix, const Point& point);
+
+    // The transform a translate, a scale or a rotate describes, given its numbers. A translate
+    // takes one or two, a scale takes one or two with the second defaulting to the first, and a
+    // rotate takes an angle in degrees and optionally a centre to turn about.
+    static Matrix translateMatrix(const std::vector<double>& args);
+    static Matrix scaleMatrix(const std::vector<double>& args);
+    static Matrix rotateMatrix(const std::vector<double>& args);
 };

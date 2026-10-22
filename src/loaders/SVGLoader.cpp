@@ -314,3 +314,52 @@ bool SVGLoader::applyCloseCommand(PathCursor& cursor) {
     cursor.isFirstPoint = true;
     return true;
 }
+
+SVGLoader::Point SVGLoader::transformPoint(const Matrix& matrix, const Point& point) {
+    Point moved;
+    // The first two numbers are the image of the x axis and the next two that of the y axis.
+    moved.x = matrix.a * point.x + matrix.c * point.y + matrix.e;
+    moved.y = matrix.b * point.x + matrix.d * point.y + matrix.f;
+    return moved;
+}
+
+SVGLoader::Matrix SVGLoader::translateMatrix(const std::vector<double>& args) {
+    Matrix matrix;
+    if (args.empty()) return matrix;
+    matrix.e = args[0];
+    // A single number moves only the horizontal axis.
+    matrix.f = args.size() >= 2 ? args[1] : 0.0;
+    return matrix;
+}
+
+SVGLoader::Matrix SVGLoader::scaleMatrix(const std::vector<double>& args) {
+    Matrix matrix;
+    if (args.empty()) return matrix;
+    matrix.a = args[0];
+    // A single number scales both axes by the same amount.
+    matrix.d = args.size() >= 2 ? args[1] : args[0];
+    return matrix;
+}
+
+SVGLoader::Matrix SVGLoader::rotateMatrix(const std::vector<double>& args) {
+    Matrix matrix;
+    if (args.empty()) return matrix;
+    // The angle is written in degrees and turns clockwise on the page, which is the direction
+    // the coordinates run.
+    const double radians = args[0] * 3.14159265358979323846 / 180.0;
+    const double cosine = std::cos(radians);
+    const double sine = std::sin(radians);
+    matrix.a = cosine;
+    matrix.b = sine;
+    matrix.c = -sine;
+    matrix.d = cosine;
+
+    // With a centre the turn happens about it rather than about the origin.
+    if (args.size() >= 3) {
+        const double cx = args[1];
+        const double cy = args[2];
+        matrix.e = cx - cosine * cx + sine * cy;
+        matrix.f = cy - sine * cx - cosine * cy;
+    }
+    return matrix;
+}
