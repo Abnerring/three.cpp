@@ -404,6 +404,14 @@ struct VulkanRenderer::Impl {
     } readback;
     // The PMREM box positions, uploaded once at construction.
     Buffer pmremVertices;
+    // A GPU target owns its own images and framebuffer. Nothing draws into one yet;
+    // this is the storage the per target work will move onto.
+    struct GpuTarget {
+        Image color, depth;
+        VkFramebuffer framebuffer = VK_NULL_HANDLE;
+        std::uint32_t width = 0, height = 0, layers = 1;
+    };
+    std::unique_ptr<GpuTarget> spareTarget;
     using BufferRef = std::shared_ptr<Buffer>;
     // The command adapter owns the upload buffers independently of the decoded
     // float/uint32 draw buffers. Reads below come from mapped Vulkan memory.
@@ -858,6 +866,8 @@ struct VulkanRenderer::Impl {
         pmremTextureLayout = pmremReflectedLayout->setLayouts()[0];
         pmremPipelineLayout = pmremReflectedLayout->handle();
         createPmremGeometry();
+        // Exercise the per target builder once so it cannot rot unnoticed.
+        spareTarget = createGpuTarget(4, 4, 1);
         createPmremPipeline();
         // Blur program: same construction path, its own reflected layout.
         const auto blurVertexWords = readShader("pmrem_blur.vert.spv");
@@ -2095,6 +2105,37 @@ struct VulkanRenderer::Impl {
         check(api.vkCreateFramebuffer(device, &create, nullptr, &faceFramebuffer),
               "vkCreateFramebuffer(face)");
     }
+    // Builds a complete GPU target without touching the renderer current one.
+    std::unique_ptr<GpuTarget> createGpuTarget(std::uint32_t targetWidth,
+                                              std::uint32_t targetHeight,
+                                              std::uint32_t targetLayerCount) {
+        auto target = std::make_unique<GpuTarget>();
+        target->width = targetWidth;
+        target->height = targetHeight;
+        target->layers = targetLayerCount;
+        createImage(target->color, VK_FORMAT_R8G8B8A8_UNORM,
+                    VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT | VK_IMAGE_USAGE_TRANSFER_SRC_BIT,
+                    VK_IMAGE_ASPECT_COLOR_BIT, targetLayerCount, targetWidth, targetHeight);
+        createImage(target->depth, depthFormat, VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT,
+                    VK_IMAGE_ASPECT_DEPTH_BIT, 1, targetWidth, targetHeight);
+        const VkImageView views[] = {target->color.view, target->depth.view};
+        VkFramebufferCreateInfo create{VK_STRUCTURE_TYPE_FRAMEBUFFER_CREATE_INFO};
+        create.renderPass = renderPass;
+        create.attachmentCount = 2;
+        create.pAttachments = views;
+        create.width = targetWidth;
+        create.height = targetHeight;
+        create.layers = 1;
+        check(api.vkCreateFramebuffer(device, &create, nullptr, &target->framebuffer),
+              "vkCreateFramebuffer(gpu target)");
+        return target;
+    }
+    void destroyGpuTarget(GpuTarget& target) {
+        if (target.framebuffer) api.vkDestroyFramebuffer(device, target.framebuffer, nullptr);
+        destroyImage(target.color);
+        destroyImage(target.depth);
+    }
+
     void resize(std::uint32_t newWidth, std::uint32_t newHeight, std::uint32_t layers = 1) {
         if (!newWidth || !newHeight)
             throw std::invalid_argument("Renderer dimensions must be positive");

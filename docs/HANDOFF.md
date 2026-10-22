@@ -376,6 +376,11 @@
    - **验证**：构建通过；`--cube` 退出码 **0**（六面渲染、方向断言、cube 视图、回读守卫全部照旧）。核心 **747 / 205,735**、`primitive-geometry`、`port-audit` 全绿。
    - **过程**：第一次用锚点整段替换，输出 `ANCHOR MISSING`——这次**先看输出再往下走**，改用行号定位（找到签名行 2009），并在改完后打印确认 `imageWidth == 0` 与 `create.extent = {imageWidth...}` 都出现了，才去构建。第 43 轮那个"锚点没匹配却照样提交"的坑没有重演。
    - **下一步**：同样把 `resize` 与 framebuffer 的创建也参数化（它们也直接用成员尺寸），然后才能引入 `GpuTarget` 与 `targetFor()`。
+109. **第 48 轮：多目标重构的第二步——有了"不碰当前目标"的 `createGpuTarget()`**。
+   - **新增**：`struct GpuTarget { Image color, depth; VkFramebuffer framebuffer; uint32 width, height, layers; }`；`createGpuTarget(w, h, layers)` 用第 108 轮参数化的 `createImage` 建两张图并建 framebuffer，**完全不改动** `width/height/colorImage/framebuffer` 这些现有成员；配套 `destroyGpuTarget(GpuTarget&)`。构造函数里创建一次 `spareTarget = createGpuTarget(4, 4, 1)`，让这条路径**每轮都被真实执行**，不会悄悄腐烂。
+   - **验证**：构建通过；`--cube` 退出码 **0**——`vkCreateImage`/`vkCreateFramebuffer` 失败都会抛异常，所以通过说明**第二套 GPU 目标真的能建出来**，且现有六面渲染、方向断言、cube 视图、回读守卫全部照旧。核心 **747 / 205,735**、`primitive-geometry`、`port-audit` 全绿。
+   - **注意**：`destroyGpuTarget` 目前**没有调用者**（`spareTarget` 在进程结束时随 `Impl` 一起消失，图像内存由驱动回收）。这是**已知的、有意的**短期状态，等第三步把绘制路径接上 `GpuTarget` 时再统一处理生命周期。
+   - **下一步（第三步，也是真正改变行为的一步）**：让 `beginFrame`/`endFrame`/`selectFace`/`readRenderTargetPixels` 都走"当前 `GpuTarget`"而不是 `Impl` 上的散装成员——这一步必须一次做完，中途状态是编译不过的，所以要先在一个分支/备份上做，用 `--cube` 与核心测试守住，再合并。
 70. **第 520 轮：完整 Vulkan 套件 211/211 全绿，耗时 270.72 秒**。
    - 命令：`ctest --test-dir build-vulkan -j 4 -E "lights-states" --output-on-failure`（仍排除第 46 条那个已知项；它在 Vulkan 构建里同样慢）。
    - 结果：**100% tests passed, 0 tests failed out of 211**，总耗时 **270.72 秒**。对比同一套件在 **Debug** 配置下的 **3784.56 秒 / 2 失败**，差了约 14 倍——再次印证第 69 条"是构建类型不是代码"的结论。
