@@ -349,7 +349,7 @@ if(THREECPP_BUILD_VULKAN)
         src/renderers/vulkan/VulkanShaderCompiler.cpp
         src/renderers/vulkan/VulkanShaderInterface.cpp src/renderers/vulkan/VulkanPipelineLayout.cpp
         src/renderers/vulkan/VulkanShaderModules.cpp src/renderers/vulkan/VulkanUniformBuffer.cpp
-        src/renderers/vulkan/VulkanProgramUniforms.cpp)
+        src/renderers/vulkan/VulkanProgramUniforms.cpp src/renderers/vulkan/CubeCameraVulkan.cpp)
     add_library(threecpp::vulkan ALIAS threecpp_vulkan)
     target_link_libraries(threecpp_vulkan PUBLIC threecpp::threecpp
         PRIVATE threecpp_spirv_reflect ${CMAKE_DL_LIBS})

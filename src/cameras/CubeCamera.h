@@ -1,8 +1,9 @@
-﻿#pragma once
+#pragma once
 #include "core/Object3D.h"
 #include <memory>
 
 class PerspectiveCamera;
+class RenderTarget;
 
 // Port of src/cameras/CubeCamera.js at the pinned revision, the camera rig only.
 //
@@ -20,5 +21,7 @@ class CubeCamera : public Object3D {
     CubeCamera& clear(JSValue renderer = {});
 
     JSValue renderTarget, coordinateSystem;
+    // Typed handle for the backend path, set by the caller; the JS value above is untouched.
+    std::shared_ptr<RenderTarget> target;
     double activeMipmapLevel = 0;
 };

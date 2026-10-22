@@ -1,4 +1,6 @@
 #include "renderers/VulkanRenderer.h"
+#include "renderers/vulkan/CubeCameraVulkan.h"
+#include "cameras/CubeCamera.h"
 #include "cameras/OrthographicCamera.h"
 #include "cameras/PerspectiveCamera.h"
 #include "geometries/PlaneGeometry.h"
@@ -1728,10 +1730,30 @@ void cubeRenderTargetTests(bool validation) {
     renderer.setRenderTarget(nullptr);
     require(renderer.getWidth() == 64 && renderer.getHeight() == 64, "size restored after cube");
 }
+
+void cubeCameraUpdateTests(bool validation) {
+    VulkanRenderer renderer({64, 64, validation});
+    auto target = std::make_shared<WebGLCubeRenderTarget>(16);
+    CubeCamera camera(0.1, 100, JSValue::object());
+    camera.target = target;
+    camera.updateMatrixWorld();
+    Scene scene;
+    // Binding the cube first means the restore is a no-op and the readback buffer survives.
+    renderer.setRenderTarget(target);
+    renderer.setClearColor(Color(0.25, 0.5, 1.0), 1);
+    updateCubeCamera(camera, renderer, scene);
+    require(renderer.getRenderTarget() == target, "cube camera restores the bound target");
+    require(renderer.getWidth() == 16, "cube camera keeps the target size");
+    auto pixels = renderer.readRenderTargetPixels(*target, 0, 0, 16, 16);
+    require(pixels.size() == static_cast<std::size_t>(16) * 16 * 4, "cube camera wrote a face");
+    // The clear colour goes through sRGB encoding, so compare channel ordering.
+    require(pixels[2] > 200 && pixels[2] > pixels[1] && pixels[1] > pixels[0] && pixels[0] > 60,
+            "face carries the clear colour");
+}
 int main(int argc, char** argv) {
     try {
         const bool validation = argc > 1 && std::string(argv[1]) == "--validation";
-        if (argc > 1 && std::string(argv[1]) == "--cube") { renderTargetTests(validation); cubeRenderTargetTests(validation); return 0; }
+        if (argc > 1 && std::string(argv[1]) == "--cube") { renderTargetTests(validation); cubeRenderTargetTests(validation); cubeCameraUpdateTests(validation); return 0; }
         unsupportedMeshTests(validation);
         unsupportedPrimitiveTests(validation);
         instancingTests(validation);
