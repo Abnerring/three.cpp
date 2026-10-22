@@ -39,4 +39,10 @@ class PVRLoader {
     // Reads a third version header. Throws std::runtime_error for a pixel format it cannot
     // describe, naming the format the way upstream does.
     static Header parseVersion3(const std::vector<std::uint8_t>& buffer);
+
+    // Reads a second version header. It differs from the third in three ways: the format is a
+    // low byte of a flags word rather than a word of its own, the header length is stored so
+    // the payload starts there rather than at a fixed offset, and the mipmap count is one less
+    // than the number of levels. Throws for a format it cannot describe.
+    static Header parseVersion2(const std::vector<std::uint8_t>& buffer);
 };

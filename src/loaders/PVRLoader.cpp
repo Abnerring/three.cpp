@@ -66,3 +66,36 @@ PVRLoader::Header PVRLoader::parseVersion3(const std::vector<std::uint8_t>& buff
     header.isCubemap = header.numFaces == 6;
     return header;
 }
+
+PVRLoader::Header PVRLoader::parseVersion2(const std::vector<std::uint8_t>& buffer) {
+    Header header;
+    // The second layout orders its fields differently and stores the header length itself.
+    const std::uint32_t headerLength = headerWord(buffer, 0);
+    header.height = headerWord(buffer, 1);
+    header.width = headerWord(buffer, 2);
+    const std::uint32_t storedMipmaps = headerWord(buffer, 3);
+    const std::uint32_t flags = headerWord(buffer, 4);
+    const std::uint32_t alphaMask = headerWord(buffer, 10);
+    header.numFaces = headerWord(buffer, 12);
+
+    // The format is the low byte of the flags word.
+    const std::uint32_t formatFlags = flags & 0xffu;
+    const bool hasAlpha = alphaMask > 0;
+    if (formatFlags == 25) {
+        header.bitsPerPixel = 4;
+        header.formatName = hasAlpha ? "RGBA_PVRTC_4BPPV1" : "RGB_PVRTC_4BPPV1";
+    } else if (formatFlags == 24) {
+        header.bitsPerPixel = 2;
+        header.formatName = hasAlpha ? "RGBA_PVRTC_2BPPV1" : "RGB_PVRTC_2BPPV1";
+    } else {
+        throw std::runtime_error("THREE.PVRLoader: Unknown PVR format: " +
+                                 std::to_string(formatFlags));
+    }
+
+    // The stored count is one less than the number of levels, and the payload begins at the
+    // header length the file records.
+    header.numMipmaps = storedMipmaps + 1;
+    header.dataOffset = headerLength;
+    header.isCubemap = header.numFaces == 6;
+    return header;
+}
