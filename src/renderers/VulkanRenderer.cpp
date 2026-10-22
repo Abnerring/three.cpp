@@ -635,6 +635,7 @@ struct VulkanRenderer::Impl {
     bool recording = false;
     bool rendering = false;
     std::shared_ptr<RenderTarget> renderTarget;
+    std::uint32_t activeCubeFace = 0, activeMipmapLevel = 0, targetLayers = 1;
     std::uint32_t savedWidth = 0, savedHeight = 0;
     bool disposing = false;
     bool colorWrite = true;
@@ -1372,7 +1373,7 @@ struct VulkanRenderer::Impl {
         VkImageCreateInfo create{VK_STRUCTURE_TYPE_IMAGE_CREATE_INFO};
         create.imageType = VK_IMAGE_TYPE_2D; create.format = config.format;
         create.extent = {config.width, config.height, 1}; create.mipLevels = config.levels;
-        create.arrayLayers = 1; create.samples = VK_SAMPLE_COUNT_1_BIT;
+        create.arrayLayers = 1;
         create.tiling = VK_IMAGE_TILING_OPTIMAL;
         create.usage = VK_IMAGE_USAGE_TRANSFER_DST_BIT | VK_IMAGE_USAGE_TRANSFER_SRC_BIT | VK_IMAGE_USAGE_SAMPLED_BIT;
         create.sharingMode = VK_SHARING_MODE_EXCLUSIVE;
@@ -1950,18 +1951,19 @@ struct VulkanRenderer::Impl {
         return cached;
     }
     void createImage(Image& result, VkFormat format, VkImageUsageFlags usage,
-                     VkImageAspectFlags aspect) {
+                     VkImageAspectFlags aspect, std::uint32_t layers = 1) {
         VkImageCreateInfo create{VK_STRUCTURE_TYPE_IMAGE_CREATE_INFO};
         create.imageType = VK_IMAGE_TYPE_2D;
         create.format = format;
         create.extent = {width, height, 1};
         create.mipLevels = 1;
-        create.arrayLayers = 1;
+        create.arrayLayers = layers;
         create.samples = VK_SAMPLE_COUNT_1_BIT;
         create.tiling = VK_IMAGE_TILING_OPTIMAL;
         create.usage = usage;
         create.sharingMode = VK_SHARING_MODE_EXCLUSIVE;
         create.initialLayout = VK_IMAGE_LAYOUT_UNDEFINED;
+        if (layers > 1) create.flags |= VK_IMAGE_CREATE_CUBE_COMPATIBLE_BIT;
         check(api.vkCreateImage(device, &create, nullptr, &result.image), "vkCreateImage");
         VkMemoryRequirements requirements{};
         api.vkGetImageMemoryRequirements(device, result.image, &requirements);
@@ -1973,11 +1975,11 @@ struct VulkanRenderer::Impl {
         check(api.vkBindImageMemory(device, result.image, result.memory, 0), "vkBindImageMemory");
         VkImageViewCreateInfo view{VK_STRUCTURE_TYPE_IMAGE_VIEW_CREATE_INFO};
         view.image = result.image;
-        view.viewType = VK_IMAGE_VIEW_TYPE_2D;
+        view.viewType = layers > 1 ? VK_IMAGE_VIEW_TYPE_2D_ARRAY : VK_IMAGE_VIEW_TYPE_2D;
         view.format = format;
         view.subresourceRange.aspectMask = aspect;
         view.subresourceRange.levelCount = 1;
-        view.subresourceRange.layerCount = 1;
+        view.subresourceRange.layerCount = layers;
         check(api.vkCreateImageView(device, &view, nullptr, &result.view), "vkCreateImageView");
     }
     void destroyImage(Image& image) {
