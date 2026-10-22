@@ -28,4 +28,17 @@ class SVGLoader {
     static std::vector<double> parseFloats(const std::string& input,
                                            const std::vector<int>& flagPositions = {},
                                            int stride = 0);
+
+    // One transform from a transform attribute: its name and the numbers in its parentheses.
+    struct TransformOp {
+        std::string name;
+        std::vector<double> args;
+    };
+
+    // The transforms an attribute lists. The text is cut at each closing bracket and the pieces
+    // are read from the last to the first, because a transform is applied to a point from the
+    // right, so the rightmost is the one that acts first. A piece with nothing in it is skipped
+    // and a piece with no opening bracket is not a transform at all. A rotation angle is given
+    // in degrees and is left as read; the caller scales it.
+    static std::vector<TransformOp> parseTransformList(const std::string& text);
 };

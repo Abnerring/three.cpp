@@ -161,3 +161,48 @@ std::vector<double> SVGLoader::parseFloats(const std::string& input,
     newNumber();
     return result;
 }
+
+std::vector<SVGLoader::TransformOp> SVGLoader::parseTransformList(const std::string& text) {
+    // The text is cut at every closing bracket, which leaves one piece per transform.
+    std::vector<std::string> pieces;
+    std::size_t at = 0;
+    while (true) {
+        const std::size_t close = text.find(')', at);
+        if (close == std::string::npos) {
+            pieces.push_back(text.substr(at));
+            break;
+        }
+        pieces.push_back(text.substr(at, close - at));
+        at = close + 1;
+    }
+
+    std::vector<TransformOp> ops;
+    // The pieces are read from the last to the first.
+    for (std::size_t i = pieces.size(); i > 0; --i) {
+        std::string piece = pieces[i - 1];
+        // The whitespace around a piece is not part of it.
+        std::size_t begin = 0;
+        while (begin < piece.size() && (piece[begin] == ' ' || piece[begin] == '\t' ||
+                                       piece[begin] == '\n' || piece[begin] == '\r')) {
+            ++begin;
+        }
+        std::size_t last = piece.size();
+        while (last > begin && (piece[last - 1] == ' ' || piece[last - 1] == '\t' ||
+                                piece[last - 1] == '\n' || piece[last - 1] == '\r')) {
+            --last;
+        }
+        piece = piece.substr(begin, last - begin);
+        // A piece with nothing in it belongs to a bracket pair that closed immediately.
+        if (piece.empty()) continue;
+
+        const std::size_t open = piece.find('(');
+        // A transform needs both its name and its bracket.
+        if (open == std::string::npos || open == 0) continue;
+
+        TransformOp op;
+        op.name = piece.substr(0, open);
+        op.args = parseFloats(piece.substr(open + 1));
+        ops.push_back(op);
+    }
+    return ops;
+}
