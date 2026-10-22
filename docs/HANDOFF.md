@@ -513,6 +513,23 @@
    - **这意味着什么**：测试里 `setRenderTarget(source)` → `renderEquirectangularToCube(...)` → `setRenderTarget(destination)` 这条链，没有让源留在 `activeKey` 上。第 56 轮写的 `useTarget` 逻辑是"`if (activeKey)` 才 park"——如果某处把 `activeKey` 清成了 `nullptr`（例如 `useTarget(nullptr)`，而第 60 轮正是为了修"层数变 1"在**解绑分支**加了它），那么源就会被**丢弃而不是 park**。**这是 `useTarget(nullptr)` 与 park 语义的冲突**：解绑时先 park 再清 key 才对，而现在顺序是 `reset` → `useTarget(nullptr)` → `resize`，`useTarget(nullptr)` 内部会 `parkedTargets[activeKey] = std::move(active)`，**这一步应该 park 成功**——所以更可能是 `resize` 内部又调了 `destroyTargets`，把 `active` 清掉后再赋值。
    - **下一步**：在 `useTarget` 与 `resize` 里各加一条打印（`activeKey`、`parkedTargets.size()`、`active` 是否为空），跑一次看这三者在 `setRenderTarget(source)` / `renderEquirectangularToCube` / `setRenderTarget(destination)` 之后分别是什么。**这是纯诊断，不改逻辑。**
    - **状态**：全部回退；核心 **747 / 205,735**、`primitive-geometry`、`port-audit`、Vulkan 构建 0 错误、`--cube` 0，树干净。
+131. **第 70 轮：用 `useTarget`/`resize` 的追踪打印拿到了关键行为——"第一次绑定目标时，`activeKey` 是空的，所以那个 1 层目标不会被 park，而是被直接丢掉"**。
+   - **追踪输出（节选）**：
+     ```
+     resize(64,64,1) activeKey=0000 active=0
+     useTarget key=…550 activeKey=0000 parked=0 active=1     ← 第一次绑目标
+     resize(32,16,1) activeKey=…550 active=0
+     useTarget key=0000 activeKey=…550 parked=0 active=1     ← 解绑
+     resize(64,64,1) activeKey=0000 active=0
+     useTarget key=…F10 activeKey=0000 parked=0 active=1     ← 绑定立方体源
+     resize(16,16,6) activeKey=…F10 active=0                 ← 建 6 层
+     useTarget key=…F10 activeKey=…F10 parked=0 active=1     ← 同 key，早退
+     ```
+   - **关键事实**：`useTarget` 的 park 条件是 `if (activeKey)`；**第一次 **`activeKey` 是 `nullptr`，所以此时 `active` 里那个 1 层目标**既不会被 park 也不会被保留**，`active.reset()` 之后就没了（内存由 `unique_ptr` 释放，Vulkan 句柄泄漏）。这条路径在**解绑**时也一样：`useTarget(nullptr)` 会 park `activeKey` 指向的目标，但**若 `activeKey` 已经是 `nullptr`**，就什么也不做。
+   - **这对 blur 的影响**：测试里先绑源、再绑目标，理论上第二步应当把源 park 起来；但追踪在 `blurCube` 内部没有出现"绑定目标"的 `useTarget` 调用——因为第 67 轮提交的那个 `blurCube` 是 **clear-only** 版本（只 `setRenderTarget(destinationCube, face)` 且 `destinationCube` 与当前 `activeKey` 相同，于是**早退**），所以源始终没有被 park。
+   - **结论**：`parkedTargets` 为空**不是 bug 的证据**，而是"当前 HEAD 里的 `blurCube` 根本没有需要 park 的场景"。要验证 park 机制本身，需要一个**真正切换两个不同目标**的用例（例如 `setRenderTarget(A)` → `setRenderTarget(B)` → 检查 A 是否进了 map）。
+   - **状态**：全部回退；核心 **747 / 205,735**、`primitive-geometry`、`port-audit`、Vulkan 构建 0 错误、`--cube` 0，树干净。
+   - **下一步**：先写一个**专门验证 park/restore 的单元测试**（A→B→A，检查两个目标各有一个 `GpuTarget`、且切回 A 时拿到的是同一个句柄）。把这块基建钉死之后，再回到 blur。
 70. **第 520 轮：完整 Vulkan 套件 211/211 全绿，耗时 270.72 秒**。
    - 命令：`ctest --test-dir build-vulkan -j 4 -E "lights-states" --output-on-failure`（仍排除第 46 条那个已知项；它在 Vulkan 构建里同样慢）。
    - 结果：**100% tests passed, 0 tests failed out of 211**，总耗时 **270.72 秒**。对比同一套件在 **Debug** 配置下的 **3784.56 秒 / 2 失败**，差了约 14 倍——再次印证第 69 条"是构建类型不是代码"的结论。
