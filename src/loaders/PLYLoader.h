@@ -78,4 +78,36 @@ class PLYLoader {
     static std::optional<std::pair<ElementRecord, std::size_t>> binaryReadElement(
         const std::vector<std::uint8_t>& data, std::size_t at,
         const std::vector<Property>& properties, bool littleEndian);
+
+    // A vertex record contributes to whichever streams the descriptor names.
+    struct AttributeDescriptor {
+        bool positionUsage = false, normalUsage = false, uvUsage = false, colorUsage = false;
+        std::string positionNames[3];
+        std::string normalNames[3];
+        std::string uvNames[2];
+        std::string colorNames[3];
+        std::string colorType = "uchar";
+    };
+
+    // The flat streams a PLY file is accumulated into before the geometry is built.
+    struct Buffer {
+        std::vector<double> vertices;
+        std::vector<double> normals;
+        std::vector<double> uvs;
+        std::vector<double> colors;
+        std::vector<std::uint32_t> indices;
+    };
+
+    // Appends one vertex record to the streams the descriptor enables. Colours are scaled
+    // to one, converted out of sRGB, then rounded back to the original storage width, which
+    // is what upstream does so integer colours keep their channel values.
+    static void handleVertex(Buffer& buffer, const ElementRecord& element,
+                             const AttributeDescriptor& descriptor);
+
+    // Appends triangles from a face record. Three indices make one triangle and four make
+    // two by the spec rule 0,1,2 and 0,2,3; other counts contribute nothing.
+    static void handleFace(Buffer& buffer, const std::vector<double>& vertexIndices);
+
+    // Whether a type is one of the floating spellings.
+    static bool isFloatType(const std::string& type);
 };

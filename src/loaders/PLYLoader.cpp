@@ -1,6 +1,9 @@
 #include "loaders/PLYLoader.h"
 
 #include <cstdlib>
+#include "math/Color.h"
+#include "math/ColorManagement.h"
+#include <cmath>
 #include <cstring>
 #include <stdexcept>
 
@@ -260,4 +263,59 @@ std::optional<std::pair<PLYLoader::ElementRecord, std::size_t>> PLYLoader::binar
         }
     }
     return std::make_pair(std::move(element), read);
+}
+
+bool PLYLoader::isFloatType(const std::string& type) {
+    return type == "float" || type == "float32" || type == "double" || type == "float64";
+}
+
+void PLYLoader::handleVertex(Buffer& buffer, const ElementRecord& element,
+                             const AttributeDescriptor& descriptor) {
+    const auto number = [&element](const std::string& name) {
+        const auto found = element.find(name);
+        if (found == element.end()) return 0.0;
+        const auto* value = std::get_if<double>(&found->second);
+        return value != nullptr ? *value : 0.0;
+    };
+
+    if (descriptor.positionUsage)
+        for (const auto& name : descriptor.positionNames) buffer.vertices.push_back(number(name));
+    if (descriptor.normalUsage)
+        for (const auto& name : descriptor.normalNames) buffer.normals.push_back(number(name));
+    if (descriptor.uvUsage)
+        for (const auto& name : descriptor.uvNames) buffer.uvs.push_back(number(name));
+
+    if (descriptor.colorUsage) {
+        const double scale = colorScale(descriptor.colorType);
+        const bool isFloat = isFloatType(descriptor.colorType);
+        // Colours are scaled to one, converted out of sRGB, then brought back to the storage
+        // width, so an integer colour keeps its channel values.
+        std::vector<double> components{number(descriptor.colorNames[0]) * scale,
+                                       number(descriptor.colorNames[1]) * scale,
+                                       number(descriptor.colorNames[2]) * scale};
+        Color color;
+        color.fromArray(components);
+        ColorManagement::colorSpaceToWorking(color, SRGBColorSpace);
+        const double inverse = scale == 0.0 ? 0.0 : 1.0 / scale;
+        buffer.colors.push_back(isFloat ? color.r : std::round(color.r * inverse));
+        buffer.colors.push_back(isFloat ? color.g : std::round(color.g * inverse));
+        buffer.colors.push_back(isFloat ? color.b : std::round(color.b * inverse));
+    }
+}
+
+void PLYLoader::handleFace(Buffer& buffer, const std::vector<double>& vertexIndices) {
+    const auto asIndex = [](double value) { return static_cast<std::uint32_t>(value); };
+    if (vertexIndices.size() == 3) {
+        buffer.indices.push_back(asIndex(vertexIndices[0]));
+        buffer.indices.push_back(asIndex(vertexIndices[1]));
+        buffer.indices.push_back(asIndex(vertexIndices[2]));
+    } else if (vertexIndices.size() == 4) {
+        // The spec splits a quad as 0,1,2 and 0,2,3 rather than any other diagonal.
+        buffer.indices.push_back(asIndex(vertexIndices[0]));
+        buffer.indices.push_back(asIndex(vertexIndices[1]));
+        buffer.indices.push_back(asIndex(vertexIndices[2]));
+        buffer.indices.push_back(asIndex(vertexIndices[0]));
+        buffer.indices.push_back(asIndex(vertexIndices[2]));
+        buffer.indices.push_back(asIndex(vertexIndices[3]));
+    }
 }
