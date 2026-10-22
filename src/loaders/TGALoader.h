@@ -51,6 +51,21 @@ class TGALoader {
                                                std::size_t offset, std::size_t pixelTotal,
                                                int pixelSizeBytes);
 
+    // The origin flags the descriptor carries in bits four and five: zero is bottom left, one
+    // bottom right, two top left and three top right. The two upper origins need the rows
+    // flipped, and the two right origins need the columns flipped.
+    static constexpr int kOriginMask = 0x30;
+    static constexpr int kOriginShift = 4;
+    static constexpr int kOriginBottomLeft = 0;
+    static constexpr int kOriginBottomRight = 1;
+    static constexpr int kOriginTopLeft = 2;
+    static constexpr int kOriginTopRight = 3;
+    static int originOf(int descriptor);
+
+    // Expands 24 bit BGR or 32 bit BGRA pixels into RGBA, swapping the channels so the result
+    // is in the order the rest of the port uses. The 32 bit form keeps its alpha byte.
+    static std::vector<std::uint8_t> toRGBA(const std::vector<std::uint8_t>& pixels, int pixelSize);
+
     // Whether a type is one of the run length encoded ones.
     static bool isRle(int imageType);
 };

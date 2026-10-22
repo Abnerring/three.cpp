@@ -114,3 +114,27 @@ std::vector<std::uint8_t> TGALoader::decodeRle(const std::vector<std::uint8_t>& 
     }
     return out;
 }
+
+int TGALoader::originOf(int descriptor) {
+    // Bits four and five of the descriptor pick one of four origins.
+    return (descriptor & kOriginMask) >> kOriginShift;
+}
+
+std::vector<std::uint8_t> TGALoader::toRGBA(const std::vector<std::uint8_t>& pixels,
+                                            int pixelSize) {
+    const std::size_t bytes = static_cast<std::size_t>(pixelSize / 8);
+    if (bytes < 3) return {};
+    const std::size_t count = pixels.size() / bytes;
+    std::vector<std::uint8_t> out(count * 4, 0);
+
+    for (std::size_t i = 0; i < count; ++i) {
+        const std::size_t at = i * bytes;
+        // The file stores blue, green, red then optionally alpha; the working order is red,
+        // green, blue, alpha.
+        out[i * 4 + 0] = pixels[at + 2];
+        out[i * 4 + 1] = pixels[at + 1];
+        out[i * 4 + 2] = pixels[at + 0];
+        out[i * 4 + 3] = bytes == 4 ? pixels[at + 3] : std::uint8_t(255);
+    }
+    return out;
+}
