@@ -81,6 +81,12 @@ class TGALoader {
     // origins need the rows reversed and the two right origins the columns.
     static void flipToOrigin(std::vector<std::uint8_t>& pixels, int width, int height, int origin);
 
+    // Expands eight bit index pixels through a colour map. Each palette entry is three bytes
+    // in blue green red order, the same as a twenty four bit pixel, so the conversion reuses
+    // the same swap. An index past the end of the palette becomes opaque black.
+    static std::vector<std::uint8_t> toRGBAFromIndexed(const std::vector<std::uint8_t>& pixels,
+                                                      const std::vector<std::uint8_t>& palette);
+
     // Whether a type is one of the run length encoded ones.
     static bool isRle(int imageType);
 };

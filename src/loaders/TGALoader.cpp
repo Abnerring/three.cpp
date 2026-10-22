@@ -203,3 +203,22 @@ void TGALoader::flipToOrigin(std::vector<std::uint8_t>& pixels, int width, int h
         }
     }
 }
+
+std::vector<std::uint8_t> TGALoader::toRGBAFromIndexed(const std::vector<std::uint8_t>& pixels,
+                                                       const std::vector<std::uint8_t>& palette) {
+    const std::size_t entries = palette.size() / 3;
+    std::vector<std::uint8_t> out(pixels.size() * 4, 0);
+    for (std::size_t i = 0; i < pixels.size(); ++i) {
+        const std::size_t index = pixels[i];
+        if (index < entries) {
+            const std::size_t at = index * 3;
+            // A palette entry has the same blue green red order as a twenty four bit pixel.
+            out[i * 4 + 0] = palette[at + 2];
+            out[i * 4 + 1] = palette[at + 1];
+            out[i * 4 + 2] = palette[at + 0];
+        }
+        // An index past the end stays black rather than reading past the palette.
+        out[i * 4 + 3] = 255;
+    }
+    return out;
+}
