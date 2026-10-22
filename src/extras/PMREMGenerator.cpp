@@ -117,7 +117,11 @@ void PMREMGenerator::compileEquirectangularShader() {
     _needsRenderer("compileEquirectangularShader");
 }
 void PMREMGenerator::dispose() {
-    _cubeSize = 0;
-    _sourceTarget = nullptr;
-    _lodSizes.clear();
+    // Upstream disposes the cached source target, its five cached materials and the box
+    // geometry. It deliberately does not reset the derived size, and it leaves the source
+    // target member pointing at the disposed target - which _getSourceTarget would then
+    // reuse. That quirk is kept rather than quietly corrected. The materials do not exist
+    // here yet because the shader passes that would create them are not implemented.
+    if (_sourceTarget) _sourceTarget->dispose();
+    if (_boxMesh && _boxMesh->geometry) _boxMesh->geometry->dispose();
 }

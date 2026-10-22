@@ -51,7 +51,8 @@ TEST_CASE("PMREMGenerator reports the shader passes it cannot run") {
     REQUIRE_THROWS_AS(generator.compileCubemapShader(), std::logic_error);
     REQUIRE_THROWS_AS(generator.compileEquirectangularShader(), std::logic_error);
     generator.dispose();
-    REQUIRE(generator.cubeSize() == 0);
+    // Upstream's dispose does not reset the derived size, and fromScene already set it.
+    REQUIRE(generator.cubeSize() == 256);
 }
 TEST_CASE("PMREMGenerator derives the size from fromScene options before rendering") {
     PMREMGenerator generator;
@@ -142,4 +143,15 @@ TEST_CASE("PMREMGenerator maps a mip level to the roughness it was filtered for"
     REQUIRE(PMREMGenerator::lodToRoughness(5, 0) == 0.0);
     // 1 - sqrt(1 - 2/8) = 1 - sqrt(0.75).
     REQUIRE(PMREMGenerator::lodToRoughness(2, 8) == Approx(1.0 - std::sqrt(0.75)).epsilon(1e-15));
+}
+TEST_CASE("PMREMGenerator dispose keeps the derived size and the cached target") {
+    PMREMGenerator generator;
+    generator._setSize(512);
+    auto source = generator._getSourceTarget();
+    REQUIRE(source != nullptr);
+    generator.dispose();
+    // Upstream does not reset the size on dispose.
+    REQUIRE(generator.cubeSize() == 512);
+    // Nor does it clear the cached target, which is the documented quirk.
+    REQUIRE(generator._sourceTarget == source);
 }
