@@ -662,6 +662,14 @@
    - **方法论的盲点（重要）**：第 85 轮那个"`src` 与 `test` 基名做差集"的扫描**会过度报告**——测试文件不一定叫 `<类名>.tests.cpp`，可以叫 `RemainingCurves.tests.cpp` 覆盖一整个家族。所以那份"310 个没有专属测试"的名单**偏大**，必须**再按内容 grep 一遍**（例如搜 `TEST_CASE` + 类名）才能确认真的没测。
    - **处理**：删掉我这份冗余测试、`git checkout` 还原 `test/CMakeLists.txt`，树回到 **787 用例 / 206,036 断言**、`primitive-geometry`、`port-audit` 全绿（**没有丢任何东西**）。
    - **下一轮的正确流程**：① 先 `grep -r "TEST_CASE" test --include=*.cpp` 找**内容层面**是否已有该类的用例；② 没有才写；③ 写之前先看类的真实构造签名（`Points` 是 `shared_ptr` 向量）。
+152. **第 91 轮：把"还剩什么"这件事查到底——可移植核心其实只剩 27 个模块，其中 23 个依赖 TSL。**
+   - **先纠正第 90 轮的方法**：按内容 grep（而不是按文件名差集）检查了一批候选类（`Clock`/`Timer`/`Cache`/`SphericalHarmonics3`/`LoadingManager`/`LoaderUtils`/`TextureUtils`/`Box2`/`Frustum`/`Raycaster`/`UniformsUtils`/`InstancedInterleavedBuffer`/`BatchedMesh`/`AnimationUtils`/`Base64`/`Float32BufferAttribute`/`Vector4`/`Matrix3`），**每一个都有测试提到**，其中 `Cache`、`Vector4`、`Matrix3` 甚至有专属测试文件（`CacheRealm.tests.cpp`、`Vector4.tests.cpp`、`Matrix3.tests.cpp`）。**所以"310 个没有专属测试"是文件命名造成的假象，不是真实缺口。**
+   - **`missing` 的真实构成**：630 个里，**排除 `src/nodes/*`、`examples/*`、以及 `vulkan-port-pending` 范围之后，只剩 27 个**：
+     - 4 个**入口再导出**：`Three.Legacy.js`、`Three.TSL.js`、`Three.WebGPU.js`、`Three.WebGPU.Nodes.js`（端口有自己的入口，不需要照搬再导出层）；
+     - 23 个**node 材质**：`NodeMaterial` 及 `Mesh*/Line*/Points*/Sprite*/Shadow*/Volume*NodeMaterial`、`ProxyNodeMaterial`、`NodeMaterialObserver`，以及 3 个 `loaders/nodes/*Loader`——**全部依赖 TSL 与 `NodeBuilder`**。
+   - **结论**：**可移植的核心已经完整**。剩下的三大块是：① TSL（需要 `NodeBuilder` 3544 行 + `Node` 的反射式子节点发现，C++ 无等价物）；② PMREM 的 GPU 卷积（blur 管线设备丢失，已暂停）；③ `examples/jsm` 插件（体量大，且多数依赖 WebGL 渲染器行为）。
+   - **本轮实际交付（差分）**：新增 3×3 纹理、2×9 网格、2 实例、1×32 立方纹理、三点 `LinearInterpolant` 五个场景；差分从 **309 → 315 场景**，22 组，exit=0。
+   - **验证**：核心 **787 / 206,036**、`primitive-geometry`、`port-audit` 全绿。
 70. **第 520 轮：完整 Vulkan 套件 211/211 全绿，耗时 270.72 秒**。
    - 命令：`ctest --test-dir build-vulkan -j 4 -E "lights-states" --output-on-failure`（仍排除第 46 条那个已知项；它在 Vulkan 构建里同样慢）。
    - 结果：**100% tests passed, 0 tests failed out of 211**，总耗时 **270.72 秒**。对比同一套件在 **Debug** 配置下的 **3784.56 秒 / 2 失败**，差了约 14 倍——再次印证第 69 条"是构建类型不是代码"的结论。

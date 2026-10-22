@@ -225,6 +225,7 @@ const interpolantScenarios = [
     ['interp discrete 4 2 0 1 8 0 1 2 3 4 5 6 7', () => new DiscreteInterpolant([0, 1], [0, 1, 2, 3, 4, 5, 6, 7], 4)],
     ['interp discrete 4 3 0 1 2 12 0 1 2 3 4 5 6 7 8 9 10 11', () => new DiscreteInterpolant([0, 1, 2], [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11], 4)],
     ['interp discrete 2 2 0 1 4 3 9 4 2', () => new DiscreteInterpolant([0, 1], [3, 9, 4, 2], 2)],
+    ['interp linear 3 3 0 1 2 9 1 2 3 4 5 6 7 8 9', () => new LinearInterpolant([0, 1, 2], [1, 2, 3, 4, 5, 6, 7, 8, 9], 3)],
     ['interp linear 2 2 0 1 4 5 3 9 7', () => new LinearInterpolant([0, 1], [5, 3, 9, 7], 2)],
     ['interp cubic 1 2 0 1 6 0 10 1 20 0 1', () => new CubicInterpolant([0, 1], [0, 10, 1, 20, 0, 1], 1)],
     ['interp cubic 2 2 0 1 12 0 0 1 1 2 0 0 3 1 4 0 0', () => new CubicInterpolant([0, 1], [0, 0, 1, 1, 2, 0, 0, 3, 1, 4, 0, 0], 2)],
@@ -446,6 +447,7 @@ const helperScenarios = [
     ['helper grid 2 2', () => new GridHelper(2, 2)],
     ['helper grid 1 1', () => new GridHelper(1, 1)],
     ['helper grid 12 5', () => new GridHelper(12, 5)],
+    ['helper grid 2 9', () => new GridHelper(2, 9)],
     ['helper grid 100 100', () => new GridHelper(100, 100)],
     ['helper grid 10 1', () => new GridHelper(10, 1)],
     ['helper grid 5 5', () => new GridHelper(5, 5)],
@@ -455,6 +457,7 @@ const helperScenarios = [
     ['helper grid 9 4', () => new GridHelper(9, 4)],
     ['helper grid 1 1', () => new GridHelper(1, 1)],
     ['helper grid 12 5', () => new GridHelper(12, 5)],
+    ['helper grid 2 9', () => new GridHelper(2, 9)],
     ['helper box3 -1 -1 -1 1 1 1', () => new Box3Helper(new Box3(new Vector3(-1, -1, -1), new Vector3(1, 1, 1)))],
     ['helper box3 0 0 0 0 0 0', () => new Box3Helper(new Box3(new Vector3(0, 0, 0), new Vector3(0, 0, 0)))],
     ['helper box3 0 0 0 10 10 10', () => new Box3Helper(new Box3(new Vector3(0, 0, 0), new Vector3(10, 10, 10)))],
@@ -654,6 +657,7 @@ const textureScenarios = [
     ['texture data 2 9', () => new DataTexture(new Uint8Array(2 * 9 * 4), 2, 9)],
     ['texture data 1 1', () => new DataTexture(new Uint8Array(4), 1, 1)],
     ['texture data 16 1', () => new DataTexture(new Uint8Array(16 * 4), 16, 1)],
+    ['texture data 3 3', () => new DataTexture(new Uint8Array(3 * 3 * 4), 3, 3)],
     ['texture depth 4 2', () => new DepthTexture(4, 2)],
     ['texture depth 1 1', () => new DepthTexture(1, 1)],
     ['texture depth 2 8', () => new DepthTexture(2, 8)],
@@ -761,6 +765,7 @@ const instanceScenarios = [
     ['instance 1', 1],
     ['instance 7', 7],
     ['instance 64', 64],
+    ['instance 2', 2],
     ['instance 3', 3],
     ['instance 8', 8],
     ['instance 16', 16],
@@ -768,6 +773,7 @@ const instanceScenarios = [
     ['instance 1', 1],
     ['instance 7', 7],
     ['instance 64', 64],
+    ['instance 2', 2],
 ];
 const instanceRaw = execFileSync(probePath, [], {input: instanceScenarios.map(([line]) => line).join('\n'), encoding: 'utf8'});
 const instanceLines = instanceRaw.trim().split('\n').map((line) => JSON.parse(line));
