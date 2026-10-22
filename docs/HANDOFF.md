@@ -608,6 +608,12 @@
    - **测试（3 个用例、19 条断言）**：id 严格递增（`second.id() == first.id() + 1`）、全部默认值、`nodeType` 可选；三个 `getUpdateType*` 都是 `none`、`isCacheable` 为真、`customCacheKey() == id`、`getHash() == std::to_string(id)`、`getScope() == &node`；派生类覆写 `isCacheable`/`customCacheKey` 后生效，而 `getHash` 仍走默认。
    - **验证**：核心 **765 用例 / 205,850 断言**（+3 / +19）、`primitive-geometry`、`port-audit` 全绿。
    - **下一步（同一个类，继续切片）**：`getCacheKey` 需要 `_getChildren(ignores)`（383–449 行），而后者默认返回空列表、派生类才会填；接着是 `getElementType`/`getMemberType`/`getNodeType`（45 行的类型推导）/`generateNodeType`/`getShared`/`getArrayCount`/`traverse`/`dispose`；最后才是 `serialize`/`deserialize`/`toJSON`（它们依赖 `getSerializeChildren`）。`setup`/`analyze`/`generate`/`build` 按规则显式抛错。
+143. **第 82 轮：`Node` 再切片（`isGlobal`/`getArrayCount`/`getMemberType`），并查清 `_getChildren` 撞上了 JS 反射**。
+   - **新增**：`isGlobal()`（返回 `global` 字段）、`getArrayCount()`（基类返回 `null` → 空 optional）、`getMemberType(name)`（基类返回 `"void"`）。测试里用派生类验证 `isGlobal` 与 `getArrayCount` 都能被覆写。
+   - **重要发现（`_getChildren`）**：上游实现是 `for ( const property of Object.getOwnPropertyNames( this ) )`，然后按"属性是不是 `isNode` 对象 / 数组 / 纯对象"分类——这是**运行时反射**，C++ **没有等价物**。所以 `getChildren`/`getCacheKey`/`getSerializeChildren`/`serialize` 这一整条线**不能照搬**，必须改成"派生类显式登记自己的子节点"。这个结论已经写进 `Node.h` 的注释里。
+   - **`getNodeType` 这一组也不能独立移植**：`getNodeType`、`generateNodeType`、`getElementType` 的签名都带 `builder`，内部要 `builder.getDataFromNode`/`getNodeProperties`/`getElementType`——都落在 `NodeBuilder`（3544 行）里。只有 `getMemberType` 是基类常量返回。
+   - **验证**：核心 **766 用例 / 205,856 断言**（+1 / +6）、`primitive-geometry`、`port-audit` 全绿。
+   - **对 TSL 推进路线的修正**：既然 `_getChildren` 与 `getNodeType` 都卡在 builder/反射上，`Node` 剩余的可移植面已经不多（`dispose` 需要 `EventDispatcher`、`traverse` 需要子节点登记、`serialize` 需要序列化协议）。**下一段更适合转去港口里其它自成体系的模块**，例如 `src/nodes/utils`（31 个文件 4260 行）里纯数学的辅助函数，或者回到差分扩充。
 70. **第 520 轮：完整 Vulkan 套件 211/211 全绿，耗时 270.72 秒**。
    - 命令：`ctest --test-dir build-vulkan -j 4 -E "lights-states" --output-on-failure`（仍排除第 46 条那个已知项；它在 Vulkan 构建里同样慢）。
    - 结果：**100% tests passed, 0 tests failed out of 211**，总耗时 **270.72 秒**。对比同一套件在 **Debug** 配置下的 **3784.56 秒 / 2 失败**，差了约 14 倍——再次印证第 69 条"是构建类型不是代码"的结论。

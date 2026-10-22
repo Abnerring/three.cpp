@@ -1,4 +1,4 @@
-﻿#include "nodes/core/Node.h"
+#include "nodes/core/Node.h"
 
 #include "catch.hpp"
 
@@ -42,4 +42,21 @@ TEST_CASE("Node derived classes can override the accessors") {
     REQUIRE(custom.customCacheKey() == 42.0);
     // Unoverridden defaults still apply.
     REQUIRE(custom.getHash() == std::to_string(custom.id()));
+}
+TEST_CASE("Node reports its global flag, array count and member type") {
+    Node node;
+    REQUIRE_FALSE(node.isGlobal());
+    // The base class has no array length, which upstream expresses as null.
+    REQUIRE_FALSE(node.getArrayCount().has_value());
+    // And it has no members, so member access reports void.
+    REQUIRE(node.getMemberType("any") == "void");
+
+    struct GlobalNode : Node {
+        GlobalNode() { _global = true; }
+        std::optional<double> getArrayCount() const override { return 4.0; }
+    };
+    GlobalNode global;
+    REQUIRE(global.isGlobal());
+    REQUIRE(global.getArrayCount().has_value());
+    REQUIRE(global.getArrayCount().value() == 4.0);
 }

@@ -1,4 +1,4 @@
-﻿#pragma once
+#pragma once
 #include "nodes/core/NodeConstants.h"
 
 #include <cstdint>
@@ -40,6 +40,17 @@ class Node {
     // The identifier used when hashing the node; upstream returns String( this.id ).
     virtual std::string getHash() const { return std::to_string(_id); }
 
+    // Upstream returns this.global; the builder argument is unused there too.
+    virtual bool isGlobal() const { return _global; }
+    // Upstream returns null for a plain node, which is an empty optional here.
+    virtual std::optional<double> getArrayCount() const { return {}; }
+    // Upstream returns "void" for the base class; derived nodes describe their members.
+    virtual std::string_view getMemberType(const std::string& /*name*/) const { return "void"; }
+
+    // Structural note: upstream's _getChildren walks Object.getOwnPropertyNames( this ), which
+    // is runtime reflection. There is no equivalent here, so a derived node has to register
+    // its child nodes explicitly instead. That is why getCacheKey, getChildren and the
+    // serialisation helpers are not part of this slice yet.
     virtual std::string_view getUpdateType() const { return _updateType; }
     virtual std::string_view getUpdateBeforeType() const { return _updateBeforeType; }
     virtual std::string_view getUpdateAfterType() const { return _updateAfterType; }
