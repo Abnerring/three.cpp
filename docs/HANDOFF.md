@@ -480,6 +480,13 @@
    - **保留下来的东西**：`blurCube`（能编译、不再崩溃，但**未出图**，明确标注）；`drawPmremBlurFace` 的 stage flags 修复；第 63 轮的着色器 `sigmaGuard`。回退的只有那个**会失败**的验收用例。
    - **下一个排查方向**：目标面全黑 = 要么 draw 覆盖不到（顶点/投影/视口），要么着色器输出 NaN。`accumWeight` 在 `sigma` 很小时仍然正常（`stratum` 从 0.5/20 起、`truncation < 1`），所以更可能是**几何没覆盖**：blur 管线与等距柱状管线的差别只在 stages/layout，顶点输入完全一样，但两者的**着色器 push 块大小不同**（192 vs 196）——下一步应当在 `drawPmremBlurFace` 里临时 `vkCmdClearAttachments` 一个亮色，确认**绘制本身**是否发生。
    - **状态**：核心 **747 / 205,735**、`primitive-geometry`、`port-audit`、Vulkan 构建 0 错误、`--cube` 0，树干净。
+126. **第 65 轮：用"红清 + 探针"把 blur 的问题范围收窄到"采样"，但常量输出实验让管线崩溃，已全部回退**。
+   - **关键实验一（红清）**：在 blur 的 `beginFrame` 之后、draw 之前插入 `clearAttachments(true, false, Color(1,0,0), 1, false)`，期望读到红色。结果**仍然全黑**——说明**清屏被覆盖了**，也就是 **blur 的 draw 确实执行了**、并且**输出黑色**。这把"绘制没发生 / framebuffer 不对"两个可能性排除了。
+   - **关键实验二（层数与 framebuffer 探针）**：打印 `active->layers`、`faceFramebuffer`、`framebuffer`、源的 `layers`。六面都是 `activeLayers=6 srcLayers=6`，`faceFramebuffer` 与 `framebuffer` 都是有效句柄（六面打印出同一个 `faceFramebuffer` 指针是分配器复用，不是没重建）。所以**目标存储与逐面 framebuffer 都正常**。
+   - **一个必须先排除的假象**：一开始测试在 `blurCube` **之前** `setRenderTarget(nullptr)`，而 `blurCube` 结束时会恢复到 `nullptr`——`resize` 于是重建 `pixels` 并清零，读回来永远是 0。改成**先绑目标**再调 `blurCube`，恢复就成了空操作。**这是第 19 轮同一个坑，第三次踩到**。
+   - **关键实验三（常量输出）失败**：把片元改成直接输出品红，并保留原计算在 `if (accumWeight < 0.0)` 里防止被优化掉。结果 `--cube` **崩溃**（`0xC0000005`）——常量输出让 `accumWeight` 与采样循环变成死代码，SPIR-V 反射出的绑定/推常量范围随之变化，管线布局与运行时写入不再匹配。
+   - **当前结论（有价值的负面结果）**：blur 的**绘制链路是通的**（红清被覆盖）、**目标存储正确**（6 层、framebuffer 有效）、**输入源正确**（6 层、cube 视图存在），但**采样结果是黑**。所以问题在 **`envMap` 采样本身**：descriptor 类型/数量与反射布局不符、或源图布局不是 `SHADER_READ_ONLY_OPTIMAL`、或 `samplerCube` 与 cube 视图的组合在该驱动上需要额外校验。
+   - **状态**：全部回退到 `1c1a15c` 之后的绿点；核心 **747 / 205,735**、`primitive-geometry`、`port-audit`、Vulkan 构建 0 错误、`--cube` 0，树干净。
 70. **第 520 轮：完整 Vulkan 套件 211/211 全绿，耗时 270.72 秒**。
    - 命令：`ctest --test-dir build-vulkan -j 4 -E "lights-states" --output-on-failure`（仍排除第 46 条那个已知项；它在 Vulkan 构建里同样慢）。
    - 结果：**100% tests passed, 0 tests failed out of 211**，总耗时 **270.72 秒**。对比同一套件在 **Debug** 配置下的 **3784.56 秒 / 2 失败**，差了约 14 倍——再次印证第 69 条"是构建类型不是代码"的结论。
