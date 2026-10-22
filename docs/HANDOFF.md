@@ -204,6 +204,12 @@
    - **现状**：差分 **22 组 / 287 场景 / exit=0**；核心 **745 / 205,728**；addons **155 / 23,996**；`primitive-geometry` 与 `port-audit` 通过。
    - **一个意外收获**：上游 `WebGLCubeRenderTarget` **没有 `type` 属性**，探针第一次编译时就因此报错；把它输出出来反而会制造假的差异。所以差分字段必须**照着上游真实存在的属性选**，不能顺手加。
    - **下一步**：GPU 侧（六面渲染、PMREM 的 `_textureToCubemap`/`_applyPMREM`）在 mipmap 用例恢复前无法验证；在此期间继续做**纯 CPU 且可差分**的部分，或开始评估 TSL（`src/nodes`）里可以先做的纯 CPU 子集（生成 GLSL 字符串，用 `third_party/vulkan/bin/glslang.exe` 编译验证——这条**不需要 GPU**）。
+80. **第 14 轮：找到了绕过环境阻塞的钥匙（`VulkanRendererTests --cube`），六面渲染因此**第一次真正跑起来**，但逐面颜色不对**。
+   - **关键发现**：`VulkanRendererTests` 是**遇第一个失败即中止**的，而 `mipmapTests` 排在前面，所以六面测试**永远跑不到**（这就是前几轮"无法验证"的真正机制）。在 `main` **最前面**加一个快路径：`if (argc > 1 && argv[1] == "--cube") { renderTargetTests(validation); cubeRenderTargetTests(validation); return 0; }`——只跑与立方相关的两个用例，**绕开** mipmap。
+   - **结果**：`--cube` 跑 46.9 秒后报 `cube face carries its own colour`——也就是说**六面渲染代码跑通了**（`setRenderTarget(cube, face)` 接受 face、`selectFace` 建了逐面视图与 framebuffer、`beginFrame` 用了 faceFramebuffer、`endFrame` 按 `baseArrayLayer = activeCubeFace` 回读），但**读回来的颜色不是该面的颜色**。
+   - **已经排除的**：`--cube` 位置（第一次放太靠后，mipmap 先跑；移到最前面才真正执行）、链接失效（头文件改了但测试 obj 是旧的，要删 obj 强制重编）、`threecpp_vulkan` 未重编（要先编库再编测试）。
+   - **下一步（诊断顺序）**：① 只跑 **face 0**，确认单面正确——若单面就对，问题在"切面"逻辑（`selectFace` 的早退条件或 `initializedLayers` 位）；② 若单面也不对，问题在**首帧布局转换**（`beginFrame` 里 `VK_IMAGE_LAYOUT_UNDEFINED → COLOR_ATTACHMENT_OPTIMAL` 只对当前层做，但整图是 6 层，需要每层各做一次——现在正是这么做的，但 `initializedLayers` 的位可能在 `endFrame` 之后才置，导致第二轮又按 UNDEFINED 转换）；③ 打印每个面读回的首像素，和预期的 `{1,0,0}`/`{0,1,0}`/… 逐个对照。
+   - **本轮处理**：所有未验证改动**已回退**，树保持干净（核心 745 / 205,728、差分 22 组 / 287 场景、`primitive-geometry` 与 `port-audit` 全绿）。
 70. **第 520 轮：完整 Vulkan 套件 211/211 全绿，耗时 270.72 秒**。
    - 命令：`ctest --test-dir build-vulkan -j 4 -E "lights-states" --output-on-failure`（仍排除第 46 条那个已知项；它在 Vulkan 构建里同样慢）。
    - 结果：**100% tests passed, 0 tests failed out of 211**，总耗时 **270.72 秒**。对比同一套件在 **Debug** 配置下的 **3784.56 秒 / 2 失败**，差了约 14 倍——再次印证第 69 条"是构建类型不是代码"的结论。
