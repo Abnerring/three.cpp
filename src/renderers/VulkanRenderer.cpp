@@ -382,6 +382,7 @@ struct VulkanRenderer::Impl {
     VkDescriptorSetLayout pmremBlurTextureLayout = VK_NULL_HANDLE;
     VkPipelineLayout pmremBlurPipelineLayout = VK_NULL_HANDLE;
     VkPipeline pmremBlurPipelineHandle = VK_NULL_HANDLE;
+    VkSampler pmremSampler = VK_NULL_HANDLE;
     std::vector<VkDescriptorPool> descriptorPools;
     std::size_t activeDescriptorPool = 0;
     VkCommandBuffer textureCommandBuffer = VK_NULL_HANDLE;
@@ -885,6 +886,17 @@ struct VulkanRenderer::Impl {
         pmremTextureLayout = pmremReflectedLayout->setLayouts()[0];
         pmremPipelineLayout = pmremReflectedLayout->handle();
         createPmremGeometry();
+        {
+            VkSamplerCreateInfo pmremSamplerInfo{VK_STRUCTURE_TYPE_SAMPLER_CREATE_INFO};
+            pmremSamplerInfo.magFilter = VK_FILTER_LINEAR;
+            pmremSamplerInfo.minFilter = VK_FILTER_LINEAR;
+            pmremSamplerInfo.mipmapMode = VK_SAMPLER_MIPMAP_MODE_NEAREST;
+            pmremSamplerInfo.addressModeU = VK_SAMPLER_ADDRESS_MODE_CLAMP_TO_EDGE;
+            pmremSamplerInfo.addressModeV = VK_SAMPLER_ADDRESS_MODE_CLAMP_TO_EDGE;
+            pmremSamplerInfo.addressModeW = VK_SAMPLER_ADDRESS_MODE_CLAMP_TO_EDGE;
+            check(api.vkCreateSampler(device, &pmremSamplerInfo, nullptr, &pmremSampler),
+                  "vkCreateSampler(pmrem)");
+        }
         // Exercise the per target builder once so it cannot rot unnoticed.
         spareTarget = createGpuTarget(4, 4, 1);
         createPmremPipeline();
@@ -2403,6 +2415,55 @@ struct VulkanRenderer::Impl {
                                     pmremPipelineLayout, 0, 1, &set, 0, nullptr);
         api.vkCmdPushConstants(commandBuffer, pmremPipelineLayout, VK_SHADER_STAGE_VERTEX_BIT,
                                0, sizeof(float) * transforms.size(), transforms.data());
+        api.vkCmdDraw(commandBuffer, 36, 1, 0, 0);
+    }
+
+    // The blur pass samples a cubemap through its cube view and writes the bound face.
+    void drawPmremBlurFace(VkImageView sourceCubeView, const std::array<float, 49>& block) {
+        VkDescriptorSet set = VK_NULL_HANDLE;
+        for (;;) {
+            if (activeDescriptorPool == descriptorPools.size()) {
+                VkDescriptorPoolSize sizes[] = {{VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, 12288},
+                    {VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, 4096},
+                    {VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, 32768}};
+                VkDescriptorPoolCreateInfo create{VK_STRUCTURE_TYPE_DESCRIPTOR_POOL_CREATE_INFO};
+                create.maxSets = 4096;
+                create.poolSizeCount = 3;
+                create.pPoolSizes = sizes;
+                VkDescriptorPool pool;
+                check(api.vkCreateDescriptorPool(device, &create, nullptr, &pool),
+                      "vkCreateDescriptorPool(pmrem blur)");
+                descriptorPools.push_back(pool);
+            }
+            VkDescriptorSetAllocateInfo allocate{VK_STRUCTURE_TYPE_DESCRIPTOR_SET_ALLOCATE_INFO};
+            allocate.descriptorPool = descriptorPools[activeDescriptorPool];
+            allocate.descriptorSetCount = 1;
+            allocate.pSetLayouts = &pmremBlurTextureLayout;
+            const auto result = api.vkAllocateDescriptorSets(device, &allocate, &set);
+            if (result == VK_ERROR_OUT_OF_POOL_MEMORY || result == VK_ERROR_FRAGMENTED_POOL) {
+                ++activeDescriptorPool;
+                continue;
+            }
+            check(result, "vkAllocateDescriptorSets(pmrem blur)");
+            break;
+        }
+        const VkDescriptorImageInfo image{pmremSampler, sourceCubeView,
+                                         VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL};
+        VkWriteDescriptorSet write{VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET};
+        write.dstSet = set;
+        write.dstBinding = 0;
+        write.descriptorCount = 1;
+        write.descriptorType = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
+        write.pImageInfo = &image;
+        api.vkUpdateDescriptorSets(device, 1, &write, 0, nullptr);
+        api.vkCmdBindPipeline(commandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS,
+                              pmremBlurPipelineHandle);
+        const VkDeviceSize offset = 0;
+        api.vkCmdBindVertexBuffers(commandBuffer, 0, 1, &pmremVertices.buffer, &offset);
+        api.vkCmdBindDescriptorSets(commandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS,
+                                    pmremBlurPipelineLayout, 0, 1, &set, 0, nullptr);
+        api.vkCmdPushConstants(commandBuffer, pmremBlurPipelineLayout, VK_SHADER_STAGE_VERTEX_BIT,
+                               0, sizeof(float) * block.size(), block.data());
         api.vkCmdDraw(commandBuffer, 36, 1, 0, 0);
     }
 
