@@ -698,6 +698,15 @@
    - **处理**：本轮**回退** MDD，不提交半成品；把三条写清楚留给下次。本轮实际交付是差分 **320 → 326 场景**（新增 7×7 纹理、100×1 网格、1 实例）。
    - **下次的正确做法**：① 在 `MDDLoader.cpp` 里**显式 include** `animation/tracks/NumberKeyframeTrack.h`（`NumberKeyframeTrack` 未声明就是因为缺它）；② 用 **`AnimationArray` 的真实底层类型**（去 `animation/Interpolant.h` 或 `KeyframeTrack.h` 里看 `using AnimationArray = ...` 到底是什么），必要时**直接用 `std::vector<JSValue>`** 构造；③ `BufferAttribute` 用 **`TypedBufferAttribute<float>`**。
    - **验证**：核心 **793 / 206,105**、`primitive-geometry`、`port-audit` 全绿，差分 **326 场景 / 22 组 / exit=0**。
+157. **第 96 轮：`MDDLoader` 第二轮成功——第三个 addon loader 落地**。
+   - **第 156 条给出的三条修正全部生效**：
+     1. **`AnimationArray = InterpolantArray`**（`src/animation/AnimationUtils.h:9`）——它**不是向量**，是 `math/Interpolant.h` 里一个包住 `std::variant<…TypedArray…, JSValue>` 的**包装类**，没有 `push_back`。正确构造方式：`AnimationArray(Float32Array(values))`（`TypedArray` 有 `explicit TypedArray(const std::vector<T>&)`）。
+     2. **`BufferAttribute` 是普通类**，模板版是 **`TypedBufferAttribute<float, Clamped>`**，用 `std::make_shared<TypedBufferAttribute<float>>(values, 3)`。
+     3. `.cpp` 里要**显式 include** `animation/tracks/NumberKeyframeTrack.h`，否则 `NumberKeyframeTrack` 未声明。
+   - **实现要点**：MDD 是**大端**（`DataView.getUint32/getFloat32` 都没传小端标志）；头部 `totalFrames`/`totalPoints`；时间数组每帧一个 float；影响权重数组是**平方长度**、走**对角线**（`values[totalFrames*i + i] = 1`）；`AnimationClip` 时长取**最后一帧时间**；每个 morph target 是 `TypedBufferAttribute<float>`，名字 `morph_{i}`；数据不足时抛 `THREE.MDDLoader: Unexpected end of data`（上游这里会**静默读到 NaN**，端口选择显式报错，已在头文件注明）。
+   - **测试（3 个用例、13 条断言）**：用 C++ 手工拼一个**大端**字节缓冲（2 帧 / 3 点 / 帧时间 0 与 0.5 / 帧 0 是 0..8 / 帧 1 是 1 后跟 2），断言 morph target 数量、`itemSize == 3`（**是属性不是方法**）、`count == 3`、`getX(0) == 0`（**精确比较**，因为相对容差表达不了零）、`getY(1) == 4`、`getZ(2) == 8`、第二帧首点 1.0、clip 时长 0.5（`name.toString() == "default"`）、以及截断输入抛错。
+   - **两个自造错误**：`Approx(0.0).epsilon(1e-6)` **对零无效**（它是相对容差）；我第一版把帧 0 的三个点当成 `(0,0,0)`/`(1,2,3)` 算了，实际数据是 0..8 连续，`getY(1)` 应为 **4** 而不是 2。**又一次：失败先怀疑测试。**
+   - **验证**：核心 **796 用例 / 206,118 断言**（+3 / +13）、`primitive-geometry`、`port-audit` 全绿。addon loader **4 / 52 → 5 / 52**。
 70. **第 520 轮：完整 Vulkan 套件 211/211 全绿，耗时 270.72 秒**。
    - 命令：`ctest --test-dir build-vulkan -j 4 -E "lights-states" --output-on-failure`（仍排除第 46 条那个已知项；它在 Vulkan 构建里同样慢）。
    - 结果：**100% tests passed, 0 tests failed out of 211**，总耗时 **270.72 秒**。对比同一套件在 **Debug** 配置下的 **3784.56 秒 / 2 失败**，差了约 14 倍——再次印证第 69 条"是构建类型不是代码"的结论。
