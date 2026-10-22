@@ -163,6 +163,7 @@ target_sources(threecpp PRIVATE
     src/core/InstancedInterleavedBuffer.cpp
     src/core/RenderTarget.cpp
     src/core/RenderTarget3D.cpp
+    src/core/WebGLCubeRenderTarget.cpp
     src/core/InstancedBufferAttribute.cpp
     src/objects/Bone.cpp
     src/objects/Skeleton.cpp

@@ -1,9 +1,11 @@
 #include "catch.hpp"
+#include "core/WebGLCubeRenderTarget.h"
 #include "textures/DataTexture.h"
 #include "textures/DataArrayTexture.h"
 #include "textures/Data3DTexture.h"
 #include "textures/DepthTexture.h"
 #include "textures/CubeDepthTexture.h"
+#include "textures/CubeTexture.h"
 #include "textures/FramebufferTexture.h"
 #include "textures/CompressedArrayTexture.h"
 #include "textures/CompressedCubeTexture.h"
@@ -335,4 +337,24 @@ TEST_CASE("Material JSON delays invalid late fields until after texture callback
     REQUIRE(material.toJSON().at("userData").get<std::string>() == "abc");
     material.userData = nullptr;
     REQUIRE_THROWS_AS(material.toJSON(), JSTypeError);
+}
+TEST_CASE("Cube render targets own a six face cube texture") {
+    WebGLCubeRenderTarget target(8);
+    REQUIRE(target.isWebGLCubeRenderTarget);
+    REQUIRE(target.width == 8);
+    REQUIRE(target.height == 8);
+    REQUIRE(target.texture.get() != nullptr);
+    REQUIRE(target.texture.get()->isRenderTargetTexture);
+    auto cube = std::dynamic_pointer_cast<CubeTexture>(target.texture.get());
+    REQUIRE(cube != nullptr);
+    REQUIRE(cube->images.get()->faces.size() == 6);
+    for (const auto& image : cube->images.get()->faces) {
+        REQUIRE(image->width == 8);
+        REQUIRE(image->height == 8);
+        REQUIRE(image->depth == 1);
+    }
+    // The two methods that need GPU work report that instead of pretending to succeed.
+    const auto renderer = JSValue::object();
+    REQUIRE_THROWS_AS(target.fromEquirectangularTexture(renderer, JSValue::object()), std::logic_error);
+    REQUIRE_THROWS_AS(target.clear(renderer), std::logic_error);
 }
