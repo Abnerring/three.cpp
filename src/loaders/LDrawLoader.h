@@ -220,4 +220,13 @@ class LDrawLoader {
     // The finish a word names. The comparison ignores case, and a word that names none gives
     // the plain finish rather than an error, which is how a colour with no finish arrives.
     static FinishType finishTypeFromToken(const std::string& token);
+
+    // Whether a file declares itself a part, which is what makes the loader cache the geometry
+    // it builds. Only the two exact words count, with the case they are written in.
+    static bool isPartType(const std::string& type);
+
+    // Whether a file declares itself a primitive or a subpart. Unlike the part test this one
+    // looks for the word anywhere in the declaration and ignores case, so a primitive written
+    // as part of a longer name still counts, while the subpart word is still exact.
+    static bool isPrimitiveType(const std::string& type);
 };

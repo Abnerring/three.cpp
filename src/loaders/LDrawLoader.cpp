@@ -433,3 +433,18 @@ LDrawLoader::FinishType LDrawLoader::finishTypeFromToken(const std::string& toke
     // A colour that names no finish has the plain one.
     return FinishType::Default;
 }
+
+bool LDrawLoader::isPartType(const std::string& type) {
+    // Both words are compared exactly and with their case, so a lower case spelling and a
+    // plural do not count.
+    return type == "Part" || type == "Unofficial_Part";
+}
+
+bool LDrawLoader::isPrimitiveType(const std::string& type) {
+    // The primitive test looks for the word anywhere, without regard to case.
+    std::string lower = type;
+    for (char& c : lower) c = static_cast<char>(std::tolower(static_cast<unsigned char>(c)));
+    if (lower.find("primitive") != std::string::npos) return true;
+    // The subpart word is exact and case sensitive.
+    return type == "Subpart";
+}

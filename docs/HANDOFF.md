@@ -1697,6 +1697,12 @@
    - **近似拼写不算**：`MATTE` 与 `MATTE METALLIC`（空格而不是下划线）都落到 `Default`，测试专门钉住。
    - **测试（4 个用例、18 条断言）**：五个词；**三种大小写混写**；空串、`GLITTER` 与两个近似拼写都给 `Default`；**五个真实词两两不等且都不等于 `Default`**（防止映射退化成别名）。
    - **验证**：核心 **1417 用例 / 209,897 断言**（+4 / +18）、addons、`primitive-geometry`、`port-audit`、Vulkan 全绿。
+300. **第 239 轮：`LDrawLoader` 第十三层——零件与图元的类型判定**。
+   - **`isPartType`**：`type === 'Part' || type === 'Unofficial_Part'`——**精确、区分大小写**，所以 `part`、`PART`、`Parts`、`Subpart` 都不算。
+   - **`isPrimitiveType`**：`/primitive/i.test( type ) || type === 'Subpart'`——**前一半是"包含 + 忽略大小写"**（`PRIMITIVE`、`unofficial_primitive`、`Primitives` 都算），**后一半又是精确且区分大小写**（`subpart`、`Subparts` 不算）。
+   - **一处三重的判定不一致**：同一个文件里，三个词用了**两套语义**（精确 vs 子串）和**两种大小写策略**（敏感 vs 不敏感）。测试把这三条各自钉住，避免以后被"统一"成一种。
+   - **测试（4 个用例、24 条断言）**：零件两种写法 + 六种不算的写法；图元的六种写法；**`Subpart` 精确**（三种）；**两个判定从不同时成立**（Part 不是 Primitive、Primitive 不是 Part、Model 两者都不是）。
+   - **验证**：核心 **1421 用例 / 209,921 断言**（+4 / +24）、addons、`primitive-geometry`、`port-audit`、Vulkan 全绿。
 70. **第 520 轮：完整 Vulkan 套件 211/211 全绿，耗时 270.72 秒**。
    - 命令：`ctest --test-dir build-vulkan -j 4 -E "lights-states" --output-on-failure`（仍排除第 46 条那个已知项；它在 Vulkan 构建里同样慢）。
    - 结果：**100% tests passed, 0 tests failed out of 211**，总耗时 **270.72 秒**。对比同一套件在 **Debug** 配置下的 **3784.56 秒 / 2 失败**，差了约 14 倍——再次印证第 69 条"是构建类型不是代码"的结论。

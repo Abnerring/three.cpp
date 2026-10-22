@@ -162,6 +162,7 @@ add_executable(THREECPPTests
         unit/src/loaders/LDrawEmbedded.tests.cpp
         unit/src/loaders/LDrawBfc.tests.cpp
         unit/src/loaders/LDrawFinish.tests.cpp
+        unit/src/loaders/LDrawType.tests.cpp
         unit/src/cameras/StereoCamera.tests.cpp
         unit/src/audio/AudioContext.tests.cpp
         unit/src/audio/Audio.tests.cpp
