@@ -180,3 +180,36 @@ BVHLoader::Keyframe BVHLoader::decodeChannels(const std::vector<std::string>& ch
     keyframe.rotation[3] = rotation.w;
     return keyframe;
 }
+
+std::vector<BVHLoader::BoneInfo> BVHLoader::buildSkeleton(const Hierarchy& hierarchy) {
+    std::vector<BoneInfo> bones;
+    if (hierarchy.root == nullptr) return bones;
+
+    // The flat list is already parents before children, so an index map is enough to resolve
+    // the parent of each node as it is visited in that same order.
+    std::vector<std::pair<const Node*, int>> stack;
+    stack.emplace_back(hierarchy.root.get(), -1);
+    while (!stack.empty()) {
+        const auto [node, parent] = stack.back();
+        stack.pop_back();
+
+        BoneInfo info;
+        info.name = node->name;
+        // The rest position is the offset, since bones start at the origin.
+        info.position[0] = node->offset[0];
+        info.position[1] = node->offset[1];
+        info.position[2] = node->offset[2];
+        info.parent = parent;
+        info.isEndSite = node->type == "ENDSITE";
+        bones.push_back(info);
+        const int index = static_cast<int>(bones.size()) - 1;
+
+        // An end site has no children to descend into, which matches upstream skipping the
+        // recursion for it.
+        if (node->type == "ENDSITE") continue;
+        // Push in reverse so the first child is visited first, keeping document order.
+        for (auto it = node->children.rbegin(); it != node->children.rend(); ++it)
+            stack.emplace_back(it->get(), index);
+    }
+    return bones;
+}

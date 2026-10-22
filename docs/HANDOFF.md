@@ -983,6 +983,13 @@
    - **一次工具链的坑**：`New-Object 'System.Collections.Generic.List[string]'` 在这个 pwsh 会话里**加载不到类型**，导致头文件那一半的写入**静默失败**（`.cpp` 却写成功了），编译报 `Keyframe` 不是成员。**改回 `$out = @()` 数组拼接**就正常。以后行插入统一用数组，不用 `List[string]`。
    - **验证**：核心 **945 用例 / 206,955 断言**（+6 / +21）、`primitive-geometry`、`port-audit` 全绿。
    - **BVH 只剩最后一层**：把节点树 + 键帧变成 `Skeleton`（`Bone` 父子 + 位置）与 `AnimationClip`（按通道分组成四元数/向量轨迹）。
+195. **第 134 轮：`BVHLoader` 第四层——骨骼描述**。
+   - **为什么不直接用 `Bone`**：上游 `toTHREEBone` 是递归建 `Bone` 并 `add` 成图；端口把结果先落成**纯数据** `BoneInfo{name, position[3], parent, isEndSite}`，理由是**可以在没有对象图的情况下逐项断言**，而把 `BoneInfo` 变成 `Bone` 是机械的一步（`position` 赋值 + `add`）。
+   - **遍历顺序**：用显式栈做**前序**遍历，**子节点逆序入栈**，这样出栈顺序就是文件里的顺序（父在前、兄弟按声明序）。`ENDSITE` **不再下降**（虽然它本来也没有子节点），与上游 `if (source.type !== 'ENDSITE')` 一致。
+   - **`position` 就是 `offset`**：骨骼初始在原点，所以 `bone.position.add(source.offset)` 等价于直接赋值。
+   - **测试（4 个用例、20 条断言）**：三层链（根 `(0,1,2)` 父 −1、关节 `(5,0,0)` 父 0、端点 `(10,0,0)` 父 1 且 `isEndSite`）；空层级；**两个兄弟节点**都挂在根下且**保持声明顺序**（A 在 B 前）。
+   - **验证**：核心 **949 用例 / 206,975 断言**（+4 / +20）、`primitive-geometry`、`port-audit` 全绿。
+   - **BVH 只剩轨迹构建**：把每根骨骼的键帧变成 `VectorKeyframeTrack`（位置）与 `QuaternionKeyframeTrack`（旋转），属性路径分别是 `.position` 与 `.quaternion`。
 70. **第 520 轮：完整 Vulkan 套件 211/211 全绿，耗时 270.72 秒**。
    - 命令：`ctest --test-dir build-vulkan -j 4 -E "lights-states" --output-on-failure`（仍排除第 46 条那个已知项；它在 Vulkan 构建里同样慢）。
    - 结果：**100% tests passed, 0 tests failed out of 211**，总耗时 **270.72 秒**。对比同一套件在 **Debug** 配置下的 **3784.56 秒 / 2 失败**，差了约 14 倍——再次印证第 69 条"是构建类型不是代码"的结论。

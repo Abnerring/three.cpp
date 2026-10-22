@@ -58,4 +58,19 @@ class BVHLoader {
 
     static Keyframe decodeChannels(const std::vector<std::string>& channels,
                                    const std::vector<double>& values);
+
+    // One bone as the file describes it: a name, a rest position and the index of its
+    // parent in the same list, with minus one for the root. Upstream builds Bone objects
+    // directly; the description is kept separate so it can be checked without an object
+    // graph, and the caller turns it into Bones.
+    struct BoneInfo {
+        std::string name;
+        double position[3] = {0, 0, 0};
+        int parent = -1;
+        bool isEndSite = false;
+    };
+
+    // Walks the hierarchy in the same order as the parse list, so every parent appears
+    // before its children. An end site is included, as upstream creates a Bone for it too.
+    static std::vector<BoneInfo> buildSkeleton(const Hierarchy& hierarchy);
 };
