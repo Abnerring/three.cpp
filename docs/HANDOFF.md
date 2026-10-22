@@ -670,6 +670,13 @@
    - **结论**：**可移植的核心已经完整**。剩下的三大块是：① TSL（需要 `NodeBuilder` 3544 行 + `Node` 的反射式子节点发现，C++ 无等价物）；② PMREM 的 GPU 卷积（blur 管线设备丢失，已暂停）；③ `examples/jsm` 插件（体量大，且多数依赖 WebGL 渲染器行为）。
    - **本轮实际交付（差分）**：新增 3×3 纹理、2×9 网格、2 实例、1×32 立方纹理、三点 `LinearInterpolant` 五个场景；差分从 **309 → 315 场景**，22 组，exit=0。
    - **验证**：核心 **787 / 206,036**、`primitive-geometry`、`port-audit` 全绿。
+153. **第 92 轮：发现 `examples/jsm` 的 loader 是个 50 个模块的大缺口，并从 `LUTCubeLoader` 的失败里摸清了 `TextureImage::Data` 的形状**。
+   - **盘点**：上游 `examples/jsm/loaders` 有 **52 个** loader，端口只有 **2 个**（`STLLoader`、`XYZLoader`）——**缺 50 个**。最小的是 `USDZLoader`（16 行，只是再导出）、`RGBELoader`（18 行，再导出）、`TIFFLoader`（59 行，包第三方 `utif`）；真正能独立实现且纯 CPU 的第一批是 `SPLATLoader`（139）、`MDDLoader`（147）、`LUTCubeLoader`（190）、`LUTImageLoader`（190）、`KTXLoader`（199）。
+   - **本轮尝试**：移植 `LUTCubeLoader` 的 `parse()`（纯正则解析：`TITLE`、`LUT_3D_SIZE`、`DOMAIN_MIN`/`DOMAIN_MAX`、逐行三元组数据点，按 `UnsignedByteType` 乘 255、`FloatType` 乘 1，末位写 alpha）。
+   - **编译失败暴露了两个事实**：① `Data3DTexture` 的宽高深**不在 `image` 上**，而是**构造参数** `Data3DTexture(data, width, height, depth)`；② `TextureImage::Data` 是 **`std::variant<std::nullptr_t, Int8Array, Uint8Array, Int16Array, Uint16Array, Int32Array, Uint32Array, Float32Array, Float64Array, Uint8ClampedArray, JSValue>`**，也就是说纹理数据必须**包装成对应的 typed array 类型**传进去，不像 JS 那样直接塞一个 `Uint8Array` 就行。
+   - **处理**：本轮**回退**这个 loader（不提交半成品），把上面两条写成结论留给下次；本轮实际交付是差分 **315 → 320 场景**（新增 32×2 纹理、5×5 网格、9 实例）。
+   - **下次做 loader 的正确路径**：先看 `src/textures/TextureSource.h` 里 `TextureImage` 的构造方式与 `Uint8Array`/`Float32Array` 在端口里的真实类型，再写 `parse()`；`parse()` 本身是纯函数，可以**先只返回数据向量**、纹理包装作为第二步。
+   - **验证**：核心 **787 / 206,036**、`primitive-geometry`、`port-audit` 全绿，差分 **320 场景 / 22 组 / exit=0**。
 70. **第 520 轮：完整 Vulkan 套件 211/211 全绿，耗时 270.72 秒**。
    - 命令：`ctest --test-dir build-vulkan -j 4 -E "lights-states" --output-on-failure`（仍排除第 46 条那个已知项；它在 Vulkan 构建里同样慢）。
    - 结果：**100% tests passed, 0 tests failed out of 211**，总耗时 **270.72 秒**。对比同一套件在 **Debug** 配置下的 **3784.56 秒 / 2 失败**，差了约 14 倍——再次印证第 69 条"是构建类型不是代码"的结论。
