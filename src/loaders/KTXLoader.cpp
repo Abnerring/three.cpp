@@ -1,4 +1,4 @@
-﻿#include "loaders/KTXLoader.h"
+#include "loaders/KTXLoader.h"
 
 #include <algorithm>
 
@@ -78,4 +78,49 @@ KTXLoader::Header KTXLoader::readHeader(const std::vector<std::uint8_t>& buffer,
 
     header.valid = true;
     return header;
+}
+
+std::vector<KTXLoader::Image> KTXLoader::readImages(const std::vector<std::uint8_t>& buffer,
+                                                    const Header& header, bool loadMipmaps) {
+    std::vector<Image> images;
+    if (!header.valid) return images;
+
+    // The image list starts after the header and any key value pairs.
+    std::size_t offset = kHeaderLength + header.bytesOfKeyValueData;
+    std::uint32_t width = header.pixelWidth;
+    std::uint32_t height = header.pixelHeight;
+    const std::uint32_t count = loadMipmaps ? header.numberOfMipmapLevels : 1;
+
+    const auto readWordAt = [&buffer, &header](std::size_t at) -> std::uint32_t {
+        if (at + 4 > buffer.size()) return 0;
+        std::uint32_t value = 0;
+        for (int i = 0; i < 4; ++i) {
+            const std::size_t byte = header.littleEndian ? at + static_cast<std::size_t>(3 - i)
+                                                         : at + static_cast<std::size_t>(i);
+            value = (value << 8) | buffer[byte];
+        }
+        return value;
+    };
+
+    for (std::uint32_t level = 0; level < count; ++level) {
+        // One size word introduces the level, shared by all of its faces.
+        const std::uint32_t imageSize = readWordAt(offset);
+        offset += 4;
+        for (std::uint32_t face = 0; face < header.numberOfFaces; ++face) {
+            Image image;
+            image.width = width;
+            image.height = height;
+            image.imageSize = imageSize;
+            // The data begins after the size word.
+            image.offset = offset;
+            // Padding to the next four byte boundary; an aligned size adds nothing.
+            image.padding = 3 - ((static_cast<std::size_t>(imageSize) + 3) % 4);
+            images.push_back(image);
+            offset += imageSize + image.padding;
+        }
+        // Each step halves the size but never reaches zero.
+        width = width > 1 ? width / 2 : 1;
+        height = height > 1 ? height / 2 : 1;
+    }
+    return images;
 }

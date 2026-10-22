@@ -1,4 +1,4 @@
-﻿#pragma once
+#pragma once
 #include <cstdint>
 #include <string>
 #include <vector>
@@ -38,4 +38,22 @@ class KTXLoader {
     // expects is one for a flat texture and six for a cube map.
     static Header readHeader(const std::vector<std::uint8_t>& buffer,
                              std::uint32_t facesExpected = 1);
+
+    // One image in the file. The offset is where its bytes begin, which is after the size word
+    // that introduces its level rather than at the start of that word.
+    struct Image {
+        std::uint32_t width = 0;
+        std::uint32_t height = 0;
+        std::uint32_t imageSize = 0;
+        std::size_t offset = 0;
+        // Bytes of alignment added after the image so the next one starts on a four byte
+        // boundary. A size already aligned adds nothing.
+        std::size_t padding = 0;
+    };
+
+    // Walks the image list. Each level begins with the size shared by its faces, and each face
+    // is followed by padding to the next four byte boundary. Each step halves the size but
+    // never reaches zero. With loadMipmaps false only the first level is reported.
+    static std::vector<Image> readImages(const std::vector<std::uint8_t>& buffer,
+                                         const Header& header, bool loadMipmaps = true);
 };
