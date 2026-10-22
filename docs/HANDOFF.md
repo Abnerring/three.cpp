@@ -370,6 +370,12 @@
    - **为什么本轮没做多目标重构**：第 105 条那条路要把 `colorImage`/`depthImage`/`framebuffer`/`faceView`/`faceFramebuffer` 从一个 `Impl` 成员包成"每目标一份"，而这三样东西在 3000 行的 `VulkanRenderer.cpp` 里被**上百处**直接引用（`beginFrame`、`endFrame`、`clear`、`readRenderTargetPixels`、`imageBarrier`、`selectFace`、`resize`、`setRenderTarget`……）。每轮可用调用数约 5 次、单次构建 2–4 分钟，而 19/20 轮已经有过两次"混改导致核心测试崩溃"的教训。**在这种预算下硬推，最可能的结果是又一个崩溃加一次回退。**
    - **结论与建议**：这一步需要**一整段连续时间**（改动 + 反复构建 + 逐步修正），不适合拆成"每轮一小块"。当前更稳妥的推进顺序是：先把 PMREM 里**不依赖 ping-pong** 的部分补齐（`compileCubemapShader`/`compileEquirectangularShader` 的显式报错、`dispose` 的完整语义、`_setSize` 的边界），或者继续扩差分；等有充足时间再动渲染核心。
    - **状态**：核心 **745 / 205,728**、`primitive-geometry`、`port-audit`、`--cube` 全绿。
+108. **第 47 轮：多目标重构的第一步——`createImage` 的尺寸变成显式参数（行为零变化）**。
+   - **为什么先做这个**：第 105/107 条说过，`GpuTarget` 这条路之所以没法"增量"做，是因为 `createImage` 直接用 `Impl::width/height`——想给第二个目标建图，就得去改渲染器的当前尺寸，副作用太大。所以真正的第一步不是加结构，而是**把尺寸变成参数**。
+   - **改动**：`createImage(result, format, usage, aspect, layers = 1, imageWidth = 0, imageHeight = 0)`，`0` 表示"沿用当前激活尺寸"。函数开头两行 `if (imageWidth == 0) imageWidth = width;` 等价于原有行为，`create.extent` 改用 `imageWidth/imageHeight`。**所有现有调用点一个字都不用改**，因此这是纯粹的行为中性重构。
+   - **验证**：构建通过；`--cube` 退出码 **0**（六面渲染、方向断言、cube 视图、回读守卫全部照旧）。核心 **747 / 205,735**、`primitive-geometry`、`port-audit` 全绿。
+   - **过程**：第一次用锚点整段替换，输出 `ANCHOR MISSING`——这次**先看输出再往下走**，改用行号定位（找到签名行 2009），并在改完后打印确认 `imageWidth == 0` 与 `create.extent = {imageWidth...}` 都出现了，才去构建。第 43 轮那个"锚点没匹配却照样提交"的坑没有重演。
+   - **下一步**：同样把 `resize` 与 framebuffer 的创建也参数化（它们也直接用成员尺寸），然后才能引入 `GpuTarget` 与 `targetFor()`。
 70. **第 520 轮：完整 Vulkan 套件 211/211 全绿，耗时 270.72 秒**。
    - 命令：`ctest --test-dir build-vulkan -j 4 -E "lights-states" --output-on-failure`（仍排除第 46 条那个已知项；它在 Vulkan 构建里同样慢）。
    - 结果：**100% tests passed, 0 tests failed out of 211**，总耗时 **270.72 秒**。对比同一套件在 **Debug** 配置下的 **3784.56 秒 / 2 失败**，差了约 14 倍——再次印证第 69 条"是构建类型不是代码"的结论。

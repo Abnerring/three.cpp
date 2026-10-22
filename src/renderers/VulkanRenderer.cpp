@@ -2005,12 +2005,17 @@ struct VulkanRenderer::Impl {
         geometryCache[geometry->id] = cached;
         return cached;
     }
+    // The size is explicit so a second target can be created without disturbing the
+    // renderer's current one; zero means "use the active size", as every call site does.
     void createImage(Image& result, VkFormat format, VkImageUsageFlags usage,
-                     VkImageAspectFlags aspect, std::uint32_t layers = 1) {
+                     VkImageAspectFlags aspect, std::uint32_t layers = 1,
+                     std::uint32_t imageWidth = 0, std::uint32_t imageHeight = 0) {
+        if (imageWidth == 0) imageWidth = width;
+        if (imageHeight == 0) imageHeight = height;
         VkImageCreateInfo create{VK_STRUCTURE_TYPE_IMAGE_CREATE_INFO};
         create.imageType = VK_IMAGE_TYPE_2D;
         create.format = format;
-        create.extent = {width, height, 1};
+        create.extent = {imageWidth, imageHeight, 1};
         create.mipLevels = 1;
         create.arrayLayers = layers;
         create.samples = VK_SAMPLE_COUNT_1_BIT;
