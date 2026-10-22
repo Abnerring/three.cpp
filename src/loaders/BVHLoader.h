@@ -49,4 +49,13 @@ class BVHLoader {
     // frame has fewer values than the channels need.
     static Motion parseMotion(const std::vector<std::string>& lines, std::size_t& cursor,
                               std::size_t channelCount);
+
+    struct Keyframe {
+        double time = 0;
+        double position[3] = {0, 0, 0};
+        double rotation[4] = {0, 0, 0, 1};
+    };
+
+    static Keyframe decodeChannels(const std::vector<std::string>& channels,
+                                   const std::vector<double>& values);
 };

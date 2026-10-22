@@ -976,6 +976,13 @@
    - **测试（6 个用例、17 条断言）**：两帧/六通道的完整读取（时间 `0` 与 `0.033`、值 12 个、游标停在 5）；缺 `MOTION`；`Frames` 行不完整；`Time:` 少了 `Frame` 前缀；帧值不足；**零帧**时两个数组都为空。
    - **验证**：核心 **939 用例 / 206,934 断言**（+6 / +17）、`primitive-geometry`、`port-audit` 全绿。
    - **BVH 只剩最后一层**：把层级 + 帧数据变成 `Skeleton`（骨骼与 Bone 的父子、每根骨骼的 position/quaternion）与 `AnimationClip`（按通道名分组成 `QuaternionKeyframeTrack`/`VectorKeyframeTrack`）。
+194. **第 133 轮：`BVHLoader` 第三层——通道解码（位置与旋转）**。
+   - **语义**：`Xposition`/`Yposition`/`Zposition` 直接写进位置对应轴；`Xrotation`/`Yrotation`/`Zrotation` 是**角度**，按**通道声明顺序**依次**右乘**到四元数上（`q = q * setFromAxisAngle(axis, deg2rad(v))`），所以结果是**复合旋转**，不是最后一次覆盖。
+   - **一个漂亮的测试锚点**：`Zrotation 90` 后接 `Xrotation 90` 的复合结果是 **(0.5, 0.5, 0.5, 0.5)** —— 手算可得、且**顺序错、或者写成覆盖而不是相乘**都得不到这个值，所以一条断言就能钉住三件事。
+   - **测试（6 个用例、21 条断言）**：三个位置通道；单个 `Zrotation 90` → `(0, 0, 0.7071, 0.7071)`；**复合顺序** → `(0.5, 0.5, 0.5, 0.5)`；位置与旋转混排；未知通道名被忽略；值不足时**停在最后一个可用值**。
+   - **一次工具链的坑**：`New-Object 'System.Collections.Generic.List[string]'` 在这个 pwsh 会话里**加载不到类型**，导致头文件那一半的写入**静默失败**（`.cpp` 却写成功了），编译报 `Keyframe` 不是成员。**改回 `$out = @()` 数组拼接**就正常。以后行插入统一用数组，不用 `List[string]`。
+   - **验证**：核心 **945 用例 / 206,955 断言**（+6 / +21）、`primitive-geometry`、`port-audit` 全绿。
+   - **BVH 只剩最后一层**：把节点树 + 键帧变成 `Skeleton`（`Bone` 父子 + 位置）与 `AnimationClip`（按通道分组成四元数/向量轨迹）。
 70. **第 520 轮：完整 Vulkan 套件 211/211 全绿，耗时 270.72 秒**。
    - 命令：`ctest --test-dir build-vulkan -j 4 -E "lights-states" --output-on-failure`（仍排除第 46 条那个已知项；它在 Vulkan 构建里同样慢）。
    - 结果：**100% tests passed, 0 tests failed out of 211**，总耗时 **270.72 秒**。对比同一套件在 **Debug** 配置下的 **3784.56 秒 / 2 失败**，差了约 14 倍——再次印证第 69 条"是构建类型不是代码"的结论。

@@ -1,6 +1,9 @@
 #include "loaders/BVHLoader.h"
 
 #include <cctype>
+#include "math/Quaternion.h"
+#include "math/Vector3.h"
+#include <cmath>
 #include <cstdlib>
 #include <stdexcept>
 
@@ -143,4 +146,37 @@ BVHLoader::Motion BVHLoader::parseMotion(const std::vector<std::string>& lines, 
             motion.values.push_back(std::strtod(frameTokens[k].c_str(), nullptr));
     }
     return motion;
+}
+
+BVHLoader::Keyframe BVHLoader::decodeChannels(const std::vector<std::string>& channels,
+                                               const std::vector<double>& values) {
+    Keyframe keyframe;
+    Quaternion rotation;
+    // The axes the channel names refer to.
+    const Vector3 axisX(1, 0, 0);
+    const Vector3 axisY(0, 1, 0);
+    const Vector3 axisZ(0, 0, 1);
+    const double degToRad = 3.14159265358979323846 / 180.0;
+
+    for (std::size_t i = 0; i < channels.size() && i < values.size(); ++i) {
+        const std::string& channel = channels[i];
+        const double value = values[i];
+
+        if (channel == "Xposition") keyframe.position[0] = value;
+        else if (channel == "Yposition") keyframe.position[1] = value;
+        else if (channel == "Zposition") keyframe.position[2] = value;
+        else if (channel == "Xrotation" || channel == "Yrotation" || channel == "Zrotation") {
+            // Rotations are degrees and compose in declaration order, so each one is applied
+            // on the right of what came before.
+            const Vector3& axis = channel == "Xrotation" ? axisX : (channel == "Yrotation" ? axisY : axisZ);
+            Quaternion step;
+            step.setFromAxisAngle(axis, value * degToRad);
+            rotation.multiply(step);
+        }
+    }
+    keyframe.rotation[0] = rotation.x;
+    keyframe.rotation[1] = rotation.y;
+    keyframe.rotation[2] = rotation.z;
+    keyframe.rotation[3] = rotation.w;
+    return keyframe;
 }
