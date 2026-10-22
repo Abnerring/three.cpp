@@ -1502,6 +1502,13 @@
    - **测试（4 个用例、12 条断言）**：两方块（四宽两高 → 两宽四高）的首两行像素值；**flip 与不 flip 的首块不同**；尺寸非法与源太短都返回空；**1×1 的像素四字节原样保留**。
    - **验证**：核心 **1276 用例 / 209,282 断言**（+4 / +12）、addons、`primitive-geometry`、`port-audit`、Vulkan 全绿。
    - **还剩**：`parse` 的纹理参数（`size³`、`RGBAFormat`、`UnsignedByteType`、`LinearFilter`、`ClampToEdge`、`generateMipmaps = false`）与 `_getImageData`（要解码器）。
+270. **第 209 轮：`GLTFGaussianSplatLoaderExtension` 第一层——语义命名与检测**。
+   - **`ATTRIBUTES` 只有一个条目**（`POSITION: 'position'`），所有其它语义都走 **`semantic.toLowerCase()`**——所以 `SCALE` 变 `scale`、`_SH0` 变 `_sh0`，而已经是小写的原样不动。这条"显式一例 + 小写兜底"容易被写成一张大表，测试专门钉住**只映射了 position** 这个事实。
+   - **检测**：primitive 的 extensions 对象**列出 `KHR_gaussian_splatting`** 才算；别的扩展（`KHR_materials_unlit`）不算。
+   - **两条错误文案**：缺语义时 `... requires SCALE.`；声明了但数据没到 `... attribute ROTATION was not loaded.`。
+   - **测试（3 个用例、12 条断言）**：六个语义的映射（含下划线）；四种扩展名组合；两条文案的逐字比对。
+   - **验证**：核心 **1279 用例 / 209,294 断言**（+3 / +12）、addons、`primitive-geometry`、`port-audit`、Vulkan 全绿。
+   - **剩余**：`createGaussianSplat` 与球谐属性构建——它们依赖 `GaussianSplat` 对象（`../objects/GaussianSplat.js`，需要 WebGPU 渲染器），端口没有；能做的只是把属性按语义取出并按 `GaussianSplatUtils` 的约定写入。
 70. **第 520 轮：完整 Vulkan 套件 211/211 全绿，耗时 270.72 秒**。
    - 命令：`ctest --test-dir build-vulkan -j 4 -E "lights-states" --output-on-failure`（仍排除第 46 条那个已知项；它在 Vulkan 构建里同样慢）。
    - 结果：**100% tests passed, 0 tests failed out of 211**，总耗时 **270.72 秒**。对比同一套件在 **Debug** 配置下的 **3784.56 秒 / 2 失败**，差了约 14 倍——再次印证第 69 条"是构建类型不是代码"的结论。
