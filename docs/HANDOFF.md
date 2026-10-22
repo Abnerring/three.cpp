@@ -1085,6 +1085,13 @@
    - **测试（5 个用例、21 条断言）**：完整头（`type`/`dimension`/`sizes`/`encoding`，且类型化键仍在自由字段里）；**默认单位向量**；**按 spacing 缩放**；`bz2` 与 `bzip2` 都抛错；无魔数抛错。
    - **验证**：核心 **1013 用例 / 207,249 断言**（+5 / +21）、`primitive-geometry`、`port-audit` 全绿。
    - **NRRD 剩余**：`space directions` 的显式解析（含 `none` 项）、`text`/`ascii` 与 `raw`/`gzip` 三种编码的体数据、以及装成体积数据。
+211. **第 150 轮：`space directions` 尝试失败（既有测试失败 + 崩溃），已回退；同时是里程碑核验**。
+   - **想做的事**：解析 `space directions: (2,0,0) (0,3,0) (0,0,4)` 这类三元组与 `none`，并让**显式方向优先于 `spacings`**（上游 `if (!headerObject.vectors)` 就是这个意思）。
+   - **结果**：编译通过，但跑起来出现**两个问题**——① **既有测试 `NRRDLoader.tests.cpp` 第 19 行失败**（`isNrrd` 那条），说明我对 `parseHeader` 的修改**影响了本来正常的路径**；② 随后整套 **`0xC0000005`（访问违例）**崩溃，只跑完 349 个用例。**没有继续深挖**，直接回退。
+   - **最可疑的地方**：`parseSpaceDirections` 里对 `substr(at, end - at)` 的边界处理——当 `end < at` 时长度会**下溢**成一个巨大值；另外我用 `Replace` 往 `parseHeader` 里插 `else if` 分支时，锚点 `} else if (key == "spacings")` 可能匹配到了**错误的位置**，把原本的 `spacings` 分支破坏掉——这能同时解释"`isNrrd` 变假"和"崩溃"。
+   - **下次的正确做法**：① 不要用字符串 `Replace` 插 `else if` 分支，改成**按行号插入**并在插入后**打印该函数的完整文本**确认结构；② `substr` 前先 `if (end <= at) break;`；③ **先跑既有测试**（`NRRDLoader` 那 5 个用例）再跑全套，能更早定位。
+   - **本轮同时是第 150 轮里程碑**：核心 **1013 用例 / 207,249 断言**、addons **155 / 23,996**、差分 **22 组 / 343 场景**、`port-audit` 通过、Vulkan 构建 0 错误且 `--cube` 为 0。**9 个完整 loader**（约 5047 行上游代码）、**49 个模块**。**addon loader 36 / 52**。
+   - **诚实结论**：目标仍未达成，保持 active。
 70. **第 520 轮：完整 Vulkan 套件 211/211 全绿，耗时 270.72 秒**。
    - 命令：`ctest --test-dir build-vulkan -j 4 -E "lights-states" --output-on-failure`（仍排除第 46 条那个已知项；它在 Vulkan 构建里同样慢）。
    - 结果：**100% tests passed, 0 tests failed out of 211**，总耗时 **270.72 秒**。对比同一套件在 **Debug** 配置下的 **3784.56 秒 / 2 失败**，差了约 14 倍——再次印证第 69 条"是构建类型不是代码"的结论。
