@@ -259,3 +259,36 @@ std::vector<VOXLoader::Quad> VOXLoader::mergeMask(std::vector<int> mask, int dim
     }
     return quads;
 }
+
+std::array<double, 3> VOXLoader::toThree(const int point[3], const Size& size) {
+    // The last two axes swap and the old y is negated, then the model is centred on the origin
+    // by subtracting half of each extent.
+    return {point[0] - size.x / 2.0, point[2] - size.z / 2.0, -point[1] + size.y / 2.0};
+}
+
+VOXLoader::QuadGeometry VOXLoader::emitQuad(const Quad& quad, const int pos[3], const int du[3],
+                                            const int dv[3], const Size& size) {
+    // The four corners of the rectangle, walking du first and then dv.
+    int c0[3] = {pos[0], pos[1], pos[2]};
+    int c1[3] = {pos[0] + du[0], pos[1] + du[1], pos[2] + du[2]};
+    int c2[3] = {pos[0] + du[0] + dv[0], pos[1] + du[1] + dv[1], pos[2] + du[2] + dv[2]};
+    int c3[3] = {pos[0] + dv[0], pos[1] + dv[1], pos[2] + dv[2]};
+
+    const auto p0 = toThree(c0, size);
+    const auto p1 = toThree(c1, size);
+    const auto p2 = toThree(c2, size);
+    const auto p3 = toThree(c3, size);
+
+    QuadGeometry geometry;
+    // A positive value faces one way and a negative one the other, which is just a swap of the
+    // middle two corners so the triangles wind the other way round.
+    const std::array<std::array<double, 3>, 4> order =
+        quad.value > 0 ? std::array<std::array<double, 3>, 4>{p0, p1, p2, p3}
+                       : std::array<std::array<double, 3>, 4>{p0, p3, p2, p1};
+    for (std::size_t i = 0; i < 4; ++i)
+        for (std::size_t k = 0; k < 3; ++k) geometry.vertices[i * 3 + k] = order[i][k];
+
+    // Two triangles per quad, sharing the diagonal from the first to the third corner.
+    geometry.indices = {0, 1, 2, 0, 2, 3};
+    return geometry;
+}

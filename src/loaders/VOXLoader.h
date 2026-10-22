@@ -97,4 +97,20 @@ class VOXLoader {
     // along u while the value matches, then the height grows along v only while every cell of
     // the whole width matches, which is what makes the result a rectangle rather than a run.
     static std::vector<Quad> mergeMask(std::vector<int> mask, int dimsU, int dimsV);
+
+    // A quad emitted as geometry: four corners in triangle order and six indices.
+    struct QuadGeometry {
+        double vertices[12] = {0};
+        std::array<int, 6> indices{0, 0, 0, 0, 0, 0};
+    };
+
+    // Turns one rectangle into a quad. The rectangle sits at pos on axis d and spans du in u
+    // and dv in v; a positive value keeps the corners in that order while a negative one
+    // swaps two of them so the face points the other way.
+    static QuadGeometry emitQuad(const Quad& quad, const int pos[3], const int du[3],
+                                 const int dv[3], const Size& size);
+
+    // Converts one VOX point to the port frame: x keeps, y takes the old z, z takes the
+    // negated old y, and the whole model is centred by subtracting half of each size.
+    static std::array<double, 3> toThree(const int point[3], const Size& size);
 };

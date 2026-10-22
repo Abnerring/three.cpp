@@ -96,6 +96,7 @@ add_executable(THREECPPTests
         unit/src/loaders/VOXColorVolume.tests.cpp
         unit/src/loaders/VOXMask.tests.cpp
         unit/src/loaders/VOXMerge.tests.cpp
+        unit/src/loaders/VOXQuad.tests.cpp
         unit/src/cameras/StereoCamera.tests.cpp
         unit/src/audio/AudioContext.tests.cpp
         unit/src/audio/Audio.tests.cpp
