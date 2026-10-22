@@ -411,6 +411,12 @@
    - **教训**：**大括号不能靠整行删除来维护**。正确做法是把 `struct Image { ... } colorImage, depthImage;` **原位替换**成 `struct Image { ... };`（保留大括号、只删成员名），而且每删一个成员就构建一次——本轮一次删了七个，四个错误源头混在一起，定位成本陡增。
    - **当前状态**：`git checkout -- src/renderers/VulkanRenderer.cpp` 回退到 `5fd78af`；Vulkan 构建 **0 错误**，`--cube` **0**，核心 **747 / 205,735**、`primitive-geometry`、`port-audit` 全绿，树干净。
    - **续做建议**：`resize`/`destroyTargets` 只改函数体（不动成员），**先构建一次**确认绿；然后再**分七次**逐个删成员，每次删一个就构建。这样每一步的失败都能一眼定位。
+115. **第 54 轮：`resize` 只建 `active` 了，五门禁绿（旧成员暂时留着但已无人创建）**。
+   - **做了什么**：`resize()` 的体整段重写——校验、早退（现在比较 `active->width/height/layers`）、`destroyTargets()`、更新 `width/height`、`active = createGpuTarget(newWidth, newHeight, layers)`、`selectFace(activeCubeFace)`、重建 `readback` 与 `pixels`。**不再创建**旧的 `colorImage`/`depthImage`/`framebuffer`。`destroyTargets()` 保持原样（它会同时拆旧成员与 `active`；旧成员现在是空句柄，销毁是安全的空操作）。
+   - **又一个"打印成功但其实没写"**：我在同一段脚本里改了 `destroyTargets` 的数组、也打印了 `destroyTargets rewritten`，但**只对 `resize` 那次调用了 `WriteAllLines`**，`destroyTargets` 的改动被丢弃了——打印提示具有误导性。**这已经是第三次同类问题**（第 43 轮锚点没匹配、第 49 轮替换没生效、本轮忘写）。规则再强化：**每段改写后必须立刻重读文件并打印实际内容**，不能只看自己打印的"成功"。
+   - **好消息**：因为 `beginFrame`/`endFrame`/`selectFace` 早已只用 `active->`，`resize` 不再建旧图之后**一切正常**——`--cube` 退出码 0，说明旧成员已经彻底不影响行为。
+   - **验证（五项门禁）**：核心 **747 / 205,735** ✓、`primitive-geometry` ✓、`port-audit` ✓、`threecpp_vulkan` **0 错误** ✓、`--cube` **0** ✓。
+   - **下一步**：删旧成员。按第 114 条的规矩：**原位替换**（`} colorImage, depthImage;` → `};`）而不是整行删，并且**一次只删一个成员、删完就构建**。
 70. **第 520 轮：完整 Vulkan 套件 211/211 全绿，耗时 270.72 秒**。
    - 命令：`ctest --test-dir build-vulkan -j 4 -E "lights-states" --output-on-failure`（仍排除第 46 条那个已知项；它在 Vulkan 构建里同样慢）。
    - 结果：**100% tests passed, 0 tests failed out of 211**，总耗时 **270.72 秒**。对比同一套件在 **Debug** 配置下的 **3784.56 秒 / 2 失败**，差了约 14 倍——再次印证第 69 条"是构建类型不是代码"的结论。

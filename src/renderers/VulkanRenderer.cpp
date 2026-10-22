@@ -2150,31 +2150,13 @@ struct VulkanRenderer::Impl {
         if (newWidth > properties.limits.maxFramebufferWidth ||
             newHeight > properties.limits.maxFramebufferHeight)
             throw std::invalid_argument("Renderer dimensions exceed Vulkan device limits");
-        if (newWidth == width && newHeight == height && layers == targetLayers)
+        if (active && newWidth == active->width && newHeight == active->height &&
+            layers == active->layers)
             return;
         check(api.vkDeviceWaitIdle(device), "vkDeviceWaitIdle");
         destroyTargets();
         width = newWidth;
         height = newHeight;
-        initialized = false;
-        targetLayers = layers;
-        createImage(colorImage, VK_FORMAT_R8G8B8A8_UNORM,
-                    VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT | VK_IMAGE_USAGE_TRANSFER_SRC_BIT,
-                    VK_IMAGE_ASPECT_COLOR_BIT, layers);
-        createImage(depthImage, depthFormat, VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT,
-                    VK_IMAGE_ASPECT_DEPTH_BIT);
-        const VkImageView views[] = {colorImage.view, depthImage.view};
-        VkFramebufferCreateInfo create{VK_STRUCTURE_TYPE_FRAMEBUFFER_CREATE_INFO};
-        create.renderPass = renderPass;
-        create.attachmentCount = 2;
-        create.pAttachments = views;
-        create.width = width;
-        create.height = height;
-        create.layers = 1;
-        check(api.vkCreateFramebuffer(device, &create, nullptr, &framebuffer),
-              "vkCreateFramebuffer");
-        // Mirror the same resources into the per target structure while the draw path
-        // is migrated one function at a time.
         active = createGpuTarget(newWidth, newHeight, layers);
         selectFace(activeCubeFace);
         readback = createBuffer(static_cast<VkDeviceSize>(width) * height * 4,
