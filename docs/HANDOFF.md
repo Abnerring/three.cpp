@@ -833,6 +833,15 @@
    - **`mtllib` 的取值**：`libraries[length - 1]`，即**最后一个**材质库。
    - **测试（5 个用例、21 条断言）**：两段连续区间（A 覆盖 0–3、B 从 3 起、B 覆盖到 5）；**尾随空材质被丢弃**（A 之后再 `usemtl B` 却没有任何面 → 关闭时只剩 A）；**空对象得到占位材质**；`mtllib` 取最后一个 `two.mtl`、空列表时为空串；`currentMaterial` 跟随最近一次 `startMaterial`。
    - **验证**：核心 **855 用例 / 206,419 断言**（+5 / +21）、`primitive-geometry`、`port-audit` 全绿。
+173. **第 112 轮：`OBJLoader` 第四层——`parseObjects`，四层齐备**。
+   - **本轮做的事**：把前三层（几何抽取、面法线、材质分组）串成一个完整的解析器，输出 `vector<Object>`，每个对象带 `name`/`fromDeclaration`/四条流/`hasUVIndices`/`OBJMaterialGroups`/`materialLibraries`。
+   - **`fromDeclaration === false` 的首对象复用怪癖**（上游注释里写得很清楚）：解析器一开始就有一个**未声明**的对象；文件里第一个 `o`/`g` **不是新建对象，而是给这个已有对象改名**。所以 `o First` + `o Second` 的文件只有 **2 个对象**（不是 3 个），而没有 `o` 的文件只有 **1 个空名对象**。
+   - **`usemtl`/`mtllib`/`s` 的处理**：分别是开一段材质、往库列表里追加、设置 `smooth`（`s off` → 假）；`s` 的设置会影响**之后新建的材质**（`startMaterial` 从 `previous.smooth` 或对象级 `smooth` 继承）。
+   - **关闭对象时**：每个对象都调一次 `finalize(true, 顶点数)`，让最后一段材质拿到它的 `groupEnd`/`groupCount`，顺带清理空段、必要时补占位材质。
+   - **顺手清理**：第一版里留下了 `nLen`/`offset` 两个没用的局部变量（`(void)` 吞掉），已删除。
+   - **测试（4 个用例、20 条断言）**：两个 `o` 得到 2 个对象且第一个被改名（`fromDeclaration` 为真）；每个对象一段材质（A 覆盖 0–3、B 是第二个对象）；**没有 `o` 的文件只有 1 个空名对象**且自动补一个空名占位材质；`s off` 让对象与材质都是**非平滑**。
+   - **验证**：核心 **859 用例 / 206,439 断言**（+4 / +20）、`primitive-geometry`、`port-audit` 全绿。
+   - **OBJ 现状**：`parseGeometry` ✓ / `addFaceNormal` ✓ / `OBJMaterialGroups` ✓ / `parseObjects` ✓ 四层齐备；剩下的是把 `Object` 变成真正的 `BufferGeometry` + `Object3D`（含 `Object3D` 的层级与多材质 group），那是渲染对象层。
 70. **第 520 轮：完整 Vulkan 套件 211/211 全绿，耗时 270.72 秒**。
    - 命令：`ctest --test-dir build-vulkan -j 4 -E "lights-states" --output-on-failure`（仍排除第 46 条那个已知项；它在 Vulkan 构建里同样慢）。
    - 结果：**100% tests passed, 0 tests failed out of 211**，总耗时 **270.72 秒**。对比同一套件在 **Debug** 配置下的 **3784.56 秒 / 2 失败**，差了约 14 倍——再次印证第 69 条"是构建类型不是代码"的结论。

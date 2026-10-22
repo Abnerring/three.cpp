@@ -1,4 +1,5 @@
 #pragma once
+#include "loaders/OBJMaterialGroups.h"
 #include <array>
 #include <string>
 #include <vector>
@@ -40,4 +41,22 @@ class OBJLoader {
     // into vertices; the result is appended to out.
     static void addFaceNormal(const std::vector<double>& vertices, int a, int b, int c,
                               std::vector<double>& out);
+
+    // One object as the file declares it, with the accumulated streams and the material runs.
+    struct Object {
+        std::string name;
+        bool fromDeclaration = false;
+        std::vector<double> vertices;
+        std::vector<double> normals;
+        std::vector<double> colors;
+        std::vector<double> uvs;
+        bool hasUVIndices = false;
+        OBJMaterialGroups groups;
+        std::vector<std::string> materialLibraries;
+    };
+
+    // Splits the text into objects the way upstream does: o and g start a new object, usemtl
+    // opens a material run, mtllib records a library, faces fan into the current object. The
+    // first object starts undeclared so the first o or g renames it instead of adding one.
+    std::vector<Object> parseObjects(const std::string& text) const;
 };
