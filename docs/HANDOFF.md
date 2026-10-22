@@ -930,6 +930,13 @@
    - **一个端口 API 的坑**：`texture.images` 是 `Texture::ImageProperty`，**没有 `operator!`**，判空要写 `.get() == nullptr`。
    - **测试（3 个用例、13 条断言）**：默认为 `HalfFloatType` 且四项配置就位；`setDataType` 转发到内部 loader 且可链式；`UnsignedByteType` 时**四项默认值存活**（`generateMipmaps` 仍为真、`colorSpace` 不是线性）。
    - **验证**：核心 **904 用例 / 206,642 断言**（+3 / +13）、`primitive-geometry`、`port-audit` 全绿。addon loader **31 → 32 / 52**。
+187. **第 126 轮：`MD2Loader` 第一层——头部、校验与纹理坐标**。
+   - **格式**：Quake 2 的 MD2，**小端**；头部是**十七个 int32**（`ident`/`version`/`skinwidth`/`skinheight`/`framesize`/`num_skins`/`num_vertices`/`num_st`/`num_tris`/`num_glcmds`/`num_frames`/五个 `offset_*`/`offset_end`）。
+   - **两条校验**：`ident == 844121161`（就是 ASCII 的 **IDP2**）且 `version == 8`；以及 **`offset_end == byteLength`**（文件被截断时这条会失败）。上游对两者只 `console.error` 后返回，端口拆成 `isValid`/`isConsistent` 两个可测的判定，解析函数本身只负责读。
+   - **纹理坐标**：每项四个字节（两个 int16），`u / skinwidth`、**`1 - v / skinheight`**（**v 翻转**，所以原点在左下）。
+   - **测试（5 个用例、17 条断言）**：十七个字段逐个核对；**错误魔数**与**错误版本**都被判无效；`offset_end` 与文件长度一致，**截断一个字节后不再一致**；UV 归一化（(0,0) → (0,1)、(64,32) → (1,0)）；头部不足 17×4 字节时抛 `Unexpected end of data`。
+   - **验证**：核心 **909 用例 / 206,659 断言**（+5 / +17）、`primitive-geometry`、`port-audit` 全绿。
+   - **MD2 剩余**：三角形索引、帧与关键帧动画（含法线量化表）、以及 `computeBoundingSphere`。
 70. **第 520 轮：完整 Vulkan 套件 211/211 全绿，耗时 270.72 秒**。
    - 命令：`ctest --test-dir build-vulkan -j 4 -E "lights-states" --output-on-failure`（仍排除第 46 条那个已知项；它在 Vulkan 构建里同样慢）。
    - 结果：**100% tests passed, 0 tests failed out of 211**，总耗时 **270.72 秒**。对比同一套件在 **Debug** 配置下的 **3784.56 秒 / 2 失败**，差了约 14 倍——再次印证第 69 条"是构建类型不是代码"的结论。
