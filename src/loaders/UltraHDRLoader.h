@@ -14,11 +14,21 @@ class UltraHDRLoader {
 
     // The linear value of one table index. Everything below eight bit resolution is covered by
     // the table, so a byte is a multiple of four in it.
-    static double srgbToLinear(int index);
+    // The linear value of one sRGB sample. Below about ten and a third the curve is a
+    // straight line with a much smaller slope, between there and the table size it is a
+    // table lookup truncated to an index, and above that the formula applies directly.
+    static double srgbToLinear(double value);
 
     // The boost a gain map value asks for: the value scaled to nought through one, optionally
     // raised to a recovery exponent, then interpolated between the declared minimum and
     // maximum in the log domain.
+    // Combines one sRGB sample with a gain map value. The boost is a base two exponent
+    // scaled by the weight, where a zero product means no boost at all rather than a
+    // factor of one; the result is then converted to linear and clamped to the largest
+    // value a half float holds.
+    static double composeHdr(double sdrValue, double gainBoost, double weight,
+                             double offsetSdr, double offsetHdr);
+
     static double gainMapBoost(double gainValue, double inverseGamma, bool gammaIsOne,
                                double minBoost, double maxBoost);
 

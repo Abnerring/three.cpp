@@ -3,25 +3,32 @@
 #include "catch.hpp"
 
 #include <cmath>
+#include <cstdint>
+#include <vector>
 
-TEST_CASE("UltraHDRLoader builds the sRGB table") {
-    // Index zero is the offset raised to the exponent.
-    REQUIRE(UltraHDRLoader::srgbToLinear(0) == Approx(std::pow(0.0521327014, 2.4)).epsilon(1e-12));
-    // Index one follows the same formula.
-    REQUIRE(UltraHDRLoader::srgbToLinear(1) ==
-            Approx(std::pow(0.003717127 + 0.0521327014, 2.4)).epsilon(1e-12));
-    // The table rises with the index.
-    REQUIRE(UltraHDRLoader::srgbToLinear(1023) > UltraHDRLoader::srgbToLinear(512));
-    REQUIRE(UltraHDRLoader::srgbToLinear(512) > UltraHDRLoader::srgbToLinear(0));
-    // Black is near zero and white is above one, since the table overshoots for the top values.
-    REQUIRE(UltraHDRLoader::srgbToLinear(0) < 0.01);
-    REQUIRE(UltraHDRLoader::srgbToLinear(1023) > 1.0);
+namespace {
+void putUint32BE(std::vector<std::uint8_t>& out, std::uint32_t value) {
+    for (int i = 3; i >= 0; --i) out.push_back(std::uint8_t((value >> (i * 8)) & 0xff));
 }
+void putInt32BE(std::vector<std::uint8_t>& out, std::int32_t value) {
+    putUint32BE(out, static_cast<std::uint32_t>(value));
+}
+}  // namespace
 
-TEST_CASE("UltraHDRLoader clamps a table index") {
-    // Past the end the last entry repeats, and below zero the first.
-    REQUIRE(UltraHDRLoader::srgbToLinear(5000) == UltraHDRLoader::srgbToLinear(1023));
-    REQUIRE(UltraHDRLoader::srgbToLinear(-3) == UltraHDRLoader::srgbToLinear(0));
+TEST_CASE("UltraHDRLoader converts an sRGB sample in three ranges") {
+    // Below about ten and a third the curve is the linear segment.
+    REQUIRE(UltraHDRLoader::srgbToLinear(0.0) == 0.0);
+    REQUIRE(UltraHDRLoader::srgbToLinear(5.0) == Approx(5.0 * 0.000303527).epsilon(1e-12));
+    // Inside the table the formula gives the same value as the table entry would.
+    REQUIRE(UltraHDRLoader::srgbToLinear(100.0) ==
+            Approx(std::pow(100.0 * 0.003717127 + 0.0521327014, 2.4)).epsilon(1e-9));
+    // A fractional sample is truncated to an index, not interpolated.
+    REQUIRE(UltraHDRLoader::srgbToLinear(100.9) == UltraHDRLoader::srgbToLinear(100.0));
+    // Past the table the formula applies to the value as it is.
+    REQUIRE(UltraHDRLoader::srgbToLinear(2000.0) ==
+            Approx(std::pow(2000.0 * 0.003717127 + 0.0521327014, 2.4)).epsilon(1e-9));
+    // The conversion rises with the sample.
+    REQUIRE(UltraHDRLoader::srgbToLinear(1000.0) > UltraHDRLoader::srgbToLinear(100.0));
 }
 
 TEST_CASE("UltraHDRLoader interpolates the gain boost") {
@@ -37,26 +44,37 @@ TEST_CASE("UltraHDRLoader raises the map value by the recovery exponent") {
     REQUIRE(UltraHDRLoader::gainMapBoost(0.25, 2.0, true, 0.0, 1.0) == Approx(0.25).epsilon(1e-12));
     REQUIRE(UltraHDRLoader::gainMapBoost(0.25, 2.0, false, 0.0, 1.0) == Approx(0.0625).epsilon(1e-12));
 }
-namespace {
-void putUint32BE(std::vector<std::uint8_t>& out, std::uint32_t value) {
-    for (int i = 3; i >= 0; --i) out.push_back(std::uint8_t((value >> (i * 8)) & 0xff));
+
+TEST_CASE("UltraHDRLoader composes a gain map onto an sRGB sample") {
+    // No boost leaves the sample alone, then the conversion applies.
+    const double plain = UltraHDRLoader::composeHdr(100.0, 0.0, 1.0, 0.0, 0.0);
+    REQUIRE(plain == Approx(UltraHDRLoader::srgbToLinear(100.0)).epsilon(1e-12));
+    // A boost of one doubles the value before conversion.
+    const double doubled = UltraHDRLoader::composeHdr(100.0, 1.0, 1.0, 0.0, 0.0);
+    REQUIRE(doubled == Approx(UltraHDRLoader::srgbToLinear(200.0)).epsilon(1e-12));
+    // The weight multiplies into the exponent, so a half weight is a square root.
+    const double half = UltraHDRLoader::composeHdr(100.0, 1.0, 0.5, 0.0, 0.0);
+    REQUIRE(half == Approx(UltraHDRLoader::srgbToLinear(100.0 * std::sqrt(2.0))).epsilon(1e-9));
 }
-void putInt32BE(std::vector<std::uint8_t>& out, std::int32_t value) {
-    putUint32BE(out, static_cast<std::uint32_t>(value));
+
+TEST_CASE("UltraHDRLoader applies the offsets and clamps") {
+    // The sdr offset lifts the sample and the hdr offset lowers the result.
+    REQUIRE(UltraHDRLoader::composeHdr(100.0, 0.0, 1.0, 10.0, 0.0) ==
+            Approx(UltraHDRLoader::srgbToLinear(110.0)).epsilon(1e-12));
+    REQUIRE(UltraHDRLoader::composeHdr(100.0, 0.0, 1.0, 0.0, 10.0) ==
+            Approx(UltraHDRLoader::srgbToLinear(90.0)).epsilon(1e-12));
+    // A negative result clamps to zero rather than going below it.
+    REQUIRE(UltraHDRLoader::composeHdr(0.0, 0.0, 1.0, 0.0, 1000.0) == 0.0);
 }
-}  // namespace
 
 TEST_CASE("UltraHDRLoader reads the common denominator metadata") {
     std::vector<std::uint8_t> buffer;
-    // Minimum and writer versions, then the flags with the common bit set.
     buffer.push_back(0);
     buffer.push_back(0);
     buffer.push_back(0);
     buffer.push_back(0);
     buffer.push_back(0x8);
-    // A common denominator of one thousand.
     putUint32BE(buffer, 1000);
-    // Headrooms of five hundred and two thousand give log2 of a half and of two.
     putUint32BE(buffer, 500);
     putUint32BE(buffer, 2000);
     putInt32BE(buffer, -1000);
@@ -68,14 +86,11 @@ TEST_CASE("UltraHDRLoader reads the common denominator metadata") {
     const auto metadata = UltraHDRLoader::parseIsoMetadata(buffer);
     REQUIRE(metadata.useCommonDenominator);
     REQUIRE_FALSE(metadata.backwardDirection);
-    // The headrooms are base two logarithms of the ratios.
     REQUIRE(metadata.hdrCapacityMin == Approx(-1.0).epsilon(1e-12));
     REQUIRE(metadata.hdrCapacityMax == Approx(1.0).epsilon(1e-12));
     REQUIRE(metadata.gainMapMin == Approx(-1.0).epsilon(1e-12));
     REQUIRE(metadata.gainMapMax == Approx(1.0).epsilon(1e-12));
-    // A gamma of two thousand over one thousand.
     REQUIRE(metadata.gamma == Approx(2.0).epsilon(1e-12));
-    // The offsets are scaled by the byte range.
     REQUIRE(metadata.offsetSdr == Approx(25.5).epsilon(1e-12));
     REQUIRE(metadata.offsetHdr == Approx(-25.5).epsilon(1e-12));
 }
@@ -83,9 +98,7 @@ TEST_CASE("UltraHDRLoader reads the common denominator metadata") {
 TEST_CASE("UltraHDRLoader reads the paired metadata") {
     std::vector<std::uint8_t> buffer;
     for (int i = 0; i < 5; ++i) buffer.push_back(0);
-    // The flags leave both bits clear.
     buffer[4] = 0x0;
-    // Each headroom now carries its own denominator.
     putUint32BE(buffer, 3);
     putUint32BE(buffer, 2);
     putUint32BE(buffer, 8);
@@ -106,16 +119,16 @@ TEST_CASE("UltraHDRLoader reads the paired metadata") {
     REQUIRE(metadata.gainMapMin == Approx(-1.5).epsilon(1e-12));
     REQUIRE(metadata.gainMapMax == Approx(1.5).epsilon(1e-12));
     REQUIRE(metadata.gamma == Approx(2.0).epsilon(1e-12));
-    // One quarter of the byte range is about sixty three and three quarters.
     REQUIRE(metadata.offsetSdr == Approx(63.75).epsilon(1e-12));
 }
 
 TEST_CASE("UltraHDRLoader records the backward direction flag") {
-    // The flags byte alone is enough to read them, so only the prefix is needed.
-    std::vector<std::uint8_t> buffer(5, 0);
+    // The paired path needs its whole block, so the buffer is padded out.
+    std::vector<std::uint8_t> buffer(61, 0);
     buffer[4] = 0x4;
-    // The paired path wants its whole block, so pad it out with zeros.
-    for (int i = 0; i < 56; ++i) buffer.push_back(0);
+    const auto metadata = UltraHDRLoader::parseIsoMetadata(buffer);
+    REQUIRE(metadata.backwardDirection);
+    REQUIRE_FALSE(metadata.useCommonDenominator);
 }
 
 TEST_CASE("UltraHDRLoader rejects a block that is too short") {

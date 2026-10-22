@@ -1,5 +1,6 @@
 #include "loaders/UltraHDRLoader.h"
 
+#include <algorithm>
 #include <cmath>
 #include <stdexcept>
 
@@ -11,11 +12,6 @@ constexpr double kByteOffset = 0.0521327014;
 constexpr double kExponent = 2.4;
 }  // namespace
 
-double UltraHDRLoader::srgbToLinear(int index) {
-    // An index past the table is clamped rather than reading out of bounds.
-    const int clamped = index < 0 ? 0 : (index >= kTableSize ? kTableSize - 1 : index);
-    return std::pow(clamped * kByteScale + kByteOffset, kExponent);
-}
 
 double UltraHDRLoader::gainMapBoost(double gainValue, double inverseGamma, bool gammaIsOne,
                                     double minBoost, double maxBoost) {
@@ -109,4 +105,26 @@ UltraHDRLoader::IsoMetadata UltraHDRLoader::parseIsoMetadata(
     metadata.offsetSdr = pair(true) * 255.0;
     metadata.offsetHdr = pair(true) * 255.0;
     return metadata;
+}
+double UltraHDRLoader::srgbToLinear(double value) {
+    // The linear segment, which is a straight line with a slope far below the curve.
+    if (value < 10.31475) return value * 0.000303527;
+    // Inside the table range the value is truncated to an index, not interpolated.
+    if (value < kTableSize) {
+        const int index = static_cast<int>(value);
+        return std::pow(index * kByteScale + kByteOffset, kExponent);
+    }
+    // Past the table the formula is evaluated directly.
+    return std::pow(value * kByteScale + kByteOffset, kExponent);
+}
+
+double UltraHDRLoader::composeHdr(double sdrValue, double gainBoost, double weight,
+                                  double offsetSdr, double offsetHdr) {
+    // A zero product means the boost is off entirely rather than a factor of one.
+    const double boost = gainBoost * weight;
+    const double factor = boost == 0.0 ? 1.0 : std::pow(2.0, boost);
+    const double hdrValue = (sdrValue + offsetSdr) * factor - offsetHdr;
+    // The result is converted to linear and clamped to the half float maximum.
+    const double linear = srgbToLinear(hdrValue);
+    return std::min(std::max(linear, 0.0), 65504.0);
 }
