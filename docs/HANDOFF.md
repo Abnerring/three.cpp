@@ -1553,6 +1553,17 @@
    - **测试（4 个用例、24 条断言）**：四节点（第一个原序、**第二个是 `1,3,2`**）；六节点四个三角形的交替（第 2 奇、第 3 偶、第 4 奇）；**两节点丢弃、三节点原样**；**条带行读进 mesh**。
    - **验证**：核心 **1312 用例 / 209,425 断言**（+4 / +24）、addons、`primitive-geometry`、`port-audit`、Vulkan 全绿。
    - **VTK 的 ASCII 路径至此完整**：`POINTS`、`POLYGONS`（扇形）、`TRIANGLE_STRIPS`（交替）、`POINT_DATA`/`CELL_DATA` 下的 `COLOR_SCALARS`（**带 sRGB→线性**）与 `NORMALS`（原样）。**二进制路径仍需 zlib，未做**。
+278. **第 217 轮：剩余 loader 的库依赖表（决定性）+ `LWOLoader` 第一层**。
+   - **3MF 不是可移植的**：它 `import { unzipSync } from '../libs/fflate.module.js'`——3MF 文件本身是 **ZIP 包**，没有解压就什么都读不出来。所以**放弃 3MF**（和 `KMZLoader` 同类）。
+   - **把每个剩余 loader 的 `../libs/` 导入都查了一遍**（脚本，非记忆）：
+     - **无库依赖、可移植**：`LWOLoader` 1051、`TDSLoader` 1142、`3DMLoader` 1937、`LDrawLoader` 2510、`SVGLoader` 3323；`GLTFLoader` 4979 只依赖 `BufferGeometryUtils`/`SkeletonUtils`（端口已有）；`ColladaLoader` 153 是外壳（真正的解析器在 `collada/` 子目录）；`DRACOLoader` 无静态依赖但**运行期加载 WASM**。
+     - **需 fflate**：`KMZLoader`、`USDLoader`、`3MFLoader`、**`EXRLoader`**、`FBXLoader`。
+     - **需 ktx-parse + zstddec**：`KTX2Loader`。
+     - **需 chevrotain 解析器生成器**：`VRMLLoader`。
+   - **修正一处旧判断**：我在第 209 轮说 `EXRLoader` 是"纯算法、自包含"，**错了**——它 `import fflate`，压缩的 EXR 需要解压。
+   - **`LWOLoader` 第一层**：LWO 是**块树**（4 字符标识 + **大端字节数** + 内容），整文件包在 `FORM` 里。端口实现了 `readChunkHeader`（标识去掉尾部空格、大端 size、内容起点）与 `extractParentUrl`（`indexOf` 找不到目录时返回 `'./'`，否则取前缀）。
+   - **测试（5 个用例、11 条断言）**：块头的标识与大小；**短标识的尾部空格被去掉**（`"AB  "` → `"AB"`）；**带偏移读取**（`dataOffset == 12`）；过短抛错；**路径切分三种情形**（`models/` / `./` / 空前缀）。
+   - **验证**：核心 **1317 用例 / 209,436 断言**（+5 / +11）、addons、`primitive-geometry`、`port-audit`、Vulkan 全绿。
 70. **第 520 轮：完整 Vulkan 套件 211/211 全绿，耗时 270.72 秒**。
    - 命令：`ctest --test-dir build-vulkan -j 4 -E "lights-states" --output-on-failure`（仍排除第 46 条那个已知项；它在 Vulkan 构建里同样慢）。
    - 结果：**100% tests passed, 0 tests failed out of 211**，总耗时 **270.72 秒**。对比同一套件在 **Debug** 配置下的 **3784.56 秒 / 2 失败**，差了约 14 倍——再次印证第 69 条"是构建类型不是代码"的结论。
