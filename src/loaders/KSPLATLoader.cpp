@@ -336,3 +336,47 @@ KSPLATLoader::Row KSPLATLoader::decodeRow(const std::vector<std::uint8_t>& buffe
             row.color[i] = buffer[colorAt + static_cast<std::size_t>(i)];
     return row;
 }
+
+std::vector<KSPLATLoader::Row> KSPLATLoader::decodeSection(
+    const std::vector<std::uint8_t>& buffer, const SectionHeader& section,
+    const Compression& layout, std::size_t sectionBase) {
+    std::vector<Row> rows;
+    const SectionLayout sizes = sectionLayout(section, layout);
+    if (sizes.bytesPerSplat <= 0) return rows;
+
+    // The partial bucket lengths come first, then the bucket records, then the rows.
+    const std::size_t bucketsBase = sectionBase + sizes.bucketsMetaDataSize;
+    const std::size_t dataBase = sectionBase + sizes.bucketsStorageSize;
+    const std::uint32_t fullBucketSplats = section.fullBucketCount * section.bucketSize;
+
+    // The partial lengths are read once so the walk does not touch the buffer per splat.
+    std::vector<std::uint32_t> partialLengths;
+    for (std::uint32_t i = 0; i < section.partiallyFilledBucketCount; ++i) {
+        const std::size_t at = sectionBase + static_cast<std::size_t>(i) * 4;
+        partialLengths.push_back(at + 4 <= buffer.size() ? readUint32(buffer, at) : 0);
+    }
+
+    rows.reserve(section.splatCount);
+    for (std::uint32_t i = 0; i < section.splatCount; ++i) {
+        const BucketPosition bucket =
+            bucketIndex(i, section, fullBucketSplats, partialLengths);
+
+        // A compressed centre is placed by the bucket's own coordinate, read from the record.
+        double bucketCoordinate[3] = {0, 0, 0};
+        if (layout.bytesPerCenter != 12 && section.bucketCount > 0) {
+            const std::size_t at =
+                bucketsBase + static_cast<std::size_t>(bucket.value) *
+                                  static_cast<std::size_t>(section.bucketStorageSizeBytes);
+            for (int axis = 0; axis < 3; ++axis) {
+                const std::size_t componentAt = at + static_cast<std::size_t>(axis) * 4;
+                if (componentAt + 4 <= buffer.size())
+                    bucketCoordinate[axis] = readFloat32(buffer, componentAt);
+            }
+        }
+
+        const std::size_t rowOffset = dataBase + static_cast<std::size_t>(i) *
+                                                    static_cast<std::size_t>(sizes.bytesPerSplat);
+        rows.push_back(decodeRow(buffer, rowOffset, section, layout, bucketCoordinate));
+    }
+    return rows;
+}

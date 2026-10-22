@@ -1380,6 +1380,13 @@
    - **测试（3 个用例、17 条断言）**：完整未压缩行（中心 `1/2/3`、**scale `0.5/0.25/0.125` 原样**、旋转 `w=1`、颜色 `10/20/30/40`）；**压缩行**（中间值落在桶坐标 `10/20/30` 上、半浮点 scale 与旋转都是 1、颜色 7）；**行太短返回默认值**（中心 0、scale 1、旋转 1）而不是越界读。
    - **验证**：核心 **1211 用例 / 209,055 断言**（+3 / +17）、addons、`primitive-geometry`、`port-audit`、Vulkan 全绿。
    - **剩余**：把所有行串成段循环并交给 `createGaussianSplatGeometry`。
+253. **第 192 轮：`KSPLATLoader` 第四层——段内循环与桶坐标**。
+   - **段的字节布局**：先 `partiallyFilledBucketCount × 4` 的半满桶长度表，再 `bucketCount × bucketStorageSizeBytes` 的桶记录，最后是 `splatCount` 行数据。无桶的档位把行数据直接放在元数据之后。
+   - **桶坐标只在压缩档位需要**：每次取一个 splat 的桶号后，从 `bucketsBase + bucket × bucketStorageSizeBytes` 读三个 float32 当作该桶的原点，交给上一轮的 `decodeRow`。
+   - **测试（4 个用例、9 条断言）**：两行未压缩数据的循环；**段偏移**（段从 100 字节处开始）；**一个满桶 + 压缩行**（中间值落在桶坐标 `5/6/7` 上）；**空段**返回空。
+   - **两处错误都是我的**：① **测试名与第 186 轮重名**（`reads a section at an offset`），Catch2 又是 `exit 255`——这已是**第二次**，所以这一轮加了一个**扫描全部 496 个测试名的查重步骤**（结果 0 重复）；② 压缩段的测试里我给了 `bucketCount = 1` 却**忘了 `fullBucketCount`**，于是 `bucketIndex` 走半满桶路径、找不到 splat 0 而抛错。补上 `fullBucketCount = 1` 与 `bucketSize = 1` 后通过。
+   - **验证**：核心 **1215 用例 / 209,064 断言**（+4 / +9）、addons、`primitive-geometry`、`port-audit`、Vulkan 全绿。
+   - **剩余**：顶层 `parse` 的段循环与最终装配。
 70. **第 520 轮：完整 Vulkan 套件 211/211 全绿，耗时 270.72 秒**。
    - 命令：`ctest --test-dir build-vulkan -j 4 -E "lights-states" --output-on-failure`（仍排除第 46 条那个已知项；它在 Vulkan 构建里同样慢）。
    - 结果：**100% tests passed, 0 tests failed out of 211**，总耗时 **270.72 秒**。对比同一套件在 **Debug** 配置下的 **3784.56 秒 / 2 失败**，差了约 14 倍——再次印证第 69 条"是构建类型不是代码"的结论。

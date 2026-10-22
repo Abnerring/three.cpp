@@ -157,4 +157,11 @@ class KSPLATLoader {
     static Row decodeRow(const std::vector<std::uint8_t>& buffer, std::size_t rowOffset,
                          const SectionHeader& section, const Compression& layout,
                          double bucketCoordinate[3]);
+
+    // Decodes every splat of one section. The section starts with its bucket offsets, then
+    // the bucket records, then the splat rows themselves; a level with no buckets puts the
+    // rows straight after the metadata.
+    static std::vector<Row> decodeSection(const std::vector<std::uint8_t>& buffer,
+                                          const SectionHeader& section, const Compression& layout,
+                                          std::size_t sectionBase);
 };
