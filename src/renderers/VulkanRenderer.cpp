@@ -374,6 +374,7 @@ struct VulkanRenderer::Impl {
     std::unique_ptr<VulkanUniformBuffer> pmremUniformTemplate;
     VkDescriptorSetLayout pmremTextureLayout = VK_NULL_HANDLE;
     VkPipelineLayout pmremPipelineLayout = VK_NULL_HANDLE;
+    VkPipeline pmremPipelineHandle = VK_NULL_HANDLE;
     std::vector<VkDescriptorPool> descriptorPools;
     std::size_t activeDescriptorPool = 0;
     VkCommandBuffer textureCommandBuffer = VK_NULL_HANDLE;
@@ -854,6 +855,7 @@ struct VulkanRenderer::Impl {
             throw std::runtime_error("PMREM shader requires one descriptor set");
         pmremTextureLayout = pmremReflectedLayout->setLayouts()[0];
         pmremPipelineLayout = pmremReflectedLayout->handle();
+        createPmremPipeline();
         pipelineLayout = reflectedLayout->handle();
         createRenderPass();
         resize(parameters.width, parameters.height);
@@ -2260,6 +2262,62 @@ struct VulkanRenderer::Impl {
               "vkCreateGraphicsPipelines");
         pipelines.emplace(key, result);
         return result;
+    }
+
+    // The PMREM pass draws a box through a classic vec3 position input, which the vertex
+    // pulling pipeline above cannot express. Same render pass and dynamic state.
+    void createPmremPipeline() {
+        const auto stages = pmremModules->pipelineStages();
+        VkVertexInputBindingDescription binding{0, sizeof(float) * 3, VK_VERTEX_INPUT_RATE_VERTEX};
+        VkVertexInputAttributeDescription attribute{0, 0, VK_FORMAT_R32G32B32_SFLOAT, 0};
+        VkPipelineVertexInputStateCreateInfo vertex{VK_STRUCTURE_TYPE_PIPELINE_VERTEX_INPUT_STATE_CREATE_INFO};
+        vertex.vertexBindingDescriptionCount = 1;
+        vertex.pVertexBindingDescriptions = &binding;
+        vertex.vertexAttributeDescriptionCount = 1;
+        vertex.pVertexAttributeDescriptions = &attribute;
+        VkPipelineInputAssemblyStateCreateInfo assembly{VK_STRUCTURE_TYPE_PIPELINE_INPUT_ASSEMBLY_STATE_CREATE_INFO};
+        assembly.topology = VK_PRIMITIVE_TOPOLOGY_TRIANGLE_LIST;
+        VkPipelineViewportStateCreateInfo viewport{VK_STRUCTURE_TYPE_PIPELINE_VIEWPORT_STATE_CREATE_INFO};
+        viewport.viewportCount = 1;
+        viewport.scissorCount = 1;
+        VkPipelineRasterizationStateCreateInfo rasterization{VK_STRUCTURE_TYPE_PIPELINE_RASTERIZATION_STATE_CREATE_INFO};
+        rasterization.polygonMode = VK_POLYGON_MODE_FILL;
+        // Upstream draws the box from the inside with blending and depth off.
+        rasterization.cullMode = VK_CULL_MODE_NONE;
+        rasterization.frontFace = VK_FRONT_FACE_COUNTER_CLOCKWISE;
+        rasterization.lineWidth = 1;
+        VkPipelineMultisampleStateCreateInfo multisample{VK_STRUCTURE_TYPE_PIPELINE_MULTISAMPLE_STATE_CREATE_INFO};
+        multisample.rasterizationSamples = VK_SAMPLE_COUNT_1_BIT;
+        VkPipelineDepthStencilStateCreateInfo depth{VK_STRUCTURE_TYPE_PIPELINE_DEPTH_STENCIL_STATE_CREATE_INFO};
+        depth.depthTestEnable = VK_FALSE;
+        depth.depthWriteEnable = VK_FALSE;
+        VkPipelineColorBlendAttachmentState blend{};
+        blend.blendEnable = VK_FALSE;
+        blend.colorWriteMask = VK_COLOR_COMPONENT_R_BIT | VK_COLOR_COMPONENT_G_BIT |
+                               VK_COLOR_COMPONENT_B_BIT | VK_COLOR_COMPONENT_A_BIT;
+        VkPipelineColorBlendStateCreateInfo colorBlend{VK_STRUCTURE_TYPE_PIPELINE_COLOR_BLEND_STATE_CREATE_INFO};
+        colorBlend.attachmentCount = 1;
+        colorBlend.pAttachments = &blend;
+        const VkDynamicState dynamicStates[] = {VK_DYNAMIC_STATE_VIEWPORT, VK_DYNAMIC_STATE_SCISSOR};
+        VkPipelineDynamicStateCreateInfo dynamic{VK_STRUCTURE_TYPE_PIPELINE_DYNAMIC_STATE_CREATE_INFO};
+        dynamic.dynamicStateCount = 2;
+        dynamic.pDynamicStates = dynamicStates;
+        VkGraphicsPipelineCreateInfo create{VK_STRUCTURE_TYPE_GRAPHICS_PIPELINE_CREATE_INFO};
+        create.stageCount = 2;
+        create.pStages = stages.data();
+        create.pVertexInputState = &vertex;
+        create.pInputAssemblyState = &assembly;
+        create.pViewportState = &viewport;
+        create.pRasterizationState = &rasterization;
+        create.pMultisampleState = &multisample;
+        create.pDepthStencilState = &depth;
+        create.pColorBlendState = &colorBlend;
+        create.pDynamicState = &dynamic;
+        create.layout = pmremPipelineLayout;
+        create.renderPass = renderPass;
+        check(api.vkCreateGraphicsPipelines(device, VK_NULL_HANDLE, 1, &create, nullptr,
+                                           &pmremPipelineHandle),
+              "vkCreateGraphicsPipelines(pmrem)");
     }
 
     void imageBarrier(VkImage image, VkImageAspectFlags aspect, VkImageLayout oldLayout,
