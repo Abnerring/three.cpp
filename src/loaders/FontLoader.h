@@ -1,7 +1,9 @@
-﻿#pragma once
+#pragma once
 #include <map>
+#include <memory>
 #include <string>
 #include <vector>
+class ShapePath;
 
 // Port of the text layout half of examples/jsm/loaders/FontLoader.js at the pinned revision.
 // Font.parse is a single construction, and the glyph outline interpreter that turns a glyph's
@@ -52,4 +54,15 @@ class Font {
                                       const std::string& direction = "ltr") const;
 
     Data data;
+
+    // Builds one glyph outline. The command string is space separated: m and l take one
+    // point, q takes an end point then a control point, b takes an end point then two
+    // controls. Every coordinate is scaled and offset before it is recorded. The returned
+    // advance is the horizontal advance times the scale.
+    struct GlyphPath {
+        std::shared_ptr<ShapePath> path;
+        double advance = 0;
+    };
+    static GlyphPath createPath(const std::string& character, double scale, double offsetX,
+                                double offsetY, const Data& data);
 };
