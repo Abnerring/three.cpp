@@ -506,6 +506,13 @@
    - **正确的做法**：先定位 `void VulkanRenderer::blurCube` 的起始行，**再在它的范围内**（`for` 循环体内）找 `beginFrame` 的收尾行，而不是全文件找第一处。
    - **当前状态**：全部回退；核心 **747 / 205,735**、`primitive-geometry`、`port-audit`、Vulkan 构建 0 错误、`--cube` 0，树干净。
    - **下一步**：重做 `blurCube`（clear 在 draw **之前**），并且**这次用 `blurCube` 函数体内的相对位置**来定位插入点，插完立刻打印该函数的前 30 行确认顺序。
+130. **第 69 轮：修正了 clear/draw 顺序，但发现源目标从未被 park——探针给出了决定性数据**。
+   - **顺序已修**：新的 `blurCube` 用 `beginFrame(true, false, Color(0.25,0.25,0.25), 1, false)`，**clear 与开帧是同一步**，之后才 barrier + draw。顺序上不会再出现"clear 擦掉 draw"。
+   - **删掉了旧的 clear-only 版本**：第 67 轮那个 `blurCube` 已经**提交过**，所以 `git checkout` 之后它仍在文件里；本轮新增第二个定义时立刻报 `C2084 函数重定义`，用"找到第一个定义、从它的 `{` 删到匹配的 `}`"删掉旧的，只剩一个新的。
+   - **新问题（探针数据）**：`blur park probe: source=…250 dest=…620 activeKey=…620 parked=0`——`activeKey` 已经是**目标**、而 `parkedTargets` **是空的**。说明进入 `blurCube` 时 `activeKey` 就是 `nullptr`，源**从来没有成为过 `active`**，因此 `useTarget(destination)` 那一步**没有东西可 park**。
+   - **这意味着什么**：测试里 `setRenderTarget(source)` → `renderEquirectangularToCube(...)` → `setRenderTarget(destination)` 这条链，没有让源留在 `activeKey` 上。第 56 轮写的 `useTarget` 逻辑是"`if (activeKey)` 才 park"——如果某处把 `activeKey` 清成了 `nullptr`（例如 `useTarget(nullptr)`，而第 60 轮正是为了修"层数变 1"在**解绑分支**加了它），那么源就会被**丢弃而不是 park**。**这是 `useTarget(nullptr)` 与 park 语义的冲突**：解绑时先 park 再清 key 才对，而现在顺序是 `reset` → `useTarget(nullptr)` → `resize`，`useTarget(nullptr)` 内部会 `parkedTargets[activeKey] = std::move(active)`，**这一步应该 park 成功**——所以更可能是 `resize` 内部又调了 `destroyTargets`，把 `active` 清掉后再赋值。
+   - **下一步**：在 `useTarget` 与 `resize` 里各加一条打印（`activeKey`、`parkedTargets.size()`、`active` 是否为空），跑一次看这三者在 `setRenderTarget(source)` / `renderEquirectangularToCube` / `setRenderTarget(destination)` 之后分别是什么。**这是纯诊断，不改逻辑。**
+   - **状态**：全部回退；核心 **747 / 205,735**、`primitive-geometry`、`port-audit`、Vulkan 构建 0 错误、`--cube` 0，树干净。
 70. **第 520 轮：完整 Vulkan 套件 211/211 全绿，耗时 270.72 秒**。
    - 命令：`ctest --test-dir build-vulkan -j 4 -E "lights-states" --output-on-failure`（仍排除第 46 条那个已知项；它在 Vulkan 构建里同样慢）。
    - 结果：**100% tests passed, 0 tests failed out of 211**，总耗时 **270.72 秒**。对比同一套件在 **Debug** 配置下的 **3784.56 秒 / 2 失败**，差了约 14 倍——再次印证第 69 条"是构建类型不是代码"的结论。
