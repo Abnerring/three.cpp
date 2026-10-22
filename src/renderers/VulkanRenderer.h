@@ -1,6 +1,7 @@
 #ifndef THREECPP_VULKAN_RENDERER_H
 #define THREECPP_VULKAN_RENDERER_H
 
+#include "constants.h"
 #include "math/Color.h"
 #include "core/JSValue.h"
 #include <cstdint>
@@ -44,6 +45,8 @@ class VulkanRenderer {
     bool autoClearColor = true;
     bool autoClearDepth = true;
     bool sortObjects = true;
+    // Upstream renderers expose the coordinate system they draw with.
+    double coordinateSystem = WebGLCoordinateSystem;
     bool srgbOutput = true;
     JSValue clippingPlanes = JSValue::array();
     JSValue localClippingEnabled = false;
@@ -64,6 +67,9 @@ class VulkanRenderer {
     // the target size, and restoring a null target restores the previous size.
     void setRenderTarget(std::shared_ptr<RenderTarget> target, std::uint32_t activeCubeFace = 0,
                           std::uint32_t activeMipmapLevel = 0);
+    // The active face and mip level of the bound target, as upstream exposes them.
+    std::uint32_t getActiveCubeFace() const;
+    std::uint32_t getActiveMipmapLevel() const;
     std::shared_ptr<RenderTarget> getRenderTarget() const;
     // Rows are top to bottom, matching readPixels() on this renderer.
     std::vector<std::uint8_t> readRenderTargetPixels(RenderTarget& target, std::uint32_t x,

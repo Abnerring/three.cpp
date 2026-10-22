@@ -2430,6 +2430,8 @@ void VulkanRenderer::setRenderTarget(std::shared_ptr<RenderTarget> target,
     }
 }
 std::shared_ptr<RenderTarget> VulkanRenderer::getRenderTarget() const { return impl->renderTarget; }
+std::uint32_t VulkanRenderer::getActiveCubeFace() const { return impl->activeCubeFace; }
+std::uint32_t VulkanRenderer::getActiveMipmapLevel() const { return impl->activeMipmapLevel; }
 std::vector<std::uint8_t> VulkanRenderer::readRenderTargetPixels(RenderTarget& target, std::uint32_t x,
                                                                   std::uint32_t y, std::uint32_t width,
                                                                   std::uint32_t height) {

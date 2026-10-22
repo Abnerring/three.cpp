@@ -1720,6 +1720,11 @@ void cubeRenderTargetTests(bool validation) {
         const auto face = renderer.readRenderTargetPixels(*cube, 0, 0, 16, 16);
         require(face[2] > 200 && face[0] < 60 && face[1] < 60, "clear repaints all faces");
     }
+    renderer.setRenderTarget(cube, 4);
+    require(renderer.getActiveCubeFace() == 4, "active cube face reports the bound face");
+    require(renderer.getActiveMipmapLevel() == 0, "active mip level reports zero");
+    require(renderer.coordinateSystem == WebGLCoordinateSystem,
+            "renderer reports its coordinate system");
     renderer.setRenderTarget(nullptr);
     require(renderer.getWidth() == 64 && renderer.getHeight() == 64, "size restored after cube");
 }
