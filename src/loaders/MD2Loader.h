@@ -1,4 +1,4 @@
-﻿#pragma once
+#pragma once
 #include <cstdint>
 #include <string>
 #include <vector>
@@ -48,4 +48,23 @@ class MD2Loader {
     // Throws when the data ends before the coordinates do.
     static std::vector<double> parseUVs(const std::vector<std::uint8_t>& buffer,
                                         const Header& header);
+
+    // Twelve bytes per triangle: three uint16 vertex indices then three uint16 texture
+    // coordinate indices, all little endian.
+    struct Triangle {
+        std::uint16_t vertex[3] = {0, 0, 0};
+        std::uint16_t uv[3] = {0, 0, 0};
+    };
+    static std::vector<Triangle> parseTriangles(const std::vector<std::uint8_t>& buffer,
+                                                const Header& header);
+
+    // A frame starts with a scale and a translation, then a sixteen byte name that ends at
+    // the first zero byte. The vertex data follows and is the layer above.
+    struct FrameHeader {
+        double scale[3] = {0, 0, 0};
+        double translation[3] = {0, 0, 0};
+        std::string name;
+    };
+    static std::vector<FrameHeader> parseFrameHeaders(const std::vector<std::uint8_t>& buffer,
+                                                      const Header& header);
 };
