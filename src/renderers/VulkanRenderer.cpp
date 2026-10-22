@@ -412,6 +412,8 @@ struct VulkanRenderer::Impl {
         std::uint32_t width = 0, height = 0, layers = 1;
     };
     std::unique_ptr<GpuTarget> spareTarget;
+    // Mirrors the active target while the draw path is migrated onto it.
+    std::unique_ptr<GpuTarget> active;
     using BufferRef = std::shared_ptr<Buffer>;
     // The command adapter owns the upload buffers independently of the decoded
     // float/uint32 draw buffers. Reads below come from mapped Vulkan memory.
@@ -2072,6 +2074,7 @@ struct VulkanRenderer::Impl {
         if (framebuffer)
             api.vkDestroyFramebuffer(device, framebuffer, nullptr);
         framebuffer = VK_NULL_HANDLE;
+        if (active) { destroyGpuTarget(*active); active.reset(); }
         destroyImage(colorImage);
         destroyImage(depthImage);
         destroyBuffer(readback);
@@ -2167,6 +2170,9 @@ struct VulkanRenderer::Impl {
         create.layers = 1;
         check(api.vkCreateFramebuffer(device, &create, nullptr, &framebuffer),
               "vkCreateFramebuffer");
+        // Mirror the same resources into the per target structure while the draw path
+        // is migrated one function at a time.
+        active = createGpuTarget(newWidth, newHeight, layers);
         selectFace(activeCubeFace);
         readback = createBuffer(static_cast<VkDeviceSize>(width) * height * 4,
                                 VK_BUFFER_USAGE_TRANSFER_DST_BIT);

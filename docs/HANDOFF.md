@@ -393,6 +393,11 @@
    - **修复**：`git checkout 11186cc -- src/renderers/VulkanRenderer.cpp`（`11186cc` 正是迁移前的提交），Vulkan 构建回到 **0 错误**，`--cube` 退出码 **0**。
    - **教训与规则变更（重要）**：**门禁必须包含 `threecpp_vulkan` 的构建**。从今往后每轮提交前跑五项：① `build/` 核心测试 ② 差分 ③ `port-audit` ④ **`build-vkdebug` 的 `threecpp_vulkan` 构建** ⑤ **`--cube` 退出码**。只看前三项会在"改了 Vulkan 源码"时给出假绿。
    - **另一条教训**：`git checkout <branch>` **不会**替你丢弃脏文件；切换分支前必须先 `git status`，**看到脏就停下来**，不能切完继续 `git add -A`。
+112. **第 51 轮：用"镜像并存"的办法让 `active` 成为活的第二套目标，五门禁全绿**。
+   - **新办法（替代失败的批量替换）**：不删旧成员、不改任何调用点，而是在 `resize()` 建完旧的 `colorImage`/`depthImage`/`framebuffer` **之后**，再调一次 `active = createGpuTarget(newWidth, newHeight, layers);`；`destroyTargets()` 里相应加 `if (active) { destroyGpuTarget(*active); active.reset(); }`。这样 `active` 是**每帧都真实存在的镜像**，而旧路径**一个字没动**——行为完全不变，风险接近零。
+   - **为什么要这么绕**：第 49 轮的教训是"批量替换会误伤、且替换失败时错误列表不变"。镜像法把"引入新结构"和"切换调用点"彻底拆开：这一轮只做前者，且不需要改任何现有代码。
+   - **验证（五项门禁，按第 111 条新规矩）**：核心 **747 / 205,735** ✓、`primitive-geometry` ✓、`port-audit` ✓、`build-vkdebug` 的 `threecpp_vulkan` **0 错误** ✓、`--cube` 退出码 **0** ✓。
+   - **下一步**：逐个函数把调用点从旧成员切到 `active->...`，**每切一个函数跑一次五项门禁**——顺序建议 `beginFrame` → `endFrame` → `selectFace` → `readRenderTargetPixels` → `destroyTargets` → `resize`（最后删旧成员）。每次切换都是"读的是同一个对象"，所以门禁应当全绿；一旦某项变红，就立刻知道是哪个函数切错了。
 70. **第 520 轮：完整 Vulkan 套件 211/211 全绿，耗时 270.72 秒**。
    - 命令：`ctest --test-dir build-vulkan -j 4 -E "lights-states" --output-on-failure`（仍排除第 46 条那个已知项；它在 Vulkan 构建里同样慢）。
    - 结果：**100% tests passed, 0 tests failed out of 211**，总耗时 **270.72 秒**。对比同一套件在 **Debug** 配置下的 **3784.56 秒 / 2 失败**，差了约 14 倍——再次印证第 69 条"是构建类型不是代码"的结论。
