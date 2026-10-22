@@ -329,15 +329,24 @@ if(THREECPP_BUILD_VULKAN)
         message(FATAL_ERROR "Vulkan requires headers and glslangValidator. Set THREECPP_VULKAN_INCLUDE_DIR and THREECPP_GLSLANG_VALIDATOR, or install the Vulkan SDK.")
     endif()
     set(THREECPP_SHADER_OUTPUTS)
+    # Every built-in program is compiled the same way; PMREM needs its own pair.
+    foreach(program basic pmrem_equirect)
+    # The basic program is sourced from meshbasic.glsl but keeps its historical spv name.
+    if(program STREQUAL "basic")
+        set(program_source meshbasic)
+    else()
+        set(program_source "${program}")
+    endif()
     foreach(stage vert frag)
-        set(shader "basic.${stage}")
-        set(shader_source "${CMAKE_CURRENT_SOURCE_DIR}/src/renderers/shaders/ShaderLib/meshbasic.${stage}.glsl")
+        set(shader "${program}.${stage}")
+        set(shader_source "${CMAKE_CURRENT_SOURCE_DIR}/src/renderers/shaders/ShaderLib/${program_source}.${stage}.glsl")
         set(output "${CMAKE_CURRENT_BINARY_DIR}/shaders/${shader}.spv")
         add_custom_command(OUTPUT "${output}"
             COMMAND "${CMAKE_COMMAND}" -E make_directory "${CMAKE_CURRENT_BINARY_DIR}/shaders"
             COMMAND "${THREECPP_GLSLANG_VALIDATOR}" -V --target-env vulkan1.1 -S "${stage}" "${shader_source}" -o "${output}"
             DEPENDS "${shader_source}" VERBATIM)
         list(APPEND THREECPP_SHADER_OUTPUTS "${output}")
+    endforeach()
     endforeach()
     add_custom_target(threecpp_shaders DEPENDS ${THREECPP_SHADER_OUTPUTS})
     add_library(threecpp_spirv_reflect STATIC src/renderers/vulkan/lib/spirv_reflect/spirv_reflect.cpp)

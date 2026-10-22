@@ -239,6 +239,11 @@
    - **两条路**：**A（推荐）**把 PMREM 的三个着色器也做成**构建期内置程序**——写 `.vert/.frag` 源码，用现成的 `threecpp_shaders` 目标编成 `.spv`，渲染器加一条"按名字选内置程序 + 传 uniform"的路径；**B** 实现完整的 `ShaderMaterial` 运行时编译与绑定（大得多，但更通用）。
    - A 的好处：PMREM 的着色器是**固定的**（上游 `_getEquirectMaterial`/`_getBlurMaterial`/`_getGGXMaterial` 都是常量源码），不需要通用机制；而构建期编译已经在跑，风险最小。
    - **本轮同时做的**：差分从 287 扩到 **293 场景**（新增网格 9×4、7×3 纹理、4:3 相机、双色半球光、曲线路径、2 分量 2 采样线性插值），全部与上游逐位一致；核心 **745 / 205,728**、`primitive-geometry`、`port-audit` 全绿。
+86. **第 23 轮：PMREM 的等距柱状着色器写出并**真的被编译成 SPIR-V**；同时摸清了渲染器的程序通道**。
+   - **渲染器现状（决定方案 A 的改动面）**：`VulkanRenderer.cpp` 只有**一套**程序——构建期把 `meshbasic.{vert,frag}.glsl` 编成 `basic.{vert,frag}.spv`，运行时 `readShader()` 读入并建**一条**管线（803–822 行），第 815 行还写死了 `MeshBasic shader requires one reflected texture uniform block`。但它**有**通用的反射与 uniform 机制（`VulkanShaderInterface`/`VulkanUniformBuffer`/`VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER` 检查），所以"多一套内置程序"是**可行**的，只是要把单管线路径泛化成"按程序名建管线"。
+   - **本轮落地**：写出 `src/renderers/shaders/ShaderLib/pmrem_equirect.{vert,frag}.glsl`——vert 镜像 `ShaderChunk.cube_vert`（`transformDirection(position, modelMatrix)` 得到 `vWorldDirection`），frag 镜像上游 `_getEquirectMaterial`（`equirectUv` 内联、四次子像素采样取平均、`0.25` 权重）。CMake 的着色器循环从"只有 basic"改成**程序列表**（`foreach(program basic pmrem_equirect)`，并加一层源文件名映射：`basic` 的源码仍叫 `meshbasic.glsl`、spv 名保持不变）。
+   - **验证**：`cmake --build build-vkdebug --target threecpp_shaders` 通过，产出 `pmrem_equirect.vert.spv` **1712 B**、`pmrem_equirect.frag.spv` **2792 B**（`glslang` 认它，即合法 Vulkan SPIR-V），`basic.*` 仍是原来的 12056/6220 B。核心 **745 / 205,728**、`primitive-geometry`、`port-audit` 全绿。
+   - **下一步**：把渲染器的管线创建从"一条写死"改成"按程序名建/缓存"，然后让 PMREM 用这套内置程序 + uniform 走 `updateCubeCamera` 已有的六面流程。
 70. **第 520 轮：完整 Vulkan 套件 211/211 全绿，耗时 270.72 秒**。
    - 命令：`ctest --test-dir build-vulkan -j 4 -E "lights-states" --output-on-failure`（仍排除第 46 条那个已知项；它在 Vulkan 构建里同样慢）。
    - 结果：**100% tests passed, 0 tests failed out of 211**，总耗时 **270.72 秒**。对比同一套件在 **Debug** 配置下的 **3784.56 秒 / 2 失败**，差了约 14 倍——再次印证第 69 条"是构建类型不是代码"的结论。
