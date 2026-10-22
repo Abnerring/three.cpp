@@ -451,3 +451,33 @@ std::vector<int> VOXLoader::parseChildren(const std::map<std::string, std::strin
     }
     return children;
 }
+
+VOXLoader::Scene VOXLoader::assembleScene(std::vector<Node> nodes) {
+    Scene scene;
+    scene.nodes = std::move(nodes);
+
+    // Index the nodes by their id so a child reference can be resolved.
+    std::map<int, std::size_t> byId;
+    for (std::size_t i = 0; i < scene.nodes.size(); ++i)
+        byId[scene.nodes[i].transform.nodeId] = i;
+
+    std::vector<bool> claimed(scene.nodes.size(), false);
+    for (auto& node : scene.nodes) {
+        std::vector<int> kept;
+        for (const int childId : node.children) {
+            const auto found = byId.find(childId);
+            // A reference to a node that does not exist, or to one already claimed, is dropped
+            // so the result stays a tree rather than a graph with two parents.
+            if (found == byId.end()) continue;
+            if (claimed[found->second]) continue;
+            claimed[found->second] = true;
+            kept.push_back(childId);
+        }
+        node.children = std::move(kept);
+    }
+
+    // Whatever no one claimed is a root.
+    for (std::size_t i = 0; i < scene.nodes.size(); ++i)
+        if (!claimed[i]) scene.roots.push_back(scene.nodes[i].transform.nodeId);
+    return scene;
+}

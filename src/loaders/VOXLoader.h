@@ -159,4 +159,23 @@ class VOXLoader {
 
     // Reads the child list of an nGRP or nSHP dictionary.
     static std::vector<int> parseChildren(const std::map<std::string, std::string>& dict);
+
+    // One node of the scene graph as the file lists it: a transform, the child ids a group
+    // declared and the model ids a shape referenced.
+    struct Node {
+        Transform transform;
+        std::vector<int> children;
+        std::vector<int> models;
+    };
+
+    // The assembled graph: the nodes in file order and the indices of those no other node
+    // claims, which are the roots to hang under one parent.
+    struct Scene {
+        std::vector<Node> nodes;
+        std::vector<int> roots;
+    };
+
+    // Fills in each node's parent and returns the roots. A child id that names no node, or a
+    // node claimed twice, is ignored rather than producing a broken tree.
+    static Scene assembleScene(std::vector<Node> nodes);
 };
