@@ -44,4 +44,22 @@ class PCDLoader {
         int rowSize = 0;
     };
     static FieldLayout computeOffsets(const Header& header);
+
+    // The streams a point cloud decodes into.
+    struct Points {
+        std::vector<double> positions;
+        std::vector<double> normals;
+        // Three working space components per point, already converted out of sRGB.
+        std::vector<double> colors;
+        std::vector<double> intensity;
+        std::vector<double> label;
+    };
+
+    // Splits a packed PCD rgb value into three channel bytes. The order is red in the
+    // highest byte, then green, then blue.
+    static void unpackRGB(unsigned int packed, int rgb[3]);
+
+    // Reads ascii point rows. Each row is whitespace separated and the layout says which
+    // token belongs to which field, so a missing field simply contributes nothing.
+    static Points parseAsciiPoints(const std::string& text, const FieldLayout& layout);
 };

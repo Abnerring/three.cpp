@@ -1,5 +1,7 @@
 #include "loaders/PCDLoader.h"
 
+#include "math/Color.h"
+#include "math/ColorManagement.h"
 #include <cctype>
 #include <cstdlib>
 #include <sstream>
@@ -142,4 +144,73 @@ PCDLoader::FieldLayout PCDLoader::computeOffsets(const Header& header) {
     // The row size only describes the binary forms.
     layout.rowSize = sizeSum;
     return layout;
+}
+
+void PCDLoader::unpackRGB(unsigned int packed, int rgb[3]) {
+    // Red sits in the highest byte, then green, then blue.
+    rgb[0] = static_cast<int>((packed >> 16) & 0xffu);
+    rgb[1] = static_cast<int>((packed >> 8) & 0xffu);
+    rgb[2] = static_cast<int>(packed & 0xffu);
+}
+
+PCDLoader::Points PCDLoader::parseAsciiPoints(const std::string& text, const FieldLayout& layout) {
+    Points points;
+    const auto offsetOf = [&layout](const std::string& name) -> int {
+        const auto found = layout.offset.find(name);
+        return found == layout.offset.end() ? -1 : found->second;
+    };
+    const int xAt = offsetOf("x");
+    const int yAt = offsetOf("y");
+    const int zAt = offsetOf("z");
+    const int rgbAt = offsetOf("rgb");
+    const int nxAt = offsetOf("normal_x");
+    const int nyAt = offsetOf("normal_y");
+    const int nzAt = offsetOf("normal_z");
+    const int intensityAt = offsetOf("intensity");
+    const int labelAt = offsetOf("label");
+
+    std::size_t start = 0;
+    while (start <= text.size()) {
+        const std::size_t end = text.find('\n', start);
+        const std::string raw =
+            end == std::string::npos ? text.substr(start) : text.substr(start, end - start);
+        start = end == std::string::npos ? text.size() + 1 : end + 1;
+
+        const std::string line = trim(raw);
+        if (line.empty()) continue;
+        const auto tokens = splitWhitespace(line);
+
+        const auto tokenAt = [&tokens](int index) -> double {
+            if (index < 0 || static_cast<std::size_t>(index) >= tokens.size()) return 0.0;
+            return std::strtod(tokens[static_cast<std::size_t>(index)].c_str(), nullptr);
+        };
+
+        // A position needs all three components to be worth recording.
+        if (xAt >= 0 && yAt >= 0 && zAt >= 0) {
+            points.positions.push_back(tokenAt(xAt));
+            points.positions.push_back(tokenAt(yAt));
+            points.positions.push_back(tokenAt(zAt));
+        }
+        if (nxAt >= 0 && nyAt >= 0 && nzAt >= 0) {
+            points.normals.push_back(tokenAt(nxAt));
+            points.normals.push_back(tokenAt(nyAt));
+            points.normals.push_back(tokenAt(nzAt));
+        }
+        if (rgbAt >= 0) {
+            // The packed value arrives as a number and is unpacked into channel bytes, then
+            // converted out of sRGB into the working space.
+            int rgb[3] = {0, 0, 0};
+            unpackRGB(static_cast<unsigned int>(tokenAt(rgbAt)), rgb);
+            const std::vector<double> components{rgb[0] / 255.0, rgb[1] / 255.0, rgb[2] / 255.0};
+            Color color;
+            color.fromArray(components);
+            ColorManagement::colorSpaceToWorking(color, SRGBColorSpace);
+            points.colors.push_back(color.r);
+            points.colors.push_back(color.g);
+            points.colors.push_back(color.b);
+        }
+        if (intensityAt >= 0) points.intensity.push_back(tokenAt(intensityAt));
+        if (labelAt >= 0) points.label.push_back(tokenAt(labelAt));
+    }
+    return points;
 }

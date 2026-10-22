@@ -1015,6 +1015,12 @@
    - **一处我写错的期望**：我以为短元数据会"沿用第一个值"（那样 `rowSize` 是 8），实际是**逐字段兜底为 1**（`rowSize` 是 7）。改成 7 并通过——**又一次"测试跟着实现对"**。
    - **验证**：核心 **965 用例 / 207,044 断言**（+5 / +20）、`primitive-geometry`、`port-audit` 全绿。
    - **PCD 剩余**：`ascii`/`binary` 的点数据读取（按这张表取 `x`/`y`/`z`/`rgb`/法线/强度/标签）与 `binary_compressed`（先 `decompressLZF` 再按 binary 读）。
+200. **第 139 轮：`PCDLoader` 第三层——ascii 点数据与打包 `rgb`**。
+   - **打包 rgb 的位序**：**红在最高字节**、然后绿、然后蓝（`(packed >> 16) & 0xff`、`>> 8`、`& 0xff`）。拆出来的三个字节除以 255 后**还要做 sRGB→working 转换**，所以纯白会变成三个 1，纯红变成 `(1, 0, 0)`。
+   - **ascii 读取**：一行按空白切 token，用 `FieldLayout.offset`（token 序号）查每个字段的位置；**位置需要三个分量齐全**才记（缺 `z` 就整行不产生位置）；法线同理；`intensity`/`label` 单独成流；空行跳过；`FieldLayout` 里没有的字段**不产生任何数据**（而不是写 0）。
+   - **测试（6 个用例、23 条断言）**：`0xff8040` → `(255,128,64)`；两行 ascii 的位置与颜色（**纯白 → 三个 1**、**纯红 → `(1,0,0)`**）；空行与缺字段（只有位置、颜色与法线为空）；法线/强度/标签各自成流；**缺 `z` 时位置为空**；空文本。
+   - **验证**：核心 **971 用例 / 207,067 断言**（+6 / +23）、`primitive-geometry`、`port-audit` 全绿。
+   - **PCD 剩余**：`binary` 与 `binary_compressed` 的点读取（按字节偏移取，按 `size`/`type` 定宽），以及把三条流装配成 `BufferGeometry`。
 70. **第 520 轮：完整 Vulkan 套件 211/211 全绿，耗时 270.72 秒**。
    - 命令：`ctest --test-dir build-vulkan -j 4 -E "lights-states" --output-on-failure`（仍排除第 46 条那个已知项；它在 Vulkan 构建里同样慢）。
    - 结果：**100% tests passed, 0 tests failed out of 211**，总耗时 **270.72 秒**。对比同一套件在 **Debug** 配置下的 **3784.56 秒 / 2 失败**，差了约 14 倍——再次印证第 69 条"是构建类型不是代码"的结论。
