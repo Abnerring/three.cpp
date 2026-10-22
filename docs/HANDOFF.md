@@ -473,6 +473,13 @@
    - **保留与回退**：着色器改动**保留**（它独立可验证：编译通过、体积变化合理、且不改变任何运行路径的行为）；`blurCube` 与验收用例**回退**，因为它们是导致崩溃的调用方。
    - **下一个怀疑对象**：`drawPmremBlurFace` 的**描述符集**。它用 `pmremBlurTextureLayout`（从 blur 着色器反射出来的布局）分配描述符集，但**用的是 `pmremSampler` + 源 cube 视图**；如果反射出来的布局里 binding 0 的类型/数量与写入的 `COMBINED_IMAGE_SAMPLER` 不一致，`vkUpdateDescriptorSets` 会越界。下一轮应当在 `drawPmremBlurFace` 里**先打印反射布局的 binding 数量与类型**，再决定是否写入。
    - **状态**：三个文件已回退，着色器改动保留；核心 **747 / 205,735**、`primitive-geometry`、`port-audit`、Vulkan 构建 0 错误、`--cube` 0，树干净。
+125. **第 64 轮：崩溃根因找到了（barrier 在帧外），但 blur 出图仍是全黑，两个假设接连被否**。
+   - **崩溃根因（已修）**：`blurCube` 在**任何 `beginFrame` 之前**调用 `impl->imageBarrier(...)`。`imageBarrier` 是**往命令缓冲记录**，而此时命令缓冲没有处于记录状态——`vkCmdPipelineBarrier` 属于非法调用，直接访问违例。把它挪到**第一面的 `beginFrame` 之后**（`if (face == 0)` 里逐层转换），**崩溃消失**。
+   - **新症状**：`--cube` 不再崩，但验收断言失败；探针打印 `blur probe centre = 0,0,0 corner = 0`——**目标面全黑**，说明 blur 的 draw **什么都没画出来**。
+   - **第二个假设（已证伪）**：`drawPmremBlurFace` 的 `vkCmdPushConstants` 用的是 `VK_SHADER_STAGE_VERTEX_BIT`（照抄等距柱状的写法），而 blur 的 `sigma` 是**片元阶段**在读——片元拿不到 push 数据。改成 `VERTEX | FRAGMENT` 后**仍然全黑**，所以这不是根因（但**修复本身是对的**，保留）。
+   - **保留下来的东西**：`blurCube`（能编译、不再崩溃，但**未出图**，明确标注）；`drawPmremBlurFace` 的 stage flags 修复；第 63 轮的着色器 `sigmaGuard`。回退的只有那个**会失败**的验收用例。
+   - **下一个排查方向**：目标面全黑 = 要么 draw 覆盖不到（顶点/投影/视口），要么着色器输出 NaN。`accumWeight` 在 `sigma` 很小时仍然正常（`stratum` 从 0.5/20 起、`truncation < 1`），所以更可能是**几何没覆盖**：blur 管线与等距柱状管线的差别只在 stages/layout，顶点输入完全一样，但两者的**着色器 push 块大小不同**（192 vs 196）——下一步应当在 `drawPmremBlurFace` 里临时 `vkCmdClearAttachments` 一个亮色，确认**绘制本身**是否发生。
+   - **状态**：核心 **747 / 205,735**、`primitive-geometry`、`port-audit`、Vulkan 构建 0 错误、`--cube` 0，树干净。
 70. **第 520 轮：完整 Vulkan 套件 211/211 全绿，耗时 270.72 秒**。
    - 命令：`ctest --test-dir build-vulkan -j 4 -E "lights-states" --output-on-failure`（仍排除第 46 条那个已知项；它在 Vulkan 构建里同样慢）。
    - 结果：**100% tests passed, 0 tests failed out of 211**，总耗时 **270.72 秒**。对比同一套件在 **Debug** 配置下的 **3784.56 秒 / 2 失败**，差了约 14 倍——再次印证第 69 条"是构建类型不是代码"的结论。
