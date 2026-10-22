@@ -857,6 +857,13 @@
    - **测试（4 个用例、24 条断言）**：format/version/comments/obj_info；两个 element 按名字与数量分组、list 属性的三个字段（`uchar` / `int` / `vertex_indices`）；**重命名映射**生效且未命中的名字不变；两个错误路径**逐字比对文案**。
    - **验证**：核心 **866 用例 / 206,479 断言**（+4 / +24）、`primitive-geometry`、`port-audit` 全绿。
    - **PLY 剩余四层**：属性类型映射（`char/uchar/short/ushort/int/uint/float/double` 与 `int8…float64` 两组别名）、ASCII 体读取、二进制体读取（含 `binary_little_endian`/`binary_big_endian`）、以及 `BufferGeometry` 构建（含 `normal` 缺省时的面法线计算）。
+176. **第 115 轮：`PLYLoader` 第二层——三个类型映射函数**。
+   - **`bufferAttributeClass(type)`**：把**两种拼写**映射到同一个类——`int8`/`char` → `Int8BufferAttribute`，`uint8`/`uchar` → `Uint8`，`int16`/`short` → `Int16`，`uint16`/`ushort` → `Uint16`，`int32`/`int` → `Int32`，`uint32`/`uint` → `Uint32`，`float32`/`float` → `Float32`，`float64`/`double` → `Float64`；未知类型返回**空串**（上游返回 `undefined`）。
+   - **`colorScale(type)`**：`uchar`/`uint8` → **1/255**，`ushort`/`uint16` → **1/65535**，`float`/`float32`/`double`/`float64` → **1**，**其它一律 1/255**（上游的 default 分支）。
+   - **`parseASCIINumber(text, type)`**：整数拼写走 `parseInt`（**截断**），浮点拼写走 `parseFloat`（**保留小数**）；两类之外的类型返回 0。配套的 `isIntegerType` 一并暴露，便于上层判断。
+   - **测试（3 个用例、23 条断言）**：八组两种拼写各自映射正确 + 未知类型为空；颜色缩放的四种宽度 + 默认回退；ASCII 数字解析的**整数截断**（`"3.7"` 以 `uchar` 解析得 **3**）与**浮点保留**（`"3.7"` 以 `float` 解析得 **3.7**）。
+   - **验证**：核心 **869 用例 / 206,502 断言**（+3 / +23）、`primitive-geometry`、`port-audit` 全绿。
+   - **PLY 剩余三层**：ASCII 体读取（`parseASCIIElement` 用 token 流）、二进制体读取（大小端 + `DataView`）、`BufferGeometry` 构建（属性装配 + 缺 `normal` 时的面法线）。
 70. **第 520 轮：完整 Vulkan 套件 211/211 全绿，耗时 270.72 秒**。
    - 命令：`ctest --test-dir build-vulkan -j 4 -E "lights-states" --output-on-failure`（仍排除第 46 条那个已知项；它在 Vulkan 构建里同样慢）。
    - 结果：**100% tests passed, 0 tests failed out of 211**，总耗时 **270.72 秒**。对比同一套件在 **Debug** 配置下的 **3784.56 秒 / 2 失败**，差了约 14 倍——再次印证第 69 条"是构建类型不是代码"的结论。

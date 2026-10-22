@@ -1,4 +1,4 @@
-﻿#include "loaders/PLYLoader.h"
+#include "loaders/PLYLoader.h"
 
 #include <cstdlib>
 #include <stdexcept>
@@ -95,4 +95,40 @@ PLYLoader::Header PLYLoader::parseHeader(const std::string& text) const {
     }
     if (hasElement) header.elements.push_back(current);
     return header;
+}
+
+std::string PLYLoader::bufferAttributeClass(const std::string& type) {
+    // Both spellings map to the same class, exactly as the upstream switch does.
+    if (type == "int8" || type == "char") return "Int8BufferAttribute";
+    if (type == "uint8" || type == "uchar") return "Uint8BufferAttribute";
+    if (type == "int16" || type == "short") return "Int16BufferAttribute";
+    if (type == "uint16" || type == "ushort") return "Uint16BufferAttribute";
+    if (type == "int32" || type == "int") return "Int32BufferAttribute";
+    if (type == "uint32" || type == "uint") return "Uint32BufferAttribute";
+    if (type == "float32" || type == "float") return "Float32BufferAttribute";
+    if (type == "float64" || type == "double") return "Float64BufferAttribute";
+    return {};
+}
+
+double PLYLoader::colorScale(const std::string& type) {
+    if (type == "uchar" || type == "uint8") return 1.0 / 255.0;
+    if (type == "ushort" || type == "uint16") return 1.0 / 65535.0;
+    if (type == "float" || type == "float32" || type == "double" || type == "float64") return 1.0;
+    // Anything else falls back to the byte width.
+    return 1.0 / 255.0;
+}
+
+bool PLYLoader::isIntegerType(const std::string& type) {
+    return type == "char" || type == "uchar" || type == "short" || type == "ushort" ||
+           type == "int" || type == "uint" || type == "int8" || type == "uint8" ||
+           type == "int16" || type == "uint16" || type == "int32" || type == "uint32";
+}
+
+double PLYLoader::parseASCIINumber(const std::string& text, const std::string& type) {
+    // Integer spellings are parsed as integers and everything else as a float, which is what
+    // upstream's two case groups do. A type in neither group yields zero here.
+    if (isIntegerType(type)) return static_cast<double>(std::atoll(text.c_str()));
+    if (type == "float" || type == "double" || type == "float32" || type == "float64")
+        return std::strtod(text.c_str(), nullptr);
+    return 0.0;
 }

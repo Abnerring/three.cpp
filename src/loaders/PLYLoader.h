@@ -1,4 +1,4 @@
-﻿#pragma once
+#pragma once
 #include <map>
 #include <optional>
 #include <string>
@@ -41,4 +41,19 @@ class PLYLoader {
     // Reads the text between the ply magic and end_header. Throws std::runtime_error when
     // that block is missing.
     Header parseHeader(const std::string& text) const;
+
+    // The typed buffer attribute class upstream picks for a property type, as the class name
+    // it returns. An unknown type yields an empty string, matching upstream returning
+    // undefined.
+    static std::string bufferAttributeClass(const std::string& type);
+
+    // Colour channels are scaled by the storage width: bytes by 255, shorts by 65535, floats
+    // by one, and anything unrecognised falls back to 255 as upstream does.
+    static double colorScale(const std::string& type);
+
+    // Reads one ascii token with the integer or floating parser the type calls for.
+    static double parseASCIINumber(const std::string& text, const std::string& type);
+
+    // Whether a type is one of the integer spellings.
+    static bool isIntegerType(const std::string& type);
 };
