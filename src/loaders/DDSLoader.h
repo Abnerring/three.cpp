@@ -56,4 +56,18 @@ class DDSLoader {
     static std::vector<Level> mipmapChain(const Header& header, int mipmapCount,
                                           std::size_t firstOffset, int blockBytes,
                                           int bytesPerPixel);
+
+    // What a file's pixel format means to the reader: the block size a compressed level uses,
+    // or zero for an uncompressed one, the bytes each pixel takes in that case, and the name
+    // of the format.
+    struct Format {
+        int blockBytes = 0;
+        int bytesPerPixel = 0;
+        std::string name;
+    };
+
+    // Works the format out from the four character code, following the extended header when the
+    // code says DX10. Throws for a code or extended format the loader does not know, naming it
+    // the way upstream does.
+    static Format resolveFormat(const Header& header, const std::vector<std::uint8_t>& buffer);
 };

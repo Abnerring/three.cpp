@@ -81,3 +81,74 @@ std::vector<DDSLoader::Level> DDSLoader::mipmapChain(const Header& header, int m
     }
     return levels;
 }
+
+DDSLoader::Format DDSLoader::resolveFormat(const Header& header,
+                                           const std::vector<std::uint8_t>& buffer) {
+    Format format;
+    // The four characters are packed four in the low byte upwards, so the codes read as their
+    // characters in order when written this way.
+    const auto code = [](const char* text) {
+        std::uint32_t packed = 0;
+        for (int i = 0; i < 4; ++i) packed |= static_cast<std::uint32_t>(text[i]) << (i * 8);
+        return packed;
+    };
+
+    if (header.fourCC == code("DXT1")) {
+        format.blockBytes = 8;
+        format.name = "RGB_S3TC_DXT1";
+        return format;
+    }
+    if (header.fourCC == code("DXT3")) {
+        format.blockBytes = 16;
+        format.name = "RGBA_S3TC_DXT3";
+        return format;
+    }
+    if (header.fourCC == code("DXT5")) {
+        format.blockBytes = 16;
+        format.name = "RGBA_S3TC_DXT5";
+        return format;
+    }
+    if (header.fourCC == code("ETC1")) {
+        format.blockBytes = 8;
+        format.name = "RGB_ETC1";
+        return format;
+    }
+
+    if (header.fourCC == code("DX10")) {
+        // The extended header starts one word after the thirty one word header.
+        const std::uint32_t dxgi = headerWord(buffer, kHeaderWords);
+        if (dxgi == 95) {
+            // BC6H unsigned half floats.
+            format.blockBytes = 16;
+            format.name = "RGB_BPTC_UNSIGNED";
+            return format;
+        }
+        if (dxgi == 96) {
+            // BC6H signed half floats.
+            format.blockBytes = 16;
+            format.name = "RGB_BPTC_SIGNED";
+            return format;
+        }
+        throw std::runtime_error("THREE.DDSLoader.parse: Unsupported DXGI_FORMAT code " +
+                                 std::to_string(dxgi));
+    }
+
+    // Without a known code the pixel masks decide, which is the uncompressed form.
+    const std::uint32_t redMask = headerWord(buffer, 23);
+    const std::uint32_t greenMask = headerWord(buffer, 24);
+    const std::uint32_t blueMask = headerWord(buffer, 25);
+    const std::uint32_t alphaMask = headerWord(buffer, 26);
+    if (header.rgbBitCount == 32 && (redMask & 0xff0000) && (greenMask & 0xff00) &&
+        (blueMask & 0xff) && (alphaMask & 0xff000000)) {
+        format.bytesPerPixel = 4;
+        format.name = "RGBA";
+        return format;
+    }
+    if (header.rgbBitCount == 24 && (redMask & 0xff0000) && (greenMask & 0xff00) &&
+        (blueMask & 0xff)) {
+        format.bytesPerPixel = 3;
+        format.name = "RGB";
+        return format;
+    }
+    throw std::runtime_error("THREE.DDSLoader.parse: Unsupported DDS format.");
+}

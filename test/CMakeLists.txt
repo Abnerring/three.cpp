@@ -129,6 +129,7 @@ add_executable(THREECPPTests
         unit/src/loaders/PVRVersion2.tests.cpp
         unit/src/loaders/DDSLoader.tests.cpp
         unit/src/loaders/DDSMipmap.tests.cpp
+        unit/src/loaders/DDSFormat.tests.cpp
         unit/src/cameras/StereoCamera.tests.cpp
         unit/src/audio/AudioContext.tests.cpp
         unit/src/audio/Audio.tests.cpp
