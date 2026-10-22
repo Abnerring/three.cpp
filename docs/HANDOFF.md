@@ -722,6 +722,12 @@
    - **范围声明**：和 `SPLATLoader` 一样，`buildGeometry` 那一段（两个 `BufferGeometry` + `Color.setRGB(…, SRGBColorSpace)`）**没有移植**，`parse` 返回 `atoms`（含 `cpk` 与 `element`）与 `bonds`（三元组）两个原始数组；头文件写明。
    - **测试（4 个用例、26 条断言）**：坐标/序号/元素（`n` / `N`）；CPK 查表（氮 `48,80,248`、碳 `144,144,144`）与**表大小 118**；**重复 CONECT 去重**（3 行 `CONECT` 只留 2 条键）且索引从 0 开始；元素列为空时**回退到原子名列**。
    - **验证**：核心 **805 用例 / 206,175 断言**（+4 / +26）、`primitive-geometry`、`port-audit` 全绿。addon loader **6 / 52 → 7 / 52**。
+160. **第 99 轮：`GCodeLoader` 的状态机落地**。
+   - **移植范围**：完整的命令状态机（`G0`/`G1` 直线、`G2`/`G3` **明确不实现**（上游也只留了注释）、`G90`/`G91` 绝对/相对、`M82`/`M83` **挤出轴的独立覆盖**、`G92` 设位**不产生线段**）、**按 Z 变化分层**、**挤出流/空走流**两路顶点，以及**跨层拼接**。`Group`/`LineSegments` 与末尾的 `rotation.set(-π/2, 0, 0)` 没有移植，`parse` 返回 `layers` + 两路拼接 + `finalState`。
+   - **三个从源码里读出来的细节**：① `extruding` **一旦置真就不会再置假**（上游没有 else 分支），所以**第一次挤出之后所有线段都算挤出**；② 分层判据是"**挤出时 Z 与当前层不同**"，不是单纯的 Z 变化；③ 注释是**全局**用 `/;.+/g` 剥的，端口按"从分号到行尾"实现，效果等价。
+   - **测试（6 个用例、28 条断言）**：空程序；第一次挤出成一段（`vertex` 6 个数、`pathVertex` 空）；**换 Z 挤出开新层**（两层、拼接 12 个数）；`G91` 相对移动累加；**`M82` 覆盖**（轴相对但挤出回到绝对，`e == 1`）；`G92` 只改状态不出线段；注释被剥离后仍能解析。
+   - **一处测试内的怪写法**：`REQUIRE_FALSE(relativeMove.finalState.relative == false)` 其实等价于断言为真，下轮可改成 `REQUIRE(relativeMove.finalState.relative)`。功能没错，只是可读性差。
+   - **验证**：核心 **811 用例 / 206,203 断言**（+6 / +28）、`primitive-geometry`、`port-audit` 全绿。addon loader **7 / 52 → 8 / 52**。
 70. **第 520 轮：完整 Vulkan 套件 211/211 全绿，耗时 270.72 秒**。
    - 命令：`ctest --test-dir build-vulkan -j 4 -E "lights-states" --output-on-failure`（仍排除第 46 条那个已知项；它在 Vulkan 构建里同样慢）。
    - 结果：**100% tests passed, 0 tests failed out of 211**，总耗时 **270.72 秒**。对比同一套件在 **Debug** 配置下的 **3784.56 秒 / 2 失败**，差了约 14 倍——再次印证第 69 条"是构建类型不是代码"的结论。
