@@ -108,6 +108,7 @@ add_executable(THREECPPTests
         unit/src/loaders/IESLoader.tests.cpp
         unit/src/loaders/IESLamp.tests.cpp
         unit/src/loaders/IESParse.tests.cpp
+        unit/src/loaders/IESSample.tests.cpp
         unit/src/cameras/StereoCamera.tests.cpp
         unit/src/audio/AudioContext.tests.cpp
         unit/src/audio/Audio.tests.cpp

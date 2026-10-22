@@ -95,4 +95,17 @@ class IESLoader {
     // then the ten values, the three factors and the tables, and finally scales them. Throws
     // std::runtime_error when the file has no tilt keyword at all.
     static Lamp parse(const std::string& text);
+
+    // Bilinearly interpolates one candela reading from the tables. The horizontal index is the
+    // outer one, and a range with no width along either axis collapses to the edge value.
+    static double interpolateCandela(const Tables& tables, double phi, double theta);
+
+    // Mirrors a sampled horizontal angle into the measured range, which lets a lamp described
+    // over half a cycle be sampled over the whole one.
+    static double mirrorHorizontalAngle(double theta, double endAngle);
+
+    // Samples the lamp into the layout a texture expects: three hundred and sixty columns of
+    // one hundred and eighty rows, or a single column when there is only one horizontal angle.
+    // The index runs theta times the height plus phi, so a column is a horizontal angle.
+    static std::vector<double> sampleValues(const Tables& tables, int numHorizontalAngles);
 };

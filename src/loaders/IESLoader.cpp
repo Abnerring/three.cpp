@@ -1,6 +1,7 @@
 #include "loaders/IESLoader.h"
 
 #include <cctype>
+#include <cmath>
 #include <cstdlib>
 #include <stdexcept>
 
@@ -171,4 +172,82 @@ IESLoader::Lamp IESLoader::parse(const std::string& text) {
     lamp.maximum = normalizeTables(lamp.tables, lamp.values.multiplier, lamp.factors.ballast,
                                    lamp.factors.ballastLightOutput);
     return lamp;
+}
+
+double IESLoader::interpolateCandela(const Tables& tables, double phi, double theta) {
+    int thetaIndex = 0, phiIndex = 0;
+    double startTheta = 0, endTheta = 0, startPhi = 0, endPhi = 0;
+    const int numHorizontal = static_cast<int>(tables.horizontalAngles.size());
+    const int numVertical = static_cast<int>(tables.verticalAngles.size());
+
+    // Find the horizontal interval the sample falls in, using the last one as a fallback.
+    for (int i = 0; i < numHorizontal - 1; ++i) {
+        if (theta < tables.horizontalAngles[i + 1] || i == numHorizontal - 2) {
+            thetaIndex = i;
+            startTheta = tables.horizontalAngles[i];
+            endTheta = tables.horizontalAngles[i + 1];
+            break;
+        }
+    }
+    // The same for the vertical interval.
+    for (int i = 0; i < numVertical - 1; ++i) {
+        if (phi < tables.verticalAngles[i + 1] || i == numVertical - 2) {
+            phiIndex = i;
+            startPhi = tables.verticalAngles[i];
+            endPhi = tables.verticalAngles[i + 1];
+            break;
+        }
+    }
+
+    const double deltaTheta = endTheta - startTheta;
+    const double deltaPhi = endPhi - startPhi;
+    // A zero height interval means the sample is outside the measured range.
+    if (deltaPhi == 0) return 0;
+
+    const double t1 = deltaTheta == 0 ? 0 : (theta - startTheta) / deltaTheta;
+    const double t2 = (phi - startPhi) / deltaPhi;
+    const int nextThetaIndex = deltaTheta == 0 ? thetaIndex : thetaIndex + 1;
+
+    const auto lerp = [](double a, double b, double t) { return a + (b - a) * t; };
+    if (thetaIndex >= static_cast<int>(tables.candela.size())) return 0;
+    if (nextThetaIndex >= static_cast<int>(tables.candela.size())) return 0;
+    if (phiIndex + 1 >= static_cast<int>(tables.candela[static_cast<std::size_t>(thetaIndex)].size()))
+        return 0;
+
+    // Interpolate across the horizontal direction at both vertical ends, then between them.
+    const auto& rowA = tables.candela[static_cast<std::size_t>(thetaIndex)];
+    const auto& rowB = tables.candela[static_cast<std::size_t>(nextThetaIndex)];
+    const double v1 = lerp(rowA[static_cast<std::size_t>(phiIndex)],
+                           rowB[static_cast<std::size_t>(phiIndex)], t1);
+    const double v2 = lerp(rowA[static_cast<std::size_t>(phiIndex) + 1],
+                           rowB[static_cast<std::size_t>(phiIndex) + 1], t1);
+    return lerp(v1, v2, t2);
+}
+
+double IESLoader::mirrorHorizontalAngle(double theta, double endAngle) {
+    // A lamp measured over part of the cycle is mirrored to cover the rest.
+    if (endAngle == 0 || theta <= endAngle) return theta;
+    double sample = std::fmod(theta, endAngle * 2.0);
+    if (sample > endAngle) sample = endAngle * 2.0 - sample;
+    return sample;
+}
+
+std::vector<double> IESLoader::sampleValues(const Tables& tables, int numHorizontalAngles) {
+    const int width = numHorizontalAngles == 1 ? 1 : 360;
+    const int height = 180;
+    std::vector<double> data(static_cast<std::size_t>(width) * static_cast<std::size_t>(height), 0);
+    if (tables.horizontalAngles.empty() || tables.verticalAngles.empty()) return data;
+
+    const double endTheta = tables.horizontalAngles.back();
+    for (int theta = 0; theta < width; ++theta) {
+        const double sampleTheta = mirrorHorizontalAngle(theta, endTheta);
+        for (int phi = 0; phi < height; ++phi) {
+            const double samplePhi = phi * 180.0 / (height - 1);
+            // A column is one horizontal angle, so theta multiplies the row count.
+            data[static_cast<std::size_t>(phi) +
+                 static_cast<std::size_t>(theta) * static_cast<std::size_t>(height)] =
+                interpolateCandela(tables, samplePhi, sampleTheta);
+        }
+    }
+    return data;
 }
