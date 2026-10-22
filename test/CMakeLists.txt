@@ -169,6 +169,7 @@ add_executable(THREECPPTests
         unit/src/loaders/SVGNumbers.tests.cpp
         unit/src/loaders/SVGTransform.tests.cpp
         unit/src/loaders/SVGPath.tests.cpp
+        unit/src/loaders/SVGCurve.tests.cpp
         unit/src/cameras/StereoCamera.tests.cpp
         unit/src/audio/AudioContext.tests.cpp
         unit/src/audio/Audio.tests.cpp

@@ -240,3 +240,66 @@ std::vector<SVGLoader::Point> SVGLoader::applyStraightCommand(LineCommand comman
     }
     return points;
 }
+
+double SVGLoader::reflect(double point, double control) {
+    // Twice the point less the control, written the way the source writes it.
+    return point - (control - point);
+}
+
+std::vector<SVGLoader::CurveSegment> SVGLoader::applyCurveCommand(
+    CurveCommand command, const std::vector<double>& numbers, PathCursor& cursor) {
+    std::vector<CurveSegment> segments;
+
+    // Each command reads a different number of values per segment: a cubic writes six, a
+    // smooth cubic four, a quadratic four and a smooth quadratic two.
+    std::size_t stride = 0;
+    if (command == CurveCommand::Cubic) stride = 6;
+    else if (command == CurveCommand::SmoothCubic) stride = 4;
+    else if (command == CurveCommand::Quadratic) stride = 4;
+    else stride = 2;
+
+    for (std::size_t i = 0; i + stride <= numbers.size(); i += stride) {
+        CurveSegment segment;
+        if (command == CurveCommand::Cubic) {
+            // Both controls are written, then the end point.
+            segment.control1.x = numbers[i];
+            segment.control1.y = numbers[i + 1];
+            segment.control2.x = numbers[i + 2];
+            segment.control2.y = numbers[i + 3];
+            segment.end.x = numbers[i + 4];
+            segment.end.y = numbers[i + 5];
+            segment.cubic = true;
+            // The second control is the one a following smooth command reflects.
+            cursor.control = segment.control2;
+        } else if (command == CurveCommand::SmoothCubic) {
+            // The first control is reflected and the second is written.
+            segment.control1.x = reflect(cursor.point.x, cursor.control.x);
+            segment.control1.y = reflect(cursor.point.y, cursor.control.y);
+            segment.control2.x = numbers[i];
+            segment.control2.y = numbers[i + 1];
+            segment.end.x = numbers[i + 2];
+            segment.end.y = numbers[i + 3];
+            segment.cubic = true;
+            cursor.control = segment.control2;
+        } else if (command == CurveCommand::Quadratic) {
+            // A quadratic writes one control and the end point.
+            segment.control1.x = numbers[i];
+            segment.control1.y = numbers[i + 1];
+            segment.end.x = numbers[i + 2];
+            segment.end.y = numbers[i + 3];
+            segment.cubic = false;
+            cursor.control = segment.control1;
+        } else {
+            // A smooth quadratic reflects its control and reads only the end point.
+            segment.control1.x = reflect(cursor.point.x, cursor.control.x);
+            segment.control1.y = reflect(cursor.point.y, cursor.control.y);
+            segment.end.x = numbers[i];
+            segment.end.y = numbers[i + 1];
+            segment.cubic = false;
+            cursor.control = segment.control1;
+        }
+        cursor.point = segment.end;
+        segments.push_back(segment);
+    }
+    return segments;
+}

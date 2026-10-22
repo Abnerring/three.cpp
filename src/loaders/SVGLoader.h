@@ -73,4 +73,30 @@ class SVGLoader {
     static std::vector<Point> applyStraightCommand(LineCommand command,
                                                    const std::vector<double>& numbers,
                                                    PathCursor& cursor);
+
+    // A curve a command describes: two control points for a cubic, one for a quadratic, and
+    // the point it ends on either way.
+    struct CurveSegment {
+        Point control1;
+        Point control2;
+        Point end;
+        // Whether both control points matter, which is true for a cubic and false for a
+        // quadratic where only the first is read.
+        bool cubic = false;
+    };
+
+    // The curve commands that carry their own control points, and the two smooth ones that
+    // take a reflected control point instead.
+    enum class CurveCommand { Cubic, SmoothCubic, Quadratic, SmoothQuadratic };
+
+    // Reflects one coordinate through another: the value a control point takes when it is
+    // mirrored across the point the path has reached.
+    static double reflect(double point, double control);
+
+    // Applies a curve command, returning the segments it describes and moving the cursor to the
+    // last end point. A smooth command reflects the cursor's control point to make its own; the
+    // control point it leaves behind is the one the next smooth command will reflect.
+    static std::vector<CurveSegment> applyCurveCommand(CurveCommand command,
+                                                       const std::vector<double>& numbers,
+                                                       PathCursor& cursor);
 };
