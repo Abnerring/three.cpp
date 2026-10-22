@@ -1,4 +1,4 @@
-﻿#include "loaders/MTLLoader.h"
+#include "loaders/MTLLoader.h"
 
 #include "catch.hpp"
 
@@ -33,18 +33,18 @@ TEST_CASE("MTLLoader reads the four colour keys as three numbers") {
     MTLLoader loader;
     const auto materials = loader.parse(kMtl);
     const auto& red = materials.at("Red");
-    const auto ka = std::get<MTLLoader::Color>(red.at("ka"));
+    const auto ka = std::get<MTLLoader::ColorValue>(red.at("ka"));
     REQUIRE(ka[0] == Approx(0.1).epsilon(1e-9));
     REQUIRE(ka[1] == Approx(0.2).epsilon(1e-9));
     REQUIRE(ka[2] == Approx(0.3).epsilon(1e-9));
-    const auto kd = std::get<MTLLoader::Color>(red.at("kd"));
+    const auto kd = std::get<MTLLoader::ColorValue>(red.at("kd"));
     REQUIRE(kd[0] == Approx(0.5).epsilon(1e-9));
-    const auto ks = std::get<MTLLoader::Color>(red.at("ks"));
+    const auto ks = std::get<MTLLoader::ColorValue>(red.at("ks"));
     REQUIRE(ks[0] == 0.0);
-    const auto ke = std::get<MTLLoader::Color>(red.at("ke"));
+    const auto ke = std::get<MTLLoader::ColorValue>(red.at("ke"));
     REQUIRE(ke[2] == Approx(1.0).epsilon(1e-9));
 
-    const auto blueKd = std::get<MTLLoader::Color>(materials.at("Blue").at("kd"));
+    const auto blueKd = std::get<MTLLoader::ColorValue>(materials.at("Blue").at("kd"));
     REQUIRE(blueKd[0] == 0.0);
     REQUIRE(blueKd[2] == Approx(1.0).epsilon(1e-9));
 }

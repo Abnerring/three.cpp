@@ -794,6 +794,15 @@
    - **测试（6 个用例、30 条断言）**：裸 url 默认值；`-bm`；单独 `-s`；单独 `-o`；`-mm`；以及**同时出现时复刻丢 token**（url 含残留数字、offset 仍为 0）。
    - **验证**：核心 **833 用例 / 206,310 断言**（+6 / +30）、`primitive-geometry`、`port-audit` 全绿。
    - **MTL 剩余**：`createMaterial_` 里把记录变成 `MeshPhongMaterial` 的部分（`ColorManagement.colorSpaceToWorking` + `TextureLoader`）以及 `getAsArray`/`create`/`preload`，都依赖纹理加载与材质构建，属于下一段工作。
+168. **第 107 轮：`MTLLoader::createMaterialParams` 落地——MTL 只在纹理加载上收口**。
+   - **范围**：`createMaterial_` 的属性开关全部移植（`kd`/`ks`/`ke` → `color`/`specular`/`emissive` 并做 **sRGB→working 转换**；`ns→shininess`；`d<1→opacity+transparent`；`tr`（含 `invertTrProperty`）→ `1-tr`；八种纹理键 → 槽位；`map_d` **强制 transparent**；**每个槽位保留第一个纹理**）。纹理槽位里存的是**解析出来的 url**，因为 `TextureLoader` 是宿主职责。
+   - **三个 C++ 侧的坑**：
+     1. `MTLLoader::Color`（`std::array<double,3>`）**遮蔽了 three.js 的 `Color` 类**，导致 `Color::fromArray` 找不到——改名成 **`ColorValue`**；
+     2. 改名之后，函数里原本的 `Color color{0,0,0}` 又**指向了 three.js 的 `Color`**，要显式写 `ColorValue`；
+     3. `Color::fromArray` **不是静态函数**，必须先构造再调用（上游是链式的 `new Color().fromArray(...)`）。
+   - **测试（5 个用例、23 条断言）**：三个颜色键都被读到（`hasColor`/`hasSpecular`/`hasEmissive` + 非黑）；`ns` 250；`d 0.5` → opacity 0.5 且 transparent，`d 1` → 不透明；`tr 0.3` → opacity **0.7**，`invertTrProperty` → **0.3**；第一个纹理保留 + `map_d` 强制透明；`-bm`/`-mm` 选项被提到 `bumpScale`/`displacementBias`/`displacementScale`。
+   - **验证**：核心 **838 用例 / 206,333 断言**（+5 / +23）、`primitive-geometry`、`port-audit` 全绿。
+   - **MTL 现状**：`parse` ✓、`convert` ✓、`getTextureParams` ✓、`createMaterialParams` ✓ 四层齐了；剩下 `TextureLoader` 与 `MeshPhongMaterial` 的实际构造（`getAsArray`/`create`/`preload`）——前者是宿主 I/O，后者可以直接做。
 70. **第 520 轮：完整 Vulkan 套件 211/211 全绿，耗时 270.72 秒**。
    - 命令：`ctest --test-dir build-vulkan -j 4 -E "lights-states" --output-on-failure`（仍排除第 46 条那个已知项；它在 Vulkan 构建里同样慢）。
    - 结果：**100% tests passed, 0 tests failed out of 211**，总耗时 **270.72 秒**。对比同一套件在 **Debug** 配置下的 **3784.56 秒 / 2 失败**，差了约 14 倍——再次印证第 69 条"是构建类型不是代码"的结论。

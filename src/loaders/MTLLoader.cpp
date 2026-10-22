@@ -1,5 +1,6 @@
 #include "loaders/MTLLoader.h"
 
+#include "math/ColorManagement.h"
 #include <cctype>
 #include <cstdlib>
 #include <vector>
@@ -73,7 +74,7 @@ MTLLoader::MaterialsInfo MTLLoader::parse(const std::string& text) const {
 
         if (key == "ka" || key == "kd" || key == "ks" || key == "ke") {
             const auto parts = splitWhitespace(value, 3);
-            Color color{0.0, 0.0, 0.0};
+            ColorValue color{0.0, 0.0, 0.0};
             for (std::size_t i = 0; i < parts.size() && i < 3; ++i)
                 color[i] = std::strtod(parts[i].c_str(), nullptr);
             (*current)[key] = color;
@@ -96,8 +97,8 @@ MTLLoader::MaterialsInfo MTLLoader::convert(const MaterialsInfo& materialsInfo,
 
             // Only the three colour keys take part in the option handling upstream.
             if (lprop == "kd" || lprop == "ka" || lprop == "ks") {
-                if (const auto* color = std::get_if<Color>(&value)) {
-                    Color scaled = *color;
+                if (const auto* color = std::get_if<ColorValue>(&value)) {
+                    ColorValue scaled = *color;
                     if (options.normalizeRGB)
                         scaled = {scaled[0] / 255.0, scaled[1] / 255.0, scaled[2] / 255.0};
                     if (options.ignoreZeroRGBs && scaled[0] == 0 && scaled[1] == 0 && scaled[2] == 0)
@@ -168,4 +169,89 @@ MTLLoader::TextureParams MTLLoader::getTextureParams(const std::string& value) {
         result.url += items[i];
     }
     return result;
+}
+
+MTLLoader::MaterialParams MTLLoader::createMaterialParams(const MaterialInfo& materialInfo,
+                                                        const MaterialOptions& options) {
+    MaterialParams params;
+    // Keeps the first texture seen for a slot, exactly like the upstream guard.
+    const auto setMapForType = [&params](const std::string& slot, const std::string& value) {
+        if (slot == "map") { if (params.map.empty()) params.map = value; }
+        else if (slot == "specularMap") { if (params.specularMap.empty()) params.specularMap = value; }
+        else if (slot == "emissiveMap") { if (params.emissiveMap.empty()) params.emissiveMap = value; }
+        else if (slot == "normalMap") { if (params.normalMap.empty()) params.normalMap = value; }
+        else if (slot == "bumpMap") { if (params.bumpMap.empty()) params.bumpMap = value; }
+        else if (slot == "displacementMap") { if (params.displacementMap.empty()) params.displacementMap = value; }
+        else if (slot == "alphaMap") { if (params.alphaMap.empty()) params.alphaMap = value; }
+    };
+
+    for (const auto& [prop, value] : materialInfo) {
+        const std::string key = lower(prop);
+
+        if (key == "name") {
+            if (const auto* s = std::get_if<std::string>(&value)) params.name = *s;
+            continue;
+        }
+
+        // An empty value is skipped before the switch upstream.
+        if (const auto* s = std::get_if<std::string>(&value); s != nullptr && s->empty()) continue;
+
+        if (key == "kd" || key == "ks" || key == "ke") {
+            const auto* color = std::get_if<ColorValue>(&value);
+            if (color == nullptr) continue;
+            const std::vector<double> components(color->begin(), color->end());
+            ::Color converted;
+            converted.fromArray(components);
+            ColorManagement::colorSpaceToWorking(converted, SRGBColorSpace);
+            if (key == "kd") { params.color = converted; params.hasColor = true; }
+            else if (key == "ks") { params.specular = converted; params.hasSpecular = true; }
+            else { params.emissive = converted; params.hasEmissive = true; }
+            continue;
+        }
+
+        // The texture options carry their own scale and offset in the line.
+        if (key == "map_kd" || key == "map_ks" || key == "map_ke" || key == "norm" ||
+            key == "map_bump" || key == "bump" || key == "disp" || key == "map_d") {
+            const auto* text = std::get_if<std::string>(&value);
+            if (text == nullptr) continue;
+            const TextureParams texParams = getTextureParams(*text);
+            if (texParams.bumpScale) params.bumpScale = texParams.bumpScale;
+            if (texParams.displacementBias) params.displacementBias = texParams.displacementBias;
+            if (texParams.displacementScale) params.displacementScale = texParams.displacementScale;
+
+            if (key == "map_kd") setMapForType("map", texParams.url);
+            else if (key == "map_ks") setMapForType("specularMap", texParams.url);
+            else if (key == "map_ke") setMapForType("emissiveMap", texParams.url);
+            else if (key == "norm") setMapForType("normalMap", texParams.url);
+            else if (key == "map_bump" || key == "bump") setMapForType("bumpMap", texParams.url);
+            else if (key == "disp") setMapForType("displacementMap", texParams.url);
+            else {
+                setMapForType("alphaMap", texParams.url);
+                // An alpha map always forces transparency upstream.
+                params.transparent = true;
+            }
+            continue;
+        }
+
+        const auto* text = std::get_if<std::string>(&value);
+        if (text == nullptr) continue;
+        const double n = std::strtod(text->c_str(), nullptr);
+
+        if (key == "ns") {
+            params.shininess = n;
+        } else if (key == "d") {
+            if (n < 1) {
+                params.opacity = n;
+                params.transparent = true;
+            }
+        } else if (key == "tr") {
+            double tr = n;
+            if (options.invertTrProperty) tr = 1.0 - tr;
+            if (tr > 0) {
+                params.opacity = 1.0 - tr;
+                params.transparent = true;
+            }
+        }
+    }
+    return params;
 }

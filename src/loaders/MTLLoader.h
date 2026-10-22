@@ -4,6 +4,7 @@
 #include <optional>
 #include <string>
 #include "constants.h"
+#include "math/Color.h"
 #include <variant>
 
 // Port of the parsing half of examples/jsm/loaders/MTLLoader.js at the pinned revision. The
@@ -12,8 +13,8 @@
 class MTLLoader {
   public:
     // Either the raw string value or, for the four colour keys, three numbers.
-    using Color = std::array<double, 3>;
-    using Value = std::variant<std::string, Color>;
+    using ColorValue = std::array<double, 3>;
+    using Value = std::variant<std::string, ColorValue>;
     using MaterialInfo = std::map<std::string, Value>;
     // Keyed by material name, in insertion order upstream; a map keeps lookup deterministic.
     using MaterialsInfo = std::map<std::string, MaterialInfo>;
@@ -24,6 +25,8 @@ class MTLLoader {
         double wrap = RepeatWrapping;
         bool normalizeRGB = false;
         bool ignoreZeroRGBs = false;
+        // Inverts the tr value, an option upstream documents but does not set by default.
+        bool invertTrProperty = false;
     };
 
     // Parses the text. Keys are lower cased, blank lines and comments are skipped, and the
@@ -52,4 +55,24 @@ class MTLLoader {
     // displacementBias and displacementScale into the material params, which the three
     // optionals carry back instead.
     static TextureParams getTextureParams(const std::string& value);
+
+    // The material parameters upstream assembles before constructing a MeshPhongMaterial.
+    // Texture slots hold the resolved url, because loading a texture is host work; every
+    // other field mirrors what the material would receive.
+    struct MaterialParams {
+        std::string name;
+        ::Color color, specular, emissive;
+        bool hasColor = false, hasSpecular = false, hasEmissive = false;
+        double shininess = 30;
+        double opacity = 1;
+        bool transparent = false;
+        std::string map, specularMap, emissiveMap, normalMap, bumpMap, displacementMap, alphaMap;
+        std::optional<double> bumpScale, displacementBias, displacementScale;
+    };
+
+    // Mirrors createMaterial_'s switch. Empty values are skipped, colour keys are converted
+    // from sRGB to the working space, d below one and a positive tr both set opacity and the
+    // transparent flag, and the first texture seen for a slot is the one kept.
+    static MaterialParams createMaterialParams(const MaterialInfo& materialInfo,
+                                               const MaterialOptions& options);
 };
