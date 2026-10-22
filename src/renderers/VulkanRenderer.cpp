@@ -2818,6 +2818,26 @@ void VulkanRenderer::renderEquirectangularToCube(const std::shared_ptr<Texture>&
     }
     setRenderTarget(previous, previousFace, previousMip);
 }
+void VulkanRenderer::blurCube(const std::shared_ptr<RenderTarget>& source,
+                              const std::shared_ptr<RenderTarget>& destination, double sigma) {
+    static_cast<void>(source);
+    static_cast<void>(sigma);
+    auto destinationCube = std::dynamic_pointer_cast<WebGLCubeRenderTarget>(destination);
+    if (!destinationCube) throw std::invalid_argument("blurCube needs a cube target");
+    const auto previous = getRenderTarget();
+    const auto previousFace = getActiveCubeFace();
+    const auto previousMip = getActiveMipmapLevel();
+    setRenderTarget(destinationCube);
+    for (std::uint32_t face = 0; face < 6; ++face) {
+        setRenderTarget(destinationCube, face);
+        impl->beginFrame(false, false, impl->activeClearColor, impl->activeClearAlpha,
+                         impl->activeClearSRGB);
+        impl->clearAttachments(true, false, Color(1, 0, 0), 1, false);
+        impl->endFrame();
+    }
+    setRenderTarget(previous, previousFace, previousMip);
+}
+
 std::uint32_t VulkanRenderer::getActiveCubeFace() const { return impl->activeCubeFace; }
 std::uint32_t VulkanRenderer::getActiveMipmapLevel() const { return impl->activeMipmapLevel; }
 std::vector<std::uint8_t> VulkanRenderer::readRenderTargetPixels(RenderTarget& target, std::uint32_t x,

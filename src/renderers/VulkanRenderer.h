@@ -73,6 +73,10 @@ class VulkanRenderer {
     // cube target through the PMREM program. The convolution passes are not part of this.
     void renderEquirectangularToCube(const std::shared_ptr<Texture>& source,
                                      const std::shared_ptr<RenderTarget>& target);
+    // Clears every face of the destination to red. This is a diagnosis step: it isolates
+    // the render pass, framebuffer and readback chain from the blur draw itself.
+    void blurCube(const std::shared_ptr<RenderTarget>& source,
+                  const std::shared_ptr<RenderTarget>& destination, double sigma);
     std::uint32_t getActiveCubeFace() const;
     std::uint32_t getActiveMipmapLevel() const;
     std::shared_ptr<RenderTarget> getRenderTarget() const;

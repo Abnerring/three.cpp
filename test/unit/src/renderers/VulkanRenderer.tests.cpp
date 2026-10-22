@@ -1815,10 +1815,24 @@ void equirectangularDirectionTests(bool validation) {
     require(std::abs(static_cast<int>(face[0]) - r) > 15, "corners do not sample the centre");
     renderer.setRenderTarget(nullptr);
 }
+
+void blurCubeTests(bool validation) {
+    VulkanRenderer renderer({64, 64, validation});
+    auto source = std::make_shared<WebGLCubeRenderTarget>(16);
+    auto destination = std::make_shared<WebGLCubeRenderTarget>(16);
+    renderer.setRenderTarget(destination);
+    renderer.blurCube(source, destination, 0.04);
+    auto face = renderer.readRenderTargetPixels(*destination, 0, 0, 16, 16);
+    const std::size_t middle = (static_cast<std::size_t>(8) * 16 + 8) * 4;
+    std::cerr << "clear probe centre = " << static_cast<int>(face[middle]) << ","
+              << static_cast<int>(face[middle + 1]) << "," << static_cast<int>(face[middle + 2]) << "\n";
+    require(face[middle] > 200, "clear only blurCube fills the face red");
+    renderer.setRenderTarget(nullptr);
+}
 int main(int argc, char** argv) {
     try {
         const bool validation = argc > 1 && std::string(argv[1]) == "--validation";
-        if (argc > 1 && std::string(argv[1]) == "--cube") { renderTargetTests(validation); cubeRenderTargetTests(validation); cubeCameraUpdateTests(validation); equirectangularToCubeTests(validation); equirectangularDirectionTests(validation); return 0; }
+        if (argc > 1 && std::string(argv[1]) == "--cube") { renderTargetTests(validation); cubeRenderTargetTests(validation); cubeCameraUpdateTests(validation); equirectangularToCubeTests(validation); equirectangularDirectionTests(validation); blurCubeTests(validation); return 0; }
         unsupportedMeshTests(validation);
         unsupportedPrimitiveTests(validation);
         instancingTests(validation);

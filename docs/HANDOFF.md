@@ -493,6 +493,13 @@
    - **决定：停止在这个方向上零敲碎打**。理由：这是一条 3000 行文件里的深层渲染问题，每次尝试要 2–4 分钟构建 + 一次完整运行，而我的工具链在**文本替换**这一步就反复出错，导致"我以为在测 A，实际根本没跑到 A"。这与第 49–56 轮的多目标重构是同一类问题，而那一次是**用七轮、每轮只做一件极小的、带自检的改动**才成功的。
    - **下一段的正确做法（写在这里作为交接）**：① 先在**分支**上做；② 每一步只改**一个**可验证的东西（例如只插入一句 `std::fprintf` 并在**插入后立刻 grep 确认它在文件里**）；③ 每步构建后立刻运行并**观察那一条输出**；④ 只有当"探针确实打印出来了"才继续下一步。不要一次改三处再一起构建——那会让"到底哪一处生效了"变得不可知。
    - **当前状态**：全部回退；核心 **747 / 205,735**、`primitive-geometry`、`port-audit`、Vulkan 构建 0 错误、`--cube` 0，树干净。PMREM 的 blur 仍未出图，但**存储/切换/管线/采样器/绘制/编排**这些部件都已就位且有据可查（第 105–126 条）。
+128. **第 67 轮：按"单步 + grep 确认"的纪律只做一件事，证明了六面通道与回读链完全正常**。
+   - **只做一件事**：新增 `blurCube`，**只清红、不绘制、不 barrier、不采样**——每一面 `setRenderTarget(dest, face)` → `beginFrame(false, false, …)` → `clearAttachments(true, false, Color(1,0,0), 1, false)` → `endFrame()`。
+   - **插完立刻 grep 确认**：`void VulkanRenderer::blurCube` 在 2821 行、`clearAttachments(true, false, Color(1, 0, 0)` 恰好 1 处、大括号平衡 0、构建 0 错误。**这次没有出现"打印成功但没写进去"**。
+   - **结果（`cube exit = 0`）**：探针打印 `clear probe centre = 255,0,0`——**读到纯红**。这与第 65 轮的"红清被覆盖"**相互矛盾**，重新审视后发现：第 65 轮我是在 `blurCube` **之前** `setRenderTarget(nullptr)`，而 `blurCube` 结束会恢复到 `nullptr`，`resize` 重建 `pixels` 并清零——所以那次读到的是**清零后的缓冲**，不是"清屏被覆盖"。**第 65 轮的结论是错的，本轮的实验才是干净的。**
+   - **现在的确定结论**：六面的 render pass、逐面 framebuffer、`clearAttachments`、`endFrame` 的拷贝、`readRenderTargetPixels` 的回读——**整条链都正常**。问题**只在绘制/采样**那一小段。
+   - **状态**：五项门禁全绿（核心 **747 / 205,735**、`primitive-geometry`、`port-audit`、Vulkan 构建 0 错误、`--cube` 0）。
+   - **下一步（继续保持单步）**：在这个**已经验证为绿**的 `blurCube` 上，**只加 draw 一行**（连同必需的 barrier），其余不动；跑一次看红是否变黑。这样"变黑"就能**唯一地**归因到 draw/采样。
 70. **第 520 轮：完整 Vulkan 套件 211/211 全绿，耗时 270.72 秒**。
    - 命令：`ctest --test-dir build-vulkan -j 4 -E "lights-states" --output-on-failure`（仍排除第 46 条那个已知项；它在 Vulkan 构建里同样慢）。
    - 结果：**100% tests passed, 0 tests failed out of 211**，总耗时 **270.72 秒**。对比同一套件在 **Debug** 配置下的 **3784.56 秒 / 2 失败**，差了约 14 倍——再次印证第 69 条"是构建类型不是代码"的结论。
