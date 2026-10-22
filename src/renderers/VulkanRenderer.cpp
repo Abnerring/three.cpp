@@ -2605,7 +2605,10 @@ void VulkanRenderer::renderEquirectangularToCube(const std::shared_ptr<Texture>&
         eye->updateMatrixWorld();
         const auto view = eye->matrixWorldInverse.elements();
         for (int i = 0; i < 16; ++i) block[16 + i] = static_cast<float>(view[static_cast<std::size_t>(i)]);
-        const auto projection = eye->projectionMatrix.elements();
+        // The rig uses a negative field of view to mark cube face projection, which flips
+        // the matrix; use an explicit positive ninety degrees so the mapping is upright.
+        PerspectiveCamera faceProjection(90, 1, 0.1, 100);
+        const auto projection = faceProjection.projectionMatrix.elements();
         for (int i = 0; i < 16; ++i) block[32 + i] = static_cast<float>(projection[static_cast<std::size_t>(i)]);
         setRenderTarget(cube, face);
         impl->beginFrame(false, false, impl->activeClearColor, impl->activeClearAlpha,
