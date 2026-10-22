@@ -453,6 +453,13 @@
    - **为什么这行会丢**：第 57 轮崩溃后我用 `git checkout -- src/renderers/VulkanRenderer.cpp` 整体回退，而第 56 轮加的 `useTarget(nullptr)` 就在这次回退里一起没了——**回退是整文件的，不会区分"哪些是我想要的、哪些是刚坏的"**。这是"回退以后再继续"这条路线的固有代价。
    - **验证（五项门禁）**：核心 **747 / 205,735** ✓、`primitive-geometry` ✓、`port-audit` ✓、`threecpp_vulkan` 0 错误 ✓、`--cube` 0 ✓；大括号平衡 0 ✓。
    - **下一步**：重新加回 `blurCube` 与 `drawPmremBlurFace`（第 59 轮已经写好过、逻辑没变），这次源目标的层数应当正确，验收用例（纯色源 → blur → 仍是该色）应该能通过。
+122. **第 61 轮：重加采样器时连撞两次"重复插入"，最后确认第 58 轮的三件里有两件一直在**。
+   - **发现的真相**：第 58 轮的提交（`2d87e3b`）没有被回退——`pmremSampler` 与 `drawPmremBlurFace` **一直都在树里**。第 59 轮只回退了 `blurCube` 那一批改动。所以本轮我"重加"时把采样器**又插了一遍**：`VkSampler pmremSampler` 出现两次（`C2086 重定义`）、创建块也出现两次。
+   - **去重时又制造了第二个问题**：我只删了 `"vkCreateSampler(pmrem)");` 那一行，留下孤立的 `check(api.vkCreateSampler(...)`，于是 `C1075 "(" 未找到匹配令牌`。最后按"找到第二个 `VkSamplerCreateInfo pmremSamplerInfo` 声明，从它的 `{` 删到匹配的 `check(` 行"才干净。
+   - **教训**：**改动之前必须先确认目标是否已经存在**（`Select-String` 一下），而不是假设"上一轮回退过所以肯定没有"。这和第 52 轮的 `faceView`/`faceFramebuffer` 重定义是同一个毛病。
+   - **另一个教训**：**去重要整块删，不能只删半行**。删一个 `check(...)` 的收尾而不删开头，会把文件变成语法错误，反而比重复定义更难定位。
+   - **当前状态**：文件与 `HEAD`（第 60 轮的 `4f40e7a`）**完全一致**，构建 0 错误、`--cube` 0，树干净——本轮没有净代码变更，但把"哪些东西其实还在"搞清楚了。
+   - **下一步**：只加 `blurCube`（第 59 轮写过、逻辑没变），加之前先 `Select-String blurCube` 确认它确实不在。
 70. **第 520 轮：完整 Vulkan 套件 211/211 全绿，耗时 270.72 秒**。
    - 命令：`ctest --test-dir build-vulkan -j 4 -E "lights-states" --output-on-failure`（仍排除第 46 条那个已知项；它在 Vulkan 构建里同样慢）。
    - 结果：**100% tests passed, 0 tests failed out of 211**，总耗时 **270.72 秒**。对比同一套件在 **Debug** 配置下的 **3784.56 秒 / 2 失败**，差了约 14 倍——再次印证第 69 条"是构建类型不是代码"的结论。
