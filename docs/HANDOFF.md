@@ -285,6 +285,12 @@
    - **`Transforms` 块内容**：`modelMatrix`（盒子恒等）、`modelViewMatrix`（等于该面的 view 矩阵）、`projectionMatrix`（该眼的投影）。因为着色器里是 `layout(set=0, binding=0, std140)`，字段顺序必须与着色器声明一致（`mat4 modelMatrix; mat4 modelViewMatrix; mat4 projectionMatrix;`），总大小 192 字节。
    - **等距柱状纹理怎么来**：`PMREMGenerator::fromEquirectangular` 拿到的是 `DataTexture`；需要把它上传成设备纹理（项目里 `TextureRef` + `createImage` 那条路已经存在，`textureDescriptor` 里 `map->sampler`/`map->image.view` 就是它），然后在 descriptor 写入时用 `VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL`。
    - **本轮无代码变更**（只读代码 + 记录），门禁：核心 **745 / 205,728**、`primitive-geometry`、`port-audit` 全绿，树干净。
+94. **第 31 轮：PMREM 的变换块从 uniform buffer 改成 push constant，把剩余工作中最大的一块管道拆掉了**。
+   - **动机**：原设计里 `Transforms` 是一个 `layout(set=0, binding=0, std140) uniform` 块，于是需要"分配 UBO → 编码 → 上传 → 写描述符"整套流程（`textureUniformTemplate`/`encodeTextureUniforms`/`createBuffer` 那一套）。但顶点阶段其实**只用到三个矩阵**，总共 192 字节，远在 push constant 限额内。
+   - **改动**：`pmrem_equirect.vert.glsl` 里 `layout(set = 0, binding = 0) uniform Transforms {…}` 改为 `layout(push_constant) uniform Transforms {…}`；`.vert.spv` 从 1712 B 变成 **1680 B**（`glslang` 重新编译通过）。渲染器构造里随之删掉"在 PMREM 顶点接口里找 `VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER`"、"建 `pmremUniformTemplate`"以及那句 `PMREM shader requires one reflected uniform block`——第一次只删了一部分，运行时直接抛这句（说明那条断言确实在起作用，也让错误定位很快）。
+   - **现状**：PMREM 程序现在只剩"**一个** `COMBINED_IMAGE_SAMPLER`（等距柱状纹理，`binding=1`）"需要描述符；绘制时只要 `vkCmdPushConstants(VERTEX, 0, 192, block)` 即可。
+   - **验证**：`threecpp_vulkan` 与 `VulkanRendererTests` 构建通过，`--cube` 在真实 GPU 上通过。核心 **745 / 205,728**、`primitive-geometry`、`port-audit` 全绿。
+   - **偏差记录**：上游用的是 `ShaderMaterial` 的 `uniforms`（等价于 UBO 语义）；这里用 push constant 承载同样的三个矩阵，**数值语义一致**，只是绑定机制不同——属于本项目"内置程序"路线的实现细节，已在着色器注释里写明。
 70. **第 520 轮：完整 Vulkan 套件 211/211 全绿，耗时 270.72 秒**。
    - 命令：`ctest --test-dir build-vulkan -j 4 -E "lights-states" --output-on-failure`（仍排除第 46 条那个已知项；它在 Vulkan 构建里同样慢）。
    - 结果：**100% tests passed, 0 tests failed out of 211**，总耗时 **270.72 秒**。对比同一套件在 **Debug** 配置下的 **3784.56 秒 / 2 失败**，差了约 14 倍——再次印证第 69 条"是构建类型不是代码"的结论。

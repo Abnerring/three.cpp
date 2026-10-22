@@ -371,7 +371,6 @@ struct VulkanRenderer::Impl {
     // needs its own set because the basic vertex stage uses a different binding split.
     std::unique_ptr<VulkanShaderModules> pmremModules;
     std::unique_ptr<VulkanPipelineLayout> pmremReflectedLayout;
-    std::unique_ptr<VulkanUniformBuffer> pmremUniformTemplate;
     VkDescriptorSetLayout pmremTextureLayout = VK_NULL_HANDLE;
     VkPipelineLayout pmremPipelineLayout = VK_NULL_HANDLE;
     VkPipeline pmremPipelineHandle = VK_NULL_HANDLE;
@@ -840,15 +839,6 @@ struct VulkanRenderer::Impl {
         const std::array<VulkanShaderModules::Stage, 2> pmremStages{{{pmremVertexWords}, {pmremFragmentWords}}};
         pmremModules = std::make_unique<VulkanShaderModules>(device,
             VulkanShaderModules::Dispatch{api.vkCreateShaderModule, api.vkDestroyShaderModule}, pmremStages);
-        const auto& pmremVertexInterface = pmremModules->interfaces().front();
-        const auto pmremTransforms = std::find_if(pmremVertexInterface.descriptors.begin(),
-            pmremVertexInterface.descriptors.end(), [](const auto& descriptor) {
-                return descriptor.type == VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
-            });
-        if (pmremTransforms == pmremVertexInterface.descriptors.end() ||
-            pmremTransforms->count != 1)
-            throw std::runtime_error("PMREM shader requires one reflected uniform block");
-        pmremUniformTemplate = std::make_unique<VulkanUniformBuffer>(pmremTransforms->block);
         pmremReflectedLayout = std::make_unique<VulkanPipelineLayout>(device,
             VulkanPipelineLayout::Dispatch{api.vkCreateDescriptorSetLayout, api.vkDestroyDescriptorSetLayout,
                 api.vkCreatePipelineLayout, api.vkDestroyPipelineLayout},
