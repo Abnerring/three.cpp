@@ -233,6 +233,12 @@
    - **已恢复**：`git checkout` 撤销这两处改动，核心 **745 / 205,728**、差分 **22 组 / 287 场景**、`primitive-geometry` 与 `port-audit` 全绿，树干净。
    - **下一轮的做法（换位置，不换逻辑）**：不要在 `CubeCamera.h` 里写模板。改为把 `update` 的实现放进**能看到完整类型的编译单元**——例如 `src/renderers/vulkan/` 下一个 `CubeCameraVulkan.cpp`（或在 `VulkanRenderer.cpp` 里加一个非模板重载 `void renderCubeFaces(CubeCamera&, Scene&)`），由渲染器侧完成"保存/六面渲染/恢复"，`CubeCamera` 只暴露一个 `target` 的设置入口。这样 `CubeCamera.h` 只依赖前向声明，避免模板在头文件里拉入 `PerspectiveCamera` 的完整定义。
    - **过程纪律再次强调**：本轮第一次崩溃时我用了 `$LASTEXITCODE` 覆盖后的值做判断，把崩溃提交了（第 83 条）。**现在每个门禁的退出码都单独存变量**，最后一次提交前确认了 `core=0 diff=0 primitive-geometry=0 audit=0`。
+85. **第 22 轮：PMREM 的 GPU 路径卡在一个渲染器能力上——当前 Vulkan 渲染器只会画自己的预编译着色器**。
+   - **事实**：`VulkanRenderer.cpp` 用 `readShader("basic.vert.spv")` 这样读**构建期预编译**的 SPIR-V（`THREECPP_SHADER_DIRECTORY`），材质只支持它内置的那套；`ShaderMaterial` 的处理**只存在于 `src/renderers/webgl/*`**（那是 CPU 侧的 WebGL 语义模拟），Vulkan 侧**完全没有**。所以 PMREM 需要的三个卷积着色器（等距柱状转换、模糊、GGX/积分）**没有落地通道**。
+   - **已有的基础**：`VulkanShaderCompiler` 自带 `compileESSL`（把 ES/GLSL 源码编译成 SPIR-V，`THREECPP_HAS_NATIVE_ESSL`），而构建脚本里已经有用 `third_party/vulkan/bin/glslang.exe` 把 `basic.vert/frag` 编译成 `.spv` 的 `add_custom_target(threecpp_shaders)`。
+   - **两条路**：**A（推荐）**把 PMREM 的三个着色器也做成**构建期内置程序**——写 `.vert/.frag` 源码，用现成的 `threecpp_shaders` 目标编成 `.spv`，渲染器加一条"按名字选内置程序 + 传 uniform"的路径；**B** 实现完整的 `ShaderMaterial` 运行时编译与绑定（大得多，但更通用）。
+   - A 的好处：PMREM 的着色器是**固定的**（上游 `_getEquirectMaterial`/`_getBlurMaterial`/`_getGGXMaterial` 都是常量源码），不需要通用机制；而构建期编译已经在跑，风险最小。
+   - **本轮同时做的**：差分从 287 扩到 **293 场景**（新增网格 9×4、7×3 纹理、4:3 相机、双色半球光、曲线路径、2 分量 2 采样线性插值），全部与上游逐位一致；核心 **745 / 205,728**、`primitive-geometry`、`port-audit` 全绿。
 70. **第 520 轮：完整 Vulkan 套件 211/211 全绿，耗时 270.72 秒**。
    - 命令：`ctest --test-dir build-vulkan -j 4 -E "lights-states" --output-on-failure`（仍排除第 46 条那个已知项；它在 Vulkan 构建里同样慢）。
    - 结果：**100% tests passed, 0 tests failed out of 211**，总耗时 **270.72 秒**。对比同一套件在 **Debug** 配置下的 **3784.56 秒 / 2 失败**，差了约 14 倍——再次印证第 69 条"是构建类型不是代码"的结论。
