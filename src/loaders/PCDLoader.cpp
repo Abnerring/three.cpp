@@ -2,6 +2,7 @@
 
 #include "math/Color.h"
 #include "math/ColorManagement.h"
+#include <cstring>
 #include <cctype>
 #include <cstdlib>
 #include <sstream>
@@ -211,6 +212,88 @@ PCDLoader::Points PCDLoader::parseAsciiPoints(const std::string& text, const Fie
         }
         if (intensityAt >= 0) points.intensity.push_back(tokenAt(intensityAt));
         if (labelAt >= 0) points.label.push_back(tokenAt(labelAt));
+    }
+    return points;
+}
+
+PCDLoader::Points PCDLoader::parseBinaryPoints(const std::vector<std::uint8_t>& data,
+                                               std::size_t start, int pointCount,
+                                               const Header& header, const FieldLayout& layout,
+                                               bool littleEndian) {
+    Points points;
+    // Index the metadata by field name so a lookup per field per point stays simple.
+    std::map<std::string, std::pair<int, std::string>> meta;
+    for (std::size_t i = 0; i < header.fields.size(); ++i) {
+        const int width = i < header.size.size() ? header.size[i] : 1;
+        const std::string type = i < header.type.size() ? header.type[i] : "f";
+        meta[header.fields[i]] = {width, type};
+    }
+
+    const auto readField = [&](std::size_t at, const std::string& name, double& out) -> bool {
+        const auto found = layout.offset.find(name);
+        const auto info = meta.find(name);
+        if (found == layout.offset.end() || info == meta.end()) return false;
+        const std::size_t offset = at + static_cast<std::size_t>(found->second);
+        const int width = info->second.first;
+        const std::string& type = info->second.second;
+        if (offset + static_cast<std::size_t>(width) > data.size()) return false;
+
+        // Assemble the value most significant byte first; little endian stores it backwards.
+        std::uint64_t raw = 0;
+        for (int k = 0; k < width; ++k) {
+            const std::size_t index = littleEndian ? data[offset + static_cast<std::size_t>(width - 1 - k)]
+                                                   : data[offset + static_cast<std::size_t>(k)];
+            raw = (raw << 8) | index;
+        }
+        if (type == "f" && width == 4) {
+            const std::uint32_t bits = static_cast<std::uint32_t>(raw);
+            float value = 0.0f;
+            std::memcpy(&value, &bits, sizeof(float));
+            out = static_cast<double>(value);
+        } else if (type == "f" && width == 8) {
+            double value = 0.0;
+            std::memcpy(&value, &raw, sizeof(double));
+            out = value;
+        } else {
+            // The integer types are widened as they are, without a sign flip, which is what a
+            // plain DataView read gives.
+            out = static_cast<double>(raw);
+        }
+        return true;
+    };
+
+    for (int i = 0; i < pointCount; ++i) {
+        const std::size_t at = start + static_cast<std::size_t>(i) * static_cast<std::size_t>(layout.rowSize);
+        double x = 0, y = 0, z = 0;
+        if (readField(at, "x", x) && readField(at, "y", y) && readField(at, "z", z)) {
+            points.positions.push_back(x);
+            points.positions.push_back(y);
+            points.positions.push_back(z);
+        }
+        double nx = 0, ny = 0, nz = 0;
+        if (readField(at, "normal_x", nx) && readField(at, "normal_y", ny) &&
+            readField(at, "normal_z", nz)) {
+            points.normals.push_back(nx);
+            points.normals.push_back(ny);
+            points.normals.push_back(nz);
+        }
+        double rgb = 0;
+        if (readField(at, "rgb", rgb)) {
+            int channels[3] = {0, 0, 0};
+            unpackRGB(static_cast<unsigned int>(rgb), channels);
+            const std::vector<double> components{channels[0] / 255.0, channels[1] / 255.0,
+                                                 channels[2] / 255.0};
+            Color color;
+            color.fromArray(components);
+            ColorManagement::colorSpaceToWorking(color, SRGBColorSpace);
+            points.colors.push_back(color.r);
+            points.colors.push_back(color.g);
+            points.colors.push_back(color.b);
+        }
+        double intensity = 0;
+        if (readField(at, "intensity", intensity)) points.intensity.push_back(intensity);
+        double label = 0;
+        if (readField(at, "label", label)) points.label.push_back(label);
     }
     return points;
 }

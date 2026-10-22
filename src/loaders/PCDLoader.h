@@ -62,4 +62,12 @@ class PCDLoader {
     // Reads ascii point rows. Each row is whitespace separated and the layout says which
     // token belongs to which field, so a missing field simply contributes nothing.
     static Points parseAsciiPoints(const std::string& text, const FieldLayout& layout);
+
+    // Reads binary point rows. The header supplies each field's width and type and the
+    // layout supplies its byte offset, so a row is walked field by field. Floats are read as
+    // floats and the integer types are widened to double, then the same streams are filled
+    // as for the ascii form.
+    static Points parseBinaryPoints(const std::vector<std::uint8_t>& data, std::size_t start,
+                                    int pointCount, const Header& header,
+                                    const FieldLayout& layout, bool littleEndian);
 };

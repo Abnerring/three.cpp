@@ -72,6 +72,7 @@ add_executable(THREECPPTests
         unit/src/loaders/PCDLoader.tests.cpp
         unit/src/loaders/PCDOffsets.tests.cpp
         unit/src/loaders/PCDPoints.tests.cpp
+        unit/src/loaders/PCDBinary.tests.cpp
         unit/src/cameras/StereoCamera.tests.cpp
         unit/src/audio/AudioContext.tests.cpp
         unit/src/audio/Audio.tests.cpp
