@@ -132,3 +132,28 @@ Font::GlyphPath Font::createPath(const std::string& character, double scale, dou
     }
     return result;
 }
+
+std::vector<std::shared_ptr<ShapePath>> Font::createPaths(const std::string& text, double size,
+                                                         const std::string& direction) const {
+    const double scale = size / data.resolution;
+    std::vector<std::shared_ptr<ShapePath>> paths;
+
+    // The placement pass does the ordering, the line breaks and the per direction advance, so
+    // this only has to turn each placement into a path at its offset.
+    for (const auto& placement : layoutText(text, size, direction)) {
+        const auto glyphPath =
+            createPath(placement.character, scale, placement.x, placement.y, data);
+        if (glyphPath.path != nullptr) paths.push_back(glyphPath.path);
+    }
+    return paths;
+}
+
+std::vector<std::shared_ptr<Shape>> Font::generateShapes(const std::string& text, double size,
+                                                        const std::string& direction) const {
+    std::vector<std::shared_ptr<Shape>> shapes;
+    for (const auto& path : createPaths(text, size, direction)) {
+        auto extracted = path->toShapes();
+        for (auto& shape : extracted) shapes.push_back(std::move(shape));
+    }
+    return shapes;
+}

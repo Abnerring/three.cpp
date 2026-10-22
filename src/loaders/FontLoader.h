@@ -4,6 +4,7 @@
 #include <string>
 #include <vector>
 class ShapePath;
+class Shape;
 
 // Port of the text layout half of examples/jsm/loaders/FontLoader.js at the pinned revision.
 // Font.parse is a single construction, and the glyph outline interpreter that turns a glyph's
@@ -65,4 +66,14 @@ class Font {
     };
     static GlyphPath createPath(const std::string& character, double scale, double offsetX,
                                 double offsetY, const Data& data);
+
+    // Lays the text out and builds one path per character, in the order the layout placed
+    // them. A character whose glyph is missing contributes nothing.
+    std::vector<std::shared_ptr<ShapePath>> createPaths(const std::string& text, double size,
+                                                       const std::string& direction) const;
+
+    // The public entry point upstream exposes: the paths flattened into shapes, ready for
+    // a ShapeGeometry.
+    std::vector<std::shared_ptr<Shape>> generateShapes(const std::string& text, double size = 100,
+                                                      const std::string& direction = "ltr") const;
 };

@@ -908,6 +908,12 @@
    - **一个容易搞反的地方**：我一开始以为 `q` 是"控制点在前"，读了上游才发现**前两个数是终点**。测试里专门用 `q 30 40 10 20` 这种"终点与控制点数值不同"的输入，若交换了顺序会立刻失败。
    - **测试（6 个用例、15 条断言）**：`m`+`l` 组合出一条子路径；**advance 随缩放变化**（×2 → 100、×0.5 → 25）；四种命令字母都能被接受且不丢路径；不同 offset 都能生成路径；缺失字形返回空；**回退 `?`** 时 advance 取 `?` 的值。
    - **验证**：核心 **896 用例 / 206,617 断言**（+6 / +15）、`primitive-geometry`、`port-audit` 全绿。
+184. **第 123 轮：`FontLoader` 收尾——`createPaths` + `generateShapes`，字体完整**。
+   - **`createPaths(text, size, direction)`**：先 `layoutText` 拿到**每个字符的位置**（顺序、换行、`rtl`/`tb` 的推进都已处理），再对每个位置调 `createPath(character, scale, x, y)`；**没有字形的字符不产生路径**。
+   - **`generateShapes(text, size, direction)`**：对每条路径调 `ShapePath::toShapes()` 并展平成一个 `Shape` 列表——就是上游那三行循环。
+   - **测试（5 个用例、12 条断言）**：两个字符 → 两条路径；**夹一个无字形字符只产出两条**（说明中间那个被跳过）；`rtl` 与 `ltr` 都产两条但**顺序不同**（用指针比较确认第一条不是同一条）；`generateShapes` 至少产出两个形状且都不是空指针；空字符串两处都返回空。
+   - **验证**：核心 **901 用例 / 206,629 断言**（+5 / +12）、`primitive-geometry`、`port-audit` 全绿。addon loader **30 → 31 / 52**。
+   - **四个完整 loader**：`MTLLoader`（5 层）、`OBJLoader`（5 层）、`PLYLoader`（6 层）、`FontLoader`（3 层）。Font 的 `TTFLoader` 因为依赖 CDN 上的 opentype.js 而**明确不做**（第 181 条已记）。
 70. **第 520 轮：完整 Vulkan 套件 211/211 全绿，耗时 270.72 秒**。
    - 命令：`ctest --test-dir build-vulkan -j 4 -E "lights-states" --output-on-failure`（仍排除第 46 条那个已知项；它在 Vulkan 构建里同样慢）。
    - 结果：**100% tests passed, 0 tests failed out of 211**，总耗时 **270.72 秒**。对比同一套件在 **Debug** 配置下的 **3784.56 秒 / 2 失败**，差了约 14 倍——再次印证第 69 条"是构建类型不是代码"的结论。
