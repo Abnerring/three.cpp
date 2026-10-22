@@ -1,5 +1,8 @@
 #include "loaders/VOXLoader.h"
 
+#include "math/Color.h"
+#include "math/ColorManagement.h"
+
 #include <stdexcept>
 
 VOXLoader::Matrix VOXLoader::rotationMatrix(std::uint8_t byte) {
@@ -290,5 +293,64 @@ VOXLoader::QuadGeometry VOXLoader::emitQuad(const Quad& quad, const int pos[3], 
 
     // Two triangles per quad, sharing the diagonal from the first to the third corner.
     geometry.indices = {0, 1, 2, 0, 2, 3};
+    return geometry;
+}
+
+VOXLoader::MeshGeometry VOXLoader::buildMesh(const std::vector<Voxel>& voxels, const Size& size,
+                                             const std::vector<std::array<std::uint8_t, 4>>& palette) {
+    MeshGeometry geometry;
+    const std::vector<std::uint8_t> volume = buildColorVolume(voxels, size);
+    if (volume.empty()) return geometry;
+
+    const int dims[3] = {size.x, size.y, size.z};
+    for (int d = 0; d < 3; ++d) {
+        const int axisU = (d + 1) % 3;
+        const int axisV = (d + 2) % 3;
+        const int dimsU = dims[axisU];
+        const int dimsV = dims[axisV];
+
+        // One extra slice so the far end of the volume gets its outward faces.
+        for (int slice = 0; slice <= dims[d]; ++slice) {
+            const auto mask = buildMask(volume, size, d, slice);
+            const auto quads = mergeMask(mask, dimsU, dimsV);
+
+            for (const auto& quad : quads) {
+                int pos[3] = {0, 0, 0};
+                pos[d] = slice;
+                pos[axisU] = quad.u;
+                pos[axisV] = quad.v;
+
+                int du[3] = {0, 0, 0};
+                int dv[3] = {0, 0, 0};
+                du[axisU] = quad.w;
+                dv[axisV] = quad.h;
+
+                const auto piece = emitQuad(quad, pos, du, dv, size);
+                const int base = static_cast<int>(geometry.positions.size() / 3);
+                for (const double component : piece.vertices) geometry.positions.push_back(component);
+                for (const int index : piece.indices) geometry.indices.push_back(base + index);
+
+                // The magnitude carries the palette index; the sign only said which way the
+                // face looks.
+                const std::size_t colorIndex = static_cast<std::size_t>(std::abs(quad.value));
+                int rgb[3] = {255, 255, 255};
+                if (colorIndex < palette.size()) {
+                    rgb[0] = palette[colorIndex][0];
+                    rgb[1] = palette[colorIndex][1];
+                    rgb[2] = palette[colorIndex][2];
+                }
+                // The palette is in sRGB, so the four corners share one converted colour.
+                const std::vector<double> components{rgb[0] / 255.0, rgb[1] / 255.0, rgb[2] / 255.0};
+                Color color;
+                color.fromArray(components);
+                ColorManagement::colorSpaceToWorking(color, SRGBColorSpace);
+                for (int corner = 0; corner < 4; ++corner) {
+                    geometry.colors.push_back(color.r);
+                    geometry.colors.push_back(color.g);
+                    geometry.colors.push_back(color.b);
+                }
+            }
+        }
+    }
     return geometry;
 }

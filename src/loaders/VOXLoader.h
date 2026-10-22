@@ -113,4 +113,18 @@ class VOXLoader {
     // Converts one VOX point to the port frame: x keeps, y takes the old z, z takes the
     // negated old y, and the whole model is centred by subtracting half of each size.
     static std::array<double, 3> toThree(const int point[3], const Size& size);
+
+    // The geometry a mesh chunk produces.
+    struct MeshGeometry {
+        std::vector<double> positions;
+        std::vector<int> indices;
+        // Three working space components per corner.
+        std::vector<double> colors;
+    };
+
+    // Runs the mesher over the three axes: every slice is masked, merged into rectangles and
+    // each rectangle becomes a quad. A palette entry is chosen by the magnitude of the mask
+    // value, since the sign only carried the facing.
+    static MeshGeometry buildMesh(const std::vector<Voxel>& voxels, const Size& size,
+                                  const std::vector<std::array<std::uint8_t, 4>>& palette);
 };
