@@ -151,6 +151,13 @@
    - 中间还踩了两个工具坑：`$t.Replace(...)` 里用反斜杠转义双引号在 PowerShell 里**直接语法错误**（整段脚本没执行，文件未被改动——事后 `git status` 确认过）；补 include 时又因为之前回退把 `<cstdio>` 一起撤掉而先失败一次。
    - **结论与下一步**：不要再"改完就信"。下次插桩后**先 `Select-String` 那个 exe 里有没有那段字面量**（或用 `strings`），确认代码真的进了二进制；再跑。如果字面量在、输出仍无，才去怀疑运行路径。
    - **本轮无代码变更**（插桩已 `git checkout` 撤回），核心 738 / 205,626、`primitive-geometry`、`port-audit` 全绿，树干净。
+68. **更正：这个环境其实有可用的 Vulkan，之前"You must install the SDK"的结论是错的——SDK 已经被塞进 `third_party/vulkan`**（第 517 轮）。
+   - 起因：用户问"项目中不能放个第三方库的文件夹吗，然后放入 vulkan 的 sdk"。查下来发现所需要的只有**两样**（`CMakeLists.txt:317-318`）：`vulkan/vulkan.h` 头文件，以及一个 `glslangValidator` 兼容的编译器；**运行时**用的是 `LoadLibraryA("vulkan-1.dll")`（`VulkanRenderer.cpp:207`），而 `C:\Windows\System32\vulkan-1.dll` **本来就存在**。
+   - 机内已有资产：`D:\project\goblin\Computational\vulkan\include\vulkan\` 是完整的 Vulkan-Headers（含 `vk_video/`），`...\lib\vulkan\glslang.exe`（Glslang 11:16.1.0，新版把 `glslangValidator` 改名为 `glslang`）。
+   - 做法：拷成 `third_party/vulkan/{include,bin}`（26.4 MB，21 个头文件 + `vk_video` 12 个 + `glslang.exe` 与 4 个 DLL）。`CMakeLists.txt` 的 `find_path`/`find_program` 现在**先看项目内**、再看 `$ENV{VULKAN_SDK}`，并且 `NAMES` 增加了 `glslang`。`.gitignore` 里对 `*.dll/*.exe` 的规则在本目录**加了例外**并注明原因。
+   - **验证（都是实测）**：① 不带任何 `-D` 路径参数、只给 `-DTHREECPP_BUILD_VULKAN=ON`，配置就把 `THREECPP_VULKAN_INCLUDE_DIR`/`THREECPP_GLSLANG_VALIDATOR` 解析到项目内路径；② 着色器编译出 SPIR-V（`basic.frag.spv` 6220 B、`basic.vert.spv` 12056 B）；③ `build-vulkan` 一次构建 602 个目标全过；④ **16 个 Vulkan 测试全部通过**（`100% tests passed, 0 failed out of 16`），其中包括 635 秒的 `threecpp.vulkan`、275 秒的 `threecpp.threejs-vulkan-clipping-parity`、98 秒的 `vulkan-binding-smoke`，以及 3 个差分 trace；⑤ 主 `build/`（Vulkan OFF）重新配置后 **197 项测试、738 用例 / 205,626 断言、差分与 audit 全部不变**。
+   - **结论更正**：第 37、44、57 条里"没有 Vulkan SDK，所以渲染与 TSL 只能编译不能验证"**不再成立**。`build-vulkan` 现在有 **213 项**注册测试（比无 Vulkan 的 197 多 16 项）。之前记为"环境阻塞"的那一项**已经消失**，剩下的只有那个性能缺陷，以及"后端功能本身还没写完"的工作量。
+   - **下一步**：`PMREMGenerator`（第 35 条）与 `src/nodes`（TSL，第 38 条，219 个模块）的验收环境**现在已经具备**；先做 `PMREMGenerator`，因为它只需要渲染到纹理/立方体目标的能力，而 Vulkan 渲染器与 16 项测试证明这块已经通了。
 67. **终局陈述（第 255 轮）：目标达成到什么程度，以及剩下的两项到底是什么**。
    - **规模**：src/ 下 835 个源文件；165 个单元测试文件；历史提交 348 个；HANDOFF 58 条。
    - **可交付的绿状态**：核心 **738 用例 / 205,626 断言**、addons **155 / 23,996**、差分 **21 组 / 277 场景**、完整 ctest **195/195 通过**（172 秒，排除唯一已知挂起项）。这些都取实测，不是估算。
