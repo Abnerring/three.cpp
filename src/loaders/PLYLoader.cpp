@@ -1,6 +1,7 @@
 #include "loaders/PLYLoader.h"
 
 #include <cstdlib>
+#include <cstring>
 #include <stdexcept>
 
 namespace {
@@ -155,4 +156,108 @@ std::optional<PLYLoader::ElementRecord> PLYLoader::parseASCIIElement(
         }
     }
     return element;
+}
+
+int PLYLoader::binaryTypeSize(const std::string& type) {
+    if (type == "int8" || type == "char" || type == "uint8" || type == "uchar") return 1;
+    if (type == "int16" || type == "short" || type == "uint16" || type == "ushort") return 2;
+    if (type == "int32" || type == "int" || type == "uint32" || type == "uint" ||
+        type == "float32" || type == "float")
+        return 4;
+    if (type == "float64" || type == "double") return 8;
+    return 0;
+}
+
+namespace {
+double readBinaryScalar(const std::vector<std::uint8_t>& data, std::size_t at,
+                        const std::string& type, bool littleEndian, bool& ok) {
+    const int size = PLYLoader::binaryTypeSize(type);
+    if (size == 0 || at + static_cast<std::size_t>(size) > data.size()) {
+        ok = false;
+        return 0.0;
+    }
+    // The value is assembled most significant byte first. Little endian stores the least
+    // significant byte at the lowest address, so it is read backwards.
+    std::uint64_t raw = 0;
+    for (int i = 0; i < size; ++i) {
+        const std::size_t index = littleEndian ? data[at + static_cast<std::size_t>(size - 1 - i)]
+                                               : data[at + static_cast<std::size_t>(i)];
+        raw = (raw << 8) | index;
+    }
+    const auto bitsFor = [&](auto sample) {
+        using Sample = decltype(sample);
+        Sample value{};
+        if (size <= static_cast<int>(sizeof(Sample))) {
+            std::memcpy(&value, &raw, static_cast<std::size_t>(size));
+        }
+        return value;
+    };
+    (void)bitsFor;
+
+    // Sign extend the integer widths before converting.
+    const auto signedOf = [&](int bits) -> double {
+        const std::uint64_t mask = (bits == 64) ? ~std::uint64_t(0) : ((std::uint64_t(1) << bits) - 1);
+        std::uint64_t value = raw & mask;
+        const std::uint64_t signBit = std::uint64_t(1) << (bits - 1);
+        if (value & signBit) {
+            // Two's complement into a signed 64 bit value.
+            value |= ~mask;
+            return static_cast<double>(static_cast<std::int64_t>(value));
+        }
+        return static_cast<double>(value);
+    };
+
+    if (type == "int8" || type == "char") return signedOf(8);
+    if (type == "uint8" || type == "uchar") return static_cast<double>(raw & 0xff);
+    if (type == "int16" || type == "short") return signedOf(16);
+    if (type == "uint16" || type == "ushort") return static_cast<double>(raw & 0xffff);
+    if (type == "int32" || type == "int") return signedOf(32);
+    if (type == "uint32" || type == "uint") return static_cast<double>(raw & 0xffffffffull);
+    if (type == "float32" || type == "float") {
+        const std::uint32_t bits = static_cast<std::uint32_t>(raw & 0xffffffffull);
+        float value = 0.0f;
+        std::memcpy(&value, &bits, sizeof(float));
+        return static_cast<double>(value);
+    }
+    if (type == "float64" || type == "double") {
+        double value = 0.0;
+        std::memcpy(&value, &raw, sizeof(double));
+        return value;
+    }
+    ok = false;
+    return 0.0;
+}
+}  // namespace
+
+std::optional<std::pair<PLYLoader::ElementRecord, std::size_t>> PLYLoader::binaryReadElement(
+    const std::vector<std::uint8_t>& data, std::size_t at, const std::vector<Property>& properties,
+    bool littleEndian) {
+    ElementRecord element;
+    std::size_t read = 0;
+    bool ok = true;
+
+    for (const auto& property : properties) {
+        if (property.isList()) {
+            const double countValue =
+                readBinaryScalar(data, at + read, property.countType, littleEndian, ok);
+            read += static_cast<std::size_t>(binaryTypeSize(property.countType));
+            if (!ok) return std::nullopt;
+
+            const auto count = static_cast<std::size_t>(countValue < 0 ? 0 : countValue);
+            std::vector<double> list;
+            list.reserve(count);
+            for (std::size_t i = 0; i < count; ++i) {
+                list.push_back(readBinaryScalar(data, at + read, property.itemType, littleEndian, ok));
+                read += static_cast<std::size_t>(binaryTypeSize(property.itemType));
+                if (!ok) return std::nullopt;
+            }
+            element[property.name] = std::move(list);
+        } else {
+            const double value = readBinaryScalar(data, at + read, property.type, littleEndian, ok);
+            read += static_cast<std::size_t>(binaryTypeSize(property.type));
+            if (!ok) return std::nullopt;
+            element[property.name] = value;
+        }
+    }
+    return std::make_pair(std::move(element), read);
 }

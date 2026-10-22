@@ -1,4 +1,5 @@
 #pragma once
+#include <cstdint>
 #include <map>
 #include <variant>
 #include <optional>
@@ -67,4 +68,14 @@ class PLYLoader {
     static std::optional<ElementRecord> parseASCIIElement(const std::vector<Property>& properties,
                                                     const std::vector<std::string>& tokens,
                                                     std::size_t& cursor);
+
+    // The byte width of a property type, or zero when it is unknown.
+    static int binaryTypeSize(const std::string& type);
+
+    // Reads one binary element starting at at. Returns the record and how many bytes it
+    // consumed, or nothing when the data ends early. Single byte types ignore the endian
+    // flag exactly as upstream does.
+    static std::optional<std::pair<ElementRecord, std::size_t>> binaryReadElement(
+        const std::vector<std::uint8_t>& data, std::size_t at,
+        const std::vector<Property>& properties, bool littleEndian);
 };
