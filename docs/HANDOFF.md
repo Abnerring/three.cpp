@@ -766,6 +766,12 @@
      - 三个错误路径（空输入、缺 format、缺尺寸）**逐字比对上游文案**。
    - **验证**：核心 **816 用例 / 206,235 断言**（+5 / +32）、`primitive-geometry`、`port-audit` 全绿。addon loader **25 → 26 / 52**。
    - **下一轮**：`RGBELoader` 现在就是三行的弃用别名（继承 `HDRLoader`、构造时 `console.warn`），可以直接补上；`HDRCubeTextureLoader`（164 行）也随之解锁。
+164. **第 103 轮：`HDRLoader` 补上 `setDataType`，并落地 `RGBELoader` 这个弃用别名**。
+   - **`HDRLoader::setDataType`**：上游继承自 `DataTextureLoader`，解析本身**不看这个值**，只是记录并返回自身（可链式）。端口加了 `_type`（默认 `HalfFloatType = 1016`）、`dataType()` 与链式 `setDataType()`。这样 `HDRCubeTextureLoader` 的 `setDataType` 也有地方可转发了。
+   - **`RGBELoader`**：上游在 r180 把它标记为弃用，**实现只有三行**——继承 `HDRLoader`、构造时 `console.warn`。端口写成 `class RGBELoader : public HDRLoader`，把警告文案提成 `static const char* deprecatedMessage()`（C++ 里构造期往 stderr 打日志在库代码里不合适，所以把文案做成可查询的常量，由调用方决定是否打印）。**解析行为与 `HDRLoader` 完全一致**，测试直接验证了这一点。
+   - **`HDRCubeTextureLoader`（164 行）没有移植**：它除了 `setDataType` 转发之外，全是 `FileLoader` 取六个面 + `CubeTexture.images[i]` 的 I/O 与纹理配置，属于宿主职责；本轮已在第 162/163 条记录了这个判断。
+   - **测试（2 个用例、11 条断言）**：`RGBELoader` 的警告文案逐字比对、**继承来的 `parse` 解码结果与 `HDRLoader` 相同**（`128/255`、alpha 1、黑像素 0）；`HDRLoader` 的 `dataType` 默认 `HalfFloatType`、改成 `FloatType` 后能读回、`setDataType` 返回自身引用（链式）、派生实例各自持有设置。
+   - **验证**：核心 **818 用例 / 206,246 断言**（+2 / +11）、`primitive-geometry`、`port-audit` 全绿。addon loader **26 → 27 / 52**。
 70. **第 520 轮：完整 Vulkan 套件 211/211 全绿，耗时 270.72 秒**。
    - 命令：`ctest --test-dir build-vulkan -j 4 -E "lights-states" --output-on-failure`（仍排除第 46 条那个已知项；它在 Vulkan 构建里同样慢）。
    - 结果：**100% tests passed, 0 tests failed out of 211**，总耗时 **270.72 秒**。对比同一套件在 **Debug** 配置下的 **3784.56 秒 / 2 失败**，差了约 14 倍——再次印证第 69 条"是构建类型不是代码"的结论。

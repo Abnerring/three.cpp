@@ -127,6 +127,7 @@ target_sources(threecpp PRIVATE
     src/loaders/PDBLoader.cpp
     src/loaders/GCodeLoader.cpp
     src/loaders/HDRLoader.cpp
+    src/loaders/RGBELoader.cpp
     src/loaders/CubeTextureLoader.cpp
     src/extras/ImageUtils.cpp
     src/extras/PMREMGenerator.cpp

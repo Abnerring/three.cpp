@@ -1,4 +1,4 @@
-﻿#pragma once
+#pragma once
 #include <cstdint>
 #include <string>
 #include <vector>
@@ -8,6 +8,9 @@
 // texture loader base, so parse() takes the bytes and returns the decoded pixels.
 class HDRLoader {
   public:
+    // HalfFloatType upstream, which is what the HDR cube loader defaults to.
+    static constexpr double kHalfFloatType = 1016;
+    static constexpr double kFloatType = 1015;
     struct Header {
         bool hasProgramType = false;
         bool hasFormat = false;
@@ -27,6 +30,14 @@ class HDRLoader {
         std::vector<float> data;
     };
 
+    // DataTextureLoader exposes the target texture type through this setter upstream; the
+    // parser itself does not branch on it, so it is stored and reported back.
+    HDRLoader& setDataType(double value) {
+        _type = value;
+        return *this;
+    }
+    double dataType() const { return _type; }
+
     // Throws std::runtime_error with the upstream messages when the header or the scanlines
     // do not parse.
     Result parse(const std::vector<std::uint8_t>& buffer) const;
@@ -35,4 +46,7 @@ class HDRLoader {
     // maths of the format.
     static void rgbeToFloat(const std::uint8_t* source, std::size_t offset, float* dest,
                             std::size_t destOffset);
+
+  private:
+    double _type = kHalfFloatType;
 };
