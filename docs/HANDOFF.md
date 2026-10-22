@@ -747,6 +747,14 @@
      4. **23 个 node 材质**——全部依赖 TSL。
    - **结论：目标（"实现和 three.js 一模一样的一切功能"）尚未达成**，因此**不把目标标为完成**，继续保持 active。可移植的**核心**（数学、几何、材质、动画、加载器基础、WebGL 侧的多数模块）已经完整并有逐位/差分双重验证；缺口集中在 **TSL**、**PMREM 的 GPU 卷积**、**examples 插件**这三块。
    - **下一阶段方向**：继续按"每轮一个自包含模块 + node 取参考值 + 精确断言 + 五项门禁"的节奏推进 addon loader（还剩 44 个里挑不依赖第三方解码库的），以及尝试 PMREM 的最小管线实验。
+162. **第 101 轮：查清 addon loader 剩下的 44 个里哪些能独立做，并把 `HDRLoader` 的 RGBE/RLE 核心读通了**。
+   - **目录对照的修正**：我之前拿 `examples/jsm/loaders` 与端口同名目录比，漏看了端口把新 loader 放在 `src/loaders/`。两处一起算：端口 **25 个** loader、上游 **52 个**、**缺 44 个**。
+   - **剩下的多数是"薄包装"**：`RGBELoader`（18 行）是 `HDRLoader` 的**弃用别名**（构造时 `console.warn`）；`USDZLoader`（16 行）只是再导出；`KMZLoader`/`ColladaLoader` 依赖完整 Collada 解析；`HDRCubeTextureLoader` 依赖 `HDRLoader`；`LUTImageLoader` 需要图片解码；`KTXLoader`/`DDSLoader`/`PVRLoader` 依赖压缩纹理格式。**真正值得先做的底座是 `HDRLoader`（463 行）**，它一处就能解锁 `RGBELoader` 与 `HDRCubeTextureLoader`。
+   - **`HDRLoader` 的核心已经读通**，下轮可直接实现：
+     - RLE 判定：宽度 `< 8` 或 `> 0x7fff`、或头四个字节不是 `2,2,hi,lo`（`buffer[2] & 0x80` 也算非 RLE）→ 按**平坦**读；
+     - 扫描线：每条以 `2,2,(w>>8),(w&0xff)` 开头，然后**四个通道依次 R/G/B/E**，每段 `count > 128` 表示**编码段**（`count -= 128` 是重复次数），否则是字面段；
+     - 解码：`scale = 2^(e - 128) / 255`，`rgb * scale`，alpha 置 1；half 版本用 `DataUtils.toHalfFloat(Math.min(v, 65504))`（**65504 是 float16 最大值**）。
+   - **本轮实际交付**：差分 **326 → 332 场景**（1×8 纹理、3×3 网格、32 实例）。核心 **811 / 206,203**、`primitive-geometry`、`port-audit` 全绿。
 70. **第 520 轮：完整 Vulkan 套件 211/211 全绿，耗时 270.72 秒**。
    - 命令：`ctest --test-dir build-vulkan -j 4 -E "lights-states" --output-on-failure`（仍排除第 46 条那个已知项；它在 Vulkan 构建里同样慢）。
    - 结果：**100% tests passed, 0 tests failed out of 211**，总耗时 **270.72 秒**。对比同一套件在 **Debug** 配置下的 **3784.56 秒 / 2 失败**，差了约 14 倍——再次印证第 69 条"是构建类型不是代码"的结论。
