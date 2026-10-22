@@ -85,4 +85,20 @@ class MD2Loader {
     static std::size_t decodeVertices(const std::vector<std::uint8_t>& buffer, std::size_t at,
                                       int count, const double scale[3],
                                       const double translation[3], std::vector<Vertex>& out);
+
+    // A decoded frame: the vertices in file order plus the frame name from the header.
+    struct Frame {
+        FrameHeader header;
+        std::vector<Vertex> vertices;
+    };
+
+    // One morph target per frame, with the triangle vertex indices expanded out so the
+    // attribute holds three vertices per triangle corner in triangle order.
+    struct MorphTargets {
+        std::vector<std::vector<double>> positions;
+        std::vector<std::vector<double>> normals;
+        std::vector<std::string> names;
+    };
+    static MorphTargets buildMorphTargets(const std::vector<Frame>& frames,
+                                          const std::vector<Triangle>& triangles);
 };

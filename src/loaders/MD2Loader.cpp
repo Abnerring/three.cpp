@@ -306,3 +306,40 @@ std::size_t MD2Loader::decodeVertices(const std::vector<std::uint8_t>& buffer, s
     }
     return offset - at;
 }
+
+MD2Loader::MorphTargets MD2Loader::buildMorphTargets(const std::vector<Frame>& frames,
+                                                      const std::vector<Triangle>& triangles) {
+    MorphTargets targets;
+    // The triangle list flattened into a vertex index order, which is what the attributes use.
+    std::vector<std::uint16_t> vertexOrder;
+    vertexOrder.reserve(triangles.size() * 3);
+    for (const auto& triangle : triangles)
+        for (int k = 0; k < 3; ++k) vertexOrder.push_back(triangle.vertex[k]);
+
+    for (const auto& frame : frames) {
+        if (frame.vertices.empty()) continue;
+
+        std::vector<double> positions;
+        std::vector<double> normals;
+        positions.reserve(vertexOrder.size() * 3);
+        normals.reserve(vertexOrder.size() * 3);
+        for (const auto index : vertexOrder) {
+            const auto at = static_cast<std::size_t>(index);
+            if (at >= frame.vertices.size()) {
+                // A frame that does not cover the triangle stays short, as upstream would.
+                positions.insert(positions.end(), {0.0, 0.0, 0.0});
+                normals.insert(normals.end(), {0.0, 0.0, 0.0});
+                continue;
+            }
+            const auto& vertex = frame.vertices[at];
+            positions.insert(positions.end(),
+                             {vertex.position[0], vertex.position[1], vertex.position[2]});
+            normals.insert(normals.end(), {vertex.normal[0], vertex.normal[1], vertex.normal[2]});
+        }
+        // Both streams carry the frame name, as upstream sets attribute.name from it.
+        targets.positions.push_back(std::move(positions));
+        targets.normals.push_back(std::move(normals));
+        targets.names.push_back(frame.header.name);
+    }
+    return targets;
+}
