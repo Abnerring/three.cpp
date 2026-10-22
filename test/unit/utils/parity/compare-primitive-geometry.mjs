@@ -332,6 +332,7 @@ const lightScenarios = [
     ['light hemisphere 0.5 0.5 0.5 0.5 0.5 0.5 0', () => new HemisphereLight(new Color(0.5, 0.5, 0.5), new Color(0.5, 0.5, 0.5), 0)],
     ['light hemisphere 1 1 1 0 0 0 3', () => new HemisphereLight(new Color(1, 1, 1), new Color(0, 0, 0), 3)],
     ['light hemisphere 0.2 0.4 0.6 0.8 0.6 0.4 1', () => new HemisphereLight(new Color(0.2, 0.4, 0.6), new Color(0.8, 0.6, 0.4), 1)],
+    ['light directional 0.1 0.2 0.3 0.5', () => new DirectionalLight(new Color(0.1, 0.2, 0.3), 0.5)],
     ['light rectarea 1 1 1 5 4 3', () => new RectAreaLight(new Color(1, 1, 1), 5, 4, 3)],
     ['light rectarea 0.5 0.25 1 2 3 4', () => new RectAreaLight(new Color(0.5, 0.25, 1), 2, 3, 4)],
     ['light rectarea 1 1 1 1 0 0', () => new RectAreaLight(new Color(1, 1, 1), 1, 0, 0)],
@@ -451,6 +452,7 @@ const helperScenarios = [
     ['helper grid 7 3', () => new GridHelper(7, 3)],
     ['helper grid 3 7', () => new GridHelper(3, 7)],
     ['helper grid 9 4', () => new GridHelper(9, 4)],
+    ['helper grid 1 1', () => new GridHelper(1, 1)],
     ['helper box3 -1 -1 -1 1 1 1', () => new Box3Helper(new Box3(new Vector3(-1, -1, -1), new Vector3(1, 1, 1)))],
     ['helper box3 0 0 0 0 0 0', () => new Box3Helper(new Box3(new Vector3(0, 0, 0), new Vector3(0, 0, 0)))],
     ['helper box3 0 0 0 10 10 10', () => new Box3Helper(new Box3(new Vector3(0, 0, 0), new Vector3(10, 10, 10)))],
@@ -648,6 +650,7 @@ const textureScenarios = [
     ['texture data 32 32', () => new DataTexture(new Uint8Array(32 * 32 * 4), 32, 32)],
     ['texture data 7 3', () => new DataTexture(new Uint8Array(7 * 3 * 4), 7, 3)],
     ['texture data 2 9', () => new DataTexture(new Uint8Array(2 * 9 * 4), 2, 9)],
+    ['texture data 1 1', () => new DataTexture(new Uint8Array(4), 1, 1)],
     ['texture depth 4 2', () => new DepthTexture(4, 2)],
     ['texture depth 1 1', () => new DepthTexture(1, 1)],
     ['texture depth 2 8', () => new DepthTexture(2, 8)],
@@ -753,11 +756,13 @@ const {MeshBasicMaterial: BasicForInstancing} = await import(pathToFileURL(path.
 
 const instanceScenarios = [
     ['instance 1', 1],
+    ['instance 7', 7],
     ['instance 3', 3],
     ['instance 8', 8],
     ['instance 16', 16],
     ['instance 32', 32],
     ['instance 1', 1],
+    ['instance 7', 7],
 ];
 const instanceRaw = execFileSync(probePath, [], {input: instanceScenarios.map(([line]) => line).join('\n'), encoding: 'utf8'});
 const instanceLines = instanceRaw.trim().split('\n').map((line) => JSON.parse(line));

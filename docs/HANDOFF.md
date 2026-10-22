@@ -365,6 +365,11 @@
    - **验收**：`cubeRenderTargetTests` 里新增一段——绑好 cube 之后，用一个**从未绑定过**的 `WebGLCubeRenderTarget(8)` 去读，必须抛 `std::logic_error`，`require(reported, "readback needs the bound target")`。现有所有读取路径都不受影响（它们读的正是绑定目标）。
    - **过程教训（又一次）**：第一次插入测试时我的锚点字符串没匹配上，**测试根本没加进去**，但因为核心/差分/审计三个退出码都是 0，提交照样过了——**提交信息里那句"the cube case asserts the error"当时是不成立的**。发现后用**行号定位**（找到 `cubeRenderTargetTests` 的结尾花括号）把测试插进去，重跑 `--cube` 通过，再 `git commit --amend` 改正信息。**教训：锚点式替换必须先验证"是否真的替换成功"，不能只看后面的退出码。**
    - **状态**：核心 **745 / 205,728**、`primitive-geometry`、`port-audit`、`--cube` 全绿。
+107. **第 44 轮：差分扩到 304 场景；同时记录一个诚实的判断——渲染核心的多目标重构需要专门的段落**。
+   - **本轮交付**：新增 1×1 纹理、1×1 网格、方向光（`DirectionalLight(0.1,0.2,0.3, 0.5)`）、7 实例、5 尺寸立方纹理五个场景。全部与上游逐位一致：**22 组 / 304 场景 / exit=0**。（原本还想加一个 `OrthographicCamera` 场景，但探针的 `node` 分支**没有 `orthographic` 这个 kind**，直接报 `unknown node`，已移除——顺手确认了探针会**明确拒绝**未知输入，而不是默默给出错误数据。）
+   - **为什么本轮没做多目标重构**：第 105 条那条路要把 `colorImage`/`depthImage`/`framebuffer`/`faceView`/`faceFramebuffer` 从一个 `Impl` 成员包成"每目标一份"，而这三样东西在 3000 行的 `VulkanRenderer.cpp` 里被**上百处**直接引用（`beginFrame`、`endFrame`、`clear`、`readRenderTargetPixels`、`imageBarrier`、`selectFace`、`resize`、`setRenderTarget`……）。每轮可用调用数约 5 次、单次构建 2–4 分钟，而 19/20 轮已经有过两次"混改导致核心测试崩溃"的教训。**在这种预算下硬推，最可能的结果是又一个崩溃加一次回退。**
+   - **结论与建议**：这一步需要**一整段连续时间**（改动 + 反复构建 + 逐步修正），不适合拆成"每轮一小块"。当前更稳妥的推进顺序是：先把 PMREM 里**不依赖 ping-pong** 的部分补齐（`compileCubemapShader`/`compileEquirectangularShader` 的显式报错、`dispose` 的完整语义、`_setSize` 的边界），或者继续扩差分；等有充足时间再动渲染核心。
+   - **状态**：核心 **745 / 205,728**、`primitive-geometry`、`port-audit`、`--cube` 全绿。
 70. **第 520 轮：完整 Vulkan 套件 211/211 全绿，耗时 270.72 秒**。
    - 命令：`ctest --test-dir build-vulkan -j 4 -E "lights-states" --output-on-failure`（仍排除第 46 条那个已知项；它在 Vulkan 构建里同样慢）。
    - 结果：**100% tests passed, 0 tests failed out of 211**，总耗时 **270.72 秒**。对比同一套件在 **Debug** 配置下的 **3784.56 秒 / 2 失败**，差了约 14 倍——再次印证第 69 条"是构建类型不是代码"的结论。
