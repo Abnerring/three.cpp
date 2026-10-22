@@ -1,4 +1,4 @@
-﻿#pragma once
+#pragma once
 #include <cstdint>
 #include <vector>
 
@@ -41,4 +41,41 @@ class KSPLATLoader {
     // How many bytes one splat occupies at a level and degree: the four fixed fields plus three
     // components for the base colour and the rest of the band.
     static int splatStride(int level, int degree);
+
+    // The file header, which is four kilobytes with the fields at fixed offsets.
+    struct Header {
+        int versionMajor = 0;
+        int versionMinor = 0;
+        std::uint32_t maxSectionCount = 0;
+        std::uint32_t sectionCount = 0;
+        std::uint32_t maxSplatCount = 0;
+        std::uint32_t splatCount = 0;
+        int compressionLevel = 0;
+        // The harmonic coefficients are kept in a range; upstream falls back to minus one and
+        // a half and one and a half when a stored zero is found, because a zero is falsy there.
+        double minHarmonicCoefficient = -1.5;
+        double maxHarmonicCoefficient = 1.5;
+    };
+
+    // One section header, a kilobyte each, at a given offset.
+    struct SectionHeader {
+        std::uint32_t splatCount = 0;
+        std::uint32_t maxSplatCount = 0;
+        std::uint32_t bucketSize = 0;
+        std::uint32_t bucketCount = 0;
+        double bucketBlockSize = 0;
+        int bucketStorageSizeBytes = 0;
+        std::uint32_t compressionScaleRange = 1;
+        std::uint32_t fullBucketCount = 0;
+        std::uint32_t partiallyFilledBucketCount = 0;
+        int sphericalHarmonicsDegree = 0;
+    };
+
+    // Reads the file header. Throws when the buffer is shorter than the fixed fields.
+    static Header parseHeader(const std::vector<std::uint8_t>& buffer);
+
+    // Reads one section header at the given offset, taking the scale range from the level when
+    // the stored value is zero.
+    static SectionHeader parseSectionHeader(const std::vector<std::uint8_t>& buffer,
+                                            std::size_t offset, const Compression& layout);
 };

@@ -1,4 +1,7 @@
-﻿#include "loaders/KSPLATLoader.h"
+#include "loaders/KSPLATLoader.h"
+
+#include <cstring>
+#include <stdexcept>
 
 namespace {
 // The component order per degree, flattened from the three bands.
@@ -54,4 +57,65 @@ int KSPLATLoader::splatStride(int level, int degree) {
     return layout.bytesPerCenter + layout.bytesPerScale + layout.bytesPerRotation +
            layout.bytesPerColor +
            kDegreeComponents[degree] * layout.bytesPerHarmonicComponent;
+}
+
+namespace {
+std::uint32_t readUint32(const std::vector<std::uint8_t>& data, std::size_t at) {
+    return static_cast<std::uint32_t>(data[at]) | (static_cast<std::uint32_t>(data[at + 1]) << 8) |
+           (static_cast<std::uint32_t>(data[at + 2]) << 16) |
+           (static_cast<std::uint32_t>(data[at + 3]) << 24);
+}
+std::uint32_t readUint16(const std::vector<std::uint8_t>& data, std::size_t at) {
+    return static_cast<std::uint32_t>(data[at]) | (static_cast<std::uint32_t>(data[at + 1]) << 8);
+}
+float readFloat32(const std::vector<std::uint8_t>& data, std::size_t at) {
+    const std::uint32_t bits = readUint32(data, at);
+    float value = 0.0f;
+    std::memcpy(&value, &bits, sizeof(value));
+    return value;
+}
+}  // namespace
+
+KSPLATLoader::Header KSPLATLoader::parseHeader(const std::vector<std::uint8_t>& buffer) {
+    // The fields run to offset forty four, well inside the four kilobyte header.
+    if (buffer.size() < 44) throw std::runtime_error("THREE.KSPLATLoader: Header is too short");
+
+    Header header;
+    header.versionMajor = buffer[0];
+    header.versionMinor = buffer[1];
+    header.maxSectionCount = readUint32(buffer, 4);
+    header.sectionCount = readUint32(buffer, 8);
+    header.maxSplatCount = readUint32(buffer, 12);
+    header.splatCount = readUint32(buffer, 16);
+    header.compressionLevel = static_cast<int>(readUint16(buffer, 20));
+
+    // A stored zero means the writer left the field out, which upstream takes as falsy and
+    // replaces with its default rather than keeping.
+    const float minCoefficient = readFloat32(buffer, 36);
+    const float maxCoefficient = readFloat32(buffer, 40);
+    header.minHarmonicCoefficient = minCoefficient != 0.0f ? minCoefficient : -1.5;
+    header.maxHarmonicCoefficient = maxCoefficient != 0.0f ? maxCoefficient : 1.5;
+    return header;
+}
+
+KSPLATLoader::SectionHeader KSPLATLoader::parseSectionHeader(
+    const std::vector<std::uint8_t>& buffer, std::size_t offset, const Compression& layout) {
+    if (offset + 42 > buffer.size())
+        throw std::runtime_error("THREE.KSPLATLoader: Section header is too short");
+
+    SectionHeader header;
+    header.splatCount = readUint32(buffer, offset + 0);
+    header.maxSplatCount = readUint32(buffer, offset + 4);
+    header.bucketSize = readUint32(buffer, offset + 8);
+    header.bucketCount = readUint32(buffer, offset + 12);
+    header.bucketBlockSize = readFloat32(buffer, offset + 16);
+    header.bucketStorageSizeBytes = static_cast<int>(readUint16(buffer, offset + 20));
+    // The same falsy rule applies here: a zero takes the level's range.
+    const std::uint32_t storedRange = readUint32(buffer, offset + 24);
+    header.compressionScaleRange =
+        storedRange != 0 ? storedRange : static_cast<std::uint32_t>(layout.scaleRange);
+    header.fullBucketCount = readUint32(buffer, offset + 32);
+    header.partiallyFilledBucketCount = readUint32(buffer, offset + 36);
+    header.sphericalHarmonicsDegree = static_cast<int>(readUint16(buffer, offset + 40));
+    return header;
 }
