@@ -1002,6 +1002,12 @@
    - **测试（7 个用例、27 条断言）**：字面段（`[2,'a','b','c']` → `"abc"`）；**回溯段**（`[0,'a',0x60,0x00]` 长 6 → 六个 `'a'`）；输出不够；输入截断；**偏移为负**；完整头部（四个字段、尺寸、类型、宽高、点数、`data`、头部长度等于整段文本）；缺 `data` 行。
    - **验证**：核心 **960 用例 / 207,024 断言**（+7 / +27）、`primitive-geometry`、`port-audit` 全绿。
    - **PCD 剩余**：`ascii` 点数据、`binary` 点数据（按 `size`/`type`/`count` 逐字段）、`binary_compressed`（先解压再按 binary 读）。
+198. **第 137 轮：`PCDLoader` 第二层（`offset` 计算）尝试失败，已回退——记下这个异常的崩溃**。
+   - **本来要做的事**：上游在 `parseHeader` 之后算一张 `offset` 表——**ascii 用 token 序号**（按 `count` 累加）、**binary 用字节偏移**（按 `size × count` 累加），外加只在 binary 有意义的 `rowSize`。这是很纯的一块，逻辑本身没难度。
+   - **实现与结果**：给 `PCDLoader::Header` 加了 `std::map<std::string,int> offset` 与 `int rowSize`，加了 `computeOffsets(Header&)`，配了 4 个测试。**单跑那 4 个测试全过**（`5 + 4` 条断言），**但完整套件直接 `0xC0000409`（栈溢出/快速失败）** ——回退头文件与实现后立刻恢复 **960 / 207,024**。
+   - **为什么记下来**：`computeOffsets` **没有被任何地方调用**（纯新增代码），崩溃却出现在**完整套件**里、而新测试单独跑又不崩。最可疑的是给 `Header` 加的那个 `std::map` 成员——它改变了结构体大小与拷贝语义，而 `parseHeader` 是**按值返回**的。**没有继续深挖**是因为这一层不是必须的（`offset` 只是解析点数据时的查表），而每次试错都要跑一次完整套件。
+   - **下次的正确做法**：不要把 `offset` 塞进 `Header`。**改成 `computeOffsets(const Header&)` 返回一个独立的 `std::map`**，`Header` 保持纯 POD 式（只有 vector/int/string），这样结构体大小与拷贝行为都不变。这也符合前面几轮的经验：**结构体里加容器成员要谨慎**。
+   - **验证**：回退后核心 **960 用例 / 207,024 断言**（与第 136 轮一致）、`primitive-geometry`、`port-audit` 全绿，树干净。
 70. **第 520 轮：完整 Vulkan 套件 211/211 全绿，耗时 270.72 秒**。
    - 命令：`ctest --test-dir build-vulkan -j 4 -E "lights-states" --output-on-failure`（仍排除第 46 条那个已知项；它在 Vulkan 构建里同样慢）。
    - 结果：**100% tests passed, 0 tests failed out of 211**，总耗时 **270.72 秒**。对比同一套件在 **Debug** 配置下的 **3784.56 秒 / 2 失败**，差了约 14 倍——再次印证第 69 条"是构建类型不是代码"的结论。
