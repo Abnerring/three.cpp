@@ -381,6 +381,12 @@
    - **验证**：构建通过；`--cube` 退出码 **0**——`vkCreateImage`/`vkCreateFramebuffer` 失败都会抛异常，所以通过说明**第二套 GPU 目标真的能建出来**，且现有六面渲染、方向断言、cube 视图、回读守卫全部照旧。核心 **747 / 205,735**、`primitive-geometry`、`port-audit` 全绿。
    - **注意**：`destroyGpuTarget` 目前**没有调用者**（`spareTarget` 在进程结束时随 `Impl` 一起消失，图像内存由驱动回收）。这是**已知的、有意的**短期状态，等第三步把绘制路径接上 `GpuTarget` 时再统一处理生命周期。
    - **下一步（第三步，也是真正改变行为的一步）**：让 `beginFrame`/`endFrame`/`selectFace`/`readRenderTargetPixels` 都走"当前 `GpuTarget`"而不是 `Impl` 上的散装成员——这一步必须一次做完，中途状态是编译不过的，所以要先在一个分支/备份上做，用 `--cube` 与核心测试守住，再合并。
+110. **第 49 轮：第三步（绘制路径迁移到 GpuTarget）在分支上试了一次，没收敛，已放弃；`main` 保绿**。
+   - **做法**：按第 109 条先开分支 `step3-multitarget`（并留了 `step3-backup` 指向当时的 HEAD `11186cc`），然后用文本替换把 `colorImage.`/`depthImage.`/`faceView`/`faceFramebuffer`/`targetLayers`/`initializedLayers` 全部改成 `active->...`，并把 `GpuTarget` 扩成能装 `faceView`/`faceFramebuffer`/`initialized`/`initializedLayers`。
+   - **失败原因（关键教训）**：替换**误伤了声明行**——`VkImageView faceView = VK_NULL_HANDLE;` 被改成了 `VkImageView active->faceView = ...`；先删声明再做替换的顺序本来是对的，但我的**删除模式没匹配上**（缩进/上下文不同），于是替换把声明也一起改了。修完声明区后，又暴露出 `disposing` 被误删、`destroyTargets` 里裸 `framebuffer` 未改；**第二轮修补的替换模式同样没匹配**，错误列表一字未变（这本身就是"替换没生效"的铁证）。
+   - **结论**：**纯文本批量替换不适合这种改动**。正确的做法是**逐处按行号替换 + 每处都打印确认**（第 108 轮那样），或者干脆手写整个 `Impl` 的新成员区与那几个函数。这需要一个**完整段落**的时间，不适合拆成每轮几分钟。
+   - **当前状态**：已 `git checkout main`（分支保留供参考），`main` 上重新构建通过，核心 **747 / 205,735**、`primitive-geometry`、`port-audit` 全绿，树干净。
+   - **下一步建议**：如果要继续这一步，先写一份"**逐行替换清单**"（哪些行号、改成什么），再一次性按行号执行并在每行替换后断言内容，最后构建；或者直接手工重写 `resize`/`destroyTargets`/`selectFace`/`beginFrame`/`endFrame`/`readRenderTargetPixels` 这六个函数体。
 70. **第 520 轮：完整 Vulkan 套件 211/211 全绿，耗时 270.72 秒**。
    - 命令：`ctest --test-dir build-vulkan -j 4 -E "lights-states" --output-on-failure`（仍排除第 46 条那个已知项；它在 Vulkan 构建里同样慢）。
    - 结果：**100% tests passed, 0 tests failed out of 211**，总耗时 **270.72 秒**。对比同一套件在 **Debug** 配置下的 **3784.56 秒 / 2 失败**，差了约 14 倍——再次印证第 69 条"是构建类型不是代码"的结论。
