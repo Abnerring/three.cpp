@@ -755,6 +755,17 @@
      - 扫描线：每条以 `2,2,(w>>8),(w&0xff)` 开头，然后**四个通道依次 R/G/B/E**，每段 `count > 128` 表示**编码段**（`count -= 128` 是重复次数），否则是字面段；
      - 解码：`scale = 2^(e - 128) / 255`，`rgb * scale`，alpha 置 1；half 版本用 `DataUtils.toHalfFloat(Math.min(v, 65504))`（**65504 是 float16 最大值**）。
    - **本轮实际交付**：差分 **326 → 332 场景**（1×8 纹理、3×3 网格、32 实例）。核心 **811 / 206,203**、`primitive-geometry`、`port-audit` 全绿。
+163. **第 102 轮：`HDRLoader` 落地——RGBE 头解析、RLE 解码、浮点转换三条都验过**。
+   - **实现**：`src/loaders/HDRLoader.{h,cpp}`。头解析用五条正则（`^#\?(\S+)`、`GAMMA`、`EXPOSURE`、`FORMAT=(\S+)`、`-Y h +X w`），遇到 `#` 开头记进 `comments`，**FORMAT 与尺寸都到手就停**；缺 format / 缺尺寸分别抛上游原文的错。像素部分先判 RLE：**宽度 <8 或 >0x7fff、或前四字节不是 `2,2,hi,lo`** 就走平坦路径；否则按扫描线解 —— 每行 `2,2,(w>>8),(w&0xff)` 开头，**四个通道依次 R/G/B/E** 各一段 run，`count > 128` 表示**编码段**（`count -= 128` 是重复数），否则字面段。转换是 `scale = 2^(e-128)/255`、`rgb*scale`、alpha 恒 1。
+   - **一个必须自己补的实现细节**：上游的 `fgets` 用 `String.fromCharCode` 逐块转字符串，端口直接按字节切行（`\n` 为界，游标越过换行），行为等价但快得多；`rgbe` 平面缓冲与 `std::vector<float> data` 的排列（`row*w + x`）也照上游的从上到下。
+   - **测试（5 个用例、32 条断言）**：
+     - `rgbeToFloat` 单独验（指数 128 → **scale = 1/255**、`128→0.502`、`64→0.251`、`32→0.125`、alpha 1；全零像素仍是黑但 alpha 为 1）；
+     - 头字段（`RADIANCE`、`32-bit_rle_rgbe`、2×2、`comments`、`gamma`/`exposure` 默认 1）；
+     - **平坦路径**逐像素；
+     - **RLE 路径**：宽 8、单条扫描线、四个通道各一段**字面 run**，验红色 200/255、绿蓝 100/255；
+     - 三个错误路径（空输入、缺 format、缺尺寸）**逐字比对上游文案**。
+   - **验证**：核心 **816 用例 / 206,235 断言**（+5 / +32）、`primitive-geometry`、`port-audit` 全绿。addon loader **25 → 26 / 52**。
+   - **下一轮**：`RGBELoader` 现在就是三行的弃用别名（继承 `HDRLoader`、构造时 `console.warn`），可以直接补上；`HDRCubeTextureLoader`（164 行）也随之解锁。
 70. **第 520 轮：完整 Vulkan 套件 211/211 全绿，耗时 270.72 秒**。
    - 命令：`ctest --test-dir build-vulkan -j 4 -E "lights-states" --output-on-failure`（仍排除第 46 条那个已知项；它在 Vulkan 构建里同样慢）。
    - 结果：**100% tests passed, 0 tests failed out of 211**，总耗时 **270.72 秒**。对比同一套件在 **Debug** 配置下的 **3784.56 秒 / 2 失败**，差了约 14 倍——再次印证第 69 条"是构建类型不是代码"的结论。
