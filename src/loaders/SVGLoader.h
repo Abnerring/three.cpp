@@ -41,4 +41,36 @@ class SVGLoader {
     // and a piece with no opening bracket is not a transform at all. A rotation angle is given
     // in degrees and is left as read; the caller scales it.
     static std::vector<TransformOp> parseTransformList(const std::string& text);
+
+    // A point on a path.
+    struct Point {
+        double x = 0;
+        double y = 0;
+        bool operator==(const Point& other) const {
+            return x == other.x && y == other.y;
+        }
+    };
+
+    // Where a path has reached. The control point is kept for the smooth commands that follow,
+    // and the first point is remembered so a closed path can return to it.
+    struct PathCursor {
+        Point point;
+        Point control;
+        Point firstPoint;
+        // Whether the first point of a command becomes the path's first point. When it is
+        // set the first point is overwritten each time a command begins.
+        bool setFirstPoint = true;
+    };
+
+    // The straight line commands.
+    enum class LineCommand { Move, Line, Horizontal, Vertical };
+
+    // Applies a straight line command. A move takes pairs and the first pair starts the path
+    // while the rest continue it, a line takes pairs and continues the path throughout, and the
+    // two single axis commands take one number each and leave the other axis where it was. The
+    // points the command visits are returned in order, and the first of a move is marked as the
+    // start of a subpath.
+    static std::vector<Point> applyStraightCommand(LineCommand command,
+                                                   const std::vector<double>& numbers,
+                                                   PathCursor& cursor);
 };

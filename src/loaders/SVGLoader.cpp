@@ -206,3 +206,37 @@ std::vector<SVGLoader::TransformOp> SVGLoader::parseTransformList(const std::str
     }
     return ops;
 }
+
+std::vector<SVGLoader::Point> SVGLoader::applyStraightCommand(LineCommand command,
+                                                            const std::vector<double>& numbers,
+                                                            PathCursor& cursor) {
+    std::vector<Point> points;
+    // Records a point as visited and, when it is the first of the command, as the path's start.
+    const auto visit = [&cursor, &points](double x, double y) {
+        Point next;
+        next.x = x;
+        next.y = y;
+        cursor.point = next;
+        cursor.control = next;
+        if (cursor.setFirstPoint && points.empty()) {
+            cursor.firstPoint = next;
+        }
+        points.push_back(next);
+    };
+
+    if (command == LineCommand::Horizontal) {
+        // One number per step, and the other axis stays where it is.
+        for (const double value : numbers) visit(value, cursor.point.y);
+        return points;
+    }
+    if (command == LineCommand::Vertical) {
+        for (const double value : numbers) visit(cursor.point.x, value);
+        return points;
+    }
+
+    // Both of the remaining commands take pairs of numbers.
+    for (std::size_t i = 0; i + 1 < numbers.size(); i += 2) {
+        visit(numbers[i], numbers[i + 1]);
+    }
+    return points;
+}
