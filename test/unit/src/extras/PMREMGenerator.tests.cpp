@@ -1,4 +1,4 @@
-﻿#include "catch.hpp"
+#include "catch.hpp"
 #include "core/RenderTarget.h"
 #include "extras/PMREMGenerator.h"
 #include "textures/Texture.h"
@@ -49,4 +49,25 @@ TEST_CASE("PMREMGenerator reports the shader passes it cannot run") {
     REQUIRE_THROWS_AS(generator.compileEquirectangularShader(), std::logic_error);
     generator.dispose();
     REQUIRE(generator.cubeSize() == 0);
+}
+TEST_CASE("PMREMGenerator derives the size from fromScene options before rendering") {
+    PMREMGenerator generator;
+    // Default size is 256, and the lod chain stops at LOD_MIN.
+    REQUIRE_THROWS_AS(generator.fromScene(JSValue::object()), std::logic_error);
+    REQUIRE(generator.cubeSize() == 256);
+    REQUIRE(generator.lodSizes().size() == 6);
+    REQUIRE(generator.lodSizes().back() == 8);
+
+    auto options = JSValue::object();
+    options.set("size", 512);
+    REQUIRE_THROWS_AS(generator.fromScene(JSValue::object(), 0, 0.1, 100, options), std::logic_error);
+    REQUIRE(generator.cubeSize() == 512);
+    REQUIRE(generator.lodSizes().size() == 7);
+    REQUIRE(generator.lodSizes().front() == 512);
+    REQUIRE(generator.lodSizes().back() == 8);
+
+    auto small = JSValue::object();
+    small.set("size", 64);   // below the 256 floor, upsampled
+    REQUIRE_THROWS_AS(generator.fromScene(JSValue::object(), 0, 0.1, 100, small), std::logic_error);
+    REQUIRE(generator.cubeSize() == 256);
 }

@@ -47,7 +47,18 @@ std::shared_ptr<RenderTarget> PMREMGenerator::allocateTarget() {
     return pmremTarget;
 }
 
-std::shared_ptr<RenderTarget> PMREMGenerator::fromScene(JSValue, double, double, double, JSValue) {
+std::shared_ptr<RenderTarget> PMREMGenerator::fromScene(JSValue scene, double sigma, double near,
+                                                        double far, JSValue options) {
+    // Upstream destructures size (default 256) and position (default origin) first, then
+    // derives the cube size and allocates the target before any rendering happens.
+    const auto requested = options.get("size");
+    _setSize(requested.isUndefined() ? 256 : requested.toNumber());
+    auto pmremTarget = allocateTarget();
+    (void) pmremTarget;
+    (void) scene;
+    (void) sigma;
+    (void) near;
+    (void) far;
     _needsRenderer("fromScene");
 }
 std::shared_ptr<RenderTarget> PMREMGenerator::fromEquirectangular(JSValue, JSValue) {
