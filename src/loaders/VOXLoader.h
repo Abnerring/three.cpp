@@ -37,4 +37,30 @@ class VOXLoader {
     // Splits the buffer into chunks. Throws std::runtime_error when the signature is missing
     // or a chunk claims more bytes than the buffer holds.
     static File parseChunks(const std::vector<std::uint8_t>& buffer);
+
+    // The grid a model occupies, from the SIZE chunk.
+    struct Size {
+        int x = 0;
+        int y = 0;
+        int z = 0;
+    };
+
+    // One occupied cell: its coordinates and its index into the palette.
+    struct Voxel {
+        int x = 0;
+        int y = 0;
+        int z = 0;
+        int colorIndex = 0;
+    };
+
+    // Reads the three sizes. Throws when the chunk is short.
+    static Size readSize(const std::vector<std::uint8_t>& buffer, const Chunk& chunk);
+
+    // Reads the voxel list: a count followed by four bytes per voxel.
+    static std::vector<Voxel> readXyzi(const std::vector<std::uint8_t>& buffer, const Chunk& chunk);
+
+    // Reads the palette as red green blue alpha entries. A palette chunk in practice holds
+    // two hundred and fifty six entries, but the count is taken from the chunk size.
+    static std::vector<std::array<std::uint8_t, 4>> readRgba(const std::vector<std::uint8_t>& buffer,
+                                                             const Chunk& chunk);
 };

@@ -74,3 +74,48 @@ VOXLoader::File VOXLoader::parseChunks(const std::vector<std::uint8_t>& buffer) 
     file.chunks = readChunks(buffer, 8, buffer.size());
     return file;
 }
+
+VOXLoader::Size VOXLoader::readSize(const std::vector<std::uint8_t>& buffer, const Chunk& chunk) {
+    if (chunk.contentSize < 12)
+        throw std::runtime_error("THREE.VOXLoader: SIZE chunk is too short");
+    Size size;
+    size.x = static_cast<int>(readUint32LE(buffer, chunk.contentOffset));
+    size.y = static_cast<int>(readUint32LE(buffer, chunk.contentOffset + 4));
+    size.z = static_cast<int>(readUint32LE(buffer, chunk.contentOffset + 8));
+    return size;
+}
+
+std::vector<VOXLoader::Voxel> VOXLoader::readXyzi(const std::vector<std::uint8_t>& buffer,
+                                                  const Chunk& chunk) {
+    if (chunk.contentSize < 4)
+        throw std::runtime_error("THREE.VOXLoader: XYZI chunk is too short");
+    const std::uint32_t count = readUint32LE(buffer, chunk.contentOffset);
+    if (4 + static_cast<std::size_t>(count) * 4 > chunk.contentSize)
+        throw std::runtime_error("THREE.VOXLoader: XYZI chunk is too short");
+
+    std::vector<Voxel> voxels;
+    voxels.reserve(count);
+    for (std::uint32_t i = 0; i < count; ++i) {
+        const std::size_t at = chunk.contentOffset + 4 + static_cast<std::size_t>(i) * 4;
+        // Three coordinates and a palette index, one byte each.
+        Voxel voxel;
+        voxel.x = buffer[at + 0];
+        voxel.y = buffer[at + 1];
+        voxel.z = buffer[at + 2];
+        voxel.colorIndex = buffer[at + 3];
+        voxels.push_back(voxel);
+    }
+    return voxels;
+}
+
+std::vector<std::array<std::uint8_t, 4>> VOXLoader::readRgba(const std::vector<std::uint8_t>& buffer,
+                                                             const Chunk& chunk) {
+    const std::size_t count = chunk.contentSize / 4;
+    std::vector<std::array<std::uint8_t, 4>> palette;
+    palette.reserve(count);
+    for (std::size_t i = 0; i < count; ++i) {
+        const std::size_t at = chunk.contentOffset + i * 4;
+        palette.push_back({buffer[at + 0], buffer[at + 1], buffer[at + 2], buffer[at + 3]});
+    }
+    return palette;
+}

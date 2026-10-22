@@ -91,6 +91,7 @@ add_executable(THREECPPTests
         unit/src/loaders/AMFAssemble.tests.cpp
         unit/src/loaders/VOXLoader.tests.cpp
         unit/src/loaders/VOXChunks.tests.cpp
+        unit/src/loaders/VOXContent.tests.cpp
         unit/src/cameras/StereoCamera.tests.cpp
         unit/src/audio/AudioContext.tests.cpp
         unit/src/audio/Audio.tests.cpp
