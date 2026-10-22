@@ -1394,6 +1394,13 @@
    - **测试（3 个用例、11 条断言）**：**最小完整文件**（4096 头 + 1024 段头 + 44 行 = 5164 字节）解析出 1 个中心、6 个协方差、4 个颜色；**段声明两个 splat 但只给一行** → `Invalid KSPLAT byte length.`；**截断文件** → `Invalid KSPLAT header.`。
    - **验证**：核心 **1218 用例 / 209,075 断言**（+3 / +11）、addons、`primitive-geometry`、`port-audit`、Vulkan 全绿。addon loader **28 → 29 / 52**。
    - **十六个完整 loader**：MTL、OBJ、PLY、Font、HDRCubeTexture、MD2、BVH、PCD、TGA、NRRD、AMF、VOX、SPZ、IES、GaussianSplatPLY、**KSPLAT**。
+255. **第 194 轮：`UltraHDRLoader` 第一层——sRGB 表与增益映射**。
+   - **先按第 242 条打开看了三个候选**：`DDSLoader` 与 `LUTImageLoader` 都依赖压缩纹理或图片解码；`UltraHDRLoader`（755 行、`extends Loader`）有**五个纯函数**，所以选它。
+   - **sRGB 表**：`table[i] = pow(i × 0.003717127 + 0.0521327014, 2.4)`，1024 项——`0.003717127` 是 `1/255 × 0.9478672986` 的乘积，`0.0521327014` 是线性段的截距。
+   - **增益映射**：`recovery = gammaIsOne ? v : pow(v, inverseGamma)`，`boost = min + (max − min) × recovery`——**在 log 域里插值**，所以端点就是声明的 min/max。
+   - **测试（4 个用例、13 条断言）**：表的两端公式值、单调性、黑接近 0、白大于 1（**表在高端过冲**）、**索引被夹紧**（5000 → 1023、−3 → 0）、增益的三个端点、**指数 2 时 0.25 → 0.0625**。
+   - **验证**：核心 **1222 用例 / 209,088 断言**（+4 / +13）、addons、`primitive-geometry`、`port-audit`、Vulkan 全绿。
+   - **剩余**：`_parseISOMetadata`（ISO 盒子）、`_parseXMPMetadata`、`_applyGainmapToSDR` 的逐像素合成；JPEG 解码本身需要编解码器，端口没有。
 70. **第 520 轮：完整 Vulkan 套件 211/211 全绿，耗时 270.72 秒**。
    - 命令：`ctest --test-dir build-vulkan -j 4 -E "lights-states" --output-on-failure`（仍排除第 46 条那个已知项；它在 Vulkan 构建里同样慢）。
    - 结果：**100% tests passed, 0 tests failed out of 211**，总耗时 **270.72 秒**。对比同一套件在 **Debug** 配置下的 **3784.56 秒 / 2 失败**，差了约 14 倍——再次印证第 69 条"是构建类型不是代码"的结论。
