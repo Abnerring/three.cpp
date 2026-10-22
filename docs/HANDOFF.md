@@ -922,6 +922,14 @@
    - **一个重要区分**：**"import 干净"不等于"可移植"**。像 `DRACOLoader`/`KTX2Loader` 的 import 是干净的，但它们**运行时去加载 WASM 解码器**，仍然属于外部依赖，不能算可移植。所以这个扫描只回答"源码层面有没有第三方 import"，还要再看运行时。
    - **按行数排序后的现实**：`ColladaLoader` 154 行、`KMZLoader` 164、`HDRCubeTextureLoader` 165、`LUTImageLoader` 191、`KTXLoader` 200、`MD2Loader` 436、`BVHLoader` 485、`AMFLoader` 542、`TGALoader` 540、`SPZLoader` 562、`PCDLoader` 623、`NRRDLoader` 719、`VOXLoader` 920……**其中 `HDRCubeTextureLoader`（165 行）的依赖（`HDRLoader`）我们已经有了**，是最顺手的下一个目标。
    - **本轮实际交付**：差分 **334 → 343 场景**（64×2 纹理、8×4 网格、128 实例）。核心 **901 / 206,629**、`primitive-geometry`、`port-audit` 全绿。
+186. **第 125 轮：`HDRCubeTextureLoader` 落地**。
+   - **为什么挑它**：165 行，而且它唯一的外部依赖是 `HDRLoader`，**我们已经有了**（第 102 轮）。这也是第 185 条里"按依赖排序"的直接结果。
+   - **`createTexture` 的语义**：`type` 记入纹理；**只有 `FloatType` 与 `HalfFloatType` 两个分支**（上游 `switch` 里两段代码**完全相同**）才把 `colorSpace` 设为 `LinearSRGBColorSpace`、`minFilter`/`magFilter` 设为 `LinearFilter`、`generateMipmaps` 设为 `false`；**其它类型什么也不改**（没有 `default` 分支）——测试用 `UnsignedByteType` 验证默认值存活。
+   - **`setDataType`**：既改自己的 `type`，也**转发**给内部 `HDRLoader`（第 103 轮加的那个），可链式。
+   - **`setFace`**：把已解析的 HDR 结果放进 `images->faces[index]`，六个面齐了才置 `needsUpdate`。**加载文件本身仍然是宿主职责**（头文件写明），这是和上游唯一的范围差异。
+   - **一个端口 API 的坑**：`texture.images` 是 `Texture::ImageProperty`，**没有 `operator!`**，判空要写 `.get() == nullptr`。
+   - **测试（3 个用例、13 条断言）**：默认为 `HalfFloatType` 且四项配置就位；`setDataType` 转发到内部 loader 且可链式；`UnsignedByteType` 时**四项默认值存活**（`generateMipmaps` 仍为真、`colorSpace` 不是线性）。
+   - **验证**：核心 **904 用例 / 206,642 断言**（+3 / +13）、`primitive-geometry`、`port-audit` 全绿。addon loader **31 → 32 / 52**。
 70. **第 520 轮：完整 Vulkan 套件 211/211 全绿，耗时 270.72 秒**。
    - 命令：`ctest --test-dir build-vulkan -j 4 -E "lights-states" --output-on-failure`（仍排除第 46 条那个已知项；它在 Vulkan 构建里同样慢）。
    - 结果：**100% tests passed, 0 tests failed out of 211**，总耗时 **270.72 秒**。对比同一套件在 **Debug** 配置下的 **3784.56 秒 / 2 失败**，差了约 14 倍——再次印证第 69 条"是构建类型不是代码"的结论。

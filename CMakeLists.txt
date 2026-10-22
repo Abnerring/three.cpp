@@ -133,6 +133,7 @@ target_sources(threecpp PRIVATE
     src/loaders/OBJMaterialGroups.cpp
     src/loaders/PLYLoader.cpp
     src/loaders/FontLoader.cpp
+    src/loaders/HDRCubeTextureLoader.cpp
     src/loaders/CubeTextureLoader.cpp
     src/extras/ImageUtils.cpp
     src/extras/PMREMGenerator.cpp
