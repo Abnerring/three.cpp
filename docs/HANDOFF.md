@@ -1571,6 +1571,12 @@
    - **一件工具事故**：我用 `git checkout ... 2>&1 | Out-Null` 回退，管道把 `fatal: not a git repository` 吞掉了，我因此**以为回退了**，实际两个 CMakeLists 仍是改过的、两个新文件也还在。后来先 `git checkout` 再单独 `Remove-Item`，并**打印 `git status`** 才确认干净。**回退之后必须打印状态**。
    - **验证**：回退后核心 **1317 用例 / 209,436 断言**、addons、`primitive-geometry`、`port-audit`、Vulkan 全部为 0，工作树干净。
    - **下一轮**：照上面的记录重做 `TDSLoader` 的块游标——`position = offset + 6`、守卫 `offset + 6`、**测试缓冲按 `size` 补齐**。
+280. **第 219 轮：`TDSLoader` 重做成功——块游标**。
+   - **按第 279 条的三条做**：`position = offset + 6`、守卫 `offset + 6`、**测试缓冲按 `size` 字段精确补齐**。这一轮**一次通过**，没有返工。
+   - **补齐的做法**：每个测试都在缓冲定义后面直接写了 `REQUIRE(buffer.size() == N)`（N 就是那个块声明的长度），所以"声明多少就有多少字节"这件事**由测试自己守住**，不需要靠我算完记在脑子里。
+   - **关键数值**：`0.5f` = `0x3F000000`，按小端写出来是 **`00 00 00 3F`**；`-2` 写成 **`FE FF FF FF`**；`"Mesh"` 加终止符共 **5** 字节。
+   - **测试（7 个用例、23 条断言）**：块头的标识/长度/起点/终点；小端 word 与 float（**含 `buffer.size() == 12` 自查**）；有符号 short 与 int；**NULL 结尾字符串把终止符也吃掉**（游标正好到 11）；**只有头部的块已经结束**；**5 字节不足 6 字节头而抛错**；**越界读返回 0 且不移动游标**。
+   - **验证**：核心 **1324 用例 / 209,459 断言**（+7 / +23）、addons、`primitive-geometry`、`port-audit`、Vulkan 全绿。
 70. **第 520 轮：完整 Vulkan 套件 211/211 全绿，耗时 270.72 秒**。
    - 命令：`ctest --test-dir build-vulkan -j 4 -E "lights-states" --output-on-failure`（仍排除第 46 条那个已知项；它在 Vulkan 构建里同样慢）。
    - 结果：**100% tests passed, 0 tests failed out of 211**，总耗时 **270.72 秒**。对比同一套件在 **Debug** 配置下的 **3784.56 秒 / 2 失败**，差了约 14 倍——再次印证第 69 条"是构建类型不是代码"的结论。

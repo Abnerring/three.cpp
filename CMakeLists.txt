@@ -155,6 +155,7 @@ target_sources(threecpp PRIVATE
     src/loaders/GLTFGaussianSplatLoaderExtension.cpp
     src/loaders/VTKLoader.cpp
     src/loaders/LWOLoader.cpp
+    src/loaders/TDSLoader.cpp
     src/loaders/CubeTextureLoader.cpp
     src/extras/ImageUtils.cpp
     src/extras/PMREMGenerator.cpp
