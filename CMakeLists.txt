@@ -125,6 +125,8 @@ target_sources(threecpp PRIVATE
     src/nodes/core/StackTrace.cpp
     src/nodes/core/NodeCode.cpp
     src/nodes/core/NodeFunctionInput.cpp
+    src/nodes/core/NodeCache.cpp
+    src/nodes/core/NodeVar.cpp
     src/loaders/DataTextureLoader.cpp
     src/loaders/CompressedTextureLoader.cpp src/loaders/MaterialLoader.cpp src/loaders/FileLoader.cpp
     src/loaders/ObjectLoader.cpp

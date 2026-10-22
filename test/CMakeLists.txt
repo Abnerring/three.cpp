@@ -13,6 +13,7 @@ add_executable(THREECPPTests
         unit/src/extras/PMREMGenerator.tests.cpp
     unit/src/nodes/core/StackTrace.tests.cpp
         unit/src/nodes/core/NodeData.tests.cpp
+        unit/src/nodes/core/NodeCacheVar.tests.cpp
         unit/src/loaders/DataTextureLoader.tests.cpp
         unit/src/loaders/CompressedTextureLoader.tests.cpp
         unit/src/core/BufferGeometryLookAt.tests.cpp

@@ -583,6 +583,12 @@
    - **测试（2 个用例、15 条断言）**：默认构造的字段值（`count` 为空 optional、`qualifier` 空串、`isConst` 为假）、带全部参数构造（`count = 4`、`qualifier = "inout"`、`isConst = true`）、两个静态标记。
    - **验证**：核心 **753 用例 / 205,774 断言**（+2 / +15）、`primitive-geometry`、`port-audit` 全绿；审计 `missing` **634**（-2）、`partial-unverified` **307**（+2）。
    - **下一步**：`src/nodes/core` 里接下来最独立的是 `NodeCache`（75 行）、`NodeVar`（69 行）、`NodeVarying`（63 行）、`NodeUniform`（91 行）——前两个只依赖基类，可以先做；`NodeVarying`/`NodeUniform` 会碰到 `Node`，需要等基类。
+139. **第 78 轮：TSL 再添 `NodeCache` 与 `NodeVar`**。
+   - **`NodeCache`**（75 行）：上游用模块级 `_id` 自增、`WeakMap<Node, Object>` 存数据、可选 `parent`；`getData` 在本层没有条目时**回退到父缓存**。C++ 版本：`id` 用函数内静态计数器（与模块级同效）、数据用 `unordered_map<const void*, JSValue>`（指针即身份，和 WeakMap 的键语义一致）、`parent` 用 `shared_ptr`；`getData` 返回值在"没有数据"时是 **undefined 的 `JSValue`**（对应上游的 `undefined`）。
+   - **`NodeVar`**（69 行）：`name`、`type`、`readOnly`、`local`、`count`（上游 `null` → 空 `optional`）、静态 `isNodeVar`。
+   - **测试（3 个用例、17 条断言）**：`NodeCache` 的 id **严格递增**、新建缓存**没有父**、未设键时返回 **undefined**；父链回退（父有、子无 → 读到父）、**子层覆盖**（子在同名键上写值后，子读新值、父读旧值）；`NodeVar` 的默认值与全参数构造。
+   - **验证**：核心 **756 用例 / 205,791 断言**（+3 / +17）、`primitive-geometry`、`port-audit` 全绿。
+   - **下一步**：`NodeUniform`（91 行）会引用 `NodeUniformGroup`（`UniformGroupNode` 174 行）；`NodeVarying`（63 行）与 `NodeAttribute`（53 行）都很小、只依赖 `Node` 基类，可以等基类落地后一起做。
 70. **第 520 轮：完整 Vulkan 套件 211/211 全绿，耗时 270.72 秒**。
    - 命令：`ctest --test-dir build-vulkan -j 4 -E "lights-states" --output-on-failure`（仍排除第 46 条那个已知项；它在 Vulkan 构建里同样慢）。
    - 结果：**100% tests passed, 0 tests failed out of 211**，总耗时 **270.72 秒**。对比同一套件在 **Debug** 配置下的 **3784.56 秒 / 2 失败**，差了约 14 倍——再次印证第 69 条"是构建类型不是代码"的结论。
