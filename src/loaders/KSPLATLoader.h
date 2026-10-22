@@ -123,4 +123,22 @@ class KSPLATLoader {
                                   const std::vector<std::uint8_t>& source,
                                   std::size_t rowOffset, int bytesPerComponent,
                                   double minCoefficient, double maxCoefficient);
+
+    // The byte budget one section needs, derived from its header.
+    struct SectionLayout {
+        int bytesPerSplat = 0;
+        std::uint32_t bucketsMetaDataSize = 0;
+        std::uint32_t bucketsStorageSize = 0;
+        std::uint32_t splatDataSize = 0;
+        std::uint32_t storageSize = 0;
+    };
+
+    // Checks the file as a whole: the header length, the version, the compression level, the
+    // splat cap, and whether the section header table fits. Throws with the upstream message
+    // for each.
+    static void validateFile(const std::vector<std::uint8_t>& buffer, const Header& header);
+
+    // Works out how many bytes one section occupies. The bucket storage counts the optional
+    // per bucket coordinates as well as the buckets themselves.
+    static SectionLayout sectionLayout(const SectionHeader& section, const Compression& layout);
 };

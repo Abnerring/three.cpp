@@ -3,6 +3,7 @@
 #include "loaders/SPZLoader.h"
 #include <cstring>
 #include <stdexcept>
+#include <string>
 
 namespace {
 // The component order per degree, flattened from the three bands.
@@ -237,3 +238,58 @@ std::vector<int> bandIndexes(int degree) {
     return out;
 }
 }  // namespace
+
+void KSPLATLoader::validateFile(const std::vector<std::uint8_t>& buffer, const Header& header) {
+    // The header is a fixed four kilobytes.
+    if (buffer.size() < static_cast<std::size_t>(kHeaderSizeBytes))
+        throw std::runtime_error("THREE.KSPLATLoader: Invalid KSPLAT header.");
+
+    // The major version must match and the minor may not be older than the one the format
+    // started at.
+    if (header.versionMajor != kVersionMajor || header.versionMinor < kVersionMinor)
+        throw std::runtime_error("THREE.KSPLATLoader: Unsupported KSPLAT version " +
+                                 std::to_string(header.versionMajor) + "." +
+                                 std::to_string(header.versionMinor) + ".");
+
+    if (header.compressionLevel < 0 || header.compressionLevel > 2)
+        throw std::runtime_error("THREE.KSPLATLoader: Unsupported KSPLAT compression level " +
+                                 std::to_string(header.compressionLevel) + ".");
+
+    // A cap so a corrupt count cannot ask for a huge allocation.
+    if (header.splatCount > static_cast<std::uint32_t>(kMaxSplats))
+        throw std::runtime_error("THREE.KSPLATLoader: KSPLAT file contains too many splats (" +
+                                 std::to_string(header.splatCount) + ").");
+
+    // Every possible section header sits between the file header and the section data.
+    const std::size_t sectionDataOffset =
+        static_cast<std::size_t>(kHeaderSizeBytes) +
+        static_cast<std::size_t>(header.maxSectionCount) * kSectionHeaderSizeBytes;
+    if (buffer.size() < sectionDataOffset)
+        throw std::runtime_error("THREE.KSPLATLoader: Invalid KSPLAT section headers.");
+}
+
+KSPLATLoader::SectionLayout KSPLATLoader::sectionLayout(const SectionHeader& section,
+                                                        const Compression& layout) {
+    SectionLayout result;
+    const int components = section.sphericalHarmonicsDegree >= 0 &&
+                                   section.sphericalHarmonicsDegree < 4
+                               ? kDegreeComponents[section.sphericalHarmonicsDegree]
+                               : -1;
+    if (components < 0)
+        throw std::runtime_error(
+            "THREE.KSPLATLoader: Unsupported KSPLAT spherical harmonics degree " +
+            std::to_string(section.sphericalHarmonicsDegree) + ".");
+
+    // One splat is its four fixed fields plus every harmonic component the degree asks for.
+    result.bytesPerSplat = layout.bytesPerCenter + layout.bytesPerScale +
+                           layout.bytesPerRotation + layout.bytesPerColor +
+                           components * layout.bytesPerHarmonicComponent;
+    // The partial bucket lengths live in front of the bucket storage, and the splat data after
+    // both.
+    result.bucketsMetaDataSize = section.partiallyFilledBucketCount * 4;
+    result.bucketsStorageSize = section.bucketStorageSizeBytes * section.bucketCount +
+                                result.bucketsMetaDataSize;
+    result.splatDataSize = result.bytesPerSplat * section.maxSplatCount;
+    result.storageSize = result.bucketsStorageSize + result.splatDataSize;
+    return result;
+}
