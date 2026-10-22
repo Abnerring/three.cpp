@@ -253,3 +253,31 @@ TDSLoader::MainChunk TDSLoader::mainChunkKind(std::uint16_t id) {
     // Everything else in the main body is skipped.
     return MainChunk::Unknown;
 }
+
+namespace {
+// The chunks inside the mesh data block and inside a named object.
+constexpr std::uint16_t kMeshVersion = 0x3D3E;
+constexpr std::uint16_t kMasterScale = 0x0100;
+constexpr std::uint16_t kNamedObject = 0x4000;
+constexpr std::uint16_t kMatEntry = 0xAFFF;
+constexpr std::uint16_t kNTriObject = 0x4100;
+}  // namespace
+
+TDSLoader::MeshDataChunk TDSLoader::meshDataKind(std::uint16_t id) {
+    if (id == kMeshVersion) return MeshDataChunk::Version;
+    if (id == kMasterScale) return MeshDataChunk::MasterScale;
+    if (id == kNamedObject) return MeshDataChunk::NamedObject;
+    if (id == kMatEntry) return MeshDataChunk::MaterialEntry;
+    return MeshDataChunk::Unknown;
+}
+
+TDSLoader::NamedObjectChunk TDSLoader::namedObjectKind(std::uint16_t id) {
+    // Only a triangle object carries geometry; the rest of a named object is skipped.
+    if (id == kNTriObject) return NamedObjectChunk::TriangleObject;
+    return NamedObjectChunk::Unknown;
+}
+
+std::array<double, 3> TDSLoader::masterScale(double scale) {
+    // One value on all three axes.
+    return {scale, scale, scale};
+}

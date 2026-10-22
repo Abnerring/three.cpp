@@ -128,4 +128,18 @@ class TDSLoader {
     enum class MainChunk { Version, MeshData, Unknown };
 
     static MainChunk mainChunkKind(std::uint16_t id);
+
+    // What a chunk inside the mesh data block is.
+    enum class MeshDataChunk { Version, MasterScale, NamedObject, MaterialEntry, Unknown };
+
+    static MeshDataChunk meshDataKind(std::uint16_t id);
+
+    // What a chunk inside a named object is.
+    enum class NamedObjectChunk { TriangleObject, Unknown };
+
+    static NamedObjectChunk namedObjectKind(std::uint16_t id);
+
+    // The scale a master scale chunk gives the whole group. The single value is applied to all
+    // three axes.
+    static std::array<double, 3> masterScale(double scale);
 };
