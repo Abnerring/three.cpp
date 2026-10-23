@@ -456,4 +456,32 @@ class GLTFLoader {
     enum class MorphSource { Base, Target };
 
     static MorphSource morphSource(bool flagSet, bool targetHasAttribute);
+    // An axis aligned box, as two corners.
+    struct Bounds {
+        std::array<double, 3> min{0, 0, 0};
+        std::array<double, 3> max{0, 0, 0};
+    };
+
+    // The bounds a position accessor declares. glTF requires both corners, but some extensions of
+    // the format leave them out, so a missing pair is reported rather than guessed; the flag says
+    // whether a box could be built at all. A normalised accessor's numbers are the stored
+    // integers, so both corners are scaled by the factor that turns them into their real values.
+    struct BoundsResult {
+        bool present = false;
+        Bounds bounds;
+    };
+
+    static BoundsResult boundsFromAccessor(bool hasMin, bool hasMax,
+                                           std::array<double, 3> min,
+                                           std::array<double, 3> max, bool normalized,
+                                           const std::string& componentType);
+
+    // The warning a position accessor without corners produces.
+    static std::string boundsWarning();
+
+    // How far a morph target can move a vertex. The weight that applies it runs from minus one to
+    // one, so the reach on each axis is the larger of the two corner magnitudes rather than the
+    // distance between them.
+    static std::array<double, 3> morphDisplacement(std::array<double, 3> min,
+                                                   std::array<double, 3> max);
 };

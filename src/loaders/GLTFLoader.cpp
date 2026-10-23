@@ -722,3 +722,38 @@ GLTFLoader::MorphSource GLTFLoader::morphSource(bool flagSet, bool targetHasAttr
     if (!flagSet) return MorphSource::Base;
     return targetHasAttribute ? MorphSource::Target : MorphSource::Base;
 }
+
+GLTFLoader::BoundsResult GLTFLoader::boundsFromAccessor(bool hasMin, bool hasMax,
+                                                        std::array<double, 3> min,
+                                                        std::array<double, 3> max, bool normalized,
+                                                        const std::string& componentType) {
+    BoundsResult result;
+    // Both corners are required; without them no box can be built.
+    if (!hasMin || !hasMax) return result;
+    result.present = true;
+    result.bounds.min = min;
+    result.bounds.max = max;
+    // A normalised accessor stores integers, so both corners scale by the same factor.
+    if (normalized) {
+        const double scale = normalizedComponentScale(componentType);
+        for (int axis = 0; axis < 3; ++axis) {
+            result.bounds.min[axis] *= scale;
+            result.bounds.max[axis] *= scale;
+        }
+    }
+    return result;
+}
+
+std::string GLTFLoader::boundsWarning() {
+    return "THREE.GLTFLoader: Missing min/max properties for accessor POSITION.";
+}
+
+std::array<double, 3> GLTFLoader::morphDisplacement(std::array<double, 3> min,
+                                                    std::array<double, 3> max) {
+    std::array<double, 3> reach{};
+    // The larger magnitude of the two corners on each axis, since the weight can be negative.
+    for (int axis = 0; axis < 3; ++axis) {
+        reach[axis] = std::max(std::abs(min[axis]), std::abs(max[axis]));
+    }
+    return reach;
+}
