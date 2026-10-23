@@ -118,3 +118,84 @@ std::vector<GLTFLoader::BinaryChunk> GLTFLoader::readBinaryChunks(
     }
     return chunks;
 }
+
+std::string GLTFLoader::componentTypeName(std::uint32_t componentType) {
+    // The six types the format allows, by the number the file writes.
+    switch (componentType) {
+        case 5120: return "int8";
+        case 5121: return "uint8";
+        case 5122: return "int16";
+        case 5123: return "uint16";
+        case 5125: return "uint32";
+        case 5126: return "float32";
+        default:
+            throw std::runtime_error("THREE.GLTFLoader: Unsupported component type.");
+    }
+}
+
+int GLTFLoader::componentTypeSize(std::uint32_t componentType) {
+    // The width in bytes of one component.
+    switch (componentType) {
+        case 5120: return 1;
+        case 5121: return 1;
+        case 5122: return 2;
+        case 5123: return 2;
+        case 5125: return 4;
+        case 5126: return 4;
+        default:
+            throw std::runtime_error("THREE.GLTFLoader: Unsupported component type.");
+    }
+}
+
+int GLTFLoader::typeSize(const std::string& type) {
+    // A matrix holds as many components as its rows times its columns.
+    if (type == "SCALAR") return 1;
+    if (type == "VEC2") return 2;
+    if (type == "VEC3") return 3;
+    if (type == "VEC4") return 4;
+    if (type == "MAT2") return 4;
+    if (type == "MAT3") return 9;
+    if (type == "MAT4") return 16;
+    throw std::runtime_error("THREE.GLTFLoader: Unsupported accessor type.");
+}
+
+std::string GLTFLoader::attributeName(const std::string& semantic) {
+    // The ten the parser names explicitly.
+    if (semantic == "POSITION") return "position";
+    if (semantic == "NORMAL") return "normal";
+    if (semantic == "TANGENT") return "tangent";
+    if (semantic == "TEXCOORD_0") return "uv";
+    if (semantic == "TEXCOORD_1") return "uv1";
+    if (semantic == "TEXCOORD_2") return "uv2";
+    if (semantic == "TEXCOORD_3") return "uv3";
+    if (semantic == "COLOR_0") return "color";
+    if (semantic == "WEIGHTS_0") return "skinWeight";
+    if (semantic == "JOINTS_0") return "skinIndex";
+    // Anything else is its own name lower cased.
+    std::string name = semantic;
+    for (char& c : name) c = static_cast<char>(std::tolower(static_cast<unsigned char>(c)));
+    return name;
+}
+
+std::string GLTFLoader::filterName(std::uint32_t filter) {
+    switch (filter) {
+        case 9728: return "NearestFilter";
+        case 9729: return "LinearFilter";
+        case 9984: return "NearestMipmapNearestFilter";
+        case 9985: return "LinearMipmapNearestFilter";
+        case 9986: return "NearestMipmapLinearFilter";
+        case 9987: return "LinearMipmapLinearFilter";
+        default:
+            throw std::runtime_error("THREE.GLTFLoader: Unknown filter.");
+    }
+}
+
+std::string GLTFLoader::wrappingName(std::uint32_t wrapping) {
+    switch (wrapping) {
+        case 33071: return "ClampToEdgeWrapping";
+        case 33648: return "MirroredRepeatWrapping";
+        case 10497: return "RepeatWrapping";
+        default:
+            throw std::runtime_error("THREE.GLTFLoader: Unknown wrapping.");
+    }
+}

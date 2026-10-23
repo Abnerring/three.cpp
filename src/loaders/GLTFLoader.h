@@ -58,4 +58,24 @@ class GLTFLoader {
     // length is reached rather than when the buffer ends.
     static std::vector<BinaryChunk> readBinaryChunks(const std::vector<std::uint8_t>& buffer,
                                                      const BinaryHeader& header);
+
+    // The six component types the format allows, named the way the port names them.
+    static std::string componentTypeName(std::uint32_t componentType);
+
+    // How many bytes one component of a type takes. A type the format does not allow throws.
+    static int componentTypeSize(std::uint32_t componentType);
+
+    // The number of components an element of a shape holds, so a scalar is one and a four by
+    // four matrix sixteen.
+    static int typeSize(const std::string& type);
+
+    // The attribute name a semantic maps to. A semantic not listed falls back to its own name
+    // lower cased, which is what the parser does for the newer ones.
+    static std::string attributeName(const std::string& semantic);
+
+    // The filter a texture sampler names, as the port spells it. An unknown value throws.
+    static std::string filterName(std::uint32_t filter);
+
+    // The wrapping a sampler names. An unknown value throws.
+    static std::string wrappingName(std::uint32_t wrapping);
 };
