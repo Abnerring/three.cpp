@@ -176,6 +176,34 @@ add_executable(THREECPPTests
         unit/src/loaders/SVGArc.tests.cpp
         unit/src/loaders/SVGCommand.tests.cpp
         unit/src/loaders/GLTFLoader.tests.cpp
+        unit/src/cameras/Camera.tests.cpp
+        unit/src/core/JSCallableBuiltin.tests.cpp
+        unit/src/core/JSRegExp.tests.cpp
+        unit/src/core/Layers.tests.cpp
+        unit/src/core/NativeCallbackInterop.tests.cpp
+        unit/src/core/NativeGraphStability.tests.cpp
+        unit/src/core/NativeHeapExit.tests.cpp
+        unit/src/core/NativeUniformsRealm.tests.cpp
+        unit/src/core/Object3D.tests.cpp
+        unit/src/core/Resources.tests.cpp
+        unit/src/extras/core/CurvePath.tests.cpp
+        unit/src/extras/core/Path.tests.cpp
+        unit/src/extras/core/Shape.tests.cpp
+        unit/src/extras/core/ShapePath.tests.cpp
+        unit/src/extras/curves/CubicBezierCurve.tests.cpp
+        unit/src/extras/curves/CubicBezierCurve3.tests.cpp
+        unit/src/extras/curves/LineCurve.tests.cpp
+        unit/src/extras/curves/LineCurve3.tests.cpp
+        unit/src/extras/curves/QuadraticBezierCurve.tests.cpp
+        unit/src/extras/curves/QuadraticBezierCurve3.tests.cpp
+        unit/src/geometries/AdvancedGeometries.tests.cpp
+        unit/src/geometries/PrimitiveGeometries.tests.cpp
+        unit/src/math/Interpolant.tests.cpp
+        unit/src/math/interpolants/Interpolants.tests.cpp
+        unit/src/renderers/shaders/UniformsUtilsExports.tests.cpp
+        unit/src/renderers/webgl/WebGLProgram.tests.cpp
+        unit/src/renderers/webgl/WebGLPrograms.tests.cpp
+        unit/src/scenes/Scene.tests.cpp
         unit/src/loaders/GLTFBinary.tests.cpp
         unit/src/loaders/GLTFTypes.tests.cpp
         unit/src/loaders/GLTFBufferView.tests.cpp

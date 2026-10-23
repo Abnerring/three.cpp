@@ -2123,6 +2123,13 @@
    - **一处自查**：本轮发现用例数从 1703 变成 1702。查证后确认 **MDD 的 6 个与 GCode 的 5 个都已注册且都在跑**，`--list-tests` 输出的 2431 是 **Catch2 的"节路径"计数**，与用例数不是一回事。
    - **一个真实的发现**：把 `test/unit/src` 下所有 `.tests.cpp` 里的 `TEST_CASE` 加起来是 **2151**，而实际执行的是 **1702**——说明**有测试文件没有在 `test/CMakeLists.txt` 里注册**。这一条留待下一轮处理。
    - **验证**：核心 **1702 用例 / 211,932 断言**、addons、`primitive-geometry`、`port-audit`、Vulkan 全绿。
+366. **第 52 轮：把二十八个没注册的测试接进构建**。
+   - **发现方式**：把 `test/unit/src` 下所有 `.tests.cpp` 里的 `TEST_CASE` 加起来是 **2151**，而实际执行只有 **1702**——差出来的就是**磁盘上有、`test/CMakeLists.txt` 里没有**的文件。逐个比对后确认 **29 个**。
+   - **一次全加**：把 29 个文件一起塞进注册列表，让编译器把问题一次报出来。结果是**只有 4 个错，全在一个文件里**——`renderers/vulkan/VulkanProgramUniforms.tests.cpp` 调用的 `compileESSL` 已经不在 `VulkanShaderCompiler` 上（API 变过）。
+   - **处理**：把那一个文件从列表里去掉（**文件保留，等 API 对齐后再接**），其余 **28 个一次通过**。
+   - **收益**：核心从 **1702 用例 / 211,932 断言** 涨到 **1773 用例 / 212,529 断言**（**+71 / +597**），**全部通过**。涉及 `Object3D`、`Scene`、`Camera`、`Layers`、六种曲线、`Path`/`Shape`/`ShapePath`/`CurvePath`、两种几何、`WebGLProgram` 等。
+   - **教训**：**写完测试不等于测试在跑**——注册列表与磁盘内容必须定期比对，这一轮之前已经有 29 个文件游离在外。
+   - **验证**：核心 **1773 用例 / 212,529 断言**、addons、`primitive-geometry`、`port-audit`、Vulkan 全绿。
 70. **第 520 轮：完整 Vulkan 套件 211/211 全绿，耗时 270.72 秒**。
    - 命令：`ctest --test-dir build-vulkan -j 4 -E "lights-states" --output-on-failure`（仍排除第 46 条那个已知项；它在 Vulkan 构建里同样慢）。
    - 结果：**100% tests passed, 0 tests failed out of 211**，总耗时 **270.72 秒**。对比同一套件在 **Debug** 配置下的 **3784.56 秒 / 2 失败**，差了约 14 倍——再次印证第 69 条"是构建类型不是代码"的结论。
