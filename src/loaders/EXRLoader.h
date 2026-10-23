@@ -908,4 +908,18 @@ class EXRLoader {
     // would have held them.
     static std::vector<std::uint8_t> samplesToBytes(const std::vector<std::uint16_t>& samples);
     static std::vector<std::uint8_t> wordsToBytes(const std::vector<std::uint32_t>& words);
+    // Runs whichever reader the block's compression names and hands back the bytes the
+    // scanline loop walks. The two whose answers are already bytes pass through; the two whose
+    // answers are samples are written out through the bridge. The two that are not written at
+    // all are refused rather than passed through as though they were stored plainly.
+    struct BlockResult {
+        bool valid = false;
+        std::vector<std::uint8_t> bytes;
+        std::string error;
+    };
+
+    static BlockResult decompressBlock(const std::vector<std::uint8_t>& block, int compression,
+                                       std::uint32_t columns, std::uint32_t lines,
+                                       std::uint32_t channelType, std::size_t channelCount,
+                                       const std::vector<int>& channelTypes);
 };

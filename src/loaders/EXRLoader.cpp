@@ -1711,3 +1711,58 @@ std::vector<std::uint8_t> EXRLoader::wordsToBytes(const std::vector<std::uint32_
     }
     return bytes;
 }
+
+EXRLoader::BlockResult EXRLoader::decompressBlock(const std::vector<std::uint8_t>& block,
+                                                  int compression, std::uint32_t columns,
+                                                  std::uint32_t lines, std::uint32_t channelType,
+                                                  std::size_t channelCount,
+                                                  const std::vector<int>& channelTypes) {
+    BlockResult result;
+    switch (decompresserFor(compression)) {
+        case Decompresser::None:
+            // Stored plainly, so the bytes are the answer.
+            result.bytes = block;
+            result.valid = true;
+            return result;
+        case Decompresser::RunLength: {
+            const RleBlockResult out = uncompressRLE(block);
+            if (!out.valid) { result.error = out.error.empty() ? hufDecodeMessage() : out.error; return result; }
+            result.bytes = out.bytes;
+            result.valid = true;
+            return result;
+        }
+        case Decompresser::Zip: {
+            const ZipBlockResult out = uncompressZIP(block);
+            if (!out.valid) { result.error = out.error; return result; }
+            result.bytes = out.bytes;
+            result.valid = true;
+            return result;
+        }
+        case Decompresser::Wavelet: {
+            // The wavelet reader answers in samples, which are written back out as bytes.
+            const PizResult out =
+                uncompressPIZ(block, 0, static_cast<std::uint32_t>(block.size()), columns, lines,
+                              channelType, channelCount);
+            if (!out.valid) { result.error = out.error; return result; }
+            result.bytes = samplesToBytes(out.values);
+            result.valid = true;
+            return result;
+        }
+        case Decompresser::Pxr: {
+            // The pixel rate reader answers in words, whose first two bytes are the sample.
+            const PxrResult out = uncompressPXR(block, channelTypes, columns, lines);
+            if (!out.valid) { result.error = out.error; return result; }
+            result.bytes = wordsToBytes(out.values);
+            result.valid = true;
+            return result;
+        }
+        case Decompresser::B44:
+            result.error = "THREE.EXRLoader: the block compression is not read yet";
+            return result;
+        case Decompresser::Deep:
+            result.error = "THREE.EXRLoader: the deep compression is not read yet";
+            return result;
+    }
+    result.error = "THREE.EXRLoader: no reader for that compression";
+    return result;
+}
