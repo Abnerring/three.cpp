@@ -243,6 +243,7 @@ target_sources(threecpp PRIVATE
     src/nodes/core/StructNode.cpp
     src/nodes/core/InputNode.cpp
     src/nodes/core/AttributeNode.cpp
+    src/nodes/core/StructTypeNode.cpp
     src/nodes/core/ParameterNode.cpp
     src/nodes/core/NodeConstants.cpp
     src/nodes/core/Node.cpp

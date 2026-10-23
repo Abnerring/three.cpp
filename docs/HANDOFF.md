@@ -3243,6 +3243,14 @@
    - **哈希用属性名**：`getHash` 返回 `getAttributeName( builder )`，**所以两个同名属性节点哈希相同**——**与 `ParameterNode` 用 `String( this.id )` 相反**，两者都是合理选择但选了不同的。
    - **测试（4 个用例、16 条断言）**：类型六处；警告两处；四阶段四处（含空串）；哈希与默认两处。
    - **验证**：核心 **2328 用例 / 216,109 断言**（+4 / +16）、`primitive-geometry`、`port-audit`、addons、`--cube` 全绿。
+524. **第 215–216 轮：`StructTypeNode` 的对齐算法，以及我在最后一个例子上漏了一步**。
+   - **算法六步**：每成员先更新最大对齐 → 算 `offset % maxAlignment` 的块内偏移 → 算 `chunkOffset % alignment` 的错位 → 非零则补 `alignment − overhang` → 加 `itemSize`；**最后把总数向上取整到 `maxAlignment` 的倍数**。
+   - **手算对上三例**：`{float}` → 1；`{vec3}` → 4（3 被抬到 4）；`{vec3, vec3}` → 8（第二个从 3 补到 4，总 7 再抬到 8）。
+   - **我在第四个例子 `{{2,2},{1,1}}` 上漏了最后一步**：走完是 3，**而最后向上取整到 2 的倍数得 4**。同一测试里下一行 `{{2,2},{2,2}}` 我算对了（4），**说明我只在第一个例子上忘了那一步**。
+   - **一处与三族相反的默认**：`getMemberType` 对不存在的成员返回 **`'void'`**，而 `MemberNode`、`ParameterNode`、`AttributeNode` 在同样位置都给 `'float'`。**所以"缺失成员给什么"在这个家族里两种答案都在用**。
+   - **成员两种写法**：字符串 → `atomic: false`；对象 → `value.atomic || false`。
+   - **测试（6 个用例、32 条断言）**：类型八处；单成员四处；第二成员五处；最大对齐三处；缺失成员六处；原子标志六处。
+   - **验证**：核心 **2334 用例 / 216,139 断言**、`primitive-geometry`、`port-audit`、addons 全绿。
 70. **第 520 轮：完整 Vulkan 套件 211/211 全绿，耗时 270.72 秒**。
    - 命令：`ctest --test-dir build-vulkan -j 4 -E "lights-states" --output-on-failure`（仍排除第 46 条那个已知项；它在 Vulkan 构建里同样慢）。
    - 结果：**100% tests passed, 0 tests failed out of 211**，总耗时 **270.72 秒**。对比同一套件在 **Debug** 配置下的 **3784.56 秒 / 2 失败**，差了约 14 倍——再次印证第 69 条"是构建类型不是代码"的结论。
