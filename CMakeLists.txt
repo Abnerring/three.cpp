@@ -251,6 +251,7 @@ target_sources(threecpp PRIVATE
     src/nodes/core/VaryingNode.cpp
     src/nodes/core/MRTNode.cpp
     src/nodes/core/UniformNode.cpp
+    src/nodes/core/IndexNode.cpp
     src/nodes/core/ParameterNode.cpp
     src/nodes/core/NodeConstants.cpp
     src/nodes/core/Node.cpp

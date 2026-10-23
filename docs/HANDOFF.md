@@ -3304,6 +3304,13 @@
    - **`label()` 已弃用但仍可用**：`warn` 之后 `setName`，**与第 154/210 轮同一模式**。
    - **测试（4 个用例、20 条断言）**：默认五处；哈希四处；共享七处（含"后者不等于自己"）；弃用四处。
    - **验证**：核心 **2363 用例 / 216,303 断言**（+4 / +20）、`primitive-geometry`、`port-audit`、addons、`--cube` 全绿。
+532. **第 224 轮：`IndexNode` 的六种索引，与本层唯一的抛异常**。
+   - **未知 scope 直接抛**：`throw new Error( 'THREE.IndexNode: Unknown scope: ' + scope )`。**这是本段第一次见到抛异常**——**其他所有"不认识的东西"都是警告之后继续**（`JoinNode`、`ColorSpaceNode`、`ParameterNode` 等）。**所以"报告还是抛出"在这个层里没有统一规则**。
+   - **两个阶段直接读，不是一个**：`builder.shaderStage === 'vertex' || === 'compute'` 时直接用属性名，**其他阶段才包 varying**。**所以 `compute` 与 `vertex` 同类**，一个只看 `vertex` 的读法会漏掉第二个。
+   - **类型是 `uint`**：索引是计数，所以无符号。
+   - **六个 scope 各有自己的 builder 调用**，测试逐个断言且断言了前两个不相同。
+   - **测试（4 个用例、31 条断言）**：类型五处；六个调用九处；抛异常五处 + 六次循环；两阶段六处。
+   - **验证**：核心 **2367 用例 / 216,334 断言**（+4 / +31）、`primitive-geometry`、`port-audit`、addons、`--cube` 全绿。
 70. **第 520 轮：完整 Vulkan 套件 211/211 全绿，耗时 270.72 秒**。
    - 命令：`ctest --test-dir build-vulkan -j 4 -E "lights-states" --output-on-failure`（仍排除第 46 条那个已知项；它在 Vulkan 构建里同样慢）。
    - 结果：**100% tests passed, 0 tests failed out of 211**，总耗时 **270.72 秒**。对比同一套件在 **Debug** 配置下的 **3784.56 秒 / 2 失败**，差了约 14 倍——再次印证第 69 条"是构建类型不是代码"的结论。

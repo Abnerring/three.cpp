@@ -194,8 +194,8 @@
     "note": "Accepted port scope is src and examples/jsm, including tracked third-party dependencies. Editor/manual web applications are excluded from native application rewrites. Native host behavior, packaging and all three platforms require separate implementation and verification evidence."
   },
   "counts": {
-    "partial-unverified": 336,
-    "missing": 605,
+    "partial-unverified": 337,
+    "missing": 604,
     "vulkan-port-pending": 290,
     "dependency-unverified": 20
   },
@@ -203,8 +203,8 @@
     "src": {
       "modules": 755,
       "counts": {
-        "partial-unverified": 252,
-        "missing": 213,
+        "partial-unverified": 253,
+        "missing": 212,
         "vulkan-port-pending": 290
       }
     },
@@ -803,7 +803,7 @@
       "path": "src/nodes/core",
       "upstreamFiles": 42,
       "moduleCount": 42,
-      "modulesWithCppFiles": 33,
+      "modulesWithCppFiles": 34,
       "verifiedComplete": 0
     },
     {
@@ -8784,11 +8784,11 @@
       "scope": "src",
       "kind": "core",
       "upstreamSha256": "4920a14bb80ffe33912a078b95a8c44dbd138ba7fa820eb335e54f2bab18c6da",
-      "header": null,
-      "implementation": null,
+      "header": "src/nodes/core/IndexNode.h",
+      "implementation": "src/nodes/core/IndexNode.cpp",
       "expectedHeader": "src/nodes/core/IndexNode.h",
       "expectedImplementation": "src/nodes/core/IndexNode.cpp",
-      "status": "missing",
+      "status": "partial-unverified",
       "verifiedComplete": false,
       "apiExtraction": "partial-static",
       "verification": {
@@ -8797,7 +8797,9 @@
           "pointer": "/modules/266"
         },
         "upstreamUnitTests": [],
-        "cppUnitTests": [],
+        "cppUnitTests": [
+          "test/unit/src/nodes/core/IndexNode.tests.cpp"
+        ],
         "reviewedImplementation": [],
         "differentialResults": [],
         "renderingResults": [],
