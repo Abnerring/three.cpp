@@ -155,4 +155,26 @@ class EXRLoader {
     // Where in the first level a code of this length is found. A short code is looked up by the
     // whole of its value; a long one by the bits above the first level.
     static int hufSubTableIndex(int code, int length);
+    // The state a bit stream is read through. The accumulate word is kept signed, and shifted
+    // with the arithmetic shift, because that is what the source does: the word is filled eight
+    // bits at a time without ever being masked, so its top bit can be set and a signed shift then
+    // brings ones in above the bits being asked for. Masking after the shift is what makes the
+    // answer right in spite of that, and reproducing both halves of the pair matters.
+    struct BitState {
+        std::int32_t accumulate = 0;
+        int liveBits = 0;
+    };
+
+    // One byte read eight bits at a time, as the stream needs them.
+    static BitState getChar(BitState state, const std::vector<std::uint8_t>& bytes,
+                            std::size_t& offset);
+
+    // A run of bits, taken from the top of what has been accumulated.
+    struct GetBitsResult {
+        BitState state;
+        int value = 0;
+    };
+
+    static GetBitsResult getBits(int nBits, BitState state, const std::vector<std::uint8_t>& bytes,
+                                 std::size_t& offset);
 };

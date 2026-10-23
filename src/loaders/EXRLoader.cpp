@@ -337,3 +337,31 @@ int EXRLoader::hufSubTableIndex(int code, int length) {
     // A long one keeps the bits above the first level.
     return code >> (length - kHufDecodeBits);
 }
+
+EXRLoader::BitState EXRLoader::getChar(BitState state, const std::vector<std::uint8_t>& bytes,
+                                       std::size_t& offset) {
+    // One byte goes in at the bottom, whether or not anything is read from the top.
+    const std::uint8_t byte = offset < bytes.size() ? bytes[offset++] : std::uint8_t{0};
+    state.accumulate = static_cast<std::int32_t>(
+        (static_cast<std::uint32_t>(state.accumulate) << 8) | byte);
+    state.liveBits += 8;
+    return state;
+}
+
+EXRLoader::GetBitsResult EXRLoader::getBits(int nBits, BitState state,
+                                            const std::vector<std::uint8_t>& bytes,
+                                            std::size_t& offset) {
+    // Fill until enough bits are live.
+    while (state.liveBits < nBits) state = getChar(state, bytes, offset);
+
+    // The bits just taken are no longer live.
+    state.liveBits -= nBits;
+
+    // Take them from the top, masked to the width asked for. The accumulate word is shifted as a
+    // signed value, which is what the source does; the mask is what keeps the answer right.
+    const int mask = (1 << nBits) - 1;
+    GetBitsResult result;
+    result.state = state;
+    result.value = (state.accumulate >> state.liveBits) & mask;
+    return result;
+}
