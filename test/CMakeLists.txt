@@ -271,6 +271,7 @@ add_executable(THREECPPTests
         unit/src/loaders/KMZLoader.tests.cpp
         unit/src/loaders/ThreeMFLoader.tests.cpp
         unit/src/loaders/ThreeMFMetadata.tests.cpp
+        unit/src/loaders/ThreeMFTransform.tests.cpp
         unit/src/loaders/EXRValues.tests.cpp
         unit/src/loaders/EXRChlist.tests.cpp
         unit/src/loaders/EXRTile.tests.cpp

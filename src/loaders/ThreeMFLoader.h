@@ -39,4 +39,17 @@ class ThreeMFLoader {
     // the empty string, which does not count, so a document writing transform="" gets no
     // transform rather than an identity one.
     static bool carriesTransform(const std::string& transform);
+    // The twelve numbers of a build item's transform, in the order the document writes them.
+    // The split is on a single space rather than on any whitespace, so two spaces in a row give
+    // an empty piece, and an empty piece reads as not a number. That a run of spaces can poison
+    // a matrix is a property of the source rather than of the format.
+    static std::vector<double> transformNumbers(const std::string& transform);
+
+    // The sixteen numbers of the matrix, row by row as the matrix takes them. The document
+    // writes its twelve column by column, so the first four of the result are the first, fourth,
+    // seventh and tenth the document wrote. The last row is the constant one.
+    static std::vector<double> transformMatrix(const std::string& transform);
+
+    // How many numbers a document must write for a transform to be complete.
+    static constexpr int kTransformNumberCount = 12;
 };
