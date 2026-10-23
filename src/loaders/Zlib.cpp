@@ -239,3 +239,71 @@ int Zlib::repeatCount(int code, std::uint32_t extra) {
     if (code == 18) return static_cast<int>(extra) + 11;
     return 0;
 }
+
+std::vector<int> Zlib::readCodeLengthLengths(BitReader& reader, int count) {
+    std::vector<int> lengths(19, 0);
+    // The lengths arrive in their own order, three bits each, and only the first few are sent.
+    for (int i = 0; i < count && i < 19; ++i) {
+        lengths[static_cast<std::size_t>(codeLengthOrder()[static_cast<std::size_t>(i)])] =
+            static_cast<int>(readBits(reader, 3));
+    }
+    return lengths;
+}
+
+Zlib::LengthsResult Zlib::expandLengths(BitReader& reader, const HuffmanTable& codeLengthTable,
+                                        int total) {
+    LengthsResult result;
+    while (static_cast<int>(result.lengths.size()) < total) {
+        // A symbol is either a length or a run.
+        const auto symbol = decodeSymbol(reader, codeLengthTable);
+        if (!symbol.found) {
+            result.error = "Zlib: the lengths ran out.";
+            return result;
+        }
+        if (symbol.symbol < 16) {
+            result.lengths.push_back(symbol.symbol);
+            continue;
+        }
+        // A run needs something to repeat, so the very first symbol may not be one of these.
+        if (result.lengths.empty() && symbol.symbol == 16) {
+            result.error = repeatFirstError();
+            return result;
+        }
+        // The extra bits say how long the run is.
+        const int extraBits = symbol.symbol == 16 ? 2 : (symbol.symbol == 17 ? 3 : 7);
+        const std::uint32_t extra = readBits(reader, extraBits);
+        const int run = repeatCount(symbol.symbol, extra);
+        // A run may not reach past the number of lengths wanted.
+        if (static_cast<int>(result.lengths.size()) + run > total) {
+            result.error = overrunError();
+            return result;
+        }
+        // Sixteen copies the length before it; the other two write zeros.
+        const int value = symbol.symbol == 16 ? result.lengths.back() : 0;
+        for (int i = 0; i < run; ++i) result.lengths.push_back(value);
+    }
+    result.valid = true;
+    return result;
+}
+
+Zlib::SplitLengths Zlib::splitLengths(const std::vector<int>& lengths, int literalCount,
+                                      int distanceCount) {
+    SplitLengths split;
+    // The first count gives the literal table and the next gives the distance one. A vector that
+    // is short simply gives a shorter second half rather than reading past its end.
+    for (int i = 0; i < literalCount && i < static_cast<int>(lengths.size()); ++i) {
+        split.literal.push_back(lengths[static_cast<std::size_t>(i)]);
+    }
+    for (int i = 0; i < distanceCount && literalCount + i < static_cast<int>(lengths.size()); ++i) {
+        split.distance.push_back(lengths[static_cast<std::size_t>(literalCount + i)]);
+    }
+    return split;
+}
+
+std::string Zlib::repeatFirstError() {
+    return "Zlib: a length run began before any length.";
+}
+
+std::string Zlib::overrunError() {
+    return "Zlib: a length run reached past the count.";
+}

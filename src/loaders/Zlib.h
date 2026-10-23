@@ -155,4 +155,33 @@ class Zlib {
     // to six times and carries two bits; seventeen repeats a zero for three to ten and carries
     // three; eighteen repeats a zero for eleven to a hundred and thirty eight and carries seven.
     static int repeatCount(int code, std::uint32_t extra);
+    // The nineteen code-length lengths, read three bits each in the order they arrive.
+    static std::vector<int> readCodeLengthLengths(BitReader& reader, int count);
+
+    // The lengths of the two alphabets, read through the code-length table. A repeat code that
+    // copies the previous length needs one to exist, so the very first one may not be a sixteen,
+    // and the run may not reach past the number of lengths wanted. The answer says whether it was
+    // possible.
+    struct LengthsResult {
+        bool valid = false;
+        std::vector<int> lengths;
+        std::string error;
+    };
+
+    static LengthsResult expandLengths(BitReader& reader, const HuffmanTable& codeLengthTable,
+                                       int total);
+
+    // Splits the lengths into the two alphabets. The first literal count belong to the first and
+    // the rest to the second, which is what ties the two tables to the counts read earlier.
+    struct SplitLengths {
+        std::vector<int> literal;
+        std::vector<int> distance;
+    };
+
+    static SplitLengths splitLengths(const std::vector<int>& lengths, int literalCount,
+                                     int distanceCount);
+
+    // The two errors expanding can raise.
+    static std::string repeatFirstError();
+    static std::string overrunError();
 };
