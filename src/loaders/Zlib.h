@@ -2,6 +2,7 @@
 #include <cstddef>
 #include <cstdint>
 #include <string>
+#include <utility>
 #include <vector>
 
 // A decoder for the zlib format, which wraps a deflate stream in a two byte header and a four
@@ -106,4 +107,30 @@ class Zlib {
 
     // The fixed distance codes, one per symbol, likewise.
     static std::vector<std::uint32_t> fixedDistanceCodes();
+    // A table that turns what the stream gives back into a symbol. It is built from the lengths
+    // only, so the codes follow the canonical assignment and are reversed for the stream.
+    struct HuffmanTable {
+        // The longest code in the table, which bounds the search.
+        int maxLength = 0;
+        // For each length, a map from the code as the stream carries it to the symbol it names.
+        // A flat vector of pairs keeps this small; the tables here have at most a few hundred
+        // entries.
+        std::vector<std::vector<std::pair<std::uint32_t, int>>> byLength;
+    };
+
+    // Builds a table from an alphabet's code lengths. A length of zero means the symbol does not
+    // appear and is not entered.
+    static HuffmanTable buildTable(const std::vector<int>& lengths);
+
+    // Reads bits until they name a symbol. The bits are taken one at a time, each new one going
+    // above the ones already taken, because the stream hands out the lowest first while a code
+    // reads from its own lowest end. The answer says whether a symbol was found; an impossible
+    // stream gives none rather than looping for ever.
+    struct SymbolResult {
+        bool found = false;
+        int symbol = -1;
+        int bitsUsed = 0;
+    };
+
+    static SymbolResult decodeSymbol(BitReader& reader, const HuffmanTable& table);
 };

@@ -160,3 +160,56 @@ std::vector<std::uint32_t> Zlib::fixedDistanceCodes() {
     }
     return codes;
 }
+
+Zlib::HuffmanTable Zlib::buildTable(const std::vector<int>& lengths) {
+    HuffmanTable table;
+    table.byLength.resize(16);
+    // How many symbols use each length.
+    int counts[16] = {};
+    for (const int length : lengths) {
+        if (length > 0 && length < 16) counts[length]++;
+    }
+    // The canonical first code of each length.
+    std::uint32_t next[16] = {};
+    std::uint32_t code = 0;
+    counts[0] = 0;
+    for (int bits = 1; bits < 16; ++bits) {
+        code = (code + static_cast<std::uint32_t>(counts[bits - 1])) << 1;
+        next[bits] = code;
+        if (counts[bits] > 0 && bits > table.maxLength) table.maxLength = bits;
+    }
+    // Each symbol takes the next code of its length, turned round for the stream.
+    for (std::size_t symbol = 0; symbol < lengths.size(); ++symbol) {
+        const int length = lengths[symbol];
+        if (length <= 0 || length >= 16) continue;
+        const std::uint32_t reversed = reverseBits(next[length]++, length);
+        table.byLength[static_cast<std::size_t>(length)].emplace_back(
+            reversed, static_cast<int>(symbol));
+    }
+    return table;
+}
+
+Zlib::SymbolResult Zlib::decodeSymbol(BitReader& reader, const HuffmanTable& table) {
+    SymbolResult result;
+    std::uint32_t code = 0;
+    // One bit at a time, each new one above those already taken.
+    for (int length = 1; length <= table.maxLength; ++length) {
+        // A stream that has run out cannot name anything, so the padding a read past the
+        // end would give must not be allowed to match.
+        if (!hasMoreBits(reader)) return result;
+        const int bit = readBit(reader);
+        code |= static_cast<std::uint32_t>(bit) << (length - 1);
+        // The table for this length is checked as soon as it is reachable.
+        const auto& row = table.byLength[static_cast<std::size_t>(length)];
+        for (const auto& entry : row) {
+            if (entry.first == code) {
+                result.found = true;
+                result.symbol = entry.second;
+                result.bitsUsed = length;
+                return result;
+            }
+        }
+    }
+    // Nothing matched within the longest code, so the stream is impossible.
+    return result;
+}
