@@ -1206,3 +1206,63 @@ EXRLoader::DecodeResult EXRLoader::hufDecode(const std::vector<int>& codes,
     result.written = written;
     return result;
 }
+
+EXRLoader::HuffResult EXRLoader::hufUncompress(const std::vector<std::uint8_t>& data,
+                                               std::size_t byteOffset, std::uint32_t compressedSize,
+                                               std::size_t room) {
+    HuffResult result;
+    const std::size_t start = byteOffset;
+    // Each of the three numbers is four bytes, high first, and each is padded out by four.
+    const auto readWord = [&](std::size_t at) {
+        std::uint32_t value = 0;
+        for (int i = 0; i < 4; ++i) {
+            if (at + static_cast<std::size_t>(i) >= data.size()) return value;
+            value = (value << 8) | data[at + static_cast<std::size_t>(i)];
+        }
+        return value;
+    };
+    const std::uint32_t im = readWord(byteOffset);
+    const std::uint32_t iM = readWord(byteOffset + 4);
+    const std::uint32_t nBits = readWord(byteOffset + 12);
+    byteOffset += 16;
+    // Both counts must lie inside the alphabet.
+    if (!hufRangeValid(im, iM)) {
+        result.error = hufRangeMessage();
+        return result;
+    }
+    // The bit count must fit the bytes that remain after the header.
+    const std::size_t used = byteOffset - start;
+    const std::size_t remaining = compressedSize > used ? compressedSize - used : 0;
+    if (!hufBitsFit(nBits, remaining)) {
+        result.error = hufBitsMessage();
+        return result;
+    }
+    // The encoded lengths, then the table built from them, then the codes themselves.
+    const std::size_t tableBytes = compressedSize > used ? compressedSize - used : 0;
+    std::size_t offset = byteOffset;
+    int liveBits = 0;
+    std::uint32_t accumulator = 0;
+    const EncTableResult lengths =
+        hufUnpackEncTable(data, offset, liveBits, accumulator, tableBytes, im, iM);
+    if (!lengths.valid) {
+        result.error = lengths.error.empty() ? hufTableMessage() : lengths.error;
+        return result;
+    }
+    const DecTableResult table = hufBuildDecTable(lengths.lengths, im, iM);
+    if (!table.valid) {
+        result.error = table.error;
+        return result;
+    }
+    // The run marker is the far end of the range the block named.
+    result.values.assign(room, 0);
+    const DecodeResult decoded = hufDecode(lengths.lengths, table.entries, data, offset, liveBits,
+                                           accumulator, nBits, static_cast<int>(iM),
+                                           result.values, room);
+    if (!decoded.valid) {
+        result.error = decoded.error;
+        return result;
+    }
+    result.values.resize(decoded.written);
+    result.valid = true;
+    return result;
+}

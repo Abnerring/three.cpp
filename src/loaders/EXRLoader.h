@@ -698,4 +698,17 @@ class EXRLoader {
                                   const std::vector<std::uint8_t>& data, std::size_t byteOffset,
                                   int liveBits, std::uint32_t accumulator, std::uint32_t usedBits,
                                   int runMarker, std::vector<std::int32_t>& out, std::size_t room);
+    // The whole of the huffman stage: two counts naming the range of symbols the block carries,
+    // then how many bits of code follow, then the encoded lengths and the codes themselves. The
+    // two counts must lie inside the alphabet and the bit count must fit the bytes that remain,
+    // both being refused before any work is done.
+    struct HuffResult {
+        bool valid = false;
+        std::vector<std::int32_t> values;
+        std::string error;
+    };
+
+    static HuffResult hufUncompress(const std::vector<std::uint8_t>& data,
+                                    std::size_t byteOffset, std::uint32_t compressedSize,
+                                    std::size_t room);
 };

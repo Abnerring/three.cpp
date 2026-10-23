@@ -274,6 +274,7 @@ add_executable(THREECPPTests
         unit/src/loaders/EXRHufDecodeHelpers.tests.cpp
         unit/src/loaders/EXRHufRun.tests.cpp
         unit/src/loaders/EXRHufDecode.tests.cpp
+        unit/src/loaders/EXRHufUncompress.tests.cpp
         unit/src/loaders/Zlib.tests.cpp
         unit/src/loaders/ZlibBits.tests.cpp
         unit/src/loaders/ZlibFixed.tests.cpp
