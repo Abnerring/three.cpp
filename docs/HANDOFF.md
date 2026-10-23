@@ -3259,6 +3259,12 @@
    - **一个从未初始化的标志**：`update()` 里设 `this.needsUpdate = true`，而**构造函数里没有给这个属性初值**，所以**在第一次更新之前它是"不存在"而不是 `false`**。
    - **测试（5 个用例、29 条断言）**：类型四处；两个缺省六处；三个预设十二处；序列化三处；标志三处。
    - **验证**：核心 **2339 用例 / 216,171 断言**（+5 / +29）、`primitive-geometry`、`port-audit`、addons、`--cube` 全绿。
+526. **第 218 轮：`ArrayNode` 的参数个数决定一切**。
+   - **一个参数是值列表、两个参数是类型加数量**：`array( [ a, b, c ] )` 得到 `nodeType = null`、`count = 3`、`values = [a,b,c]`；`array( 'vec3', 4 )` 得到 `nodeType = 'vec3'`、`count = 4`、**`values = null`**。**同一个函数的两种语义完全由参数个数决定**。
+   - **类型从第一个值取**：`generateNodeType` 里 `nodeType === null` 时返回 `this.values[ 0 ].getNodeType( builder )`。**所以"给了类型"与"给了值列表"是互补的两种形态，各自缺一样东西**——**而两者都缺时（不存在的调用）会崩在 `values[0]` 上**，源里没有保护。
+   - **`toArray` 用 `Array( count ).fill( node )`**：**同一个节点对象重复 count 次**，所以列表里不是 `count` 个不同节点而是一个节点占 `count` 个位置。**一个以为每格是独立节点的读法会错**。
+   - **测试（3 个用例、24 条断言）**：两种形态七处；类型五处（含两种"是否给了类型"）；填充七处（含零长度）。
+   - **验证**：核心 **2342 用例 / 216,195 断言**（+3 / +24）、`primitive-geometry`、`port-audit`、addons、`--cube` 全绿。
 70. **第 520 轮：完整 Vulkan 套件 211/211 全绿，耗时 270.72 秒**。
    - 命令：`ctest --test-dir build-vulkan -j 4 -E "lights-states" --output-on-failure`（仍排除第 46 条那个已知项；它在 Vulkan 构建里同样慢）。
    - 结果：**100% tests passed, 0 tests failed out of 211**，总耗时 **270.72 秒**。对比同一套件在 **Debug** 配置下的 **3784.56 秒 / 2 失败**，差了约 14 倍——再次印证第 69 条"是构建类型不是代码"的结论。
