@@ -151,3 +151,29 @@ void EXRLoader::interleaveScalar(const std::vector<std::uint16_t>& source,
         out[s++] = source[second++];
     }
 }
+
+std::vector<std::uint8_t> EXRLoader::decodeRunLength(const std::vector<std::uint8_t>& source) {
+    std::vector<std::uint8_t> out;
+    // The size runs down as the stream is consumed, and a stream that declares more than it holds
+    // simply stops.
+    long long size = static_cast<long long>(source.size());
+    std::size_t p = 0;
+
+    while (size > 0 && p < source.size()) {
+        // The header is signed.
+        const int header = static_cast<std::int8_t>(source[p++]);
+        if (header < 0) {
+            // A verbatim run: the count bytes follow as they are.
+            const int count = -header;
+            size -= count + 1;
+            for (int i = 0; i < count && p < source.size(); ++i) out.push_back(source[p++]);
+        } else {
+            // A repeat run: one byte, written one more time than the header says.
+            size -= 2;
+            if (p >= source.size()) break;
+            const std::uint8_t value = source[p++];
+            for (int i = 0; i < header + 1; ++i) out.push_back(value);
+        }
+    }
+    return out;
+}

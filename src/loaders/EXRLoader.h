@@ -100,4 +100,11 @@ class EXRLoader {
     // the size plus one halved.
     static void interleaveScalar(const std::vector<std::uint16_t>& source,
                                  std::vector<std::uint16_t>& out);
+    // Expands a run length encoded stream. A signed header byte says which of the two forms
+    // follows: negative means that many bytes are copied verbatim, the count being the header
+    // negated, and non-negative means one byte is read and repeated one more time than the
+    // header. The two counts therefore differ by one, and a header of zero still repeats its
+    // value once rather than writing nothing. The stream ends when its declared size runs out
+    // rather than when the buffer does.
+    static std::vector<std::uint8_t> decodeRunLength(const std::vector<std::uint8_t>& source);
 };
