@@ -179,6 +179,7 @@ target_sources(threecpp PRIVATE
     src/nodes/core/AccessorNames.cpp
     src/nodes/core/PointUVNode.cpp
     src/nodes/core/TangentUtils.cpp
+    src/nodes/core/BuiltinNode.cpp
     src/nodes/core/NodeConstants.cpp
     src/nodes/core/Node.cpp
     src/loaders/DataTextureLoader.cpp
