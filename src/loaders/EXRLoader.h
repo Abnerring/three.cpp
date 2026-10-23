@@ -828,4 +828,17 @@ class EXRLoader {
     // The row of the output a file row is written to. The file stores its rows from the bottom
     // up while the output counts from the top, so the two are mirror images.
     static std::uint32_t scanlineOutputRow(std::uint32_t row, std::uint32_t height);
+    // A tiled file stores its image as a grid of blocks, and the block at the right or the
+    // bottom of the grid is cut short so that it stops at the edge rather than running past it.
+    static std::uint32_t tileColumns(std::uint32_t startX, std::uint32_t blockWidth,
+                                     std::uint32_t width);
+
+    static std::uint32_t tileLines(std::uint32_t startY, std::uint32_t blockHeight,
+                                   std::uint32_t height);
+
+    // The output row a line of a block is written to. The row is mirrored as it is for a
+    // scanline file, and the block's own first row is added before the mirroring, so a block
+    // near the bottom lands near the top.
+    static std::uint32_t tileOutputRow(std::uint32_t startY, std::uint32_t line,
+                                       std::uint32_t height);
 };

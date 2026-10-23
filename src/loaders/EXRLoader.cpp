@@ -1525,3 +1525,25 @@ std::uint32_t EXRLoader::scanlineOutputRow(std::uint32_t row, std::uint32_t heig
     // The file counts from the bottom and the output from the top.
     return height > row ? height - 1 - row : 0;
 }
+
+std::uint32_t EXRLoader::tileColumns(std::uint32_t startX, std::uint32_t blockWidth,
+                                     std::uint32_t width) {
+    // A block at the right edge stops at the edge.
+    if (startX + blockWidth > width) return width > startX ? width - startX : 0;
+    return blockWidth;
+}
+
+std::uint32_t EXRLoader::tileLines(std::uint32_t startY, std::uint32_t blockHeight,
+                                   std::uint32_t height) {
+    // A block at the bottom stops there, the same way.
+    if (startY + blockHeight > height) return height > startY ? height - startY : 0;
+    return blockHeight;
+}
+
+std::uint32_t EXRLoader::tileOutputRow(std::uint32_t startY, std::uint32_t line,
+                                       std::uint32_t height) {
+    // The block's own first row is added before the mirroring, so a block at the bottom of the
+    // file lands at the top of the output.
+    const std::uint32_t row = startY + line;
+    return height > row ? height - 1 - row : 0;
+}
