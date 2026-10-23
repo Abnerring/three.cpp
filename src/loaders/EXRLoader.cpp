@@ -1547,3 +1547,37 @@ std::uint32_t EXRLoader::tileOutputRow(std::uint32_t startY, std::uint32_t line,
     const std::uint32_t row = startY + line;
     return height > row ? height - 1 - row : 0;
 }
+
+int EXRLoader::channelSampleBytes(int pixelType) {
+    // The same doubling the block compression uses.
+    return pixelType * 2;
+}
+
+std::vector<std::pair<std::string, std::size_t>> EXRLoader::channelByteOffsets(
+    const std::vector<std::pair<std::string, int>>& channels,
+    const std::vector<std::string>& decoded) {
+    std::vector<std::pair<std::string, std::size_t>> offsets;
+    std::size_t offset = 0;
+    for (const auto& channel : channels) {
+        // Only a channel the caller wants is given a place, but every channel takes room, so a
+        // skipped one pushes the later ones along by its own size.
+        bool wanted = false;
+        for (const auto& name : decoded) {
+            if (name == channel.first) wanted = true;
+        }
+        if (wanted) offsets.emplace_back(channel.first, offset);
+        offset += static_cast<std::size_t>(channelSampleBytes(channel.second));
+    }
+    return offsets;
+}
+
+std::size_t EXRLoader::totalBytesPerSample(const std::vector<int>& pixelTypes) {
+    // What the offsets add up to once every channel has been counted.
+    std::size_t total = 0;
+    for (const int type : pixelTypes) total += static_cast<std::size_t>(channelSampleBytes(type));
+    return total;
+}
+
+std::size_t EXRLoader::outputLineWidth(std::uint32_t width, std::size_t outputChannels) {
+    return static_cast<std::size_t>(width) * outputChannels;
+}

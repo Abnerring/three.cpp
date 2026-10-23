@@ -3,6 +3,7 @@
 #include <cstddef>
 #include <cstdint>
 #include <string>
+#include <utility>
 #include <vector>
 
 // Port of the small bit helpers in examples/jsm/loaders/EXRLoader.js at the pinned revision. The
@@ -841,4 +842,27 @@ class EXRLoader {
     // near the bottom lands near the top.
     static std::uint32_t tileOutputRow(std::uint32_t startY, std::uint32_t line,
                                        std::uint32_t height);
+    // How many bytes one sample of a channel takes. The format counts a half as one and a full
+    // precision value as two, so the bytes are that count doubled, exactly as for the block
+    // compression.
+    static int channelSampleBytes(int pixelType);
+
+    // Where each channel's samples begin within a line. A channel the caller does not want is
+    // not given a place of its own but still takes room in the line, so the channels after it
+    // are pushed along by its size. The map holds only the ones wanted.
+    static std::vector<std::pair<std::string, std::size_t>> channelByteOffsets(
+        const std::vector<std::pair<std::string, int>>& channels,
+        const std::vector<std::string>& decoded);
+
+    // The bytes one line takes up, which is what the offsets add up to.
+    static std::size_t totalBytesPerSample(const std::vector<int>& pixelTypes);
+
+    // How wide one line of the output is.
+    static std::size_t outputLineWidth(std::uint32_t width, std::size_t outputChannels);
+
+    // The value an alpha channel is filled with so that a file without one reads as opaque. The
+    // two outputs hold their numbers differently, so one is the plain integer and the other its
+    // half precision form: three in the top ten bits of sixteen is the half that means one.
+    static constexpr std::uint16_t kByteAlphaOpaque = 1;
+    static constexpr std::uint16_t kHalfAlphaOpaque = 0x3C00;
 };

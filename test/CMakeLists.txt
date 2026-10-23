@@ -284,6 +284,7 @@ add_executable(THREECPPTests
         unit/src/loaders/EXRBlockHeights.tests.cpp
         unit/src/loaders/EXRScanlineLoop.tests.cpp
         unit/src/loaders/EXRTiles.tests.cpp
+        unit/src/loaders/EXRChannelOffsets.tests.cpp
         unit/src/loaders/Zlib.tests.cpp
         unit/src/loaders/ZlibBits.tests.cpp
         unit/src/loaders/ZlibFixed.tests.cpp
