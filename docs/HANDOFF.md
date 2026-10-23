@@ -2085,6 +2085,11 @@
    - **字符串读取的两处边界**：没有终止符时**读到末尾**；空缓冲**什么都不读、偏移不动**。
    - **测试（5 个用例、16 条断言）**：两个连续字符串；空串与空缓冲；无终止符；属性数量三种；警告三条（含空类型与带空格的类型）。
    - **验证**：核心 **1684 用例 / 211,806 断言**（+5 / +16）、addons、`primitive-geometry`、`port-audit`、Vulkan 全绿。
+360. **第 46 轮：`EXRLoader` 第十七层——属性类型分派**。
+   - **十三种类型**：`chlist`、`chromaticities`、`compression`、`box2i`、`envmap`、`tiledesc`、`lineOrder`、`float`、`v2f`、`v3f`、`int`、`rational`，加上**共享一个处理器的三种字符串**——`string`、`stringvector`、`iccProfile` 在磁盘上是同一种东西（定长字符串）。
+   - **比较是精确的**：`FLOAT` 与 `chlist `（带尾空格）都不认识，所以端口里没有做任何大小写或去空格的宽容处理。
+   - **测试（3 个用例、34 条断言）**：十二行表格逐行验证（每行两条，共 24 条）；三种字符串映射到同一类；五种不认识的情形（含大小写与尾空格）。
+   - **验证**：核心 **1687 用例 / 211,840 断言**（+3 / +34）、addons、`primitive-geometry`、`port-audit`、Vulkan 全绿。
 70. **第 520 轮：完整 Vulkan 套件 211/211 全绿，耗时 270.72 秒**。
    - 命令：`ctest --test-dir build-vulkan -j 4 -E "lights-states" --output-on-failure`（仍排除第 46 条那个已知项；它在 Vulkan 构建里同样慢）。
    - 结果：**100% tests passed, 0 tests failed out of 211**，总耗时 **270.72 秒**。对比同一套件在 **Debug** 配置下的 **3784.56 秒 / 2 失败**，差了约 14 倍——再次印证第 69 条"是构建类型不是代码"的结论。

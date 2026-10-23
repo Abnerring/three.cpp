@@ -256,4 +256,29 @@ class EXRLoader {
     // The warning an attribute of a type the reader does not know produces. Such an attribute is
     // skipped and the parser carries on, so a file with something new in it still loads.
     static std::string unknownAttributeWarning(const std::string& type);
+    // The kinds of value a header attribute can hold. Three of the type names share the first
+    // kind, since a fixed length string is what all three of them are on disk.
+    enum class AttributeKind {
+        FixedString,
+        ChannelList,
+        Chromaticities,
+        Compression,
+        Box,
+        EnvironmentMap,
+        TileDescription,
+        LineOrder,
+        Float,
+        Vector2,
+        Vector3,
+        Integer,
+        Rational,
+        Unknown,
+    };
+
+    // The kind a type name stands for. The comparison is exact, and a name that is not one of
+    // the thirteen gives Unknown, which the caller reports and skips.
+    static AttributeKind attributeKind(const std::string& type);
+
+    // Whether a kind names something the reader can handle. Only Unknown cannot.
+    static bool attributeKindKnown(AttributeKind kind);
 };

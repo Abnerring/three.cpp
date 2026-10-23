@@ -463,3 +463,28 @@ std::string EXRLoader::unknownAttributeWarning(const std::string& type) {
     // The type is quoted, so a name with a space in it stays readable.
     return "THREE.EXRLoader: Skipped unknown header attribute type '" + type + "'.";
 }
+
+EXRLoader::AttributeKind EXRLoader::attributeKind(const std::string& type) {
+    // Three names share the fixed string handler.
+    if (type == "string" || type == "stringvector" || type == "iccProfile") {
+        return AttributeKind::FixedString;
+    }
+    if (type == "chlist") return AttributeKind::ChannelList;
+    if (type == "chromaticities") return AttributeKind::Chromaticities;
+    if (type == "compression") return AttributeKind::Compression;
+    if (type == "box2i") return AttributeKind::Box;
+    if (type == "envmap") return AttributeKind::EnvironmentMap;
+    if (type == "tiledesc") return AttributeKind::TileDescription;
+    if (type == "lineOrder") return AttributeKind::LineOrder;
+    if (type == "float") return AttributeKind::Float;
+    if (type == "v2f") return AttributeKind::Vector2;
+    if (type == "v3f") return AttributeKind::Vector3;
+    if (type == "int") return AttributeKind::Integer;
+    if (type == "rational") return AttributeKind::Rational;
+    // Anything else is reported and skipped.
+    return AttributeKind::Unknown;
+}
+
+bool EXRLoader::attributeKindKnown(AttributeKind kind) {
+    return kind != AttributeKind::Unknown;
+}
