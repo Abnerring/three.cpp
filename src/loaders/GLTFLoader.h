@@ -434,4 +434,26 @@ class GLTFLoader {
     // the matching influence, so a list longer than the influences would write past the end and
     // a shorter one leaves the rest as they were.
     static std::size_t weightsWritten(std::size_t weightCount, std::size_t influenceCount);
+    // Which of the three morphable attributes any target supplies.
+    struct MorphFlags {
+        bool position = false;
+        bool normal = false;
+        bool colour = false;
+    };
+
+    // Reads the flags from one list of presences per attribute, one entry per target. A target
+    // that names none of the three still takes a place in the lists, so the arrays end up one
+    // entry per target rather than one per contributing target.
+    static MorphFlags morphFlags(const std::vector<bool>& hasPosition,
+                                 const std::vector<bool>& hasNormal,
+                                 const std::vector<bool>& hasColour);
+
+    // Whether anything morphs at all. When nothing does the geometry is returned untouched.
+    static bool morphsAnything(const MorphFlags& flags);
+
+    // Where one target's attribute comes from. A target that omits the attribute reuses the
+    // mesh's own, which keeps every target array the same length as the base one.
+    enum class MorphSource { Base, Target };
+
+    static MorphSource morphSource(bool flagSet, bool targetHasAttribute);
 };

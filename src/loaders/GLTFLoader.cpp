@@ -693,3 +693,32 @@ std::size_t GLTFLoader::weightsWritten(std::size_t weightCount, std::size_t infl
     // The shorter of the two, since the source writes weight by weight into the influences.
     return weightCount < influenceCount ? weightCount : influenceCount;
 }
+
+GLTFLoader::MorphFlags GLTFLoader::morphFlags(const std::vector<bool>& hasPosition,
+                                              const std::vector<bool>& hasNormal,
+                                              const std::vector<bool>& hasColour) {
+    MorphFlags flags;
+    // Any single target that names an attribute is enough to turn that attribute on.
+    for (std::size_t i = 0; i < hasPosition.size(); ++i) {
+        if (hasPosition[i]) flags.position = true;
+    }
+    for (std::size_t i = 0; i < hasNormal.size(); ++i) {
+        if (hasNormal[i]) flags.normal = true;
+    }
+    for (std::size_t i = 0; i < hasColour.size(); ++i) {
+        if (hasColour[i]) flags.colour = true;
+    }
+    return flags;
+}
+
+bool GLTFLoader::morphsAnything(const MorphFlags& flags) {
+    // All three off means the geometry is left exactly as it came in.
+    return flags.position || flags.normal || flags.colour;
+}
+
+GLTFLoader::MorphSource GLTFLoader::morphSource(bool flagSet, bool targetHasAttribute) {
+    // The attribute is only read when its flag is on, and then from the target when the target
+    // names one and from the mesh itself when it does not.
+    if (!flagSet) return MorphSource::Base;
+    return targetHasAttribute ? MorphSource::Target : MorphSource::Base;
+}
