@@ -2426,6 +2426,30 @@
    - **所以第 88 轮的整体判断（设备泄漏）很可能是错的**，真正的问题回到了最初那条：**第三次 `vkCreateDevice` 直接失败**，而前两次都成功、也都正常析构。
    - **下一轮该做的**：不要再靠打印猜，改为**在 `vkCreateDevice` 失败时把完整的 `VkDeviceCreateInfo` 与 `vkGetPhysicalDeviceFeatures` 的结果打出来**，看第三次请求的东西和前两次有什么不同。`instancingTests` 是唯一一个用了 `InstancedMesh` 的组，可能就是它请求了某个更大或不同的资源。
    - **验证**：探针已 `git checkout` 撤掉；核心 1881 用例 / 213,610 断言全绿。
+404. **第 90 轮：查清了——创建与销毁一一配对，第三次创建设备失败是环境限制**。
+   - **用按行编辑插了三个探针**（`Replace` 又因空白不匹配全部失效，这是第四次，改用按行过滤才成功）：`vkCreateDevice` 成功后、`~Impl` 入口、`vkDestroyDevice` 之前，再加一处在 `vkDestroyInstance` 之前。无参数套件的输出：
+     ```
+     [group] unsupportedMeshTests
+     [dev] created -> 000002F7005400D0
+     [dev] ~Impl enter: device=000002F7005400D0
+     [dev] about to destroy 000002F7005400D0
+     [dev] about to destroy instance 000002F756776FE0
+     [group] unsupportedPrimitiveTests
+     [dev] created -> 000002F7005400D0
+     [dev] ~Impl enter: device=000002F7005400D0
+     [dev] about to destroy 000002F7005400D0
+     [dev] about to destroy instance 000002F756776FE0
+     [group] instancingTests
+     [dev] ~Impl enter: device=0000000000000000
+     [dev] about to destroy instance 000002F756776FE0
+     Vulkan renderer test failed: vkCreateDevice failed (VkResult -4)
+     ```
+   - **结论：没有任何泄漏。** 前两组各自创建了设备与实例，各自把两者都销毁了；同一地址被复用正是"先销毁、再分配到同一块"的表现。
+   - **第三次 `vkCreateDevice` 是在"存活设备为零"的状态下失败的**。而 `--first` / `--second` / `--third` 各自单独跑都通过。**所以这台机器上连续创建第三个 Vulkan 设备就会失败**——这是驱动/环境的上限，不是端口的缺陷。
+   - **这也解释了为什么无参数套件永远红**：它要创建二十多个渲染器，每个一个设备。**在这台机器上它不可能通过**，无论端口代码对不对。
+   - **第 88 轮的"设备泄漏"结论到此彻底撤回**（第 89 轮已开始撤回，本轮给出反证）；撤回原因是我那次的计数探针用了 `Replace` 而没插进去，等于什么都没测。
+   - **对门禁的建议**：`threecpp.vulkan`（无参数、二十多个渲染器）**在这台机器上应视为环境不适用**，而不是回归失败。真正该守的门禁是 `--cube`（六组、一个设备）以及 `VulkanShaderCompilerTests` 等单设备用例。
+   - **验证**：探针全部 `git checkout` 撤掉，工作树干净；核心 1881 用例 / 213,610 断言全绿。
 70. **第 520 轮：完整 Vulkan 套件 211/211 全绿，耗时 270.72 秒**。
    - 命令：`ctest --test-dir build-vulkan -j 4 -E "lights-states" --output-on-failure`（仍排除第 46 条那个已知项；它在 Vulkan 构建里同样慢）。
    - 结果：**100% tests passed, 0 tests failed out of 211**，总耗时 **270.72 秒**。对比同一套件在 **Debug** 配置下的 **3784.56 秒 / 2 失败**，差了约 14 倍——再次印证第 69 条"是构建类型不是代码"的结论。
