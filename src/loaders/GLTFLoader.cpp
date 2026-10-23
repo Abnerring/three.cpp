@@ -321,3 +321,27 @@ GLTFLoader::MaterialColour GLTFLoader::applyBaseColorFactor(MaterialColour colou
     if (factor.size() >= 4) colour.a = factor[3];
     return colour;
 }
+
+GLTFLoader::SamplerSettings GLTFLoader::samplerSettings(const std::string& magFilter,
+                                                        const std::string& minFilter,
+                                                        const std::string& wrapS,
+                                                        const std::string& wrapT) {
+    SamplerSettings settings;
+    // The two filters fall back differently: magnification to the plain linear filter and
+    // minification to the one that also blends between levels.
+    settings.magFilter = magFilter.empty() ? "LinearFilter" : magFilter;
+    settings.minFilter = minFilter.empty() ? "LinearMipmapLinearFilter" : minFilter;
+    // Both axes fall back to repeating.
+    settings.wrapS = wrapS.empty() ? "RepeatWrapping" : wrapS;
+    settings.wrapT = wrapT.empty() ? "RepeatWrapping" : wrapT;
+    return settings;
+}
+
+bool GLTFLoader::needsMipmaps(bool compressed, const std::string& minFilter) {
+    // A compressed texture carries its levels already, and a single level filter never asks for
+    // them.
+    if (compressed) return false;
+    if (minFilter == "NearestFilter") return false;
+    if (minFilter == "LinearFilter") return false;
+    return true;
+}

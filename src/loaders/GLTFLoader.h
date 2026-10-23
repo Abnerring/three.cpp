@@ -171,4 +171,23 @@ class GLTFLoader {
     // they cannot share one rule.
     static constexpr const char* kBaseColorFactorSpace = "srgb-linear";
     static constexpr const char* kBaseColorTextureSpace = "srgb";
+    // The four settings a sampler gives, after the defaults are applied. The two filters have
+    // different defaults, which is why they cannot share one fallback.
+    struct SamplerSettings {
+        std::string magFilter;
+        std::string minFilter;
+        std::string wrapS;
+        std::string wrapT;
+    };
+
+    // Builds the settings from the values a sampler names, or from nothing when it names none.
+    // An absent filter falls back to the linear one for magnification and to the trilinear one
+    // for minification; an absent wrapping falls back to repeating.
+    static SamplerSettings samplerSettings(const std::string& magFilter, const std::string& minFilter,
+                                           const std::string& wrapS, const std::string& wrapT);
+
+    // Whether a texture made with these settings generates mipmaps. A compressed texture never
+    // does, and neither does one whose minification filter is a single level, since neither
+    // nearest nor linear looks at more than one level.
+    static bool needsMipmaps(bool compressed, const std::string& minFilter);
 };
