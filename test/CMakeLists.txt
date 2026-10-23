@@ -322,6 +322,7 @@ add_executable(THREECPPTests
         unit/src/nodes/core/DebugNode.tests.cpp
         unit/src/nodes/core/Discard.tests.cpp
         unit/src/nodes/core/ScreenNode.tests.cpp
+        unit/src/nodes/core/DepthConversion.tests.cpp
         unit/src/loaders/EXRSamplesToBytes.tests.cpp
         unit/src/loaders/EXRDecompressBlock.tests.cpp
         unit/src/loaders/Zlib.tests.cpp
