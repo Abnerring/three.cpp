@@ -3281,6 +3281,14 @@
    - **普通路径只在两种情况下进流**：`output === 'void' || sourceType === 'void'`。**否则文本作为值返回、不进流**。
    - **测试（4 个用例、22 条断言）**：类型六处；写一次两处 + 值一处；拆分八处；进流五处。
    - **验证**：核心 **2350 用例 / 216,240 断言**（+4 / +22）、`primitive-geometry`、`port-audit`、addons、`--cube` 全绿。
+529. **第 221 轮：`VaryingNode` 的五处规则**。
+   - **包装节点硬编码在顶点阶段**：`this.node = subBuild( node, 'VERTEX' )`——**不管这个 varying 从哪个阶段被用到，被包裹的节点都在顶点阶段构建**。
+   - **一处 `||=` 惯用法**：`varying.needsInterpolation || ( varying.needsInterpolation = ( builder.shaderStage === 'fragment' ) )`。**只在标志为假时赋值，而赋的值是"是否片段阶段"**。所以**顶点阶段赋 `false`（等于不变），片段阶段赋 `true`**。
+   - **发射次数按阶段不同**：`flowBlock = stage === 'vertex' ? builder.flowBlock : null`，而判据是 `properties[propertyKey] !== flowBlock`。**所以顶点阶段每块发一次、其他阶段总共发一次**。源注释只说了前半句。
+   - **`setup` 与 `analyze` 完全相同**：两个方法都是"建 varying + 把节点排进顶点阶段"，**一个是另一个的复制**。
+   - **哈希有回退**：`getHash` 是 `this.name || super.getHash( builder )`，**所以两个同名 varying 哈希相同，两个匿名的则按普通哈希**。
+   - **测试（5 个用例、20 条断言）**：阶段四处；插值标志五处；发射五次六处；两方法两处；哈希四处。
+   - **验证**：核心 **2355 用例 / 216,260 断言**（+5 / +20）、`primitive-geometry`、`port-audit`、addons、`--cube` 全绿。
 70. **第 520 轮：完整 Vulkan 套件 211/211 全绿，耗时 270.72 秒**。
    - 命令：`ctest --test-dir build-vulkan -j 4 -E "lights-states" --output-on-failure`（仍排除第 46 条那个已知项；它在 Vulkan 构建里同样慢）。
    - 结果：**100% tests passed, 0 tests failed out of 211**，总耗时 **270.72 秒**。对比同一套件在 **Debug** 配置下的 **3784.56 秒 / 2 失败**，差了约 14 倍——再次印证第 69 条"是构建类型不是代码"的结论。

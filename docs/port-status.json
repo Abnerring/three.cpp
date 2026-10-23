@@ -194,8 +194,8 @@
     "note": "Accepted port scope is src and examples/jsm, including tracked third-party dependencies. Editor/manual web applications are excluded from native application rewrites. Native host behavior, packaging and all three platforms require separate implementation and verification evidence."
   },
   "counts": {
-    "partial-unverified": 333,
-    "missing": 608,
+    "partial-unverified": 334,
+    "missing": 607,
     "vulkan-port-pending": 290,
     "dependency-unverified": 20
   },
@@ -203,8 +203,8 @@
     "src": {
       "modules": 755,
       "counts": {
-        "partial-unverified": 249,
-        "missing": 216,
+        "partial-unverified": 250,
+        "missing": 215,
         "vulkan-port-pending": 290
       }
     },
@@ -803,7 +803,7 @@
       "path": "src/nodes/core",
       "upstreamFiles": 42,
       "moduleCount": 42,
-      "modulesWithCppFiles": 30,
+      "modulesWithCppFiles": 31,
       "verifiedComplete": 0
     },
     {
@@ -9736,11 +9736,11 @@
       "scope": "src",
       "kind": "core",
       "upstreamSha256": "63718ea6d310ef3257ffbfe4144c21221777944209c689671eff84c47728fcbe",
-      "header": null,
-      "implementation": null,
+      "header": "src/nodes/core/VaryingNode.h",
+      "implementation": "src/nodes/core/VaryingNode.cpp",
       "expectedHeader": "src/nodes/core/VaryingNode.h",
       "expectedImplementation": "src/nodes/core/VaryingNode.cpp",
-      "status": "missing",
+      "status": "partial-unverified",
       "verifiedComplete": false,
       "apiExtraction": "partial-static",
       "verification": {
@@ -9749,7 +9749,9 @@
           "pointer": "/modules/300"
         },
         "upstreamUnitTests": [],
-        "cppUnitTests": [],
+        "cppUnitTests": [
+          "test/unit/src/nodes/core/VaryingNode.tests.cpp"
+        ],
         "reviewedImplementation": [],
         "differentialResults": [],
         "renderingResults": [],
