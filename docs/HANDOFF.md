@@ -3222,6 +3222,13 @@
    - **刷新是 FRAME**。
    - **测试（5 个用例、21 条断言）**：借名六处；回调六处；警告六处（含四组合循环）；措辞三处；链一处。
    - **验证**：核心 **2316 用例 / 216,059 断言**（+5 / +21）、`primitive-geometry`、`port-audit`、addons、`--cube` 全绿。
+521. **第 212 轮：`StructNode` 的四个"看不出来"**。
+   - **构造时传的类型是死的**：`super( 'vec3' )`，但 `generateNodeType` **覆写成返回结构类型的那个方法**，所以 `'vec3'` 从不被报出来。测试把它做成 `kConstructorType` 与 `constructorTypeIsUsed() == false` 一对。
+   - **两种调用约定靠 `isArrayAsParameter` 区分**：**分开传的参数按位置与成员名配对**（`values[names[i]] = params[i]`），**传一个对象则原样使用**，**不传则 `values = null`**——**不是空对象**。
+   - **结构类型被移到子节点的最后**：`_getChildren` 里先找到它、删掉、再 push 回去。**源注释直说是为了代码生成顺序**（"Ensure struct type is the last child for correct code generation order"）。
+   - **位置配对意味着参数不携带语义**：第一个参数永远是第一个成员，**所以把 `max` 传在前面的调用方会静默写进 `min`**。测试用正反两个成员顺序把这个差别写出来。
+   - **测试（4 个用例、17 条断言）**：死类型四处；三种取值六处；位置配对四处（含越界与负值）；次序两处。
+   - **验证**：核心 **2320 用例 / 216,076 断言**（+4 / +17）、`primitive-geometry`、`port-audit`、addons、`--cube` 全绿。
 70. **第 520 轮：完整 Vulkan 套件 211/211 全绿，耗时 270.72 秒**。
    - 命令：`ctest --test-dir build-vulkan -j 4 -E "lights-states" --output-on-failure`（仍排除第 46 条那个已知项；它在 Vulkan 构建里同样慢）。
    - 结果：**100% tests passed, 0 tests failed out of 211**，总耗时 **270.72 秒**。对比同一套件在 **Debug** 配置下的 **3784.56 秒 / 2 失败**，差了约 14 倍——再次印证第 69 条"是构建类型不是代码"的结论。

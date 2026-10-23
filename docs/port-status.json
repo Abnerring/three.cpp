@@ -194,8 +194,8 @@
     "note": "Accepted port scope is src and examples/jsm, including tracked third-party dependencies. Editor/manual web applications are excluded from native application rewrites. Native host behavior, packaging and all three platforms require separate implementation and verification evidence."
   },
   "counts": {
-    "partial-unverified": 325,
-    "missing": 616,
+    "partial-unverified": 326,
+    "missing": 615,
     "vulkan-port-pending": 290,
     "dependency-unverified": 20
   },
@@ -203,8 +203,8 @@
     "src": {
       "modules": 755,
       "counts": {
-        "partial-unverified": 241,
-        "missing": 224,
+        "partial-unverified": 242,
+        "missing": 223,
         "vulkan-port-pending": 290
       }
     },
@@ -803,7 +803,7 @@
       "path": "src/nodes/core",
       "upstreamFiles": 42,
       "moduleCount": 42,
-      "modulesWithCppFiles": 22,
+      "modulesWithCppFiles": 23,
       "verifiedComplete": 0
     },
     {
@@ -9500,11 +9500,11 @@
       "scope": "src",
       "kind": "core",
       "upstreamSha256": "10eba06857cb5d3db5d4c8bd774708864dadaa05b02fbac145e0d38721deae34",
-      "header": null,
-      "implementation": null,
+      "header": "src/nodes/core/StructNode.h",
+      "implementation": "src/nodes/core/StructNode.cpp",
       "expectedHeader": "src/nodes/core/StructNode.h",
       "expectedImplementation": "src/nodes/core/StructNode.cpp",
-      "status": "missing",
+      "status": "partial-unverified",
       "verifiedComplete": false,
       "apiExtraction": "static-only",
       "verification": {
@@ -9513,7 +9513,9 @@
           "pointer": "/modules/292"
         },
         "upstreamUnitTests": [],
-        "cppUnitTests": [],
+        "cppUnitTests": [
+          "test/unit/src/nodes/core/StructNode.tests.cpp"
+        ],
         "reviewedImplementation": [],
         "differentialResults": [],
         "renderingResults": [],
