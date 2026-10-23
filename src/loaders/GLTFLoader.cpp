@@ -449,3 +449,25 @@ GLTFLoader::EmissiveIntensity GLTFLoader::emissiveIntensity(bool hasStrength, do
     }
     return result;
 }
+
+std::string GLTFLoader::materialParamForField(const std::string& field) {
+    // A factor drops its suffix; a texture gains a map suffix; the normal scale is one number.
+    if (field == "clearcoatFactor") return "clearcoat";
+    if (field == "clearcoatTexture") return "clearcoatMap";
+    if (field == "clearcoatRoughnessFactor") return "clearcoatRoughness";
+    if (field == "clearcoatRoughnessTexture") return "clearcoatRoughnessMap";
+    if (field == "clearcoatNormalTexture") return "clearcoatNormalMap";
+    if (field == "clearcoatNormalTexture.scale") return "clearcoatNormalScale";
+    // Anything else names no parameter.
+    return std::string();
+}
+
+std::string GLTFLoader::materialTypeForClearcoat(bool hasExtension) {
+    // Only the physical material carries a clearcoat.
+    return hasExtension ? "MeshPhysicalMaterial" : std::string();
+}
+
+std::array<double, 2> GLTFLoader::normalScaleFrom(double scale) {
+    // One number on both axes.
+    return {scale, scale};
+}

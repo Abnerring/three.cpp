@@ -1878,6 +1878,13 @@
    - **扩展查找**：材质没有 `extensions` 对象时就是"没有"，与上游的可选链一致；空名字也找不到。
    - **测试（3 个用例、13 条断言）**：两个名字命中 + 未命中 + 空列表 + 空名字；两种材质类型及其不等；强度三种（有值、没有、零）。
    - **验证**：核心 **1555 用例 / 210,569 断言**（+3 / +13）、addons、`primitive-geometry`、`port-audit`、Vulkan 全绿。
+329. **第 15 轮：`GLTFLoader` 第十五层——清漆材质**。
+   - **扩展字段到材质参数的改名表**：因子**去后缀**（`clearcoatFactor` → `clearcoat`、`clearcoatRoughnessFactor` → `clearcoatRoughness`），贴图**加 map 后缀**（`clearcoatTexture` → `clearcoatMap`、两个 roughness/normal 同理），而**法线缩放**是 `clearcoatNormalTexture.scale` → `clearcoatNormalScale`——**六条映射，三条规则**。
+   - **两种名字不会撞车**：`clearcoatNormalTexture` 与 `clearcoatNormalTexture.scale` 指向**不同参数**，测试专门断言它们不相等。
+   - **材质类型只在有扩展时才指定**：清漆需要物理材质，没有扩展时返回**空名字**表示"交给别的规则决定"。
+   - **法线缩放是一个数铺两轴**：文件里只写一个标量，端口返回两个分量。
+   - **测试（4 个用例、16 条断言）**：六条改名 + 两条不撞车；三种未知字段（含 `clearcoat` 本身与空串）；两种材质类型；两种缩放。
+   - **验证**：核心 **1559 用例 / 210,585 断言**（+4 / +16）、addons、`primitive-geometry`、`port-audit`、Vulkan 全绿。
 70. **第 520 轮：完整 Vulkan 套件 211/211 全绿，耗时 270.72 秒**。
    - 命令：`ctest --test-dir build-vulkan -j 4 -E "lights-states" --output-on-failure`（仍排除第 46 条那个已知项；它在 Vulkan 构建里同样慢）。
    - 结果：**100% tests passed, 0 tests failed out of 211**，总耗时 **270.72 秒**。对比同一套件在 **Debug** 配置下的 **3784.56 秒 / 2 失败**，差了约 14 倍——再次印证第 69 条"是构建类型不是代码"的结论。

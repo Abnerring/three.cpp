@@ -240,4 +240,16 @@ class GLTFLoader {
     };
 
     static EmissiveIntensity emissiveIntensity(bool hasStrength, double strength);
+    // The material parameter an extension field fills. The names differ in three ways: a
+    // factor loses its suffix, a texture gains a map suffix, and the normal scale is one number
+    // written twice. A field not in the table names nothing.
+    static std::string materialParamForField(const std::string& field);
+
+    // The material a clearcoat extension asks for. A material that carries it needs the
+    // physical material, which is the only one with a clearcoat; one that does not is left to
+    // whatever the rest of the definition asks for, which is reported as an empty name.
+    static std::string materialTypeForClearcoat(bool hasExtension);
+
+    // The two numbers a normal scale takes: the one the file wrote, on both axes.
+    static std::array<double, 2> normalScaleFrom(double scale);
 };
