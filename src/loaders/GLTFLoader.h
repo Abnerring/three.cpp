@@ -349,4 +349,25 @@ class GLTFLoader {
 
     static TextureMatrix textureTransformMatrix(std::array<double, 2> repeat,
                                                 std::array<double, 2> offset, double rotation);
+    // The primitive modes the format defines, as numbers.
+    static constexpr int kPoints = 0;
+    static constexpr int kLines = 1;
+    static constexpr int kLineLoop = 2;
+    static constexpr int kLineStrip = 3;
+    static constexpr int kTriangles = 4;
+    static constexpr int kTriangleStrip = 5;
+    static constexpr int kTriangleFan = 6;
+
+    // The mode a primitive has when the file leaves it out, which is triangles.
+    static int defaultPrimitiveMode();
+
+    // Whether a primitive of this mode can be instanced. The extension only handles the three
+    // triangle modes, and a primitive with no mode written is one of them because the default
+    // applies; points and lines are refused. The flag says whether a mode was written at all,
+    // since the answer is yes for a missing mode.
+    static bool supportsInstancing(bool hasMode, int mode);
+
+    // Whether an instancing definition has anything to instance with. An extension that names
+    // no attributes cannot say where the copies go, so it is refused rather than instanced once.
+    static bool hasInstanceAttributes(std::size_t attributeCount);
 };

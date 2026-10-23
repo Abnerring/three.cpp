@@ -607,3 +607,20 @@ bool GLTFLoader::textureTransformApplies(bool hasTexCoord, int texCoord, int cha
     const bool nothingElse = !hasOffset && !hasRotation && !hasScale;
     return !(channelAgrees && nothingElse);
 }
+
+int GLTFLoader::defaultPrimitiveMode() {
+    // Triangles when nothing is written.
+    return kTriangles;
+}
+
+bool GLTFLoader::supportsInstancing(bool hasMode, int mode) {
+    // A missing mode is the default and therefore a triangle mode.
+    if (!hasMode) return true;
+    // Of the seven modes only the three that build triangles can be instanced here.
+    return mode == kTriangles || mode == kTriangleStrip || mode == kTriangleFan;
+}
+
+bool GLTFLoader::hasInstanceAttributes(std::size_t attributeCount) {
+    // Nothing to place the copies by.
+    return attributeCount >= 1;
+}
