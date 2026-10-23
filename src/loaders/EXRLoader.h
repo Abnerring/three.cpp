@@ -583,4 +583,20 @@ class EXRLoader {
     // Whether a row or a column has a leftover at this step. Both tests are bit tests, and both
     // are needed: the column one closes the row and the row one closes the block.
     static bool pizHasOddRow(std::uint32_t ny, int step);
+    // The wavelet itself, over one channel of a block. The buffer holds the block as sixteen bit
+    // words, j picks which word of each sample this pass works on, and the two strides say how
+    // far apart neighbouring samples lie. The step halves from the largest power of two the
+    // smaller side allows down to one, and each step touches the four corners of every square of
+    // its own size, with two leftovers for when a side is not a multiple of it.
+    static void wav2Decode(std::vector<std::int32_t>& buffer, std::size_t j, std::uint32_t nx,
+                           std::size_t ox, std::uint32_t ny, std::size_t oy, int maxValue);
+
+    // The two step counts a pass begins with: the last step taken and the one before it. The
+    // second is the largest power of two the side allows and the first is half of that.
+    struct WaveletStart {
+        int step = 0;
+        int previous = 0;
+    };
+
+    static WaveletStart pizWaveletStart(int extent);
 };

@@ -857,3 +857,76 @@ bool EXRLoader::pizHasOddRow(std::uint32_t ny, int step) {
     // The same bit test as the column one, on the other side.
     return (static_cast<int>(ny) & step) != 0;
 }
+
+EXRLoader::WaveletStart EXRLoader::pizWaveletStart(int extent) {
+    WaveletStart start;
+    int p = 1;
+    while (p <= extent) p <<= 1;
+    p >>= 1;
+    start.previous = p;
+    p >>= 1;
+    start.step = p < 1 ? 0 : p;
+    return start;
+}
+
+void EXRLoader::wav2Decode(std::vector<std::int32_t>& buffer, std::size_t j, std::uint32_t nx,
+                           std::size_t ox, std::uint32_t ny, std::size_t oy, int maxValue) {
+    const bool narrow = !pizWaveletWide(maxValue);
+    const int extent = pizWaveletExtent(nx, ny);
+    WaveletStart start = pizWaveletStart(extent);
+    int p = start.step;
+    int p2 = start.previous;
+    while (p >= 1) {
+        // The strides at this step and the one before it.
+        const std::size_t oy1 = oy * static_cast<std::size_t>(p);
+        const std::size_t oy2 = oy * static_cast<std::size_t>(p2);
+        const std::size_t ox1 = ox * static_cast<std::size_t>(p);
+        const std::size_t ox2 = ox * static_cast<std::size_t>(p2);
+        // Rows whose squares are complete.
+        std::size_t py = 0;
+        const std::size_t ey = py + oy * static_cast<std::size_t>(ny - static_cast<std::uint32_t>(p2));
+        for (; py <= ey; py += oy2) {
+            std::size_t px = py;
+            const std::size_t ex =
+                py + ox * static_cast<std::size_t>(nx - static_cast<std::uint32_t>(p2));
+            for (; px <= ex; px += ox2) {
+                const PizOffsets at = pizOffsets(px, ox1, oy1);
+                const auto step = [&](int a, int b) {
+                    return narrow ? wdec16(a, b) : wdec14(a, b);
+                };
+                // The two pairs of the first pass, then the two of the second.
+                const WaveletPair first = step(buffer[at.p00 + j], buffer[at.p10 + j]);
+                const WaveletPair second = step(buffer[at.p01 + j], buffer[at.p11 + j]);
+                const WaveletPair top = step(static_cast<int>(first.a), static_cast<int>(second.a));
+                const WaveletPair bottom = step(static_cast<int>(first.b), static_cast<int>(second.b));
+                buffer[at.p00 + j] = top.a;
+                buffer[at.p01 + j] = top.b;
+                buffer[at.p10 + j] = bottom.a;
+                buffer[at.p11 + j] = bottom.b;
+            }
+            // A row that is not a multiple of the step keeps its last column.
+            if (pizHasOddColumn(nx, p)) {
+                const std::size_t p10 = px + oy1;
+                const WaveletPair pair = narrow ? wdec16(buffer[px + j], buffer[p10 + j])
+                                                : wdec14(buffer[px + j], buffer[p10 + j]);
+                buffer[p10 + j] = pair.b;
+                buffer[px + j] = pair.a;
+            }
+        }
+        // A side that is not a multiple of the step keeps a whole row at the bottom.
+        if (pizHasOddRow(ny, p)) {
+            std::size_t px = py;
+            const std::size_t ex =
+                py + ox * static_cast<std::size_t>(nx - static_cast<std::uint32_t>(p2));
+            for (; px <= ex; px += ox2) {
+                const std::size_t p01 = px + ox1;
+                const WaveletPair pair = narrow ? wdec16(buffer[px + j], buffer[p01 + j])
+                                                : wdec14(buffer[px + j], buffer[p01 + j]);
+                buffer[p01 + j] = pair.b;
+                buffer[px + j] = pair.a;
+            }
+        }
+        p2 = p;
+        p >>= 1;
+    }
+}
