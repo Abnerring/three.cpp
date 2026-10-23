@@ -411,4 +411,26 @@ class EXRLoader {
     // uncompressed count for the deflate one, which is a discrepancy kept as it is.
     static std::size_t advanceAfterAc(BlockCompression kind, std::uint32_t compressedSize,
                                       std::uint32_t uncompressedCount);
+    // One entry of the first level of the decoding table. An entry either names a symbol directly,
+    // with a length and a count of one, or holds no length and instead names a run of candidate
+    // symbols that have to be tried in turn. The two uses never share an entry, which is why a
+    // second attempt to fill one with a length is an error.
+    struct DecodeEntry {
+        int length = 0;
+        int literal = 0;
+        // Whether a run of candidates is held rather than a single symbol.
+        bool hasCandidates = false;
+        std::vector<int> candidates;
+    };
+
+    // Whether an entry is free to take a code of this length. An entry already holding a length
+    // cannot take another, whether it names one symbol or a run.
+    static bool decodeEntryFree(const DecodeEntry& entry);
+
+    // Whether an entry now needs a run of candidates, which is what a code longer than the first
+    // level puts there.
+    static bool decodeEntryWantsCandidates(int codeLength);
+
+    // A fresh table, every entry empty.
+    static std::vector<DecodeEntry> emptyDecodeTable();
 };

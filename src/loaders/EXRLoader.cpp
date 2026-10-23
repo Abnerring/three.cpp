@@ -633,3 +633,18 @@ std::size_t EXRLoader::advanceAfterAc(BlockCompression kind, std::uint32_t compr
     if (kind == BlockCompression::Huffman) return compressedSize;
     return 0;
 }
+
+bool EXRLoader::decodeEntryFree(const DecodeEntry& entry) {
+    // A length anywhere in the entry means it is spoken for.
+    return entry.length == 0 && !entry.hasCandidates && entry.candidates.empty();
+}
+
+bool EXRLoader::decodeEntryWantsCandidates(int codeLength) {
+    // Only a code too long for the first level goes into a run.
+    return hufUsesSubTable(codeLength);
+}
+
+std::vector<EXRLoader::DecodeEntry> EXRLoader::emptyDecodeTable() {
+    // One entry per slot of the first level, all of them free.
+    return std::vector<DecodeEntry>(static_cast<std::size_t>(kHufDecodeSize), DecodeEntry{});
+}
