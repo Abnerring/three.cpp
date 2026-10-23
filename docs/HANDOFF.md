@@ -3311,6 +3311,14 @@
    - **六个 scope 各有自己的 builder 调用**，测试逐个断言且断言了前两个不相同。
    - **测试（4 个用例、31 条断言）**：类型五处；六个调用九处；抛异常五处 + 六次循环；两阶段六处。
    - **验证**：核心 **2367 用例 / 216,334 断言**（+4 / +31）、`primitive-geometry`、`port-audit`、addons、`--cube` 全绿。
+533. **第 225 轮：`VarNode` 的四个缺省标志与两处"答案不在节点上"**。
+   - **四个标志两开两关**：`global = true`、`parents = true`、`readOnly = false`、`intent = false`。**名字不都说明哪边是哪边**，所以测试把四个都列举而非推断。
+   - **`parents` 这个标志值得单独记**：注释说"Add this flag to the node system to indicate that this node require parents"——**一个表示"需要父节点"的布尔**，而命名只用了一个词。
+   - **`intent` 的答案不在节点上**：`isIntent( builder )` 读的是 `builder.getDataFromNode( this )`，**而节点上的 `intent` 只是请求**。**所以两者在 builder 看过之前可以不一致**。
+   - **名字缺省是 `null`**，所以系统会生成一个而不是拒绝。
+   - **`setIntent` 返回节点自身**，可链式。
+   - **测试（3 个用例、14 条断言）**：四个标志八处；名字一处；意图四中 **+** 缓存一处。
+   - **验证**：核心 **2370 用例 / 216,348 断言**（+3 / +14）、`primitive-geometry`、`port-audit`、addons、`--cube` 全绿。
 70. **第 520 轮：完整 Vulkan 套件 211/211 全绿，耗时 270.72 秒**。
    - 命令：`ctest --test-dir build-vulkan -j 4 -E "lights-states" --output-on-failure`（仍排除第 46 条那个已知项；它在 Vulkan 构建里同样慢）。
    - 结果：**100% tests passed, 0 tests failed out of 211**，总耗时 **270.72 秒**。对比同一套件在 **Debug** 配置下的 **3784.56 秒 / 2 失败**，差了约 14 倍——再次印证第 69 条"是构建类型不是代码"的结论。

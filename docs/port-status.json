@@ -194,8 +194,8 @@
     "note": "Accepted port scope is src and examples/jsm, including tracked third-party dependencies. Editor/manual web applications are excluded from native application rewrites. Native host behavior, packaging and all three platforms require separate implementation and verification evidence."
   },
   "counts": {
-    "partial-unverified": 337,
-    "missing": 604,
+    "partial-unverified": 338,
+    "missing": 603,
     "vulkan-port-pending": 290,
     "dependency-unverified": 20
   },
@@ -203,8 +203,8 @@
     "src": {
       "modules": 755,
       "counts": {
-        "partial-unverified": 253,
-        "missing": 212,
+        "partial-unverified": 254,
+        "missing": 211,
         "vulkan-port-pending": 290
       }
     },
@@ -803,7 +803,7 @@
       "path": "src/nodes/core",
       "upstreamFiles": 42,
       "moduleCount": 42,
-      "modulesWithCppFiles": 34,
+      "modulesWithCppFiles": 35,
       "verifiedComplete": 0
     },
     {
@@ -9715,11 +9715,11 @@
       "scope": "src",
       "kind": "core",
       "upstreamSha256": "eefcd387f3cb3cbb597b4568f4728acb9d488f235ca0b0b2b8d647cb41c5ff9d",
-      "header": null,
-      "implementation": null,
+      "header": "src/nodes/core/VarNode.h",
+      "implementation": "src/nodes/core/VarNode.cpp",
       "expectedHeader": "src/nodes/core/VarNode.h",
       "expectedImplementation": "src/nodes/core/VarNode.cpp",
-      "status": "missing",
+      "status": "partial-unverified",
       "verifiedComplete": false,
       "apiExtraction": "static-only",
       "verification": {
@@ -9728,7 +9728,9 @@
           "pointer": "/modules/299"
         },
         "upstreamUnitTests": [],
-        "cppUnitTests": [],
+        "cppUnitTests": [
+          "test/unit/src/nodes/core/VarNode.tests.cpp"
+        ],
         "reviewedImplementation": [],
         "differentialResults": [],
         "renderingResults": [],
