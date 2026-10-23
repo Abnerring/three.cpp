@@ -179,6 +179,7 @@ add_executable(THREECPPTests
         unit/src/loaders/GLTFBinary.tests.cpp
         unit/src/loaders/GLTFTypes.tests.cpp
         unit/src/loaders/GLTFBufferView.tests.cpp
+        unit/src/loaders/GLTFInterleaved.tests.cpp
         unit/src/cameras/StereoCamera.tests.cpp
         unit/src/audio/AudioContext.tests.cpp
         unit/src/audio/Audio.tests.cpp

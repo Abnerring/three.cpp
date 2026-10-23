@@ -215,3 +215,27 @@ std::size_t GLTFLoader::accessorComponentCount(std::size_t count, const std::str
     // Each element holds as many components as its shape says.
     return count * static_cast<std::size_t>(typeSize(type));
 }
+
+bool GLTFLoader::isInterleaved(std::size_t byteStride, std::size_t itemBytes) {
+    // No stride, or one that matches the element size, is the plain layout.
+    return byteStride != 0 && byteStride != itemBytes;
+}
+
+std::size_t GLTFLoader::interleavedSlice(std::size_t byteOffset, std::size_t byteStride) {
+    // Which run of elements the offset begins in.
+    if (byteStride == 0) return 0;
+    return byteOffset / byteStride;
+}
+
+std::size_t GLTFLoader::interleavedAttributeOffset(std::size_t byteOffset, std::size_t byteStride,
+                                                   std::size_t elementBytes) {
+    // The attribute begins part way into each element, counted in components.
+    if (byteStride == 0 || elementBytes == 0) return 0;
+    return (byteOffset % byteStride) / elementBytes;
+}
+
+std::size_t GLTFLoader::interleavedStride(std::size_t byteStride, std::size_t elementBytes) {
+    // The buffer counts its stride in components rather than bytes.
+    if (elementBytes == 0) return 0;
+    return byteStride / elementBytes;
+}

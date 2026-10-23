@@ -87,4 +87,18 @@ class GLTFLoader {
     // How many components an accessor of the given count and shape holds. An accessor with no
     // view is still that long, filled entirely with zeroes.
     static std::size_t accessorComponentCount(std::size_t count, const std::string& type);
+
+    // Whether a view's stride means its elements are interleaved with others. A stride equal to
+    // the size of one element is the plain layout, and no stride at all means the same.
+    static bool isInterleaved(std::size_t byteStride, std::size_t itemBytes);
+
+    // Which element of the stride a byte offset falls in, counted from the start of the view.
+    static std::size_t interleavedSlice(std::size_t byteOffset, std::size_t byteStride);
+
+    // How far into one element the attribute begins, counted in components rather than bytes.
+    static std::size_t interleavedAttributeOffset(std::size_t byteOffset, std::size_t byteStride,
+                                                  std::size_t elementBytes);
+
+    // The stride counted in components, which is what an interleaved buffer is told.
+    static std::size_t interleavedStride(std::size_t byteStride, std::size_t elementBytes);
 };
