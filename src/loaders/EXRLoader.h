@@ -482,4 +482,27 @@ class EXRLoader {
     // was given. Note that the single and multi scanline zips are different names, so a block
     // that says ZIP is not read here.
     static std::string unsupportedDeepMessage(const std::string& name);
+    // A multipart file writes a four byte part number before each chunk, and the reader steps
+    // over it rather than reading it, so the part is implied by the order of the chunks rather
+    // than by anything in them.
+    static constexpr int kPartPrefixSize = 4;
+
+    // How far a chunk's reader starts past the first of the chunk's own data: four bytes when
+    // the file has more than one part and nothing when it has one.
+    static std::size_t chunkPrefix(bool multiPart);
+
+    // The image row a chunk begins at. The chunk writes the absolute row and the reader takes
+    // the window's own first row off it, so a window that does not start at zero still gives
+    // rows counted from zero.
+    static int rowWithinWindow(int writtenRow, int windowFirstRow);
+
+    // The number of samples a row holds, read from the last of the cumulative counts. An empty
+    // row gives zero and its data block is stepped over rather than read.
+    static std::uint32_t totalSamples(const std::vector<std::uint32_t>& cumulativeCounts);
+
+    // The cumulative count table is written with each count in the machine's own byte order,
+    // which is the little one, while the rest of the file is the other way round. Reading it the
+    // file's usual way would turn a small count into a huge one.
+    static std::uint32_t cumulativeCount(std::uint32_t b0, std::uint32_t b1, std::uint32_t b2,
+                                         std::uint32_t b3);
 };

@@ -261,6 +261,7 @@ add_executable(THREECPPTests
         unit/src/loaders/EXRZipBlock.tests.cpp
         unit/src/loaders/EXRRleBlock.tests.cpp
         unit/src/loaders/EXRCompressionNames.tests.cpp
+        unit/src/loaders/EXRDeepChunk.tests.cpp
         unit/src/loaders/Zlib.tests.cpp
         unit/src/loaders/ZlibBits.tests.cpp
         unit/src/loaders/ZlibFixed.tests.cpp

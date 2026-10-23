@@ -719,3 +719,26 @@ std::string EXRLoader::unsupportedDeepMessage(const std::string& name) {
     // The message names the compression it was given.
     return "THREE.EXRLoader: " + name + " is unsupported for deep data";
 }
+
+std::size_t EXRLoader::chunkPrefix(bool multiPart) {
+    // A file with more than one part writes a number before each chunk; a single part one does
+    // not.
+    return multiPart ? static_cast<std::size_t>(kPartPrefixSize) : 0;
+}
+
+int EXRLoader::rowWithinWindow(int writtenRow, int windowFirstRow) {
+    // Rows are counted from the first row of the window, not from zero of the file.
+    return writtenRow - windowFirstRow;
+}
+
+std::uint32_t EXRLoader::totalSamples(const std::vector<std::uint32_t>& cumulativeCounts) {
+    // The counts are cumulative, so the last one is the total for the whole row.
+    if (cumulativeCounts.empty()) return 0;
+    return cumulativeCounts.back();
+}
+
+std::uint32_t EXRLoader::cumulativeCount(std::uint32_t b0, std::uint32_t b1, std::uint32_t b2,
+                                         std::uint32_t b3) {
+    // Lowest byte first, unlike the rest of the file.
+    return (b0 & 0xFFu) | ((b1 & 0xFFu) << 8) | ((b2 & 0xFFu) << 16) | ((b3 & 0xFFu) << 24);
+}

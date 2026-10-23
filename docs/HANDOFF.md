@@ -2504,6 +2504,13 @@
    - **错误消息把名字带上**：`'THREE.EXRLoader: ' + compression + ' is unsupported for deep data'`，所以两个不同的名字给出两条不同的消息。
    - **测试（3 个用例、15 条断言）**：三个名字（含 `ZIPS != ZIP`）；七种分派（含大小写与空串）；四条消息（含"两个名字不同"与"消息里有 deep"）。
    - **验证**：核心 **1908 用例 / 213,800 断言**（+3 / +15）、`primitive-geometry`、`port-audit`、addons、`--cube` 全绿。
+413. **第 99 轮：`EXRLoader` 第二十九层——深度数据的分块规则**。
+   - **多部分文件每块前有四个字节的部件号**：`if ( isMultiPart ) chunkOffset.value += INT32_SIZE`。**它只是被跨过去，不被读**——所以"第几部分"完全由块的顺序决定，块里不写。
+   - **行号按窗口计数**：`line = parseInt32(...) - EXRHeader.dataWindow.yMin`。窗口从负五开始时，块里写的负三就是窗口的第二行。
+   - **累计样本表是「小端」的**：`sctView.getUint32( x * 4, true )` 的第三个参数是 `true`。**而文件其余部分是大端**。同样的四个字节按文件惯例读会把一个小计数读成 `0x01000000`。这是这一层最容易写错的地方，测试专门用两条断言把两种读法的结果都写出来对照。
+   - **总样本数取最后一个累计值**：`totalSamples = cumulativeCounts[ width - 1 ]`。累计表天然如此，但空表与全零都要给出 0，所以循环里 `totalSamples === 0` 时直接跳过数据块。
+   - **测试（4 个用例、17 条断言）**：前缀两种；行号四种（含负窗口与正偏移）；总数五种（含空表）；小端四种（含与"另一种读法"的对照）。
+   - **验证**：核心 **1912 用例 / 213,817 断言**（+4 / +17）、`primitive-geometry`、`port-audit`、addons、`--cube` 全绿。
 70. **第 520 轮：完整 Vulkan 套件 211/211 全绿，耗时 270.72 秒**。
    - 命令：`ctest --test-dir build-vulkan -j 4 -E "lights-states" --output-on-failure`（仍排除第 46 条那个已知项；它在 Vulkan 构建里同样慢）。
    - 结果：**100% tests passed, 0 tests failed out of 211**，总耗时 **270.72 秒**。对比同一套件在 **Debug** 配置下的 **3784.56 秒 / 2 失败**，差了约 14 倍——再次印证第 69 条"是构建类型不是代码"的结论。
