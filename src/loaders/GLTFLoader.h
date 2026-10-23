@@ -198,4 +198,13 @@ class GLTFLoader {
                                           std::vector<Attribute> dracoAttributes, int indices,
                                           std::vector<Attribute> attributes, int mode,
                                           const std::vector<std::vector<Attribute>>& targets);
+    // The extension names the loader knows, in the order the source lists them. Each is both
+    // the key the file writes and the value the loader uses, so the list holds one copy of each.
+    static const std::vector<std::string>& knownExtensions();
+
+    // Whether a name is one of them.
+    static bool isKnownExtension(const std::string& name);
+
+    // How many there are, which the tests check against the source list.
+    static std::size_t knownExtensionCount();
 };

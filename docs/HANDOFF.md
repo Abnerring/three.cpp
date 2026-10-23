@@ -1859,6 +1859,12 @@
    - **形变目标逐个追加**：每个 target 各自拼一段 `:属性键`，所以两个"只差一个 target"的图元不会共用几何。
    - **测试（5 个用例、10 条断言）**：普通键的完整字符串；压缩键的完整字符串与"普通字段被忽略"；一个与两个 target 的追加；**三种"只差一处"的图元键不同**（索引访问器 / target / mode）；**空 target 列表不留 `::`**。
    - **验证**：核心 **1544 用例 / 210,523 断言**（+5 / +10）、addons、`primitive-geometry`、`port-audit`、Vulkan 全绿。
+326. **第 12 轮：`GLTFLoader` 第十二层——扩展名表**。
+   - **二十四个名字**，顺序与上游一致：从 `KHR_binary_glTF` 到 `EXT_mesh_gpu_instancing`。每个名字既是文件里写的键、也是端口用的值，所以只存一份。
+   - **比较区分大小写**：`khr_draco_mesh_compression` 不认；空名字也不认。
+   - **两个 meshopt 拼写都在**：`EXT_meshopt_compression` 与 `KHR_meshopt_compression` 是两个不同的名字，各占一项。
+   - **测试（4 个用例、14 条断言）**：总数 24 与首尾两项；三种认识与三种不认识（含大小写与空串）；**用 `set` 去重后数量不变**（防止表里出现重复）；两个 meshopt 名字并存。
+   - **验证**：核心 **1548 用例 / 210,537 断言**（+4 / +14）、addons、`primitive-geometry`、`port-audit`、Vulkan 全绿。
 70. **第 520 轮：完整 Vulkan 套件 211/211 全绿，耗时 270.72 秒**。
    - 命令：`ctest --test-dir build-vulkan -j 4 -E "lights-states" --output-on-failure`（仍排除第 46 条那个已知项；它在 Vulkan 构建里同样慢）。
    - 结果：**100% tests passed, 0 tests failed out of 211**，总耗时 **270.72 秒**。对比同一套件在 **Debug** 配置下的 **3784.56 秒 / 2 失败**，差了约 14 倍——再次印证第 69 条"是构建类型不是代码"的结论。

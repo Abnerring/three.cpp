@@ -367,3 +367,41 @@ std::string GLTFLoader::createPrimitiveKey(bool hasDraco, int dracoBufferView, i
     }
     return key;
 }
+
+const std::vector<std::string>& GLTFLoader::knownExtensions() {
+    // The twenty four names the source lists, in its order.
+    static const std::vector<std::string> names{
+        "KHR_binary_glTF",
+        "KHR_draco_mesh_compression",
+        "KHR_lights_punctual",
+        "KHR_materials_clearcoat",
+        "KHR_materials_diffuse_roughness",
+        "KHR_materials_dispersion",
+        "KHR_materials_ior",
+        "KHR_materials_sheen",
+        "KHR_materials_specular",
+        "KHR_materials_transmission",
+        "KHR_materials_iridescence",
+        "KHR_materials_anisotropy",
+        "KHR_materials_unlit",
+        "KHR_materials_volume",
+        "KHR_texture_basisu",
+        "KHR_texture_transform",
+        "KHR_mesh_quantization",
+        "KHR_materials_emissive_strength",
+        "EXT_materials_bump",
+        "EXT_texture_webp",
+        "EXT_texture_avif",
+        "EXT_meshopt_compression",
+        "KHR_meshopt_compression",
+        "EXT_mesh_gpu_instancing",
+    };
+    return names;
+}
+
+bool GLTFLoader::isKnownExtension(const std::string& name) {
+    const auto& names = knownExtensions();
+    return std::find(names.begin(), names.end(), name) != names.end();
+}
+
+std::size_t GLTFLoader::knownExtensionCount() { return knownExtensions().size(); }
