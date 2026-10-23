@@ -190,6 +190,7 @@ add_executable(THREECPPTests
         unit/src/loaders/GLTFLights.tests.cpp
         unit/src/loaders/GLTFUnlit.tests.cpp
         unit/src/loaders/GLTFClearcoat.tests.cpp
+        unit/src/loaders/GLTFSheen.tests.cpp
         unit/src/cameras/StereoCamera.tests.cpp
         unit/src/audio/AudioContext.tests.cpp
         unit/src/audio/Audio.tests.cpp

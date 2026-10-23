@@ -471,3 +471,20 @@ std::array<double, 2> GLTFLoader::normalScaleFrom(double scale) {
     // One number on both axes.
     return {scale, scale};
 }
+
+GLTFLoader::SheenDefaults GLTFLoader::sheenDefaults() {
+    // Black, smooth, and turned all the way up.
+    SheenDefaults defaults;
+    defaults.colour = {0.0, 0.0, 0.0};
+    defaults.roughness = 0.0;
+    defaults.sheen = 1.0;
+    return defaults;
+}
+
+std::string GLTFLoader::sheenParamForField(const std::string& field) {
+    // A factor loses its suffix.
+    if (field == "sheenColorFactor") return "sheenColor";
+    if (field == "sheenRoughnessFactor") return "sheenRoughness";
+    // The extension has only those two, so anything else names nothing.
+    return std::string();
+}

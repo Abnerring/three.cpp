@@ -252,4 +252,19 @@ class GLTFLoader {
 
     // The two numbers a normal scale takes: the one the file wrote, on both axes.
     static std::array<double, 2> normalScaleFrom(double scale);
+    // What a sheen extension starts from. Unlike a base colour, which starts white, the sheen
+    // colour starts black and the roughness at zero, while the sheen itself is turned all the
+    // way up so the extension's own values are what the material shows.
+    struct SheenDefaults {
+        std::array<double, 3> colour{0, 0, 0};
+        double roughness = 0;
+        double sheen = 1;
+    };
+
+    static SheenDefaults sheenDefaults();
+
+    // The material parameter a sheen field fills. A factor loses its suffix, so the colour
+    // factor fills the colour and the roughness factor fills the roughness; nothing else is
+    // recognised here because the extension has only those two.
+    static std::string sheenParamForField(const std::string& field);
 };
