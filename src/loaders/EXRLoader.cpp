@@ -592,3 +592,24 @@ void EXRLoader::writeRun(std::vector<std::uint8_t>& out, int count) {
     const std::uint8_t value = out.back();
     for (int i = 0; i < count; ++i) out.push_back(value);
 }
+
+EXRLoader::Rational EXRLoader::rationalFrom(std::int32_t numerator, std::uint32_t denominator) {
+    Rational rational;
+    rational.numerator = numerator;
+    rational.denominator = denominator;
+    return rational;
+}
+
+std::string EXRLoader::fixedLengthString(const std::vector<std::uint8_t>& buffer,
+                                         std::size_t offset, std::size_t size) {
+    std::string text;
+    // Exactly the stated number of bytes, or as many as are there if fewer.
+    for (std::size_t i = 0; i < size && offset + i < buffer.size(); ++i) {
+        text.push_back(static_cast<char>(buffer[offset + i]));
+    }
+    return text;
+}
+
+std::size_t EXRLoader::advanceF32(std::size_t offset) { return offset + kFloatSize; }
+
+std::size_t EXRLoader::advanceU32(std::size_t offset) { return offset + kIntSize; }

@@ -368,4 +368,27 @@ class EXRLoader {
     // the output, so a run of zero does not read it at all and an empty output has nothing to
     // repeat.
     static void writeRun(std::vector<std::uint8_t>& out, int count);
+    // The size of a float and of an int in the file.
+    static constexpr std::size_t kFloatSize = 4;
+    static constexpr std::size_t kIntSize = 4;
+
+    // A count and a divisor. The two are read with different signs: the first as a signed number
+    // and the second as an unsigned one, so a rational with a negative count is possible while a
+    // negative divisor is not.
+    struct Rational {
+        std::int32_t numerator = 0;
+        std::uint32_t denominator = 0;
+    };
+
+    static Rational rationalFrom(std::int32_t numerator, std::uint32_t denominator);
+
+    // A string of a stated length. Unlike the names in the header this one does not stop at a
+    // zero byte: exactly the number of bytes the attribute declares are taken, so an embedded
+    // zero stays in the middle of the result rather than ending it.
+    static std::string fixedLengthString(const std::vector<std::uint8_t>& buffer,
+                                         std::size_t offset, std::size_t size);
+
+    // How far an offset moves after reading a float or an int.
+    static std::size_t advanceF32(std::size_t offset);
+    static std::size_t advanceU32(std::size_t offset);
 };
