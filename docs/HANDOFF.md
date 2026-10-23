@@ -2130,6 +2130,12 @@
    - **收益**：核心从 **1702 用例 / 211,932 断言** 涨到 **1773 用例 / 212,529 断言**（**+71 / +597**），**全部通过**。涉及 `Object3D`、`Scene`、`Camera`、`Layers`、六种曲线、`Path`/`Shape`/`ShapePath`/`CurvePath`、两种几何、`WebGLProgram` 等。
    - **教训**：**写完测试不等于测试在跑**——注册列表与磁盘内容必须定期比对，这一轮之前已经有 29 个文件游离在外。
    - **验证**：核心 **1773 用例 / 212,529 断言**、addons、`primitive-geometry`、`port-audit`、Vulkan 全绿。
+367. **第 53 轮：`VulkanProgramUniforms.tests.cpp` 为什么进不了构建**。
+   - **结论：它依赖编译期开关**。`VulkanShaderCompiler::compileESSL` 在头文件里标着"**仅当以 `THREECPP_NATIVE_ESSL` 构建时可用**"，普通构建里这个函数**根本不存在**，所以这个测试文件**无法编译**，与类型名无关。
+   - **试过的三种改法都不对**：先把它当成 `VulkanEsslResult`（旧名），再写成 `VulkanShaderCompiler::ESSLResult`（不是嵌套成员），再改成裸 `ESSLResult`（在小写 `e` 开头的那一类类型里根本看不见）。三次都编译失败，最后确认**问题不在名字而在宏**。
+   - **处理**：文件**保留、但不注册**；等哪天默认构建打开 `THREECPP_NATIVE_ESSL`，把它加回注册表即可，里面的断言一条都不用改。
+   - **顺带修好一处**：给它补了 `#include <stdexcept>`，这样将来注册时不会再因为 `std::runtime_error` 报错。
+   - **验证**：核心 **1773 用例 / 212,529 断言**（与上一轮持平，本轮只增知识不增用例）、addons、`primitive-geometry`、`port-audit`、Vulkan 全绿。
 70. **第 520 轮：完整 Vulkan 套件 211/211 全绿，耗时 270.72 秒**。
    - 命令：`ctest --test-dir build-vulkan -j 4 -E "lights-states" --output-on-failure`（仍排除第 46 条那个已知项；它在 Vulkan 构建里同样慢）。
    - 结果：**100% tests passed, 0 tests failed out of 211**，总耗时 **270.72 秒**。对比同一套件在 **Debug** 配置下的 **3784.56 秒 / 2 失败**，差了约 14 倍——再次印证第 69 条"是构建类型不是代码"的结论。

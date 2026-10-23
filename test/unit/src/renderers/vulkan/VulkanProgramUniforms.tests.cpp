@@ -4,12 +4,13 @@
 #include <algorithm>
 #include <array>
 #include <cstring>
+#include <stdexcept>
 #include <limits>
 
 namespace {
 using Storage = VulkanProgramUniforms;
 using Scalar = VulkanShaderInterface::Numeric::Scalar;
-VulkanEsslResult compile() {
+VulkanShaderCompiler::ESSLResult compile() {
     const auto result = VulkanShaderCompiler::compileESSL({
         R"(#version 300 es
 precision highp float;precision highp int;
