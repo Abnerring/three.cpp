@@ -765,4 +765,31 @@ class EXRLoader {
     static PxrResult uncompressPXR(const std::vector<std::uint8_t>& block,
                                    const std::vector<int>& pixelTypes, std::uint32_t columns,
                                    std::uint32_t lines);
+    // The block compression keeps half precision channels as four by four blocks of fourteen
+    // bytes, each block holding its own range, so no two blocks need agree. Every other channel
+    // is not compressed at all but stored as it lies, one scanline after another.
+    static constexpr int kB44BlockExtent = 4;
+    static constexpr int kB44BlockBytes = 14;
+
+    // The number of bytes one sample of a channel takes. The format counts a half as one and a
+    // full precision value as two, so the bytes are that count doubled.
+    static int b44PixelSize(int pixelType);
+
+    // The size a channel reaches once its sampling is applied. A channel sampled every second
+    // pixel has half as many samples, rounded up.
+    static std::uint32_t b44ChannelExtent(std::uint32_t size, int sampling);
+
+    // Whether a channel is sampled at every pixel in both directions, which is the only case in
+    // which its samples are written to the output rather than stepped over.
+    static bool b44IsFullResolution(int xSampling, int ySampling);
+
+    // Whether a channel is compressed at all. Only the half precision ones are; the rest are
+    // stored as they lie.
+    static bool b44IsCompressed(int pixelType);
+
+    // How many blocks a side of a channel needs, rounded up.
+    static std::uint32_t b44BlockCount(std::uint32_t extent);
+
+    // Whether a block may be written flat, which only the second of the two block kinds allows.
+    static bool b44AllowsFlat(bool isB44a);
 };

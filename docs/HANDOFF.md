@@ -2629,6 +2629,14 @@
    - **一处我踩了规则里明写的陷阱**：新测试里用了 `"EXRLoader refuses a block that is not a stream"`，**与第 96 轮 `EXRZipBlock` 里的那条重名**，于是 Catch2 直接 `exit 255` 并打印 `already defined`。**我的九条常备检查里第一条就是这个**，这一轮却漏了。改名后通过。
    - **测试（3 个用例、9 条断言）**：端到端两个值；非流两种（含空块）；通道类型不可读。
    - **验证**：核心 **1972 用例 / 214,165 断言**（+3 / +9）、`primitive-geometry`、`port-audit`、addons、`--cube` 全绿。
+433. **`EXRLoader` 第四十七层：B44 的块常量与通道规则**。
+   - **块是四乘四、十四字节**：`kB44BlockExtent = 4`、`kB44BlockBytes = 14`。每个块自带自己的范围，所以块与块之间不需要一致。
+   - **只有半精度通道会被压缩**：`pixelType !== 1` 的通道按扫描线原样存放（`b44IsCompressed`）。所以一个文件里可以半精度通道走块、全精度通道走原样。
+   - **降采样通道的尺寸向上取整**：`chanWidth = ceil(width / xSampling)`。九列隔一取得到五而不是四——**最后那一个样本不会丢**。
+   - **一处真怪处**：非半精度**且**被降采样的通道，源里走的是 `srcOffset += chanWidth * pixelSize`，**只跳过、不写入**。所以这类通道的数据在输出里根本不存在。测试没有直接断言这一点（那需要完整组装），但 `b44IsFullResolution` 与 `b44IsCompressed` 两条把它的两个条件分开了。
+   - **两种块的区别只有一处**：B44A 允许三字节的"平坦块"，B44 不允许（`b44AllowsFlat`）。
+   - **测试（6 个用例、26 条断言）**：字节数三种 + 两个常量；采样取整六种（含零）；全分辨率四种；压缩三种；块数六种；平坦两种。
+   - **验证**：核心 **1978 用例 / 214,191 断言**（+6 / +26）、`primitive-geometry`、`port-audit`、addons、`--cube` 全绿。**提交前还跑了一次全仓重名比对，0 个重复。**
 70. **第 520 轮：完整 Vulkan 套件 211/211 全绿，耗时 270.72 秒**。
    - 命令：`ctest --test-dir build-vulkan -j 4 -E "lights-states" --output-on-failure`（仍排除第 46 条那个已知项；它在 Vulkan 构建里同样慢）。
    - 结果：**100% tests passed, 0 tests failed out of 211**，总耗时 **270.72 秒**。对比同一套件在 **Debug** 配置下的 **3784.56 秒 / 2 失败**，差了约 14 倍——再次印证第 69 条"是构建类型不是代码"的结论。

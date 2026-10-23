@@ -1435,3 +1435,34 @@ EXRLoader::PxrResult EXRLoader::uncompressPXR(const std::vector<std::uint8_t>& b
     result.valid = true;
     return result;
 }
+
+int EXRLoader::b44PixelSize(int pixelType) {
+    // The format counts a half as one and a full precision value as two, so bytes are doubled.
+    return pixelType * 2;
+}
+
+std::uint32_t EXRLoader::b44ChannelExtent(std::uint32_t size, int sampling) {
+    // Every sampling-th sample, rounded up so that the last one is never lost.
+    if (sampling <= 0) return size;
+    return (size + static_cast<std::uint32_t>(sampling) - 1) / static_cast<std::uint32_t>(sampling);
+}
+
+bool EXRLoader::b44IsFullResolution(int xSampling, int ySampling) {
+    // Both at every pixel, which is the only case whose samples are written out.
+    return xSampling == 1 && ySampling == 1;
+}
+
+bool EXRLoader::b44IsCompressed(int pixelType) {
+    // Only the half precision ones go through the blocks.
+    return pixelType == 1;
+}
+
+std::uint32_t EXRLoader::b44BlockCount(std::uint32_t extent) {
+    // Four samples to a block, rounded up.
+    return (extent + 3u) / 4u;
+}
+
+bool EXRLoader::b44AllowsFlat(bool isB44a) {
+    // The second kind allows a three byte block for a flat patch; the first does not.
+    return isB44a;
+}
