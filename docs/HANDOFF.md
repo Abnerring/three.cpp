@@ -2410,6 +2410,22 @@
    - **下一轮该看什么**：第 1030 行附近那个 `if` 的条件（很可能是 `if (device)` 或 `if (initialized)`），以及 `initialized` 在这几个渲染器上是否为真。
    - **一处自己的失误**：第一次插 `~Impl` 探针时我按 8 个空格缩进写正则，而实际文件是 4 个——`patched=true` 只来自另一处替换，于是那一轮看到的"`~Impl` 没进"是假象，差点把结论带偏。**第二次按 `\s+` 匹配才插对。**
    - **验证**：两处探针均已 `git checkout` 撤掉，工作树干净；核心 1881 用例 / 213,610 断言全绿。
+403. **第 89 轮：设备句柄在析构时是有效的，但两次是同一个地址**。
+   - **在 `~Impl` 开头打印三个指针**（`device`、`instance`、`api.vkDestroyDevice`），无参数套件的输出：
+     ```
+     [group] unsupportedMeshTests
+     [dev] ~Impl device=000001A2005400D0 instance=000001A274006E80 destroyFn=00007FF8AA7F55F0
+     [group] unsupportedPrimitiveTests
+     [dev] ~Impl device=000001A2005400D0 instance=000001A274006E80 destroyFn=00007FF8AA7F55F0
+     [group] instancingTests
+     [dev] ~Impl device=0000000000000000 instance=000001A274006E80 destroyFn=0000000000000000
+     ```
+   - **两个结论**：
+     1. **前三组的 `device` 与 `destroyFn` 不是空指针**，所以第 88 轮推测的"`if (api.vkDestroyDevice)` 因指针为空而跳过"**不成立**——销毁段的条件 `if (device)` 也是真的。**那么第 88 轮的计数器显示"销毁零次"就与这里矛盾了**，说明那次的计数器探针本身有问题（很可能是同一个缩进错误让它插到了别处），**不能作为结论**。
+     2. **第 1、2 组的 `device` 是同一个地址 `000001A2005400D0`**。驱动再次分配时拿到同一地址，最自然的解释是**第一个设备确实被释放了**——这也和"第 3 组 `destroyFn` 为空"对上：第 3 组的 `initialize()` 在 `loadDevice` 之前就失败了，所以它没有函数表。
+   - **所以第 88 轮的整体判断（设备泄漏）很可能是错的**，真正的问题回到了最初那条：**第三次 `vkCreateDevice` 直接失败**，而前两次都成功、也都正常析构。
+   - **下一轮该做的**：不要再靠打印猜，改为**在 `vkCreateDevice` 失败时把完整的 `VkDeviceCreateInfo` 与 `vkGetPhysicalDeviceFeatures` 的结果打出来**，看第三次请求的东西和前两次有什么不同。`instancingTests` 是唯一一个用了 `InstancedMesh` 的组，可能就是它请求了某个更大或不同的资源。
+   - **验证**：探针已 `git checkout` 撤掉；核心 1881 用例 / 213,610 断言全绿。
 70. **第 520 轮：完整 Vulkan 套件 211/211 全绿，耗时 270.72 秒**。
    - 命令：`ctest --test-dir build-vulkan -j 4 -E "lights-states" --output-on-failure`（仍排除第 46 条那个已知项；它在 Vulkan 构建里同样慢）。
    - 结果：**100% tests passed, 0 tests failed out of 211**，总耗时 **270.72 秒**。对比同一套件在 **Debug** 配置下的 **3784.56 秒 / 2 失败**，差了约 14 倍——再次印证第 69 条"是构建类型不是代码"的结论。
