@@ -109,3 +109,54 @@ Zlib::StoredHeader Zlib::readStoredHeader(BitReader& reader) {
     header.valid = (header.inverse == (~header.length & 0xFFFFu));
     return header;
 }
+
+int Zlib::fixedLiteralLength(int symbol) {
+    // Outside the alphabet there is no length at all.
+    if (symbol < 0 || symbol >= 288) return 0;
+    // The four runs, in the order the alphabet is numbered.
+    if (symbol <= 143) return 8;
+    if (symbol <= 255) return 9;
+    if (symbol <= 279) return 7;
+    return 8;
+}
+
+std::uint32_t Zlib::reverseBits(std::uint32_t value, int count) {
+    std::uint32_t out = 0;
+    for (int i = 0; i < count; ++i) {
+        out = (out << 1) | ((value >> i) & 1u);
+    }
+    return out;
+}
+
+std::vector<std::uint32_t> Zlib::fixedLiteralCodes() {
+    // The codes are assigned in the canonical way: the first of a length gets the value carried
+    // over from the length above, shifted up, and each next one counts on from there.
+    std::vector<std::uint32_t> codes(288, 0);
+    std::uint32_t next[16] = {};
+    std::uint32_t code = 0;
+    // A count of how many symbols use each length, then the usual walk down.
+    int counts[16] = {};
+    for (int symbol = 0; symbol < 288; ++symbol) counts[fixedLiteralLength(symbol)]++;
+    counts[0] = 0;
+    for (int bits = 1; bits < 16; ++bits) {
+        code = (code + static_cast<std::uint32_t>(counts[bits - 1])) << 1;
+        next[bits] = code;
+    }
+    // Each symbol takes the next code of its length, turned round for the stream.
+    for (int symbol = 0; symbol < 288; ++symbol) {
+        const int length = fixedLiteralLength(symbol);
+        if (length == 0) continue;
+        codes[static_cast<std::size_t>(symbol)] = reverseBits(next[length]++, length);
+    }
+    return codes;
+}
+
+std::vector<std::uint32_t> Zlib::fixedDistanceCodes() {
+    // All thirty codes use five bits, so they simply count from zero.
+    std::vector<std::uint32_t> codes(30, 0);
+    for (int symbol = 0; symbol < 30; ++symbol) {
+        codes[static_cast<std::size_t>(symbol)] =
+            reverseBits(static_cast<std::uint32_t>(symbol), kFixedDistanceLength);
+    }
+    return codes;
+}

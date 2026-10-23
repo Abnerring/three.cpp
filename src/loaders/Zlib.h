@@ -88,4 +88,22 @@ class Zlib {
     };
 
     static StoredHeader readStoredHeader(BitReader& reader);
+    // The number of bits the fixed literal codes use for a symbol. The alphabet is split into
+    // four runs: the first hundred and forty four use eight bits, the next hundred and twelve use
+    // nine, the next twenty four use seven and the last eight use eight again.
+    static int fixedLiteralLength(int symbol);
+
+    // The fixed distance codes are all five bits long.
+    static constexpr int kFixedDistanceLength = 5;
+
+    // A code with its bits turned round. A code is written in the specification most significant
+    // bit first, while the stream carries the least significant bit first, so every code has to
+    // be reversed before it is compared with what the stream gives.
+    static std::uint32_t reverseBits(std::uint32_t value, int count);
+
+    // The fixed literal codes, one per symbol, as the stream carries them.
+    static std::vector<std::uint32_t> fixedLiteralCodes();
+
+    // The fixed distance codes, one per symbol, likewise.
+    static std::vector<std::uint32_t> fixedDistanceCodes();
 };
