@@ -3,6 +3,7 @@
 #include <algorithm>
 #include <cctype>
 #include <stdexcept>
+#include <utility>
 
 namespace {
 // The name of a component type as the file writes it, lower cased for comparison.
@@ -344,4 +345,25 @@ bool GLTFLoader::needsMipmaps(bool compressed, const std::string& minFilter) {
     if (minFilter == "NearestFilter") return false;
     if (minFilter == "LinearFilter") return false;
     return true;
+}
+
+std::string GLTFLoader::createPrimitiveKey(bool hasDraco, int dracoBufferView, int dracoIndices,
+                                           std::vector<Attribute> dracoAttributes, int indices,
+                                           std::vector<Attribute> attributes, int mode,
+                                           const std::vector<std::vector<Attribute>>& targets) {
+    std::string key;
+    if (hasDraco) {
+        // A compressed primitive is keyed by what the extension names.
+        key = "draco:" + std::to_string(dracoBufferView) + ":" + std::to_string(dracoIndices) +
+              ":" + createAttributesKey(std::move(dracoAttributes));
+    } else {
+        // An ordinary one by its index accessor, its attributes and its mode.
+        key = std::to_string(indices) + ":" + createAttributesKey(std::move(attributes)) + ":" +
+              std::to_string(mode);
+    }
+    // Each morph target adds its own attributes.
+    for (const auto& target : targets) {
+        key += ":" + createAttributesKey(target);
+    }
+    return key;
 }

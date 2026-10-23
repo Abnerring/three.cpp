@@ -185,6 +185,7 @@ add_executable(THREECPPTests
         unit/src/loaders/GLTFAnimation.tests.cpp
         unit/src/loaders/GLTFMaterial.tests.cpp
         unit/src/loaders/GLTFSampler.tests.cpp
+        unit/src/loaders/GLTFPrimitiveKey.tests.cpp
         unit/src/cameras/StereoCamera.tests.cpp
         unit/src/audio/AudioContext.tests.cpp
         unit/src/audio/Audio.tests.cpp

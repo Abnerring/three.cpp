@@ -190,4 +190,12 @@ class GLTFLoader {
     // does, and neither does one whose minification filter is a single level, since neither
     // nearest nor linear looks at more than one level.
     static bool needsMipmaps(bool compressed, const std::string& minFilter);
+    // The key a primitive's geometry is cached under. A primitive compressed by the draco
+    // extension is keyed by its compressed buffer, its index accessor and its attributes; an
+    // ordinary one by its index accessor, its attributes and its mode. Each morph target then
+    // adds its own attributes, so two primitives that differ only in a target do not share a key.
+    static std::string createPrimitiveKey(bool hasDraco, int dracoBufferView, int dracoIndices,
+                                          std::vector<Attribute> dracoAttributes, int indices,
+                                          std::vector<Attribute> attributes, int mode,
+                                          const std::vector<std::vector<Attribute>>& targets);
 };
