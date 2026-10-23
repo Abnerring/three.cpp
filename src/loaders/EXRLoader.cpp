@@ -572,3 +572,23 @@ EXRLoader::TileDescription EXRLoader::tileDescription(std::uint32_t xSize, std::
     tile.roundingMode = roundingModeName(modes >> 4);
     return tile;
 }
+
+int EXRLoader::runLengthCount(std::int32_t accumulate, int liveBits) {
+    // Shift down to the live bits and keep the low byte, which is what a one byte array does.
+    if (liveBits < 0) return 0;
+    const std::int32_t shifted = accumulate >> liveBits;
+    return static_cast<int>(static_cast<std::uint8_t>(shifted & 0xFF));
+}
+
+bool EXRLoader::runFits(std::size_t outOffset, int count, std::size_t outEnd) {
+    // A count of zero writes nothing and always fits.
+    if (count <= 0) return true;
+    return outOffset + static_cast<std::size_t>(count) <= outEnd;
+}
+
+void EXRLoader::writeRun(std::vector<std::uint8_t>& out, int count) {
+    // Nothing to repeat and nothing written.
+    if (count <= 0 || out.empty()) return;
+    const std::uint8_t value = out.back();
+    for (int i = 0; i < count; ++i) out.push_back(value);
+}

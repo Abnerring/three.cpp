@@ -2172,6 +2172,12 @@
    - **一次自我纠正**：我先写的 `acceptsBond` 是 `recorded.empty() || true`，那是恒真，等于没测；改成 `partner == 0 → false，否则 !alreadyRecorded`。
    - **测试（4 个用例、19 条断言）**：修剪四种；大写化五种（含 `NO` → `No`）；哈希四种（含对称与相等）；去重四种。
    - **验证**：核心 **1796 用例 / 212,648 断言**（+4 / +19）、addons、`primitive-geometry`、`port-audit`、Vulkan 全绿。
+373. **第 59 轮：`EXRLoader` 第二十一层——符号的写出与重复**。
+   - **计数被截成一个字节**：`new Uint8Array( [ cs ] )[ 0 ]`——所以超出 255 的计数会**按 256 取模**而不是被拒绝。端口用 `& 0xFF` 明确写出这一点。
+   - **重复的是"已经写出的最后一个字节"**：`const s = outBuffer[ outBufferOffset.value - 1 ]`——不是另读一个值。所以计数为 0 时**根本不读**，输出为空时**没有可重复的东西**。
+   - **边界是"恰好填满也算放得下"**：`out + cs > end` 才拒绝，等号放行。
+   - **测试（4 个用例、19 条断言）**：计数四种；**截断三种（含 `0x105 → 5` 与 `0x100 → 0`）**；边界四种（含零计数）；写出四种（含空输出）。
+   - **验证**：核心 **1800 用例 / 212,667 断言**（+4 / +19）、addons、`primitive-geometry`、`port-audit`、Vulkan 全绿。
 70. **第 520 轮：完整 Vulkan 套件 211/211 全绿，耗时 270.72 秒**。
    - 命令：`ctest --test-dir build-vulkan -j 4 -E "lights-states" --output-on-failure`（仍排除第 46 条那个已知项；它在 Vulkan 构建里同样慢）。
    - 结果：**100% tests passed, 0 tests failed out of 211**，总耗时 **270.72 秒**。对比同一套件在 **Debug** 配置下的 **3784.56 秒 / 2 失败**，差了约 14 倍——再次印证第 69 条"是构建类型不是代码"的结论。

@@ -354,4 +354,18 @@ class EXRLoader {
 
     static TileDescription tileDescription(std::uint32_t xSize, std::uint32_t ySize,
                                            std::uint8_t modes);
+    // How many times a run length symbol repeats. The bits are shifted down to the live ones and
+    // then cut to a byte, so a count that would not fit is taken modulo two hundred and fifty
+    // six rather than refused, which is what putting it through a one byte array does in the
+    // source.
+    static int runLengthCount(std::int32_t accumulate, int liveBits);
+
+    // Whether a run can be written without reaching past the end of the output. A run of zero is
+    // always allowed, since it writes nothing.
+    static bool runFits(std::size_t outOffset, int count, std::size_t outEnd);
+
+    // Writes a byte the given number of times. The byte written is the one already at the end of
+    // the output, so a run of zero does not read it at all and an empty output has nothing to
+    // repeat.
+    static void writeRun(std::vector<std::uint8_t>& out, int count);
 };
