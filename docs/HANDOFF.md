@@ -3372,6 +3372,13 @@
    - **`ViewportDepthTextureNode` 只在缺纹理时用共享的**：`if ( depthTexture === null )` 才回退，**判的是"缺"而不是"假"**。而**它不覆写 `updateReference`**——所以与兄弟不同，只有起始纹理不一样。
    - **测试（4 个用例、13 条断言）**：共享三处；空操作两处；深度来源四处；对比与参数三处。
    - **验证**：核心 **2396 用例 / 216,484 断言**（+4 / +13）、`primitive-geometry`、`port-audit`、addons、`--cube` 全绿。
+541. **第 233 轮：`ViewportDepthNode` 的三种 scope 与七种建立结果**。
+   - **只有 `depthBase` 在生成时用自己的东西**：`generate` 里只有那个 scope 返回 `builder.getFragDepth()`，**另两个落到父类的普通路径**。
+   - **`setup` 可以返回 `null`**：`depthBase` 而没有值时 `node` 一直是 `null`，**所以"无值"是一种合法结果而不是错误**。
+   - **`DEPTH` 完全忽略 `valueNode`**：文档自己写了"`valueNode` is ignored"，**所以那个属性在这个 scope 下是死的**。
+   - **`linearDepth` 有值时两种相机差两层转换**：**透视**要 `perspectiveDepthToViewZ` 再 `viewZToOrthographicDepth`（**两次**）；**正交**已经线性，**直接把值传过去（零次）**。**这是本节点里两种相机差别最大的一处**。
+   - **测试（4 个用例、29 条断言）**：类型与三 scope 六处；生成两分支五处；七种建立结果十一处；转换次数与值使用六处。
+   - **验证**：核心 **2400 用例 / 216,513 断言**（+4 / +29）、`primitive-geometry`、`port-audit`、addons、`--cube` 全绿。
 70. **第 520 轮：完整 Vulkan 套件 211/211 全绿，耗时 270.72 秒**。
    - 命令：`ctest --test-dir build-vulkan -j 4 -E "lights-states" --output-on-failure`（仍排除第 46 条那个已知项；它在 Vulkan 构建里同样慢）。
    - 结果：**100% tests passed, 0 tests failed out of 211**，总耗时 **270.72 秒**。对比同一套件在 **Debug** 配置下的 **3784.56 秒 / 2 失败**，差了约 14 倍——再次印证第 69 条"是构建类型不是代码"的结论。
