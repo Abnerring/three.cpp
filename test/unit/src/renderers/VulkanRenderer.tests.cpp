@@ -1857,7 +1857,12 @@ void parkRestoreTests(bool validation) {
     // Read both targets while the second is bound: each keeps its own pixels.
     auto firstPixels = renderer.readRenderTargetPixels(*first, 0, 0, 16, 16);
     auto secondPixels = renderer.readRenderTargetPixels(*second, 0, 0, 16, 16);
+    // The readback can come back empty when the target is not the one bound, and indexing
+    // it then reads past the end; the two checks below turn that into a plain failure.
+    require(firstPixels.size() == 16 * 16 * 4, "the parked readback has a whole face");
+    require(secondPixels.size() == 16 * 16 * 4, "the bound readback has a whole face");
     const std::size_t middle = (static_cast<std::size_t>(8) * 16 + 8) * 4;
+    std::cerr << "park probe sizes = " << firstPixels.size() << "," << secondPixels.size() << "\n";
     std::cerr << "park probe first = " << static_cast<int>(firstPixels[middle + 1])
               << " second = " << static_cast<int>(secondPixels[middle + 2]) << "\n";
     require(firstPixels[middle + 1] > 200 && firstPixels[middle + 2] < 60,
