@@ -200,6 +200,7 @@ target_sources(threecpp PRIVATE
     src/nodes/core/SpriteSheetUV.cpp
     src/nodes/core/Oscillators.cpp
     src/nodes/core/ViewportUtils.cpp
+    src/nodes/core/DebugNode.cpp
     src/nodes/core/NodeConstants.cpp
     src/nodes/core/Node.cpp
     src/loaders/DataTextureLoader.cpp
