@@ -292,6 +292,7 @@ add_executable(THREECPPTests
         unit/src/nodes/core/StructType.tests.cpp
         unit/src/nodes/core/NodeFrame.tests.cpp
         unit/src/nodes/core/ConstNode.tests.cpp
+        unit/src/nodes/core/NodeUniform.tests.cpp
         unit/src/loaders/EXRSamplesToBytes.tests.cpp
         unit/src/loaders/EXRDecompressBlock.tests.cpp
         unit/src/loaders/Zlib.tests.cpp
