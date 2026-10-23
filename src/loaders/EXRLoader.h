@@ -865,4 +865,17 @@ class EXRLoader {
     // half precision form: three in the top ten bits of sixteen is the half that means one.
     static constexpr std::uint16_t kByteAlphaOpaque = 1;
     static constexpr std::uint16_t kHalfAlphaOpaque = 0x3C00;
+    // Where one sample of a line is written in the output. Three things decide it: the row,
+    // which counts from the top of the output while the file counts from the bottom; the
+    // column and the channel within the line; and the plane, since the output holds all of a
+    // pixel's channels together. The place a sample is read from is a different sum, taken
+    // within the line rather than within the image.
+    static std::size_t scanlineWriteIndex(std::uint32_t outputRow, std::uint32_t x,
+                                          std::size_t channelInOutput, std::size_t outputChannels,
+                                          std::uint32_t lineWidth);
+
+    // Where one sample of a line is read from within the block that holds the line.
+    static std::size_t scanlineReadIndex(std::uint32_t lineWithinBlock, std::size_t channelOffset,
+                                         std::uint32_t x, std::uint32_t columns,
+                                         std::size_t sampleBytes);
 };

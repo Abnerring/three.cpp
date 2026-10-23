@@ -1581,3 +1581,24 @@ std::size_t EXRLoader::totalBytesPerSample(const std::vector<int>& pixelTypes) {
 std::size_t EXRLoader::outputLineWidth(std::uint32_t width, std::size_t outputChannels) {
     return static_cast<std::size_t>(width) * outputChannels;
 }
+
+std::size_t EXRLoader::scanlineWriteIndex(std::uint32_t outputRow, std::uint32_t x,
+                                          std::size_t channelInOutput, std::size_t outputChannels,
+                                          std::uint32_t lineWidth) {
+    // The row picks out a line of the output, the column picks out a pixel within it, and the
+    // channel picks out which of the pixel's own places the sample belongs to.
+    return static_cast<std::size_t>(outputRow) * lineWidth +
+           static_cast<std::size_t>(x) * outputChannels + channelInOutput;
+}
+
+std::size_t EXRLoader::scanlineReadIndex(std::uint32_t lineWithinBlock, std::size_t channelOffset,
+                                         std::uint32_t x, std::uint32_t columns,
+                                         std::size_t sampleBytes) {
+    // Within a block the lines come first, then each channel's own run of samples, then the
+    // column. The channel's place is counted in samples rather than bytes, so it is multiplied
+    // by the line's width in samples.
+    return static_cast<std::size_t>(lineWithinBlock) * static_cast<std::size_t>(columns) *
+               sampleBytes +
+           channelOffset * static_cast<std::size_t>(columns) +
+           static_cast<std::size_t>(x) * sampleBytes;
+}
