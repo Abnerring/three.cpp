@@ -2366,6 +2366,15 @@
    - **为什么表现会变**：`pixels` 偏短时，`pixel()` 的下标有时还在界内（读到旧数据 → 报"mipmap 全黑"），有时越界（`.at` 抛 `invalid vector subscript`）。**这正好解释了第 82 轮观察到的"失败文案会变"。**
    - **本轮只加了断言，没有改渲染器**：断言把一个静默的错误读变成明确的失败，这是改进；但真正的修复（resize 时同步 `pixels` 与 `readback`，并让 `memcpy` 按实际读回长度做）留给下一轮，因为那要动 Vulkan 的读回路径。
    - **验证**：核心 **1881 用例 / 213,610 断言**、`primitive-geometry`、`port-audit`、addons 全绿；Vulkan 无参数**现在报的是新断言**（**不是修复，是更清楚的失败**）。
+399. **第 85 轮：`readPixels()` 返回了错误的成员——两个同名向量，只有一个被写过**。
+   - **真因**：`src/renderers/VulkanRenderer.cpp` 里有两个同类型的成员——
+     - **第 419 行 `GpuTarget::pixels`**：`endFrame()` 第 2703 行 `memcpy` 写的**就是这个**，注释也写明"per target 的 CPU 副本"；
+     - **第 703 行 `Impl::pixels`**：**从来没有任何地方给它赋值**，而 `readPixels()`（第 2908 行）**返回的正是它**。
+   - **于是 `readPixels()` 给出的向量与渲染目标毫无关系**：它的长度可能为零、可能过期，于是 `pixel()` 里按 `getWidth()*getHeight()` 算出的下标落到界外——**这才是 `invalid vector subscript` 的来源**。
+   - **修法**：`readPixels()` 改为返回 `impl->active->pixels`，并在没有渲染目标时返回空向量。**没有动 `resize`**，因为第 82 轮已经核对过那边是对的。
+   - **效果**：**`invalid vector subscript` 消失了**。同一份无参数套件现在报的是 `vkCreateDevice failed (VkResult -4)`（`VK_ERROR_INITIALIZATION_FAILED`）——**一处更早、与读回无关的失败**，`--cube` 仍然是 0。
+   - **所以本轮修好了一个真 bug，但套件仍然红**，只是红在了别处。这条线索（设备创建失败）下一轮单独查。
+   - **验证**：核心 **1881 用例 / 213,610 断言**、`primitive-geometry`、`port-audit`、addons、`--cube` 全绿。
 70. **第 520 轮：完整 Vulkan 套件 211/211 全绿，耗时 270.72 秒**。
    - 命令：`ctest --test-dir build-vulkan -j 4 -E "lights-states" --output-on-failure`（仍排除第 46 条那个已知项；它在 Vulkan 构建里同样慢）。
    - 结果：**100% tests passed, 0 tests failed out of 211**，总耗时 **270.72 秒**。对比同一套件在 **Debug** 配置下的 **3784.56 秒 / 2 失败**，差了约 14 倍——再次印证第 69 条"是构建类型不是代码"的结论。

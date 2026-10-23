@@ -2905,7 +2905,11 @@ std::vector<std::uint8_t> VulkanRenderer::readPixels() const {
         // Preserve attachments while subsequent callbacks and draws continue this frame.
         impl->beginFrame(false, false, impl->clearColor, impl->clearAlpha, srgbOutput);
     }
-    return impl->pixels;
+    // The pixels belong to the target that was rendered into; the wide member above is
+    // not the one that gets written, so returning it would hand back a vector that was
+    // never filled. A renderer with no target has nothing to give.
+    if (!impl->active) return {};
+    return impl->active->pixels;
 }
 const VulkanRendererInfo& VulkanRenderer::getInfo() const {
     const auto render = info.get("render");
