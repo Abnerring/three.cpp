@@ -733,4 +733,23 @@ class EXRLoader {
     enum class Decompresser { None, RunLength, Zip, Wavelet, Pxr, B44, Deep };
 
     static Decompresser decompresserFor(int code);
+    // The pixel rate compression keeps each channel's values as separate planes of one byte per
+    // pixel, one plane for the top byte, one for the next and so on, and writes the difference
+    // between a value and the one before it rather than the value. A half precision channel
+    // therefore takes two planes and a full precision one three, the lowest byte of a full
+    // precision value never being kept at all, which is what makes the compression lossy.
+    static int pxrPlaneCount(int pixelType);
+
+    // The difference one pixel contributes, taken from a byte of each plane. A half precision
+    // channel gives sixteen bits and a full precision one twenty four, the bottom eight being
+    // left as zero.
+    static std::uint32_t pxrDifference(int pixelType, std::uint32_t plane0, std::uint32_t plane1,
+                                       std::uint32_t plane2);
+
+    // Where each plane of one row begins, given where the row's planes begin.
+    static std::vector<std::size_t> pxrPlaneStarts(std::size_t rowStart, std::uint32_t columns,
+                                                   int pixelType);
+
+    // How far the planes for one row move the read position on.
+    static std::size_t pxrRowBytes(std::uint32_t columns, int pixelType);
 };

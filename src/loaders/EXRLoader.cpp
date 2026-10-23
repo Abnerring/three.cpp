@@ -1357,3 +1357,41 @@ EXRLoader::Decompresser EXRLoader::decompresserFor(int code) {
         default: return Decompresser::None;
     }
 }
+
+int EXRLoader::pxrPlaneCount(int pixelType) {
+    // A half precision channel is two bytes and so takes two planes; a full precision one is
+    // four bytes but the lowest is dropped, leaving three.
+    if (pixelType == 1) return 2;
+    if (pixelType == 2) return 3;
+    return 0;
+}
+
+std::uint32_t EXRLoader::pxrDifference(int pixelType, std::uint32_t plane0, std::uint32_t plane1,
+                                       std::uint32_t plane2) {
+    if (pixelType == 1) {
+        // Two bytes, the first the higher.
+        return ((plane0 & 0xFFu) << 8) | (plane1 & 0xFFu);
+    }
+    if (pixelType == 2) {
+        // Three bytes with the lowest of the four left empty, which loses the bottom eight bits
+        // of the value and is where the compression stops being exact.
+        return ((plane0 & 0xFFu) << 24) | ((plane1 & 0xFFu) << 16) | ((plane2 & 0xFFu) << 8);
+    }
+    return 0;
+}
+
+std::size_t EXRLoader::pxrRowBytes(std::uint32_t columns, int pixelType) {
+    // One byte per pixel for each plane the channel has.
+    return static_cast<std::size_t>(columns) * static_cast<std::size_t>(pxrPlaneCount(pixelType));
+}
+
+std::vector<std::size_t> EXRLoader::pxrPlaneStarts(std::size_t rowStart, std::uint32_t columns,
+                                                   int pixelType) {
+    std::vector<std::size_t> starts;
+    const int planes = pxrPlaneCount(pixelType);
+    for (int i = 0; i < planes; ++i) {
+        // Each plane follows the one above it, a row's worth apart.
+        starts.push_back(rowStart + static_cast<std::size_t>(i) * columns);
+    }
+    return starts;
+}
