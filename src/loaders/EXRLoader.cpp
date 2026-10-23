@@ -1,5 +1,8 @@
 #include "loaders/EXRLoader.h"
 
+#include <cmath>
+#include <cstring>
+
 int EXRLoader::hufLength(int code) {
     // The low six bits.
     return code & 63;
@@ -71,4 +74,33 @@ void EXRLoader::csc709Inverse(YcbcrPixel& pixel) {
 
 void EXRLoader::csc709InverseBlock(YcbcrPixel* pixels, std::size_t count) {
     for (std::size_t i = 0; i < count; ++i) csc709Inverse(pixels[i]);
+}
+
+std::uint16_t EXRLoader::floatToHalfBits(float value) {
+    // The bits of the number, read without changing them.
+    std::uint32_t bits = 0;
+    static_assert(sizeof(float) == sizeof(bits), "a float must be four bytes here");
+    std::memcpy(&bits, &value, sizeof(bits));
+
+    const std::uint32_t sign = (bits >> 16) & 0x8000u;
+    const std::uint32_t magnitude = bits & 0x7fffffffu;
+
+    // Too large for a half: infinity, or not a number if it already was one.
+    if (magnitude >= 0x47800000u) {
+        return static_cast<std::uint16_t>(sign | (magnitude > 0x7f800000u ? kHalfNotANumber
+                                                                        : kHalfInfinity));
+    }
+
+    // Too small for a normal half. Half a step is added first, which puts the value on the grid
+    // the subnormal patterns share, and the bias is then removed.
+    if (magnitude < 0x38800000u) {
+        const float nudged = std::fabs(value) + 0.5f;
+        std::uint32_t nudgedBits = 0;
+        std::memcpy(&nudgedBits, &nudged, sizeof(nudgedBits));
+        return static_cast<std::uint16_t>(sign | (nudgedBits - 0x3f000000u));
+    }
+
+    // Round to nearest, with a tie going to the even pattern.
+    const std::uint32_t rounded = magnitude + 0xfffu + ((magnitude >> 13) & 1u);
+    return static_cast<std::uint16_t>(sign | ((rounded - 0x38000000u) >> 13));
 }

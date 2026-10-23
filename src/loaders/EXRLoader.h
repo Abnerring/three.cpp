@@ -57,4 +57,18 @@ class EXRLoader {
 
     static void csc709Inverse(YcbcrPixel& pixel);
     static void csc709InverseBlock(YcbcrPixel* pixels, std::size_t count);
+    // A single precision number as the sixteen bit pattern of the nearest half. The rounding is
+    // to nearest with ties going to the even pattern, which is what the note in the source is
+    // about: truncating instead puts the output a few units in the last place away from the
+    // reference implementation, and those units show up in the decoded image.
+    //
+    // The same three cases the source handles come up here. A number too large for a half becomes
+    // infinity, and a pattern that is already not a number stays one. A number too small for a
+    // normal half is nudged by half a step before the exponent is removed, which forces it onto
+    // the coarser grid the subnormal patterns use. Everything else is rounded by adding half a
+    // step less one and then the lowest bit of the result, so an exact tie lands on the even
+    // pattern rather than always away from zero.
+    static std::uint16_t floatToHalfBits(float value);
+    static constexpr std::uint16_t kHalfInfinity = 0x7c00;
+    static constexpr std::uint16_t kHalfNotANumber = 0x7e00;
 };
