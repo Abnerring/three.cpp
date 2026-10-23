@@ -2390,6 +2390,26 @@
    - **矛盾还没解开**：要么某个组在失败路径上（`unsupportedMeshTests` 是**故意喂非法网格**的）提前 `return` 而跳过了析构，要么渲染器被复制/共享导致析构没发生。**下一轮该查"故意失败的那几次是否让对象活得更久"**。
    - **`--first`/`--second`/`--third` 与组标记都保留在测试里**：它们不改变任何断言，只是把"红"变成"红在哪一组"，这对后续排查有用。
    - **验证**：核心 1881 用例 / 213,610 断言、`primitive-geometry`、`port-audit`、addons、`--cube` 全绿。
+402. **第 88 轮：设备创建三次、销毁零次——`~Impl` 进了，但销毁那段被跳过**。
+   - **加了一对计数器**（临时，已撤）：`vkCreateDevice` 之前与 `vkDestroyDevice` 之前各打一行，带"已创建 / 已销毁 / 存活"三个数。跑无参数套件，输出是：
+     ```
+     [group] unsupportedMeshTests        [dev] create #1 (alive 1)
+     [group] unsupportedPrimitiveTests   [dev] create #2 (alive 2)
+     [group] instancingTests             [dev] create #3 (alive 3)
+     Vulkan renderer test failed: vkCreateDevice failed (VkResult -4)
+     ```
+     **`destroy` 一行都没有，`alive` 一路涨到 3，第四次创建就失败**——这与 `VK_ERROR_INITIALIZATION_FAILED` 在驱动上"设备数到上限"的含义完全吻合。
+   - **再加一层探针**确认对象到底有没有析构：在 `~VulkanRenderer` 与 `~Impl` 开头各打一行。结果是 **`~VulkanRenderer` 与 `~Impl` 每次都进了**：
+     ```
+     create #1 → ~VulkanRenderer → ~Impl entered
+     create #2 → ~VulkanRenderer → ~Impl entered
+     create #3 → ~Impl entered
+     ```
+     **所以析构链是完整的**，问题不在"对象没被销毁"。
+   - **于是矛盾集中到一处**：`~Impl` 里那段销毁代码（约 1038–1054 行，`vkDestroyPipeline` / `vkDestroyRenderPass` / `vkDestroyFence` / `vkDestroyCommandPool` / `vkDestroyDevice`）**被某个外层条件整段跳过**。`loadDevice`（第 254 行）在任何函数指针缺失时会 `throw`，所以 `api.vkDestroyDevice` 不可能是空指针——**因此那个 `if (api.vkDestroyDevice)` 根本没有被执行到**。
+   - **下一轮该看什么**：第 1030 行附近那个 `if` 的条件（很可能是 `if (device)` 或 `if (initialized)`），以及 `initialized` 在这几个渲染器上是否为真。
+   - **一处自己的失误**：第一次插 `~Impl` 探针时我按 8 个空格缩进写正则，而实际文件是 4 个——`patched=true` 只来自另一处替换，于是那一轮看到的"`~Impl` 没进"是假象，差点把结论带偏。**第二次按 `\s+` 匹配才插对。**
+   - **验证**：两处探针均已 `git checkout` 撤掉，工作树干净；核心 1881 用例 / 213,610 断言全绿。
 70. **第 520 轮：完整 Vulkan 套件 211/211 全绿，耗时 270.72 秒**。
    - 命令：`ctest --test-dir build-vulkan -j 4 -E "lights-states" --output-on-failure`（仍排除第 46 条那个已知项；它在 Vulkan 构建里同样慢）。
    - 结果：**100% tests passed, 0 tests failed out of 211**，总耗时 **270.72 秒**。对比同一套件在 **Debug** 配置下的 **3784.56 秒 / 2 失败**，差了约 14 倍——再次印证第 69 条"是构建类型不是代码"的结论。
