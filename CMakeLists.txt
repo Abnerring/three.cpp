@@ -204,6 +204,7 @@ target_sources(threecpp PRIVATE
     src/nodes/core/Discard.cpp
     src/nodes/core/ScreenNode.cpp
     src/nodes/core/DepthConversion.cpp
+    src/nodes/core/ViewportDepthTexture.cpp
     src/nodes/core/NodeConstants.cpp
     src/nodes/core/Node.cpp
     src/loaders/DataTextureLoader.cpp
