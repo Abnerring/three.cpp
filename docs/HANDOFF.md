@@ -3095,6 +3095,12 @@
    - **两条消息的措辞不同，且都带类型名**：一条说 "Length of parameters exceeds…"，另一条说 "Length of '…' data exceeds…"。
    - **测试（5 个用例、26 条断言）**：宽度五处；不存在的宽度六处；两个检查七处；截断五处；两条消息四处。
    - **验证**：核心 **2235 用例 / 215,631 断言**（+5 / +26）、`primitive-geometry`、`port-audit`、addons、`--cube` 全绿。
+503. **第 193 轮：`MemberNode` 的缺失成员变成 float，以及一处查错名字的守卫**。
+   - **读一个不存在的成员不会报错**：`generateNodeType` 与 `getMemberType` 都返回 **`'float'`**，`generate` 打一句警告后**生成一个该类型的常量**。所以**一个读了结构里没有的成员的着色器仍然能编译，只是在那个位置得到零**。测试把"缺失时是 float、存在时是原类型"两侧都断言了。
+   - **一处查错名字的守卫**：`getMemberType( builder, name )` 里先调 `this.hasMember( builder )`——**那检查的是 `this.property`，而随后查的是 `name`**。**两个名字不同时，守卫问的是另一个成员。** 端口把这个事实做成 `guardUsesOwnProperty()` 并记录，不修。
+   - **存在性检查会往上递归**：如果 `structNode` 本身是一个成员节点，它必须先找到自己的成员。所以**成员的成员只有在第一层成立时才算存在**。
+   - **测试（5 个用例、18 条断言）**：缺失与存在七处；警告三处；递归五处；守卫三处；缓存一处。
+   - **验证**：核心 **2240 用例 / 215,649 断言**（+5 / +18）、`primitive-geometry`、`port-audit`、addons、`--cube` 全绿。
 70. **第 520 轮：完整 Vulkan 套件 211/211 全绿，耗时 270.72 秒**。
    - 命令：`ctest --test-dir build-vulkan -j 4 -E "lights-states" --output-on-failure`（仍排除第 46 条那个已知项；它在 Vulkan 构建里同样慢）。
    - 结果：**100% tests passed, 0 tests failed out of 211**，总耗时 **270.72 秒**。对比同一套件在 **Debug** 配置下的 **3784.56 秒 / 2 失败**，差了约 14 倍——再次印证第 69 条"是构建类型不是代码"的结论。
