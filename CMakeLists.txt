@@ -264,6 +264,7 @@ target_sources(threecpp PRIVATE
     src/nodes/core/ViewportDepthNode.cpp
     src/loaders/USDZLoader.cpp
     src/loaders/TTFLoader.cpp
+    src/loaders/ColladaLoader.cpp
     src/nodes/core/ParameterNode.cpp
     src/nodes/core/NodeConstants.cpp
     src/nodes/core/Node.cpp
