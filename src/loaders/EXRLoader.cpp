@@ -1098,3 +1098,18 @@ bool EXRLoader::hufCandidateMatches(int code, int length, std::uint32_t accumula
 }
 
 std::string EXRLoader::hufDecodeMessage() { return "THREE.EXRLoader: hufDecode issues"; }
+
+bool EXRLoader::hufIsRunMarker(int symbol, int marker) {
+    // The marker is compared as an integer like any other symbol.
+    return symbol == marker;
+}
+
+int EXRLoader::hufRunLength(std::uint32_t rawBits) {
+    // Kept to one byte, which is what putting the number into a byte sized array does upstream.
+    return static_cast<int>(rawBits & 0xFFu);
+}
+
+bool EXRLoader::hufRoomFor(std::size_t written, std::size_t wanted, std::size_t room) {
+    // A run that would reach past the room is reported rather than clipped.
+    return written + wanted <= room;
+}

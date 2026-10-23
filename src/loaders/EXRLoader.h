@@ -670,4 +670,17 @@ class EXRLoader {
 
     // The error the decode loop raises when a slot's candidates all disagree.
     static std::string hufDecodeMessage();
+    // A symbol equal to the block's run marker does not name a value of its own. Instead the
+    // next eight bits say how many copies of the byte just written to follow, and the run is
+    // written by repeating that byte. Everything else names a value directly.
+    static bool hufIsRunMarker(int symbol, int marker);
+
+    // How many copies a run marker stands for. The bits are taken as a whole number and then
+    // kept to one byte, so a count that would need more than eight bits comes back truncated
+    // rather than being refused.
+    static int hufRunLength(std::uint32_t rawBits);
+
+    // Whether a run or a single value still fits in the room the caller left. A block that would
+    // overrun is reported by the function returning false rather than by raising anything.
+    static bool hufRoomFor(std::size_t written, std::size_t wanted, std::size_t room);
 };
