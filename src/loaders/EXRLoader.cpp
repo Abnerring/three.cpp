@@ -488,3 +488,38 @@ EXRLoader::AttributeKind EXRLoader::attributeKind(const std::string& type) {
 bool EXRLoader::attributeKindKnown(AttributeKind kind) {
     return kind != AttributeKind::Unknown;
 }
+
+std::string EXRLoader::compressionName(std::uint8_t code) {
+    // Ten codes, in the order the format numbers them.
+    static const char* names[] = {
+        "NO_COMPRESSION",  "RLE_COMPRESSION",  "ZIPS_COMPRESSION", "ZIP_COMPRESSION",
+        "PIZ_COMPRESSION", "PXR24_COMPRESSION", "B44_COMPRESSION", "B44A_COMPRESSION",
+        "DWAA_COMPRESSION", "DWAB_COMPRESSION",
+    };
+    // A code past the table names nothing rather than reading past it.
+    if (code >= 10) return std::string();
+    return names[code];
+}
+
+std::string EXRLoader::lineOrderName(std::uint8_t code) {
+    static const char* names[] = {"INCREASING_Y", "DECREASING_Y", "RANDOM_Y"};
+    if (code >= 3) return std::string();
+    return names[code];
+}
+
+std::string EXRLoader::envmapName(std::uint8_t code) {
+    static const char* names[] = {"ENVMAP_LATLONG", "ENVMAP_CUBE"};
+    if (code >= 2) return std::string();
+    return names[code];
+}
+
+EXRLoader::Box2i EXRLoader::boxFromNumbers(std::int32_t first, std::int32_t second,
+                                           std::int32_t third, std::int32_t fourth) {
+    // The first two are the minima of the two axes and the last two their maxima.
+    Box2i box;
+    box.xMin = first;
+    box.yMin = second;
+    box.xMax = third;
+    box.yMax = fourth;
+    return box;
+}

@@ -281,4 +281,26 @@ class EXRLoader {
 
     // Whether a kind names something the reader can handle. Only Unknown cannot.
     static bool attributeKindKnown(AttributeKind kind);
+    // The names a compression code stands for, in code order.
+    static std::string compressionName(std::uint8_t code);
+
+    // The names a line order stands for. There are three.
+    static std::string lineOrderName(std::uint8_t code);
+
+    // The names an environment map stands for. There are two.
+    static std::string envmapName(std::uint8_t code);
+
+    // A box read from four signed numbers. The order they arrive in is the minimum of each axis
+    // followed by the maximum of each, not the two corners one after the other, which is the easy
+    // thing to get wrong.
+    struct Box2i {
+        std::int32_t xMin = 0;
+        std::int32_t yMin = 0;
+        std::int32_t xMax = 0;
+        std::int32_t yMax = 0;
+    };
+
+    // Fills a box from four numbers already read in that order.
+    static Box2i boxFromNumbers(std::int32_t first, std::int32_t second, std::int32_t third,
+                                std::int32_t fourth);
 };
