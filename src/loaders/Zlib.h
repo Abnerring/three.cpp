@@ -184,4 +184,23 @@ class Zlib {
     // The two errors expanding can raise.
     static std::string repeatFirstError();
     static std::string overrunError();
+    // The base length a length code stands for. The codes run from two hundred and fifty seven
+    // to two hundred and eighty five in groups of four that double their reach, and the last one
+    // is a special case: it has no extra bits at all and always means two hundred and fifty
+    // eight. Codes above it name nothing.
+    static int lengthBase(int code);
+
+    // The extra bits a length code carries, which say how much above the base it reaches.
+    static int lengthExtra(int code);
+
+    // The base distance a distance code stands for. The thirty codes run in pairs, each pair
+    // reaching four times as far as the one before.
+    static int distanceBase(int code);
+
+    // The extra bits a distance code carries.
+    static int distanceExtra(int code);
+
+    // How many length codes name something and how many distance codes there are.
+    static constexpr int kLengthCodeCount = 29;
+    static constexpr int kDistanceCodeCount = 30;
 };

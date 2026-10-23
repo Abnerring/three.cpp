@@ -307,3 +307,38 @@ std::string Zlib::repeatFirstError() {
 std::string Zlib::overrunError() {
     return "Zlib: a length run reached past the count.";
 }
+
+int Zlib::lengthBase(int code) {
+    // The codes start at two hundred and fifty seven; the first eight are three to ten.
+    static const int base[] = {3,  4,  5,  6,  7,  8,  9,  10, 11,  13,  15,  17, 19, 23, 27,
+                               31, 35, 43, 51, 59, 67, 83, 99, 115, 131, 163, 195, 227, 258};
+    const int index = code - 257;
+    if (index < 0 || index >= kLengthCodeCount) return 0;
+    return base[index];
+}
+
+int Zlib::lengthExtra(int code) {
+    // The first eight carry none; then each four carries one more, up to five.
+    const int index = code - 257;
+    if (index < 0 || index >= kLengthCodeCount) return 0;
+    if (index < 8) return 0;
+    // The last code is the special case and carries nothing either.
+    if (index == 28) return 0;
+    return (index - 8) / 4 + 1;
+}
+
+int Zlib::distanceBase(int code) {
+    // The first four are one to four, then pairs reaching four times as far each time.
+    static const int base[] = {1,    2,    3,    4,    5,    7,     9,     13,    17,   25,
+                               33,   49,   65,   97,   129,  193,   257,   385,   513,  769,
+                               1025, 1537, 2049, 3073, 4097, 6145, 8193, 12289, 16385, 24577};
+    if (code < 0 || code >= kDistanceCodeCount) return 0;
+    return base[code];
+}
+
+int Zlib::distanceExtra(int code) {
+    // The first four carry none and each pair after that carries one more.
+    if (code < 0 || code >= kDistanceCodeCount) return 0;
+    if (code < 4) return 0;
+    return (code - 4) / 2 + 1;
+}
