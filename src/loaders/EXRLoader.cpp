@@ -1022,3 +1022,57 @@ EXRLoader::EncTableResult EXRLoader::hufUnpackEncTable(const std::vector<std::ui
     result.valid = true;
     return result;
 }
+
+std::string EXRLoader::hufEntryMessage() { return "THREE.EXRLoader: Invalid table entry"; }
+
+EXRLoader::DecTableResult EXRLoader::hufBuildDecTable(const std::vector<int>& codes,
+                                                      std::uint32_t im, std::uint32_t iM) {
+    DecTableResult result;
+    result.entries = emptyDecodeTable();
+    for (std::uint32_t symbol = im; symbol <= iM; ++symbol) {
+        const int packed = codes[symbol];
+        const int code = hufCode(packed);
+        const int length = hufLength(packed);
+        // A code that does not fit inside its own length cannot name anything.
+        if (length > 0 && (code >> length) != 0) {
+            result.error = hufEntryMessage();
+            return result;
+        }
+        if (length > kHufDecodeBits) {
+            // Too long for the first level: the slot its leading bits reach holds a list.
+            const std::size_t slot =
+                static_cast<std::size_t>(code >> (length - kHufDecodeBits));
+            if (slot >= result.entries.size()) {
+                result.error = hufEntryMessage();
+                return result;
+            }
+            DecodeEntry& entry = result.entries[slot];
+            if (entry.length != 0) {
+                result.error = hufEntryMessage();
+                return result;
+            }
+            entry.hasCandidates = true;
+            entry.candidates.push_back(static_cast<int>(symbol));
+        } else if (length > 0) {
+            // Short enough: every slot the code's bits can reach names it.
+            const int span = 1 << (kHufDecodeBits - length);
+            const std::size_t base = static_cast<std::size_t>(code) << (kHufDecodeBits - length);
+            for (int i = 0; i < span; ++i) {
+                const std::size_t slot = base + static_cast<std::size_t>(i);
+                if (slot >= result.entries.size()) {
+                    result.error = hufEntryMessage();
+                    return result;
+                }
+                DecodeEntry& entry = result.entries[slot];
+                if (entry.length != 0 || !entry.candidates.empty()) {
+                    result.error = hufEntryMessage();
+                    return result;
+                }
+                entry.length = length;
+                entry.literal = static_cast<int>(symbol);
+            }
+        }
+    }
+    result.valid = true;
+    return result;
+}

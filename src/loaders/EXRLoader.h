@@ -639,4 +639,20 @@ class EXRLoader {
 
     // The error the unpacker raises when a run would reach past the far end.
     static std::string hufTableMessage();
+    // Builds the decoding table from the lengths the block carried. A code of fourteen bits or
+    // fewer fills every slot its bits can reach, so the rest of the table is a wildcard, while a
+    // longer code puts a list of candidates in the one slot its leading bits reach and leaves
+    // the rest to be sorted out as the bits arrive. Both refuse a slot that is already taken,
+    // and a code that does not fit inside its own length is refused outright.
+    struct DecTableResult {
+        bool valid = false;
+        std::vector<DecodeEntry> entries;
+        std::string error;
+    };
+
+    static DecTableResult hufBuildDecTable(const std::vector<int>& codes, std::uint32_t im,
+                                           std::uint32_t iM);
+
+    // The error building the table raises.
+    static std::string hufEntryMessage();
 };
