@@ -101,4 +101,17 @@ class GLTFLoader {
 
     // The stride counted in components, which is what an interleaved buffer is told.
     static std::size_t interleavedStride(std::size_t byteStride, std::size_t elementBytes);
+
+    // Writes a sparse accessor's overrides into the array that already holds its default
+    // values. Each entry of the index list names a whole element, and the values run on in the
+    // element order the indices name. An index past the end of the array is ignored, and a
+    // short value run leaves the remaining components as they were.
+    static void applySparse(const std::vector<std::uint32_t>& indices,
+                            const std::vector<double>& values, std::size_t itemSize,
+                            std::vector<double>& target);
+
+    // Whether an accessor filled by a sparse override reports itself as normalised. The source
+    // turns the flag off for these, because the values copied in are already in their final
+    // form.
+    static bool sparseNormalized(bool normalized);
 };

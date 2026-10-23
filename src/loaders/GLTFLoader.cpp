@@ -239,3 +239,25 @@ std::size_t GLTFLoader::interleavedStride(std::size_t byteStride, std::size_t el
     if (elementBytes == 0) return 0;
     return byteStride / elementBytes;
 }
+
+void GLTFLoader::applySparse(const std::vector<std::uint32_t>& indices,
+                             const std::vector<double>& values, std::size_t itemSize,
+                             std::vector<double>& target) {
+    if (itemSize == 0) return;
+    // Each index names one element and the values run on in that order.
+    for (std::size_t entry = 0; entry < indices.size(); ++entry) {
+        const std::size_t base = static_cast<std::size_t>(indices[entry]) * itemSize;
+        for (std::size_t component = 0; component < itemSize; ++component) {
+            // An element past the end, or a value run that stopped short, leaves what was there.
+            if (base + component >= target.size()) break;
+            const std::size_t source = entry * itemSize + component;
+            if (source >= values.size()) break;
+            target[base + component] = values[source];
+        }
+    }
+}
+
+bool GLTFLoader::sparseNormalized(bool /*normalized*/) {
+    // Whatever the accessor declared, a sparse override reports itself as not normalised.
+    return false;
+}
