@@ -194,8 +194,8 @@
     "note": "Accepted port scope is src and examples/jsm, including tracked third-party dependencies. Editor/manual web applications are excluded from native application rewrites. Native host behavior, packaging and all three platforms require separate implementation and verification evidence."
   },
   "counts": {
-    "partial-unverified": 314,
-    "missing": 627,
+    "partial-unverified": 315,
+    "missing": 626,
     "vulkan-port-pending": 290,
     "dependency-unverified": 20
   },
@@ -203,8 +203,8 @@
     "src": {
       "modules": 755,
       "counts": {
-        "partial-unverified": 230,
-        "missing": 235,
+        "partial-unverified": 231,
+        "missing": 234,
         "vulkan-port-pending": 290
       }
     },
@@ -803,7 +803,7 @@
       "path": "src/nodes/core",
       "upstreamFiles": 42,
       "moduleCount": 42,
-      "modulesWithCppFiles": 11,
+      "modulesWithCppFiles": 12,
       "verifiedComplete": 0
     },
     {
@@ -9598,11 +9598,11 @@
       "scope": "src",
       "kind": "core",
       "upstreamSha256": "897d9ea72e655fcf6b46df2214ce9fd996ed6b87e9e3984151ea90f53a20dd3d",
-      "header": null,
-      "implementation": null,
+      "header": "src/nodes/core/TempNode.h",
+      "implementation": "src/nodes/core/TempNode.cpp",
       "expectedHeader": "src/nodes/core/TempNode.h",
       "expectedImplementation": "src/nodes/core/TempNode.cpp",
-      "status": "missing",
+      "status": "partial-unverified",
       "verifiedComplete": false,
       "apiExtraction": "static-only",
       "verification": {
@@ -9611,7 +9611,9 @@
           "pointer": "/modules/296"
         },
         "upstreamUnitTests": [],
-        "cppUnitTests": [],
+        "cppUnitTests": [
+          "test/unit/src/nodes/core/TempNode.tests.cpp"
+        ],
         "reviewedImplementation": [],
         "differentialResults": [],
         "renderingResults": [],
