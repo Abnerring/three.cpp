@@ -230,6 +230,7 @@ target_sources(threecpp PRIVATE
     src/nodes/core/TriplanarTextures.cpp
     src/nodes/core/FunctionOverloadingNode.cpp
     src/nodes/core/CubeMapNode.cpp
+    src/nodes/core/EventNode.cpp
     src/nodes/core/NodeConstants.cpp
     src/nodes/core/Node.cpp
     src/loaders/DataTextureLoader.cpp

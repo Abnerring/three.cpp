@@ -3151,6 +3151,14 @@
    - **刷新时机是 RENDER**：**与 `MaxMipLevel` 的 `FRAME` 形成对照**。
    - **测试（5 个用例、25 条断言）**：两种映射四种；其余不转三处；来源四处；缓存七处；映射重写与占位四处。
    - **验证**：核心 **2271 用例 / 215,815 断言**（+5 / +25）、`primitive-geometry`、`port-audit`、addons、`--cube` 全绿。
+511. **第 202 轮：`EventNode` 的九项事件表**。
+   - **类型是 `void`**：这个节点跑一个回调、不产出任何值，所以类型直接说 `void`，而不是借用某个值类型。测试断言它不等于 `float`。
+   - **九个名字填三个不同的槽**：`object`/`material`/`frame` 用 `updateType`（**普通的那个**），`afterObject` 用 `updateAfterType`，三个 `before*` 用 `updateBeforeType`。**所以名字不只决定"什么时候"，还决定"填哪个槽"**——这一点从 `updateType` 这个名字上完全看不出来。
+   - **两个 pipeline 名字绕过槽系统**：`beforeRenderPipeline` 与 `afterRenderPipeline` **不填任何更新槽**，而是把回调推进 `context.onBeforePipelineCallbacks` / `onAfterPipelineCallbacks`。所以它们的槽是第四种，且**没有更新类型**。
+   - **两个 material 名字用 render 类型**：因为**没有"material"这个更新类型**，材质事件落到 render 上。
+   - **一个不认识的名字不填任何槽**：所以**回调永不执行，而且什么也不报**——是沉默而不是错误。测试把九个已知名字与两个未知名字都断言了。
+   - **测试（5 个用例、37 条断言）**：void 类型三处；三个槽八处；pipeline 五处；类型七处；未知与循环十三处。
+   - **验证**：核心 **2276 用例 / 215,852 断言**（+5 / +37）、`primitive-geometry`、`port-audit`、addons、`--cube` 全绿。
 70. **第 520 轮：完整 Vulkan 套件 211/211 全绿，耗时 270.72 秒**。
    - 命令：`ctest --test-dir build-vulkan -j 4 -E "lights-states" --output-on-failure`（仍排除第 46 条那个已知项；它在 Vulkan 构建里同样慢）。
    - 结果：**100% tests passed, 0 tests failed out of 211**，总耗时 **270.72 秒**。对比同一套件在 **Debug** 配置下的 **3784.56 秒 / 2 失败**，差了约 14 倍——再次印证第 69 条"是构建类型不是代码"的结论。
