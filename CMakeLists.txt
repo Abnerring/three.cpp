@@ -226,6 +226,7 @@ target_sources(threecpp PRIVATE
     src/nodes/core/ArrayElementNode.cpp
     src/nodes/core/StorageArrayElementNode.cpp
     src/nodes/core/SpriteUtils.cpp
+    src/nodes/core/SetNode.cpp
     src/nodes/core/NodeConstants.cpp
     src/nodes/core/Node.cpp
     src/loaders/DataTextureLoader.cpp
