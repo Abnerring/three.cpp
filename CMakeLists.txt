@@ -214,6 +214,7 @@ target_sources(threecpp PRIVATE
     src/nodes/core/ToonOutlinePass.cpp
     src/nodes/core/PassTexture.cpp
     src/nodes/core/UVUtils.cpp
+    src/nodes/core/ConvertNode.cpp
     src/nodes/core/NodeConstants.cpp
     src/nodes/core/Node.cpp
     src/loaders/DataTextureLoader.cpp
