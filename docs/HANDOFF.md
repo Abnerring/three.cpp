@@ -2329,6 +2329,16 @@
    - **相关代码位置**：`src/renderers/VulkanRenderer.cpp` 里第 186 行的 `vkCmdBlitImage` 与第 516 行附近的 `generateMipmaps` 参数——自动 mip 链应当是用 `vkCmdBlitImage` 逐级降采样得到的。
    - **本轮不动手**：Vulkan 的 mip 链涉及图像布局转换、每级 blit 的范围与采样器上限，盲改的返工风险太高（本会话末尾的调用预算已很紧）。这一条记录下精确的输入、期望与实得，留给专门的一轮。
    - **验证**：核心 1881 用例 / 213,610 断言仍全绿；工作树干净。
+395. **第 81 轮：mipmap 失败的排查——配置这条链是干净的，嫌疑落到 blit 本身**。
+   - **逐段核对了 `TextureConfig` 的构造**（`src/renderers/VulkanRenderer.cpp` 第 1319–1407 行），结论：**每一项都对**。
+     - `generatedLevels = floor(log2(max(w,h))) + 1`，8×8 得 **4**，且它用的是第 1324 行已经赋好的宽高（不是我先前担心的"算在赋值之前"）。
+     - `config.levels` 在第 1385 行取 `generatedLevels`，因为 `texture.generateMipmaps` 为真。
+     - `config.generateMipmaps = generateMipmaps && mipmapsAutoUpdate && !manual`——三项都成立：`mipmapsAutoUpdate` 的缺省值与上游 `Texture.js` 一样是 **true**，而这条测试没有设 `mipmaps`，所以 `manual` 为假。
+     - 采样器：`mipFilter` 在 `minFilter` 是带 mip 的那四种时为真，本例正是 `LinearMipmapLinearFilter`；于是 `maxLod = levels - 1 = 3`，`mipmapMode` 为 `LINEAR`。视图的 `subresourceRange` 也覆盖了全部四层。
+   - **所以不是"链没建"也不是"采样器上限为零"**，这两条最常见的猜测都排除了。
+   - **剩下最可疑的一处**：第 1545 行的 `vkCmdClearColorImage` 用 `VkClearColorValue zero{}` 把**全部层级**清成黑色，随后第 1550 行只把第 0 层从暂存缓冲拷进去。于是**如果 blit 那一步静默失败**（第 1553–1568 行的循环），留下的正好就是"第 0 层对、其余全黑"——而测试报的正是"全黑"。
+   - **下一步该查什么**：`vkCmdBlitImage` 的返回值、`VK_FORMAT_FEATURE_BLIT_SRC_BIT/BLIT_DST_BIT` 是否真的被设备支持（第 1404 行只检查、不打印），以及每级 blit 前后的 barrier 是否把 `level` 从 `TRANSFER_DST` 错切成了别的布局。**这三个都值得单独一轮**。
+   - **验证**：核心 1881 用例 / 213,610 断言仍全绿；工作树干净。
 70. **第 520 轮：完整 Vulkan 套件 211/211 全绿，耗时 270.72 秒**。
    - 命令：`ctest --test-dir build-vulkan -j 4 -E "lights-states" --output-on-failure`（仍排除第 46 条那个已知项；它在 Vulkan 构建里同样慢）。
    - 结果：**100% tests passed, 0 tests failed out of 211**，总耗时 **270.72 秒**。对比同一套件在 **Debug** 配置下的 **3784.56 秒 / 2 失败**，差了约 14 倍——再次印证第 69 条"是构建类型不是代码"的结论。
