@@ -3202,6 +3202,12 @@
    - **`generate` 返回属性名**，不是成员组成的构造函数。
    - **测试（5 个用例、25 条断言）**：固定类型五处；位置名五处（含 `m10`）；前缀六处（含"不等于一个点"）；行三处 + 对照一处；答案与缓存四处。
    - **验证**：核心 **2303 用例 / 215,993 断言**（+5 / +25）、`primitive-geometry`、`port-audit`、addons、`--cube` 全绿。
+518. **第 209 轮：`LightingModel` 的六个钩子里谁被谁调用**。
+   - **六个钩子，五个是空的**：`start` 是唯一有实现的，其余五个（`finish`、`direct`、`directRectArea`、`indirect`、`ambientOcclusion`）都是空函数体。**所以"抽象"在这里是"留给你填"而不是语言层面的抽象**。
+   - **调用者分三类**：四个由框架直接调用；**`indirect` 是由 `start` 调用的**，不是框架；而 **`ambientOcclusion` 谁都不调**——它的文档原话是 **"Unlike other methods, this method must be called manually by the lighting model in its indirect term"**。**所以一个从不提它的具体模型就是没有环境光遮蔽**。
+   - **`start` 做两件事**：先把直接光从光节点装好，再调 `indirect`。**所以一个覆写 `start` 而不调父类的实现会同时跳过这两件**，不是只跳过一件。
+   - **测试（5 个用例、28 条断言）**：六个钩子四处；五个空 + "恰好一个有体"八处；三类调用者八处；两件事四处；文档措辞三处。
+   - **验证**：核心 **2308 用例 / 216,021 断言**（+5 / +28）、`primitive-geometry`、`port-audit`、addons、`--cube` 全绿。
 70. **第 520 轮：完整 Vulkan 套件 211/211 全绿，耗时 270.72 秒**。
    - 命令：`ctest --test-dir build-vulkan -j 4 -E "lights-states" --output-on-failure`（仍排除第 46 条那个已知项；它在 Vulkan 构建里同样慢）。
    - 结果：**100% tests passed, 0 tests failed out of 211**，总耗时 **270.72 秒**。对比同一套件在 **Debug** 配置下的 **3784.56 秒 / 2 失败**，差了约 14 倍——再次印证第 69 条"是构建类型不是代码"的结论。

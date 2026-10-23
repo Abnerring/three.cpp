@@ -237,6 +237,7 @@ target_sources(threecpp PRIVATE
     src/nodes/core/SubBuildNode.cpp
     src/nodes/core/NodeConstantsTables.cpp
     src/nodes/core/OutputStructNode.cpp
+    src/nodes/core/LightingModel.cpp
     src/nodes/core/ParameterNode.cpp
     src/nodes/core/NodeConstants.cpp
     src/nodes/core/Node.cpp

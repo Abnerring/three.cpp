@@ -194,8 +194,8 @@
     "note": "Accepted port scope is src and examples/jsm, including tracked third-party dependencies. Editor/manual web applications are excluded from native application rewrites. Native host behavior, packaging and all three platforms require separate implementation and verification evidence."
   },
   "counts": {
-    "partial-unverified": 322,
-    "missing": 619,
+    "partial-unverified": 323,
+    "missing": 618,
     "vulkan-port-pending": 290,
     "dependency-unverified": 20
   },
@@ -203,8 +203,8 @@
     "src": {
       "modules": 755,
       "counts": {
-        "partial-unverified": 238,
-        "missing": 227,
+        "partial-unverified": 239,
+        "missing": 226,
         "vulkan-port-pending": 290
       }
     },
@@ -803,7 +803,7 @@
       "path": "src/nodes/core",
       "upstreamFiles": 42,
       "moduleCount": 42,
-      "modulesWithCppFiles": 19,
+      "modulesWithCppFiles": 20,
       "verifiedComplete": 0
     },
     {
@@ -8886,11 +8886,11 @@
       "scope": "src",
       "kind": "core",
       "upstreamSha256": "020c76cfb7f846da3c632a3ef8f5e7fa7fdcd6234353b54e0d6e5e957288d22b",
-      "header": null,
-      "implementation": null,
+      "header": "src/nodes/core/LightingModel.h",
+      "implementation": "src/nodes/core/LightingModel.cpp",
       "expectedHeader": "src/nodes/core/LightingModel.h",
       "expectedImplementation": "src/nodes/core/LightingModel.cpp",
-      "status": "missing",
+      "status": "partial-unverified",
       "verifiedComplete": false,
       "apiExtraction": "static-only",
       "verification": {
@@ -8899,7 +8899,9 @@
           "pointer": "/modules/270"
         },
         "upstreamUnitTests": [],
-        "cppUnitTests": [],
+        "cppUnitTests": [
+          "test/unit/src/nodes/core/LightingModel.tests.cpp"
+        ],
         "reviewedImplementation": [],
         "differentialResults": [],
         "renderingResults": [],
