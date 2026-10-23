@@ -2339,6 +2339,16 @@
    - **剩下最可疑的一处**：第 1545 行的 `vkCmdClearColorImage` 用 `VkClearColorValue zero{}` 把**全部层级**清成黑色，随后第 1550 行只把第 0 层从暂存缓冲拷进去。于是**如果 blit 那一步静默失败**（第 1553–1568 行的循环），留下的正好就是"第 0 层对、其余全黑"——而测试报的正是"全黑"。
    - **下一步该查什么**：`vkCmdBlitImage` 的返回值、`VK_FORMAT_FEATURE_BLIT_SRC_BIT/BLIT_DST_BIT` 是否真的被设备支持（第 1404 行只检查、不打印），以及每级 blit 前后的 barrier 是否把 `level` 从 `TRANSFER_DST` 错切成了别的布局。**这三个都值得单独一轮**。
    - **验证**：核心 1881 用例 / 213,610 断言仍全绿；工作树干净。
+396. **第 82 轮：找到门禁失效的真正原因——`VulkanRendererTests` 不带参数才跑全套，而我一直只跑 `--cube`**。
+   - **`test/CMakeLists.txt` 第 738 行**：`add_test(NAME threecpp.vulkan COMMAND VulkanRendererTests)`——**没有任何参数**。
+   - **实测对照**（同一个 `build-vkdebug` 二进制）：
+     - **`VulkanRendererTests --cube` → 退出 0**，输出 `park probe first = 255 second = 255`。**这就是我五门禁里跑的那条**。
+     - **`VulkanRendererTests`（无参数）→ 退出 1**，输出 `Vulkan renderer test failed: invalid vector subscript`。
+   - **所以：门禁绿的是"小测试"，红的才是"全套"。** 我过去几十轮报告的 Vulkan 绿，实际只覆盖了一个用例。
+   - **更糟的一点：失败信息本身会变**。第 79 轮 `ctest` 报的是 mipmap 那条（`minified checkerboard expected 128,128,128,255`），这一轮直接跑二进制报的是 `invalid vector subscript`。**同一条命令、不同次的失败点不同**，这说明存在**越界读**（`std::vector::operator[]` 的检查断言被触发），而越界读的结果取决于内存内容——所以它有时表现为"mipmap 读出黑色"，有时直接断言崩溃。
+   - **这解释了第 80、81 两轮为什么读遍配置链都找不到问题**：问题不在配置，在于某个下标算错了。
+   - **下一步**：拿 Debug 构建（`build-vkdebug` 就是 Debug）在调试器里跑到断言处，看是哪一个 `operator[]` 越界。**这是唯一能定位的办法**，靠读代码已经不行了。
+   - **本轮没有改代码**：插入的临时诊断探针已经 `git checkout` 撤掉，工作树干净。核心 1881 用例 / 213,610 断言仍全绿。
 70. **第 520 轮：完整 Vulkan 套件 211/211 全绿，耗时 270.72 秒**。
    - 命令：`ctest --test-dir build-vulkan -j 4 -E "lights-states" --output-on-failure`（仍排除第 46 条那个已知项；它在 Vulkan 构建里同样慢）。
    - 结果：**100% tests passed, 0 tests failed out of 211**，总耗时 **270.72 秒**。对比同一套件在 **Debug** 配置下的 **3784.56 秒 / 2 失败**，差了约 14 倍——再次印证第 69 条"是构建类型不是代码"的结论。
