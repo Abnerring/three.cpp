@@ -3101,6 +3101,13 @@
    - **存在性检查会往上递归**：如果 `structNode` 本身是一个成员节点，它必须先找到自己的成员。所以**成员的成员只有在第一层成立时才算存在**。
    - **测试（5 个用例、18 条断言）**：缺失与存在七处；警告三处；递归五处；守卫三处；缓存一处。
    - **验证**：核心 **2240 用例 / 215,649 断言**（+5 / +18）、`primitive-geometry`、`port-audit`、addons、`--cube` 全绿。
+504. **第 194 轮：`ArrayElementNode` 把浮点索引悄悄变成无符号整数，以及成员查在数组上**。
+   - **索引类型的判据是两项的与**：`! builder.isVector( indexType ) && builder.isInteger( indexType ) ? indexType : 'uint'`。**所以整数保留原类型，而浮点与向量都被写成 `uint`**——**一个传浮点索引的调用方拿到的是着色器里的截断，不是错误**。
+   - **一处查错对象**：`getMemberType( builder, name )` 转发给 **`this.node`**，也就是**数组节点**，不是元素。所以**读 `arr[0].member` 时，`member` 是在 `arr` 上找的**。测试把这一点写成 `memberLookupTarget() == Array`。
+   - **节点自己的类型是元素的类型**：`generateNodeType` 返回 `node.getElementType( builder )`，测试同时断言它**不等于数组的类型**。
+   - **`isCacheable` 恒假**：本层第七个直接拒绝缓存的模块。
+   - **测试（4 个用例、16 条断言）**：整数三处；浮点与向量六处（含"两种理由同一答案"）；元素类型三处；成员与缓存四处。
+   - **验证**：核心 **2244 用例 / 215,665 断言**（+4 / +16）、`primitive-geometry`、`port-audit`、addons、`--cube` 全绿。
 70. **第 520 轮：完整 Vulkan 套件 211/211 全绿，耗时 270.72 秒**。
    - 命令：`ctest --test-dir build-vulkan -j 4 -E "lights-states" --output-on-failure`（仍排除第 46 条那个已知项；它在 Vulkan 构建里同样慢）。
    - 结果：**100% tests passed, 0 tests failed out of 211**，总耗时 **270.72 秒**。对比同一套件在 **Debug** 配置下的 **3784.56 秒 / 2 失败**，差了约 14 倍——再次印证第 69 条"是构建类型不是代码"的结论。
