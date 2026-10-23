@@ -201,4 +201,22 @@ class EXRLoader {
     // The two messages the wrapper can raise.
     static std::string hufRangeMessage();
     static std::string hufBitsMessage();
+    // The six bit symbols that stand for runs of absent codes rather than for a length. The five
+    // values from the first of them to the last name runs of two to five, and the last alone
+    // means a run long enough to need eight more bits.
+    static constexpr int kShortZeroCodeRun = 59;
+    static constexpr int kLongZeroCodeRun = 63;
+    static constexpr int kShortestLongRun = 2 + kLongZeroCodeRun - kShortZeroCodeRun;
+
+    // What a six bit symbol means.
+    enum class ZeroRun { None, Short, Long };
+
+    static ZeroRun zeroRunKind(int symbol);
+
+    // How many absent codes a short run stands for. The first of the five values means two, so
+    // the count is the symbol less the first value plus two.
+    static int shortZeroRunLength(int symbol);
+
+    // How many absent codes a long run stands for, given the eight bits that follow it.
+    static int longZeroRunLength(int extra);
 };

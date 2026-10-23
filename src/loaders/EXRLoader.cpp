@@ -396,3 +396,21 @@ std::string EXRLoader::hufRangeMessage() {
 std::string EXRLoader::hufBitsMessage() {
     return "THREE.EXRLoader: Something wrong with hufUncompress";
 }
+
+EXRLoader::ZeroRun EXRLoader::zeroRunKind(int symbol) {
+    // The last value on its own, and the four before it as a group.
+    if (symbol == kLongZeroCodeRun) return ZeroRun::Long;
+    if (symbol >= kShortZeroCodeRun) return ZeroRun::Short;
+    // Anything below the group is a real code length.
+    return ZeroRun::None;
+}
+
+int EXRLoader::shortZeroRunLength(int symbol) {
+    // The first value stands for two, not for one.
+    return symbol - kShortZeroCodeRun + 2;
+}
+
+int EXRLoader::longZeroRunLength(int extra) {
+    // The eight bits count from six rather than from zero.
+    return extra + kShortestLongRun;
+}
