@@ -3319,6 +3319,13 @@
    - **`setIntent` 返回节点自身**，可链式。
    - **测试（3 个用例、14 条断言）**：四个标志八处；名字一处；意图四中 **+** 缓存一处。
    - **验证**：核心 **2370 用例 / 216,348 断言**（+3 / +14）、`primitive-geometry`、`port-audit`、addons、`--cube` 全绿。
+534. **第 226 轮：`ContextNode` 的"透明包装"与只加一次**。
+   - **三处转发让它隐形**：`getScope`、`generateNodeType`、`getMemberType` **都直接返回被包裹节点的答案**。所以上下文节点有它包裹的节点的作用域和类型，而不是自己的——**这正是它"只在上下文上可见"的原因**。
+   - **上下文只加一次**：`increaseUsage( this )` 之后判 `=== 1`，**所以包裹的节点在修改后的上下文里只构建一次**，不管被问多少次。
+   - **合并是 `Object.assign( {}, ...children )`**：**后者的键覆盖前者**——与第 219 轮 `OverrideContextNode` 的 `new Map(flatMap)` 同一个效果但不同的机制。
+   - **恢复没有保护**：`setContext( previousContext )` 是调用之后的普通语句，**这是本层第三处"成对 builder 调用中间没有 try/finally"**（前两处是 `SubBuildNode` 与 `IsolateNode`）。
+   - **测试（3 个用例、18 条断言）**：三处转发五处；合并九处（含不相交与空）；只加一次四处。
+   - **验证**：核心 **2373 用例 / 216,366 断言**（+3 / +18）、`primitive-geometry`、`port-audit`、addons、`--cube` 全绿。
 70. **第 520 轮：完整 Vulkan 套件 211/211 全绿，耗时 270.72 秒**。
    - 命令：`ctest --test-dir build-vulkan -j 4 -E "lights-states" --output-on-failure`（仍排除第 46 条那个已知项；它在 Vulkan 构建里同样慢）。
    - 结果：**100% tests passed, 0 tests failed out of 211**，总耗时 **270.72 秒**。对比同一套件在 **Debug** 配置下的 **3784.56 秒 / 2 失败**，差了约 14 倍——再次印证第 69 条"是构建类型不是代码"的结论。
