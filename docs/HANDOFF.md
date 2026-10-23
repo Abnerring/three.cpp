@@ -1903,6 +1903,12 @@
    - **镜面强度缺省 1.0**、**镜面颜色缺省白**（`specularColorFactor || [1,1,1]`，同样是线性空间原样取用）。
    - **测试（3 个用例、13 条断言）**：缺省 1.5、写入值、**写 0 保留 0**、缺省不是 1；强度三种（缺省、0.5、0）；颜色四种（白、原样、短数组）。
    - **验证**：核心 **1568 用例 / 210,621 断言**（+3 / +13）、addons、`primitive-geometry`、`port-audit`、Vulkan 全绿。
+333. **第 19 轮：`GLTFLoader` 第十九层——彩虹色材质**。
+   - **一处大小写改名**：文件里写 `iridescenceIor`（小写 o），端口一侧是 `iridescenceIOR`（大写）。这是"缩写要全大写"的规则在起作用，测试专门断言两者**不相等**。
+   - **另外两条同前**：`iridescenceFactor` → `iridescence`、`iridescenceTexture` → `iridescenceMap`。
+   - **只在写了的时候才赋值**：与清漆那两个因子不同，这里的值**不是"有就用、没有就用缺省"**，而是"没有就不碰"，所以端口用一个带 `present` 的结构表达；写 0 也是写了。
+   - **测试（3 个用例、13 条断言）**：三条改名 + 两条不相等；三条未知（含 `iridescenceIOR` 本身）；`present` 三种（0、0.5、没写）。
+   - **验证**：核心 **1571 用例 / 210,634 断言**（+3 / +13）、addons、`primitive-geometry`、`port-audit`、Vulkan 全绿。
 70. **第 520 轮：完整 Vulkan 套件 211/211 全绿，耗时 270.72 秒**。
    - 命令：`ctest --test-dir build-vulkan -j 4 -E "lights-states" --output-on-failure`（仍排除第 46 条那个已知项；它在 Vulkan 构建里同样慢）。
    - 结果：**100% tests passed, 0 tests failed out of 211**，总耗时 **270.72 秒**。对比同一套件在 **Debug** 配置下的 **3784.56 秒 / 2 失败**，差了约 14 倍——再次印证第 69 条"是构建类型不是代码"的结论。

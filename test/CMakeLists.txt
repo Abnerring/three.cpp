@@ -193,6 +193,7 @@ add_executable(THREECPPTests
         unit/src/loaders/GLTFSheen.tests.cpp
         unit/src/loaders/GLTFVolume.tests.cpp
         unit/src/loaders/GLTFIor.tests.cpp
+        unit/src/loaders/GLTFIridescence.tests.cpp
         unit/src/cameras/StereoCamera.tests.cpp
         unit/src/audio/AudioContext.tests.cpp
         unit/src/audio/Audio.tests.cpp

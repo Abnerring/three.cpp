@@ -301,4 +301,19 @@ class GLTFLoader {
     // The specular colour, which is white by default and is taken as written otherwise, in the
     // same linear space as the other factors.
     static std::array<double, 3> specularColour(bool hasColour, const std::vector<double>& colour);
+    // The material parameter an iridescence field fills. Here the renames follow the same three
+    // rules as clearcoat, with one addition: the index of refraction field is spelled with a
+    // lower case o and the parameter with an upper case one, since the port spells the acronym
+    // out in full on its own side. A field not in the table names nothing.
+    static std::string iridescenceParamForField(const std::string& field);
+
+    // The value an iridescence field that was written fills, or a flag saying it was not
+    // written. Unlike the clearcoat factors, these are only set when the file names them, so a
+    // material keeps whatever the physical material already has.
+    struct OptionalNumber {
+        bool present = false;
+        double value = 0;
+    };
+
+    static OptionalNumber iridescenceValue(bool hasFactor, double factor);
 };

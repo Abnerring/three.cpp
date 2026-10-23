@@ -527,3 +527,25 @@ std::array<double, 3> GLTFLoader::specularColour(bool hasColour,
     // Otherwise as written, with no conversion.
     return {colour[0], colour[1], colour[2]};
 }
+
+std::string GLTFLoader::iridescenceParamForField(const std::string& field) {
+    // A factor drops its suffix and a texture gains a map suffix.
+    if (field == "iridescenceFactor") return "iridescence";
+    if (field == "iridescenceTexture") return "iridescenceMap";
+    // The index of refraction is spelled with a lower case o in the file and an upper case one
+    // on the port's side.
+    if (field == "iridescenceIor") return "iridescenceIOR";
+    // Anything else names no parameter.
+    return std::string();
+}
+
+GLTFLoader::OptionalNumber GLTFLoader::iridescenceValue(bool hasFactor, double factor) {
+    // The value is only set when the file names it, so a written zero is kept and a missing
+    // one leaves the material alone.
+    OptionalNumber result;
+    if (hasFactor) {
+        result.present = true;
+        result.value = factor;
+    }
+    return result;
+}
