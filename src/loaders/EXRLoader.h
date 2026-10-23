@@ -107,4 +107,12 @@ class EXRLoader {
     // value once rather than writing nothing. The stream ends when its declared size runs out
     // rather than when the buffer does.
     static std::vector<std::uint8_t> decodeRunLength(const std::vector<std::uint8_t>& source);
+    // The inverse of the discrete cosine transform on an eight by eight block, done as one pass
+    // along the rows and another down the columns.
+    //
+    // The constants are cosines of multiples of pi over sixteen, halved, but the pi they are
+    // taken with is written to five places rather than to full precision, so the results differ
+    // from a textbook transform in the last few bits. That is kept as it is, since the whole
+    // point is to produce the same numbers the reference implementation produces.
+    static void dctInverse(double data[64]);
 };

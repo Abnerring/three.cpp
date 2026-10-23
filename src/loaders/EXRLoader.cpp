@@ -177,3 +177,96 @@ std::vector<std::uint8_t> EXRLoader::decodeRunLength(const std::vector<std::uint
     }
     return out;
 }
+
+void EXRLoader::dctInverse(double data[64]) {
+    // The five places of pi the source writes, not a fuller constant.
+    const double pi = 3.14159;
+    const double a = 0.5 * std::cos(pi / 4.0);
+    const double b = 0.5 * std::cos(pi / 16.0);
+    const double c = 0.5 * std::cos(pi / 8.0);
+    const double d = 0.5 * std::cos(3.0 * pi / 16.0);
+    const double e = 0.5 * std::cos(5.0 * pi / 16.0);
+    const double f = 0.5 * std::cos(3.0 * pi / 8.0);
+    const double g = 0.5 * std::cos(7.0 * pi / 16.0);
+
+    double alpha[4];
+    double beta[4];
+    double theta[4];
+    double gamma[4];
+
+    // Along each row.
+    for (int row = 0; row < 8; ++row) {
+        const int rowPtr = row * 8;
+
+        alpha[0] = c * data[rowPtr + 2];
+        alpha[1] = f * data[rowPtr + 2];
+        alpha[2] = c * data[rowPtr + 6];
+        alpha[3] = f * data[rowPtr + 6];
+
+        beta[0] = b * data[rowPtr + 1] + d * data[rowPtr + 3] + e * data[rowPtr + 5] +
+                  g * data[rowPtr + 7];
+        beta[1] = d * data[rowPtr + 1] - g * data[rowPtr + 3] - b * data[rowPtr + 5] -
+                  e * data[rowPtr + 7];
+        beta[2] = e * data[rowPtr + 1] - b * data[rowPtr + 3] + g * data[rowPtr + 5] +
+                  d * data[rowPtr + 7];
+        beta[3] = g * data[rowPtr + 1] - e * data[rowPtr + 3] + d * data[rowPtr + 5] -
+                  b * data[rowPtr + 7];
+
+        theta[0] = a * (data[rowPtr + 0] + data[rowPtr + 4]);
+        theta[3] = a * (data[rowPtr + 0] - data[rowPtr + 4]);
+        theta[1] = alpha[0] + alpha[3];
+        theta[2] = alpha[1] - alpha[2];
+
+        gamma[0] = theta[0] + theta[1];
+        gamma[1] = theta[3] + theta[2];
+        gamma[2] = theta[3] - theta[2];
+        gamma[3] = theta[0] - theta[1];
+
+        data[rowPtr + 0] = gamma[0] + beta[0];
+        data[rowPtr + 1] = gamma[1] + beta[1];
+        data[rowPtr + 2] = gamma[2] + beta[2];
+        data[rowPtr + 3] = gamma[3] + beta[3];
+
+        data[rowPtr + 4] = gamma[3] - beta[3];
+        data[rowPtr + 5] = gamma[2] - beta[2];
+        data[rowPtr + 6] = gamma[1] - beta[1];
+        data[rowPtr + 7] = gamma[0] - beta[0];
+    }
+
+    // Down each column, with the stride written out.
+    for (int column = 0; column < 8; ++column) {
+        alpha[0] = c * data[16 + column];
+        alpha[1] = f * data[16 + column];
+        alpha[2] = c * data[48 + column];
+        alpha[3] = f * data[48 + column];
+
+        beta[0] = b * data[8 + column] + d * data[24 + column] + e * data[40 + column] +
+                  g * data[56 + column];
+        beta[1] = d * data[8 + column] - g * data[24 + column] - b * data[40 + column] -
+                  e * data[56 + column];
+        beta[2] = e * data[8 + column] - b * data[24 + column] + g * data[40 + column] +
+                  d * data[56 + column];
+        beta[3] = g * data[8 + column] - e * data[24 + column] + d * data[40 + column] -
+                  b * data[56 + column];
+
+        theta[0] = a * (data[column] + data[32 + column]);
+        theta[3] = a * (data[column] - data[32 + column]);
+        theta[1] = alpha[0] + alpha[3];
+        theta[2] = alpha[1] - alpha[2];
+
+        gamma[0] = theta[0] + theta[1];
+        gamma[1] = theta[3] + theta[2];
+        gamma[2] = theta[3] - theta[2];
+        gamma[3] = theta[0] - theta[1];
+
+        data[0 + column] = gamma[0] + beta[0];
+        data[8 + column] = gamma[1] + beta[1];
+        data[16 + column] = gamma[2] + beta[2];
+        data[24 + column] = gamma[3] + beta[3];
+
+        data[32 + column] = gamma[3] - beta[3];
+        data[40 + column] = gamma[2] - beta[2];
+        data[48 + column] = gamma[1] - beta[1];
+        data[56 + column] = gamma[0] - beta[0];
+    }
+}
