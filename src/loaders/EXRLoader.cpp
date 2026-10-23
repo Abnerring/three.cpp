@@ -1,5 +1,7 @@
 #include "loaders/EXRLoader.h"
 
+#include "loaders/Zlib.h"
+
 #include <cmath>
 #include <cstring>
 
@@ -676,4 +678,21 @@ std::vector<std::uint8_t> EXRLoader::interleaveScalar(const std::vector<std::uin
         out[s++] = t2 < source.size() ? source[t2++] : 0;
     }
     return out;
+}
+
+EXRLoader::ZipBlockResult EXRLoader::uncompressZIP(const std::vector<std::uint8_t>& block) {
+    ZipBlockResult result;
+    // The bytes are deflated first, so they are inflated first on the way back.
+    const Zlib::UnzlibResult inflated = Zlib::unzlib(block);
+    if (!inflated.valid) {
+        result.error = inflated.error;
+        return result;
+    }
+    // Then the predictor, then the halves put back together. The order matters: undoing the
+    // predictor on interleaved bytes would predict from the wrong neighbour.
+    std::vector<std::uint8_t> bytes = inflated.output;
+    revertPredictor(bytes);
+    result.bytes = interleaveScalar(bytes);
+    result.valid = true;
+    return result;
 }

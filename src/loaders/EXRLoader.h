@@ -445,4 +445,15 @@ class EXRLoader {
 
     // The offset the second half of a block begins at.
     static std::size_t interleaveSplit(std::size_t length);
+    // A block compressed the way a zip file compresses one: the bytes are deflated, then a
+    // predictor is applied to the raw bytes, then the two halves are separated so that like
+    // bytes lie together before deflating does its work. Reading it back undoes those in the
+    // opposite order, and the answer is the block as the file meant it.
+    struct ZipBlockResult {
+        bool valid = false;
+        std::vector<std::uint8_t> bytes;
+        std::string error;
+    };
+
+    static ZipBlockResult uncompressZIP(const std::vector<std::uint8_t>& block);
 };
