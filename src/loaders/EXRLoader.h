@@ -655,4 +655,19 @@ class EXRLoader {
 
     // The error building the table raises.
     static std::string hufEntryMessage();
+    // How many bits of padding the last byte of a block carries. The block says how many bits of
+    // it are used, and the rest are dropped before the final symbols are read.
+    static int hufPadBits(std::uint32_t usedBits);
+
+    // Where the bits still held are looked up once the block has run out. They are moved up to
+    // the top of the table's width so that the slots they can reach are the ones the leading
+    // bits name, which is the same arrangement the short codes fill.
+    static std::size_t hufFlushIndex(std::uint32_t accumulator, int liveBits);
+
+    // Whether a long code is the one the bits spell. Its own length says how many of the held
+    // bits to compare, and only those.
+    static bool hufCandidateMatches(int code, int length, std::uint32_t accumulator, int liveBits);
+
+    // The error the decode loop raises when a slot's candidates all disagree.
+    static std::string hufDecodeMessage();
 };

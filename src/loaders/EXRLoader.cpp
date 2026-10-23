@@ -1076,3 +1076,25 @@ EXRLoader::DecTableResult EXRLoader::hufBuildDecTable(const std::vector<int>& co
     result.valid = true;
     return result;
 }
+
+int EXRLoader::hufPadBits(std::uint32_t usedBits) {
+    // The block says how many bits it uses; whatever the last byte holds beyond that is padding.
+    return static_cast<int>((8u - usedBits) & 7u);
+}
+
+std::size_t EXRLoader::hufFlushIndex(std::uint32_t accumulator, int liveBits) {
+    // The held bits are moved up to the table's width, so a symbol shorter than it lands in the
+    // slot its leading bits name, exactly as a short code was stored.
+    const std::uint32_t moved = accumulator << (kHufDecodeBits - liveBits);
+    return static_cast<std::size_t>(moved & static_cast<std::uint32_t>(kHufDecodeMask));
+}
+
+bool EXRLoader::hufCandidateMatches(int code, int length, std::uint32_t accumulator,
+                                    int liveBits) {
+    // Only the code's own length is compared, taken from the top of what is held.
+    if (length <= 0 || liveBits < length) return false;
+    const std::uint32_t mask = (1u << length) - 1u;
+    return static_cast<std::uint32_t>(code) == ((accumulator >> (liveBits - length)) & mask);
+}
+
+std::string EXRLoader::hufDecodeMessage() { return "THREE.EXRLoader: hufDecode issues"; }
