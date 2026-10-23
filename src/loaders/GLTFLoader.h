@@ -290,4 +290,15 @@ class GLTFLoader {
     // The thickness the extension asks for, which is zero when absent rather than the
     // material's own value.
     static double volumeThickness(bool hasThickness, double thickness);
+    // The index of refraction an ior extension asks for. The default is one and a half, the
+    // index of glass, rather than one, which would be no bending at all; a written zero is kept
+    // because the test is against undefined rather than against a falsy value.
+    static double indexOfRefraction(bool hasIor, double ior);
+
+    // The specular intensity, which is one by default.
+    static double specularIntensity(bool hasFactor, double factor);
+
+    // The specular colour, which is white by default and is taken as written otherwise, in the
+    // same linear space as the other factors.
+    static std::array<double, 3> specularColour(bool hasColour, const std::vector<double>& colour);
 };

@@ -507,3 +507,23 @@ double GLTFLoader::volumeThickness(bool hasThickness, double thickness) {
     // The thickness is zero when the file leaves it out, not the material's own value.
     return hasThickness ? thickness : 0.0;
 }
+
+double GLTFLoader::indexOfRefraction(bool hasIor, double ior) {
+    // Glass by default.
+    if (!hasIor) return 1.5;
+    // A written zero is kept: the source tests against undefined, not against falsiness.
+    return ior;
+}
+
+double GLTFLoader::specularIntensity(bool hasFactor, double factor) {
+    // Fully specular by default.
+    return hasFactor ? factor : 1.0;
+}
+
+std::array<double, 3> GLTFLoader::specularColour(bool hasColour,
+                                                 const std::vector<double>& colour) {
+    // White by default.
+    if (!hasColour || colour.size() < 3) return {1.0, 1.0, 1.0};
+    // Otherwise as written, with no conversion.
+    return {colour[0], colour[1], colour[2]};
+}
