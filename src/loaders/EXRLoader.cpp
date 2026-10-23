@@ -523,3 +523,15 @@ EXRLoader::Box2i EXRLoader::boxFromNumbers(std::int32_t first, std::int32_t seco
     box.yMax = fourth;
     return box;
 }
+
+std::size_t EXRLoader::channelEntrySize(std::size_t nameLength) {
+    // The name, its terminator, four bytes of type, one of flag, three reserved and two of
+    // sampling: seventeen bytes beyond the name itself.
+    return nameLength + 1 + 4 + 1 + kChannelReserved + 4 + 4;
+}
+
+bool EXRLoader::channelEntryInRange(std::size_t position, std::size_t start, std::size_t size) {
+    // The last byte of the list is its terminator and is not an entry, hence the one short.
+    if (size == 0) return false;
+    return position < (start + size - 1);
+}

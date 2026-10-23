@@ -303,4 +303,26 @@ class EXRLoader {
     // Fills a box from four numbers already read in that order.
     static Box2i boxFromNumbers(std::int32_t first, std::int32_t second, std::int32_t third,
                                 std::int32_t fourth);
+    // One entry of a channel list.
+    struct Channel {
+        std::string name;
+        std::int32_t pixelType = 0;
+        std::uint8_t pLinear = 0;
+        std::int32_t xSampling = 0;
+        std::int32_t ySampling = 0;
+    };
+
+    // How many bytes an entry of a channel list takes. After the name and its terminator come a
+    // four byte type, one byte of a flag, three reserved bytes and two four byte sampling rates,
+    // which is seventeen bytes that do not depend on the name.
+    static std::size_t channelEntrySize(std::size_t nameLength);
+
+    // How far the entry loop runs. The list ends with a null byte, which the loop does not read:
+    // the bound is one short of the declared size, and the null is stepped over afterwards.
+    static bool channelEntryInRange(std::size_t position, std::size_t start, std::size_t size);
+
+    // The step taken after the loop, which is the terminator the bound kept out.
+    static constexpr std::size_t kChlistTerminator = 1;
+    // The three reserved bytes inside an entry.
+    static constexpr std::size_t kChannelReserved = 3;
 };
