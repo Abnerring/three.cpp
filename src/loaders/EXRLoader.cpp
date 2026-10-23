@@ -1113,3 +1113,96 @@ bool EXRLoader::hufRoomFor(std::size_t written, std::size_t wanted, std::size_t 
     // A run that would reach past the room is reported rather than clipped.
     return written + wanted <= room;
 }
+
+EXRLoader::DecodeResult EXRLoader::hufDecode(const std::vector<int>& codes,
+                                             const std::vector<DecodeEntry>& table,
+                                             const std::vector<std::uint8_t>& data,
+                                             std::size_t byteOffset, int liveBitsIn,
+                                             std::uint32_t accumulatorIn, std::uint32_t usedBits,
+                                             int runMarker, std::vector<std::int32_t>& out,
+                                             std::size_t room) {
+    DecodeResult result;
+    std::size_t written = 0;
+    std::uint32_t c = accumulatorIn;
+    int lc = liveBitsIn;
+    std::size_t at = byteOffset;
+    // The block ends where its own bit count says, rounded up to a whole byte.
+    const std::size_t end = byteOffset + (usedBits + 7) / 8;
+    // One symbol is written, with the run marker repeating the byte just written instead.
+    const auto emit = [&](int symbol) {
+        if (hufIsRunMarker(symbol, runMarker)) {
+            const int count = hufRunLength(c);
+            if (!hufRoomFor(written, static_cast<std::size_t>(count), room)) return false;
+            const std::int32_t last = written > 0 ? out[written - 1] : 0;
+            for (int i = 0; i < count; ++i) out[written++] = last;
+            return true;
+        }
+        if (!hufRoomFor(written, 1, room)) return false;
+        out[written++] = symbol;
+        return true;
+    };
+    while (at < end) {
+        // A byte is gathered, its bits going below the ones already held.
+        c = (c << 8) | data[at++];
+        lc += 8;
+        while (lc >= kHufDecodeBits) {
+            const std::size_t index =
+                static_cast<std::size_t>((c >> (lc - kHufDecodeBits)) & kHufDecodeMask);
+            if (index >= table.size()) {
+                result.error = hufDecodeMessage();
+                return result;
+            }
+            const DecodeEntry& entry = table[index];
+            if (entry.length != 0) {
+                // One symbol, taken at once.
+                lc -= entry.length;
+                if (!emit(entry.literal)) {
+                    result.error = hufDecodeMessage();
+                    return result;
+                }
+            } else {
+                // Candidates, tried in the order the table kept them.
+                if (entry.candidates.empty()) {
+                    result.error = hufDecodeMessage();
+                    return result;
+                }
+                bool matched = false;
+                for (const int symbol : entry.candidates) {
+                    const int packed = codes[static_cast<std::size_t>(symbol)];
+                    const int length = hufLength(packed);
+                    if (hufCandidateMatches(hufCode(packed), length, c, lc)) {
+                        lc -= length;
+                        if (!emit(symbol)) {
+                            result.error = hufDecodeMessage();
+                            return result;
+                        }
+                        matched = true;
+                        break;
+                    }
+                }
+                if (!matched) {
+                    result.error = hufDecodeMessage();
+                    return result;
+                }
+            }
+        }
+    }
+    // The padding at the end of the last byte is dropped before the rest is read.
+    const int pad = hufPadBits(usedBits);
+    c >>= pad;
+    lc -= pad;
+    while (lc > 0) {
+        const std::size_t index = hufFlushIndex(c, lc);
+        if (index >= table.size()) break;
+        const DecodeEntry& entry = table[index];
+        if (entry.length == 0 || entry.length > lc) break;
+        lc -= entry.length;
+        if (!emit(entry.literal)) {
+            result.error = hufDecodeMessage();
+            return result;
+        }
+    }
+    result.valid = true;
+    result.written = written;
+    return result;
+}

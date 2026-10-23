@@ -683,4 +683,19 @@ class EXRLoader {
     // Whether a run or a single value still fits in the room the caller left. A block that would
     // overrun is reported by the function returning false rather than by raising anything.
     static bool hufRoomFor(std::size_t written, std::size_t wanted, std::size_t room);
+    // The decode loop. Bits are gathered a byte at a time and fourteen at a time are looked up
+    // in the table; a slot naming one symbol is taken at once, while a slot holding candidates
+    // is searched one by one over each candidate's own length. Once the block runs out the bits
+    // left are moved up to the table's width and read the same way until none remain.
+    struct DecodeResult {
+        bool valid = false;
+        std::size_t written = 0;
+        std::string error;
+    };
+
+    static DecodeResult hufDecode(const std::vector<int>& codes,
+                                  const std::vector<DecodeEntry>& table,
+                                  const std::vector<std::uint8_t>& data, std::size_t byteOffset,
+                                  int liveBits, std::uint32_t accumulator, std::uint32_t usedBits,
+                                  int runMarker, std::vector<std::int32_t>& out, std::size_t room);
 };
