@@ -143,4 +143,16 @@ class EXRLoader {
     };
 
     static AcScan unRleAC(const std::vector<std::uint16_t>& acBuffer, std::size_t start);
+    // The size of the first level of the decoding table, in bits. A code no longer than this is
+    // read from the table directly; a longer one uses its top bits to find a second table.
+    static constexpr int kHufDecodeBits = 14;
+    static constexpr int kHufDecodeSize = 1 << kHufDecodeBits;
+    static constexpr int kHufDecodeMask = kHufDecodeSize - 1;
+
+    // Whether a code of this length needs the second level.
+    static bool hufUsesSubTable(int length);
+
+    // Where in the first level a code of this length is found. A short code is looked up by the
+    // whole of its value; a long one by the bits above the first level.
+    static int hufSubTableIndex(int code, int length);
 };

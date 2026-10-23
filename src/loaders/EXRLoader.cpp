@@ -325,3 +325,15 @@ EXRLoader::AcScan EXRLoader::unRleAC(const std::vector<std::uint16_t>& acBuffer,
     scan.finalPosition = dctComp;
     return scan;
 }
+
+bool EXRLoader::hufUsesSubTable(int length) {
+    // Only a code longer than the first level reaches past it.
+    return length > kHufDecodeBits;
+}
+
+int EXRLoader::hufSubTableIndex(int code, int length) {
+    // A short code indexes the table with its whole value, which is the same as shifting by zero.
+    if (length <= kHufDecodeBits) return code;
+    // A long one keeps the bits above the first level.
+    return code >> (length - kHufDecodeBits);
+}
