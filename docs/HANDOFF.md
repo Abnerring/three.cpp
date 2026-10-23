@@ -3108,6 +3108,12 @@
    - **`isCacheable` 恒假**：本层第七个直接拒绝缓存的模块。
    - **测试（4 个用例、16 条断言）**：整数三处；浮点与向量六处（含"两种理由同一答案"）；元素类型三处；成员与缓存四处。
    - **验证**：核心 **2244 用例 / 215,665 断言**（+4 / +16）、`primitive-geometry`、`port-audit`、addons、`--cube` 全绿。
+505. **第 195 轮：`StorageArrayElementNode` 与兄弟模块对"缺失成员"给出不同答案**。
+   - **一处家族内部的不一致**：`getMemberType` 在没有结构类型时返回 **`'void'`**，而**第 193 轮那个 `MemberNode` 在同一位置返回 `'float'`**。**两族对"成员不存在时是什么类型"给出了不同答案**。端口把 `kMissingMemberType = "void"` 与 `kMemberNodeMissingType = "float"` 并列写出，并让 `familiesAgreeOnMissingMember()` 断言它们不相等——**这样以后若有人"顺手统一"，测试会红**。
+   - **一处"赋值时不格式化"**：`if ( isAssignContext !== true )` 才 `builder.format(...)`。**赋值需要的是被写的那个东西，而不是一个某类型的值**，所以本来会做类型转换的格式化被略去。
+   - **一处三段条件的回退**：`storageBuffer` 不可用、节点要求 PBO、不是赋值上下文，**再与"值是实例化属性 或 阶段不是 compute"相或**。测试把"前三条满足时后两条任一即可"与"两条都不满足则不用"都写了。
+   - **测试（4 个用例、17 条断言）**：缺失成员四处；家族不一致三处；格式化三处；回退七处。
+   - **验证**：核心 **2248 用例 / 215,682 断言**（+4 / +17）、`primitive-geometry`、`port-audit`、addons、`--cube` 全绿。
 70. **第 520 轮：完整 Vulkan 套件 211/211 全绿，耗时 270.72 秒**。
    - 命令：`ctest --test-dir build-vulkan -j 4 -E "lights-states" --output-on-failure`（仍排除第 46 条那个已知项；它在 Vulkan 构建里同样慢）。
    - 结果：**100% tests passed, 0 tests failed out of 211**，总耗时 **270.72 秒**。对比同一套件在 **Debug** 配置下的 **3784.56 秒 / 2 失败**，差了约 14 倍——再次印证第 69 条"是构建类型不是代码"的结论。
