@@ -3114,6 +3114,13 @@
    - **一处三段条件的回退**：`storageBuffer` 不可用、节点要求 PBO、不是赋值上下文，**再与"值是实例化属性 或 阶段不是 compute"相或**。测试把"前三条满足时后两条任一即可"与"两条都不满足则不用"都写了。
    - **测试（4 个用例、17 条断言）**：缺失成员四处；家族不一致三处；格式化三处；回退七处。
    - **验证**：核心 **2248 用例 / 215,682 断言**（+4 / +17）、`primitive-geometry`、`port-audit`、addons、`--cube` 全绿。
+506. **第 196 轮：`SpriteUtils` 里三个参数全部失效**。
+   - **判据是 `defined()`，而三个参数都有缺省值**：`if ( defined( horizontalRotation ) )`、`if ( defined( horizontal ) )`、`if ( defined( vertical ) )`。**一个"有默认值"的参数永远是 defined**，所以**旋转分支永远走、`else` 分支完全不可达**，而 `horizontal` 与 `vertical` 两个标志**传什么都不影响结果**——**传 `false` 也不会让竖轴不被设置**。
+   - **这是本轮最强的一处**：它意味着 `billboarding({ vertical: false })` 与 `billboarding()` 生成的着色器**可能有区别**（因为旋转分支里的轴不同），但 **`vertical` 这个参数本身没有作用**。
+   - **中心的公式是减不是加**：`center = positionWorld.sub( modelWorldMatrix.mul( vec4( positionGeometry, 0 ) ).xyz )`——**世界位置减去"模型矩阵按方向变换后的局部位置"**。一个直觉上会写加法的公式，这里是减。
+   - **右轴又是"交换并取反"**：`vec3( lookXZ.z, 0, lookXZ.x.negate() )`——**与第 161 轮 `MatcapUV` 完全相同的模式**。
+   - **测试（5 个用例、24 条断言）**：分支四处（含三个缺省值）；标志无效果三处；不可达分支四处；右轴七处；中心六处（含"不是加法"与"两项不可交换"）。
+   - **验证**：核心 **2253 用例 / 215,706 断言**（+5 / +24）、`primitive-geometry`、`port-audit`、addons、`--cube` 全绿。
 70. **第 520 轮：完整 Vulkan 套件 211/211 全绿，耗时 270.72 秒**。
    - 命令：`ctest --test-dir build-vulkan -j 4 -E "lights-states" --output-on-failure`（仍排除第 46 条那个已知项；它在 Vulkan 构建里同样慢）。
    - 结果：**100% tests passed, 0 tests failed out of 211**，总耗时 **270.72 秒**。对比同一套件在 **Debug** 配置下的 **3784.56 秒 / 2 失败**，差了约 14 倍——再次印证第 69 条"是构建类型不是代码"的结论。
