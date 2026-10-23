@@ -234,6 +234,8 @@ target_sources(threecpp PRIVATE
     src/nodes/core/PostProcessingUtils.cpp
     src/nodes/core/NodeParser.cpp
     src/nodes/core/BypassNode.cpp
+    src/nodes/core/SubBuildNode.cpp
+    src/nodes/core/ParameterNode.cpp
     src/nodes/core/NodeConstants.cpp
     src/nodes/core/Node.cpp
     src/loaders/DataTextureLoader.cpp

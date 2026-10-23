@@ -3178,6 +3178,14 @@
    - **次序是先调用后输出**：调用的文本先被发出，然后才是它旁边的那个输出。
    - **测试（4 个用例、13 条断言）**：类型四处（含"不是 void"）；调用类型三处；空片段四处（含单空格）；次序与缓存两处。
    - **验证**：核心 **2287 用例 / 215,912 断言**（+4 / +13）、`primitive-geometry`、`port-audit`、addons、`--cube` 全绿。
+515. **第 206 轮：`SubBuildNode` 的配对与 `ParameterNode` 的三个默认**。
+   - **`SubBuildNode` 的类型查询有时不加括号**：`generateNodeType` 里 `if ( this.nodeType !== null ) return this.nodeType;`——**早退发生在 `addSubBuild` 之前**，所以**构造时给了类型的调用方会比没给的少一对 builder 调用**。而 `build` 里那一对是**无条件**加的。
+   - **那一对不保证成对**：`addSubBuild` 与 `removeSubBuild` 之间是一次 `build` 调用，**没有 try/finally**，所以**中间抛异常会留下一个没关的括号**。
+   - **`ParameterNode` 的缺失结构给 `float`**：`getMemberType` 在没有结构时**先 `error(...)` 再返回 `'float'`**——**与第 193 轮 `MemberNode` 的默认相同**，两族在这件事上一致（与第 195 轮那个 `void` 不同）。
+   - **`getHash()` 是字符串化的 ID**：`String( this.id )`，**不是数字**，所以调用方比的是文本。
+   - **`generate()` 直接返回名字，不检查**：名字缺省是 `null`，**所以没给名字的节点会产出 `"null"` 这段文本**，而不是被拒绝。
+   - **测试（6 个用例、24 条断言）**：配对四处；早退四处；缺失结构五处；错误文案三处；哈希四处；名字四处。
+   - **验证**：核心 **2293 用例 / 215,936 断言**（+6 / +24）、`primitive-geometry`、`port-audit`、addons、`--cube` 全绿。
 70. **第 520 轮：完整 Vulkan 套件 211/211 全绿，耗时 270.72 秒**。
    - 命令：`ctest --test-dir build-vulkan -j 4 -E "lights-states" --output-on-failure`（仍排除第 46 条那个已知项；它在 Vulkan 构建里同样慢）。
    - 结果：**100% tests passed, 0 tests failed out of 211**，总耗时 **270.72 秒**。对比同一套件在 **Debug** 配置下的 **3784.56 秒 / 2 失败**，差了约 14 倍——再次印证第 69 条"是构建类型不是代码"的结论。

@@ -194,8 +194,8 @@
     "note": "Accepted port scope is src and examples/jsm, including tracked third-party dependencies. Editor/manual web applications are excluded from native application rewrites. Native host behavior, packaging and all three platforms require separate implementation and verification evidence."
   },
   "counts": {
-    "partial-unverified": 319,
-    "missing": 622,
+    "partial-unverified": 321,
+    "missing": 620,
     "vulkan-port-pending": 290,
     "dependency-unverified": 20
   },
@@ -203,8 +203,8 @@
     "src": {
       "modules": 755,
       "counts": {
-        "partial-unverified": 235,
-        "missing": 230,
+        "partial-unverified": 237,
+        "missing": 228,
         "vulkan-port-pending": 290
       }
     },
@@ -803,7 +803,7 @@
       "path": "src/nodes/core",
       "upstreamFiles": 42,
       "moduleCount": 42,
-      "modulesWithCppFiles": 16,
+      "modulesWithCppFiles": 18,
       "verifiedComplete": 0
     },
     {
@@ -9382,11 +9382,11 @@
       "scope": "src",
       "kind": "core",
       "upstreamSha256": "2c0a279be8a5a20e2642bd28115695586f421368b9f80ab983d0ee93c251e5b4",
-      "header": null,
-      "implementation": null,
+      "header": "src/nodes/core/ParameterNode.h",
+      "implementation": "src/nodes/core/ParameterNode.cpp",
       "expectedHeader": "src/nodes/core/ParameterNode.h",
       "expectedImplementation": "src/nodes/core/ParameterNode.cpp",
-      "status": "missing",
+      "status": "partial-unverified",
       "verifiedComplete": false,
       "apiExtraction": "static-only",
       "verification": {
@@ -9575,11 +9575,11 @@
       "scope": "src",
       "kind": "core",
       "upstreamSha256": "bc3b1b0bc1f4289fb75050778cce06addcfbfe83ff0267f7bb3a3c756270984d",
-      "header": null,
-      "implementation": null,
+      "header": "src/nodes/core/SubBuildNode.h",
+      "implementation": "src/nodes/core/SubBuildNode.cpp",
       "expectedHeader": "src/nodes/core/SubBuildNode.h",
       "expectedImplementation": "src/nodes/core/SubBuildNode.cpp",
-      "status": "missing",
+      "status": "partial-unverified",
       "verifiedComplete": false,
       "apiExtraction": "static-only",
       "verification": {
