@@ -2,6 +2,7 @@
 #include <array>
 #include <cstddef>
 #include <cstdint>
+#include <vector>
 
 // Port of the small bit helpers in examples/jsm/loaders/EXRLoader.js at the pinned revision. The
 // loader itself is one long function that reads a whole file, so the parts reached first are the
@@ -71,4 +72,32 @@ class EXRLoader {
     static std::uint16_t floatToHalfBits(float value);
     static constexpr std::uint16_t kHalfInfinity = 0x7c00;
     static constexpr std::uint16_t kHalfNotANumber = 0x7e00;
+    // The size of the value range a lookup table spans.
+    static constexpr int kUshortRange = 1 << 16;
+
+    // The reverse of a bitmap table, which lists the values whose bit is set. Two details are
+    // easy to miss: the value zero is always listed whatever its bit says, and the count returned
+    // is one less than the number listed, so it reads as the last index rather than a length.
+    struct ReverseLut {
+        std::vector<std::uint16_t> lut;
+        int lastIndex = 0;
+    };
+
+    static ReverseLut reverseLutFromBitmap(const std::vector<std::uint8_t>& bitmap);
+
+    // Replaces each value by the one the table gives for it, in place. A value outside the table
+    // reads nothing and is left alone.
+    static void applyLut(const std::vector<std::uint16_t>& lut,
+                         std::vector<std::uint16_t>& data);
+
+    // Undoes a differencing pass: each value becomes the running total of everything up to it,
+    // with one hundred and twenty eight taken off for every step after the first. The pass has to
+    // run forwards because each step reads what the last one wrote.
+    static void predictor(std::vector<std::uint16_t>& source);
+
+    // Deals a scalar run into its output, taking alternately from the two halves of the source.
+    // With an odd length the first half holds the extra one, which is why the second starts at
+    // the size plus one halved.
+    static void interleaveScalar(const std::vector<std::uint16_t>& source,
+                                 std::vector<std::uint16_t>& out);
 };

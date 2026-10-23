@@ -104,3 +104,50 @@ std::uint16_t EXRLoader::floatToHalfBits(float value) {
     const std::uint32_t rounded = magnitude + 0xfffu + ((magnitude >> 13) & 1u);
     return static_cast<std::uint16_t>(sign | ((rounded - 0x38000000u) >> 13));
 }
+
+EXRLoader::ReverseLut EXRLoader::reverseLutFromBitmap(const std::vector<std::uint8_t>& bitmap) {
+    ReverseLut result;
+    result.lut.assign(static_cast<std::size_t>(kUshortRange), 0);
+    int k = 0;
+    for (int i = 0; i < kUshortRange; ++i) {
+        // Zero is always listed, and the rest when their bit is set.
+        const std::size_t byteIndex = static_cast<std::size_t>(i) >> 3;
+        const bool bitSet =
+            byteIndex < bitmap.size() && (bitmap[byteIndex] & (1 << (i & 7))) != 0;
+        if (i == 0 || bitSet) result.lut[static_cast<std::size_t>(k++)] = static_cast<std::uint16_t>(i);
+    }
+    // The count minus one, which is the last index rather than a length.
+    result.lastIndex = k - 1;
+    return result;
+}
+
+void EXRLoader::applyLut(const std::vector<std::uint16_t>& lut,
+                         std::vector<std::uint16_t>& data) {
+    for (auto& value : data) {
+        // A value outside the table is left as it is.
+        if (static_cast<std::size_t>(value) < lut.size()) value = lut[value];
+    }
+}
+
+void EXRLoader::predictor(std::vector<std::uint16_t>& source) {
+    // Forwards, because each step reads the value the previous step wrote.
+    for (std::size_t t = 1; t < source.size(); ++t) {
+        const int sum = static_cast<int>(source[t - 1]) + static_cast<int>(source[t]) - 128;
+        source[t] = static_cast<std::uint16_t>(sum);
+    }
+}
+
+void EXRLoader::interleaveScalar(const std::vector<std::uint16_t>& source,
+                                 std::vector<std::uint16_t>& out) {
+    if (source.empty()) return;
+    std::size_t first = 0;
+    std::size_t second = (source.size() + 1) / 2;
+    std::size_t s = 0;
+    // Alternate between the halves until the output is full.
+    while (true) {
+        if (s >= source.size()) break;
+        out[s++] = source[first++];
+        if (s >= source.size()) break;
+        out[s++] = source[second++];
+    }
+}
