@@ -535,3 +535,40 @@ bool EXRLoader::channelEntryInRange(std::size_t position, std::size_t start, std
     if (size == 0) return false;
     return position < (start + size - 1);
 }
+
+EXRLoader::Chromaticities EXRLoader::chromaticitiesFromNumbers(const double numbers[8]) {
+    // Each pair in turn.
+    Chromaticities points;
+    points.redX = numbers[0];
+    points.redY = numbers[1];
+    points.greenX = numbers[2];
+    points.greenY = numbers[3];
+    points.blueX = numbers[4];
+    points.blueY = numbers[5];
+    points.whiteX = numbers[6];
+    points.whiteY = numbers[7];
+    return points;
+}
+
+std::string EXRLoader::levelModeName(int code) {
+    static const char* names[] = {"ONE_LEVEL", "MIPMAP_LEVELS", "RIPMAP_LEVELS"};
+    if (code >= 3 || code < 0) return std::string();
+    return names[code];
+}
+
+std::string EXRLoader::roundingModeName(int code) {
+    static const char* names[] = {"ROUND_DOWN", "ROUND_UP"};
+    if (code >= 2 || code < 0) return std::string();
+    return names[code];
+}
+
+EXRLoader::TileDescription EXRLoader::tileDescription(std::uint32_t xSize, std::uint32_t ySize,
+                                                       std::uint8_t modes) {
+    TileDescription tile;
+    tile.xSize = xSize;
+    tile.ySize = ySize;
+    // The low nibble is the level mode and the high one the rounding mode.
+    tile.levelMode = levelModeName(modes & 0xf);
+    tile.roundingMode = roundingModeName(modes >> 4);
+    return tile;
+}

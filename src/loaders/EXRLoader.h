@@ -325,4 +325,33 @@ class EXRLoader {
     static constexpr std::size_t kChlistTerminator = 1;
     // The three reserved bytes inside an entry.
     static constexpr std::size_t kChannelReserved = 3;
+    // The four points that describe a colour space, each as a pair of coordinates. The pairs
+    // arrive together, red then green then blue then white, rather than as four x values and
+    // then four y values.
+    struct Chromaticities {
+        double redX = 0, redY = 0;
+        double greenX = 0, greenY = 0;
+        double blueX = 0, blueY = 0;
+        double whiteX = 0, whiteY = 0;
+    };
+
+    static Chromaticities chromaticitiesFromNumbers(const double numbers[8]);
+
+    // The three ways a file may describe its levels.
+    static std::string levelModeName(int code);
+
+    // The two ways it may round a tile size.
+    static std::string roundingModeName(int code);
+
+    // A tile description packs both of those into one byte: the low four bits are the level mode
+    // and the high four the rounding mode.
+    struct TileDescription {
+        std::uint32_t xSize = 0;
+        std::uint32_t ySize = 0;
+        std::string levelMode;
+        std::string roundingMode;
+    };
+
+    static TileDescription tileDescription(std::uint32_t xSize, std::uint32_t ySize,
+                                           std::uint8_t modes);
 };

@@ -223,6 +223,7 @@ add_executable(THREECPPTests
         unit/src/loaders/EXRAttributeKind.tests.cpp
         unit/src/loaders/EXRValues.tests.cpp
         unit/src/loaders/EXRChlist.tests.cpp
+        unit/src/loaders/EXRTile.tests.cpp
         unit/src/cameras/StereoCamera.tests.cpp
         unit/src/audio/AudioContext.tests.cpp
         unit/src/audio/Audio.tests.cpp
