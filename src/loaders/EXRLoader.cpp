@@ -613,3 +613,23 @@ std::string EXRLoader::fixedLengthString(const std::vector<std::uint8_t>& buffer
 std::size_t EXRLoader::advanceF32(std::size_t offset) { return offset + kFloatSize; }
 
 std::size_t EXRLoader::advanceU32(std::size_t offset) { return offset + kIntSize; }
+
+EXRLoader::BlockCompression EXRLoader::blockCompression(int code) {
+    // Only two kinds are named; anything else leaves nothing to unpack.
+    if (code == kStaticHuffman) return BlockCompression::Huffman;
+    if (code == kDeflate) return BlockCompression::Deflate;
+    return BlockCompression::None;
+}
+
+bool EXRLoader::blockPresent(std::uint32_t size) {
+    // Each block says whether it is there by its own size.
+    return size > 0;
+}
+
+std::size_t EXRLoader::advanceAfterAc(BlockCompression kind, std::uint32_t compressedSize,
+                                      std::uint32_t uncompressedCount) {
+    // The two kinds advance by different amounts, which the source does without a comment.
+    if (kind == BlockCompression::Deflate) return uncompressedCount;
+    if (kind == BlockCompression::Huffman) return compressedSize;
+    return 0;
+}

@@ -391,4 +391,24 @@ class EXRLoader {
     // How far an offset moves after reading a float or an int.
     static std::size_t advanceF32(std::size_t offset);
     static std::size_t advanceU32(std::size_t offset);
+    // The two ways a block of coefficients may itself be compressed.
+    static constexpr int kStaticHuffman = 0;
+    static constexpr int kDeflate = 1;
+
+    // What a block says about its own compression. A code outside the two leaves the reader with
+    // nothing to unpack, which the source allows to happen rather than refusing the file, since
+    // its switch has no default.
+    enum class BlockCompression { None, Huffman, Deflate };
+
+    static BlockCompression blockCompression(int code);
+
+    // Whether a block of the three is present. The three are read independently, each gated on
+    // its own size rather than on a count, so a file may carry any mixture of them.
+    static bool blockPresent(std::uint32_t size);
+
+    // How far the offset moves after a block. The source advances by a different amount for the
+    // two kinds of the first block: by the compressed size for the huffman one and by the
+    // uncompressed count for the deflate one, which is a discrepancy kept as it is.
+    static std::size_t advanceAfterAc(BlockCompression kind, std::uint32_t compressedSize,
+                                      std::uint32_t uncompressedCount);
 };
