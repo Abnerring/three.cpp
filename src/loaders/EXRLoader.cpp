@@ -1602,3 +1602,87 @@ std::size_t EXRLoader::scanlineReadIndex(std::uint32_t lineWithinBlock, std::siz
            channelOffset * static_cast<std::size_t>(columns) +
            static_cast<std::size_t>(x) * sampleBytes;
 }
+
+EXRLoader::ScanlineResult EXRLoader::parseScanline(
+    const std::vector<std::uint8_t>& data, std::size_t dataOffset, std::uint32_t width,
+    std::uint32_t height, std::uint32_t compression, int outputType,
+    const std::vector<ScanlineChannel>& channels) {
+    ScanlineResult result;
+    // Only the half precision output is written; anything else is refused rather than guessed.
+    if (outputType != 1) {
+        result.error = "THREE.EXRLoader: only half precision output is read";
+        return result;
+    }
+    const std::uint32_t blockHeight = blockHeightFor(static_cast<int>(compression));
+    if (blockHeight == 0) {
+        result.error = unsupportedCompressionMessage(compressionNameOf(static_cast<int>(compression)));
+        return result;
+    }
+    // The channels wanted take their places in a line, and every channel takes room.
+    std::vector<std::pair<std::string, int>> named;
+    std::vector<std::string> decoded;
+    for (const auto& channel : channels) {
+        named.emplace_back(channel.name, channel.pixelType);
+        if (channel.wanted) decoded.push_back(channel.name);
+    }
+    const auto offsets = channelByteOffsets(named, decoded);
+    std::vector<int> types;
+    for (const auto& channel : channels) types.push_back(channel.pixelType);
+    const std::size_t bytesPerLine = static_cast<std::size_t>(width) * totalBytesPerSample(types);
+    const std::size_t lineWidth = outputLineWidth(width, decoded.size());
+    result.samples.assign(static_cast<std::size_t>(width) * height * decoded.size(), 0);
+    // The reader is chosen by the compression's number, not by anything in the block.
+    const Decompresser reader = decompresserFor(static_cast<int>(compression));
+    std::size_t at = dataOffset;
+    const std::uint32_t blocks = scanlineBlockCount(height, blockHeight);
+    for (std::uint32_t block = 0; block < blocks; ++block) {
+        // A block begins with its first line and its own size.
+        if (at + 8 > data.size()) {
+            result.error = "THREE.EXRLoader: the block table ran out";
+            return result;
+        }
+        const auto readWord = [&](std::size_t o) {
+            std::uint32_t value = 0;
+            for (int i = 0; i < 4; ++i) value = (value << 8) | data[o + static_cast<std::size_t>(i)];
+            return value;
+        };
+        const std::int32_t line = static_cast<std::int32_t>(readWord(at));
+        const std::uint32_t size = readWord(at + 4);
+        at += 8;
+        const std::uint32_t lines = scanlineBlockLines(static_cast<std::uint32_t>(line), height,
+                                                       blockHeight);
+        // Whether the block was compressed is decided from its size, not from the name.
+        const bool compressed = scanlineBlockCompressed(size, lines, static_cast<std::uint32_t>(bytesPerLine));
+        if (at + size > data.size()) {
+            result.error = "THREE.EXRLoader: a block ran past the file";
+            return result;
+        }
+        // The lines of the block, each read from its own place and written mirrored.
+        for (std::uint32_t lineInBlock = 0; lineInBlock < lines; ++lineInBlock) {
+            const std::uint32_t trueRow = static_cast<std::uint32_t>(line) + lineInBlock;
+            const std::uint32_t outputRow = scanlineOutputRow(trueRow, height);
+            for (std::size_t c = 0; c < offsets.size(); ++c) {
+                for (std::uint32_t x = 0; x < width; ++x) {
+                    // A compressed block is not read here, since its reader returns samples
+                    // rather than the bytes this loop walks.
+                    if (compressed) {
+                        result.error = "THREE.EXRLoader: a compressed block is not read yet";
+                        return result;
+                    }
+                    const std::size_t read = at + scanlineReadIndex(lineInBlock, offsets[c].second, x,
+                                                                    width, 2);
+                    const std::size_t write = scanlineWriteIndex(outputRow, x, c, offsets.size(), lineWidth);
+                    if (read + 1 >= data.size() || write >= result.samples.size()) {
+                        result.error = "THREE.EXRLoader: a sample fell outside the file";
+                        return result;
+                    }
+                    // The file writes its samples high byte first.
+                    result.samples[write] = static_cast<std::uint16_t>((data[read] << 8) | data[read + 1]);
+                }
+            }
+        }
+        at += size;
+    }
+    result.valid = true;
+    return result;
+}

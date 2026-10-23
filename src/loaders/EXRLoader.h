@@ -878,4 +878,28 @@ class EXRLoader {
     static std::size_t scanlineReadIndex(std::uint32_t lineWithinBlock, std::size_t channelOffset,
                                          std::uint32_t x, std::uint32_t columns,
                                          std::size_t sampleBytes);
+    // One channel of a file as the reader needs it: its name, its type and whether the caller
+    // wants it.
+    struct ScanlineChannel {
+        std::string name;
+        int pixelType = 1;
+        bool wanted = true;
+    };
+
+    // Reads a file's scanlines into one array of half precision samples. What this does not do
+    // is convert them to any other output type, so a caller asking for one is refused rather
+    // than given samples it did not ask for. The order of the work is the order the source
+    // gives it: a block's row, then its size, then how many lines it holds, then whether its
+    // size says it was compressed, then the lines and their channels.
+    struct ScanlineResult {
+        bool valid = false;
+        // One entry per pixel of the output, in the output's own order.
+        std::vector<std::uint16_t> samples;
+        std::string error;
+    };
+
+    static ScanlineResult parseScanline(const std::vector<std::uint8_t>& data, std::size_t dataOffset,
+                                        std::uint32_t width, std::uint32_t height,
+                                        std::uint32_t compression, int outputType,
+                                        const std::vector<ScanlineChannel>& channels);
 };
