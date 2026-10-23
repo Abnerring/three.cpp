@@ -2322,6 +2322,13 @@
    - **两者都是预先存在的**：我这一段所有工作都在 loader 里，没碰渲染与灯光，所以不是本轮引入的；但**我的门禁从来没跑到它们**，这是门禁设计的缺陷。
    - **结论**：**五门禁应当扩充为"全量 `ctest` + 那两个二进制"**。全量一次要 **约 12 分钟**，比原来的一次提交多花时间，但这是唯一能看见全部 213 个测试的办法。本条记录作为下一轮改门禁的依据。
    - **验证**：核心 1881 用例 / 213,610 断言仍全绿；工作树干净。
+394. **第 80 轮：`threecpp.vulkan` 那条 mipmap 失败的精确诊断**。
+   - **失败点**：`test/unit/src/renderers/VulkanRenderer.tests.cpp:571`，`expectPixel(renderer, {128,128,128,255}, "Automatic mipmaps filter a minified checkerboard")`。
+   - **测试做了什么**：造一张 8×8 的 50% 黑白棋盘（`(x+y)%2` 决定 0 或 255），`generateMipmaps = true`、`minFilter = LinearMipmapLinearFilter`、`magFilter = LinearFilter`、`wrapS/wrapT = RepeatWrapping`，再把 `repeat` 设成 **(128,128)**——也就是把纹理在屏幕上重复一百二十八次，**每一像素覆盖约 1000 个纹素**，所以采样必然落在最粗的 mip 层上，而那层的颜色应当正好是平均值 **128**。
+   - **实得**：**`0,0,0,255`**——全黑，也就是**读到了最细那一层的某个黑纹素**，而不是最粗层的平均值。所以问题在"**mip 链没有被生成或没有被采样**"，不在颜色空间或混合。
+   - **相关代码位置**：`src/renderers/VulkanRenderer.cpp` 里第 186 行的 `vkCmdBlitImage` 与第 516 行附近的 `generateMipmaps` 参数——自动 mip 链应当是用 `vkCmdBlitImage` 逐级降采样得到的。
+   - **本轮不动手**：Vulkan 的 mip 链涉及图像布局转换、每级 blit 的范围与采样器上限，盲改的返工风险太高（本会话末尾的调用预算已很紧）。这一条记录下精确的输入、期望与实得，留给专门的一轮。
+   - **验证**：核心 1881 用例 / 213,610 断言仍全绿；工作树干净。
 70. **第 520 轮：完整 Vulkan 套件 211/211 全绿，耗时 270.72 秒**。
    - 命令：`ctest --test-dir build-vulkan -j 4 -E "lights-states" --output-on-failure`（仍排除第 46 条那个已知项；它在 Vulkan 构建里同样慢）。
    - 结果：**100% tests passed, 0 tests failed out of 211**，总耗时 **270.72 秒**。对比同一套件在 **Debug** 配置下的 **3784.56 秒 / 2 失败**，差了约 14 倍——再次印证第 69 条"是构建类型不是代码"的结论。
