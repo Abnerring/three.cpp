@@ -3082,6 +3082,12 @@
    - **端口另加了一个守卫** `isInWalkOrder`：上游没有，但它让读的人有一个可查的入口，判断一个名字列表会不会被静默丢弃。
    - **测试（5 个用例、37 条断言）**：四个名字；十处翻转；顺序陷阱八处（含与 `"y"` 相等）；顺序守卫六处；`1 − x` 四处。
    - **验证**：核心 **2226 用例 / 215,577 断言**、`primitive-geometry`、`port-audit`、addons 全绿。
+501. **第 191 轮：`SplitNode` 的宽度是"最大位置"而不是"个数"**。
+   - **一处与名字不符的算法**：`getVectorLength()` 从 `components.length` 出发，**再对每个名字取 `max( indexOf(c) + 1, 当前值 )`**。所以 **`"w"` 需要一个四分量宽度的值**（不是一），**`"xz"` 需要三个**（不是两个）——**取的是它点到的最高位置**，不是名字的个数。测试把 `"w" == 4` 与 `"xz" == 3` 各自单独断言，因为它们最容易被算错。
+   - **恒等重排被省略**：`components.length === nodeTypeLength && components === 'xyzw'.slice( 0, length )` 时不写 `.swizzle`。所以**从 `vec2` 读 `"xy"` 直接返回原值**，而**读 `"yx"` 要写出来**——**个数相同但顺序不同，一个省略一个不省略**。
+   - **一维值完全忽略名字**：`nodeTypeLength > 1` 才读 `components`，源注释直说 "ignore .components if .node returns float/integer"。**所以问一个 float 要第二个分量，得到的是那个 float**。
+   - **测试（4 个用例、28 条断言）**：宽度十一处（含 `w` 与 `xz` 的单独断言、未知名）；恒等八处（含 `"yx"` 与 `"xzy"`）；忽略四处；缓存一处。
+   - **验证**：核心 **2230 用例 / 215,605 断言**（+4 / +28）、`primitive-geometry`、`port-audit`、addons、`--cube` 全绿。
 70. **第 520 轮：完整 Vulkan 套件 211/211 全绿，耗时 270.72 秒**。
    - 命令：`ctest --test-dir build-vulkan -j 4 -E "lights-states" --output-on-failure`（仍排除第 46 条那个已知项；它在 Vulkan 构建里同样慢）。
    - 结果：**100% tests passed, 0 tests failed out of 211**，总耗时 **270.72 秒**。对比同一套件在 **Debug** 配置下的 **3784.56 秒 / 2 失败**，差了约 14 倍——再次印证第 69 条"是构建类型不是代码"的结论。

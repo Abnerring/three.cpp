@@ -220,6 +220,7 @@ target_sources(threecpp PRIVATE
     src/nodes/core/SampleNode.cpp
     src/nodes/core/RotateNode.cpp
     src/nodes/core/FlipNode.cpp
+    src/nodes/core/SplitNode.cpp
     src/nodes/core/NodeConstants.cpp
     src/nodes/core/Node.cpp
     src/loaders/DataTextureLoader.cpp
