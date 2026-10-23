@@ -270,3 +270,29 @@ void EXRLoader::dctInverse(double data[64]) {
         data[56 + column] = gamma[0] - beta[0];
     }
 }
+
+void EXRLoader::hufCanonicalCodeTable(std::vector<int>& hcode) {
+    // One counter per possible length.
+    std::vector<int> counts(static_cast<std::size_t>(kHufMaxCodeLength) + 1, 0);
+
+    // The entries are lengths at this point, so they are counted as they are.
+    for (const int length : hcode) {
+        if (length >= 0 && length <= kHufMaxCodeLength) counts[static_cast<std::size_t>(length)] += 1;
+    }
+
+    // Walk down from the longest, giving each length the first code that fits after the ones
+    // below it have taken their share.
+    int available = 0;
+    for (int length = kHufMaxCodeLength; length > 0; --length) {
+        const int next = (available + counts[static_cast<std::size_t>(length)]) >> 1;
+        counts[static_cast<std::size_t>(length)] = available;
+        available = next;
+    }
+
+    // Pack the code above its length, taking each one in turn as it is handed out.
+    for (int& entry : hcode) {
+        if (entry > 0 && entry <= kHufMaxCodeLength) {
+            entry = entry | (counts[static_cast<std::size_t>(entry)]++ << 6);
+        }
+    }
+}

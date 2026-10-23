@@ -115,4 +115,17 @@ class EXRLoader {
     // from a textbook transform in the last few bits. That is kept as it is, since the whole
     // point is to produce the same numbers the reference implementation produces.
     static void dctInverse(double data[64]);
+    // The longest code the format's Huffman tables can hold, which is also the size of the table
+    // the counts are kept in.
+    static constexpr int kHufMaxCodeLength = 58;
+
+    // Turns a list of code lengths into the packed entries the rest of the decoder reads, each
+    // being the code above the length the way hufCode and hufLength read them.
+    //
+    // Canonical codes are assigned so that a shorter code sorts before every longer one and codes
+    // of equal length follow each other in order. Counting the lengths and walking down from the
+    // longest gives each length the first code available to it, and the halving is what makes a
+    // code one bit shorter start where the codes below it would have run out. A length of zero
+    // marks a symbol that does not appear and is left as it is.
+    static void hufCanonicalCodeTable(std::vector<int>& hcode);
 };
