@@ -254,6 +254,7 @@ target_sources(threecpp PRIVATE
     src/nodes/core/IndexNode.cpp
     src/nodes/core/VarNode.cpp
     src/nodes/core/ContextNode.cpp
+    src/nodes/core/StackNode.cpp
     src/nodes/core/ParameterNode.cpp
     src/nodes/core/NodeConstants.cpp
     src/nodes/core/Node.cpp

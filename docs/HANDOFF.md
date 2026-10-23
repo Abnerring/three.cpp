@@ -3326,6 +3326,14 @@
    - **恢复没有保护**：`setContext( previousContext )` 是调用之后的普通语句，**这是本层第三处"成对 builder 调用中间没有 try/finally"**（前两处是 `SubBuildNode` 与 `IsolateNode`）。
    - **测试（3 个用例、18 条断言）**：三处转发五处；合并九处（含不相交与空）；只加一次四处。
    - **验证**：核心 **2373 用例 / 216,366 断言**（+3 / +18）、`primitive-geometry`、`port-audit`、addons、`--cube` 全绿。
+535. **第 227 轮：`StackNode` 的"无输出即 void"与只在一种配对下丢结果**。
+   - **三个转发都返回 `void` 当没有输出**：`getElementType`、`generateNodeType`、`getMemberType` **都写成 `outputNode ? ... : 'void'`**。所以**一个从未给过输出的栈在三种意义上都是 void**，而不是被拒绝。
+   - **结果只在一种配对下被丢弃**：`builder.buildStage !== 'generate' || this.outputNode.getNodeType( builder ) !== 'void'` 时才保留。**所以只有"第三阶段 + 空类型"这一个配对丢结果**——**放松任一半都不够**：其他阶段即使类型是 `void` 也保留，第三阶段只要类型不是 `void` 也保留。测试把四种配对都断言了。
+   - **没有输出时退回构建自己**：`super.build( ... )`，而不是无操作。
+   - **恢复没有保护**：`setCurrentStack( previousStack )` 在末尾，**这是本层第四处"成对 builder 调用中间没有 try/finally"**。
+   - **四个下划线私有字段**：`_currentCond`、`_expressionNode`、`_currentNode`、`_nodeDataLibrary`。
+   - **测试（3 个用例、20 条断言）**：三转发十处；四种配对八处；退回两处。
+   - **验证**：核心 **2376 用例 / 216,386 断言**（+3 / +20）、`primitive-geometry`、`port-audit`、addons、`--cube` 全绿。
 70. **第 520 轮：完整 Vulkan 套件 211/211 全绿，耗时 270.72 秒**。
    - 命令：`ctest --test-dir build-vulkan -j 4 -E "lights-states" --output-on-failure`（仍排除第 46 条那个已知项；它在 Vulkan 构建里同样慢）。
    - 结果：**100% tests passed, 0 tests failed out of 211**，总耗时 **270.72 秒**。对比同一套件在 **Debug** 配置下的 **3784.56 秒 / 2 失败**，差了约 14 倍——再次印证第 69 条"是构建类型不是代码"的结论。
