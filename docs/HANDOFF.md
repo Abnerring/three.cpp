@@ -2375,6 +2375,13 @@
    - **效果**：**`invalid vector subscript` 消失了**。同一份无参数套件现在报的是 `vkCreateDevice failed (VkResult -4)`（`VK_ERROR_INITIALIZATION_FAILED`）——**一处更早、与读回无关的失败**，`--cube` 仍然是 0。
    - **所以本轮修好了一个真 bug，但套件仍然红**，只是红在了别处。这条线索（设备创建失败）下一轮单独查。
    - **验证**：核心 **1881 用例 / 213,610 断言**、`primitive-geometry`、`port-audit`、addons、`--cube` 全绿。
+400. **第 86 轮：`--cube` 与无参数跑的是两组不相交的用例**。
+   - **`VulkanRenderer.tests.cpp` 第 1872 行**：`--cube` 分支只跑**六个**组——`renderTargetTests`、`cubeRenderTargetTests`、`cubeCameraUpdateTests`、`equirectangularToCubeTests`、`equirectangularDirectionTests`、`parkRestoreTests`，然后 `return 0`。
+   - **无参数走的却是另一串**，从 **`unsupportedMeshTests`** 开始，`renderTargetTests` **根本不在里面**。**两组没有任何重叠。**
+   - **所以过去几十轮的 Vulkan 门禁（`--cube`）跑的是六个渲染目标相关的用例，而 `ctest` 登记的无参数套件跑的是另外二十几个组。前者绿、后者红，两者并不矛盾——它们测的东西不一样。**
+   - **这也把 `vkCreateDevice failed (VkResult -4)` 的位置钉死了**：它发生在**无参数套件的第一组 `unsupportedMeshTests`** 里（第 81 行 `VulkanRenderer renderer({64, 64, validation})`）。而 `--cube` 的 `renderTargetTests` 同样创建渲染器却成功，所以不是设备本身不可用。
+   - **下一轮该做的**：把 `unsupportedMeshTests` 临时改成 `main` 的第一句单独跑，看它内部到底哪一步让设备创建失败；注意这一组是**故意喂非法网格**来测拒绝路径的，失败可能与"拒绝后设备状态未清理"有关。
+   - **验证**：核心 1881 用例 / 213,610 断言仍全绿；工作树干净。
 70. **第 520 轮：完整 Vulkan 套件 211/211 全绿，耗时 270.72 秒**。
    - 命令：`ctest --test-dir build-vulkan -j 4 -E "lights-states" --output-on-failure`（仍排除第 46 条那个已知项；它在 Vulkan 构建里同样慢）。
    - 结果：**100% tests passed, 0 tests failed out of 211**，总耗时 **270.72 秒**。对比同一套件在 **Debug** 配置下的 **3784.56 秒 / 2 失败**，差了约 14 倍——再次印证第 69 条"是构建类型不是代码"的结论。
