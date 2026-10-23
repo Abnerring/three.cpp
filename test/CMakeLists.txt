@@ -374,6 +374,7 @@ add_executable(THREECPPTests
         unit/src/nodes/core/VarNode.tests.cpp
         unit/src/nodes/core/ContextNode.tests.cpp
         unit/src/nodes/core/StackNode.tests.cpp
+        unit/src/nodes/core/PropertyNode.tests.cpp
         unit/src/loaders/EXRSamplesToBytes.tests.cpp
         unit/src/loaders/EXRDecompressBlock.tests.cpp
         unit/src/loaders/Zlib.tests.cpp

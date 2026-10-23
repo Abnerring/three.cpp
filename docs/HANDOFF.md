@@ -3334,6 +3334,13 @@
    - **四个下划线私有字段**：`_currentCond`、`_expressionNode`、`_currentNode`、`_nodeDataLibrary`。
    - **测试（3 个用例、20 条断言）**：三转发十处；四种配对八处；退回两处。
    - **验证**：核心 **2376 用例 / 216,386 断言**（+3 / +20）、`primitive-geometry`、`port-audit`、addons、`--cube` 全绿。
+536. **第 228 轮：`PropertyNode` 的四个规则**。
+   - **`'output'` 不是类型而是查询**：`getNodeType` 里 `nodeType === 'output'` 时返回 `builder.getOutputType()`。**所以这个名字是"去问 builder 输出类型是什么"的请求**，不是一种值类型。测试断言它不等于 `'outputType'`。
+   - **缓存键是三段用冒号连**：`hashString( type + ':' + ( name || '' ) + ':' + ( varying ? '1' : '0' ) )`。**标志写成数字 `'1'`/`'0'`**，**没有名字时中间是空的而不是 `'null'`**。
+   - **变体的插值标志被无条件设真**：`nodeVar.needsInterpolation = true` 直接赋值。**这与第 221 轮 `VaryingNode` 的 `||=` 写法相反**——那里会先问，这里不问。
+   - **占位符只在"从未被写入"时写**：`if ( builder.hasWriteUsage( this ) === false )` 才写占位符。**所以一个会在别处被写入的属性不会拿到初始值**，而判断用的是 `=== false` 严格比较。
+   - **测试（4 个用例、22 条断言）**：魔法名八处；缓存键七处；插值三处；占位符六处。
+   - **验证**：核心 **2380 用例 / 216,408 断言**（+4 / +22）、`primitive-geometry`、`port-audit`、addons、`--cube` 全绿。
 70. **第 520 轮：完整 Vulkan 套件 211/211 全绿，耗时 270.72 秒**。
    - 命令：`ctest --test-dir build-vulkan -j 4 -E "lights-states" --output-on-failure`（仍排除第 46 条那个已知项；它在 Vulkan 构建里同样慢）。
    - 结果：**100% tests passed, 0 tests failed out of 211**，总耗时 **270.72 秒**。对比同一套件在 **Debug** 配置下的 **3784.56 秒 / 2 失败**，差了约 14 倍——再次印证第 69 条"是构建类型不是代码"的结论。
