@@ -219,4 +219,26 @@ class EXRLoader {
 
     // How many absent codes a long run stands for, given the eight bits that follow it.
     static int longZeroRunLength(int extra);
+    // Where the header begins, after the four byte magic and the two bytes of version and
+    // specification.
+    static constexpr std::size_t kHeaderStart = 8;
+
+    // Whether a buffer begins with the magic. The check looks at the first four bytes only, so a
+    // file cut short is reported by the length elsewhere rather than here.
+    static bool looksLikeExr(const std::vector<std::uint8_t>& buffer);
+
+    // What the specification byte says about the file. The four flags start at the second bit;
+    // the first is not used by any of them.
+    struct HeaderFlags {
+        bool singleTile = false;
+        bool longName = false;
+        bool deepFormat = false;
+        bool multiPart = false;
+    };
+
+    static HeaderFlags headerFlags(std::uint8_t spec);
+
+    // The two messages the header can raise.
+    static std::string notExrMessage();
+    static std::string noPartsMessage();
 };

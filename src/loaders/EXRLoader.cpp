@@ -414,3 +414,31 @@ int EXRLoader::longZeroRunLength(int extra) {
     // The eight bits count from six rather than from zero.
     return extra + kShortestLongRun;
 }
+
+bool EXRLoader::looksLikeExr(const std::vector<std::uint8_t>& buffer) {
+    if (buffer.size() < 4) return false;
+    // The magic read little endian, which is the order the format writes it in.
+    const std::uint32_t magic = static_cast<std::uint32_t>(buffer[0]) |
+                                (static_cast<std::uint32_t>(buffer[1]) << 8) |
+                                (static_cast<std::uint32_t>(buffer[2]) << 16) |
+                                (static_cast<std::uint32_t>(buffer[3]) << 24);
+    return magic == kMagic;
+}
+
+EXRLoader::HeaderFlags EXRLoader::headerFlags(std::uint8_t spec) {
+    HeaderFlags flags;
+    // The four flags start at the second bit; the first is unused.
+    flags.singleTile = (spec & 2) != 0;
+    flags.longName = (spec & 4) != 0;
+    flags.deepFormat = (spec & 8) != 0;
+    flags.multiPart = (spec & 16) != 0;
+    return flags;
+}
+
+std::string EXRLoader::notExrMessage() {
+    return "THREE.EXRLoader: Provided file doesn't appear to be in OpenEXR format.";
+}
+
+std::string EXRLoader::noPartsMessage() {
+    return "THREE.EXRLoader: No valid part headers found.";
+}
