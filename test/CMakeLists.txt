@@ -259,6 +259,7 @@ add_executable(THREECPPTests
         unit/src/loaders/ZlibBits.tests.cpp
         unit/src/loaders/ZlibFixed.tests.cpp
         unit/src/loaders/ZlibHuffman.tests.cpp
+        unit/src/loaders/ZlibDynamic.tests.cpp
         unit/src/loaders/EXRValues.tests.cpp
         unit/src/loaders/EXRChlist.tests.cpp
         unit/src/loaders/EXRTile.tests.cpp

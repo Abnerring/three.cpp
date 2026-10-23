@@ -1,4 +1,5 @@
 #pragma once
+#include <array>
 #include <cstddef>
 #include <cstdint>
 #include <string>
@@ -133,4 +134,25 @@ class Zlib {
     };
 
     static SymbolResult decodeSymbol(BitReader& reader, const HuffmanTable& table);
+    // The order the nineteen code-length lengths arrive in. It is not the order the symbols are
+    // numbered in, and getting it wrong produces a table that decodes some streams and not
+    // others, which is why it is written out here as one constant.
+    static const std::array<int, 19>& codeLengthOrder();
+
+    // The three counts at the head of a dynamic block. Each arrives with a bias, so the number of
+    // literal and distance codes is the value plus two hundred and fifty seven and plus one, and
+    // the number of code-length lengths is the value plus four. The largest of the first two is
+    // two hundred and eighty six and thirty two.
+    struct DynamicCounts {
+        int literalCount = 0;
+        int distanceCount = 0;
+        int codeLengthCount = 0;
+    };
+
+    static DynamicCounts dynamicCounts(std::uint32_t hlit, std::uint32_t hdist, std::uint32_t hclen);
+
+    // How many lengths a repeat code stands for. Code sixteen copies the previous length three
+    // to six times and carries two bits; seventeen repeats a zero for three to ten and carries
+    // three; eighteen repeats a zero for eleven to a hundred and thirty eight and carries seven.
+    static int repeatCount(int code, std::uint32_t extra);
 };

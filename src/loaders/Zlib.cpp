@@ -213,3 +213,29 @@ Zlib::SymbolResult Zlib::decodeSymbol(BitReader& reader, const HuffmanTable& tab
     // Nothing matched within the longest code, so the stream is impossible.
     return result;
 }
+
+const std::array<int, 19>& Zlib::codeLengthOrder() {
+    // The order the lengths arrive in, which is the order of how often each is expected.
+    static const std::array<int, 19> order{16, 17, 18, 0, 8,  7, 9,  6, 10, 5,
+                                           11, 4,  12, 3, 13, 2, 14, 1, 15};
+    return order;
+}
+
+Zlib::DynamicCounts Zlib::dynamicCounts(std::uint32_t hlit, std::uint32_t hdist,
+                                        std::uint32_t hclen) {
+    DynamicCounts counts;
+    // Each arrives with the bias the format adds to keep small values out of the field.
+    counts.literalCount = static_cast<int>(hlit) + 257;
+    counts.distanceCount = static_cast<int>(hdist) + 1;
+    counts.codeLengthCount = static_cast<int>(hclen) + 4;
+    return counts;
+}
+
+int Zlib::repeatCount(int code, std::uint32_t extra) {
+    // Sixteen copies the previous length a few more times; the other two repeat zeros, over two
+    // different ranges.
+    if (code == 16) return static_cast<int>(extra) + 3;
+    if (code == 17) return static_cast<int>(extra) + 3;
+    if (code == 18) return static_cast<int>(extra) + 11;
+    return 0;
+}
