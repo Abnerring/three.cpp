@@ -3208,6 +3208,12 @@
    - **`start` 做两件事**：先把直接光从光节点装好，再调 `indirect`。**所以一个覆写 `start` 而不调父类的实现会同时跳过这两件**，不是只跳过一件。
    - **测试（5 个用例、28 条断言）**：六个钩子四处；五个空 + "恰好一个有体"八处；三类调用者八处；两件事四处；文档措辞三处。
    - **验证**：核心 **2308 用例 / 216,021 断言**（+5 / +28）、`primitive-geometry`、`port-audit`、addons、`--cube` 全绿。
+519. **第 210 轮：`IsolateNode` 的缓存交换与已弃用的长形式**。
+   - **交换是三步，而且在两个方法里各写了一遍**：`getCache` → `setCache( cache )` → 做完事后 `setCache( previousCache )`。**`generateNodeType` 与 `build` 都有这一对**——**所以只是问一个子节点的类型也会换缓存**，不是只读操作。
+   - **没有异常保护**：恢复是调用之后的普通语句，**中间抛异常会把 builder 留在这个节点的缓存上**。与第 206 轮 `SubBuildNode` 的括号是同一个形态。
+   - **已弃用的 `cache()` 仍可链式调用**：`warn` 之后 `isolate( node ).setParent( parent )`——**因为 `isolate()` 没有 parent 参数，长形式必须补这一步**。两个名字都注册成了方法，所以旧名还能用。
+   - **测试（3 个用例、17 条断言）**：三步五处；异常与类型查询四处；弃用与两个名字六处。
+   - **验证**：核心 **2311 用例 / 216,038 断言**（+3 / +17）、`primitive-geometry`、`port-audit`、addons、`--cube` 全绿。
 70. **第 520 轮：完整 Vulkan 套件 211/211 全绿，耗时 270.72 秒**。
    - 命令：`ctest --test-dir build-vulkan -j 4 -E "lights-states" --output-on-failure`（仍排除第 46 条那个已知项；它在 Vulkan 构建里同样慢）。
    - 结果：**100% tests passed, 0 tests failed out of 211**，总耗时 **270.72 秒**。对比同一套件在 **Debug** 配置下的 **3784.56 秒 / 2 失败**，差了约 14 倍——再次印证第 69 条"是构建类型不是代码"的结论。
