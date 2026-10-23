@@ -3016,6 +3016,14 @@
    - **alpha 先钳再处理**：`outputNode.a.clamp( 0.0, 1.0 )` 在一切之前。
    - **测试（5 个用例、32 条断言）**：五步顺序九处；两种裁减六处；色调映射六处（含 99 的可见化）；色彩空间四处；跳过四处 + 钳制四处。
    - **验证**：核心 **2188 用例 / 215,348 断言**（+5 / +32）、`primitive-geometry`、`port-audit`、addons、`--cube` 全绿。
+492. **第 180 轮：`ToonOutlinePassNode` 的描边方向与裁剪空间厚度**。
+   - **描边画在背面**：`material.side = BackSide`，而法线先取反（`normalLocal.negate()`）——这是经典的"把背面沿法线外推"的做法，用背面才不会盖住物体本身。
+   - **一处方向是反的，且注释解释了原因**：`normalize( pos.sub( pos2 ) )`——**用第一个减第二个**，而非常见的第二个减第一个。源里写着"因为 BackSide 的 objectNormal 是负的"。**交换会得到相反的推挤方向**，测试用两个相反的点对把这个次序钉住。
+   - **厚度乘 `pos.w`**：`norm.mul( thickness ).mul( pos.w )`。**裁剪空间里 w 携带距离与尺度**，乘上它才让描边的**视觉宽度与距离无关**；不乘的话远处的物体描边会变细。测试用 w = 1、10、100 三点把"同比例放大"写成断言。
+   - **一处 TODO 桩**：`const ratio = float( 1.0 ); // TODO: support outline thickness ratio for each vertex`。**这个因子今天什么也不做**，测试断言它恒为一并注明原因。
+   - **只有两种卡通材质得到描边，且线框被跳过**：`isMeshToonMaterial || isMeshToonNodeMaterial`，再与 `wireframe === false` 相与。
+   - **测试（5 个用例、26 条断言）**：名字与缺省七处；方向八处（含"两个方向相反"与单位长度）；厚度六处；比值两处；材质五种。
+   - **验证**：核心 **2193 用例 / 215,374 断言**（+5 / +26）、`primitive-geometry`、`port-audit`、addons、`--cube` 全绿。
 70. **第 520 轮：完整 Vulkan 套件 211/211 全绿，耗时 270.72 秒**。
    - 命令：`ctest --test-dir build-vulkan -j 4 -E "lights-states" --output-on-failure`（仍排除第 46 条那个已知项；它在 Vulkan 构建里同样慢）。
    - 结果：**100% tests passed, 0 tests failed out of 211**，总耗时 **270.72 秒**。对比同一套件在 **Debug** 配置下的 **3784.56 秒 / 2 失败**，差了约 14 倍——再次印证第 69 条"是构建类型不是代码"的结论。
