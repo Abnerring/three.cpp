@@ -442,3 +442,24 @@ std::string EXRLoader::notExrMessage() {
 std::string EXRLoader::noPartsMessage() {
     return "THREE.EXRLoader: No valid part headers found.";
 }
+
+std::string EXRLoader::readNullTerminated(const std::vector<std::uint8_t>& buffer,
+                                          std::size_t& offset) {
+    std::string text;
+    // Read until the null, which is one past the last character and is consumed as well.
+    while (offset < buffer.size() && buffer[offset] != 0) {
+        text.push_back(static_cast<char>(buffer[offset++]));
+    }
+    if (offset < buffer.size()) offset++;
+    return text;
+}
+
+bool EXRLoader::partHasAttributes(std::size_t attributeCount) {
+    // A part that listed nothing is not a part.
+    return attributeCount > 0;
+}
+
+std::string EXRLoader::unknownAttributeWarning(const std::string& type) {
+    // The type is quoted, so a name with a space in it stays readable.
+    return "THREE.EXRLoader: Skipped unknown header attribute type '" + type + "'.";
+}

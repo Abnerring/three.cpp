@@ -241,4 +241,19 @@ class EXRLoader {
     // The two messages the header can raise.
     static std::string notExrMessage();
     static std::string noPartsMessage();
+    // A string read up to a null byte, which is how the format writes the names and types in a
+    // header. The offset is left just past the null, so the next field begins where this one
+    // ended.
+    static std::string readNullTerminated(const std::vector<std::uint8_t>& buffer,
+                                          std::size_t& offset);
+
+    // Whether a part header is worth returning. A part that listed no attribute at all is not,
+    // and the answer is null rather than an empty object. Note that a part whose attributes were
+    // all of an unknown type still counts as having listed one, so it comes back as an empty
+    // object instead.
+    static bool partHasAttributes(std::size_t attributeCount);
+
+    // The warning an attribute of a type the reader does not know produces. Such an attribute is
+    // skipped and the parser carries on, so a file with something new in it still loads.
+    static std::string unknownAttributeWarning(const std::string& type);
 };
