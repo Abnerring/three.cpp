@@ -176,6 +176,7 @@ target_sources(threecpp PRIVATE
     src/nodes/core/NodeFrame.cpp
     src/nodes/core/ConstNode.cpp
     src/nodes/core/TempNode.cpp
+    src/nodes/core/AccessorNames.cpp
     src/nodes/core/NodeConstants.cpp
     src/nodes/core/Node.cpp
     src/loaders/DataTextureLoader.cpp
