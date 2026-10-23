@@ -1,5 +1,6 @@
 #pragma once
 #include <array>
+#include <cmath>
 #include <cstdint>
 #include <string>
 #include <utility>
@@ -324,4 +325,28 @@ class GLTFLoader {
     // The three fields are all set only when written, so the same flag structure the
     // iridescence extension uses serves here too.
     static OptionalNumber anisotropyValue(bool hasValue, double value);
+    // The material parameter a texture transform field fills, in the cases where it renames.
+    // The coordinate becomes the channel and the scale becomes the repeat, while the offset and
+    // the rotation keep their names.
+    static std::string textureTransformField(const std::string& field);
+
+    // Whether a transform asks for anything at all. A transform whose coordinate matches the
+    // texture's own channel and which carries no offset, rotation or scale leaves the texture
+    // alone, so the caller can keep the same object instead of a copy.
+    static bool textureTransformApplies(bool hasTexCoord, int texCoord, int channel,
+                                           bool hasOffset, bool hasRotation, bool hasScale);
+
+    // The matrix glTF's order implies, which differs from the port's own order. Both orders
+    // start with the translation but glTF rotates before scaling and the port scales before
+    // rotating, so the matrix is written out here rather than left to the texture's own fields.
+    // The six numbers are the first two columns of a three by three, in column order: the first
+    // pair is the image of the x axis, the second the image of the y axis, and the third the
+    // translation. The rotation is in radians and the negative sign on the second column's first
+    // number is what makes the turn go the way glTF's does.
+    struct TextureMatrix {
+        double a = 1, b = 0, c = 0, d = 1, e = 0, f = 0;
+    };
+
+    static TextureMatrix textureTransformMatrix(std::array<double, 2> repeat,
+                                                std::array<double, 2> offset, double rotation);
 };

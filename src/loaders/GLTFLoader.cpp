@@ -570,3 +570,40 @@ GLTFLoader::OptionalNumber GLTFLoader::anisotropyValue(bool hasValue, double val
     }
     return result;
 }
+
+std::string GLTFLoader::textureTransformField(const std::string& field) {
+    // The coordinate becomes the channel and the scale becomes the repeat.
+    if (field == "texCoord") return "channel";
+    if (field == "scale") return "repeat";
+    // The offset and the rotation keep their names.
+    if (field == "offset") return "offset";
+    if (field == "rotation") return "rotation";
+    return std::string();
+}
+
+
+GLTFLoader::TextureMatrix GLTFLoader::textureTransformMatrix(std::array<double, 2> repeat,
+                                                             std::array<double, 2> offset,
+                                                             double rotation) {
+    const double cosine = std::cos(rotation);
+    const double sine = std::sin(rotation);
+    TextureMatrix matrix;
+    // The first column scales and turns the x axis.
+    matrix.a = repeat[0] * cosine;
+    matrix.b = -repeat[0] * sine;
+    // The second scales and turns the y axis, with its own factors rather than the x one's.
+    matrix.c = repeat[1] * sine;
+    matrix.d = repeat[1] * cosine;
+    // The translation comes last.
+    matrix.e = offset[0];
+    matrix.f = offset[1];
+    return matrix;
+}
+bool GLTFLoader::textureTransformApplies(bool hasTexCoord, int texCoord, int channel,
+                                           bool hasOffset, bool hasRotation, bool hasScale) {
+    // A transform that only restates the texture's own channel and carries no offset,
+    // rotation or scale asks for nothing, so the texture need not be copied.
+    const bool channelAgrees = !hasTexCoord || texCoord == channel;
+    const bool nothingElse = !hasOffset && !hasRotation && !hasScale;
+    return !(channelAgrees && nothingElse);
+}
