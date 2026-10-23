@@ -930,3 +930,29 @@ void EXRLoader::wav2Decode(std::vector<std::int32_t>& buffer, std::size_t j, std
         p >>= 1;
     }
 }
+
+std::string EXRLoader::compressionNameOf(int code) {
+    // The ten the format defines, by their own numbers rather than by the order of the names.
+    switch (code) {
+        case kNoCompressionCode: return kNoCompression;
+        case kRleCompressionCode: return kRleCompression;
+        case kZipsCompressionCode: return kZipsCompression;
+        case kZipCompressionCode: return "ZIP_COMPRESSION";
+        case kPizCompressionCode: return "PIZ_COMPRESSION";
+        case kPxr24CompressionCode: return "PXR24_COMPRESSION";
+        case kB44CompressionCode: return "B44_COMPRESSION";
+        case kB44aCompressionCode: return "B44A_COMPRESSION";
+        case kDwaaCompressionCode: return "DWAA_COMPRESSION";
+        case kDwabCompressionCode: return "DWAB_COMPRESSION";
+        default: return std::string();
+    }
+}
+
+bool EXRLoader::tiledFlag(int flags) { return (flags & 0x1) != 0; }
+bool EXRLoader::hasLongNames(int flags) { return (flags & 0x4) != 0; }
+bool EXRLoader::hasDeepData(int flags) { return (flags & 0x8) != 0; }
+
+bool EXRLoader::unusedFlagSet(int flags) {
+    // The bits the format leaves unset are all but these four.
+    return (flags & ~0x1Fu) != 0;
+}

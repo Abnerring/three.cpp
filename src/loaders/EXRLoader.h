@@ -599,4 +599,27 @@ class EXRLoader {
     };
 
     static WaveletStart pizWaveletStart(int extent);
+    // The number a file writes for each compression, and the name the loader gives it. The
+    // numbers are the format's own and do not follow the order the names are listed in: the two
+    // zips are two and three, the two B44s six and seven, and the two deep ones eight and nine.
+    static constexpr int kNoCompressionCode = 0;
+    static constexpr int kRleCompressionCode = 1;
+    static constexpr int kZipsCompressionCode = 2;
+    static constexpr int kZipCompressionCode = 3;
+    static constexpr int kPizCompressionCode = 4;
+    static constexpr int kPxr24CompressionCode = 5;
+    static constexpr int kB44CompressionCode = 6;
+    static constexpr int kB44aCompressionCode = 7;
+    static constexpr int kDwaaCompressionCode = 8;
+    static constexpr int kDwabCompressionCode = 9;
+
+    // The name a number stands for, or an empty string when the number is not one the format
+    // defines.
+    static std::string compressionNameOf(int code);
+
+    // Seven bit of the header's flags are unused and must be zero. The first is the tiled flag.
+    static bool tiledFlag(int flags);
+    static bool hasLongNames(int flags);
+    static bool hasDeepData(int flags);
+    static bool unusedFlagSet(int flags);
 };
