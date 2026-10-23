@@ -1466,3 +1466,11 @@ bool EXRLoader::b44AllowsFlat(bool isB44a) {
     // The second kind allows a three byte block for a flat patch; the first does not.
     return isB44a;
 }
+
+std::uint16_t EXRLoader::b44OrderedToHalf(std::uint16_t ordered) {
+    // The top bit says which side of zero the value lies on, so that neighbouring values of
+    // either sign differ in few bits. A value with it set is positive and the bit is dropped; a
+    // value without it is negative and every bit is turned over.
+    if ((ordered & 0x8000u) != 0) return static_cast<std::uint16_t>(ordered & 0x7FFFu);
+    return static_cast<std::uint16_t>((~ordered) & 0xFFFFu);
+}

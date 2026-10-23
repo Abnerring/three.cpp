@@ -792,4 +792,10 @@ class EXRLoader {
 
     // Whether a block may be written flat, which only the second of the two block kinds allows.
     static bool b44AllowsFlat(bool isB44a);
+    // A block stores its sixteen samples in an order that puts negative numbers below positive
+    // ones rather than round a sign bit, so that neighbouring values differ in few bits whichever
+    // side of zero they lie on. Turning one back into a half puts the sign where it belongs: a
+    // value with its top bit set is positive and loses that bit, and one without it is negative
+    // and has every bit turned over.
+    static std::uint16_t b44OrderedToHalf(std::uint16_t ordered);
 };
