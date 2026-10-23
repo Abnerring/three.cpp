@@ -3236,6 +3236,13 @@
    - **精度用 `||` 回退**：`data.precision || null`，**所以一个存储下来的假精度会变成空**。
    - **测试（4 个用例、17 条断言）**：类型四处；输入类型四处；往返六处；精度三处。
    - **验证**：核心 **2324 用例 / 216,093 断言**（+4 / +17）、`primitive-geometry`、`port-audit`、addons、`--cube` 全绿。
+523. **第 214 轮：`AttributeNode` 的两处"按阶段变形状"**。
+   - **缺失属性变成 `float`**：`generateNodeType` 里几何体没有那个属性时返回 `'float'`，**并打印一句带属性名的警告**。**这与 `MemberNode` 与 `ParameterNode` 的默认一致**，三族在这件事上统一。
+   - **片元阶段把属性包成 varying**：`generate` 里 `builder.shaderStage === 'vertex'` 时直接用属性名，**其他阶段则 `varying( this ).build( ... )`**。所以**同一个节点在两个阶段产出两种形状的代码**——**一个把属性当成片元可直接读的值的读法会漏掉这一层**。
+   - **一处严格比较**：`hasGeometryAttribute( ... ) === true`，**判断布尔返回值时用了严格比较而不是真值**。
+   - **哈希用属性名**：`getHash` 返回 `getAttributeName( builder )`，**所以两个同名属性节点哈希相同**——**与 `ParameterNode` 用 `String( this.id )` 相反**，两者都是合理选择但选了不同的。
+   - **测试（4 个用例、16 条断言）**：类型六处；警告两处；四阶段四处（含空串）；哈希与默认两处。
+   - **验证**：核心 **2328 用例 / 216,109 断言**（+4 / +16）、`primitive-geometry`、`port-audit`、addons、`--cube` 全绿。
 70. **第 520 轮：完整 Vulkan 套件 211/211 全绿，耗时 270.72 秒**。
    - 命令：`ctest --test-dir build-vulkan -j 4 -E "lights-states" --output-on-failure`（仍排除第 46 条那个已知项；它在 Vulkan 构建里同样慢）。
    - 结果：**100% tests passed, 0 tests failed out of 211**，总耗时 **270.72 秒**。对比同一套件在 **Debug** 配置下的 **3784.56 秒 / 2 失败**，差了约 14 倍——再次印证第 69 条"是构建类型不是代码"的结论。
