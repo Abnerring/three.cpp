@@ -1865,6 +1865,13 @@
    - **两个 meshopt 拼写都在**：`EXT_meshopt_compression` 与 `KHR_meshopt_compression` 是两个不同的名字，各占一项。
    - **测试（4 个用例、14 条断言）**：总数 24 与首尾两项；三种认识与三种不认识（含大小写与空串）；**用 `set` 去重后数量不变**（防止表里出现重复）；两个 meshopt 名字并存。
    - **验证**：核心 **1548 用例 / 210,537 断言**（+4 / +14）、addons、`primitive-geometry`、`port-audit`、Vulkan 全绿。
+327. **第 13 轮：`GLTFLoader` 第十三层——灯光规则**。
+   - **三种灯**：`directional`、`point`、`spot`，**区分大小写**；上游的 `switch` **没有 default 分支**，所以未知类型会让灯保持未定义——端口因此单独给了 `isLightType`，让调用方能先判。
+   - **`range` 缺省是 0**：0 在端口里表示"无限制"，所以"没写"和"写了 0"是同一个意思。
+   - **颜色又是"原样取用"**：`setRGB( ..., LinearSRGBColorSpace )`，与材质的基色因子一致；没写就是白；**写得不够三个数也回落到白**，不越界读。
+   - **平行光的默认朝向**：target 在 `(0,0,-1)`，且 target 是灯的**子节点**。
+   - **测试（4 个用例、19 条断言）**：三种认识 + 三种不认识（含大小写、空串、`area`）；`range` 三种；颜色四种（白、原样、短数组）；朝向三个分量。
+   - **验证**：核心 **1552 用例 / 210,556 断言**（+4 / +19）、addons、`primitive-geometry`、`port-audit`、Vulkan 全绿。
 70. **第 520 轮：完整 Vulkan 套件 211/211 全绿，耗时 270.72 秒**。
    - 命令：`ctest --test-dir build-vulkan -j 4 -E "lights-states" --output-on-failure`（仍排除第 46 条那个已知项；它在 Vulkan 构建里同样慢）。
    - 结果：**100% tests passed, 0 tests failed out of 211**，总耗时 **270.72 秒**。对比同一套件在 **Debug** 配置下的 **3784.56 秒 / 2 失败**，差了约 14 倍——再次印证第 69 条"是构建类型不是代码"的结论。

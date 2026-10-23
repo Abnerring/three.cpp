@@ -207,4 +207,18 @@ class GLTFLoader {
 
     // How many there are, which the tests check against the source list.
     static std::size_t knownExtensionCount();
+    // The three kinds of light a punctual extension may place.
+    static bool isLightType(const std::string& type);
+
+    // A light's range, which is zero when the file leaves it out rather than an error. A range
+    // of zero means the light reaches without limit.
+    static double lightRange(bool hasRange, double range);
+
+    // A light's colour, which is white when the file leaves it out and is taken as it stands
+    // when it does not, because the numbers are already in the linear space the port uses.
+    static std::array<double, 3> lightColour(bool hasColour, const std::vector<double>& colour);
+
+    // Where a directional light points by default, which is straight down the negative z axis
+    // with its target attached to the light itself.
+    static std::array<double, 3> directionalTarget();
 };

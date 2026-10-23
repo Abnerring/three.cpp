@@ -405,3 +405,26 @@ bool GLTFLoader::isKnownExtension(const std::string& name) {
 }
 
 std::size_t GLTFLoader::knownExtensionCount() { return knownExtensions().size(); }
+
+bool GLTFLoader::isLightType(const std::string& type) {
+    // The three the extension allows.
+    return type == "directional" || type == "point" || type == "spot";
+}
+
+double GLTFLoader::lightRange(bool hasRange, double range) {
+    // An absent range reads as zero, which stands for no limit.
+    return hasRange ? range : 0.0;
+}
+
+std::array<double, 3> GLTFLoader::lightColour(bool hasColour,
+                                              const std::vector<double>& colour) {
+    // White when nothing is written.
+    if (!hasColour || colour.size() < 3) return {1.0, 1.0, 1.0};
+    // Otherwise the three numbers as they stand, with no conversion.
+    return {colour[0], colour[1], colour[2]};
+}
+
+std::array<double, 3> GLTFLoader::directionalTarget() {
+    // A directional light points down the negative z axis until it is turned.
+    return {0.0, 0.0, -1.0};
+}
