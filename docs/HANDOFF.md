@@ -3357,6 +3357,14 @@
    - **刷新是 `FRAME`**。
    - **测试（4 个用例、18 条断言）**：自动调整四处；尺寸六处（含"零不等于缺省"）；类型四处（含"两者不同"）；状态与刷新三处。
    - **验证**：核心 **2388 用例 / 216,454 断言**（+4 / +18）、`primitive-geometry`、`port-audit`、addons、`--cube` 全绿。
+539. **第 231 轮：`ReflectorNode` 的四规则**。
+   - **quad mesh 被跳过**：`if ( ! builder.object.isQuadMesh ) this._reflectorBaseNode.build( builder );`——**源注释写的是 "ignore if used in post-processing"**。**所以后处理里（一切都是 quad）这个节点什么也不做**，而不是给一个错的反射。
+   - **没开 `depth` 时请求深度直接抛**：**而且消息末尾在闭合引号前有一个空格**——`'... { depth: true }. '`——**测试断言 `message.back() == ' '`**，把这个细节留住。
+   - **纹理矩阵被关掉**：构造时 `setUpdateMatrix( false )`。**反射是在屏幕空间采样的，加矩阵反而是错的**。
+   - **递归防护在模块级**：`let _inReflector = false;`——**一个模块级可变标志**，所以**渲染一个反射器期间请求第二个会被拒**，镜子照不到自己。**模块级意味着所有实例共享**。
+   - **缺省：mipmap 关、bounces 开、depth 关、分辨率比例 1**。
+   - **测试（4 个用例、17 条断言）**：quad 四处；深度七处（含尾空格）；矩阵一处；标志与缺省五处。
+   - **验证**：核心 **2392 用例 / 216,471 断言**（+4 / +17）、`primitive-geometry`、`port-audit`、addons、`--cube` 全绿。
 70. **第 520 轮：完整 Vulkan 套件 211/211 全绿，耗时 270.72 秒**。
    - 命令：`ctest --test-dir build-vulkan -j 4 -E "lights-states" --output-on-failure`（仍排除第 46 条那个已知项；它在 Vulkan 构建里同样慢）。
    - 结果：**100% tests passed, 0 tests failed out of 211**，总耗时 **270.72 秒**。对比同一套件在 **Debug** 配置下的 **3784.56 秒 / 2 失败**，差了约 14 倍——再次印证第 69 条"是构建类型不是代码"的结论。
