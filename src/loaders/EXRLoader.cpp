@@ -648,3 +648,32 @@ std::vector<EXRLoader::DecodeEntry> EXRLoader::emptyDecodeTable() {
     // One entry per slot of the first level, all of them free.
     return std::vector<DecodeEntry>(static_cast<std::size_t>(kHufDecodeSize), DecodeEntry{});
 }
+
+void EXRLoader::revertPredictor(std::vector<std::uint8_t>& data) {
+    // The first byte is left as it is and each later one adds its predecessor, with a constant
+    // taken off. The result is stored in a byte, so it wraps rather than being clamped.
+    for (std::size_t t = 1; t < data.size(); ++t) {
+        const int sum = static_cast<int>(data[t - 1]) + static_cast<int>(data[t]) - 128;
+        data[t] = static_cast<std::uint8_t>(sum & 0xFF);
+    }
+}
+
+std::size_t EXRLoader::interleaveSplit(std::size_t length) {
+    // Halfway, rounded up: for an odd length the first half is the shorter one.
+    return (length + 1) / 2;
+}
+
+std::vector<std::uint8_t> EXRLoader::interleaveScalar(const std::vector<std::uint8_t>& source) {
+    std::vector<std::uint8_t> out(source.size(), 0);
+    std::size_t t1 = 0;
+    std::size_t t2 = interleaveSplit(source.size());
+    std::size_t s = 0;
+    // One from each half in turn, stopping as soon as the block is full.
+    while (true) {
+        if (s >= source.size()) break;
+        out[s++] = t1 < source.size() ? source[t1++] : 0;
+        if (s >= source.size()) break;
+        out[s++] = t2 < source.size() ? source[t2++] : 0;
+    }
+    return out;
+}

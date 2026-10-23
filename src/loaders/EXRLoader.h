@@ -433,4 +433,16 @@ class EXRLoader {
 
     // A fresh table, every entry empty.
     static std::vector<DecodeEntry> emptyDecodeTable();
+    // Undoes the byte predictor a compressed block was written with. Each byte becomes the sum of
+    // itself, the one before it and a constant, and because the block holds bytes the sum is kept
+    // to eight bits: it wraps rather than saturating. The first byte is left alone.
+    static void revertPredictor(std::vector<std::uint8_t>& data);
+
+    // Puts the two halves of a block back into their original order, taking one byte from the
+    // first half and then one from the second, until the block is filled. The second half begins
+    // at the halfway point rounded up, so an odd length gives a shorter first half.
+    static std::vector<std::uint8_t> interleaveScalar(const std::vector<std::uint8_t>& source);
+
+    // The offset the second half of a block begins at.
+    static std::size_t interleaveSplit(std::size_t length);
 };
