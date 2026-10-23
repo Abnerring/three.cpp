@@ -2382,6 +2382,14 @@
    - **这也把 `vkCreateDevice failed (VkResult -4)` 的位置钉死了**：它发生在**无参数套件的第一组 `unsupportedMeshTests`** 里（第 81 行 `VulkanRenderer renderer({64, 64, validation})`）。而 `--cube` 的 `renderTargetTests` 同样创建渲染器却成功，所以不是设备本身不可用。
    - **下一轮该做的**：把 `unsupportedMeshTests` 临时改成 `main` 的第一句单独跑，看它内部到底哪一步让设备创建失败；注意这一组是**故意喂非法网格**来测拒绝路径的，失败可能与"拒绝后设备状态未清理"有关。
    - **验证**：核心 1881 用例 / 213,610 断言仍全绿；工作树干净。
+401. **第 87 轮：失败在第三组 `instancingTests`，而且是累积效应；但设备清理本身是对的**。
+   - **加了组标记**：`main` 里每个 `xxxTests(validation)` 之前打一行 `[group] xxxTests` 到 stderr。跑一遍，**最后出现的三行是** `unsupportedMeshTests`、`unsupportedPrimitiveTests`、`instancingTests`，然后才是 `vkCreateDevice failed (VkResult -4)`。**所以死在第三组。**
+   - **加了三个诊断开关**：`--first` / `--second` / `--third` 分别只跑这三个组。**三个都单独通过**（退出 0）。而同样三个按顺序跑就失败。
+   - **所以是累积效应**：前两组跑完之后，第三组创建不出设备。`VK_ERROR_INITIALIZATION_FAILED` 在驱动上最常见的含义就是"能创建的设备数已到上限"。
+   - **但清理路径是对的**：`~Impl()`（第 995 行）里确实有 `vkDestroyDevice`（1049）与 `vkDestroyInstance`（1053），`~VulkanRenderer` 是 `= default`，`impl` 是 `unique_ptr`，所以每个渲染器析构时应当把设备还回去。
+   - **矛盾还没解开**：要么某个组在失败路径上（`unsupportedMeshTests` 是**故意喂非法网格**的）提前 `return` 而跳过了析构，要么渲染器被复制/共享导致析构没发生。**下一轮该查"故意失败的那几次是否让对象活得更久"**。
+   - **`--first`/`--second`/`--third` 与组标记都保留在测试里**：它们不改变任何断言，只是把"红"变成"红在哪一组"，这对后续排查有用。
+   - **验证**：核心 1881 用例 / 213,610 断言、`primitive-geometry`、`port-audit`、addons、`--cube` 全绿。
 70. **第 520 轮：完整 Vulkan 套件 211/211 全绿，耗时 270.72 秒**。
    - 命令：`ctest --test-dir build-vulkan -j 4 -E "lights-states" --output-on-failure`（仍排除第 46 条那个已知项；它在 Vulkan 构建里同样慢）。
    - 结果：**100% tests passed, 0 tests failed out of 211**，总耗时 **270.72 秒**。对比同一套件在 **Debug** 配置下的 **3784.56 秒 / 2 失败**，差了约 14 倍——再次印证第 69 条"是构建类型不是代码"的结论。

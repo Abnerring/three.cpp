@@ -1869,20 +1869,37 @@ void parkRestoreTests(bool validation) {
 int main(int argc, char** argv) {
     try {
         const bool validation = argc > 1 && std::string(argv[1]) == "--validation";
+        if (argc > 1 && std::string(argv[1]) == "--first") { unsupportedMeshTests(validation); std::cout << "first group ok\n"; return 0; }
+        if (argc > 1 && std::string(argv[1]) == "--third") { instancingTests(validation); std::cout << "third group ok\n"; return 0; }
+        if (argc > 1 && std::string(argv[1]) == "--second") { unsupportedPrimitiveTests(validation); std::cout << "second group ok\n"; return 0; }
         if (argc > 1 && std::string(argv[1]) == "--cube") { renderTargetTests(validation); cubeRenderTargetTests(validation); cubeCameraUpdateTests(validation); equirectangularToCubeTests(validation); equirectangularDirectionTests(validation); parkRestoreTests(validation); return 0; }
+        std::cerr << "[group] unsupportedMeshTests" << '\n';
         unsupportedMeshTests(validation);
+        std::cerr << "[group] unsupportedPrimitiveTests" << '\n';
         unsupportedPrimitiveTests(validation);
+        std::cerr << "[group] instancingTests" << '\n';
         instancingTests(validation);
+        std::cerr << "[group] textureTests" << '\n';
         textureTests(validation);
+        std::cerr << "[group] mipmapTests" << '\n';
         mipmapTests(validation);
+        std::cerr << "[group] renderOrderTests" << '\n';
         renderOrderTests(validation);
+        std::cerr << "[group] attributeRangeSortTests" << '\n';
         attributeRangeSortTests(validation);
+        std::cerr << "[group] attributeNumberTests" << '\n';
         attributeNumberTests(validation);
+        std::cerr << "[group] rendererInfoTests" << '\n';
         rendererInfoTests(validation);
+        std::cerr << "[group] attributeCacheWeakLifetimeTests" << '\n';
         attributeCacheWeakLifetimeTests(validation);
+        std::cerr << "[group] attributeManagedUploadTests" << '\n';
         attributeManagedUploadTests(validation);
+        std::cerr << "[group] attributeStorageAndReentryTests" << '\n';
         attributeStorageAndReentryTests(validation);
+        std::cerr << "[group] geometryObjectProtocolTests" << '\n';
         geometryObjectProtocolTests(validation);
+        std::cerr << "[group] renderTargetTests" << '\n';
         renderTargetTests(validation);
         VulkanRenderer renderer({64, 64, validation});
         OrthographicCamera camera(-1, 1, 1, -1, 0.1, 20);
