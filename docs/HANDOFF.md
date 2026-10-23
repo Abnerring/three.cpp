@@ -1872,6 +1872,12 @@
    - **平行光的默认朝向**：target 在 `(0,0,-1)`，且 target 是灯的**子节点**。
    - **测试（4 个用例、19 条断言）**：三种认识 + 三种不认识（含大小写、空串、`area`）；`range` 三种；颜色四种（白、原样、短数组）；朝向三个分量。
    - **验证**：核心 **1552 用例 / 210,556 断言**（+4 / +19）、addons、`primitive-geometry`、`port-audit`、Vulkan 全绿。
+328. **第 14 轮：`GLTFLoader` 第十四层——unlit 与自发光强度**。
+   - **`unlit` 只改材质类型**：装了它就用 `MeshBasicMaterial`（忽略光照），否则 `MeshStandardMaterial`。端口只返回类型名，因为这一层不构造材质。
+   - **自发光强度直接拷贝**：`emissiveStrength` 原样作 `emissiveIntensity`；**没有这个扩展时什么都不设**，所以端口返回一个带 `present` 标志的结构——**0 也是一个强度**，要被应用而不是被跳过。
+   - **扩展查找**：材质没有 `extensions` 对象时就是"没有"，与上游的可选链一致；空名字也找不到。
+   - **测试（3 个用例、13 条断言）**：两个名字命中 + 未命中 + 空列表 + 空名字；两种材质类型及其不等；强度三种（有值、没有、零）。
+   - **验证**：核心 **1555 用例 / 210,569 断言**（+3 / +13）、addons、`primitive-geometry`、`port-audit`、Vulkan 全绿。
 70. **第 520 轮：完整 Vulkan 套件 211/211 全绿，耗时 270.72 秒**。
    - 命令：`ctest --test-dir build-vulkan -j 4 -E "lights-states" --output-on-failure`（仍排除第 46 条那个已知项；它在 Vulkan 构建里同样慢）。
    - 结果：**100% tests passed, 0 tests failed out of 211**，总耗时 **270.72 秒**。对比同一套件在 **Debug** 配置下的 **3784.56 秒 / 2 失败**，差了约 14 倍——再次印证第 69 条"是构建类型不是代码"的结论。

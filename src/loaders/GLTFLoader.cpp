@@ -428,3 +428,24 @@ std::array<double, 3> GLTFLoader::directionalTarget() {
     // A directional light points down the negative z axis until it is turned.
     return {0.0, 0.0, -1.0};
 }
+
+bool GLTFLoader::hasMaterialExtension(const std::vector<std::string>& extensionNames,
+                                      const std::string& name) {
+    // A missing extensions object names nothing, so only the listed names count.
+    return std::find(extensionNames.begin(), extensionNames.end(), name) != extensionNames.end();
+}
+
+std::string GLTFLoader::materialTypeName(bool unlit) {
+    // Only the unlit extension changes the material type, and then to one that ignores lights.
+    return unlit ? "MeshBasicMaterial" : "MeshStandardMaterial";
+}
+
+GLTFLoader::EmissiveIntensity GLTFLoader::emissiveIntensity(bool hasStrength, double strength) {
+    EmissiveIntensity result;
+    // The strength is copied only when the extension actually wrote one.
+    if (hasStrength) {
+        result.present = true;
+        result.value = strength;
+    }
+    return result;
+}

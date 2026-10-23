@@ -221,4 +221,23 @@ class GLTFLoader {
     // Where a directional light points by default, which is straight down the negative z axis
     // with its target attached to the light itself.
     static std::array<double, 3> directionalTarget();
+    // Whether a material names an extension. A material with no extensions object at all names
+    // none, which is what the source's optional chaining amounts to.
+    static bool hasMaterialExtension(const std::vector<std::string>& extensionNames,
+                                     const std::string& name);
+
+    // The material a material definition makes. Only the unlit extension changes it, and then
+    // to the basic material, which ignores lighting; every other definition makes the standard
+    // one. The name is returned rather than the class because the port has no material here.
+    static std::string materialTypeName(bool unlit);
+
+    // The emissive intensity an emissive strength extension asks for. The strength is copied
+    // straight across, and a material without the extension keeps whatever intensity it has,
+    // so the flag says whether the value should be applied at all.
+    struct EmissiveIntensity {
+        bool present = false;
+        double value = 1;
+    };
+
+    static EmissiveIntensity emissiveIntensity(bool hasStrength, double strength);
 };
