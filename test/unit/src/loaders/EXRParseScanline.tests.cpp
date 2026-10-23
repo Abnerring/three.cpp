@@ -57,13 +57,24 @@ TEST_CASE("EXRLoader refuses a compression it does not know") {
     REQUIRE_FALSE(result.error.empty());
 }
 
-TEST_CASE("EXRLoader refuses a single line compressed block") {
-    // A block whose size is smaller than its pixels is compressed, and the readers that work on
-    // bytes have not been wired into this loop, so it says so rather than reading rubbish.
+TEST_CASE("EXRLoader reads through a block's own reader") {
+    // A block whose size is smaller than its pixels is handed to the reader its compression
+    // names. Nought names the uncompressed reader, which hands the bytes back unchanged, so a
+    // block claiming four bytes when a line needs eight runs out while being read rather than
+    // being refused before it starts.
     auto data = twoByFour();
-    // The first block claims four bytes rather than eight, which reads as compressed.
     data[7] = 0x04;
     const auto result = EXRLoader::parseScanline(data, 0, 4, 2, 0, 1, oneChannel());
     REQUIRE_FALSE(result.valid);
-    REQUIRE(result.error == "THREE.EXRLoader: a compressed block is not read yet");
+    REQUIRE_FALSE(result.error.empty());
+}
+
+TEST_CASE("EXRLoader refuses a compression it has no reader for") {
+    // A block compressed with one of the two unread kinds is refused by the dispatcher, and the
+    // reason it gives names which kind.
+    auto data = twoByFour();
+    data[7] = 0x04;
+    const auto result = EXRLoader::parseScanline(data, 0, 4, 2, 6, 1, oneChannel());
+    REQUIRE_FALSE(result.valid);
+    REQUIRE(result.error == "THREE.EXRLoader: the block compression is not read yet");
 }

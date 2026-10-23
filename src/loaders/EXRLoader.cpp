@@ -1653,6 +1653,21 @@ EXRLoader::ScanlineResult EXRLoader::parseScanline(
                                                        blockHeight);
         // Whether the block was compressed is decided from its size, not from the name.
         const bool compressed = scanlineBlockCompressed(size, lines, static_cast<std::uint32_t>(bytesPerLine));
+        // The block is decompressed once, if its size says it was compressed, and the
+        // lines below read from whichever answer that gave.
+        std::vector<std::uint8_t> stored(data.begin() + static_cast<std::ptrdiff_t>(at),
+                                         data.begin() + static_cast<std::ptrdiff_t>(at + size));
+        std::vector<std::uint8_t> plain = stored;
+        if (compressed) {
+            const BlockResult unpacked =
+                decompressBlock(stored, static_cast<int>(compression), width, lines, 2,
+                                offsets.size(), types);
+            if (!unpacked.valid) {
+                result.error = unpacked.error;
+                return result;
+            }
+            plain = unpacked.bytes;
+        }
         if (at + size > data.size()) {
             result.error = "THREE.EXRLoader: a block ran past the file";
             return result;
@@ -1663,21 +1678,16 @@ EXRLoader::ScanlineResult EXRLoader::parseScanline(
             const std::uint32_t outputRow = scanlineOutputRow(trueRow, height);
             for (std::size_t c = 0; c < offsets.size(); ++c) {
                 for (std::uint32_t x = 0; x < width; ++x) {
-                    // A compressed block is not read here, since its reader returns samples
-                    // rather than the bytes this loop walks.
-                    if (compressed) {
-                        result.error = "THREE.EXRLoader: a compressed block is not read yet";
-                        return result;
-                    }
-                    const std::size_t read = at + scanlineReadIndex(lineInBlock, offsets[c].second, x,
-                                                                    width, 2);
+                    const std::size_t read = scanlineReadIndex(lineInBlock, offsets[c].second, x,
+                                                             width, 2);
                     const std::size_t write = scanlineWriteIndex(outputRow, x, c, offsets.size(), lineWidth);
-                    if (read + 1 >= data.size() || write >= result.samples.size()) {
+                    if (read + 1 >= plain.size() || write >= result.samples.size()) {
                         result.error = "THREE.EXRLoader: a sample fell outside the file";
                         return result;
                     }
                     // The file writes its samples high byte first.
-                    result.samples[write] = static_cast<std::uint16_t>((data[read] << 8) | data[read + 1]);
+                    result.samples[write] =
+                        static_cast<std::uint16_t>((plain[read] << 8) | plain[read + 1]);
                 }
             }
         }
