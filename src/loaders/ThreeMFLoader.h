@@ -1,4 +1,4 @@
-﻿#pragma once
+#pragma once
 #include <string>
 
 // Port of the small confirmed parts of examples/jsm/loaders/3MFLoader.js at the pinned revision.
@@ -16,4 +16,10 @@ class ThreeMFLoader {
 
     // The unit a document declares, or the fallback when the attribute says nothing.
     static std::string unitOf(const std::string& declared);
+
+    // Whether the loader scales the geometry by that unit. It does not: the source reads the
+    // attribute exactly once, stores it, and never consults it again, so a model authored in
+    // inches arrives with the numbers its document wrote. The format expects the unit to be
+    // honoured, so this is a difference from the specification rather than a subtlety of it.
+    static bool unitIsApplied();
 };
