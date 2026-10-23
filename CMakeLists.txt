@@ -259,6 +259,8 @@ target_sources(threecpp PRIVATE
     src/nodes/core/LoopNode.cpp
     src/nodes/core/RTTNode.cpp
     src/nodes/core/ReflectorNode.cpp
+    src/nodes/core/ViewportSharedTextureNode.cpp
+    src/nodes/core/ViewportDepthTextureNode.cpp
     src/nodes/core/ParameterNode.cpp
     src/nodes/core/NodeConstants.cpp
     src/nodes/core/Node.cpp

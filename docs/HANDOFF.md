@@ -3365,6 +3365,13 @@
    - **缺省：mipmap 关、bounces 开、depth 关、分辨率比例 1**。
    - **测试（4 个用例、17 条断言）**：quad 四处；深度七处（含尾空格）；矩阵一处；标志与缺省五处。
    - **验证**：核心 **2392 用例 / 216,471 断言**（+4 / +17）、`primitive-geometry`、`port-audit`、addons、`--cube` 全绿。
+540. **第 232 轮：两个视图纹理兄弟的四处规则**。
+   - **`ViewportSharedTextureNode` 的纹理是全模块共享的一个**：`let _sharedFramebuffer = null;` 且构造时 `if ( _sharedFramebuffer === null )` 才创建。**所以第一个存在的节点决定其余所有节点读什么，根本没有按实例的纹理**——这正是它与普通视图纹理节点的全部差别。
+   - **`getTextureForReference` 不看实例**：直接返回那个共享对象，**所以一个按实例作答的实现会把共享的意义抹掉**。
+   - **`updateReference` 是空操作**：普通节点会给自己建一个新引用，**而这个返回 `this` 不变**，所以**共享纹理永不被替换**；调用方若以为拿到了新节点，其实还是同一个。
+   - **`ViewportDepthTextureNode` 只在缺纹理时用共享的**：`if ( depthTexture === null )` 才回退，**判的是"缺"而不是"假"**。而**它不覆写 `updateReference`**——所以与兄弟不同，只有起始纹理不一样。
+   - **测试（4 个用例、13 条断言）**：共享三处；空操作两处；深度来源四处；对比与参数三处。
+   - **验证**：核心 **2396 用例 / 216,484 断言**（+4 / +13）、`primitive-geometry`、`port-audit`、addons、`--cube` 全绿。
 70. **第 520 轮：完整 Vulkan 套件 211/211 全绿，耗时 270.72 秒**。
    - 命令：`ctest --test-dir build-vulkan -j 4 -E "lights-states" --output-on-failure`（仍排除第 46 条那个已知项；它在 Vulkan 构建里同样慢）。
    - 结果：**100% tests passed, 0 tests failed out of 211**，总耗时 **270.72 秒**。对比同一套件在 **Debug** 配置下的 **3784.56 秒 / 2 失败**，差了约 14 倍——再次印证第 69 条"是构建类型不是代码"的结论。
