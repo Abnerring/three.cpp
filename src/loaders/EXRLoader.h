@@ -529,4 +529,19 @@ class EXRLoader {
     // Whether the two ends name a bitmap that fits. A second end at or past the bitmap's own
     // length is refused rather than read.
     static bool pizBitmapFits(int maxNonZero);
+    // The wavelet step works on the smaller side of the window, so a window wider than it is
+    // tall is stepped along its height and the other way about.
+    static int pizWaveletExtent(std::uint32_t nx, std::uint32_t ny);
+
+    // The first step the wavelet takes. It begins at one and doubles until it passes the extent,
+    // comes back down one place, and is then halved again, so it lands on half of the largest
+    // power of two that does not exceed the extent. An extent of one leaves no step to take.
+    static int pizWaveletFirstStep(int extent);
+
+    // Whether the block's largest value needs the wider arithmetic. Values below sixteen
+    // thousand three hundred and eighty four are handled without it.
+    static bool pizWaveletWide(int maxValue);
+
+    // The number of sixteen bit words a row of a channel occupies.
+    static std::size_t pizRowLength(std::uint32_t nx, std::uint32_t channelType);
 };

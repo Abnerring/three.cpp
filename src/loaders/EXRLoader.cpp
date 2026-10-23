@@ -775,3 +775,27 @@ bool EXRLoader::pizBitmapFits(int maxNonZero) {
     // A second end at or past the bitmap's length cannot be read.
     return maxNonZero < kPizBitmapSize;
 }
+
+int EXRLoader::pizWaveletExtent(std::uint32_t nx, std::uint32_t ny) {
+    // The smaller side, since the wavelet runs over the shorter of the two.
+    return static_cast<int>(nx > ny ? ny : nx);
+}
+
+int EXRLoader::pizWaveletFirstStep(int extent) {
+    // Double until past the extent, come back one place, then halve once more.
+    int p = 1;
+    while (p <= extent) p <<= 1;
+    p >>= 1;
+    p >>= 1;
+    return p < 1 ? 0 : p;
+}
+
+bool EXRLoader::pizWaveletWide(int maxValue) {
+    // Sixteen thousand three hundred and eighty four is where the wider arithmetic begins.
+    return maxValue >= (1 << 14);
+}
+
+std::size_t EXRLoader::pizRowLength(std::uint32_t nx, std::uint32_t channelType) {
+    // A row of a channel is its width times the channel's own width.
+    return static_cast<std::size_t>(nx) * channelType;
+}
