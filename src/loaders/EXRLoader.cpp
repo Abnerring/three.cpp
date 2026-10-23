@@ -838,3 +838,22 @@ const std::vector<int>& EXRLoader::pizWriteOrder() {
     static const std::vector<int> order{0, 1, 2, 3};
     return order;
 }
+
+EXRLoader::WaveletPair EXRLoader::wdec16(int l, int h) {
+    // Both inputs are taken as unsigned sixteen bit words.
+    const int m = l & kWaveletModMask;
+    const int d = h & kWaveletModMask;
+    // The difference is halved and taken back off, then the offset is added back in. Both
+    // results wrap rather than being clamped.
+    const int bb = (m - (d >> 1)) & kWaveletModMask;
+    const int aa = (d + bb - kWaveletOffset) & kWaveletModMask;
+    WaveletPair pair;
+    pair.a = aa;
+    pair.b = bb;
+    return pair;
+}
+
+bool EXRLoader::pizHasOddRow(std::uint32_t ny, int step) {
+    // The same bit test as the column one, on the other side.
+    return (static_cast<int>(ny) & step) != 0;
+}

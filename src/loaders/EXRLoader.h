@@ -572,4 +572,15 @@ class EXRLoader {
     // a reader can tell that no place is written before it has been read. The pairs are the two
     // of the first pass and then the two of the second.
     static const std::vector<int>& pizWriteOrder();
+    // The narrow form of the wavelet step. It works on the values as unsigned sixteen bit words
+    // and takes everything modulo the same, so a value that would go below zero comes back round
+    // to the top rather than being clamped. The wide form above works on signed ones.
+    static constexpr int kWaveletModMask = 0xffff;
+    static constexpr int kWaveletOffset = 1 << 15;
+
+    static WaveletPair wdec16(int l, int h);
+
+    // Whether a row or a column has a leftover at this step. Both tests are bit tests, and both
+    // are needed: the column one closes the row and the row one closes the block.
+    static bool pizHasOddRow(std::uint32_t ny, int step);
 };
