@@ -2456,6 +2456,12 @@
    - **端口里如实照抄**：新增 `unitIsApplied()` 明确返回 `false`，并在注释里写明这是照抄上游而不是端口漏做。这样以后有人想"补上"这个换算时，会先看到这条记录。
    - **测试（1 个用例、4 条断言）**：三种单位原样返回；`unitIsApplied()` 为假；以及"英寸与毫米的值确实不同"——**最后一条说明单位本身是被区分对待的，只是没有被用来缩放**。
    - **验证**：核心 1881 用例 / 213,610 断言（+1 / +4）、`primitive-geometry`、`port-audit`、addons、`--cube` 全绿。
+406. **第 92 轮：`3MFLoader` 的元数据白名单与建造项规则**。
+   - **八项白名单**：`Title`、`Designer`、`Description`、`Copyright`、`LicenseTerms`、`Rating`、`CreationDate`、`ModificationDate`。**名字不在表里的 `metadata` 元素被跳过**——所以扩展自己的元数据不会进入模型。比较是**精确且区分大小写**的（`title` 与 `TITLE` 都不收）。
+   - **`objectid` 保持字符串**：`buildItem.objectId = itemNode.getAttribute('objectid')` **没有转成数字**。所以 `"007"` 与 `"7"` 是两个不同的 id，前导零不会被吃掉。格式允许任意标识符，loader 只是拿它做查表。
+   - **`if (transform)` 把空串当假**：`transform=""` 与完全没有这个属性**一样**，都得到"没有变换"，而不是单位阵。这是 JS 的真值判断，端口用 `!transform.empty()` 如实照抄。
+   - **测试（4 个用例、34 条断言）**：八项名字逐个（含两个内部的驼峰不写成小写）；**八项循环全收 + 五种拒收**；三种 id（含 `"007" ≠ "7"`）；四种变换字符串。
+   - **验证**：核心 **1886 用例 / 213,649 断言**（+4 / +34）、`primitive-geometry`、`port-audit`、addons、`--cube` 全绿。
 70. **第 520 轮：完整 Vulkan 套件 211/211 全绿，耗时 270.72 秒**。
    - 命令：`ctest --test-dir build-vulkan -j 4 -E "lights-states" --output-on-failure`（仍排除第 46 条那个已知项；它在 Vulkan 构建里同样慢）。
    - 结果：**100% tests passed, 0 tests failed out of 211**，总耗时 **270.72 秒**。对比同一套件在 **Debug** 配置下的 **3784.56 秒 / 2 失败**，差了约 14 倍——再次印证第 69 条"是构建类型不是代码"的结论。
