@@ -711,4 +711,18 @@ class EXRLoader {
     static HuffResult hufUncompress(const std::vector<std::uint8_t>& data,
                                     std::size_t byteOffset, std::uint32_t compressedSize,
                                     std::size_t room);
+    // The wavelet compression, end to end: the bitmap of values used, the table built from it,
+    // the huffman codes, the wavelet over each channel and the table applied back. The values
+    // are worked through as thirty two bit numbers because one of the two wavelet forms is
+    // signed, and are cut back to sixteen for the table.
+    struct PizResult {
+        bool valid = false;
+        std::vector<std::uint16_t> values;
+        std::string error;
+    };
+
+    static PizResult uncompressPIZ(const std::vector<std::uint8_t>& data, std::size_t byteOffset,
+                                   std::uint32_t compressedSize, std::uint32_t columns,
+                                   std::uint32_t lines, std::uint32_t channelType,
+                                   std::size_t channelCount);
 };

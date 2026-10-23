@@ -1266,3 +1266,74 @@ EXRLoader::HuffResult EXRLoader::hufUncompress(const std::vector<std::uint8_t>& 
     result.valid = true;
     return result;
 }
+
+EXRLoader::PizResult EXRLoader::uncompressPIZ(const std::vector<std::uint8_t>& data,
+                                              std::size_t byteOffset, std::uint32_t compressedSize,
+                                              std::uint32_t columns, std::uint32_t lines,
+                                              std::uint32_t channelType, std::size_t channelCount) {
+    PizResult result;
+    const std::size_t start = byteOffset;
+    // The two ends of the bitmap range come first, each two bytes high first.
+    const auto readWord16 = [&](std::size_t at) {
+        std::uint32_t value = 0;
+        for (int i = 0; i < 2; ++i) {
+            if (at + static_cast<std::size_t>(i) >= data.size()) return value;
+            value = (value << 8) | data[at + static_cast<std::size_t>(i)];
+        }
+        return value;
+    };
+    const int minNonZero = static_cast<int>(readWord16(byteOffset));
+    const int maxNonZero = static_cast<int>(readWord16(byteOffset + 2));
+    byteOffset += 4;
+    if (!pizBitmapFits(maxNonZero)) {
+        result.error = "THREE.EXRLoader: Something is wrong with PIZ_COMPRESSION BITMAP_SIZE";
+        return result;
+    }
+    // The bitmap follows, one byte per position in the range.
+    std::vector<std::uint8_t> bitmap(static_cast<std::size_t>(kPizBitmapSize), 0);
+    const int run = pizBitmapRunLength(minNonZero, maxNonZero);
+    for (int i = 0; i < run; ++i) {
+        const std::size_t slot = byteOffset++;
+        if (slot >= data.size()) {
+            result.error = "THREE.EXRLoader: Something is wrong with PIZ_COMPRESSION BITMAP_SIZE";
+            return result;
+        }
+        bitmap[static_cast<std::size_t>(minNonZero + i)] = data[slot];
+    }
+    // The table from the bitmap, and the largest value it holds.
+    const ReverseLut reversed = reverseLutFromBitmap(bitmap);
+    const int maxValue = reversed.lastIndex;
+    // Then four bytes saying how long the encoded table is, and the huffman stage itself.
+    std::uint32_t tableBytes = 0;
+    for (int i = 0; i < 4; ++i) {
+        if (byteOffset < data.size()) tableBytes = (tableBytes << 8) | data[byteOffset++];
+    }
+    const std::size_t total = static_cast<std::size_t>(columns) * lines * channelType * channelCount;
+    const HuffResult packed =
+        hufUncompress(data, byteOffset, compressedSize - static_cast<std::uint32_t>(byteOffset - start), total);
+    if (!packed.valid) {
+        result.error = packed.error;
+        return result;
+    }
+    // The values arrive as thirty two bit numbers so the signed wavelet can work on them.
+    std::vector<std::int32_t> working(packed.values.begin(), packed.values.end());
+    working.resize(total, 0);
+    // The wavelet runs over each channel's own words, one pass per word of the channel.
+    const std::size_t rowWords = pizRowLength(columns, channelType);
+    const std::vector<std::size_t> starts = pizChannelStarts(columns, lines, channelType, channelCount);
+    for (std::size_t channel = 0; channel < channelCount; ++channel) {
+        for (std::uint32_t word = 0; word < channelType; ++word) {
+            wav2Decode(working, starts[channel] + word, columns, channelType, lines, rowWords,
+                       maxValue);
+        }
+    }
+    // The table is applied back over what the wavelet produced.
+    std::vector<std::uint16_t> values(working.size(), 0);
+    for (std::size_t i = 0; i < working.size(); ++i) {
+        values[i] = static_cast<std::uint16_t>(working[i] & 0xFFFF);
+    }
+    applyLut(reversed.lut, values);
+    result.values = values;
+    result.valid = true;
+    return result;
+}
