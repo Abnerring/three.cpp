@@ -188,6 +188,7 @@ target_sources(threecpp PRIVATE
     src/nodes/core/MaterialProperties.cpp
     src/nodes/core/ModelNode.cpp
     src/nodes/core/Object3DNode.cpp
+    src/nodes/core/FrontFacing.cpp
     src/nodes/core/NodeConstants.cpp
     src/nodes/core/Node.cpp
     src/loaders/DataTextureLoader.cpp

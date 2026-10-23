@@ -2854,6 +2854,14 @@
    - **`updateType` 是 `OBJECT`**：不是 `FRAME` 也不是 `RENDER`，所以这个节点**按对象更新**，这正是它与大多数节点不同的地方。
    - **测试（4 个用例、20 条断言）**：五个名字；五个类型 + "只有一个矩阵"；三种未知名（含大小写）；缓存与更新类型（含"不是 FRAME/RENDER"）。
    - **验证**：核心 **2086 用例 / 214,694 断言**（+4 / +20）、`primitive-geometry`、`port-audit`、addons、`--cube` 全绿。
+468. **第 154 轮：`FrontFacingNode` 的两条短路与外翻因子**。
+   - **顶点阶段恒答"是"**：`if ( builder.shaderStage !== 'fragment' ) return 'true'`——**朝向只有片元阶段问得出**，所以其他阶段不问就直接答真。
+   - **背面材质恒答"否"**：`if ( material.side === BackSide ) return 'false'`。**这一条排在阶段检查之后**，所以顶点阶段仍然答真——**两条短路的先后是一个真实的行为差异**。
+   - **数字化的算法是"乘二减一"**：`float( frontFacing ).mul( 2.0 ).sub( 1.0 )`，所以**真得一、假得负一**，而不是用分支挑两个常量。
+   - **外翻因子分三支**：**正面材质恒 1**、**背面材质恒 −1**、**双面材质按 `faceDirection`**（所以只有双面才会出现"随片元而变"）。
+   - **一个改了名的函数**：`directionToFaceDirection()` 现在只打一句警告并转调 `negateOnBackSide()`——**警告文案里两个名字都在**。
+   - **测试（5 个用例、21 条断言）**：顶点阶段三种 + 顺序一条；背面材质 + 另外两支；数字化的四个断言；三支因子七种；改名文案。
+   - **验证**：核心 **2091 用例 / 214,715 断言**（+5 / +21）、`primitive-geometry`、`port-audit`、addons、`--cube` 全绿。
 70. **第 520 轮：完整 Vulkan 套件 211/211 全绿，耗时 270.72 秒**。
    - 命令：`ctest --test-dir build-vulkan -j 4 -E "lights-states" --output-on-failure`（仍排除第 46 条那个已知项；它在 Vulkan 构建里同样慢）。
    - 结果：**100% tests passed, 0 tests failed out of 211**，总耗时 **270.72 秒**。对比同一套件在 **Debug** 配置下的 **3784.56 秒 / 2 失败**，差了约 14 倍——再次印证第 69 条"是构建类型不是代码"的结论。
