@@ -182,6 +182,7 @@ target_sources(threecpp PRIVATE
     src/nodes/core/BuiltinNode.cpp
     src/nodes/core/SceneProperties.cpp
     src/nodes/core/Tangent.cpp
+    src/nodes/core/Normal.cpp
     src/nodes/core/NodeConstants.cpp
     src/nodes/core/Node.cpp
     src/loaders/DataTextureLoader.cpp
