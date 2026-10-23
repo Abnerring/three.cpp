@@ -798,4 +798,13 @@ class EXRLoader {
     // value with its top bit set is positive and loses that bit, and one without it is negative
     // and has every bit turned over.
     static std::uint16_t b44OrderedToHalf(std::uint16_t ordered);
+    // How many scanlines one block covers, which each compression decides for itself. The three
+    // that compress a line at a time take one; the zips that compresses sixteen takes sixteen
+    // while the one that compresses a single line takes one, which is the only difference
+    // between their names; the wavelets and the pixel rate take thirty two, sixteen and thirty
+    // two; and the two deep ones take thirty two and two hundred and fifty six.
+    static std::uint32_t blockHeightFor(int code);
+
+    // The message a compression the loader does not know raises, which names it.
+    static std::string unsupportedCompressionMessage(const std::string& name);
 };

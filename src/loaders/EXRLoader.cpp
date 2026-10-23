@@ -1474,3 +1474,28 @@ std::uint16_t EXRLoader::b44OrderedToHalf(std::uint16_t ordered) {
     if ((ordered & 0x8000u) != 0) return static_cast<std::uint16_t>(ordered & 0x7FFFu);
     return static_cast<std::uint16_t>((~ordered) & 0xFFFFu);
 }
+
+std::uint32_t EXRLoader::blockHeightFor(int code) {
+    // Each compression says how many scanlines one block of it covers.
+    switch (code) {
+        case kNoCompressionCode: return 1;
+        case kRleCompressionCode: return 1;
+        // The single line zips takes one line and the sixteen line one takes sixteen, which is
+        // the whole difference between the two names.
+        case kZipsCompressionCode: return 1;
+        case kZipCompressionCode: return 16;
+        case kPizCompressionCode: return 32;
+        case kPxr24CompressionCode: return 16;
+        case kB44CompressionCode: return 32;
+        case kB44aCompressionCode: return 32;
+        case kDwaaCompressionCode: return 32;
+        case kDwabCompressionCode: return 256;
+        // A number the format does not define covers nothing.
+        default: return 0;
+    }
+}
+
+std::string EXRLoader::unsupportedCompressionMessage(const std::string& name) {
+    // The name is carried into the message so a reader knows what was asked for.
+    return "THREE.EXRLoader: " + name + " is unsupported";
+}
