@@ -1872,7 +1872,7 @@ int main(int argc, char** argv) {
         if (argc > 1 && std::string(argv[1]) == "--first") { unsupportedMeshTests(validation); std::cout << "first group ok\n"; return 0; }
         if (argc > 1 && std::string(argv[1]) == "--third") { instancingTests(validation); std::cout << "third group ok\n"; return 0; }
         if (argc > 1 && std::string(argv[1]) == "--second") { unsupportedPrimitiveTests(validation); std::cout << "second group ok\n"; return 0; }
-        if (argc > 1 && std::string(argv[1]) == "--cube") { renderTargetTests(validation); cubeRenderTargetTests(validation); cubeCameraUpdateTests(validation); equirectangularToCubeTests(validation); equirectangularDirectionTests(validation); parkRestoreTests(validation); return 0; }
+        if (argc > 1 && std::string(argv[1]) == "--cube") { std::cerr << "[group] renderTargetTests\n"; renderTargetTests(validation); std::cerr << "[group] cubeRenderTargetTests\n"; cubeRenderTargetTests(validation); std::cerr << "[group] cubeCameraUpdateTests\n"; cubeCameraUpdateTests(validation); std::cerr << "[group] equirectangularToCubeTests\n"; equirectangularToCubeTests(validation); std::cerr << "[group] equirectangularDirectionTests\n"; equirectangularDirectionTests(validation); std::cerr << "[group] parkRestoreTests\n"; parkRestoreTests(validation); std::cerr << "[group] done\n"; return 0; }
         std::cerr << "[group] unsupportedMeshTests" << '\n';
         unsupportedMeshTests(validation);
         std::cerr << "[group] unsupportedPrimitiveTests" << '\n';
