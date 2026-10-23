@@ -757,3 +757,21 @@ std::array<double, 3> GLTFLoader::morphDisplacement(std::array<double, 3> min,
     }
     return reach;
 }
+
+bool GLTFLoader::shouldSetAttribute(bool alreadyPresent) {
+    // An attribute the geometry already has is left as it is.
+    return !alreadyPresent;
+}
+
+bool GLTFLoader::shouldSetIndex(bool hasIndices, bool alreadyIndexed) {
+    // Only when the file names an index accessor and the geometry has no index yet.
+    return hasIndices && !alreadyIndexed;
+}
+
+std::string GLTFLoader::colourSpaceWarning(const std::string& workingSpace,
+                                           bool hasVertexColour) {
+    // Nothing to report when there are no vertex colours or the spaces already agree.
+    if (!hasVertexColour || workingSpace == "srgb-linear") return std::string();
+    return "THREE.GLTFLoader: Converting vertex colors from \"srgb-linear\" to \"" + workingSpace +
+           "\" not supported.";
+}

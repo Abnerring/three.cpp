@@ -484,4 +484,17 @@ class GLTFLoader {
     // distance between them.
     static std::array<double, 3> morphDisplacement(std::array<double, 3> min,
                                                    std::array<double, 3> max);
+    // Whether a primitive attribute should be written. A geometry that already carries the
+    // attribute keeps it, which is how a compressed primitive's own attributes win over the ones
+    // the file lists beside them.
+    static bool shouldSetAttribute(bool alreadyPresent);
+
+    // Whether the index buffer should be written. A primitive with no index accessor has none,
+    // and one whose geometry is already indexed keeps the index it has.
+    static bool shouldSetIndex(bool hasIndices, bool alreadyIndexed);
+
+    // The warning a vertex colour attribute produces when the port works in a colour space other
+    // than the linear one the file writes. The message names both spaces, so it is only built
+    // when a colour attribute is present at all.
+    static std::string colourSpaceWarning(const std::string& workingSpace, bool hasVertexColour);
 };
