@@ -3088,6 +3088,13 @@
    - **一维值完全忽略名字**：`nodeTypeLength > 1` 才读 `components`，源注释直说 "ignore .components if .node returns float/integer"。**所以问一个 float 要第二个分量，得到的是那个 float**。
    - **测试（4 个用例、28 条断言）**：宽度十一处（含 `w` 与 `xz` 的单独断言、未知名）；恒等八处（含 `"yx"` 与 `"xzy"`）；忽略四处；缓存一处。
    - **验证**：核心 **2230 用例 / 215,605 断言**（+4 / +28）、`primitive-geometry`、`port-audit`、addons、`--cube` 全绿。
+502. **第 192 轮：`JoinNode` 会造出不存在宽度的类型，以及两个不同的溢出检查**。
+   - **类型宽度是各输入之和**：`nodes.reduce( ( count, cur ) => count + getTypeLength( ... ), 0 )`。**而没有任何一处检查这个和是不是一个真实存在的宽度**——所以两个 `vec3` 加一个 `vec2` 会得到**五分量**的类型，空列表会得到**零分量**的类型。**一个以为"会报错"的读法会错**。测试用 `{3, 2} == 5` 与 `{} == 0` 各断言一次。
+   - **两个溢出检查用了不同的比较**：循环开头是 `length >= maxLength`（**已经满了**，`break`），而进入主体后是 `length + inputTypeLength > maxLength`（**会超过**，截断后继续）。**恰好填满时第一个触发、第二个不触发**——两个运算符的差别就在边界上。
+   - **两者都先报错再继续**：`error(...)` 之后都没有 `return` 或 `throw`，所以**一个忽略消息的调用方拿到的是"打过补丁的结果"而不是失败**。
+   - **两条消息的措辞不同，且都带类型名**：一条说 "Length of parameters exceeds…"，另一条说 "Length of '…' data exceeds…"。
+   - **测试（5 个用例、26 条断言）**：宽度五处；不存在的宽度六处；两个检查七处；截断五处；两条消息四处。
+   - **验证**：核心 **2235 用例 / 215,631 断言**（+5 / +26）、`primitive-geometry`、`port-audit`、addons、`--cube` 全绿。
 70. **第 520 轮：完整 Vulkan 套件 211/211 全绿，耗时 270.72 秒**。
    - 命令：`ctest --test-dir build-vulkan -j 4 -E "lights-states" --output-on-failure`（仍排除第 46 条那个已知项；它在 Vulkan 构建里同样慢）。
    - 结果：**100% tests passed, 0 tests failed out of 211**，总耗时 **270.72 秒**。对比同一套件在 **Debug** 配置下的 **3784.56 秒 / 2 失败**，差了约 14 倍——再次印证第 69 条"是构建类型不是代码"的结论。
