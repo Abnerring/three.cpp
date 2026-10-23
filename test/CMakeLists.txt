@@ -265,6 +265,7 @@ add_executable(THREECPPTests
         unit/src/loaders/EXRPiz.tests.cpp
         unit/src/loaders/EXRPizWavelet.tests.cpp
         unit/src/loaders/EXRPizOrder.tests.cpp
+        unit/src/loaders/EXRPizWaveletStep.tests.cpp
         unit/src/loaders/Zlib.tests.cpp
         unit/src/loaders/ZlibBits.tests.cpp
         unit/src/loaders/ZlibFixed.tests.cpp

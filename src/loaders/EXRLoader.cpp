@@ -817,3 +817,24 @@ std::vector<std::size_t> EXRLoader::pizReadOffsets(std::uint32_t columns, std::u
     }
     return offsets;
 }
+
+bool EXRLoader::pizHasOddColumn(std::uint32_t nx, int step) {
+    // A bit test: the row must have the step's own bit set. A remainder test would be wrong.
+    return (static_cast<int>(nx) & step) != 0;
+}
+
+EXRLoader::PizOffsets EXRLoader::pizOffsets(std::size_t px, std::size_t ox1, std::size_t oy1) {
+    PizOffsets offsets;
+    offsets.p00 = px;
+    offsets.p01 = px + ox1;
+    offsets.p10 = px + oy1;
+    // One stride of each, which is the same as the second plus the first stride.
+    offsets.p11 = offsets.p10 + ox1;
+    return offsets;
+}
+
+const std::vector<int>& EXRLoader::pizWriteOrder() {
+    // The four places, read and written in the same order.
+    static const std::vector<int> order{0, 1, 2, 3};
+    return order;
+}

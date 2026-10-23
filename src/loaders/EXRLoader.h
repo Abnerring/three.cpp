@@ -551,4 +551,25 @@ class EXRLoader {
     static std::vector<std::size_t> pizReadOffsets(std::uint32_t columns, std::uint32_t lines,
                                                    std::uint32_t channelType,
                                                    std::size_t channelCount);
+    // Whether a row has an odd sample left over at this step. The test is a bit test rather than
+    // a remainder: the row must have the step's own bit set, so for a step of four only rows of
+    // four or more with that bit count, not every row that is odd.
+    static bool pizHasOddColumn(std::uint32_t nx, int step);
+
+    // The four places one step of the wavelet touches, given the place it starts at and the two
+    // strides. The fourth is one stride of each away, which is the same as the second plus the
+    // first stride.
+    struct PizOffsets {
+        std::size_t p00 = 0;
+        std::size_t p01 = 0;
+        std::size_t p10 = 0;
+        std::size_t p11 = 0;
+    };
+
+    static PizOffsets pizOffsets(std::size_t px, std::size_t ox1, std::size_t oy1);
+
+    // The order the four places are written back in, which is the same order they were read, so
+    // a reader can tell that no place is written before it has been read. The pairs are the two
+    // of the first pass and then the two of the second.
+    static const std::vector<int>& pizWriteOrder();
 };
