@@ -43,11 +43,14 @@ TEST_CASE("EXRLoader's run length reader leaves the samples varied") {
         if (sample != result.samples[0]) allSame = false;
     }
     REQUIRE_FALSE(allSame);
-    // The first sample is two bytes: the value itself, and the one after it, which the
-    // predictor makes by adding the two values and taking one hundred and twenty eight
-    // off. Thirty six less one hundred and twenty eight is minus ninety two, which in
-    // eight bits is one hundred and sixty four.
-    REQUIRE(result.samples[0] == 0x12A4);
+    // The predictor adds eighteen to every step past the first, since the value is
+    // eighteen and one hundred and twenty eight is taken off. So the byte at t is
+    // eighteen plus eighteen times t, kept to eight bits. The interleave takes the
+    // first byte of the first half and then the first of the second half, which is
+    // that byte at thirty two: eighteen plus five hundred and seventy six is five
+    // hundred and ninety four, and five hundred and twelve comes off, leaving eighty
+    // two.
+    REQUIRE(result.samples[0] == 0x1252);
 }
 
 TEST_CASE("EXRLoader's run length reader answers the same as the reader directly") {
