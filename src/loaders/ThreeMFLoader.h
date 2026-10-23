@@ -52,4 +52,25 @@ class ThreeMFLoader {
 
     // How many numbers a document must write for a transform to be complete.
     static constexpr int kTransformNumberCount = 12;
+    // The resources a document may hold. The source reads them one kind at a time in this order
+    // and collects each into its own map, keyed by the id the document gave.
+    static const std::vector<std::string>& resourceKinds();
+
+    // An object's type is taken as written and never checked against a list, which is the
+    // opposite of how a metadata name is treated: a type the loader does not know still reaches
+    // the model, while a metadata name it does not know is dropped.
+    static std::string objectTypeOf(const std::string& written);
+
+    // Whether an object's type is one the loader knows how to build. The three it builds are the
+    // model, the solid support and the support; anything else keeps its type but is not built.
+    static bool buildsObjectType(const std::string& type);
+
+    // The attribute a relationship's type is read from is written with a capital T, while an
+    // object's is written in lower case. The two are not interchangeable.
+    static constexpr const char* kRelationshipTypeAttribute = "Type";
+    static constexpr const char* kObjectTypeAttribute = "type";
+
+    // Whether a relationship points at the model document. The extension is lowered before it is
+    // compared, so a document named in capitals is found.
+    static bool isModelRelationship(const std::string& type);
 };

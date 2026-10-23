@@ -78,3 +78,28 @@ std::vector<double> ThreeMFLoader::transformMatrix(const std::string& transform)
             at(2), at(5), at(8), at(11),
             0.0,   0.0,   0.0,   1.0};
 }
+
+const std::vector<std::string>& ThreeMFLoader::resourceKinds() {
+    // The kinds the source reads, in the order it reads them.
+    static const std::vector<std::string> kinds{"basematerials", "texture2d", "colorgroup", "object"};
+    return kinds;
+}
+
+std::string ThreeMFLoader::objectTypeOf(const std::string& written) {
+    // Taken as written, with no list to check it against.
+    return written;
+}
+
+bool ThreeMFLoader::buildsObjectType(const std::string& type) {
+    // The three the loader builds. An unknown type keeps its name but builds nothing.
+    return type == "model" || type == "solidsupport" || type == "support";
+}
+
+bool ThreeMFLoader::isModelRelationship(const std::string& type) {
+    // The extension is lowered before the comparison, so capitals do not matter here.
+    std::string lowered = type;
+    for (char& c : lowered) {
+        if (c >= 'A' && c <= 'Z') c = static_cast<char>(c - 'A' + 'a');
+    }
+    return lowered == "model";
+}
