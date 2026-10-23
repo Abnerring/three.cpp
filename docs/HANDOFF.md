@@ -3142,6 +3142,15 @@
    - **没有任何候选时返回空**：`bestCandidateFn` 保持 `null`，随后 `setup` 会失败。
    - **测试（5 个用例、19 条断言）**：长度筛选三处；最佳匹配六处（含直接验证评分）；零分候选三处；平局三处；无候选四处。
    - **验证**：核心 **2266 用例 / 215,790 断言**（+5 / +19）、`primitive-geometry`、`port-audit`、addons、`--cube` 全绿。
+510. **第 201 轮：`CubeMapNode` 的占位纹理与按源纹理的缓存**。
+   - **占位是一个真纹理而不是空**：`new CubeTexture()` 并设 `isRenderTargetTexture = true`。**所以一个在转换完成之前就采样这个节点的着色器拿到的是纹理，不是缺失**。这个标志是它能当渲染目标纹理用的关键，测试单独断言。
+   - **缓存按源纹理取键**：`_cache = new WeakMap()`，键是那张等距柱状纹理。**所以两个节点给同一个环境时共用一张立方体贴图**，缓存的条目数随不同环境的数量增长，而不是随节点数。
+   - **命中时仍重新写映射**：`mapTextureMapping( cubeMap, texture.mapping )`——**一张缓存下来的转换可以同时服务反射用法与折射用法**，不必重建。
+   - **两种等距柱状映射都转**：`EquirectangularReflectionMapping` 与 `EquirectangularRefractionMapping`。**一个只检查常见那一种的实现会漏掉折射**。
+   - **纹理来源有两处**：纹理节点取其 `value`，材质引用按 `property` 从材质上读。
+   - **刷新时机是 RENDER**：**与 `MaxMipLevel` 的 `FRAME` 形成对照**。
+   - **测试（5 个用例、25 条断言）**：两种映射四种；其余不转三处；来源四处；缓存七处；映射重写与占位四处。
+   - **验证**：核心 **2271 用例 / 215,815 断言**（+5 / +25）、`primitive-geometry`、`port-audit`、addons、`--cube` 全绿。
 70. **第 520 轮：完整 Vulkan 套件 211/211 全绿，耗时 270.72 秒**。
    - 命令：`ctest --test-dir build-vulkan -j 4 -E "lights-states" --output-on-failure`（仍排除第 46 条那个已知项；它在 Vulkan 构建里同样慢）。
    - 结果：**100% tests passed, 0 tests failed out of 211**，总耗时 **270.72 秒**。对比同一套件在 **Debug** 配置下的 **3784.56 秒 / 2 失败**，差了约 14 倍——再次印证第 69 条"是构建类型不是代码"的结论。
