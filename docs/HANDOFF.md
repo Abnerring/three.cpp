@@ -3001,6 +3001,14 @@
    - **一处数值截断**：色相旋转的轴是 `vec3( 0.57735, 0.57735, 0.57735 )`，**而 `1/√3 = 0.5773502691896258`**——**只有五位小数**。所以这个轴**不是精确的单位向量**。测试断言"不等于精确值"且"差值小于一万分之一"，与第 155 轮那个 `0.41666` 是同一类。
    - **测试（5 个用例、24 条断言）**：饱和度七处（含"1 与 0 不同"和负值钳零）；超饱和四处；振动六处（含"等分颜色无变化"与"正 adjustment 得负 amount"）；混参三处；色相轴四处。
    - **验证**：核心 **2179 用例 / 215,302 断言**（+5 / +24）、`primitive-geometry`、`port-audit`、addons、`--cube` 全绿。
+490. **第 178 轮：`ViewportTextureNode` 的两处自相矛盾**。
+   - **筛选设成读 mipmap 的，却禁止生成 mipmap**：`defaultFramebuffer.minFilter = LinearMipmapLinearFilter`，而同一次构造里 `this.generateMipmaps = false`。**两个设置指向相反方向**，只有一个自己打开 mipmap 生成的调用方才会看到那个筛选真的起作用。端口把这一对做成 `filterAndMipmapsAgree()`，测试断言它返回假。
+   - **标志名与类名不一致**：`this.isOutputTextureNode = true`——**不是 `isViewportTextureNode`**。一个按类名写测试的人会找不到这个标志。测试同时断言了"标志名不等于类型名"。
+   - **刷新时机是"渲染前"**：`updateBeforeType = NodeUpdateType.RENDER`——**因为绑定帧缓冲的内容是在一次渲染开始时读的**，所以是 before 而不是 after。
+   - **按渲染目标缓存**：`_cacheTextures` 是一个 WeakMap，一个目标一张纹理，避免两个目标共用。
+   - **两处我自己的重复疏漏**：`#include` 又写成了单引号（第 175 轮同一个错），编译报三个。**这一类错编译期必抓，但本轮本该记得**。
+   - **测试（4 个用例、17 条断言）**：标志三处；筛选六处；刷新两处；纹理与缓存四处。
+   - **验证**：核心 **2179 用例 / 215,302 断言**、`primitive-geometry`、`port-audit`、addons 全绿。
 70. **第 520 轮：完整 Vulkan 套件 211/211 全绿，耗时 270.72 秒**。
    - 命令：`ctest --test-dir build-vulkan -j 4 -E "lights-states" --output-on-failure`（仍排除第 46 条那个已知项；它在 Vulkan 构建里同样慢）。
    - 结果：**100% tests passed, 0 tests failed out of 211**，总耗时 **270.72 秒**。对比同一套件在 **Debug** 配置下的 **3784.56 秒 / 2 失败**，差了约 14 倍——再次印证第 69 条"是构建类型不是代码"的结论。

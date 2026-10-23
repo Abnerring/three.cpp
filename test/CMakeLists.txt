@@ -328,6 +328,7 @@ add_executable(THREECPPTests
         unit/src/nodes/core/BlendModes.tests.cpp
         unit/src/nodes/core/ToneMappingFunctions.tests.cpp
         unit/src/nodes/core/ColorAdjustment.tests.cpp
+        unit/src/nodes/core/ViewportTexture.tests.cpp
         unit/src/loaders/EXRSamplesToBytes.tests.cpp
         unit/src/loaders/EXRDecompressBlock.tests.cpp
         unit/src/loaders/Zlib.tests.cpp
