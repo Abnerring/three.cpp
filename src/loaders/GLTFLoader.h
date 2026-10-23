@@ -370,4 +370,17 @@ class GLTFLoader {
     // Whether an instancing definition has anything to instance with. An extension that names
     // no attributes cannot say where the copies go, so it is refused rather than instanced once.
     static bool hasInstanceAttributes(std::size_t attributeCount);
+    // The material parameter a diffuse roughness field fills. The factor drops its suffix and
+    // the texture gains a map suffix. Worth noting that the dispersion extension beside it has
+    // a field with no suffix at all, so a rule that strips the word factor would miss that one.
+    static std::string diffuseRoughnessParamForField(const std::string& field);
+
+    // A diffuse roughness, which is zero when the file leaves it out. Unlike the iridescence and
+    // anisotropy values, this one is always written, so the material cannot keep a value of its
+    // own and an absent field means zero rather than untouched.
+    static double diffuseRoughness(bool hasFactor, double factor);
+
+    // A dispersion, written the same way and defaulting to zero for the same reason. Its field
+    // carries no suffix in the file, so the value passes straight through under its own name.
+    static double dispersion(bool hasValue, double value);
 };

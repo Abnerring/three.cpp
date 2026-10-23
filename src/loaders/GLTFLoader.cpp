@@ -624,3 +624,22 @@ bool GLTFLoader::hasInstanceAttributes(std::size_t attributeCount) {
     // Nothing to place the copies by.
     return attributeCount >= 1;
 }
+
+std::string GLTFLoader::diffuseRoughnessParamForField(const std::string& field) {
+    // The factor drops its suffix and the texture gains a map suffix.
+    if (field == "diffuseRoughnessFactor") return "diffuseRoughness";
+    if (field == "diffuseRoughnessTexture") return "diffuseRoughnessMap";
+    // The value's own name is a field of the dispersion extension, not of this one.
+    if (field == "diffuseRoughness") return std::string();
+    return std::string();
+}
+
+double GLTFLoader::diffuseRoughness(bool hasFactor, double factor) {
+    // Always written, so an absent factor means zero rather than the material's own value.
+    return hasFactor ? factor : 0.0;
+}
+
+double GLTFLoader::dispersion(bool hasValue, double value) {
+    // Written the same way the roughness factor is.
+    return hasValue ? value : 0.0;
+}
