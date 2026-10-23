@@ -42,4 +42,21 @@ class PDBLoader {
     // that does not parse gives minus one rather than zero, so a caller can tell it from the
     // first atom.
     static int atomIndex(int oneBased);
+    // A string with the spaces taken off both ends.
+    static std::string trimmed(const std::string& text);
+
+    // A name with its first letter raised and everything after it lowered, so N and n both become
+    // N and NO becomes No. Raising only the first would leave the rest as written.
+    static std::string capitalised(const std::string& text);
+
+    // The key a pair of atoms is filed under. The smaller number comes first whichever order the
+    // pair is given in, so a bond named from either end lands on the same key and is only
+    // recorded once.
+    static std::string bondHash(int first, int second);
+
+    // Whether a bond read from a line should be recorded. A partner number of zero means the
+    // column was blank and is skipped, and a pair already recorded is dropped rather than added
+    // again: the source leaves the line that would have counted repeats commented out, with a
+    // note saying most files repeat ordinary bonds rather than meaning higher orders.
+    static bool acceptsBond(int partner, bool alreadyRecorded);
 };

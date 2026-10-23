@@ -254,3 +254,41 @@ int PDBLoader::atomIndex(int oneBased) {
     // The format numbers atoms from one, so the first atom is zero here.
     return oneBased - 1;
 }
+
+std::string PDBLoader::trimmed(const std::string& text) {
+    const std::size_t first = text.find_first_not_of(" \t\r\n");
+    if (first == std::string::npos) return std::string();
+    const std::size_t last = text.find_last_not_of(" \t\r\n");
+    return text.substr(first, last - first + 1);
+}
+
+std::string PDBLoader::capitalised(const std::string& text) {
+    if (text.empty()) return std::string();
+    std::string out = text;
+    // The first letter is raised and everything after it lowered.
+    for (std::size_t i = 0; i < out.size(); ++i) {
+        char& c = out[i];
+        const bool upper = c >= 'A' && c <= 'Z';
+        const bool lower = c >= 'a' && c <= 'z';
+        if (i == 0) {
+            if (lower) c = static_cast<char>(c - 'a' + 'A');
+        } else {
+            if (upper) c = static_cast<char>(c - 'A' + 'a');
+        }
+    }
+    return out;
+}
+
+std::string PDBLoader::bondHash(int first, int second) {
+    // The smaller first, so both orders give the same key.
+    const int low = first < second ? first : second;
+    const int high = first < second ? second : first;
+    return "s" + std::to_string(low) + "e" + std::to_string(high);
+}
+
+bool PDBLoader::acceptsBond(int partner, bool alreadyRecorded) {
+    // A blank column reads as zero and names no atom, and a pair already filed is dropped
+    // rather than counted again, since the line that would count it is commented out.
+    if (partner == 0) return false;
+    return !alreadyRecorded;
+}
