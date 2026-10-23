@@ -342,3 +342,114 @@ int Zlib::distanceExtra(int code) {
     if (code < 4) return 0;
     return (code - 4) / 2 + 1;
 }
+
+Zlib::HuffmanTable Zlib::fixedLiteralTable() {
+    std::vector<int> lengths(288, 0);
+    for (int symbol = 0; symbol < 288; ++symbol) {
+        lengths[static_cast<std::size_t>(symbol)] = fixedLiteralLength(symbol);
+    }
+    return buildTable(lengths);
+}
+
+Zlib::HuffmanTable Zlib::fixedDistanceTable() {
+    return buildTable(std::vector<int>(30, kFixedDistanceLength));
+}
+
+void Zlib::copyMatch(std::vector<std::uint8_t>& out, int distance, int length) {
+    // The source moves forward as bytes are written, so an overlap repeats what was just added.
+    for (int i = 0; i < length; ++i) {
+        const std::size_t from = out.size() - static_cast<std::size_t>(distance);
+        out.push_back(out[from]);
+    }
+}
+
+std::string Zlib::blockTypeError() { return "Zlib: a block named a reserved kind."; }
+std::string Zlib::symbolError() { return "Zlib: the stream ended before its end marker."; }
+std::string Zlib::matchError() { return "Zlib: a match reached before the start."; }
+
+Zlib::InflateResult Zlib::inflate(const std::vector<std::uint8_t>& input) {
+    InflateResult result;
+    BitReader reader{&input, 0, 0};
+    bool last = false;
+
+    while (!last) {
+        const BlockHeader header = readBlockHeader(reader);
+        last = header.last;
+        if (header.type == BlockType::Reserved) {
+            result.error = blockTypeError();
+            return result;
+        }
+
+        if (header.type == BlockType::Stored) {
+            // A stored block lines up to a byte and copies its bytes as they are.
+            alignToByte(reader);
+            const StoredHeader stored = readStoredHeader(reader);
+            if (!stored.valid) {
+                result.error = "Zlib: a stored block's lengths did not agree.";
+                return result;
+            }
+            for (std::uint32_t i = 0; i < stored.length; ++i) {
+                result.output.push_back(static_cast<std::uint8_t>(readBits(reader, 8)));
+            }
+            continue;
+        }
+
+        // The two Huffman kinds differ only in where their tables come from.
+        HuffmanTable literals;
+        HuffmanTable distances;
+        if (header.type == BlockType::Fixed) {
+            literals = fixedLiteralTable();
+            distances = fixedDistanceTable();
+        } else {
+            // The dynamic header: three counts, the code length lengths, then the lengths.
+            const std::uint32_t hlit = readBits(reader, 5);
+            const std::uint32_t hdist = readBits(reader, 5);
+            const std::uint32_t hclen = readBits(reader, 4);
+            const DynamicCounts counts = dynamicCounts(hlit, hdist, hclen);
+            const auto codeLengths = readCodeLengthLengths(reader, counts.codeLengthCount);
+            const HuffmanTable codeTable = buildTable(codeLengths);
+            const auto expanded = expandLengths(reader, codeTable,
+                                                counts.literalCount + counts.distanceCount);
+            if (!expanded.valid) {
+                result.error = expanded.error;
+                return result;
+            }
+            const SplitLengths split =
+                splitLengths(expanded.lengths, counts.literalCount, counts.distanceCount);
+            literals = buildTable(split.literal);
+            distances = buildTable(split.distance);
+        }
+
+        // Read symbols until the end marker.
+        while (true) {
+            const SymbolResult symbol = decodeSymbol(reader, literals);
+            if (!symbol.found) {
+                result.error = symbolError();
+                return result;
+            }
+            if (symbol.symbol < 256) {
+                result.output.push_back(static_cast<std::uint8_t>(symbol.symbol));
+                continue;
+            }
+            if (symbol.symbol == 256) break;
+            // A length and a distance give a run copied from what is already there.
+            const int length = lengthBase(symbol.symbol) + static_cast<int>(
+                readBits(reader, lengthExtra(symbol.symbol)));
+            const SymbolResult distanceSymbol = decodeSymbol(reader, distances);
+            if (!distanceSymbol.found) {
+                result.error = symbolError();
+                return result;
+            }
+            const int distance = distanceBase(distanceSymbol.symbol) + static_cast<int>(
+                readBits(reader, distanceExtra(distanceSymbol.symbol)));
+            // A distance reaching before the output would read nothing.
+            if (distance <= 0 || static_cast<std::size_t>(distance) > result.output.size()) {
+                result.error = matchError();
+                return result;
+            }
+            copyMatch(result.output, distance, length);
+        }
+    }
+    result.valid = true;
+    return result;
+}

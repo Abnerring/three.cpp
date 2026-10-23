@@ -203,4 +203,29 @@ class Zlib {
     // How many length codes name something and how many distance codes there are.
     static constexpr int kLengthCodeCount = 29;
     static constexpr int kDistanceCodeCount = 30;
+    // The table the fixed blocks use, built from the same lengths the literal alphabet uses.
+    static HuffmanTable fixedLiteralTable();
+    static HuffmanTable fixedDistanceTable();
+
+    // Copies a run of bytes already written, which is how a match is expanded. The distance is
+    // counted back from the end of the output, so the source and the destination may overlap: a
+    // distance of one repeats the last byte.
+    static void copyMatch(std::vector<std::uint8_t>& out, int distance, int length);
+
+    // The result of unpacking a stream.
+    struct InflateResult {
+        bool valid = false;
+        std::vector<std::uint8_t> output;
+        std::string error;
+    };
+
+    // Unpacks a raw deflate stream, the blocks of which are the whole of the format's core. The
+    // three kinds of block are all handled: a stored one copies its bytes, and the two others
+    // read symbols from a table until the end marker at two hundred and fifty six.
+    static InflateResult inflate(const std::vector<std::uint8_t>& input);
+
+    // The errors unpacking can raise.
+    static std::string blockTypeError();
+    static std::string symbolError();
+    static std::string matchError();
 };

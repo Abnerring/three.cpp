@@ -262,6 +262,7 @@ add_executable(THREECPPTests
         unit/src/loaders/ZlibDynamic.tests.cpp
         unit/src/loaders/ZlibLengths.tests.cpp
         unit/src/loaders/ZlibLengthCodes.tests.cpp
+        unit/src/loaders/ZlibInflate.tests.cpp
         unit/src/loaders/EXRValues.tests.cpp
         unit/src/loaders/EXRChlist.tests.cpp
         unit/src/loaders/EXRTile.tests.cpp
