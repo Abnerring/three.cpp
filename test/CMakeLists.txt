@@ -366,6 +366,7 @@ add_executable(THREECPPTests
         unit/src/nodes/core/UniformGroupNode.tests.cpp
         unit/src/nodes/core/ArrayNode.tests.cpp
         unit/src/nodes/core/OverrideContextNode.tests.cpp
+        unit/src/nodes/core/AssignNode.tests.cpp
         unit/src/loaders/EXRSamplesToBytes.tests.cpp
         unit/src/loaders/EXRDecompressBlock.tests.cpp
         unit/src/loaders/Zlib.tests.cpp

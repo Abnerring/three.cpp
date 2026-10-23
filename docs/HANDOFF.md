@@ -3273,6 +3273,14 @@
    - **遍历收所有祖先**：`traverse` 收集每一个 `isOverrideContextNode`，**不是只取最近的那个**。
    - **测试（4 个用例、23 条断言）**：三种存法六处；两个工厂四处；参数顺序七处；合并四中 **+** 遍历一处。
    - **验证**：核心 **2346 用例 / 216,218 断言**（+4 / +23）、`primitive-geometry`、`port-audit`、addons、`--cube` 全绿。
+528. **第 220 轮：`AssignNode` 的类型随输出参数变，以及拆分只在非恒等重排时**。
+   - **类型随调用方要什么而变**：`generateNodeType( builder, output )` 返回 `output !== 'void' ? 目标类型 : 'void'`。**所以同一个节点在要值时是目标类型、在要语句时是 `void`**——**本层其他节点没有这种"类型取决于输出"的行为**。
+   - **赋值只写一次**：`nodeData.propertyName !== undefined` 是"已经写过"的判据，**而这个记录在第一次生成末尾被设成目标的名字**，所以第二次生成直接答目标、不再写一遍。
+   - **拆分只在三条件同时成立且重排不是恒等时**：后端不能通过 swizzle 赋值、目标是分量拆分、分量多于一个；**再加 `'xyzw'.slice( 0, 目标长度 ) !== components`**。所以 **`'xy'` 取一个 `vec2` 的前两位不需要拆，`'yx'` 需要**。
+   - **拆分路径写 `source[i]`**：逐分量写成 `${targetRoot}.${component} = ${sourceProperty}[ ${i} ]`，**从左侧按位置索引右侧**。
+   - **普通路径只在两种情况下进流**：`output === 'void' || sourceType === 'void'`。**否则文本作为值返回、不进流**。
+   - **测试（4 个用例、22 条断言）**：类型六处；写一次两处 + 值一处；拆分八处；进流五处。
+   - **验证**：核心 **2350 用例 / 216,240 断言**（+4 / +22）、`primitive-geometry`、`port-audit`、addons、`--cube` 全绿。
 70. **第 520 轮：完整 Vulkan 套件 211/211 全绿，耗时 270.72 秒**。
    - 命令：`ctest --test-dir build-vulkan -j 4 -E "lights-states" --output-on-failure`（仍排除第 46 条那个已知项；它在 Vulkan 构建里同样慢）。
    - 结果：**100% tests passed, 0 tests failed out of 211**，总耗时 **270.72 秒**。对比同一套件在 **Debug** 配置下的 **3784.56 秒 / 2 失败**，差了约 14 倍——再次印证第 69 条"是构建类型不是代码"的结论。

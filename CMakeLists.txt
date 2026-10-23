@@ -247,6 +247,7 @@ target_sources(threecpp PRIVATE
     src/nodes/core/UniformGroupNode.cpp
     src/nodes/core/ArrayNode.cpp
     src/nodes/core/OverrideContextNode.cpp
+    src/nodes/core/AssignNode.cpp
     src/nodes/core/ParameterNode.cpp
     src/nodes/core/NodeConstants.cpp
     src/nodes/core/Node.cpp
