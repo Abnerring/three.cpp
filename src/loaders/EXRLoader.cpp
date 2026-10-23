@@ -742,3 +742,36 @@ std::uint32_t EXRLoader::cumulativeCount(std::uint32_t b0, std::uint32_t b1, std
     // Lowest byte first, unlike the rest of the file.
     return (b0 & 0xFFu) | ((b1 & 0xFFu) << 8) | ((b2 & 0xFFu) << 16) | ((b3 & 0xFFu) << 24);
 }
+
+int EXRLoader::pizBitmapRunLength(int minNonZero, int maxNonZero) {
+    // The block writes a byte for each position in the range, counting both ends. When the first
+    // is past the second the range is empty and nothing is written.
+    if (minNonZero > maxNonZero) return 0;
+    return maxNonZero - minNonZero + 1;
+}
+
+std::size_t EXRLoader::pizChannelSize(std::uint32_t columns, std::uint32_t lines,
+                                      std::uint32_t channelType) {
+    // The whole window, times the channel's width in sixteen bit words.
+    return static_cast<std::size_t>(columns) * lines * channelType;
+}
+
+std::vector<std::size_t> EXRLoader::pizChannelStarts(std::uint32_t columns, std::uint32_t lines,
+                                                     std::uint32_t channelType,
+                                                     std::size_t channelCount) {
+    std::vector<std::size_t> starts;
+    starts.reserve(channelCount);
+    std::size_t end = 0;
+    const std::size_t size = pizChannelSize(columns, lines, channelType);
+    for (std::size_t i = 0; i < channelCount; ++i) {
+        // Each channel begins where the one before it ended.
+        starts.push_back(end);
+        end += size;
+    }
+    return starts;
+}
+
+bool EXRLoader::pizBitmapFits(int maxNonZero) {
+    // A second end at or past the bitmap's length cannot be read.
+    return maxNonZero < kPizBitmapSize;
+}

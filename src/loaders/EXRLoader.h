@@ -505,4 +505,28 @@ class EXRLoader {
     // file's usual way would turn a small count into a huge one.
     static std::uint32_t cumulativeCount(std::uint32_t b0, std::uint32_t b1, std::uint32_t b2,
                                          std::uint32_t b3);
+    // The wavelet compression keeps a bitmap of which of the sixty five thousand and thirty six
+    // possible byte values a block actually uses. The bitmap is stored as bits, so it is eight
+    // thousand one hundred and ninety two bytes long.
+    static constexpr int kPizBitmapSize = 8192;
+
+    // How many bytes of the bitmap the block writes. The two ends are read as sixteen bit
+    // values; when the first is past the second the block writes nothing at all, which is how a
+    // block that uses none of the values is stored rather than by writing a range of zeroes.
+    static int pizBitmapRunLength(int minNonZero, int maxNonZero);
+
+    // How much room a channel's samples take. Each channel of the block is the whole window
+    // again, so the size grows by the window's area times the channel's width in sixteen bit
+    // words.
+    static std::size_t pizChannelSize(std::uint32_t columns, std::uint32_t lines,
+                                      std::uint32_t channelType);
+
+    // Where each channel's samples begin, accumulated in the order the channels are written.
+    static std::vector<std::size_t> pizChannelStarts(std::uint32_t columns, std::uint32_t lines,
+                                                     std::uint32_t channelType,
+                                                     std::size_t channelCount);
+
+    // Whether the two ends name a bitmap that fits. A second end at or past the bitmap's own
+    // length is refused rather than read.
+    static bool pizBitmapFits(int maxNonZero);
 };
