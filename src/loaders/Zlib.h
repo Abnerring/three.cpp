@@ -1,4 +1,4 @@
-﻿#pragma once
+#pragma once
 #include <cstddef>
 #include <cstdint>
 #include <string>
@@ -47,4 +47,45 @@ class Zlib {
     // The two errors the header can raise.
     static std::string methodError();
     static std::string checkError();
+    // A bit reader for a deflate stream. The bits of a byte come out lowest first, which is the
+    // opposite of how the EXR loader reads its stream, and the two must not be confused: the same
+    // bytes read the other way give different values.
+    struct BitReader {
+        const std::vector<std::uint8_t>* bytes = nullptr;
+        std::size_t offset = 0;
+        // Bits taken from the current byte, from zero to seven.
+        int used = 0;
+    };
+
+    // One bit, then up to sixteen at a time, taken from the low end of each byte.
+    static int readBit(BitReader& reader);
+    static std::uint32_t readBits(BitReader& reader, int count);
+
+    // Drops the bits left in the current byte so the next read begins on a byte boundary.
+    static void alignToByte(BitReader& reader);
+
+    // Whether the reader has anything left at all.
+    static bool hasMoreBits(const BitReader& reader);
+
+    // The header of a block: whether it is the last and which of the three kinds it is.
+    enum class BlockType { Stored, Fixed, Dynamic, Reserved };
+
+    struct BlockHeader {
+        bool last = false;
+        BlockType type = BlockType::Reserved;
+        // The two kind bits as they were read, which the caller may find useful.
+        int typeBits = 0;
+    };
+
+    static BlockHeader readBlockHeader(BitReader& reader);
+
+    // A stored block's two lengths. The second is the first with every bit inverted, so a block
+    // whose lengths do not agree is corrupt; the flag says whether they agree.
+    struct StoredHeader {
+        std::uint32_t length = 0;
+        std::uint32_t inverse = 0;
+        bool valid = false;
+    };
+
+    static StoredHeader readStoredHeader(BitReader& reader);
 };

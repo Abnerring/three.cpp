@@ -256,6 +256,7 @@ add_executable(THREECPPTests
         unit/src/loaders/EXRBlockCompression.tests.cpp
         unit/src/loaders/EXRDecodeEntry.tests.cpp
         unit/src/loaders/Zlib.tests.cpp
+        unit/src/loaders/ZlibBits.tests.cpp
         unit/src/loaders/EXRValues.tests.cpp
         unit/src/loaders/EXRChlist.tests.cpp
         unit/src/loaders/EXRTile.tests.cpp

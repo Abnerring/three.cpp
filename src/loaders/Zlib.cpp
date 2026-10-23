@@ -1,4 +1,4 @@
-﻿#include "loaders/Zlib.h"
+#include "loaders/Zlib.h"
 
 Zlib::HeaderResult Zlib::readHeader(std::uint8_t cmf, std::uint8_t flg) {
     HeaderResult result;
@@ -52,4 +52,60 @@ std::string Zlib::methodError() {
 
 std::string Zlib::checkError() {
     return "Zlib: the header check failed.";
+}
+
+bool Zlib::hasMoreBits(const BitReader& reader) {
+    // Any bit left in the current byte, or any byte left after it.
+    if (reader.bytes == nullptr) return false;
+    return reader.used < 8 ? reader.offset < reader.bytes->size()
+                           : reader.offset + 1 < reader.bytes->size();
+}
+
+int Zlib::readBit(BitReader& reader) {
+    if (reader.bytes == nullptr || reader.offset >= reader.bytes->size()) return 0;
+    // The bit is taken from the low end of the byte and the position moves up.
+    const int bit = ((*reader.bytes)[reader.offset] >> reader.used) & 1;
+    reader.used += 1;
+    if (reader.used == 8) {
+        reader.used = 0;
+        reader.offset += 1;
+    }
+    return bit;
+}
+
+std::uint32_t Zlib::readBits(BitReader& reader, int count) {
+    // Bits arrive lowest first, so each new one goes above the ones already taken.
+    std::uint32_t value = 0;
+    for (int i = 0; i < count; ++i) {
+        value |= static_cast<std::uint32_t>(readBit(reader)) << i;
+    }
+    return value;
+}
+
+void Zlib::alignToByte(BitReader& reader) {
+    // Whatever is left of the current byte is dropped.
+    if (reader.used == 0) return;
+    reader.used = 0;
+    reader.offset += 1;
+}
+
+Zlib::BlockHeader Zlib::readBlockHeader(BitReader& reader) {
+    BlockHeader header;
+    header.last = readBit(reader) != 0;
+    header.typeBits = static_cast<int>(readBits(reader, 2));
+    // The three kinds by their bits; the fourth value is reserved and cannot be read.
+    if (header.typeBits == 0) header.type = BlockType::Stored;
+    else if (header.typeBits == 1) header.type = BlockType::Fixed;
+    else if (header.typeBits == 2) header.type = BlockType::Dynamic;
+    else header.type = BlockType::Reserved;
+    return header;
+}
+
+Zlib::StoredHeader Zlib::readStoredHeader(BitReader& reader) {
+    // The two lengths are written low byte first, and the second inverts the first.
+    StoredHeader header;
+    header.length = readBits(reader, 16);
+    header.inverse = readBits(reader, 16);
+    header.valid = (header.inverse == (~header.length & 0xFFFFu));
+    return header;
 }
