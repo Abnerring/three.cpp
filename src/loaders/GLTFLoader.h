@@ -149,4 +149,26 @@ class GLTFLoader {
     // interpolants and comes back as its own name for the caller to handle, while the other two
     // map onto theirs.
     static std::string interpolationName(const std::string& interpolation);
+    // A colour with its alpha, as a material holds one.
+    struct MaterialColour {
+        double r = 1;
+        double g = 1;
+        double b = 1;
+        double a = 1;
+    };
+
+    // What a material starts as when the file says nothing: white and fully opaque.
+    static MaterialColour materialDefaults();
+
+    // A material with a base colour factor read into it. The four numbers are taken as they
+    // stand, because the factor is written in the linear space the port works in; a factor with
+    // fewer than four numbers leaves the missing pieces alone.
+    static MaterialColour applyBaseColorFactor(MaterialColour colour,
+                                               const std::vector<double>& factor);
+
+    // The space a base colour factor is read in, and the space its texture is read in. The two
+    // differ: the numbers are already linear while the image is display referred, which is why
+    // they cannot share one rule.
+    static constexpr const char* kBaseColorFactorSpace = "srgb-linear";
+    static constexpr const char* kBaseColorTextureSpace = "srgb";
 };

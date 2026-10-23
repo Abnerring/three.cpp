@@ -301,3 +301,23 @@ std::string GLTFLoader::interpolationName(const std::string& interpolation) {
     if (interpolation == "STEP") return "InterpolateDiscrete";
     throw std::runtime_error("THREE.GLTFLoader: Unsupported interpolation.");
 }
+
+GLTFLoader::MaterialColour GLTFLoader::materialDefaults() {
+    // White and fully opaque.
+    MaterialColour colour;
+    colour.r = 1.0;
+    colour.g = 1.0;
+    colour.b = 1.0;
+    colour.a = 1.0;
+    return colour;
+}
+
+GLTFLoader::MaterialColour GLTFLoader::applyBaseColorFactor(MaterialColour colour,
+                                                            const std::vector<double>& factor) {
+    // The first three are the colour and the fourth the alpha; anything missing is left alone.
+    if (factor.size() >= 1) colour.r = factor[0];
+    if (factor.size() >= 2) colour.g = factor[1];
+    if (factor.size() >= 3) colour.b = factor[2];
+    if (factor.size() >= 4) colour.a = factor[3];
+    return colour;
+}
