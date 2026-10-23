@@ -199,6 +199,7 @@ add_executable(THREECPPTests
         unit/src/loaders/GLTFInstancing.tests.cpp
         unit/src/loaders/GLTFDiffuseRoughness.tests.cpp
         unit/src/loaders/GLTFDefaultMaterial.tests.cpp
+        unit/src/loaders/GLTFExtras.tests.cpp
         unit/src/cameras/StereoCamera.tests.cpp
         unit/src/audio/AudioContext.tests.cpp
         unit/src/audio/Audio.tests.cpp

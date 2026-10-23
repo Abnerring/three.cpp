@@ -408,4 +408,15 @@ class GLTFLoader {
     // heard of without failing.
     static std::vector<std::string> unknownExtensions(const std::vector<std::string>& present,
                                                       const std::vector<std::string>& known);
+    // What to do with the extras an object carries. The decision turns on the type name the
+    // source language reports for a value, which has two traps: a null value reports itself as an
+    // object, and so does an array, so both take the merging path rather than the warning one. A
+    // number, a string and a boolean warn instead.
+    enum class ExtrasDisposition { None, Assign, Warn };
+
+    static ExtrasDisposition extrasDisposition(bool hasExtras, const std::string& typeName);
+
+    // The warning a value that is not an object produces. The value itself is appended, which is
+    // why this takes it as text.
+    static std::string extrasWarning(const std::string& valueText);
 };

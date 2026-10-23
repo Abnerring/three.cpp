@@ -662,3 +662,18 @@ std::vector<std::string> GLTFLoader::unknownExtensions(const std::vector<std::st
     }
     return unknown;
 }
+
+GLTFLoader::ExtrasDisposition GLTFLoader::extrasDisposition(bool hasExtras,
+                                                            const std::string& typeName) {
+    // Nothing to do when there are no extras at all.
+    if (!hasExtras) return ExtrasDisposition::None;
+    // Only the object type merges, and null and arrays both report themselves as objects.
+    if (typeName == "object") return ExtrasDisposition::Assign;
+    // Anything else is reported and dropped.
+    return ExtrasDisposition::Warn;
+}
+
+std::string GLTFLoader::extrasWarning(const std::string& valueText) {
+    // The message the source prints, with the value appended as it would be converted to text.
+    return "THREE.GLTFLoader: Ignoring primitive type .extras, " + valueText;
+}

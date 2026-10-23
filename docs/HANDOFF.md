@@ -1943,6 +1943,13 @@
    - **未知扩展只是留下来**：`addUnknownExtensionsToUserData` 把**加载器不认识**的扩展名收进对象的 `userData.gltfExtensions`，并不去执行它。这正是"文件可以带端口没听过的扩展而不失败"的机制，测试里用一个真实名字（认识的）和一个编造名字（不认识的）对照。
    - **测试（4 个用例、19 条断言）**：七个默认值；缓存键；一认识一不认识、全认识、全不认识三种；**用真实扩展列表验证编造名字被留下、真名字不被留下**。
    - **验证**：核心 **1592 用例 / 210,726 断言**（+4 / +19）、addons、`primitive-geometry`、`port-audit`、Vulkan 全绿。
+339. **第 25 轮：`GLTFLoader` 第二十五层——extras 的归并判据**。
+   - **判据是类型名而不是值**：`typeof gltfDef.extras === 'object'` 时归并，否则打印警告丢掉。端口把它写成三态：没有 extras / 归并 / 警告。
+   - **两个 JS 语义陷阱**：`typeof null` 也是 `'object'`，所以 **null 会走归并分支**（归并一个空对象、等于什么也没做，不是错误）；**数组的 `typeof` 同样是 `'object'`**，所以数组也会被归并，把下标当作数字键拷进去，而**不会**走到警告分支。
+   - **四种会警告的**：number、string、boolean、undefined。
+   - **警告文案逐字**：`THREE.GLTFLoader: Ignoring primitive type .extras, ` + 值的文本形式；测试连"空值也照样包上整句"一起钉住。
+   - **测试（4 个用例、11 条断言）**：归并与"没有"；四种警告类型；**两个陷阱都走归并**；三条警告文案（含空值）。
+   - **验证**：核心 **1596 用例 / 210,737 断言**（+4 / +11）、addons、`primitive-geometry`、`port-audit`、Vulkan 全绿。
 70. **第 520 轮：完整 Vulkan 套件 211/211 全绿，耗时 270.72 秒**。
    - 命令：`ctest --test-dir build-vulkan -j 4 -E "lights-states" --output-on-failure`（仍排除第 46 条那个已知项；它在 Vulkan 构建里同样慢）。
    - 结果：**100% tests passed, 0 tests failed out of 211**，总耗时 **270.72 秒**。对比同一套件在 **Debug** 配置下的 **3784.56 秒 / 2 失败**，差了约 14 倍——再次印证第 69 条"是构建类型不是代码"的结论。
