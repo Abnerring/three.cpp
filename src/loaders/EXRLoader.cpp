@@ -1686,3 +1686,28 @@ EXRLoader::ScanlineResult EXRLoader::parseScanline(
     result.valid = true;
     return result;
 }
+
+std::vector<std::uint8_t> EXRLoader::samplesToBytes(const std::vector<std::uint16_t>& samples) {
+    // Each sample is two bytes, the higher one first, which is how the file would have held it.
+    std::vector<std::uint8_t> bytes;
+    bytes.reserve(samples.size() * 2);
+    for (const std::uint16_t sample : samples) {
+        bytes.push_back(static_cast<std::uint8_t>((sample >> 8) & 0xFF));
+        bytes.push_back(static_cast<std::uint8_t>(sample & 0xFF));
+    }
+    return bytes;
+}
+
+std::vector<std::uint8_t> EXRLoader::wordsToBytes(const std::vector<std::uint32_t>& words) {
+    // Each word is four bytes, the highest first, so a caller reading a sample two bytes at a
+    // time sees the half of it that matters.
+    std::vector<std::uint8_t> bytes;
+    bytes.reserve(words.size() * 4);
+    for (const std::uint32_t word : words) {
+        bytes.push_back(static_cast<std::uint8_t>((word >> 24) & 0xFF));
+        bytes.push_back(static_cast<std::uint8_t>((word >> 16) & 0xFF));
+        bytes.push_back(static_cast<std::uint8_t>((word >> 8) & 0xFF));
+        bytes.push_back(static_cast<std::uint8_t>(word & 0xFF));
+    }
+    return bytes;
+}

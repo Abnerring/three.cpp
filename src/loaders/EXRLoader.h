@@ -902,4 +902,10 @@ class EXRLoader {
                                         std::uint32_t width, std::uint32_t height,
                                         std::uint32_t compression, int outputType,
                                         const std::vector<ScanlineChannel>& channels);
+    // Turns whatever a reader gives back into the bytes the scanline loop walks. The two
+    // readers that already work in bytes pass through untouched; the two that work in samples
+    // are written out high byte first, one sample to two bytes, which is how the file itself
+    // would have held them.
+    static std::vector<std::uint8_t> samplesToBytes(const std::vector<std::uint16_t>& samples);
+    static std::vector<std::uint8_t> wordsToBytes(const std::vector<std::uint32_t>& words);
 };
