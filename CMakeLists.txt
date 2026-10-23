@@ -197,6 +197,7 @@ target_sources(threecpp PRIVATE
     src/nodes/core/Packing.cpp
     src/nodes/core/MatcapUV.cpp
     src/nodes/core/EquirectUV.cpp
+    src/nodes/core/SpriteSheetUV.cpp
     src/nodes/core/NodeConstants.cpp
     src/nodes/core/Node.cpp
     src/loaders/DataTextureLoader.cpp
