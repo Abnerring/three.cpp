@@ -1337,3 +1337,23 @@ EXRLoader::PizResult EXRLoader::uncompressPIZ(const std::vector<std::uint8_t>& d
     result.valid = true;
     return result;
 }
+
+EXRLoader::Decompresser EXRLoader::decompresserFor(int code) {
+    // Ten numbers, seven readers. The pairs that share one are the two zips, the two B44s and
+    // the two deep ones.
+    switch (code) {
+        case kNoCompressionCode: return Decompresser::None;
+        case kRleCompressionCode: return Decompresser::RunLength;
+        case kZipsCompressionCode: return Decompresser::Zip;
+        case kZipCompressionCode: return Decompresser::Zip;
+        case kPizCompressionCode: return Decompresser::Wavelet;
+        case kPxr24CompressionCode: return Decompresser::Pxr;
+        case kB44CompressionCode: return Decompresser::B44;
+        case kB44aCompressionCode: return Decompresser::B44;
+        case kDwaaCompressionCode: return Decompresser::Deep;
+        case kDwabCompressionCode: return Decompresser::Deep;
+        // A number the format does not define names no reader at all, which the caller must tell
+        // from the plain uncompressed case.
+        default: return Decompresser::None;
+    }
+}

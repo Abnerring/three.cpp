@@ -2610,6 +2610,12 @@
    - **一处我自己的实现问题**：位图读到块尾时我复用了 `BITMAP_SIZE` 那条消息，于是"范围合法但块太短"与"范围越界"给出同一条文案，测试里那条"合法范围不应报这条"因此失效。**改测试为只断言"被拒"**，并把三种情形分开写。
    - **测试（3 个用例、8 条断言）**：范围越界（`8192`）报 `BITMAP_SIZE`；合法范围但块太短被拒（两种）；空范围不读位图、下一步才被拒。
    - **验证**：核心 **1962 用例 / 214,121 断言**（+3 / +8）、`primitive-geometry`、`port-audit`、addons、`--cube` 全绿。
+430. **第 115 轮：`EXRLoader` 第四十四层——十个数归并成七个读取器**。
+   - **上游有七个解压函数**：`uncompressRAW`、`uncompressRLE`、`uncompressZIP`、`uncompressPIZ`、`uncompressPXR`、`uncompressB44`、`uncompressDWA`。**注意 `PXR` 而不叫 `PXR24`**——我按"应该叫 `uncompressPXR24`"去搜，一个字都没搜到，差点以为上游不支持这个格式。
+   - **十个编号共用七个函数**：`ZIPS`(2) 与 `ZIP`(3) 共用 `ZIP`；`B44`(6) 与 `B44A`(7) 共用 `B44`；`DWAA`(8) 与 `DWAB`(9) 共用 `DWA`。
+   - **一个陷阱**：**未定义的编号与"无压缩"都映射到 `None`**，所以调用方必须同时看编号本身，不能只看返回的枚举。测试专门断言 `decompresserFor(10) == decompresserFor(0)` 来把这个陷阱写下来。
+   - **测试（3 个用例、13 条断言）**：四个独占的；三对共用；**"十个数只出七种"的循环**（这一项贡献 3 条）。
+   - **验证**：核心 **1965 用例 / 214,134 断言**（+3 / +13）、`primitive-geometry`、`port-audit`、addons、`--cube` 全绿。
 70. **第 520 轮：完整 Vulkan 套件 211/211 全绿，耗时 270.72 秒**。
    - 命令：`ctest --test-dir build-vulkan -j 4 -E "lights-states" --output-on-failure`（仍排除第 46 条那个已知项；它在 Vulkan 构建里同样慢）。
    - 结果：**100% tests passed, 0 tests failed out of 211**，总耗时 **270.72 秒**。对比同一套件在 **Debug** 配置下的 **3784.56 秒 / 2 失败**，差了约 14 倍——再次印证第 69 条"是构建类型不是代码"的结论。

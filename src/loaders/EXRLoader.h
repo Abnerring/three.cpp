@@ -725,4 +725,12 @@ class EXRLoader {
                                    std::uint32_t compressedSize, std::uint32_t columns,
                                    std::uint32_t lines, std::uint32_t channelType,
                                    std::size_t channelCount);
+    // The seven ways a block can be compressed, which the ten numbers in a file reduce to: the
+    // two zips share one reader, the two B44s another, and the two deep ones a third, so a file
+    // naming any of ten numbers lands on one of seven. When the same file mixed parts of
+    // different kinds it would still be safe, since the reader is chosen by the name rather than
+    // by the part.
+    enum class Decompresser { None, RunLength, Zip, Wavelet, Pxr, B44, Deep };
+
+    static Decompresser decompresserFor(int code);
 };
