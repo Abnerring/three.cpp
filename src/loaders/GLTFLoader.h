@@ -78,4 +78,13 @@ class GLTFLoader {
 
     // The wrapping a sampler names. An unknown value throws.
     static std::string wrappingName(std::uint32_t wrapping);
+
+    // The bytes a buffer view covers. A view with no length covers nothing, and a view with no
+    // offset begins at the start of the buffer.
+    static std::vector<std::uint8_t> sliceBufferView(const std::vector<std::uint8_t>& buffer,
+                                                     std::size_t byteOffset, std::size_t byteLength);
+
+    // How many components an accessor of the given count and shape holds. An accessor with no
+    // view is still that long, filled entirely with zeroes.
+    static std::size_t accessorComponentCount(std::size_t count, const std::string& type);
 };

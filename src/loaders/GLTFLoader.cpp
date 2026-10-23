@@ -199,3 +199,19 @@ std::string GLTFLoader::wrappingName(std::uint32_t wrapping) {
             throw std::runtime_error("THREE.GLTFLoader: Unknown wrapping.");
     }
 }
+
+std::vector<std::uint8_t> GLTFLoader::sliceBufferView(const std::vector<std::uint8_t>& buffer,
+                                                      std::size_t byteOffset,
+                                                      std::size_t byteLength) {
+    // A view that reaches past the buffer is cut at its end rather than refused, which is what
+    // taking a slice does.
+    if (byteOffset >= buffer.size() || byteLength == 0) return {};
+    const std::size_t end = std::min(buffer.size(), byteOffset + byteLength);
+    return std::vector<std::uint8_t>(buffer.begin() + static_cast<std::ptrdiff_t>(byteOffset),
+                                     buffer.begin() + static_cast<std::ptrdiff_t>(end));
+}
+
+std::size_t GLTFLoader::accessorComponentCount(std::size_t count, const std::string& type) {
+    // Each element holds as many components as its shape says.
+    return count * static_cast<std::size_t>(typeSize(type));
+}
