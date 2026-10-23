@@ -195,6 +195,7 @@ target_sources(threecpp PRIVATE
     src/nodes/core/BumpMap.cpp
     src/nodes/core/PremultiplyAlpha.cpp
     src/nodes/core/Packing.cpp
+    src/nodes/core/MatcapUV.cpp
     src/nodes/core/NodeConstants.cpp
     src/nodes/core/Node.cpp
     src/loaders/DataTextureLoader.cpp

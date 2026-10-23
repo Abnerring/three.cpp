@@ -2901,6 +2901,12 @@
    - **两个改名的函数**：`directionToColor` → `packNormalToRGB`、`colorToDirection` → `unpackRGBToNormal`，**两句警告都同时含新旧名字**——测试对两句都断言了各含两个名字。
    - **测试（5 个用例、29 条断言）**：往返七处；钳制六处；重建五处；圆外四处（含 `isfinite` 与 `!isnan`）；两句话各三处。
    - **验证**：核心 **2118 用例 / 214,908 断言**（+5 / +29）、`primitive-geometry`、`port-audit`、addons、`--cube` 全绿。
+475. **第 161 轮：`MatcapUV` 的 0.495，以及计时器的类型**。
+   - **一处不是半的缩放**：`vec2( ... ).mul( 0.495 ).add( 0.5 )`。**用 0.495 而不是 0.5**，注释说"为了去掉缩小的 matcap 圆盘造成的瑕疵"——**用半会把圆盘的边压到最后一行像素上**。所以坐标范围是 **0.005 到 0.995**，不是 0 到 1。测试把"不等于 0.5"与两个端点的具体值都断言了。
+   - **第一个轴是"交换并取反"**：`vec3( positionViewDirection.z, 0, positionViewDirection.x.negate() )`——**第三个分量变成第一个、第一个取反变成第三个、中间恒为零**。测试断言了三处，并额外断言"答案与输入不同"，防止有人把它写成直接拷贝。
+   - **计时器有三种类型**：`time` 与 `deltaTime` 是 `float`，**`frameId` 是 `uint`**（与第 150 轮的 `cameraIndex` 一致）。
+   - **测试（4 个用例、24 条断言）**：缩放七处；坐标范围六处；第一个轴七处；类型四处（含"帧号类型不等于时间类型"）。
+   - **验证**：核心 **2122 用例 / 214,932 断言**（+4 / +24）、`primitive-geometry`、`port-audit`、addons、`--cube` 全绿。
 70. **第 520 轮：完整 Vulkan 套件 211/211 全绿，耗时 270.72 秒**。
    - 命令：`ctest --test-dir build-vulkan -j 4 -E "lights-states" --output-on-failure`（仍排除第 46 条那个已知项；它在 Vulkan 构建里同样慢）。
    - 结果：**100% tests passed, 0 tests failed out of 211**，总耗时 **270.72 秒**。对比同一套件在 **Debug** 配置下的 **3784.56 秒 / 2 失败**，差了约 14 倍——再次印证第 69 条"是构建类型不是代码"的结论。
