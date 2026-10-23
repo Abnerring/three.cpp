@@ -3024,6 +3024,14 @@
    - **只有两种卡通材质得到描边，且线框被跳过**：`isMeshToonMaterial || isMeshToonNodeMaterial`，再与 `wireframe === false` 相与。
    - **测试（5 个用例、26 条断言）**：名字与缺省七处；方向八处（含"两个方向相反"与单位长度）；厚度六处；比值两处；材质五种。
    - **验证**：核心 **2193 用例 / 215,374 断言**（+5 / +26）、`primitive-geometry`、`port-audit`、addons、`--cube` 全绿。
+493. **第 181 轮：`PassTextureNode` 是第一个"可以缓存"的节点**。
+   - **一个反例**：前面五个模块（`TempNode` 用次数、`PointUVNode`、`BuiltinNode`、`Object3DNode`、`ScreenNode`、`ViewportDepthNode`）的 `isCacheable` 要么是 `false`，要么按用量判。**`PassTextureNode` 直接 `return true`**——**所以"本层节点都不缓存"是一条错的概括**，缓存与否是逐类选择。
+   - **矩阵不更新**：`setUpdateMatrix( false )`，因为它读的是 pass 已经写好的纹理，不是调用方给的。
+   - **两种纹理节点**：普通的一种纹理，`PassMultipleTextureNode` 持有两种（当前与上一张），**后者的存在就是为了让"上一帧"可以被取到**。
+   - **克隆是共享不是拷贝**：`new this.constructor( this.passNode, this.value )`——**同一个 pass、同一个值**，所以克隆是同一张纹理的第二个视图。一个从名字推断"clone 是深拷贝"的读法会错。
+   - **`PassNode` 本身（1136 行）没有整份移植**：这一轮只取了其中两个纹理类settle的规则。**整份移植需要 pass 的渲染管线，那是 renderer 层的依赖**。
+   - **测试（3 个用例、11 条断言）**：可缓存三处；两种纹理五处；克隆两处。
+   - **验证**：核心 **2196 用例 / 215,385 断言**（+3 / +11）、`primitive-geometry`、`port-audit`、addons、`--cube` 全绿。
 70. **第 520 轮：完整 Vulkan 套件 211/211 全绿，耗时 270.72 秒**。
    - 命令：`ctest --test-dir build-vulkan -j 4 -E "lights-states" --output-on-failure`（仍排除第 46 条那个已知项；它在 Vulkan 构建里同样慢）。
    - 结果：**100% tests passed, 0 tests failed out of 211**，总耗时 **270.72 秒**。对比同一套件在 **Debug** 配置下的 **3784.56 秒 / 2 失败**，差了约 14 倍——再次印证第 69 条"是构建类型不是代码"的结论。

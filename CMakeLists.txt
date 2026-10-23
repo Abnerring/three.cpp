@@ -212,6 +212,7 @@ target_sources(threecpp PRIVATE
     src/nodes/core/ViewportTexture.cpp
     src/nodes/core/RenderOutput.cpp
     src/nodes/core/ToonOutlinePass.cpp
+    src/nodes/core/PassTexture.cpp
     src/nodes/core/NodeConstants.cpp
     src/nodes/core/Node.cpp
     src/loaders/DataTextureLoader.cpp
