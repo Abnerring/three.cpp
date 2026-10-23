@@ -354,6 +354,7 @@ add_executable(THREECPPTests
         unit/src/nodes/core/NodeParserAndAttribute.tests.cpp
         unit/src/nodes/core/BypassNode.tests.cpp
         unit/src/nodes/core/SubBuildAndParameter.tests.cpp
+        unit/src/nodes/core/NodeConstantsTables.tests.cpp
         unit/src/loaders/EXRSamplesToBytes.tests.cpp
         unit/src/loaders/EXRDecompressBlock.tests.cpp
         unit/src/loaders/Zlib.tests.cpp
