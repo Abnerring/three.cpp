@@ -163,6 +163,7 @@ target_sources(threecpp PRIVATE
     src/loaders/Zlib.cpp
     src/loaders/Zip.cpp
     src/loaders/KMZLoader.cpp
+    src/loaders/ThreeMFLoader.cpp
     src/loaders/CubeTextureLoader.cpp
     src/extras/ImageUtils.cpp
     src/extras/PMREMGenerator.cpp
