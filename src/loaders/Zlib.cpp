@@ -453,3 +453,51 @@ Zlib::InflateResult Zlib::inflate(const std::vector<std::uint8_t>& input) {
     result.valid = true;
     return result;
 }
+
+std::uint32_t Zlib::adlerFromBigEndian(std::uint32_t b0, std::uint32_t b1, std::uint32_t b2,
+                                       std::uint32_t b3) {
+    // The first byte is the most significant, unlike every other number in the stream.
+    return ((b0 & 0xFFu) << 24) | ((b1 & 0xFFu) << 16) | ((b2 & 0xFFu) << 8) | (b3 & 0xFFu);
+}
+
+std::string Zlib::shortError() { return "Zlib: the stream is too short."; }
+std::string Zlib::checksumError() { return "Zlib: the checksum does not match."; }
+std::string Zlib::dictionaryError() { return "Zlib: a dictionary is required."; }
+
+Zlib::UnzlibResult Zlib::unzlib(const std::vector<std::uint8_t>& input) {
+    UnzlibResult result;
+    // The two byte header comes first.
+    if (input.size() < 6) {
+        result.error = shortError();
+        return result;
+    }
+    const HeaderResult header = readHeader(input[0], input[1]);
+    if (!header.valid) {
+        result.error = header.error;
+        return result;
+    }
+    // A stream that wants a dictionary cannot be read without one, and none is offered here.
+    if (header.header.needsDictionary) {
+        result.error = dictionaryError();
+        return result;
+    }
+
+    // The deflate stream is everything between the header and the four byte checksum.
+    const std::vector<std::uint8_t> body(input.begin() + 2, input.end() - 4);
+    const InflateResult inflated = inflate(body);
+    if (!inflated.valid) {
+        result.error = inflated.error;
+        return result;
+    }
+
+    // The checksum covers what came out, not what went in.
+    const std::uint32_t stored = adlerFromBigEndian(input[input.size() - 4], input[input.size() - 3],
+                                                    input[input.size() - 2], input[input.size() - 1]);
+    if (adler32(inflated.output) != stored) {
+        result.error = checksumError();
+        return result;
+    }
+    result.valid = true;
+    result.output = inflated.output;
+    return result;
+}

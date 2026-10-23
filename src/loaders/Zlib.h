@@ -228,4 +228,25 @@ class Zlib {
     static std::string blockTypeError();
     static std::string symbolError();
     static std::string matchError();
+    // A checksum read back from four bytes. The zlib format writes it with the most significant
+    // byte first, which is the opposite of the way every other number in a deflate stream is
+    // written, so this one has to be assembled from the far end.
+    static std::uint32_t adlerFromBigEndian(std::uint32_t b0, std::uint32_t b1, std::uint32_t b2,
+                                            std::uint32_t b3);
+
+    // The whole zlib format: a two byte header, the deflate stream, then the checksum of what
+    // came out. The checksum is checked rather than merely skipped, since a stream whose data is
+    // intact but whose checksum is not has been damaged and should say so.
+    struct UnzlibResult {
+        bool valid = false;
+        std::vector<std::uint8_t> output;
+        std::string error;
+    };
+
+    static UnzlibResult unzlib(const std::vector<std::uint8_t>& input);
+
+    // The errors the wrapper can raise.
+    static std::string shortError();
+    static std::string checksumError();
+    static std::string dictionaryError();
 };
