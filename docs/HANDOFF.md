@@ -2737,6 +2737,12 @@
    - **改好之后**：注册路径改成 `nodes/core/`，重新配置与构建，用例数应当从 2018 涨到 2022。
    - **`StructType` 本身**：名字、成员表、`output` 标志（初值为假）、按名精确查找、可为空。四个用例、十四条断言。
    - **验证**：核心用例数应增加 4。
+450. **第 136 轮：节点层缺口的精确清单**。
+   - **上游 `src/nodes/core` 有 41 个模块**；端口 `src/nodes` 有 **10 个**：`Node`、`NodeCache`、`NodeCode`、`NodeConstants`、`NodeError`、`NodeFunctionInput`、`NodeUtils`、`NodeVar`、`StackTrace`、`StructType`（最后一个本轮新加）。**已做了的这几个质量不低**——`StackTrace` 里连 Chrome 与 Firefox 两种栈格式的解析都写了。
+   - **`core` 缺的 31 个**：`ArrayNode`、`AssignNode`、`AttributeNode`、`BypassNode`、`constants`、`ConstNode`、`ContextNode`、`IndexNode`、`InputNode`、`InspectorNode`、`IsolateNode`、`LightingModel`、`MRTNode`、`NodeAttribute`、`NodeBuilder`、`NodeFrame`、`NodeFunction`、`NodeParser`、`NodeUniform`、`NodeVarying`、`OutputStructNode`、`OverrideContextNode`、`ParameterNode`、`PropertyNode`、`StackNode`、`StructNode`、`StructTypeNode`、`SubBuildNode`、`TempNode`、`UniformGroupNode`、`UniformNode`、`VarNode`、`VaryingNode`。
+   - **`core` 之外**：上游还有 `accessors` 43 个、`display` 18 个、`lighting` 23 个、`utils` 31 个、`functions` 24 个、`math` 11 个、`gpgpu` 6 个、`materialx` 5 个、`code` 4 个、`parsers` 2 个、`pmrem` 2 个、`tsl` 2 个、`fog`/`geometry`/`procedural`/`shapes` 各 1 个。**合计 219 个文件里，端口覆盖 10 个。**
+   - **这份清单的意义**：它把"TSL 还差多少"从一句形容变成了可逐项勾掉的列表。**下一轮从 `core` 里挑最小的一个开始**——`ConstNode` 与 `NodeFrame` 都只有几十行。
+   - **验证**：核心 2022 用例 / 214,418 断言、`primitive-geometry`、`port-audit`、addons、`--cube` 全绿。
 70. **第 520 轮：完整 Vulkan 套件 211/211 全绿，耗时 270.72 秒**。
    - 命令：`ctest --test-dir build-vulkan -j 4 -E "lights-states" --output-on-failure`（仍排除第 46 条那个已知项；它在 Vulkan 构建里同样慢）。
    - 结果：**100% tests passed, 0 tests failed out of 211**，总耗时 **270.72 秒**。对比同一套件在 **Debug** 配置下的 **3784.56 秒 / 2 失败**，差了约 14 倍——再次印证第 69 条"是构建类型不是代码"的结论。
