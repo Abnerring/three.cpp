@@ -35,3 +35,40 @@ int EXRLoader::unZigZagIndex(int k) {
     if (k < 0 || k >= 64) return -1;
     return unZigZagOrder()[static_cast<std::size_t>(k)];
 }
+
+int EXRLoader::uint16Bits(int value) {
+    // The low sixteen bits.
+    return value & 0xFFFF;
+}
+
+int EXRLoader::int16Bits(int value) {
+    const int bits = uint16Bits(value);
+    // Above the signed maximum the value is negative, a whole range lower.
+    return bits > 0x7FFF ? bits - 0x10000 : bits;
+}
+
+EXRLoader::WaveletPair EXRLoader::wdec14(int l, int h) {
+    const int low = int16Bits(l);
+    const int high = int16Bits(h);
+    // Half of the high coefficient, rounded up by its parity, recovers the first sample.
+    const int sum = low + (high & 1) + (high >> 1);
+    WaveletPair pair;
+    pair.a = sum;
+    pair.b = sum - high;
+    return pair;
+}
+
+void EXRLoader::csc709Inverse(YcbcrPixel& pixel) {
+    // The three inputs are read before any output is written, which matters because they share
+    // the same storage.
+    const double y = pixel.y;
+    const double cb = pixel.cb;
+    const double cr = pixel.cr;
+    pixel.y = y + 1.5747 * cr;
+    pixel.cb = y - 0.1873 * cb - 0.4682 * cr;
+    pixel.cr = y + 1.8556 * cb;
+}
+
+void EXRLoader::csc709InverseBlock(YcbcrPixel* pixels, std::size_t count) {
+    for (std::size_t i = 0; i < count; ++i) csc709Inverse(pixels[i]);
+}
