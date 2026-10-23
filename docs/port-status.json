@@ -194,8 +194,8 @@
     "note": "Accepted port scope is src and examples/jsm, including tracked third-party dependencies. Editor/manual web applications are excluded from native application rewrites. Native host behavior, packaging and all three platforms require separate implementation and verification evidence."
   },
   "counts": {
-    "partial-unverified": 316,
-    "missing": 625,
+    "partial-unverified": 318,
+    "missing": 623,
     "vulkan-port-pending": 290,
     "dependency-unverified": 20
   },
@@ -203,8 +203,8 @@
     "src": {
       "modules": 755,
       "counts": {
-        "partial-unverified": 232,
-        "missing": 233,
+        "partial-unverified": 234,
+        "missing": 231,
         "vulkan-port-pending": 290
       }
     },
@@ -803,7 +803,7 @@
       "path": "src/nodes/core",
       "upstreamFiles": 42,
       "moduleCount": 42,
-      "modulesWithCppFiles": 13,
+      "modulesWithCppFiles": 15,
       "verifiedComplete": 0
     },
     {
@@ -8967,11 +8967,11 @@
       "scope": "src",
       "kind": "core",
       "upstreamSha256": "6bfcefefc4e32dd4e7d3214e4af22cdf4af95a1a5d9888dc4a9f44a9602f6d13",
-      "header": null,
+      "header": "src/nodes/core/NodeAttribute.h",
       "implementation": null,
       "expectedHeader": "src/nodes/core/NodeAttribute.h",
       "expectedImplementation": "src/nodes/core/NodeAttribute.cpp",
-      "status": "missing",
+      "status": "partial-unverified",
       "verifiedComplete": false,
       "apiExtraction": "static-only",
       "verification": {
@@ -9185,11 +9185,11 @@
       "scope": "src",
       "kind": "core",
       "upstreamSha256": "2f2991c0d6e104239581370d21b2c80242f84685f2293bbd1259aa8cd7ff5354",
-      "header": null,
-      "implementation": null,
+      "header": "src/nodes/core/NodeParser.h",
+      "implementation": "src/nodes/core/NodeParser.cpp",
       "expectedHeader": "src/nodes/core/NodeParser.h",
       "expectedImplementation": "src/nodes/core/NodeParser.cpp",
-      "status": "missing",
+      "status": "partial-unverified",
       "verifiedComplete": false,
       "apiExtraction": "static-only",
       "verification": {
