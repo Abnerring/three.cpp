@@ -194,8 +194,8 @@
     "note": "Accepted port scope is src and examples/jsm, including tracked third-party dependencies. Editor/manual web applications are excluded from native application rewrites. Native host behavior, packaging and all three platforms require separate implementation and verification evidence."
   },
   "counts": {
-    "partial-unverified": 335,
-    "missing": 606,
+    "partial-unverified": 336,
+    "missing": 605,
     "vulkan-port-pending": 290,
     "dependency-unverified": 20
   },
@@ -203,8 +203,8 @@
     "src": {
       "modules": 755,
       "counts": {
-        "partial-unverified": 251,
-        "missing": 214,
+        "partial-unverified": 252,
+        "missing": 213,
         "vulkan-port-pending": 290
       }
     },
@@ -803,7 +803,7 @@
       "path": "src/nodes/core",
       "upstreamFiles": 42,
       "moduleCount": 42,
-      "modulesWithCppFiles": 32,
+      "modulesWithCppFiles": 33,
       "verifiedComplete": 0
     },
     {
@@ -9684,11 +9684,11 @@
       "scope": "src",
       "kind": "core",
       "upstreamSha256": "1e1a56822e70a8da9cb5c97d7f548b67dfb5b6a26d115cf19620f0e93da81338",
-      "header": null,
-      "implementation": null,
+      "header": "src/nodes/core/UniformNode.h",
+      "implementation": "src/nodes/core/UniformNode.cpp",
       "expectedHeader": "src/nodes/core/UniformNode.h",
       "expectedImplementation": "src/nodes/core/UniformNode.cpp",
-      "status": "missing",
+      "status": "partial-unverified",
       "verifiedComplete": false,
       "apiExtraction": "static-only",
       "verification": {
@@ -9697,7 +9697,9 @@
           "pointer": "/modules/298"
         },
         "upstreamUnitTests": [],
-        "cppUnitTests": [],
+        "cppUnitTests": [
+          "test/unit/src/nodes/core/UniformNode.tests.cpp"
+        ],
         "reviewedImplementation": [],
         "differentialResults": [],
         "renderingResults": [],
