@@ -261,3 +261,21 @@ bool GLTFLoader::sparseNormalized(bool /*normalized*/) {
     // Whatever the accessor declared, a sparse override reports itself as not normalised.
     return false;
 }
+
+GLTFLoader::NodeTransform GLTFLoader::nodeTransform(
+    bool hasMatrix, const std::array<double, 16>& matrix, bool hasTranslation,
+    const std::array<double, 3>& translation, bool hasRotation,
+    const std::array<double, 4>& rotation, bool hasScale, const std::array<double, 3>& scale) {
+    NodeTransform transform;
+    // A matrix replaces the three entirely rather than combining with them.
+    if (hasMatrix) {
+        transform.hasMatrix = true;
+        transform.matrix = matrix;
+        return transform;
+    }
+    // Each of the three is taken on its own and left alone when it was not given.
+    if (hasTranslation) transform.translation = translation;
+    if (hasRotation) transform.rotation = rotation;
+    if (hasScale) transform.scale = scale;
+    return transform;
+}

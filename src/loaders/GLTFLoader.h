@@ -1,4 +1,5 @@
 #pragma once
+#include <array>
 #include <cstdint>
 #include <string>
 #include <utility>
@@ -114,4 +115,25 @@ class GLTFLoader {
     // turns the flag off for these, because the values copied in are already in their final
     // form.
     static bool sparseNormalized(bool normalized);
+    // How a node is placed. A node either carries a full matrix or a translation, a rotation
+    // and a scale, and the two forms are exclusive: a node that has a matrix ignores the three
+    // even when they are present. Each of the three may be left out on its own, in which case
+    // it keeps the value a fresh object has.
+    struct NodeTransform {
+        // True when the matrix was given; the three below are then unset and unused.
+        bool hasMatrix = false;
+        std::array<double, 16> matrix{1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1};
+        std::array<double, 3> translation{0, 0, 0};
+        // A quaternion in x, y, z, w order, which is the identity as written.
+        std::array<double, 4> rotation{0, 0, 0, 1};
+        std::array<double, 3> scale{1, 1, 1};
+    };
+
+    // Builds the transform a node declares. The matrix wins when present; otherwise each of
+    // the three is taken when present and left at its default when not.
+    static NodeTransform nodeTransform(bool hasMatrix, const std::array<double, 16>& matrix,
+                                       bool hasTranslation,
+                                       const std::array<double, 3>& translation, bool hasRotation,
+                                       const std::array<double, 4>& rotation, bool hasScale,
+                                       const std::array<double, 3>& scale);
 };
