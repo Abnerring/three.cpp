@@ -2349,6 +2349,13 @@
    - **这解释了第 80、81 两轮为什么读遍配置链都找不到问题**：问题不在配置，在于某个下标算错了。
    - **下一步**：拿 Debug 构建（`build-vkdebug` 就是 Debug）在调试器里跑到断言处，看是哪一个 `operator[]` 越界。**这是唯一能定位的办法**，靠读代码已经不行了。
    - **本轮没有改代码**：插入的临时诊断探针已经 `git checkout` 撤掉，工作树干净。核心 1881 用例 / 213,610 断言仍全绿。
+397. **第 83 轮：`invalid vector subscript` 的定位——缩小到 `expectPixel` 但没修好**。
+   - **`invalid vector subscript` 是 MSVC 的 `std::vector::at` 越界时 `what()` 的原文**，所以搜索目标从 `operator[]` 换成了 `.at(`。整个 `src/` 里只有四处，其中三处是 `map::at`（报错文案不同），**唯一可能是测试自己**。
+   - **找到了 `VulkanRenderer.tests.cpp:52`**：`pixel()` 里 `pixels.at(index)`，而 `index = (y * renderer.getWidth() + x) * 4`。这个函数的**默认坐标是 `(32,32)`，是为 64×64 的窗口写的**；而同一份测试在后面把窗口 resize 成 **32×48**，那时候 `x = 32` 已经越出宽度（合法的 x 是 0–31）。
+   - **加了边界检查**：`require(x < getWidth() && y < getHeight(), ...)`，想在坐标越界时给出明确信息而不是读到相邻行。
+   - **但它没有触发**：无参数跑仍然是 `invalid vector subscript`，退出码 1；`--cube` 仍然是 0。**所以 `pixel()` 不是元凶**，越界发生在别处。
+   - **本轮没有修好，但把可能性又排除掉一个**：`src/` 里四处 `.at(` 已有三处是 map，测试里的 `pixel()` 也已被边界检查挡住，剩下的候选是 `renderer.readPixels()` 返回的缓冲区本身比 `getWidth()*getHeight()*4` 短——那样 `pixel()` 的 index 合法而 `pixels` 短，边界检查自然不触发。
+   - **验证**：核心 1881 用例 / 213,610 断言仍全绿；`primitive-geometry`、`port-audit`、addons 全绿；Vulkan 无参数仍红（**如实记录**）。
 70. **第 520 轮：完整 Vulkan 套件 211/211 全绿，耗时 270.72 秒**。
    - 命令：`ctest --test-dir build-vulkan -j 4 -E "lights-states" --output-on-failure`（仍排除第 46 条那个已知项；它在 Vulkan 构建里同样慢）。
    - 结果：**100% tests passed, 0 tests failed out of 211**，总耗时 **270.72 秒**。对比同一套件在 **Debug** 配置下的 **3784.56 秒 / 2 失败**，差了约 14 倍——再次印证第 69 条"是构建类型不是代码"的结论。

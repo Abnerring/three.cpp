@@ -48,6 +48,10 @@ void renderHostTurn(VulkanRenderer& renderer, Scene& scene, Camera& camera) {
 }
 std::array<int, 4> pixel(const VulkanRenderer& renderer, unsigned x = 32, unsigned y = 32) {
     const auto pixels = renderer.readPixels();
+    // The coordinates must lie inside the framebuffer; a caller that kept the default
+    // coordinates across a resize would otherwise read a neighbouring row and report the
+    // colour it found there as the answer.
+    require(x < renderer.getWidth() && y < renderer.getHeight(), "pixel coordinates are inside the framebuffer");
     const auto index = (y * renderer.getWidth() + x) * 4;
     return {pixels.at(index), pixels.at(index + 1), pixels.at(index + 2), pixels.at(index + 3)};
 }
