@@ -3251,6 +3251,14 @@
    - **成员两种写法**：字符串 → `atomic: false`；对象 → `value.atomic || false`。
    - **测试（6 个用例、32 条断言）**：类型八处；单成员四处；第二成员五处；最大对齐三处；缺失成员六处；原子标志六处。
    - **验证**：核心 **2334 用例 / 216,139 断言**、`primitive-geometry`、`port-audit`、addons 全绿。
+525. **第 217 轮：`UniformGroupNode` 的五处规则**。
+   - **类型是 `'string'`**：`super( 'string' )`——**一个"字符串"类型的节点，用来给 uniform 分组**。一个想在这里找 uniform 缓冲类型的读法会扑空。
+   - **两个工厂的 `order` 缺省不同**：`uniformGroup` 是 **1**、`sharedUniformGroup` 是 **0**。**所以共享组默认排在前面**，不需要调用方说明。
+   - **三个预设里有一个是异类**：`frameGroup` 与 `renderGroup` 都 **shared、order 0**；而 **`objectGroup` 不共享、order 1**，所以它的排序与另两个不同。
+   - **两处设置不被序列化**：`serialize` 只写 `name`、`version`、`shared`，**不写 `order` 与 `updateType`**。所以**读回来的组会拿到一个新的默认 order、并且完全没有 update 类型**——**五项设置里两项在往返中丢失**。
+   - **一个从未初始化的标志**：`update()` 里设 `this.needsUpdate = true`，而**构造函数里没有给这个属性初值**，所以**在第一次更新之前它是"不存在"而不是 `false`**。
+   - **测试（5 个用例、29 条断言）**：类型四处；两个缺省六处；三个预设十二处；序列化三处；标志三处。
+   - **验证**：核心 **2339 用例 / 216,171 断言**（+5 / +29）、`primitive-geometry`、`port-audit`、addons、`--cube` 全绿。
 70. **第 520 轮：完整 Vulkan 套件 211/211 全绿，耗时 270.72 秒**。
    - 命令：`ctest --test-dir build-vulkan -j 4 -E "lights-states" --output-on-failure`（仍排除第 46 条那个已知项；它在 Vulkan 构建里同样慢）。
    - 结果：**100% tests passed, 0 tests failed out of 211**，总耗时 **270.72 秒**。对比同一套件在 **Debug** 配置下的 **3784.56 秒 / 2 失败**，差了约 14 倍——再次印证第 69 条"是构建类型不是代码"的结论。
