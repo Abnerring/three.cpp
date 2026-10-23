@@ -2743,6 +2743,12 @@
    - **`core` 之外**：上游还有 `accessors` 43 个、`display` 18 个、`lighting` 23 个、`utils` 31 个、`functions` 24 个、`math` 11 个、`gpgpu` 6 个、`materialx` 5 个、`code` 4 个、`parsers` 2 个、`pmrem` 2 个、`tsl` 2 个、`fog`/`geometry`/`procedural`/`shapes` 各 1 个。**合计 219 个文件里，端口覆盖 10 个。**
    - **这份清单的意义**：它把"TSL 还差多少"从一句形容变成了可逐项勾掉的列表。**下一轮从 `core` 里挑最小的一个开始**——`ConstNode` 与 `NodeFrame` 都只有几十行。
    - **验证**：核心 2022 用例 / 214,418 断言、`primitive-geometry`、`port-audit`、addons、`--cube` 全绿。
+451. **第 137 轮：`NodeFrame` 的两处真怪处**。
+   - **两个方法的记账顺序相反**：`updateBefore` 是**先把 id 记上、再调节点**，节点返回假才回滚；而 `update` 与 `updateAfter` 是**先调节点、只有不返回假才记账**。**同一个文件里两种顺序**，差别只在"节点拒绝时"。端口用一个 `GateDecision` 枚举把这件事显式表达出来，而不是藏在两个几乎相同的函数里。
+   - **`performance.now()` 被叫了两次**：`deltaTime` 与 `lastTime` 来自**两个不同的瞬间**，所以步长其实略大于真实间隔。端口把"两个读数"作为参数传进来，而不是自己调时钟——**这样这个差异是显式的，类也不依赖任何时钟**。
+   - **对象更新永远不过闸**，而"没有更新类型"的节点根本不会跑（源里靠落空三个比较达到）。
+   - **测试（4 个用例、20 条断言）**：帧与渲染两种闸的跳过与放行；**两种顺序必须给出不同答案**；对象更新与无类型；计数器的推进（含"渲染计数不被推进"）。
+   - **验证**：核心 **2026 用例 / 214,438 断言**（+4 / +20）、`primitive-geometry`、`port-audit`、addons、`--cube` 全绿。
 70. **第 520 轮：完整 Vulkan 套件 211/211 全绿，耗时 270.72 秒**。
    - 命令：`ctest --test-dir build-vulkan -j 4 -E "lights-states" --output-on-failure`（仍排除第 46 条那个已知项；它在 Vulkan 构建里同样慢）。
    - 结果：**100% tests passed, 0 tests failed out of 211**，总耗时 **270.72 秒**。对比同一套件在 **Debug** 配置下的 **3784.56 秒 / 2 失败**，差了约 14 倍——再次印证第 69 条"是构建类型不是代码"的结论。
