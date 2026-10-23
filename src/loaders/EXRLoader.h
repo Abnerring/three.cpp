@@ -2,6 +2,7 @@
 #include <array>
 #include <cstddef>
 #include <cstdint>
+#include <string>
 #include <vector>
 
 // Port of the small bit helpers in examples/jsm/loaders/EXRLoader.js at the pinned revision. The
@@ -185,4 +186,19 @@ class EXRLoader {
     // down until fourteen bits remain above the ones already consumed and then masked, so the
     // answer is the top fourteen of what is live.
     static int decodeTableIndex(std::int32_t accumulate, int liveBits);
+    // The number of symbols a Huffman table may describe.
+    static constexpr int kHufEncSize = 1 << 16;
+
+    // Whether the two ends of the symbol range a table describes are usable. Both are read from
+    // the file and both have to fall inside the table, which is what the first check is for.
+    static bool hufRangeValid(std::uint32_t im, std::uint32_t iM);
+
+    // Whether a run of bits fits in the bytes that are left. The check is made after the table
+    // itself has been unpacked rather than before, since unpacking consumes bytes and the count
+    // that remains is what the bits have to fit into.
+    static bool hufBitsFit(std::uint32_t nBits, std::size_t remainingBytes);
+
+    // The two messages the wrapper can raise.
+    static std::string hufRangeMessage();
+    static std::string hufBitsMessage();
 };

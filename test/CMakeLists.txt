@@ -216,6 +216,7 @@ add_executable(THREECPPTests
         unit/src/loaders/EXRHufDecTable.tests.cpp
         unit/src/loaders/EXRBitStream.tests.cpp
         unit/src/loaders/EXRDecodeIndex.tests.cpp
+        unit/src/loaders/EXRHufWrap.tests.cpp
         unit/src/cameras/StereoCamera.tests.cpp
         unit/src/audio/AudioContext.tests.cpp
         unit/src/audio/Audio.tests.cpp

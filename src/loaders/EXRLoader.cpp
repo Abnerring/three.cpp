@@ -377,3 +377,22 @@ int EXRLoader::decodeTableIndex(std::int32_t accumulate, int liveBits) {
     if (liveBits < kHufDecodeBits) return 0;
     return (accumulate >> (liveBits - kHufDecodeBits)) & kHufDecodeMask;
 }
+
+bool EXRLoader::hufRangeValid(std::uint32_t im, std::uint32_t iM) {
+    // Both ends have to fall inside the table the symbols are counted in.
+    const auto limit = static_cast<std::uint32_t>(kHufEncSize);
+    return im < limit && iM < limit;
+}
+
+bool EXRLoader::hufBitsFit(std::uint32_t nBits, std::size_t remainingBytes) {
+    // Eight bits to a byte, so the run cannot want more than eight times what is left.
+    return static_cast<std::uint64_t>(nBits) <= 8ull * static_cast<std::uint64_t>(remainingBytes);
+}
+
+std::string EXRLoader::hufRangeMessage() {
+    return "THREE.EXRLoader: Something wrong with HUF_ENCSIZE";
+}
+
+std::string EXRLoader::hufBitsMessage() {
+    return "THREE.EXRLoader: Something wrong with hufUncompress";
+}
