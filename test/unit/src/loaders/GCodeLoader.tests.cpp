@@ -121,3 +121,76 @@ TEST_CASE("GCodeLoader starts a layer only when extruding at a new height") {
     REQUIRE_FALSE(GCodeLoader::beginsLayer(true, 0.3, 0.6, false));
     REQUIRE_FALSE(GCodeLoader::beginsLayer(false, 0.0, 5.0, false));
 }
+TEST_CASE("GCodeLoader switches the positioning mode") {
+    GCodeLoader::State state;
+    // The default is absolute with no extruder override.
+    REQUIRE_FALSE(state.relative);
+    REQUIRE_FALSE(state.extrusionOverride);
+    // A relative command turns it on.
+    REQUIRE(GCodeLoader::applyModeCommand("G91", state));
+    REQUIRE(state.relative);
+    // An absolute one turns it off again.
+    REQUIRE(GCodeLoader::applyModeCommand("G90", state));
+    REQUIRE_FALSE(state.relative);
+}
+
+TEST_CASE("GCodeLoader switches the extruder override") {
+    GCodeLoader::State state;
+    // An absolute extruder whatever the axes do.
+    REQUIRE(GCodeLoader::applyModeCommand("M82", state));
+    REQUIRE(state.extrusionOverride);
+    REQUIRE_FALSE(state.extrusionRelative);
+    // A relative one.
+    REQUIRE(GCodeLoader::applyModeCommand("M83", state));
+    REQUIRE(state.extrusionOverride);
+    REQUIRE(state.extrusionRelative);
+}
+
+TEST_CASE("GCodeLoader clears the extruder override on a positioning command") {
+    // This is the part that is easy to miss: a G90 or G91 cancels an earlier M82 or M83.
+    GCodeLoader::State state;
+    REQUIRE(GCodeLoader::applyModeCommand("M83", state));
+    REQUIRE(state.extrusionOverride);
+    // The positioning command clears it.
+    REQUIRE(GCodeLoader::applyModeCommand("G90", state));
+    REQUIRE_FALSE(state.extrusionOverride);
+    // The same for the other one.
+    REQUIRE(GCodeLoader::applyModeCommand("M82", state));
+    REQUIRE(state.extrusionOverride);
+    REQUIRE(GCodeLoader::applyModeCommand("G91", state));
+    REQUIRE_FALSE(state.extrusionOverride);
+}
+
+TEST_CASE("GCodeLoader ignores a command that is not a mode") {
+    GCodeLoader::State state;
+    state.relative = true;
+    state.extrusionOverride = true;
+    // A command it does not know leaves everything as it was.
+    REQUIRE_FALSE(GCodeLoader::applyModeCommand("G1", state));
+    REQUIRE_FALSE(GCodeLoader::applyModeCommand("M104", state));
+    REQUIRE_FALSE(GCodeLoader::applyModeCommand("", state));
+    REQUIRE(state.relative);
+    REQUIRE(state.extrusionOverride);
+    // Only the four count.
+    REQUIRE(GCodeLoader::isModeCommand("G90"));
+    REQUIRE(GCodeLoader::isModeCommand("M83"));
+    REQUIRE_FALSE(GCodeLoader::isModeCommand("G0"));
+}
+
+TEST_CASE("GCodeLoader resets only the axes a command names") {
+    GCodeLoader::State state;
+    state.x = 1;
+    state.y = 2;
+    state.z = 3;
+    state.e = 4;
+    // Only x and e are named.
+    GCodeLoader::resetPosition(state, 10, true, 0, false, 0, false, 40, true);
+    REQUIRE(state.x == 10);
+    REQUIRE(state.y == 2);
+    REQUIRE(state.z == 3);
+    REQUIRE(state.e == 40);
+    // A reset that names nothing changes nothing.
+    GCodeLoader::resetPosition(state, 99, false, 99, false, 99, false, 99, false);
+    REQUIRE(state.x == 10);
+    REQUIRE(state.e == 40);
+}

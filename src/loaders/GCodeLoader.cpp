@@ -75,3 +75,45 @@ bool GCodeLoader::beginsLayer(bool hasLayer, double layerZ, double z, bool extru
     if (!hasLayer) return true;
     return z != layerZ;
 }
+
+bool GCodeLoader::applyModeCommand(const std::string& command, State& state) {
+    if (command == "G90") {
+        // Absolute positioning, and the extruder's override goes with it.
+        state.relative = false;
+        state.extrusionOverride = false;
+        return true;
+    }
+    if (command == "G91") {
+        // Relative positioning, and likewise.
+        state.relative = true;
+        state.extrusionOverride = false;
+        return true;
+    }
+    if (command == "M82") {
+        // The extruder reads absolutes whatever the other axes do.
+        state.extrusionOverride = true;
+        state.extrusionRelative = false;
+        return true;
+    }
+    if (command == "M83") {
+        // The extruder reads offsets whatever the other axes do.
+        state.extrusionOverride = true;
+        state.extrusionRelative = true;
+        return true;
+    }
+    return false;
+}
+
+bool GCodeLoader::isModeCommand(const std::string& command) {
+    return command == "G90" || command == "G91" || command == "M82" || command == "M83";
+}
+
+void GCodeLoader::resetPosition(State& state, double x, bool hasX, double y, bool hasY, double z,
+                                bool hasZ, double e, bool hasE) {
+    // Only the named axes move, and they are written as given rather than through the relative
+    // rule, since a position reset states what the position is.
+    if (hasX) state.x = x;
+    if (hasY) state.y = y;
+    if (hasZ) state.z = z;
+    if (hasE) state.e = e;
+}

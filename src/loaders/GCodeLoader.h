@@ -78,4 +78,20 @@ class GCodeLoader {
     // Whether a step begins a new layer. Only an extruding step can, and then only when there is
     // no layer yet or the height differs from the one the current layer started at.
     static bool beginsLayer(bool hasLayer, double layerZ, double z, bool extruding);
+    // The four commands that change how later numbers are read. Each returns whether it applied,
+    // so a caller can tell a mode change from a command it does not know.
+    //
+    // The two positioning commands do something easy to miss: besides setting their own mode they
+    // also clear the extruder's override, so an M82 or M83 earlier in the program stops applying
+    // as soon as a G90 or G91 appears.
+    static bool applyModeCommand(const std::string& command, State& state);
+
+    // Whether a command is one of the four.
+    static bool isModeCommand(const std::string& command);
+
+    // A position reset. Only the axes the command names are changed; the rest keep their values.
+    // The source mutates the state object in place rather than building a new one, which amounts
+    // to the same thing as long as every axis is written back.
+    static void resetPosition(State& state, double x, bool hasX, double y, bool hasY, double z,
+                              bool hasZ, double e, bool hasE);
 };
