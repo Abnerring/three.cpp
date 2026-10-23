@@ -696,3 +696,13 @@ EXRLoader::ZipBlockResult EXRLoader::uncompressZIP(const std::vector<std::uint8_
     result.valid = true;
     return result;
 }
+
+EXRLoader::RleBlockResult EXRLoader::uncompressRLE(const std::vector<std::uint8_t>& block) {
+    RleBlockResult result;
+    // The runs are expanded first, then the predictor is undone, then the halves are joined.
+    std::vector<std::uint8_t> bytes = decodeRunLength(block);
+    revertPredictor(bytes);
+    result.bytes = interleaveScalar(bytes);
+    result.valid = true;
+    return result;
+}

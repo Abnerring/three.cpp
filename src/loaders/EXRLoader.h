@@ -456,4 +456,14 @@ class EXRLoader {
     };
 
     static ZipBlockResult uncompressZIP(const std::vector<std::uint8_t>& block);
+    // A block compressed with runs: a negative count introduces that many bytes as they are,
+    // and a count of zero or more introduces that many plus one copies of the byte after it. The
+    // predictor and the interleave then undo exactly as they do for a zipped block.
+    struct RleBlockResult {
+        bool valid = false;
+        std::vector<std::uint8_t> bytes;
+        std::string error;
+    };
+
+    static RleBlockResult uncompressRLE(const std::vector<std::uint8_t>& block);
 };
