@@ -302,6 +302,7 @@ add_executable(THREECPPTests
         unit/src/nodes/core/SceneProperties.tests.cpp
         unit/src/nodes/core/Tangent.tests.cpp
         unit/src/nodes/core/Normal.tests.cpp
+        unit/src/nodes/core/ReferenceElementNode.tests.cpp
         unit/src/loaders/EXRSamplesToBytes.tests.cpp
         unit/src/loaders/EXRDecompressBlock.tests.cpp
         unit/src/loaders/Zlib.tests.cpp
