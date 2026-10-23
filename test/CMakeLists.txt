@@ -265,6 +265,7 @@ add_executable(THREECPPTests
         unit/src/loaders/ZlibInflate.tests.cpp
         unit/src/loaders/ZlibUnzlib.tests.cpp
         unit/src/loaders/ZlibReal.tests.cpp
+        unit/src/loaders/Zip.tests.cpp
         unit/src/loaders/EXRValues.tests.cpp
         unit/src/loaders/EXRChlist.tests.cpp
         unit/src/loaders/EXRTile.tests.cpp
