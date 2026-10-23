@@ -297,6 +297,7 @@ add_executable(THREECPPTests
         unit/src/nodes/core/NodeVarying.tests.cpp
         unit/src/nodes/core/AccessorNames.tests.cpp
         unit/src/nodes/core/PointUVNode.tests.cpp
+        unit/src/nodes/core/TangentUtils.tests.cpp
         unit/src/loaders/EXRSamplesToBytes.tests.cpp
         unit/src/loaders/EXRDecompressBlock.tests.cpp
         unit/src/loaders/Zlib.tests.cpp
