@@ -622,4 +622,21 @@ class EXRLoader {
     static bool hasLongNames(int flags);
     static bool hasDeepData(int flags);
     static bool unusedFlagSet(int flags);
+    // The encoded table a block carries: for each symbol between the two ends, six bits saying
+    // how long its code is, with two special lengths standing for runs of symbols that do not
+    // appear at all. A run of the short kind is written in the six bits themselves; a run of the
+    // long kind follows with eight more bits saying how long it is.
+    struct EncTableResult {
+        bool valid = false;
+        std::vector<int> lengths;
+        std::string error;
+    };
+
+    static EncTableResult hufUnpackEncTable(const std::vector<std::uint8_t>& data,
+                                            std::size_t& byteOffset, int& liveBits,
+                                            std::uint32_t& accumulator, std::size_t compressedSize,
+                                            std::uint32_t im, std::uint32_t iM);
+
+    // The error the unpacker raises when a run would reach past the far end.
+    static std::string hufTableMessage();
 };

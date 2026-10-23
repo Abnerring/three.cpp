@@ -956,3 +956,69 @@ bool EXRLoader::unusedFlagSet(int flags) {
     // The bits the format leaves unset are all but these four.
     return (flags & ~0x1Fu) != 0;
 }
+
+std::string EXRLoader::hufTableMessage() {
+    return "THREE.EXRLoader: Something wrong with hufUnpackEncTable";
+}
+
+EXRLoader::EncTableResult EXRLoader::hufUnpackEncTable(const std::vector<std::uint8_t>& data,
+                                                       std::size_t& byteOffset, int& liveBits,
+                                                       std::uint32_t& accumulator,
+                                                       std::size_t compressedSize, std::uint32_t im,
+                                                       std::uint32_t iM) {
+    EncTableResult result;
+    result.lengths.assign(kHufEncSize, 0);
+    const std::size_t start = byteOffset;
+    // Six bits per symbol, with two special lengths standing for runs.
+    const auto take = [&](int count) {
+        std::uint32_t value = 0;
+        for (int i = 0; i < count; ++i) {
+            if (liveBits == 0) {
+                // A new byte is taken from the stream and its bits are all still to come.
+                if (byteOffset >= data.size()) return -1;
+                accumulator = data[byteOffset++];
+                liveBits = 8;
+            }
+            value = (value << 1) | ((accumulator >> (liveBits - 1)) & 1u);
+            liveBits -= 1;
+        }
+        return static_cast<int>(value);
+    };
+    for (std::uint32_t symbol = im; symbol <= iM; ++symbol) {
+        // The stream must still have room for what is about to be read.
+        if (byteOffset - start > compressedSize) return result;
+        const int length = take(6);
+        if (length < 0) return result;
+        result.lengths[symbol] = length;
+        if (length == 63) {
+            // The long run: eight more bits say how long it is.
+            if (byteOffset - start > compressedSize) {
+                result.error = hufTableMessage();
+                return result;
+            }
+            const int extra = take(8);
+            if (extra < 0) {
+                result.error = hufTableMessage();
+                return result;
+            }
+            const int run = longZeroRunLength(static_cast<std::uint32_t>(extra));
+            if (symbol + static_cast<std::uint32_t>(run) > iM + 1) {
+                result.error = hufTableMessage();
+                return result;
+            }
+            for (int i = 0; i < run; ++i) result.lengths[symbol++] = 0;
+            symbol -= 1;
+        } else if (length >= 59) {
+            // The short run: the length itself says how long.
+            const int run = length - 59 + 2;
+            if (symbol + static_cast<std::uint32_t>(run) > iM + 1) {
+                result.error = hufTableMessage();
+                return result;
+            }
+            for (int i = 0; i < run; ++i) result.lengths[symbol++] = 0;
+            symbol -= 1;
+        }
+    }
+    result.valid = true;
+    return result;
+}
