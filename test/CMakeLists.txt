@@ -176,6 +176,7 @@ add_executable(THREECPPTests
         unit/src/loaders/SVGArc.tests.cpp
         unit/src/loaders/SVGCommand.tests.cpp
         unit/src/loaders/GLTFLoader.tests.cpp
+        unit/src/loaders/GLTFBinary.tests.cpp
         unit/src/cameras/StereoCamera.tests.cpp
         unit/src/audio/AudioContext.tests.cpp
         unit/src/audio/Audio.tests.cpp

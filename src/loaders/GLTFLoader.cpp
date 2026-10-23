@@ -1,4 +1,4 @@
-﻿#include "loaders/GLTFLoader.h"
+#include "loaders/GLTFLoader.h"
 
 #include <algorithm>
 #include <cctype>
@@ -60,4 +60,61 @@ std::string GLTFLoader::imageMimeType(const std::string& uri) {
     if (endsWithExtension(uri, ".ktx2")) return "image/ktx2";
     // Anything else is assumed to be a png.
     return "image/png";
+}
+
+namespace {
+std::uint32_t readLE32(const std::vector<std::uint8_t>& buffer, std::size_t at) {
+    return static_cast<std::uint32_t>(buffer[at]) |
+           (static_cast<std::uint32_t>(buffer[at + 1]) << 8) |
+           (static_cast<std::uint32_t>(buffer[at + 2]) << 16) |
+           (static_cast<std::uint32_t>(buffer[at + 3]) << 24);
+}
+}  // namespace
+
+GLTFLoader::BinaryHeader GLTFLoader::readBinaryHeader(const std::vector<std::uint8_t>& buffer) {
+    if (buffer.size() < static_cast<std::size_t>(kBinaryHeaderLength))
+        throw std::runtime_error("THREE.GLTFLoader: Unsupported glTF-Binary header.");
+
+    BinaryHeader header;
+    // The magic is four characters rather than a number.
+    header.magic.assign(reinterpret_cast<const char*>(buffer.data()), 4);
+    header.version = readLE32(buffer, 4);
+    header.length = readLE32(buffer, 8);
+
+    // A file that does not begin with the magic is not a binary glTF at all.
+    if (header.magic != kBinaryMagic)
+        throw std::runtime_error("THREE.GLTFLoader: Unsupported glTF-Binary header.");
+    // The first version of the format laid its chunks out differently.
+    if (header.version < 2)
+        throw std::runtime_error("THREE.GLTFLoader: Legacy binary file detected.");
+    return header;
+}
+
+std::vector<GLTFLoader::BinaryChunk> GLTFLoader::readBinaryChunks(
+    const std::vector<std::uint8_t>& buffer, const BinaryHeader& header) {
+    std::vector<BinaryChunk> chunks;
+    // The chunks fill whatever the header length leaves.
+    if (header.length < static_cast<std::uint32_t>(kBinaryHeaderLength)) return chunks;
+    std::size_t contentsLength =
+        static_cast<std::size_t>(header.length) - static_cast<std::size_t>(kBinaryHeaderLength);
+    std::size_t index = 0;
+    const std::size_t base = static_cast<std::size_t>(kBinaryHeaderLength);
+
+    // Each chunk is a length and a type followed by that many bytes.
+    while (index + 8 <= contentsLength && base + index + 8 <= buffer.size()) {
+        const std::uint32_t chunkLength = readLE32(buffer, base + index);
+        index += 4;
+        const std::uint32_t chunkType = readLE32(buffer, base + index);
+        index += 4;
+
+        BinaryChunk chunk;
+        chunk.type = chunkType;
+        chunk.offset = base + index;
+        chunk.length = chunkLength;
+        chunks.push_back(chunk);
+
+        // A chunk the caller does not know is skipped rather than refused.
+        index += chunkLength;
+    }
+    return chunks;
 }

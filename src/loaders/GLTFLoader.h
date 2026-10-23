@@ -1,4 +1,4 @@
-﻿#pragma once
+#pragma once
 #include <cstdint>
 #include <string>
 #include <utility>
@@ -33,4 +33,29 @@ class GLTFLoader {
     // The mime type an image reference implies. A data uri names its own type, otherwise the
     // extension decides, and anything else is a png.
     static std::string imageMimeType(const std::string& uri);
+
+    // The twelve byte header of a binary glTF file: four characters of magic, a version and the
+    // total length, the last two little endian.
+    struct BinaryHeader {
+        std::string magic;
+        std::uint32_t version = 0;
+        std::uint32_t length = 0;
+    };
+
+    // Reads the header. Throws std::runtime_error when the magic is not the expected one or the
+    // version is below two, both with the source message.
+    static BinaryHeader readBinaryHeader(const std::vector<std::uint8_t>& buffer);
+
+    // One chunk of a binary file. A chunk the loader does not know is reported with its type
+    // so the caller can ignore it, which the format requires.
+    struct BinaryChunk {
+        std::uint32_t type = 0;
+        std::size_t offset = 0;
+        std::uint32_t length = 0;
+    };
+
+    // The chunks that follow the header, read in order. The loop stops when the declared file
+    // length is reached rather than when the buffer ends.
+    static std::vector<BinaryChunk> readBinaryChunks(const std::vector<std::uint8_t>& buffer,
+                                                     const BinaryHeader& header);
 };
