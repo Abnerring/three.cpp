@@ -3379,6 +3379,13 @@
    - **`linearDepth` 有值时两种相机差两层转换**：**透视**要 `perspectiveDepthToViewZ` 再 `viewZToOrthographicDepth`（**两次**）；**正交**已经线性，**直接把值传过去（零次）**。**这是本节点里两种相机差别最大的一处**。
    - **测试（4 个用例、29 条断言）**：类型与三 scope 六处；生成两分支五处；七种建立结果十一处；转换次数与值使用六处。
    - **验证**：核心 **2400 用例 / 216,513 断言**（+4 / +29）、`primitive-geometry`、`port-audit`、addons、`--cube` 全绿。
+542. **第 234 轮：`USDZLoader` 的弃用垫片与 `TTFLoader` 的运行时依赖**。
+   - **`USDZLoader` 是 11 行的垫片**：没有自己的解析，全部转发给 `USDLoader`。**它的警告在 `super()` 之前打印**——**这在构造函数里不寻常，而且后果明确：即使用父类初始化随后失败，用旧名的调用方也已经听到了消息**。
+   - **`TTFLoader` 从 CDN 引库**：`import opentype from 'https://cdn.jsdelivr.net/npm/opentype.js@1.3.4/+esm'`。**所以这个库在页面运行时才取，不在构建时**。**C++ 端口必须自己决定这个依赖从哪来**，本轮把这个事实记下来而不是藏起来。
+   - **错误路径两个分支都通知管理器**：有 `onError` 就交给它，没有就 `console.error`，**而两条路之后都调 `scope.manager.itemError( url )`**。所以**管理器总会知道，而调用方可能不知道**。
+   - **`reversed` 缺省为 `false`**，它是转换选项而不是读文件细节。
+   - **测试（4 个用例、16 条断言）**：垫片五处；警告顺序一处；依赖六处；标志与错误路径五处。
+   - **验证**：核心 **2404 用例 / 216,529 断言**（+4 / +16）、`primitive-geometry`、`port-audit`、addons、`--cube` 全绿。
 70. **第 520 轮：完整 Vulkan 套件 211/211 全绿，耗时 270.72 秒**。
    - 命令：`ctest --test-dir build-vulkan -j 4 -E "lights-states" --output-on-failure`（仍排除第 46 条那个已知项；它在 Vulkan 构建里同样慢）。
    - 结果：**100% tests passed, 0 tests failed out of 211**，总耗时 **270.72 秒**。对比同一套件在 **Debug** 配置下的 **3784.56 秒 / 2 失败**，差了约 14 倍——再次印证第 69 条"是构建类型不是代码"的结论。
