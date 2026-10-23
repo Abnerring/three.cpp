@@ -296,3 +296,32 @@ void EXRLoader::hufCanonicalCodeTable(std::vector<int>& hcode) {
         }
     }
 }
+
+EXRLoader::AcScan EXRLoader::unRleAC(const std::vector<std::uint16_t>& acBuffer,
+                                     std::size_t start) {
+    AcScan scan;
+    scan.values.assign(64, 0);
+    int dctComp = 1;
+    std::size_t current = start;
+
+    while (dctComp < 64 && current < acBuffer.size()) {
+        const std::uint16_t acValue = acBuffer[current];
+
+        if (acValue == 0xff00) {
+            // The end of the block, spelled out rather than implied.
+            dctComp = 64;
+        } else if ((acValue >> 8) == 0xff) {
+            // A skip of that many coefficients.
+            dctComp += acValue & 0xff;
+        } else {
+            // A coefficient, stored where the scan has reached.
+            scan.values[static_cast<std::size_t>(dctComp)] = acValue;
+            dctComp++;
+        }
+
+        current++;
+        scan.wordsRead++;
+    }
+    scan.finalPosition = dctComp;
+    return scan;
+}

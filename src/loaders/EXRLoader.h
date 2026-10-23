@@ -128,4 +128,19 @@ class EXRLoader {
     // code one bit shorter start where the codes below it would have run out. A length of zero
     // marks a symbol that does not appear and is left as it is.
     static void hufCanonicalCodeTable(std::vector<int>& hcode);
+    // Expands the run length form the alternating coefficients are stored in. The scan starts at
+    // the second coefficient, since the first is written separately, and three kinds of word can
+    // appear: one that ends the block, one that says how many coefficients to skip, and one that
+    // is a coefficient itself. The ending word has to be tested first, because it also looks like
+    // a skip of zero once the top byte is looked at on its own.
+    //
+    // A skip may carry the position past the end, in which case the loop stops rather than
+    // writing outside the block, and the position is left where the skip put it.
+    struct AcScan {
+        std::vector<std::uint16_t> values;
+        std::size_t wordsRead = 0;
+        int finalPosition = 1;
+    };
+
+    static AcScan unRleAC(const std::vector<std::uint16_t>& acBuffer, std::size_t start);
 };
