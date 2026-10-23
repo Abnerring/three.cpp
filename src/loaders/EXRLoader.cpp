@@ -365,3 +365,15 @@ EXRLoader::GetBitsResult EXRLoader::getBits(int nBits, BitState state,
     result.value = (state.accumulate >> state.liveBits) & mask;
     return result;
 }
+
+std::size_t EXRLoader::bitByteCount(int bits) {
+    // Seven is added so a partial last byte still counts as one.
+    if (bits <= 0) return 0;
+    return static_cast<std::size_t>((bits + 7) / 8);
+}
+
+int EXRLoader::decodeTableIndex(std::int32_t accumulate, int liveBits) {
+    // The top fourteen of what is live, masked so the sign the shift brings in never reaches it.
+    if (liveBits < kHufDecodeBits) return 0;
+    return (accumulate >> (liveBits - kHufDecodeBits)) & kHufDecodeMask;
+}

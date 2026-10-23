@@ -177,4 +177,12 @@ class EXRLoader {
 
     static GetBitsResult getBits(int nBits, BitState state, const std::vector<std::uint8_t>& bytes,
                                  std::size_t& offset);
+    // How many bytes a run of bits occupies. A run that does not fill its last byte still
+    // occupies it, which is why seven is added before dividing.
+    static std::size_t bitByteCount(int bits);
+
+    // Where in the first level of the decoding table a word is looked up. The word is shifted
+    // down until fourteen bits remain above the ones already consumed and then masked, so the
+    // answer is the top fourteen of what is live.
+    static int decodeTableIndex(std::int32_t accumulate, int liveBits);
 };
