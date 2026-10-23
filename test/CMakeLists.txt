@@ -278,6 +278,7 @@ add_executable(THREECPPTests
         unit/src/loaders/EXRPizUncompress.tests.cpp
         unit/src/loaders/EXRDecompressers.tests.cpp
         unit/src/loaders/EXRPxr.tests.cpp
+        unit/src/loaders/EXRPxrUncompress.tests.cpp
         unit/src/loaders/Zlib.tests.cpp
         unit/src/loaders/ZlibBits.tests.cpp
         unit/src/loaders/ZlibFixed.tests.cpp

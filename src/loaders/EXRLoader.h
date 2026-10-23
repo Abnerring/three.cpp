@@ -752,4 +752,17 @@ class EXRLoader {
 
     // How far the planes for one row move the read position on.
     static std::size_t pxrRowBytes(std::uint32_t columns, int pixelType);
+    // The pixel rate compression end to end: the block is a deflated run of byte planes, and
+    // each row's channel is a difference from the value before it, summed as it is read and
+    // written back little endian. A difference is the running total's own step, so the sum
+    // starts again at zero for each row of each channel rather than running across the block.
+    struct PxrResult {
+        bool valid = false;
+        std::vector<std::uint32_t> values;
+        std::string error;
+    };
+
+    static PxrResult uncompressPXR(const std::vector<std::uint8_t>& block,
+                                   const std::vector<int>& pixelTypes, std::uint32_t columns,
+                                   std::uint32_t lines);
 };

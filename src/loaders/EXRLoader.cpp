@@ -1395,3 +1395,43 @@ std::vector<std::size_t> EXRLoader::pxrPlaneStarts(std::size_t rowStart, std::ui
     }
     return starts;
 }
+
+EXRLoader::PxrResult EXRLoader::uncompressPXR(const std::vector<std::uint8_t>& block,
+                                              const std::vector<int>& pixelTypes,
+                                              std::uint32_t columns, std::uint32_t lines) {
+    PxrResult result;
+    // The planes are deflated, so they are inflated first.
+    const Zlib::UnzlibResult inflated = Zlib::unzlib(block);
+    if (!inflated.valid) {
+        result.error = inflated.error;
+        return result;
+    }
+    const std::vector<std::uint8_t>& raw = inflated.output;
+    std::size_t rowStart = 0;
+    result.values.reserve(static_cast<std::size_t>(columns) * lines * pixelTypes.size());
+    for (std::uint32_t y = 0; y < lines; ++y) {
+        for (const int type : pixelTypes) {
+            const int planes = pxrPlaneCount(type);
+            if (planes == 0) {
+                result.error = "THREE.EXRLoader: Something wrong with PXR_COMPRESSION";
+                return result;
+            }
+            const std::vector<std::size_t> starts = pxrPlaneStarts(rowStart, columns, type);
+            // The sum restarts for each row of each channel.
+            std::uint32_t pixel = 0;
+            for (std::uint32_t j = 0; j < columns; ++j) {
+                const std::size_t at0 = starts[0] + j;
+                const std::size_t at1 = starts[1] + j;
+                const std::size_t at2 = planes > 2 ? starts[2] + j : 0;
+                const std::uint32_t b0 = at0 < raw.size() ? raw[at0] : 0;
+                const std::uint32_t b1 = at1 < raw.size() ? raw[at1] : 0;
+                const std::uint32_t b2 = (planes > 2 && at2 < raw.size()) ? raw[at2] : 0;
+                pixel += pxrDifference(type, b0, b1, b2);
+                result.values.push_back(pixel);
+            }
+            rowStart += pxrRowBytes(columns, type);
+        }
+    }
+    result.valid = true;
+    return result;
+}
