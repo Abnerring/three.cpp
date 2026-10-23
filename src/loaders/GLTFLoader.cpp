@@ -279,3 +279,25 @@ GLTFLoader::NodeTransform GLTFLoader::nodeTransform(
     if (hasScale) transform.scale = scale;
     return transform;
 }
+
+std::string GLTFLoader::pathProperty(const std::string& path) {
+    // Three of the four are renamed on the way in.
+    if (path == "scale") return "scale";
+    if (path == "translation") return "position";
+    if (path == "rotation") return "quaternion";
+    if (path == "weights") return "morphTargetInfluences";
+    throw std::runtime_error("THREE.GLTFLoader: Unsupported animation path.");
+}
+
+bool GLTFLoader::isValidAlphaMode(const std::string& mode) {
+    // The mode is stored as it is written, so only the three words are checked.
+    return mode == "OPAQUE" || mode == "MASK" || mode == "BLEND";
+}
+
+std::string GLTFLoader::interpolationName(const std::string& interpolation) {
+    // A cubic spline has no interpolant of its own here, so its name is passed through.
+    if (interpolation == "CUBICSPLINE") return "CUBICSPLINE";
+    if (interpolation == "LINEAR") return "InterpolateLinear";
+    if (interpolation == "STEP") return "InterpolateDiscrete";
+    throw std::runtime_error("THREE.GLTFLoader: Unsupported interpolation.");
+}

@@ -136,4 +136,17 @@ class GLTFLoader {
                                        const std::array<double, 3>& translation, bool hasRotation,
                                        const std::array<double, 4>& rotation, bool hasScale,
                                        const std::array<double, 3>& scale);
+    // The property an animation channel drives. Three of the four are renamed on the way in,
+    // which is why a channel path cannot simply be copied. A path the format does not allow
+    // throws.
+    static std::string pathProperty(const std::string& path);
+
+    // Whether an alpha mode is one of the three the format allows. The mode is also the value
+    // the port stores, so this check is all that reading one needs.
+    static bool isValidAlphaMode(const std::string& mode);
+
+    // The interpolation a sampler names. A cubic spline is not one of the port's own
+    // interpolants and comes back as its own name for the caller to handle, while the other two
+    // map onto theirs.
+    static std::string interpolationName(const std::string& interpolation);
 };
