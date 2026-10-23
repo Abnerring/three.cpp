@@ -3214,6 +3214,14 @@
    - **已弃用的 `cache()` 仍可链式调用**：`warn` 之后 `isolate( node ).setParent( parent )`——**因为 `isolate()` 没有 parent 参数，长形式必须补这一步**。两个名字都注册成了方法，所以旧名还能用。
    - **测试（3 个用例、17 条断言）**：三步五处；异常与类型查询四处；弃用与两个名字六处。
    - **验证**：核心 **2311 用例 / 216,038 断言**（+3 / +17）、`primitive-geometry`、`port-audit`、addons、`--cube` 全绿。
+520. **第 211 轮：`InspectorNode` 借名字、两种严格度、以及返回别人的链**。
+   - **名字会借**：`getName() { return this.name || this.node.name; }`。**自己没名字时用被包裹节点的名字**，所以一个没给名字的 inspector 答的是包裹者的名字，而不是空。
+   - **一处条件里两种严格度**：`builder.context.inspector === true && this.callback !== null`。**上下文标志是严格比较 true，回调是与 null 比较**——**所以一个"存在但不为 true"的标志不会跑回调，而一个"存在但不是函数"的回调会被调用**。
+   - **警告要两个否定同时成立**：`backend.isWebGPUBackend !== true && inspector.constructor !== InspectorBase`。**所以非 WebGPU 后端配默认 inspector 是静默的**。测试用四种组合的循环断言"只有一种会警告"。
+   - **包装函数返回被包裹节点的链**：`node.before( new InspectorNode( ... ) )`——**返回的是 `node.before(...)` 而不是 inspector**，所以**原节点是表达式里继续的那一个**，inspector 被插在它前面。
+   - **刷新是 FRAME**。
+   - **测试（5 个用例、21 条断言）**：借名六处；回调六处；警告六处（含四组合循环）；措辞三处；链一处。
+   - **验证**：核心 **2316 用例 / 216,059 断言**（+5 / +21）、`primitive-geometry`、`port-audit`、addons、`--cube` 全绿。
 70. **第 520 轮：完整 Vulkan 套件 211/211 全绿，耗时 270.72 秒**。
    - 命令：`ctest --test-dir build-vulkan -j 4 -E "lights-states" --output-on-failure`（仍排除第 46 条那个已知项；它在 Vulkan 构建里同样慢）。
    - 结果：**100% tests passed, 0 tests failed out of 211**，总耗时 **270.72 秒**。对比同一套件在 **Debug** 配置下的 **3784.56 秒 / 2 失败**，差了约 14 倍——再次印证第 69 条"是构建类型不是代码"的结论。
