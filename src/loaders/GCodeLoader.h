@@ -114,4 +114,15 @@ class GCodeLoader {
     // they had, which is what makes a command that moves only x leave y and z alone.
     static Move applyMove(const State& state, bool hasX, double x, bool hasY, double y, bool hasZ,
                           double z, bool hasE, double e, bool hasF, double f);
+    // The name a layer's object is given. The number is appended with no separator, so the tenth
+    // layer is layer9 rather than layer_9.
+    static std::string layerObjectName(std::size_t index);
+
+    // The name the group holding every layer is given, which is the format's own name written in
+    // lower case.
+    static std::string rootObjectName();
+
+    // The name a material is given for one of the two lists, which is how a caller finds it again
+    // afterwards. The names are the same ones the lists carry.
+    static std::string materialName(bool extruding);
 };

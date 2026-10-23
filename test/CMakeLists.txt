@@ -37,6 +37,7 @@ add_executable(THREECPPTests
         unit/src/loaders/SPLATLoader.tests.cpp
         unit/src/loaders/PDBLoader.tests.cpp
         unit/src/loaders/GCodeLoader.tests.cpp
+        unit/src/loaders/GCodeObjects.tests.cpp
         unit/src/loaders/PDBElement.tests.cpp
         unit/src/loaders/PDBBond.tests.cpp
         unit/src/loaders/PDBGeometry.tests.cpp

@@ -149,3 +149,17 @@ GCodeLoader::Move GCodeLoader::applyMove(const State& state, bool hasX, double x
     move.to[2] = move.next.z;
     return move;
 }
+
+std::string GCodeLoader::layerObjectName(std::size_t index) {
+    // The number goes straight after the word, with nothing between them.
+    return "layer" + std::to_string(index);
+}
+
+std::string GCodeLoader::rootObjectName() {
+    return "gcode";
+}
+
+std::string GCodeLoader::materialName(bool extruding) {
+    // The material is found again by the same name the list carries.
+    return segmentListName(segmentList(extruding));
+}
