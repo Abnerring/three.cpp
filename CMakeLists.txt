@@ -206,6 +206,7 @@ target_sources(threecpp PRIVATE
     src/nodes/core/DepthConversion.cpp
     src/nodes/core/ViewportDepthTexture.cpp
     src/nodes/core/ColorSpaceNode.cpp
+    src/nodes/core/BlendModes.cpp
     src/nodes/core/NodeConstants.cpp
     src/nodes/core/Node.cpp
     src/loaders/DataTextureLoader.cpp
