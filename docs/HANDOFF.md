@@ -2497,6 +2497,13 @@
    - **一处我自己的错**：断言 `decodeRunLength({0xFF, 0x01, 0x02})` 的第一个字节是 2，实际是 **1**——因为 `-1` 只引入一个字节，读的是 `0x01`，`0x02` 是多余的那一个。改了断言。
    - **测试（4 个用例、19 条断言）**：字面量两种；重复三种（含"计数 0 给 1 份"）；端到端三个字节；两种耗尽。
    - **验证**：核心 **1905 用例 / 213,782 断言**（+4 / +19）、`primitive-geometry`、`port-audit`、addons、`--cube` 全绿。
+412. **第 98 轮：压缩方式是「字符串」，而那个 `switch` 是深度数据专用**。
+   - **三种名字**：`NO_COMPRESSION`、`RLE_COMPRESSION`、`ZIPS_COMPRESSION`。**压缩方式在源里是字符串而不是数字**，所以分派靠字符串精确比较；大小写不同就是不认识。
+   - **`ZIPS` 与 `ZIP` 是两个名字**：单扫描线的叫 `ZIPS_COMPRESSION`，多扫描线的叫 `ZIP_COMPRESSION`（后者不在这个 `switch` 里）。测试专门断言 `ZIPS != ZIP`，并把 `ZIP_COMPRESSION` 判为不支持。
+   - **这个 `switch` 属于 `parseDeepScanlineBlock`**，不是普通扫描线那条路径。所以它只认这三种，别的都抛 `'... is unsupported for deep data'`——**消息里带 `deep` 这个词**，测试用它区分这两条路径。
+   - **错误消息把名字带上**：`'THREE.EXRLoader: ' + compression + ' is unsupported for deep data'`，所以两个不同的名字给出两条不同的消息。
+   - **测试（3 个用例、15 条断言）**：三个名字（含 `ZIPS != ZIP`）；七种分派（含大小写与空串）；四条消息（含"两个名字不同"与"消息里有 deep"）。
+   - **验证**：核心 **1908 用例 / 213,800 断言**（+3 / +15）、`primitive-geometry`、`port-audit`、addons、`--cube` 全绿。
 70. **第 520 轮：完整 Vulkan 套件 211/211 全绿，耗时 270.72 秒**。
    - 命令：`ctest --test-dir build-vulkan -j 4 -E "lights-states" --output-on-failure`（仍排除第 46 条那个已知项；它在 Vulkan 构建里同样慢）。
    - 结果：**100% tests passed, 0 tests failed out of 211**，总耗时 **270.72 秒**。对比同一套件在 **Debug** 配置下的 **3784.56 秒 / 2 失败**，差了约 14 倍——再次印证第 69 条"是构建类型不是代码"的结论。

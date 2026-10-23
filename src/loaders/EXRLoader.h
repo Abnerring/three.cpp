@@ -466,4 +466,20 @@ class EXRLoader {
     };
 
     static RleBlockResult uncompressRLE(const std::vector<std::uint8_t>& block);
+    // The compression a block was written with, named rather than numbered. The three the deep
+    // path can read are these; the rest are turned away with a message naming the one asked for.
+    static constexpr const char* kNoCompression = "NO_COMPRESSION";
+    static constexpr const char* kRleCompression = "RLE_COMPRESSION";
+    static constexpr const char* kZipsCompression = "ZIPS_COMPRESSION";
+
+    // Which of the three kinds a name stands for. A name outside them is Unsupported rather
+    // than being guessed at, since a wrong guess would produce pixels rather than an error.
+    enum class CompressionKind { None, RunLength, Zip, Unsupported };
+
+    static CompressionKind compressionKind(const std::string& name);
+
+    // The message the deep path raises for a compression it cannot read, which names the one it
+    // was given. Note that the single and multi scanline zips are different names, so a block
+    // that says ZIP is not read here.
+    static std::string unsupportedDeepMessage(const std::string& name);
 };

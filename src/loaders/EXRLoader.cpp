@@ -706,3 +706,16 @@ EXRLoader::RleBlockResult EXRLoader::uncompressRLE(const std::vector<std::uint8_
     result.valid = true;
     return result;
 }
+
+EXRLoader::CompressionKind EXRLoader::compressionKind(const std::string& name) {
+    // Exact names, compared as strings. Anything else is unsupported rather than guessed.
+    if (name == kNoCompression) return CompressionKind::None;
+    if (name == kRleCompression) return CompressionKind::RunLength;
+    if (name == kZipsCompression) return CompressionKind::Zip;
+    return CompressionKind::Unsupported;
+}
+
+std::string EXRLoader::unsupportedDeepMessage(const std::string& name) {
+    // The message names the compression it was given.
+    return "THREE.EXRLoader: " + name + " is unsupported for deep data";
+}
