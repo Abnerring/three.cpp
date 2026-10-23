@@ -544,4 +544,11 @@ class EXRLoader {
 
     // The number of sixteen bit words a row of a channel occupies.
     static std::size_t pizRowLength(std::uint32_t nx, std::uint32_t channelType);
+    // The order the samples are read back out of the wavelet buffer, as the index each read
+    // begins at. The outer run is the rows and the inner one the channels, so a row is taken
+    // from every channel before the next row is touched, and each channel's own read position
+    // moves down one row's worth at a time. The result holds one entry per row and channel.
+    static std::vector<std::size_t> pizReadOffsets(std::uint32_t columns, std::uint32_t lines,
+                                                   std::uint32_t channelType,
+                                                   std::size_t channelCount);
 };

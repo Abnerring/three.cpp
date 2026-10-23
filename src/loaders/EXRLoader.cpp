@@ -799,3 +799,21 @@ std::size_t EXRLoader::pizRowLength(std::uint32_t nx, std::uint32_t channelType)
     // A row of a channel is its width times the channel's own width.
     return static_cast<std::size_t>(nx) * channelType;
 }
+
+std::vector<std::size_t> EXRLoader::pizReadOffsets(std::uint32_t columns, std::uint32_t lines,
+                                                   std::uint32_t channelType,
+                                                   std::size_t channelCount) {
+    std::vector<std::size_t> offsets;
+    offsets.reserve(static_cast<std::size_t>(lines) * channelCount);
+    // Each channel's read position begins where its own samples begin.
+    std::vector<std::size_t> ends = pizChannelStarts(columns, lines, channelType, channelCount);
+    const std::size_t rowLength = pizRowLength(columns, channelType);
+    // Rows outside, channels inside: a row is taken from every channel before the next row.
+    for (std::uint32_t y = 0; y < lines; ++y) {
+        for (std::size_t c = 0; c < channelCount; ++c) {
+            offsets.push_back(ends[c]);
+            ends[c] += rowLength;
+        }
+    }
+    return offsets;
+}
