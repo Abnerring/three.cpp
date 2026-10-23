@@ -289,6 +289,7 @@ add_executable(THREECPPTests
         unit/src/loaders/EXRParseScanline.tests.cpp
         unit/src/loaders/EXRCompressedBlock.tests.cpp
         unit/src/loaders/EXRRleCompressedBlock.tests.cpp
+        unit/src/nodes/StructType.tests.cpp
         unit/src/loaders/EXRSamplesToBytes.tests.cpp
         unit/src/loaders/EXRDecompressBlock.tests.cpp
         unit/src/loaders/Zlib.tests.cpp
