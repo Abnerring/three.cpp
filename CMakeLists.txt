@@ -217,6 +217,7 @@ target_sources(threecpp PRIVATE
     src/nodes/core/ConvertNode.cpp
     src/nodes/core/MaxMipLevel.cpp
     src/nodes/core/Remap.cpp
+    src/nodes/core/SampleNode.cpp
     src/nodes/core/NodeConstants.cpp
     src/nodes/core/Node.cpp
     src/loaders/DataTextureLoader.cpp

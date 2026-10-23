@@ -3061,6 +3061,13 @@
    - **修好符号之后又牵出第二处**：同一个零宽度测试里的 `clamped` 期望也错，因为钳制落点由符号决定。**两处一起改才对。**
    - **测试（5 个用例、30 条断言）**：文档例子三处；输出范围四处；钳制对照八处；`defined` 三处；零宽度五处（含正负两个落点）。
    - **验证**：核心 **2214 用例 / 215,493 断言**、`primitive-geometry`、`port-audit`、addons 全绿。
+498. **第 187 轮：`SampleNode` 的一个死参数**。
+   - **构造函数收一个坐标并存下，而 `setup()` 从不读它**：`setup() { return this.sample( uv() ); }`——**用的是新造的默认坐标**，不是 `this.uvNode`。所以**第二个参数对结果没有任何影响**，一个传了自己坐标的调用方拿到的仍是默认坐标。
+   - **这是上游的一处疏漏而不是设计**：`uvNode` 被存下来、被文档描述、也被类型标注为 `?Node<vec2>`，但**没有任何一处读它**。端口照抄，并把这件事写成 `givenCoordinateIsRead = false` 与 `sourceUsedInSetup() == Default`。
+   - **`isCacheable` 恒假**：这是本层第六个直接拒绝缓存的模块（前五个是 `PointUVNode`、`BuiltinNode`、`Object3DNode`、`ScreenNode`、`ViewportDepthNode`），与第 181 轮那个"唯一一个可以缓存"的 `PassTextureNode` 形成对照。
+   - **`sample` 只是转调**：节点自己什么也不加，所以答案就是回调的答案。
+   - **测试（3 个用例、10 条断言）**：死参数五处（含"给了与没给答案相同"）；转调四处；缓存一处。
+   - **验证**：核心 **2217 用例 / 215,504 断言**（+3 / +10）、`primitive-geometry`、`port-audit`、addons、`--cube` 全绿。
 70. **第 520 轮：完整 Vulkan 套件 211/211 全绿，耗时 270.72 秒**。
    - 命令：`ctest --test-dir build-vulkan -j 4 -E "lights-states" --output-on-failure`（仍排除第 46 条那个已知项；它在 Vulkan 构建里同样慢）。
    - 结果：**100% tests passed, 0 tests failed out of 211**，总耗时 **270.72 秒**。对比同一套件在 **Debug** 配置下的 **3784.56 秒 / 2 失败**，差了约 14 倍——再次印证第 69 条"是构建类型不是代码"的结论。
