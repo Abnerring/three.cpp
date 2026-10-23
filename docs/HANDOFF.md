@@ -2842,6 +2842,11 @@
    - **第三处最反直觉**：`scene.environment !== null` 让**一个从未设过环境值的场景"算作有环境"**。端口把这条写成 `Presence::Undefined` 与 `Presence::Present` 同答案的断言。
    - **测试（4 个用例、17 条断言）**：强度三种（含两种缺失一致）；场景三种（含"未设与有同答案"）；节点三种；旋转五种（含与强度对照的分歧）。
    - **验证**：核心 **2079 用例 / 214,654 断言**（+4 / +17）、`primitive-geometry`、`port-audit`、addons、`--cube` 全绿。
+466. **第 152 轮：`ModelNode` 的五个 scope 与从帧取对象**。
+   - **五个 scope**：`position`、`viewPosition`、`direction`、`scale`、`worldMatrix`——**名字是精确比较、区分大小写的**，所以 `viewposition` 不被接受。测试把"两个驼峰名"单独断言，因为它们是五个里唯一的两个。
+   - **一处与父类的关键差别**：`update( frame )` 里 **`this.object3d = frame.object`**——**对象每次从帧里取**，节点本身不持有。所以**同一个节点实例在不同对象之间会跟着帧走**，而父类 `Object3DNode` 是给定一个对象来持有的。
+   - **测试（3 个用例、20 条断言）**：五个名字按顺序；十个接受/拒绝（含三个大小写与空串）；一条"不持有对象"的决定。
+   - **验证**：核心 **2082 用例 / 214,674 断言**（+3 / +20）、`primitive-geometry`、`port-audit`、addons、`--cube` 全绿。
 70. **第 520 轮：完整 Vulkan 套件 211/211 全绿，耗时 270.72 秒**。
    - 命令：`ctest --test-dir build-vulkan -j 4 -E "lights-states" --output-on-failure`（仍排除第 46 条那个已知项；它在 Vulkan 构建里同样慢）。
    - 结果：**100% tests passed, 0 tests failed out of 211**，总耗时 **270.72 秒**。对比同一套件在 **Debug** 配置下的 **3784.56 秒 / 2 失败**，差了约 14 倍——再次印证第 69 条"是构建类型不是代码"的结论。

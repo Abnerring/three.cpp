@@ -305,6 +305,7 @@ add_executable(THREECPPTests
         unit/src/nodes/core/ReferenceElementNode.tests.cpp
         unit/src/nodes/core/CameraNames.tests.cpp
         unit/src/nodes/core/MaterialProperties.tests.cpp
+        unit/src/nodes/core/ModelNode.tests.cpp
         unit/src/loaders/EXRSamplesToBytes.tests.cpp
         unit/src/loaders/EXRDecompressBlock.tests.cpp
         unit/src/loaders/Zlib.tests.cpp
