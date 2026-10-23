@@ -1,68 +1,83 @@
 ﻿#include "loaders/MDDLoader.h"
 
-#include "animation/tracks/NumberKeyframeTrack.h"
-
 #include <cstring>
-#include <stdexcept>
 
 namespace {
-std::uint32_t readUint32BE(const std::vector<std::uint8_t>& data, std::size_t offset) {
-    if (offset + 4 > data.size())
-        throw std::runtime_error("THREE.MDDLoader: Unexpected end of data");
-    // The DataView reads upstream do not pass a little endian flag, so they are big endian.
-    return (std::uint32_t(data[offset]) << 24) | (std::uint32_t(data[offset + 1]) << 16) |
-           (std::uint32_t(data[offset + 2]) << 8) | std::uint32_t(data[offset + 3]);
+std::uint32_t readU32(const std::vector<std::uint8_t>& buffer, std::size_t at) {
+    return static_cast<std::uint32_t>(buffer[at]) |
+           (static_cast<std::uint32_t>(buffer[at + 1]) << 8) |
+           (static_cast<std::uint32_t>(buffer[at + 2]) << 16) |
+           (static_cast<std::uint32_t>(buffer[at + 3]) << 24);
 }
-
-float readFloat32BE(const std::vector<std::uint8_t>& data, std::size_t offset) {
-    const std::uint32_t bits = readUint32BE(data, offset);
-    float value = 0.0f;
-    std::memcpy(&value, &bits, sizeof(float));
+float readF32(const std::vector<std::uint8_t>& buffer, std::size_t at) {
+    const std::uint32_t bits = readU32(buffer, at);
+    float value = 0;
+    std::memcpy(&value, &bits, sizeof(value));
     return value;
 }
 }  // namespace
 
-MDDLoader::Result MDDLoader::parse(const std::vector<std::uint8_t>& data) const {
-    const std::uint32_t totalFrames = readUint32BE(data, 0);
-    const std::uint32_t totalPoints = readUint32BE(data, 4);
-    std::size_t offset = 8;
+MDDLoader::Header MDDLoader::header(const std::vector<std::uint8_t>& buffer) {
+    Header header;
+    // A file too short to hold the two numbers has neither.
+    if (buffer.size() < 8) return header;
+    header.frames = readU32(buffer, 0);
+    header.points = readU32(buffer, 4);
+    return header;
+}
 
-    std::vector<float> times(totalFrames, 0.0f);
-    // Upstream allocates a square array and walks its diagonal, which yields one animated
-    // influence per frame and zeros elsewhere.
-    std::vector<float> values(static_cast<std::size_t>(totalFrames) * totalFrames, 0.0f);
+std::size_t MDDLoader::timeCount(const Header& header) {
+    return static_cast<std::size_t>(header.frames);
+}
 
-    for (std::uint32_t i = 0; i < totalFrames; ++i) {
-        times[i] = readFloat32BE(data, offset);
-        offset += 4;
-        values[static_cast<std::size_t>(totalFrames) * i + i] = 1.0f;
+std::size_t MDDLoader::positionCount(const Header& header) {
+    // Three numbers per point, with no padding between them.
+    return static_cast<std::size_t>(header.points) * 3;
+}
+
+std::size_t MDDLoader::byteSize(const Header& header) {
+    // The header, the times, then every frame's positions.
+    const std::size_t times = timeCount(header) * 4;
+    const std::size_t positions = static_cast<std::size_t>(header.frames) * positionCount(header) * 4;
+    return 8 + times + positions;
+}
+
+std::vector<double> MDDLoader::times(const std::vector<std::uint8_t>& buffer, const Header& header) {
+    std::vector<double> out;
+    const std::size_t count = timeCount(header);
+    if (buffer.size() < 8 + count * 4) return out;
+    out.reserve(count);
+    for (std::size_t i = 0; i < count; ++i) {
+        out.push_back(static_cast<double>(readF32(buffer, 8 + i * 4)));
     }
+    return out;
+}
 
-    auto track = std::make_shared<NumberKeyframeTrack>(JSValue(".morphTargetInfluences"),
-                                                      AnimationArray(Float32Array(times)),
-                                                      AnimationArray(Float32Array(values)));
-    auto tracks = std::make_shared<AnimationClip::Tracks>();
-    tracks->push_back(track);
-    const double duration = totalFrames > 0 ? double(times.back()) : 0.0;
-
-    Result result;
-    result.clip = std::make_shared<AnimationClip>(JSValue("default"), duration, tracks);
-    result.morphTargets.reserve(totalFrames);
-
-    for (std::uint32_t i = 0; i < totalFrames; ++i) {
-        std::vector<float> morphTarget(static_cast<std::size_t>(totalPoints) * 3, 0.0f);
-        for (std::uint32_t j = 0; j < totalPoints; ++j) {
-            const std::size_t stride = std::size_t(j) * 3;
-            morphTarget[stride + 0] = readFloat32BE(data, offset);
-            offset += 4;
-            morphTarget[stride + 1] = readFloat32BE(data, offset);
-            offset += 4;
-            morphTarget[stride + 2] = readFloat32BE(data, offset);
-            offset += 4;
-        }
-        auto attribute = std::make_shared<TypedBufferAttribute<float>>(morphTarget, 3);
-        attribute->name = "morph_" + std::to_string(i);
-        result.morphTargets.push_back(attribute);
+std::vector<double> MDDLoader::influences(const Header& header) {
+    // A square matrix of zeros with a single one in each row.
+    const std::size_t frames = static_cast<std::size_t>(header.frames);
+    std::vector<double> values(frames * frames, 0.0);
+    for (std::size_t i = 0; i < frames; ++i) {
+        // Row i is offset by the frame count and its one sits at column i.
+        values[frames * i + i] = 1.0;
     }
-    return result;
+    return values;
+}
+
+std::string MDDLoader::morphName(std::uint32_t frame) {
+    return "morph_" + std::to_string(frame);
+}
+
+std::vector<double> MDDLoader::framePositions(const std::vector<std::uint8_t>& buffer,
+                                              const Header& header, std::uint32_t frame) {
+    std::vector<double> out;
+    const std::size_t count = positionCount(header);
+    const std::size_t start = 8 + timeCount(header) * 4 + static_cast<std::size_t>(frame) * count * 4;
+    if (frame >= header.frames) return out;
+    if (start + count * 4 > buffer.size()) return out;
+    out.reserve(count);
+    for (std::size_t i = 0; i < count; ++i) {
+        out.push_back(static_cast<double>(readF32(buffer, start + i * 4)));
+    }
+    return out;
 }
