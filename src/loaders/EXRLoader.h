@@ -807,4 +807,25 @@ class EXRLoader {
 
     // The message a compression the loader does not know raises, which names it.
     static std::string unsupportedCompressionMessage(const std::string& name);
+    // How many blocks a file's scanlines are split into. The count is the height divided by the
+    // block height with the remainder dropped, so a file whose height is not a multiple of it
+    // has its last few lines never read. That is a difference from what the format intends,
+    // kept here rather than corrected.
+    static std::uint32_t scanlineBlockCount(std::uint32_t height, std::uint32_t blockHeight);
+
+    // How many lines a block that begins at a given line holds. The last block of a file is
+    // shorter when the height does not divide evenly, and every other block holds the full
+    // height.
+    static std::uint32_t scanlineBlockLines(std::uint32_t line, std::uint32_t height,
+                                            std::uint32_t blockHeight);
+
+    // Whether a block was compressed at all. A block that is no smaller than the raw pixels it
+    // stands for was stored as it lies, whatever compression the file names, so the reader
+    // decides from the two sizes rather than from the name.
+    static bool scanlineBlockCompressed(std::uint32_t storedSize, std::uint32_t lines,
+                                        std::uint32_t bytesPerLine);
+
+    // The row of the output a file row is written to. The file stores its rows from the bottom
+    // up while the output counts from the top, so the two are mirror images.
+    static std::uint32_t scanlineOutputRow(std::uint32_t row, std::uint32_t height);
 };

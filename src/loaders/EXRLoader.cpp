@@ -1499,3 +1499,29 @@ std::string EXRLoader::unsupportedCompressionMessage(const std::string& name) {
     // The name is carried into the message so a reader knows what was asked for.
     return "THREE.EXRLoader: " + name + " is unsupported";
 }
+
+std::uint32_t EXRLoader::scanlineBlockCount(std::uint32_t height, std::uint32_t blockHeight) {
+    // The remainder is dropped, so a height that is not a multiple leaves the last lines unread.
+    if (blockHeight == 0) return 0;
+    return height / blockHeight;
+}
+
+std::uint32_t EXRLoader::scanlineBlockLines(std::uint32_t line, std::uint32_t height,
+                                            std::uint32_t blockHeight) {
+    // The last block stops at the bottom of the image rather than running past it.
+    if (line + blockHeight > height) return height > line ? height - line : 0;
+    return blockHeight;
+}
+
+bool EXRLoader::scanlineBlockCompressed(std::uint32_t storedSize, std::uint32_t lines,
+                                        std::uint32_t bytesPerLine) {
+    // A block no smaller than the pixels it stands for was stored plainly. This is decided from
+    // the sizes alone, so a file whose compression happened to make a block no smaller is read
+    // plainly too.
+    return storedSize < lines * bytesPerLine;
+}
+
+std::uint32_t EXRLoader::scanlineOutputRow(std::uint32_t row, std::uint32_t height) {
+    // The file counts from the bottom and the output from the top.
+    return height > row ? height - 1 - row : 0;
+}
