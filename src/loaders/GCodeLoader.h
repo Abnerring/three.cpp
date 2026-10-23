@@ -1,4 +1,4 @@
-﻿#pragma once
+#pragma once
 #include <cstddef>
 #include <string>
 #include <vector>
@@ -47,4 +47,35 @@ class GCodeLoader {
 
     // The name a line material is given for one of the two lists.
     static std::string segmentListName(SegmentList list);
+    // Whether the extrusion amount is read as an offset. The program may override this for the
+    // extruder alone, and when it has not the global setting applies, so the answer is a choice
+    // between three flags rather than two.
+    static bool extrusionIsRelative(bool extrusionOverride, bool extrusionRelative,
+                                    bool globalRelative);
+
+    // The extrusion amount for a step, read the way the two flags above say.
+    static double absoluteExtrusion(bool extrusionOverride, bool extrusionRelative,
+                                    bool globalRelative, double current, double target);
+
+    // The comment stripper. A semicolon begins a comment that runs to the end of its line, so the
+    // text from the first one onwards goes and the newline that ends the line stays.
+    static std::string stripComment(const std::string& line);
+
+    // One argument of a command: a single letter and a number written straight after it. A token
+    // that is empty has no letter and is skipped, which is what a run of spaces produces.
+    struct Argument {
+        bool present = false;
+        char letter = 0;
+        double value = 0;
+    };
+    static Argument parseArgument(const std::string& token);
+
+    // Whether a step is laying down material. The program does not say so directly: a step
+    // extrudes when its extrusion amount is greater than the one before it, so the change in the
+    // amount is what decides, not the command that moved the head.
+    static bool isExtruding(double previousAmount, double amount);
+
+    // Whether a step begins a new layer. Only an extruding step can, and then only when there is
+    // no layer yet or the height differs from the one the current layer started at.
+    static bool beginsLayer(bool hasLayer, double layerZ, double z, bool extruding);
 };

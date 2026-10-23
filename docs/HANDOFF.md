@@ -2136,6 +2136,14 @@
    - **处理**：文件**保留、但不注册**；等哪天默认构建打开 `THREECPP_NATIVE_ESSL`，把它加回注册表即可，里面的断言一条都不用改。
    - **顺带修好一处**：给它补了 `#include <stdexcept>`，这样将来注册时不会再因为 `std::runtime_error` 报错。
    - **验证**：核心 **1773 用例 / 212,529 断言**（与上一轮持平，本轮只增知识不增用例）、addons、`primitive-geometry`、`port-audit`、Vulkan 全绿。
+368. **第 54 轮：`GCodeLoader` 第二层——行的解析与判定**。
+   - **挤出量的读法有三层**：`extrusionOverride ? extrusionRelative : state.relative`——**挤出机自己的开关优先于全局开关**。所以 `absoluteExtrusion` 不是二选一而是三选一。
+   - **挤出由"量变大"判定，不由命令判定**：`line.e > state.e` 才置 `extruding`。所以一条 `G1` 既可能是走线也可能是空走，全看 E 值。
+   - **换层 = 正在挤出 且 (还没有层 或 z 与当前层不同)**——两个条件缺一不可，空走到再高的位置也不会开新层。
+   - **注释从分号到行尾**：`stripComment` 只截断，保留换行；端口没有用正则，而是找第一个分号。
+   - **参数是一个字母紧跟数字**：字母转小写、数字用 `strtod`；**空 token 没有字母被跳过**，这正是连续空格产生的东西。
+   - **测试（5 个用例、26 条断言）**：三选一的四种组合与两种取值；注释四种；参数五种（含空 token 与大小写）；挤出判定四种（含回抽）；换层判定五种。
+   - **验证**：核心 **1778 用例 / 212,555 断言**（+5 / +26）、addons、`primitive-geometry`、`port-audit`、Vulkan 全绿。
 70. **第 520 轮：完整 Vulkan 套件 211/211 全绿，耗时 270.72 秒**。
    - 命令：`ctest --test-dir build-vulkan -j 4 -E "lights-states" --output-on-failure`（仍排除第 46 条那个已知项；它在 Vulkan 构建里同样慢）。
    - 结果：**100% tests passed, 0 tests failed out of 211**，总耗时 **270.72 秒**。对比同一套件在 **Debug** 配置下的 **3784.56 秒 / 2 失败**，差了约 14 倍——再次印证第 69 条"是构建类型不是代码"的结论。

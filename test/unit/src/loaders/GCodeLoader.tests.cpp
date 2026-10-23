@@ -64,3 +64,60 @@ TEST_CASE("GCodeLoader starts a layer at the height it began at") {
     REQUIRE(fresh.path.empty());
     REQUIRE(fresh.z == 0.0);
 }
+TEST_CASE("GCodeLoader chooses the extrusion reading from three flags") {
+    // Without an override the global setting decides.
+    REQUIRE_FALSE(GCodeLoader::extrusionIsRelative(false, true, false));
+    REQUIRE(GCodeLoader::extrusionIsRelative(false, false, true));
+    // With one the extruder's own setting wins.
+    REQUIRE(GCodeLoader::extrusionIsRelative(true, true, false));
+    REQUIRE_FALSE(GCodeLoader::extrusionIsRelative(true, false, true));
+    // The value follows the same choice.
+    REQUIRE(GCodeLoader::absoluteExtrusion(true, true, false, 10.0, 5.0) == 15.0);
+    REQUIRE(GCodeLoader::absoluteExtrusion(true, false, true, 10.0, 5.0) == 5.0);
+}
+
+TEST_CASE("GCodeLoader strips a comment") {
+    // Everything from the semicolon onwards goes, the space before it staying.
+    REQUIRE(GCodeLoader::stripComment("G1 X5 ; a note") == "G1 X5 ");
+    REQUIRE(GCodeLoader::stripComment("; only a comment") == "");
+    // A line without one is unchanged.
+    REQUIRE(GCodeLoader::stripComment("G1 X5") == "G1 X5");
+    REQUIRE(GCodeLoader::stripComment("") == "");
+}
+
+TEST_CASE("GCodeLoader reads one argument") {
+    // A letter and a number straight after it.
+    const auto x = GCodeLoader::parseArgument("X12.5");
+    REQUIRE(x.present);
+    REQUIRE(x.letter == 'x');
+    REQUIRE(x.value == 12.5);
+    // The letter is lower cased whatever case it was written in.
+    REQUIRE(GCodeLoader::parseArgument("e3").letter == 'e');
+    REQUIRE(GCodeLoader::parseArgument("E3").letter == 'e');
+    // An empty token has no letter at all, which is what a run of spaces leaves behind.
+    REQUIRE_FALSE(GCodeLoader::parseArgument("").present);
+    // A whole number parses the same way a fractional one does.
+    REQUIRE(GCodeLoader::parseArgument("Y7").value == 7.0);
+}
+
+TEST_CASE("GCodeLoader decides extrusion by the change in amount") {
+    // More than before is extruding.
+    REQUIRE(GCodeLoader::isExtruding(1.0, 2.0));
+    // Less and the same are not.
+    REQUIRE_FALSE(GCodeLoader::isExtruding(2.0, 1.0));
+    REQUIRE_FALSE(GCodeLoader::isExtruding(1.0, 1.0));
+    // A retraction, which is a decrease, is not extruding either.
+    REQUIRE_FALSE(GCodeLoader::isExtruding(1.0, 0.5));
+}
+
+TEST_CASE("GCodeLoader starts a layer only when extruding at a new height") {
+    // The first extruding step opens the first layer whatever its height.
+    REQUIRE(GCodeLoader::beginsLayer(false, 0.0, 0.3, true));
+    // At the same height it does not.
+    REQUIRE_FALSE(GCodeLoader::beginsLayer(true, 0.3, 0.3, true));
+    // At a new height it does.
+    REQUIRE(GCodeLoader::beginsLayer(true, 0.3, 0.6, true));
+    // A travel move never does, however far it moves.
+    REQUIRE_FALSE(GCodeLoader::beginsLayer(true, 0.3, 0.6, false));
+    REQUIRE_FALSE(GCodeLoader::beginsLayer(false, 0.0, 5.0, false));
+}
