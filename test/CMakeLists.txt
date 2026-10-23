@@ -315,6 +315,7 @@ add_executable(THREECPPTests
         unit/src/nodes/core/PremultiplyAlpha.tests.cpp
         unit/src/nodes/core/Packing.tests.cpp
         unit/src/nodes/core/MatcapUV.tests.cpp
+        unit/src/nodes/core/EquirectUV.tests.cpp
         unit/src/loaders/EXRSamplesToBytes.tests.cpp
         unit/src/loaders/EXRDecompressBlock.tests.cpp
         unit/src/loaders/Zlib.tests.cpp
