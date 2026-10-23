@@ -383,4 +383,29 @@ class GLTFLoader {
     // A dispersion, written the same way and defaulting to zero for the same reason. Its field
     // carries no suffix in the file, so the value passes straight through under its own name.
     static double dispersion(bool hasValue, double value);
+    // The settings a material gets when the file gives none. Two of them are easy to guess
+    // wrong: the metalness and the roughness are both one, so the material is fully metallic and
+    // fully rough rather than halfway between. The colour is white, the emissive black, and the
+    // material is opaque, depth tested and front facing.
+    struct DefaultMaterialSettings {
+        std::array<double, 3> colour{1, 1, 1};
+        std::array<double, 3> emissive{0, 0, 0};
+        double metalness = 1;
+        double roughness = 1;
+        bool transparent = false;
+        bool depthTest = true;
+        std::string side = "FrontSide";
+    };
+
+    static DefaultMaterialSettings defaultMaterialSettings();
+
+    // The key a default material is cached under, so a file's primitives that name no material
+    // all share one object.
+    static constexpr const char* kDefaultMaterialKey = "DefaultMaterial";
+
+    // The extension names on an object that the loader does not know. These are kept beside the
+    // object rather than acted on, which is what lets a file carry extensions the port has never
+    // heard of without failing.
+    static std::vector<std::string> unknownExtensions(const std::vector<std::string>& present,
+                                                      const std::vector<std::string>& known);
 };

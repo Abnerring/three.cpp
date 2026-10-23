@@ -643,3 +643,22 @@ double GLTFLoader::dispersion(bool hasValue, double value) {
     // Written the same way the roughness factor is.
     return hasValue ? value : 0.0;
 }
+
+GLTFLoader::DefaultMaterialSettings GLTFLoader::defaultMaterialSettings() {
+    DefaultMaterialSettings settings;
+    // Fully metallic and fully rough, which is the value the port starts from rather than a
+    // halfway material.
+    settings.metalness = 1.0;
+    settings.roughness = 1.0;
+    return settings;
+}
+
+std::vector<std::string> GLTFLoader::unknownExtensions(const std::vector<std::string>& present,
+                                                       const std::vector<std::string>& known) {
+    std::vector<std::string> unknown;
+    for (const auto& name : present) {
+        // A name the loader knows is handled elsewhere; the rest are kept as they are.
+        if (std::find(known.begin(), known.end(), name) == known.end()) unknown.push_back(name);
+    }
+    return unknown;
+}
