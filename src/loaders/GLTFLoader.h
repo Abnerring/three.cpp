@@ -316,4 +316,12 @@ class GLTFLoader {
     };
 
     static OptionalNumber iridescenceValue(bool hasFactor, double factor);
+    // The material parameter an anisotropy field fills. The strength is the one field in all of
+    // these extensions whose suffix is not  factor , so a rule that drops that word alone would
+    // leave it unmapped; the rotation keeps its name and the texture gains a map suffix.
+    static std::string anisotropyParamForField(const std::string& field);
+
+    // The three fields are all set only when written, so the same flag structure the
+    // iridescence extension uses serves here too.
+    static OptionalNumber anisotropyValue(bool hasValue, double value);
 };

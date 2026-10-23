@@ -1909,6 +1909,13 @@
    - **只在写了的时候才赋值**：与清漆那两个因子不同，这里的值**不是"有就用、没有就用缺省"**，而是"没有就不碰"，所以端口用一个带 `present` 的结构表达；写 0 也是写了。
    - **测试（3 个用例、13 条断言）**：三条改名 + 两条不相等；三条未知（含 `iridescenceIOR` 本身）；`present` 三种（0、0.5、没写）。
    - **验证**：核心 **1571 用例 / 210,634 断言**（+3 / +13）、addons、`primitive-geometry`、`port-audit`、Vulkan 全绿。
+334. **第 20 轮：`GLTFLoader` 第二十层——各向异性材质**。
+   - **一条会骗人的后缀**：`anisotropyStrength` 的后缀是 **`Strength`** 而不是 `Factor`，所以"把 Factor 去掉"这条通用规则**会漏掉它**。测试专门用 `anisotropyFactor` 这个名字断言它**不被认**。
+   - **旋转不改名**：`anisotropyRotation` → `anisotropyRotation`，是这些扩展里少见的**同名映射**。
+   - **贴图照旧加 map**：`anisotropyTexture` → `anisotropyMap`。
+   - **复用上一轮的结构**：三个字段都是"写了才设"，所以直接用第 19 轮的 `OptionalNumber`，没有再定义一套。
+   - **测试（3 个用例、11 条断言）**：三条改名；**三个不被认的名字（含 `anisotropyFactor`）**；`present` 三种。
+   - **验证**：核心 **1574 用例 / 210,645 断言**（+3 / +11）、addons、`primitive-geometry`、`port-audit`、Vulkan 全绿。
 70. **第 520 轮：完整 Vulkan 套件 211/211 全绿，耗时 270.72 秒**。
    - 命令：`ctest --test-dir build-vulkan -j 4 -E "lights-states" --output-on-failure`（仍排除第 46 条那个已知项；它在 Vulkan 构建里同样慢）。
    - 结果：**100% tests passed, 0 tests failed out of 211**，总耗时 **270.72 秒**。对比同一套件在 **Debug** 配置下的 **3784.56 秒 / 2 失败**，差了约 14 倍——再次印证第 69 条"是构建类型不是代码"的结论。

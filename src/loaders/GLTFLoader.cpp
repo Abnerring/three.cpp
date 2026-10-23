@@ -549,3 +549,24 @@ GLTFLoader::OptionalNumber GLTFLoader::iridescenceValue(bool hasFactor, double f
     }
     return result;
 }
+
+std::string GLTFLoader::anisotropyParamForField(const std::string& field) {
+    // The strength drops a suffix that is not the one the other extensions use.
+    if (field == "anisotropyStrength") return "anisotropy";
+    // The rotation keeps its name.
+    if (field == "anisotropyRotation") return "anisotropyRotation";
+    // A texture gains a map suffix.
+    if (field == "anisotropyTexture") return "anisotropyMap";
+    // Anything else names no parameter.
+    return std::string();
+}
+
+GLTFLoader::OptionalNumber GLTFLoader::anisotropyValue(bool hasValue, double value) {
+    // Set only when written, so a written zero is kept.
+    OptionalNumber result;
+    if (hasValue) {
+        result.present = true;
+        result.value = value;
+    }
+    return result;
+}
