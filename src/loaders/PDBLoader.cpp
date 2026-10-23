@@ -1,4 +1,4 @@
-﻿#include "loaders/PDBLoader.h"
+#include "loaders/PDBLoader.h"
 
 #include <algorithm>
 #include <cctype>
@@ -222,4 +222,35 @@ PDBLoader::Result PDBLoader::parse(const std::string& text) const {
         }
     }
     return result;
+}
+
+std::string PDBLoader::elementOf(const std::string& line) {
+    // The two columns near the end come first, trimmed of their spaces.
+    const auto slice = [&](std::size_t from, std::size_t count) {
+        if (line.size() <= from) return std::string();
+        const std::string piece = line.substr(from, count);
+        const std::size_t first = piece.find_first_not_of(' ');
+        if (first == std::string::npos) return std::string();
+        const std::size_t last = piece.find_last_not_of(' ');
+        return piece.substr(first, last - first + 1);
+    };
+    std::string element = slice(76, 2);
+    // Only when those are empty does the earlier pair count.
+    if (element.empty()) element = slice(12, 2);
+    // The answer is lower cased whatever the file wrote.
+    for (char& c : element) {
+        if (c >= 'A' && c <= 'Z') c = static_cast<char>(c - 'A' + 'a');
+    }
+    return element;
+}
+
+const std::array<std::size_t, 4>& PDBLoader::bondColumns() {
+    // Four partners, five columns apart.
+    static const std::array<std::size_t, 4> columns{11, 16, 21, 26};
+    return columns;
+}
+
+int PDBLoader::atomIndex(int oneBased) {
+    // The format numbers atoms from one, so the first atom is zero here.
+    return oneBased - 1;
 }
