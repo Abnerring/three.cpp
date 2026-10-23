@@ -185,6 +185,7 @@ target_sources(threecpp PRIVATE
     src/nodes/core/Normal.cpp
     src/nodes/core/ReferenceElementNode.cpp
     src/nodes/core/CameraNames.cpp
+    src/nodes/core/MaterialProperties.cpp
     src/nodes/core/NodeConstants.cpp
     src/nodes/core/Node.cpp
     src/loaders/DataTextureLoader.cpp

@@ -2833,6 +2833,15 @@
    - **`Camera.js` 本身没有移植**：它是大型惰性缓存构建器，依赖端口还没有的 `Fn`、`uniform`、`uniformArray`。这一轮只把其中可移植的名字与条件提出来。
    - **测试（3 个用例、15 条断言）**：四个名字 + 类型；"只有一个是前缀"（含计数循环）；数组形态五种。
    - **验证**：核心 **2075 用例 / 214,637 断言**（+3 / +15）、`primitive-geometry`、`port-audit`、addons、`--cube` 全绿。
+465. **第 151 轮：`MaterialProperties` 里三处不同的空值判断**。
+   - **同一份文件、相邻两个 uniform，用三种方式问"有没有"**：
+     1. `material.envMap ?` ——**真值测试**，`null` 与"未设"都算没有；
+     2. `material.envMap === null` ——**严格 null 测试**，所以**"未设"不算 null**，会走另一支；
+     3. `scene.environment !== null` ——**严格非 null 测试**，所以**"未设"反而算有**。
+   - **后果**：一个从未设过 `envMap` 的材质，**强度走场景的、旋转走自己的**——**两个相邻的 uniform 对同一个缺失给出相反的归属**。测试把这条写成"两个测试在不设值时分开"的断言。
+   - **第三处最反直觉**：`scene.environment !== null` 让**一个从未设过环境值的场景"算作有环境"**。端口把这条写成 `Presence::Undefined` 与 `Presence::Present` 同答案的断言。
+   - **测试（4 个用例、17 条断言）**：强度三种（含两种缺失一致）；场景三种（含"未设与有同答案"）；节点三种；旋转五种（含与强度对照的分歧）。
+   - **验证**：核心 **2079 用例 / 214,654 断言**（+4 / +17）、`primitive-geometry`、`port-audit`、addons、`--cube` 全绿。
 70. **第 520 轮：完整 Vulkan 套件 211/211 全绿，耗时 270.72 秒**。
    - 命令：`ctest --test-dir build-vulkan -j 4 -E "lights-states" --output-on-failure`（仍排除第 46 条那个已知项；它在 Vulkan 构建里同样慢）。
    - 结果：**100% tests passed, 0 tests failed out of 211**，总耗时 **270.72 秒**。对比同一套件在 **Debug** 配置下的 **3784.56 秒 / 2 失败**，差了约 14 倍——再次印证第 69 条"是构建类型不是代码"的结论。
