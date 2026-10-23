@@ -194,3 +194,74 @@ TEST_CASE("GCodeLoader resets only the axes a command names") {
     REQUIRE(state.x == 10);
     REQUIRE(state.e == 40);
 }
+TEST_CASE("GCodeLoader moves only the axes a step names") {
+    GCodeLoader::State state;
+    state.x = 1;
+    state.y = 2;
+    state.z = 3;
+    state.e = 4;
+    // A step that names only x leaves the others as they were.
+    const auto move = GCodeLoader::applyMove(state, true, 10, false, 0, false, 0, false, 0, false, 0);
+    REQUIRE(move.next.x == 10);
+    REQUIRE(move.next.y == 2);
+    REQUIRE(move.next.z == 3);
+    REQUIRE(move.next.e == 4);
+}
+
+TEST_CASE("GCodeLoader runs a segment from the old position to the new") {
+    GCodeLoader::State state;
+    state.x = 1;
+    state.y = 2;
+    state.z = 3;
+    // The start is where the head was and the end where it goes.
+    const auto move = GCodeLoader::applyMove(state, true, 10, true, 20, false, 0, false, 0, false, 0);
+    REQUIRE(move.from[0] == 1);
+    REQUIRE(move.from[1] == 2);
+    REQUIRE(move.from[2] == 3);
+    REQUIRE(move.to[0] == 10);
+    REQUIRE(move.to[1] == 20);
+    REQUIRE(move.to[2] == 3);
+}
+
+TEST_CASE("GCodeLoader decides extrusion before the segment is filed") {
+    GCodeLoader::State state;
+    state.e = 1;
+    // More material means extruding, and the new state carries that before anything is recorded.
+    const auto step = GCodeLoader::applyMove(state, true, 5, false, 0, false, 0, true, 2, false, 0);
+    REQUIRE(step.extruding);
+    REQUIRE(step.next.extruding);
+    // The old state is untouched, so the segment ran from a position that was not extruding.
+    REQUIRE_FALSE(state.extruding);
+    REQUIRE(state.e == 1);
+}
+
+TEST_CASE("GCodeLoader reads each axis by its own rule") {
+    GCodeLoader::State state;
+    state.x = 10;
+    state.e = 1;
+    // In relative mode the axes add, and so does the extrusion when it follows them.
+    state.relative = true;
+    const auto relative = GCodeLoader::applyMove(state, true, 5, false, 0, false, 0, true, 2, false, 0);
+    REQUIRE(relative.next.x == 15);
+    REQUIRE(relative.next.e == 3);
+    // An absolute extruder overrides the relative axes for its own axis alone.
+    state.extrusionOverride = true;
+    state.extrusionRelative = false;
+    const auto mixed = GCodeLoader::applyMove(state, true, 5, false, 0, false, 0, true, 2, false, 0);
+    REQUIRE(mixed.next.x == 15);
+    REQUIRE(mixed.next.e == 2);
+}
+
+TEST_CASE("GCodeLoader carries the previous flags into the next state") {
+    GCodeLoader::State state;
+    state.relative = true;
+    state.extrusionOverride = true;
+    state.extrusionRelative = true;
+    const auto move = GCodeLoader::applyMove(state, false, 0, false, 0, false, 0, false, 0, false, 0);
+    // A move does not change any of the mode flags.
+    REQUIRE(move.next.relative);
+    REQUIRE(move.next.extrusionOverride);
+    REQUIRE(move.next.extrusionRelative);
+    // And a step that names nothing and adds no material is not extruding.
+    REQUIRE_FALSE(move.extruding);
+}

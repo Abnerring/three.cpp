@@ -117,3 +117,35 @@ void GCodeLoader::resetPosition(State& state, double x, bool hasX, double y, boo
     if (hasZ) state.z = z;
     if (hasE) state.e = e;
 }
+
+GCodeLoader::Move GCodeLoader::applyMove(const State& state, bool hasX, double x, bool hasY,
+                                         double y, bool hasZ, double z, bool hasE, double e,
+                                         bool hasF, double f) {
+    Move move;
+    // The step starts as a copy of where the head is.
+    move.next = state;
+
+    // Each axis is read by the positioning rule, except the extrusion amount, which has its own.
+    if (hasX) move.next.x = absoluteValue(state.relative, state.x, x);
+    if (hasY) move.next.y = absoluteValue(state.relative, state.y, y);
+    if (hasZ) move.next.z = absoluteValue(state.relative, state.z, z);
+    if (hasE) {
+        move.next.e = absoluteExtrusion(state.extrusionOverride, state.extrusionRelative,
+                                        state.relative, state.e, e);
+    }
+    if (hasF) move.next.f = absoluteValue(state.relative, state.f, f);
+
+    // Whether this step lays material down, decided from the amount rather than the command.
+    move.extruding = isExtruding(state.e, move.next.e);
+    // The new state carries that decision, which is what the segment is filed by.
+    move.next.extruding = move.extruding;
+
+    // The segment runs from the old position to the new one.
+    move.from[0] = state.x;
+    move.from[1] = state.y;
+    move.from[2] = state.z;
+    move.to[0] = move.next.x;
+    move.to[1] = move.next.y;
+    move.to[2] = move.next.z;
+    return move;
+}

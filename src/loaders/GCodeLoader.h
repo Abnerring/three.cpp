@@ -94,4 +94,24 @@ class GCodeLoader {
     // to the same thing as long as every axis is written back.
     static void resetPosition(State& state, double x, bool hasX, double y, bool hasY, double z,
                               bool hasZ, double e, bool hasE);
+    // The result of a movement step: where the head ends up, which list the segment belongs in,
+    // and whether the step also opened a new layer.
+    //
+    // The order of these decisions matters and is easy to get wrong. The step first works out
+    // where it ends, then decides whether it is extruding from the change in amount, then opens a
+    // layer if that decision and the height say so, and only then records the segment. The
+    // segment therefore runs from the position before the step to the one after it, but it is
+    // filed by the extrusion state the step has already set, not the one it inherited.
+    struct Move {
+        State next;
+        bool extruding = false;
+        bool openedLayer = false;
+        double from[3] = {0, 0, 0};
+        double to[3] = {0, 0, 0};
+    };
+
+    // Applies one movement. Only the axes the caller names are changed; the rest keep the values
+    // they had, which is what makes a command that moves only x leave y and z alone.
+    static Move applyMove(const State& state, bool hasX, double x, bool hasY, double y, bool hasZ,
+                          double z, bool hasE, double e, bool hasF, double f);
 };
