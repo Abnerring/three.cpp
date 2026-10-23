@@ -39,6 +39,7 @@ add_executable(THREECPPTests
         unit/src/loaders/GCodeLoader.tests.cpp
         unit/src/loaders/PDBElement.tests.cpp
         unit/src/loaders/PDBBond.tests.cpp
+        unit/src/loaders/PDBGeometry.tests.cpp
         unit/src/loaders/HDRLoader.tests.cpp
         unit/src/loaders/RGBELoader.tests.cpp
         unit/src/loaders/MTLLoader.tests.cpp

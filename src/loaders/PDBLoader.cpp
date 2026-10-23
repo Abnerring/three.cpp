@@ -1,5 +1,7 @@
 #include "loaders/PDBLoader.h"
 
+#include "math/Color.h"
+
 #include <algorithm>
 #include <cctype>
 #include <cstdlib>
@@ -291,4 +293,55 @@ bool PDBLoader::acceptsBond(int partner, bool alreadyRecorded) {
     // rather than counted again, since the line that would count it is commented out.
     if (partner == 0) return false;
     return !alreadyRecorded;
+}
+
+PDBLoader::Colour PDBLoader::atomColour(int red, int green, int blue) {
+    // The table's bytes are display referred, so the colour is set in the sRGB space and read
+    // back out as linear numbers.
+    Color colour;
+    colour.setRGB(red / 255.0, green / 255.0, blue / 255.0, "srgb");
+    Colour out;
+    out.r = colour.r;
+    out.g = colour.g;
+    out.b = colour.b;
+    return out;
+}
+
+std::vector<PDBLoader::Colour> PDBLoader::atomColours(const std::vector<Atom>& atoms) {
+    std::vector<Colour> colours;
+    colours.reserve(atoms.size());
+    for (const Atom& atom : atoms) {
+        // The table is keyed by the lowered symbol; an element it does not know is black.
+        const auto found = cpkTable().find(atom.element);
+        if (found == cpkTable().end()) {
+            colours.push_back(Colour{});
+            continue;
+        }
+        colours.push_back(atomColour(found->second[0], found->second[1], found->second[2]));
+    }
+    return colours;
+}
+
+std::vector<double> PDBLoader::bondPositions(const std::vector<Atom>& atoms,
+                                             const std::vector<std::array<int, 3>>& bonds) {
+    std::vector<double> positions;
+    positions.reserve(bonds.size() * 6);
+    for (const auto& bond : bonds) {
+        // The bond stores the atom's serial less one, which is both what the map is keyed by and
+        // what an index into the list needs.
+        const int start = bond[0];
+        const int end = bond[1];
+        if (start < 0 || end < 0) continue;
+        if (static_cast<std::size_t>(start) >= atoms.size()) continue;
+        if (static_cast<std::size_t>(end) >= atoms.size()) continue;
+        const Atom& from = atoms[static_cast<std::size_t>(start)];
+        const Atom& to = atoms[static_cast<std::size_t>(end)];
+        positions.push_back(from.x);
+        positions.push_back(from.y);
+        positions.push_back(from.z);
+        positions.push_back(to.x);
+        positions.push_back(to.y);
+        positions.push_back(to.z);
+    }
+    return positions;
 }

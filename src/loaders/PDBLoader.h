@@ -59,4 +59,23 @@ class PDBLoader {
     // again: the source leaves the line that would have counted repeats commented out, with a
     // note saying most files repeat ordinary bonds rather than meaning higher orders.
     static bool acceptsBond(int partner, bool alreadyRecorded);
+    // The colour each atom is drawn with. The CPK table gives display referred bytes, so they are
+    // divided by two hundred and fifty five and then converted out of the sRGB space, which means
+    // the numbers a caller gets are not the plain quotients. That is the opposite of the glTF
+    // factors, which arrive already linear.
+    struct Colour {
+        double r = 0;
+        double g = 0;
+        double b = 0;
+    };
+
+    static Colour atomColour(int red, int green, int blue);
+
+    // The colours of a whole list of atoms, in order.
+    static std::vector<Colour> atomColours(const std::vector<Atom>& atoms);
+
+    // The two ends of every bond, as one flat list of positions: each bond contributes six
+    // numbers. A bond naming an atom that does not exist is skipped rather than read past.
+    static std::vector<double> bondPositions(const std::vector<Atom>& atoms,
+                                             const std::vector<std::array<int, 3>>& bonds);
 };
