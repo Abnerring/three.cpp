@@ -677,3 +677,19 @@ std::string GLTFLoader::extrasWarning(const std::string& valueText) {
     // The message the source prints, with the value appended as it would be converted to text.
     return "THREE.GLTFLoader: Ignoring primitive type .extras, " + valueText;
 }
+
+bool GLTFLoader::materialExtensionPresent(bool hasExtensions, bool valueIsTruthy) {
+    // A missing extensions object carries nothing, and a value that is not true counts as absent.
+    return hasExtensions && valueIsTruthy;
+}
+
+bool GLTFLoader::targetNamesApply(bool isArray, std::size_t nameCount,
+                                  std::size_t influenceCount) {
+    // The names are only usable when they are an array of exactly the right length.
+    return isArray && nameCount == influenceCount;
+}
+
+std::size_t GLTFLoader::weightsWritten(std::size_t weightCount, std::size_t influenceCount) {
+    // The shorter of the two, since the source writes weight by weight into the influences.
+    return weightCount < influenceCount ? weightCount : influenceCount;
+}

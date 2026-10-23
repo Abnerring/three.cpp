@@ -1950,6 +1950,12 @@
    - **警告文案逐字**：`THREE.GLTFLoader: Ignoring primitive type .extras, ` + 值的文本形式；测试连"空值也照样包上整句"一起钉住。
    - **测试（4 个用例、11 条断言）**：归并与"没有"；四种警告类型；**两个陷阱都走归并**；三条警告文案（含空值）。
    - **验证**：核心 **1596 用例 / 210,737 断言**（+4 / +11）、addons、`primitive-geometry`、`port-audit`、Vulkan 全绿。
+340. **第 26 轮：`GLTFLoader` 第二十六层——扩展取值与形变目标名**。
+   - **扩展是按"真值"判断的**：`materialDef.extensions[ extensionName ]` 直接放进 `if`，所以**键存在但值是 `0`、`false` 或空串时算作没有**；而 `{}` 是真值，算作有。端口因此把判据写成 `hasExtensions && valueIsTruthy`，测试用 `(true, false)` 断言返回 false。
+   - **形变目标名要三个条件同时满足**：是数组、长度**等于**影响数、否则整份忽略（不是部分应用）。测试覆盖短、长、非数组、以及 0 与 0 这种合法空对。
+   - **权重按"短的为准"写入**：上游逐个把权重写进影响，写多了会越界、写少了留下原值，所以端口返回 `min(weightCount, influenceCount)`。
+   - **测试（3 个用例、12 条断言）**：扩展三态；目标名六种；权重四种（含 0 影响）。
+   - **验证**：核心 **1599 用例 / 210,749 断言**（+3 / +12）、addons、`primitive-geometry`、`port-audit`、Vulkan 全绿。
 70. **第 520 轮：完整 Vulkan 套件 211/211 全绿，耗时 270.72 秒**。
    - 命令：`ctest --test-dir build-vulkan -j 4 -E "lights-states" --output-on-failure`（仍排除第 46 条那个已知项；它在 Vulkan 构建里同样慢）。
    - 结果：**100% tests passed, 0 tests failed out of 211**，总耗时 **270.72 秒**。对比同一套件在 **Debug** 配置下的 **3784.56 秒 / 2 失败**，差了约 14 倍——再次印证第 69 条"是构建类型不是代码"的结论。

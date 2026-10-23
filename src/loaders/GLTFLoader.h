@@ -419,4 +419,19 @@ class GLTFLoader {
     // The warning a value that is not an object produces. The value itself is appended, which is
     // why this takes it as text.
     static std::string extrasWarning(const std::string& valueText);
+    // Whether a material carries a named extension. The source tests the value for truth rather
+    // than for presence, so an extension written as zero or as an empty string counts as absent
+    // while an empty object counts as present, which is the opposite of what a presence test
+    // would say. The flag is therefore about the value's truth, not about whether a key exists.
+    static bool materialExtensionPresent(bool hasExtensions, bool valueIsTruthy);
+
+    // Whether a morph target's name list applies. The list has to be an array and its length has
+    // to match the number of influences the mesh actually has, so a file whose names do not line
+    // up with its targets is ignored rather than partly applied.
+    static bool targetNamesApply(bool isArray, std::size_t nameCount, std::size_t influenceCount);
+
+    // How many of a mesh's influences a weights list fills. The source writes each weight into
+    // the matching influence, so a list longer than the influences would write past the end and
+    // a shorter one leaves the rest as they were.
+    static std::size_t weightsWritten(std::size_t weightCount, std::size_t influenceCount);
 };
