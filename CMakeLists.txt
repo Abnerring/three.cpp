@@ -191,6 +191,7 @@ target_sources(threecpp PRIVATE
     src/nodes/core/FrontFacing.cpp
     src/nodes/core/ColorSpaceFunctions.cpp
     src/nodes/core/ToneMapping.cpp
+    src/nodes/core/NormalMap.cpp
     src/nodes/core/NodeConstants.cpp
     src/nodes/core/Node.cpp
     src/loaders/DataTextureLoader.cpp

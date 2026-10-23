@@ -310,6 +310,7 @@ add_executable(THREECPPTests
         unit/src/nodes/core/FrontFacing.tests.cpp
         unit/src/nodes/core/ColorSpaceFunctions.tests.cpp
         unit/src/nodes/core/ToneMapping.tests.cpp
+        unit/src/nodes/core/NormalMap.tests.cpp
         unit/src/loaders/EXRSamplesToBytes.tests.cpp
         unit/src/loaders/EXRDecompressBlock.tests.cpp
         unit/src/loaders/Zlib.tests.cpp
