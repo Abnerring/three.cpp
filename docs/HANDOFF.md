@@ -1891,6 +1891,12 @@
    - **三个字段里只有两个被认**：`sheenColorFactor` → `sheenColor`、`sheenRoughnessFactor` → `sheenRoughness`；贴图字段（`sheenColorTexture`）在这个扩展里**不存在**，所以返回空名字。
    - **测试（3 个用例、13 条断言）**：五个初值；**材质与 sheen 的初色相反**；两条改名 + 三条未知（贴图、`sheen` 本身、空串）。
    - **验证**：核心 **1562 用例 / 210,598 断言**（+3 / +13）、addons、`primitive-geometry`、`port-audit`、Vulkan 全绿。
+331. **第 17 轮：`GLTFLoader` 第十七层——体积材质的衰减距离**。
+   - **一处 `||` 陷阱**：上游写 `attenuationDistance || Infinity`，JS 里 **0 是假值**，所以**写 0 与不写等价**——都变成"无限制"。端口用 `{ infinite, distance }` 表达，而不是拿一个特殊数字当无穷。
+   - **与厚度形成对照**：厚度写的是 `thicknessFactor !== undefined ? ... : 0`，**显式写的 0 就是 0**。同一个扩展里两条相邻的赋值，一条吞掉 0、一条保留 0，测试把两者并排钉住。
+   - **极小值仍是距离**：`1e-9` 要算作有限。
+   - **测试（3 个用例、10 条断言）**：写了与没写；**0 与省略等价**；`1e-9` 有限；厚度三种（有值、没、写 0）。
+   - **验证**：核心 **1565 用例 / 210,608 断言**（+3 / +10）、addons、`primitive-geometry`、`port-audit`、Vulkan 全绿。
 70. **第 520 轮：完整 Vulkan 套件 211/211 全绿，耗时 270.72 秒**。
    - 命令：`ctest --test-dir build-vulkan -j 4 -E "lights-states" --output-on-failure`（仍排除第 46 条那个已知项；它在 Vulkan 构建里同样慢）。
    - 结果：**100% tests passed, 0 tests failed out of 211**，总耗时 **270.72 秒**。对比同一套件在 **Debug** 配置下的 **3784.56 秒 / 2 失败**，差了约 14 倍——再次印证第 69 条"是构建类型不是代码"的结论。

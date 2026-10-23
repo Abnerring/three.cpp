@@ -488,3 +488,22 @@ std::string GLTFLoader::sheenParamForField(const std::string& field) {
     // The extension has only those two, so anything else names nothing.
     return std::string();
 }
+
+GLTFLoader::Attenuation GLTFLoader::attenuationDistance(bool hasDistance, double distance) {
+    Attenuation result;
+    // A missing distance and a distance of zero both mean no limit, because the source's `||`
+    // treats zero as if it were not there.
+    if (!hasDistance || distance == 0.0) {
+        result.infinite = true;
+        result.distance = 0.0;
+        return result;
+    }
+    result.infinite = false;
+    result.distance = distance;
+    return result;
+}
+
+double GLTFLoader::volumeThickness(bool hasThickness, double thickness) {
+    // The thickness is zero when the file leaves it out, not the material's own value.
+    return hasThickness ? thickness : 0.0;
+}

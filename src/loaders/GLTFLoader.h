@@ -267,4 +267,27 @@ class GLTFLoader {
     // factor fills the colour and the roughness factor fills the roughness; nothing else is
     // recognised here because the extension has only those two.
     static std::string sheenParamForField(const std::string& field);
+    // What a volume extension starts from. The thickness is zero when absent, and the
+    // attenuation colour is white.
+    struct VolumeDefaults {
+        double thickness = 0;
+        double attenuationDistance = 0;
+        std::array<double, 3> attenuationColour{1, 1, 1};
+    };
+
+    // The attenuation distance a volume extension asks for. The source writes
+    // `attenuationDistance || Infinity`, so a distance of zero reads as no limit at all
+    // rather than as zero: the two cannot be told apart in the file. An absent value is the
+    // same, and anything else is taken as written. The result says whether it is infinite
+    // rather than using a special number for it.
+    struct Attenuation {
+        bool infinite = true;
+        double distance = 0;
+    };
+
+    static Attenuation attenuationDistance(bool hasDistance, double distance);
+
+    // The thickness the extension asks for, which is zero when absent rather than the
+    // material's own value.
+    static double volumeThickness(bool hasThickness, double thickness);
 };
