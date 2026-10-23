@@ -204,6 +204,7 @@ add_executable(THREECPPTests
         unit/src/loaders/GLTFMorphFlags.tests.cpp
         unit/src/loaders/GLTFBounds.tests.cpp
         unit/src/loaders/GLTFAttributeAssembly.tests.cpp
+        unit/src/loaders/EXRLoader.tests.cpp
         unit/src/cameras/StereoCamera.tests.cpp
         unit/src/audio/AudioContext.tests.cpp
         unit/src/audio/Audio.tests.cpp
