@@ -2768,6 +2768,12 @@
    - **两个方法是同一个问题**：`isCacheable` 的答案就是 `hasDependencies` 的答案，源里也是后者转调前者式的写法。端口用**二十个值的循环断言两者永远一致**——这比注释里写"其实一样"强，改了一处忘了另一处会立刻红。
    - **测试（3 个用例、30 条断言）**：弃用文案与我名字/标志；五个用次；二十个值的一致性 + 两条边界。
    - **验证**：核心 **2039 用例 / 214,511 断言**（+3 / +30）、`primitive-geometry`、`port-audit`、addons、`--cube` 全绿。
+455. **第 141 轮：`NodeVarying` 的脱钩标志**。
+   - **四个字段**：名字、类型（继承自 `NodeVar`）、`interpolationType`、`interpolationSampling`，加一个 `needsInterpolation` 标志与 `isNodeVarying`。
+   - **一处值得记的脱钩**：`needsInterpolation` **默认假，而且不由那两个 `interpolation*` 推导**。所以一个 varying **可以写着 `interpolationType = 'smooth'` 同时说"我不需要插值"**——这正是它存在的意义：让构建器能把它当成普通变量优化掉。测试专门用"给了类型仍为假"与"没给类型却为真"两侧把脱钩钉住。
+   - **两个插值名缺省为空串**：源里的缺省是 `null`，端口拼成空串，因为下游没有一处拿它跟某个词比。
+   - **测试（4 个用例、16 条断言）**：名字与类型 + 标志；标志的开关；脱钩两侧；四个缺省组合（含只给一个）。
+   - **验证**：核心 **2043 用例 / 214,527 断言**（+4 / +16）、`primitive-geometry`、`port-audit`、addons、`--cube` 全绿。
 70. **第 520 轮：完整 Vulkan 套件 211/211 全绿，耗时 270.72 秒**。
    - 命令：`ctest --test-dir build-vulkan -j 4 -E "lights-states" --output-on-failure`（仍排除第 46 条那个已知项；它在 Vulkan 构建里同样慢）。
    - 结果：**100% tests passed, 0 tests failed out of 211**，总耗时 **270.72 秒**。对比同一套件在 **Debug** 配置下的 **3784.56 秒 / 2 失败**，差了约 14 倍——再次印证第 69 条"是构建类型不是代码"的结论。
