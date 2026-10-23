@@ -69,12 +69,27 @@ TEST_CASE("EXRLoader reads through a block's own reader") {
     REQUIRE_FALSE(result.error.empty());
 }
 
+TEST_CASE("EXRLoader reads nothing at all when the height is under one block") {
+    // A block compression takes thirty two lines at a time, and the block count is the height
+    // divided by that with the remainder dropped. A file of two lines therefore has no blocks
+    // at all, so nothing is read and the answer is an empty array rather than a failure. This
+    // is the same dropped remainder recorded for the loop, seen from the outside.
+    const auto result = EXRLoader::parseScanline(twoByFour(), 0, 4, 2, 6, 1, oneChannel());
+    INFO("error: " << result.error);
+    REQUIRE(result.valid);
+    REQUIRE(result.samples.size() == 8);
+    for (const auto sample : result.samples) REQUIRE(sample == 0);
+    // The same file read as one line at a time does reach its blocks, which shows the
+    // difference is the block height and nothing else.
+    const auto lineByLine = EXRLoader::parseScanline(twoByFour(), 0, 4, 2, 0, 1, oneChannel());
+    REQUIRE(lineByLine.valid);
+    REQUIRE(lineByLine.samples[4] == 0x1111);
+}
+
 TEST_CASE("EXRLoader refuses a compression it has no reader for") {
-    // A block compressed with one of the two unread kinds is refused by the dispatcher, and the
-    // reason it gives names which kind.
-    auto data = twoByFour();
-    data[7] = 0x04;
-    const auto result = EXRLoader::parseScanline(data, 0, 4, 2, 6, 1, oneChannel());
+    // The dispatcher is asked directly, since a file short enough to reach a block of this kind
+    // would have to be at least thirty two lines tall.
+    const auto result = EXRLoader::decompressBlock({1, 2, 3}, 6, 2, 1, 1, 1, {1});
     REQUIRE_FALSE(result.valid);
     REQUIRE(result.error == "THREE.EXRLoader: the block compression is not read yet");
 }
