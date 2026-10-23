@@ -2847,6 +2847,13 @@
    - **一处与父类的关键差别**：`update( frame )` 里 **`this.object3d = frame.object`**——**对象每次从帧里取**，节点本身不持有。所以**同一个节点实例在不同对象之间会跟着帧走**，而父类 `Object3DNode` 是给定一个对象来持有的。
    - **测试（3 个用例、20 条断言）**：五个名字按顺序；十个接受/拒绝（含三个大小写与空串）；一条"不持有对象"的决定。
    - **验证**：核心 **2082 用例 / 214,674 断言**（+3 / +20）、`primitive-geometry`、`port-audit`、addons、`--cube` 全绿。
+467. **第 153 轮：`Object3DNode` 的类型映射与恒不可缓存（第三次）**。
+   - **五个 scope 里只有一个给矩阵**：`WORLD_MATRIX` → `mat4`，其余四个（`position`、`viewPosition`、`direction`、`scale`）→ `vec3`。**所以类型不是存的，是从 scope 算出来的**。测试用"数一数只有一个矩阵"把这件事写成断言。
+   - **一处落空而非拒绝**：一个不认识的 scope 名仍然得到 `vec3`，因为源里只判了一个相等、其余落到同一支。**所以 `"WorldMatrix"` 得到的是 `vec3` 而不是 `mat4`**——大小写在这里是硬边界。
+   - **`isCacheable` 恒假，这已是第三次**：`PointUVNode`（143）、`BuiltinNode`（145）、`Object3DNode`（本轮）。**三个都直接 `return false`**，与 `TempNode` 的"用超过一次才缓存"形成清楚的两类。
+   - **`updateType` 是 `OBJECT`**：不是 `FRAME` 也不是 `RENDER`，所以这个节点**按对象更新**，这正是它与大多数节点不同的地方。
+   - **测试（4 个用例、20 条断言）**：五个名字；五个类型 + "只有一个矩阵"；三种未知名（含大小写）；缓存与更新类型（含"不是 FRAME/RENDER"）。
+   - **验证**：核心 **2086 用例 / 214,694 断言**（+4 / +20）、`primitive-geometry`、`port-audit`、addons、`--cube` 全绿。
 70. **第 520 轮：完整 Vulkan 套件 211/211 全绿，耗时 270.72 秒**。
    - 命令：`ctest --test-dir build-vulkan -j 4 -E "lights-states" --output-on-failure`（仍排除第 46 条那个已知项；它在 Vulkan 构建里同样慢）。
    - 结果：**100% tests passed, 0 tests failed out of 211**，总耗时 **270.72 秒**。对比同一套件在 **Debug** 配置下的 **3784.56 秒 / 2 失败**，差了约 14 倍——再次印证第 69 条"是构建类型不是代码"的结论。
