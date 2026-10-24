@@ -1485,6 +1485,7 @@ struct VulkanRenderer::Impl {
         create.imageType = VK_IMAGE_TYPE_2D; create.format = config.format;
         create.extent = {config.width, config.height, 1}; create.mipLevels = config.levels;
         create.arrayLayers = 1;
+        create.samples = VK_SAMPLE_COUNT_1_BIT;
         create.tiling = VK_IMAGE_TILING_OPTIMAL;
         create.usage = VK_IMAGE_USAGE_TRANSFER_DST_BIT | VK_IMAGE_USAGE_TRANSFER_SRC_BIT | VK_IMAGE_USAGE_SAMPLED_BIT;
         create.sharingMode = VK_SHARING_MODE_EXCLUSIVE;
