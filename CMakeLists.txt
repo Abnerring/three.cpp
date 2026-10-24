@@ -266,6 +266,7 @@ target_sources(threecpp PRIVATE
     src/loaders/TTFLoader.cpp
     src/loaders/ColladaLoader.cpp
     src/loaders/USDLoader.cpp
+    src/loaders/MaterialXLoader.cpp
     src/nodes/core/ParameterNode.cpp
     src/nodes/core/NodeConstants.cpp
     src/nodes/core/Node.cpp

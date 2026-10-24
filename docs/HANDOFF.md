@@ -3401,6 +3401,13 @@
    - **本轮的一个操作失误**：先把 `.cpp` 写进了 `src/nodes/core/`，而 CMakeLists 指的是 `src/loaders/`，**导致构建用了旧缓存、测试计数没有增长**。**发现方式是"通过但计数没变"**——这个信号值得记住。
    - **测试（4 个用例、21 条断言）**：扩展名八处；两种空三处；缓冲六处；路径与异步三处。
    - **验证**：核心 **2412 用例 / 216,562 断言**（+4 / +21）、`primitive-geometry`、`port-audit`、addons、`--cube` 全绿。
+545. **第 237 轮：`MaterialXLoader` 的两次管理器调用与另两个 loader 不同**。
+   - **失败时调两次管理器**：`this.manager.itemError( url ); this.manager.itemEnd( url );`——**先报失败再报结束**。**而 `ColladaLoader` 与 `TTFLoader` 只调第一个**，所以**写一个统计管理器调用的调用方会发现格式之间有差异，而差异的原因并不在格式上**。
+   - **加载前先 `itemStart`**：`this.manager.itemStart( url )` 在 `FileLoader` 之前，**所以管理器从调用那一刻开始计数工作，而不是从字节到达时**。源注释说这是为了"matching the lifecycle used by GLTFLoader"。
+   - **路径判据用的是真值而不是空串**：`if ( loaderPath ) return loaderPath`。**而旁边两个 loader 用的是 `=== ''`**——**结果对空串一致，但对更少见的取值（如 `0`）不一致**。
+   - **`dispose` 运行后把 disposer 置空**：所以**调用两次是安全的**，第二次什么也不做。
+   - **测试（4 个用例、14 条断言）**：路径五处；判据对比两处；dispose 三处；管理器四次三处。
+   - **验证**：核心 **2416 用例 / 216,576 断言**（+4 / +14）、`primitive-geometry`、`port-audit`、addons、`--cube` 全绿。**本轮特意核对了断言数从 216,562 增长到 216,576**，以免重演上一轮"通过但计数不变"的陈旧构建。
 70. **第 520 轮：完整 Vulkan 套件 211/211 全绿，耗时 270.72 秒**。
    - 命令：`ctest --test-dir build-vulkan -j 4 -E "lights-states" --output-on-failure`（仍排除第 46 条那个已知项；它在 Vulkan 构建里同样慢）。
    - 结果：**100% tests passed, 0 tests failed out of 211**，总耗时 **270.72 秒**。对比同一套件在 **Debug** 配置下的 **3784.56 秒 / 2 失败**，差了约 14 倍——再次印证第 69 条"是构建类型不是代码"的结论。
