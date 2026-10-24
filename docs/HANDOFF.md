@@ -3496,6 +3496,13 @@
    - **本轮的一个失误**：把嵌套枚举写成 `OutputChoice.Source`（用点而非 `::`），**30 个编译错误**。**修法是把枚举提到类一级**，比修限定符更干净。**发现方式仍是"build errors = 30 但 core exit=0"**。
    - **测试（5 个用例、14 条断言）**：引用两处；全局一处；守卫一处；三级回退七处；父标志两处。
    - **验证**：核心 **2460 用例 / 216,773 断言**（+5 / +14，从 216,759 增长）、`primitive-geometry`、`port-audit`、addons、`--cube` 全绿。
+557. **第 249 轮：`NodeBuilder` 的两套嵌套记录**。
+   - **`addContext` 把新的展开在旧的上面**：`setContext( { ...this.context, ...context } )`——**重叠处新的胜**，**而调用返回的是旧的上下文**，那正是调用方要放回去的东西。
+   - **`getSharedContext` 恰好删掉两个键**：`delete context.material; delete context.getUV;`——**这两个都属于某一个材质而不属于着色器构造**，所以**"可共享的上下文"就是当前上下文减掉这两项**。测试断言 `getUv`（小写 v）不被删，把大小写敏感钉住。
+   - **`addStack` 同时维护两套记录**：`this.stack = stack( this.stack )`（builder 自己的链）**与** `setCurrentStack( this.stack )`（模块级的"当前栈"）。**两者都要更新**，**而保存下来的是前一个当前栈，不是父栈**。
+   - **`removeStack` 在退回之前给每个节点回写栈**：`nodeData.stack = lastStack` 对 `lastStack.nodes` 里每个节点都做一次——**所以"某个节点属于哪个栈"这条记录在栈被移除后仍然存在**，而不是随栈一起消失。
+   - **测试（4 个用例、19 条断言）**：合并七处；删两键七处；加栈四处；回写一处。
+   - **验证**：核心 **2464 用例 / 216,792 断言**（+4 / +19，从 216,773 增长）、`primitive-geometry`、`port-audit`、addons、`--cube` 全绿。
 70. **第 520 轮：完整 Vulkan 套件 211/211 全绿，耗时 270.72 秒**。
    - 命令：`ctest --test-dir build-vulkan -j 4 -E "lights-states" --output-on-failure`（仍排除第 46 条那个已知项；它在 Vulkan 构建里同样慢）。
    - 结果：**100% tests passed, 0 tests failed out of 211**，总耗时 **270.72 秒**。对比同一套件在 **Debug** 配置下的 **3784.56 秒 / 2 失败**，差了约 14 倍——再次印证第 69 条"是构建类型不是代码"的结论。

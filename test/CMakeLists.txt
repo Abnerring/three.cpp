@@ -361,6 +361,7 @@ add_executable(THREECPPTests
         unit/src/nodes/core/NodeTypeCache.tests.cpp
         unit/src/nodes/core/NodeShared.tests.cpp
         unit/src/nodes/core/NodeSetup.tests.cpp
+        unit/src/nodes/core/NodeBuilderContext.tests.cpp
         unit/src/nodes/core/OutputStructNode.tests.cpp
         unit/src/nodes/core/LightingModel.tests.cpp
         unit/src/nodes/core/IsolateNode.tests.cpp
