@@ -246,6 +246,7 @@ target_sources(threecpp PRIVATE
     src/nodes/core/NodeBuilderData.cpp
     src/nodes/core/NodeBuilderHash.cpp
     src/nodes/core/NodeBuilderTypes.cpp
+    src/nodes/core/NodeBuilderKinds.cpp
     src/nodes/core/OutputStructNode.cpp
     src/nodes/core/LightingModel.cpp
     src/nodes/core/IsolateNode.cpp
