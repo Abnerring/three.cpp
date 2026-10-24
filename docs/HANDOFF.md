@@ -3472,6 +3472,12 @@
    - **`getScope` 返回节点自身**，不是名字也不是查表。
    - **测试（5 个用例、20 条断言）**：成员类型三处；作用域一处；两个答案六处；剥名五处；重算五处。
    - **验证**：核心 **2447 用例 / 216,726 断言**（+5 / +20，从 216,706 增长）、`primitive-geometry`、`port-audit`、addons、`--cube` 全绿。
+554. **第 246 轮：`Node` 的类型缓存是两个地方，不是一个**。
+   - **`output` 有名字时缓存进映射，没名字时进标量**：`nodeData.typeFromOutput[ output ]` 与 `nodeData.type` 是**两个不同的字段**。**所以问 `vec3` 与问 `float` 的回答分别被记住，而"不问输出"的那一次又记在另一处**。
+   - **判据是"条目不存在"而不是"假值"**：`if ( type === undefined )` 才计算并记住。**所以被记住的空类型仍然被记住**，下次不再重算——**一个用假值判断的实现会每次都重做**。
+   - **默认的 `generateNodeType` 是转发而不是计算**：`if ( nodeProperties.outputNode ) return nodeProperties.outputNode.getNodeType( builder, output )`——**有输出节点就把问题连着 `output` 一起交给它**，没有才答自己声明的类型。**所以"计算类型"这件事，默认实现是空壳，真正的计算都在子类里**。
+   - **测试（4 个用例、16 条断言）**：两个槽三处；命中与未中七处；空类型四处；转发四处。
+   - **验证**：核心 **2451 用例 / 216,742 断言**（+4 / +16，从 216,726 增长）、`primitive-geometry`、`port-audit`、addons、`--cube` 全绿。
 70. **第 520 轮：完整 Vulkan 套件 211/211 全绿，耗时 270.72 秒**。
    - 命令：`ctest --test-dir build-vulkan -j 4 -E "lights-states" --output-on-failure`（仍排除第 46 条那个已知项；它在 Vulkan 构建里同样慢）。
    - 结果：**100% tests passed, 0 tests failed out of 211**，总耗时 **270.72 秒**。对比同一套件在 **Debug** 配置下的 **3784.56 秒 / 2 失败**，差了约 14 倍——再次印证第 69 条"是构建类型不是代码"的结论。
