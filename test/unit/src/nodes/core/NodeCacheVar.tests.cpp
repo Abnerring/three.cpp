@@ -8,27 +8,32 @@
 TEST_CASE("NodeCache hands out increasing ids and starts empty") {
     NodeCache first;
     NodeCache second;
-    REQUIRE(second.id() == first.id() + 1);
-    REQUIRE_FALSE(first.parent());
+    REQUIRE(second.id().toNumber() == first.id().toNumber() + 1);
+    REQUIRE(first.parent().isNull());
 
-    int key = 0;
-    REQUIRE(first.getData(&key).isUndefined());
+    const auto key = JSValue::object();
+    REQUIRE(first.getData(key).isUndefined());
 }
 
 TEST_CASE("NodeCache falls back to its parent and prefers its own data") {
     auto parent = std::make_shared<NodeCache>();
     NodeCache child(parent);
 
-    int a = 0;
-    int b = 0;
-    parent->setData(&a, JSValue(1.0));
-    REQUIRE(child.getData(&a).toNumber() == 1);
-    REQUIRE(child.getData(&b).isUndefined());
+    const auto a = JSValue::object();
+    const auto b = JSValue::object();
+    parent->setData(a, JSValue(1.0));
+    REQUIRE(child.getData(a).toNumber() == 1);
+    REQUIRE(child.getData(b).isUndefined());
 
     // A value set on the child shadows the parent for that node only.
-    child.setData(&a, JSValue(2.0));
-    REQUIRE(child.getData(&a).toNumber() == 2);
-    REQUIRE(parent->getData(&a).toNumber() == 1);
+    child.setData(a, JSValue(2.0));
+    REQUIRE(child.getData(a).toNumber() == 2);
+    REQUIRE(parent->getData(a).toNumber() == 1);
+
+    child.setData(a, JSValue{});
+    REQUIRE(child.getData(a).toNumber() == 1);
+    child.setData(a, nullptr);
+    REQUIRE(child.getData(a).isNull());
 }
 
 TEST_CASE("NodeVar defaults match the upstream signature") {

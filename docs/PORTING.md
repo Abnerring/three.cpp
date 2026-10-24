@@ -21,6 +21,8 @@
 
 ## C++ 适配
 
+`NodeCache` 与 `NodeFrame` 已改为真实管理对象，字段、原型方法和弱缓存是活状态。NodeCache 保留本地 `undefined` 查询父缓存、动态 `get/set` 与父字段二次读取；NodeFrame 保留三种更新阶段、共享引用、严格 `false`、异常及同步重入时的标记顺序，时钟由每个运行时域的原生宿主提供。WeakMap 支持当前运行时的未注册 Symbol 键及条件回收；Symbol 注册表仍待实现。固定上游差分通过 NodeCache 68 个协议场景、NodeFrame 800 个协议场景，分别另有 8 个实际 Node GC 快照。它们尚未连接完整 NodeBuilder、节点代码生成或现代 Vulkan 渲染管线。
+
 原版接口优先，允许修改旧接口。Vector2/3/4 与 Color 的分量使用公开数值字段，例如 `v.x`、`color.r`；Euler/Quaternion 使用公开赋值属性，在直接写入时触发原版旋转回调，批量操作保留原版回调次数与 `update=false` 行为。`Object3D::children` 用 shared_ptr 持有子节点，parent 为非拥有指针。对象不允许直接复制，以 copy/clone 保持身份、监听器和旋转回调的有效性。需要更新版本的属性使用 C++ 赋值代理。矩阵 elements 与部分其余属性尚待接口迁移。
 
 当前 `JsonValue` 覆盖 JSON 数据，不支持 JavaScript 的函数、undefined、循环引用或任意动态原型。堆上共享对象的 `toNonIndexed()` 无索引分支返回自身；栈对象使用此分支会遇到 C++ shared_from_this 的所有权约束。C++ 关键字 `static` 属性对应 `isStatic`，JSON 仍为 `static`。

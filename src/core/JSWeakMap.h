@@ -1,10 +1,9 @@
 #pragma once
 #include "core/JSValue.h"
 
-// Native WeakMap for the runtime's object, array, and function keys. Conditional
-// entries live in JSHeap records and participate in ephemeron fixed-point GC.
-// Symbol keys, @@toStringTag, and iterable constructor initialization require
-// the still-unimplemented Symbol/iterator runtime and are not emulated here.
+// Native WeakMap for object, array, function and unregistered Symbol keys.
+// Conditional entries participate in ephemeron fixed-point GC. The Symbol
+// registry, @@toStringTag and iterable constructor initialization remain pending.
 class JSWeakMap {
     JSValue object_;
   public:

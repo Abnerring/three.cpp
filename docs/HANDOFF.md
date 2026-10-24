@@ -1,8 +1,9 @@
 # 续接说明（Handoff）
 
 本文件记录当前进度、已探明的事实与下一步，供后续（新上下文）直接使用，避免重复摸索。
-最近一次全量验证：核心单测 662 cases / 205,175 assertions、addons 144 cases / 23,937 assertions、
-差分网络 131/131 通过（排除已知长耗时用例 `webcpp.threejs-webgl-lights-states`）。
+2026-10-24 当前阶段验证：`THREECPPTests` 2,490 cases / 216,957 assertions 通过；NodeCache 68 个协议场景 + 8 个实际 Node GC 快照、NodeFrame 800 个协议场景 + 8 个实际 Node GC 快照与固定上游一致。本轮未重跑完整差分网络或全部 addons，不能沿用历史结果作为当前全量验收。
+
+NodeCache/NodeFrame 已从描述性辅助类改为真实管理对象及 ephemeron WeakMap。注意本地 `undefined` 应继续查父缓存；NodeFrame `_getMaps` 的对象字面量须创建自有数据属性，不能被继承 setter/只读属性拦截。原始 03 差分失败来自探针缺少可选链的空值判断，输入与 Node 预期保持不变，修复探针后 04 全量通过；失败记录与修复后记录分别保存在 `D:\Temp\surui\threecpp-20261024`。NodeBuilder 本体、完整 nodes/TSL 与现代渲染仍待实现，旧的 fact/helper 类不能计为对应模块完成。
 
 ## 一、项目约定（必须遵守）
 

@@ -1494,7 +1494,7 @@ bool JSValue::hasWeakMapData() const {
 }
 JSValue JSValue::weakMapGet(const JSValue& key) const {
     if (!hasWeakMapData()) throw JSTypeError("WeakMap.get receiver lacks WeakMap data");
-    if (!key.isObject()) return {};
+    if (!key.isObject() && !key.isSymbol()) return {};
     static_cast<void>(JSWeakValue(key)); heap_->validateEdge(key);
     const auto& entries = heap_->record(*this).weakEntries;
     if (!entries) return {};
@@ -1503,21 +1503,23 @@ JSValue JSValue::weakMapGet(const JSValue& key) const {
 }
 bool JSValue::weakMapHas(const JSValue& key) const {
     if (!hasWeakMapData()) throw JSTypeError("WeakMap.has receiver lacks WeakMap data");
-    if (!key.isObject()) return false;
+    if (!key.isObject() && !key.isSymbol()) return false;
     static_cast<void>(JSWeakValue(key)); heap_->validateEdge(key);
     const auto& entries = heap_->record(*this).weakEntries;
     return entries && entries->contains(std::get<Reference>(key.value_).id);
 }
 bool JSValue::weakMapErase(const JSValue& key) {
     if (!hasWeakMapData()) throw JSTypeError("WeakMap.delete receiver lacks WeakMap data");
-    if (!key.isObject()) return false;
+    if (!key.isObject() && !key.isSymbol()) return false;
     static_cast<void>(JSWeakValue(key)); heap_->validateEdge(key);
     const auto& entries = heap_->record(*this).weakEntries;
     return entries && entries->erase(std::get<Reference>(key.value_).id) != 0;
 }
 void JSValue::weakMapSet(const JSValue& key, const JSValue& value) {
     if (!hasWeakMapData()) throw JSTypeError("WeakMap.set receiver lacks WeakMap data");
-    if (!key.isObject()) throw JSTypeError("Invalid value used as weak map key");
+    // Runtime Symbol factories currently create unregistered symbols only.
+    // They have heap identities and use the same conditional edges as objects.
+    if (!key.isObject() && !key.isSymbol()) throw JSTypeError("Invalid value used as weak map key");
     static_cast<void>(JSWeakValue(key)); static_cast<void>(JSWeakValue(value));
     heap_->validateEdge(key); heap_->validateEdge(value);
     auto& entries = heap_->record(*this).weakEntries;

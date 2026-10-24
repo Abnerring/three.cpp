@@ -1,28 +1,26 @@
-﻿#pragma once
+#pragma once
 #include "core/JSValue.h"
-
-#include <cstdint>
 #include <memory>
-#include <unordered_map>
 
-// Port of src/nodes/core/NodeCache.js: the builder's per node data cache.
-//
-// Upstream keys a WeakMap by Node identity. The C++ version keys by pointer, which is the
-// same identity relation, and stores a JSValue so callers can put whatever the node code
-// needs there. A cache may point at a parent and look there when it has nothing itself.
+// NodeCache.js at 11738a9d55e502fb484cefffcea3a66dc44e9fe9.
+// The ordinary runtime object is authoritative. Its nodesData field contains a
+// real ephemeron WeakMap; neither cache entries nor their keys are native roots.
 class NodeCache {
   public:
-    explicit NodeCache(std::shared_ptr<NodeCache> parent = {});
+    NodeCache();
+    explicit NodeCache(const JSValue& parent);
+    explicit NodeCache(const std::shared_ptr<NodeCache>& parent);
 
-    std::uint64_t id() const { return _id; }
-    const std::shared_ptr<NodeCache>& parent() const { return _parent; }
-
-    // Returns undefined when neither this cache nor any parent holds data for the key.
-    JSValue getData(const void* node) const;
-    void setData(const void* node, JSValue data);
+    JSValue object() const;
+    static JSValue constructor();
+    static JSValue prototype();
+    JSValue id() const;
+    JSValue parent() const;
+    JSValue getData(const JSValue& node) const;
+    JSValue setData(const JSValue& node, const JSValue& data);
 
   private:
-    std::uint64_t _id;
-    std::unordered_map<const void*, JSValue> _nodesData;
-    std::shared_ptr<NodeCache> _parent;
+    JSValue object_;
 };
+
+JSValue nativeNodeCacheConstructor();

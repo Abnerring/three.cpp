@@ -244,3 +244,36 @@ TEST_CASE("WeakMap rejects foreign managed handles before reading or retaining t
     REQUIRE_THROWS_AS(map.set(localKey, foreign->value), JSTypeError); REQUIRE_FALSE(map.has(localKey));
     map.set(localKey, foreign->primitive); REQUIRE(map.get(localKey).string() == "native");
 }
+
+TEST_CASE("WeakMap accepts Symbol identities without retaining unreachable keys", "[runtime][weakmap][symbol][gc]") {
+    auto realm = JSValue::object();
+    JSWeakMap map;
+    auto first = JSValue::symbol("same"), second = JSValue::symbol("same");
+    map.set(first, 1);
+    map.set(second, 2);
+    REQUIRE(map.has(first));
+    REQUIRE(map.get(first).number() == 1);
+    REQUIRE(map.get(second).number() == 2);
+    REQUIRE(map.remove(second));
+    REQUIRE_FALSE(map.has(second));
+    REQUIRE(map.get(second).isUndefined());
+    map.set(JSValue::wellKnownSymbol("iterator"), 3);
+    REQUIRE(map.get(JSValue::wellKnownSymbol("iterator")).number() == 3);
+
+    JSWeakValue weakKey, weakValue;
+    auto key = JSValue::symbol("ephemeron");
+    {
+        auto value = JSValue::object();
+        value.set("back", key);
+        map.set(key, value);
+        weakKey = JSWeakValue(key);
+        weakValue = JSWeakValue(value);
+    }
+    realm.collectGarbage();
+    REQUIRE_FALSE(weakValue.expired());
+    key = {};
+    realm.collectGarbage();
+    REQUIRE(weakKey.expired());
+    REQUIRE(weakValue.expired());
+    REQUIRE(map.get(first).number() == 1);
+}

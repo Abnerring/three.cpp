@@ -1658,6 +1658,20 @@ if(THREEJS_SOURCE_DIR AND THREECPP_NODE_EXECUTABLE)
         "$<TARGET_FILE:ThreeJsQueryParityProbe>" "${THREEJS_SOURCE_DIR}")
 endif()
 
+add_executable(ThreeJsNodeCacheParityProbe unit/utils/parity/NodeCacheParityProbe.cpp)
+target_link_libraries(ThreeJsNodeCacheParityProbe PRIVATE threecpp::threecpp)
+add_executable(ThreeJsNodeFrameParityProbe unit/utils/parity/NodeFrameParityProbe.cpp)
+target_link_libraries(ThreeJsNodeFrameParityProbe PRIVATE threecpp::threecpp)
+if(THREECPP_NODE_EXECUTABLE AND THREEJS_SOURCE_DIR)
+    add_test(NAME threecpp.threejs-node-cache-parity
+        COMMAND "${THREECPP_NODE_EXECUTABLE}" "${CMAKE_CURRENT_SOURCE_DIR}/unit/utils/parity/compare-node-cache.mjs"
+        "${THREEJS_SOURCE_DIR}" "$<TARGET_FILE:ThreeJsNodeCacheParityProbe>")
+    add_test(NAME threecpp.threejs-node-frame-parity
+        COMMAND "${THREECPP_NODE_EXECUTABLE}" --expose-gc "${CMAKE_CURRENT_SOURCE_DIR}/unit/utils/parity/compare-node-frame.mjs"
+        "${THREEJS_SOURCE_DIR}" "$<TARGET_FILE:ThreeJsNodeFrameParityProbe>")
+    set_tests_properties(threecpp.threejs-node-cache-parity threecpp.threejs-node-frame-parity PROPERTIES TIMEOUT 180)
+endif()
+
 # Native ESSL remains an optional Vulkan compiler candidate.
 if(TARGET threecpp_vulkan AND THREECPP_NATIVE_ESSL)
     add_subdirectory(native-essl)
