@@ -248,6 +248,7 @@ target_sources(threecpp PRIVATE
     src/nodes/core/NodeBuilderTypes.cpp
     src/nodes/core/NodeBuilderKinds.cpp
     src/nodes/core/NodeBuilderFormat.cpp
+    src/nodes/core/NodeBuilderAssembly.cpp
     src/nodes/core/OutputStructNode.cpp
     src/nodes/core/LightingModel.cpp
     src/nodes/core/IsolateNode.cpp
