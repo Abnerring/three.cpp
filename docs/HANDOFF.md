@@ -3488,6 +3488,14 @@
    - **本轮的一个失误**：`overrideState` 里把 `isOverwritten` 写成了无条件 `true`，而它应该报"这次调用之前是否已标记"，所以应是 `alreadyMarked`。**第一次调用应为 `false`**。**发现方式是"core exit=1 且第 31 行红"**。
    - **测试（4 个用例、16 条断言）**：只共享不同节点四处；override 只在哈希落空时四处；标记与取消四处；回退与键两处。
    - **验证**：核心 **2455 用例 / 216,754 断言**、`primitive-geometry`、`port-audit`、addons、`--cube` 全绿。
+556. **第 248 轮：`Node` 的引用替换、setup 守卫与三级输出回退**。
+   - **`onReference` 是替换方法而不是记录回调**：`this.updateReference = callback.bind( this )`——**它把那个实例上的方法整个换成一个绑定函数**，**所以类自己的方法在那一实例上被遮蔽**，替换品在原方法被调的位置执行。**默认实现返回 `this`（自己就是自己的引用）**。
+   - **`initialized` 在 `setup()` 之前置位**：`properties.initialized = true; properties.outputNode = this.setup( builder ) || ...`——**所以 setup 期间回头再问到同一个节点时会读到已置位的标记、不会再跑一次**。**如果置位放在后面，第二次调用就能进来，工作会跑两遍**。
+   - **输出节点是三级回退**：**setup 的答案 → 原有的 → `null`**。**所以一个 setup 返回空的类不会把别人已经放好的输出清掉**。
+   - **`parents === true` 严格比较**：子节点注册为父需要标志恰为 true。
+   - **本轮的一个失误**：把嵌套枚举写成 `OutputChoice.Source`（用点而非 `::`），**30 个编译错误**。**修法是把枚举提到类一级**，比修限定符更干净。**发现方式仍是"build errors = 30 但 core exit=0"**。
+   - **测试（5 个用例、14 条断言）**：引用两处；全局一处；守卫一处；三级回退七处；父标志两处。
+   - **验证**：核心 **2460 用例 / 216,773 断言**（+5 / +14，从 216,759 增长）、`primitive-geometry`、`port-audit`、addons、`--cube` 全绿。
 70. **第 520 轮：完整 Vulkan 套件 211/211 全绿，耗时 270.72 秒**。
    - 命令：`ctest --test-dir build-vulkan -j 4 -E "lights-states" --output-on-failure`（仍排除第 46 条那个已知项；它在 Vulkan 构建里同样慢）。
    - 结果：**100% tests passed, 0 tests failed out of 211**，总耗时 **270.72 秒**。对比同一套件在 **Debug** 配置下的 **3784.56 秒 / 2 失败**，差了约 14 倍——再次印证第 69 条"是构建类型不是代码"的结论。
