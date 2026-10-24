@@ -386,6 +386,7 @@ add_executable(THREECPPTests
         unit/src/loaders/MaterialXLoader.tests.cpp
         unit/src/loaders/DRACOLoader.tests.cpp
         unit/src/loaders/KTX2Loader.tests.cpp
+        unit/src/loaders/ThreeDMLoader.tests.cpp
         unit/src/loaders/EXRSamplesToBytes.tests.cpp
         unit/src/loaders/EXRDecompressBlock.tests.cpp
         unit/src/loaders/Zlib.tests.cpp

@@ -3423,6 +3423,14 @@
    - **`ALPHA_PREMULTIPLIED` 标志**决定值是否需要先除回去。
    - **测试（3 个用例、22 条断言）**：色彩空间八处；超压缩六处；计数与标志六处。
    - **验证**：核心 **2423 用例 / 216,623 断言**（+3 / +22，从 216,601 增长）、`primitive-geometry`、`port-audit`、addons、`--cube` 全绿。
+548. **第 240 轮：`3DMLoader` 的细分缺省与两处共享**。
+   - **细分层级缺省是 3**：`subdivisionLevel = 3`。**这不是中性值而是选择**——**层级越高越光滑、顶点数增长很快**，所以**一个从不碰这个设置的调用方仍然拿到被细分三次的网格**。
+   - **`workerLimit = 4` 与首任务 `1` 与 `DRACOLoader` 完全相同**：**两个 loader 在两个数字上都一致，说明这是约定而不是巧合**，所以测试把两个都记下来。
+   - **几何加载器是模块级共享的一个**：`const _bufferGeometryLoader = new BufferGeometryLoader()`——**整个模块一个，不是每个 loader 一个**。
+   - **库要从 CDN 取**：`kLibraryVersion = "8.32.1"`，**这是 addons 里第二个这样做的 loader**（第一个是 `TTFLoader`），**所以这个模式不是孤例**。
+   - **库路径初值是空串**，所以使用前必须设。
+   - **测试（3 个用例、15 条断言）**：库四处；细分七处；worker 与共享四处。
+   - **验证**：核心 **2426 用例 / 216,638 断言**（+3 / +15，从 216,623 增长）、`primitive-geometry`、`port-audit`、addons、`--cube` 全绿。
 70. **第 520 轮：完整 Vulkan 套件 211/211 全绿，耗时 270.72 秒**。
    - 命令：`ctest --test-dir build-vulkan -j 4 -E "lights-states" --output-on-failure`（仍排除第 46 条那个已知项；它在 Vulkan 构建里同样慢）。
    - 结果：**100% tests passed, 0 tests failed out of 211**，总耗时 **270.72 秒**。对比同一套件在 **Debug** 配置下的 **3784.56 秒 / 2 失败**，差了约 14 倍——再次印证第 69 条"是构建类型不是代码"的结论。

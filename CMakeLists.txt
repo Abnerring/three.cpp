@@ -269,6 +269,7 @@ target_sources(threecpp PRIVATE
     src/loaders/MaterialXLoader.cpp
     src/loaders/DRACOLoader.cpp
     src/loaders/KTX2Loader.cpp
+    src/loaders/ThreeDMLoader.cpp
     src/nodes/core/ParameterNode.cpp
     src/nodes/core/NodeConstants.cpp
     src/nodes/core/Node.cpp
