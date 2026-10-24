@@ -513,6 +513,25 @@ JSValue arrayIndexOf(const JSValue& receiver, const Args& args, const Args&) {
     }
     return -1;
 }
+JSValue arrayIncludes(const JSValue& receiver, const Args& args, const Args&) {
+    const auto object = arrayMethodObject(receiver);
+    const auto length = arrayLikeLength(object);
+    // The zero-length exit precedes conversion of fromIndex, including an
+    // observable or throwing Symbol.toPrimitive callback.
+    if (length == 0) return false;
+    const auto start = integerOrInfinity(argument(args, 1));
+    if (start >= double(length)) return false;
+    const auto search = argument(args, 0);
+    const auto first = start >= 0 ? start : std::max(double(length) + start, 0.0);
+    for (auto i = static_cast<std::uint64_t>(first); i < length; ++i) {
+        // Includes uses Get, not HasProperty: a hole is the value undefined.
+        const auto value = object.get(std::to_string(i));
+        if (value.strictEquals(search) ||
+            (value.type() == JSValue::Type::Number && search.type() == JSValue::Type::Number &&
+             std::isnan(value.toNumber()) && std::isnan(search.toNumber()))) return true;
+    }
+    return false;
+}
 JSValue arraySplice(const JSValue& receiver, const Args& args, const Args&) {
     auto object = arrayObject(receiver); const auto length = arrayLikeLength(object);
     const auto start = relativeIndex(argument(args, 0), length);
@@ -665,7 +684,7 @@ class JSHeap : public std::enable_shared_from_this<JSHeap> {
     };
 
     struct Record {
-        enum class ConstructMode { None, Class, Callable, Object, Array, Builtin, CallableBuiltin };
+        enum class ConstructMode { None, Class, Callable, Object, Array, Builtin, CallableBuiltin, Bound };
         OrderedMap<Property> properties;
         OrderedMap<JSValue> hostSlots;
         struct SymbolProperty { JSValue key; Property property; };
@@ -950,11 +969,15 @@ class JSHeap : public std::enable_shared_from_this<JSHeap> {
         proto.enumerable = false; proto.configurable = true; object.defineProperty("__proto__", proto);
         install(function, "toString", nativeToString, 0);
         install(function, "call", functionCall, 1);
+        install(function, "bind", [](const JSValue& receiver, const Args& args, const Args&) -> JSValue {
+            return receiver.bind(argument(args, 0), args.empty() ? Args{} : Args(args.begin() + 1, args.end()));
+        }, 1);
         install(array, "join", arrayJoin, 1); install(array, "toString", arrayToString, 0);
         install(array, "push", arrayPush, 1); install(array, "pop", arrayPop, 0);
         install(array, "shift", arrayShift, 0);
         install(array, "unshift", arrayUnshift, 1); install(array, "sort", arraySort, 1);
         install(array, "concat", arrayConcat, 1); install(array, "slice", arraySlice, 2); install(array, "indexOf", arrayIndexOf, 1);
+        install(array, "includes", arrayIncludes, 1);
         install(array, "splice", arraySplice, 2);
         install(array, "map", arrayMap, 1);
         install(array, "filter", arrayFilter, 1);
@@ -1921,6 +1944,38 @@ JSValue JSValue::call(const JSValue& receiver, const std::vector<JSValue>& args)
     return callback(rootedReceiver, rootedArgs, captures);
 }
 JSValue JSValue::construct(const std::vector<JSValue>& args) const { return construct(args, *this); }
+JSValue JSValue::bind(const JSValue& receiver, const std::vector<JSValue>& args) const {
+    static_cast<void>(JSWeakValue(*this));
+    if (!isCallable()) throw JSTypeError("Bind must be called on a function");
+    const JSValue target = *this;
+    const auto prototype = target.getPrototype();
+    std::vector<JSValue> captures{target, receiver};
+    captures.insert(captures.end(), args.begin(), args.end());
+    auto bound = function([](const JSValue&, const Args& args, const Args& captures) -> JSValue {
+        Args combined(captures.begin() + 2, captures.end());
+        combined.insert(combined.end(), args.begin(), args.end());
+        return captures[0].call(captures[1], combined);
+    }, captures, "", 0);
+    bound.setPrototype(prototype);
+    if (target.isConstructible())
+        bound.heap_->record(bound).constructMode = JSHeap::Record::ConstructMode::Bound;
+    double length = 0;
+    if (target.hasOwn("length")) {
+        const auto targetLength = target.get("length");
+        if (targetLength.type() == Type::Number) {
+            const double n = targetLength.number();
+            if (n == std::numeric_limits<double>::infinity()) length = n;
+            else if (std::isfinite(n)) length = std::max(0.0, std::trunc(n) - double(args.size()));
+        }
+    }
+    JSPropertyDescriptor descriptor;
+    descriptor.value = length;
+    bound.defineProperty("length", descriptor);
+    const auto targetName = target.get("name");
+    descriptor.value = "bound " + (targetName.type() == Type::String ? targetName.string() : std::string{});
+    bound.defineProperty("name", descriptor);
+    return bound;
+}
 JSValue JSValue::construct(const std::vector<JSValue>& args, const JSValue& newTarget) const {
     if (!isConstructible()) throw JSTypeError("Value is not a constructor");
     if (!newTarget.isConstructible()) throw JSTypeError("newTarget is not a constructor");
@@ -1935,6 +1990,11 @@ JSValue JSValue::construct(const std::vector<JSValue>& args, const JSValue& newT
     const auto mode = record.constructMode;
     const auto callback = record.callback;
     const std::vector<JSValue> captures = record.captures;
+    if (mode == JSHeap::Record::ConstructMode::Bound) {
+        Args combined(captures.begin() + 2, captures.end());
+        combined.insert(combined.end(), rootedArgs.begin(), rootedArgs.end());
+        return captures[0].construct(combined, rootedNewTarget.sameValue(function) ? captures[0] : rootedNewTarget);
+    }
     if (mode == JSHeap::Record::ConstructMode::Object && rootedNewTarget.sameValue(function))
         return callback(JSValue{}, rootedArgs, captures);
     if (mode == JSHeap::Record::ConstructMode::CallableBuiltin) {

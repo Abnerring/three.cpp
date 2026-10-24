@@ -206,6 +206,7 @@ JSValue bufferConstructor() {
     constructor.retainForHeapLifetime();cached=JSWeakValue(constructor);return constructor;
 }
 }
+JSValue nativeArrayBufferConstructor() { return bufferConstructor(); }
 JSValue nativeArrayBuffer(const ArrayBuffer& buffer) {
     auto result=JSValue::hostObject(NativeArrayAccess::storage(buffer),buffer.identity(),bufferTag);
     if(result.getHostSlot("initialized").isUndefined()) {

@@ -4,6 +4,8 @@
 // ArrayBuffer and typed-array wrappers share their native storage control block.
 // This keeps JS extension properties alive while native handles remain alive.
 JSValue nativeArrayBuffer(const ArrayBuffer& buffer);
+// Stable intrinsic binding, independent of prototype.constructor mutation.
+JSValue nativeArrayBufferConstructor();
 ArrayBuffer arrayBuffer(const JSValue& value);
 struct NativeArrayOwnership {
     std::vector<JSNativeOwnerEdge> edges;

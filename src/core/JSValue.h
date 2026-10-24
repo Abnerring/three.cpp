@@ -118,6 +118,7 @@ class JSValue {
     std::string toString() const;
     JSValue call() const;
     JSValue call(const JSValue& receiver, const std::vector<JSValue>& args = {}) const;
+    JSValue bind(const JSValue& receiver, const std::vector<JSValue>& args = {}) const;
     JSValue construct(const std::vector<JSValue>& args = {}) const;
     JSValue construct(const std::vector<JSValue>& args, const JSValue& newTarget) const;
     std::string nativeFunctionSource() const;

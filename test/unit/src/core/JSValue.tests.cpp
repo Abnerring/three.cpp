@@ -5,6 +5,82 @@
 #include <cmath>
 #include <limits>
 
+TEST_CASE("Array includes uses SameValueZero and reads sparse inherited values", "[core][runtime][includes]") {
+    auto values = JSValue::array(4); const auto includes = values.get("includes");
+    const auto nan = JSValue(std::numeric_limits<double>::quiet_NaN());
+    auto item = JSValue::object(); values.set("0", nan); values.set("1", -0.0); values.set("3", item);
+    REQUIRE(includes.get("name").strictEquals("includes")); REQUIRE(includes.get("length").strictEquals(1));
+    REQUIRE(includes.call(values, {nan}).strictEquals(true));
+    REQUIRE(includes.call(values, {0}).strictEquals(true));
+    REQUIRE(includes.call(values, {JSValue{}}).strictEquals(true));
+    REQUIRE(includes.call(values, {item}).strictEquals(true));
+    REQUIRE(includes.call(values, {JSValue::object()}).strictEquals(false));
+    REQUIRE_FALSE(values.hasOwn("2"));
+    auto prototype = JSValue::object(values.getPrototype()); prototype.set("2", "inherited"); values.setPrototype(prototype);
+    REQUIRE(includes.call(values, {JSValue{}}).strictEquals(false));
+    REQUIRE(includes.call(values, {"inherited"}).strictEquals(true));
+    REQUIRE(includes.call(values, {item, -1.8}).strictEquals(true));
+    REQUIRE(includes.call(values, {nan, 1}).strictEquals(false));
+    REQUIRE(includes.call(values, {nan, -std::numeric_limits<double>::infinity()}).strictEquals(true));
+    REQUIRE(includes.call(values, {nan, std::numeric_limits<double>::infinity()}).strictEquals(false));
+    REQUIRE(includes.call("hello", {"e"}).strictEquals(true));
+    REQUIRE(includes.call(7, {JSValue{}}).strictEquals(false));
+    REQUIRE_THROWS_AS(includes.call(nullptr), JSTypeError); REQUIRE_THROWS_AS(includes.call(JSValue{}), JSTypeError);
+    REQUIRE_THROWS_AS(includes.call(values, {nan, JSValue::symbol("start")}), JSTypeError);
+}
+TEST_CASE("Array includes snapshots length before fromIndex conversion and ordered Get", "[core][runtime][includes]") {
+    using Args = std::vector<JSValue>;
+    auto object = JSValue::object(), events = JSValue::array(), length = JSValue::object(), start = JSValue::object();
+    length.setPrimitiveConverter(JSValue::function([](const JSValue&, const Args& args, const Args& captures) {
+        captures[0].get("push").call(captures[0], {"length." + args[0].toString()}); return JSValue(3);
+    }, {events}));
+    JSPropertyDescriptor getter; getter.configurable = true;
+    getter.getter = JSValue::function([](const JSValue&, const Args&, const Args& captures) {
+        captures[0].get("push").call(captures[0], {"length.get"}); return captures[1];
+    }, {events, length}); object.defineProperty("length", getter);
+    start.setPrimitiveConverter(JSValue::function([](const JSValue&, const Args& args, const Args& captures) {
+        captures[0].get("push").call(captures[0], {"start." + args[0].toString()});
+        auto object = captures[1]; JSPropertyDescriptor changed; changed.value = 0; changed.writable = true; changed.configurable = true;
+        object.defineProperty("length", changed); return JSValue(1.8);
+    }, {events, object}));
+    for (int index : {1, 2}) {
+        JSPropertyDescriptor element;
+        element.getter = JSValue::function([](const JSValue&, const Args&, const Args& captures) {
+            captures[0].get("push").call(captures[0], {"get" + captures[1].toString()}); return captures[1];
+        }, {events, index}); object.defineProperty(std::to_string(index), element);
+    }
+    const auto includes = JSValue::array().get("includes");
+    REQUIRE(includes.call(object, {2, start}).strictEquals(true));
+    REQUIRE(events.toJSON()->dump() == "[\"length.get\",\"length.number\",\"start.number\",\"get1\",\"get2\"]");
+    REQUIRE(object.get("length").strictEquals(0));
+    auto throwing = JSValue::object(); throwing.setPrimitiveConverter(JSValue::function([](const JSValue&, const Args&, const Args&) -> JSValue { throw JSRangeError("fromIndex"); }));
+    REQUIRE(includes.call(object, {2, throwing}).strictEquals(false));
+    auto longObject = JSValue::object(); longObject.set("length", 9007199254740991.0); longObject.set("9007199254740990", "last");
+    REQUIRE(includes.call(longObject, {"last", -1}).strictEquals(true));
+    REQUIRE(includes.call(longObject, {"last", 9007199254740991.0}).strictEquals(false));
+    auto nonempty = JSValue::array(1); REQUIRE_THROWS_AS(includes.call(nonempty, {2, throwing}), JSRangeError);
+}
+
+TEST_CASE("Bound functions retain receivers and forward construction with bound arguments", "[core][runtime]") {
+    auto receiver = JSValue::object(); receiver.set("value", 7);
+    auto callback = JSValue::function([](const JSValue& self, const std::vector<JSValue>& args, const std::vector<JSValue>&) -> JSValue {
+        return self.get("value").toNumber() + args[0].toNumber() + args[1].toNumber();
+    }, {}, "sum", 2);
+    const auto bound = callback.get("bind").call(callback, {receiver, 3});
+    REQUIRE(bound.call(nullptr, {5}).strictEquals(15));
+    REQUIRE(bound.get("name").strictEquals("bound sum")); REQUIRE(bound.get("length").strictEquals(1));
+    REQUIRE_FALSE(bound.hasOwn("prototype")); REQUIRE_FALSE(bound.isConstructible());
+    auto constructor = JSValue::constructor([](const JSValue& receiver, const std::vector<JSValue>& args, const std::vector<JSValue>&) -> JSValue {
+        auto self = receiver; self.set("x", args[0]); self.set("y", args[1]); return {};
+    }, {}, "Pair", 2);
+    auto boundConstructor = constructor.bind(receiver, {11});
+    const auto pair = boundConstructor.construct({12});
+    REQUIRE(pair.getPrototype().sameValue(constructor.get("prototype")));
+    REQUIRE(pair.get("x").strictEquals(11)); REQUIRE(pair.get("y").strictEquals(12));
+    REQUIRE_FALSE(receiver.hasOwn("x"));
+    REQUIRE_THROWS_AS(boundConstructor.call({}, {12}), JSTypeError);
+}
+
 TEST_CASE("Native data snapshots retain numbers without invoking stringify hooks", "[core][runtime][serialization]") {
     auto data=JSValue::object(),events=JSValue::array();
     const auto numbers=JSValue::fromJSON(JsonValue::Array{-0.0,std::numeric_limits<double>::quiet_NaN(),

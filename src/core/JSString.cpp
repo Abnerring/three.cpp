@@ -6,6 +6,7 @@
 #include <algorithm>
 #include <cmath>
 #include <cstdint>
+#include <limits>
 
 namespace {
 using Args=std::vector<JSValue>;
@@ -40,6 +41,29 @@ JSValue startsWith(const JSValue& self,const Args& args,const Args&){
     const auto start=static_cast<std::size_t>(std::min(std::max(integer,0.0),double(stringUnits.size())));
     if(searchUnits.size()>stringUnits.size()-start)return false;
     return std::equal(searchUnits.begin(),searchUnits.end(),stringUnits.begin()+start);
+}
+JSValue charCodeAt(const JSValue& self,const Args& args,const Args&) {
+    if(self.isNull()||self.isUndefined())throw JSTypeError("String method called on null or undefined");
+    const auto text=jsUTF16(self.toString());
+    const auto position=argument(args,0).toNumber();
+    const auto index=std::isnan(position)||position==0?0:std::trunc(position);
+    if(index<0||index>=double(text.size()))return std::numeric_limits<double>::quiet_NaN();
+    return text[static_cast<std::size_t>(index)];
+}
+JSValue slice(const JSValue& self,const Args& args,const Args&) {
+    if(self.isNull()||self.isUndefined())throw JSTypeError("String method called on null or undefined");
+    const auto text=jsUTF16(self.toString());
+    const double length=double(text.size());
+    const auto relative=[&](const JSValue& value) {
+        const auto n=value.toNumber();
+        const auto integer=std::isnan(n)||n==0?0:std::trunc(n);
+        return integer<0?std::max(length+integer,0.0):std::min(integer,length);
+    };
+    const auto start=relative(argument(args,0));
+    const auto endValue=argument(args,1);
+    const auto end=endValue.isUndefined()?length:relative(endValue);
+    return jsUTF8(std::u16string_view(text).substr(static_cast<std::size_t>(start),
+        static_cast<std::size_t>(std::max(end-start,0.0))));
 }
 JSValue getMethod(const JSValue& object,const char* symbol) {
     const auto method=object.get(JSValue::wellKnownSymbol(symbol));
@@ -132,6 +156,7 @@ JSValue createNativeStringPrototype(){
         prototype.defineProperty(name,data(method,true,false,true));
     };
     install("indexOf",indexOf,1);install("replace",replace,2);install("split",split,2);install("trim",trim,0);install("toUpperCase",toUpperCase,0);
+    install("charCodeAt",charCodeAt,1);install("slice",slice,2);
     return prototype;
 }
 JSValue createNativeStringObject(const JSValue& text){
