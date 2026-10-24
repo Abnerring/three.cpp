@@ -3503,6 +3503,13 @@
    - **`removeStack` 在退回之前给每个节点回写栈**：`nodeData.stack = lastStack` 对 `lastStack.nodes` 里每个节点都做一次——**所以"某个节点属于哪个栈"这条记录在栈被移除后仍然存在**，而不是随栈一起消失。
    - **测试（4 个用例、19 条断言）**：合并七处；删两键七处；加栈四处；回写一处。
    - **验证**：核心 **2464 用例 / 216,792 断言**（+4 / +19，从 216,773 增长）、`primitive-geometry`、`port-audit`、addons、`--cube` 全绿。
+558. **第 250 轮：`NodeBuilder` 的数据存在哪、嵌几层**。
+   - **节点自己决定数据存在哪个缓存里**：`cache = cache === null ? ( node.isGlobal( this ) ? this.globalCache : this.cache ) : cache`。**叫 global 的节点存在共享缓存里，不叫的存在按构建的缓存里**——**所以节点通过回答一个关于自己的问题来决定自己草稿纸的归属**。第 248 轮记过 `isGlobal` 默认返回 `this.global`，**这一轮看到那个答案被用在这里**。
+   - **嵌套是三级**：**节点 → 着色器阶段 → 子构建**，**而第三级只在子构建里存在**。`if ( this.subBuildLayers.length === 0 ) return data;` 是那个早退——**所以同一个节点在不同子构建里保存不同的数据**。
+   - **`getNodeProperties` 的缺省阶段是 `'any'`**：**不是构建器当前所在的阶段**。**所以一个属性属于节点整体而不是它某个阶段**，从某个阶段里问也到达同一条记录。
+   - **属性是首次访问时创建、且带一个空输出节点**：`nodeData.properties || ( nodeData.properties = { outputNode: null } )`——**所以调用方总是拿到带它要的字段的东西，而不是一个需要自己判断的空记录**。
+   - **测试（4 个用例、15 条断言）**：缓存选择七处；层级四处；缺省阶段三处；首次创建两处。
+   - **验证**：核心 **2468 用例 / 216,807 断言**（+4 / +15，从 216,792 增长）、`primitive-geometry`、`port-audit`、addons、`--cube` 全绿。
 70. **第 520 轮：完整 Vulkan 套件 211/211 全绿，耗时 270.72 秒**。
    - 命令：`ctest --test-dir build-vulkan -j 4 -E "lights-states" --output-on-failure`（仍排除第 46 条那个已知项；它在 Vulkan 构建里同样慢）。
    - 结果：**100% tests passed, 0 tests failed out of 211**，总耗时 **270.72 秒**。对比同一套件在 **Debug** 配置下的 **3784.56 秒 / 2 失败**，差了约 14 倍——再次印证第 69 条"是构建类型不是代码"的结论。

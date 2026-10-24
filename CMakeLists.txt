@@ -243,6 +243,7 @@ target_sources(threecpp PRIVATE
     src/nodes/core/NodeShared.cpp
     src/nodes/core/NodeSetup.cpp
     src/nodes/core/NodeBuilderContext.cpp
+    src/nodes/core/NodeBuilderData.cpp
     src/nodes/core/OutputStructNode.cpp
     src/nodes/core/LightingModel.cpp
     src/nodes/core/IsolateNode.cpp
