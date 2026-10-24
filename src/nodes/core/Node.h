@@ -1,70 +1,28 @@
 #pragma once
-#include "nodes/core/NodeConstants.h"
+#include "core/JSMember.h"
 
-#include <cstdint>
-#include <optional>
-#include <string>
-
-// Port of src/nodes/core/Node.js at the pinned revision, partial: the identity, cache key
-// and type accessors that are plain logic. The methods that need a NodeBuilder (setup,
-// analyze, generate, build) are not implemented and report that by name instead.
-//
-// Upstream registers every node on construction and hands out an increasing id; the same
-// function local counter is used here.
+// Live native implementation of the pinned Node.js module. Fields, methods,
+// children and builder interactions share the same managed object graph.
+JSValue nativeNodeConstructor();
 class Node {
+    JSValue object_;
   public:
-    static constexpr bool isNode = true;
-
-    // Upstream defaults this to false and captures a JavaScript stack when it is true.
-    // There is no engine stack to capture here, so the trace stays empty unless a caller
-    // supplies one.
-    static inline bool captureStackTrace = false;
-
-    explicit Node(std::optional<std::string> nodeType = {});
-    virtual ~Node() = default;
-
-    std::uint64_t id() const { return _id; }
-    std::uint64_t version() const { return _version; }
-    std::string_view name() const { return _name; }
-    void setName(std::string name) { _name = std::move(name); }
-    bool global() const { return _global; }
-    bool parents() const { return _parents; }
-    const std::optional<std::string>& nodeType() const { return _nodeType; }
-
-    // Whether caching the result in a temporary variable is allowed.
-    virtual bool isCacheable() const { return true; }
-    // Upstream returns this.id; derived nodes may override.
-    virtual double customCacheKey() const { return static_cast<double>(_id); }
-    // Returns this node, which is the default scope.
-    virtual Node* getScope() { return this; }
-    // The identifier used when hashing the node; upstream returns String( this.id ).
-    virtual std::string getHash() const { return std::to_string(_id); }
-
-    // Upstream returns this.global; the builder argument is unused there too.
-    virtual bool isGlobal() const { return _global; }
-    // Upstream returns null for a plain node, which is an empty optional here.
-    virtual std::optional<double> getArrayCount() const { return {}; }
-    // Upstream returns "void" for the base class; derived nodes describe their members.
-    virtual std::string_view getMemberType(const std::string& /*name*/) const { return "void"; }
-
-    // Structural note: upstream's _getChildren walks Object.getOwnPropertyNames( this ), which
-    // is runtime reflection. There is no equivalent here, so a derived node has to register
-    // its child nodes explicitly instead. That is why getCacheKey, getChildren and the
-    // serialisation helpers are not part of this slice yet.
-    virtual std::string_view getUpdateType() const { return _updateType; }
-    virtual std::string_view getUpdateBeforeType() const { return _updateBeforeType; }
-    virtual std::string_view getUpdateAfterType() const { return _updateAfterType; }
-
-  protected:
-    std::optional<std::string> _nodeType;
-    std::string_view _updateType = NodeUpdateType::NONE;
-    std::string_view _updateBeforeType = NodeUpdateType::NONE;
-    std::string_view _updateAfterType = NodeUpdateType::NONE;
-    std::uint64_t _version = 0;
-    std::string _name;
-    bool _global = false;
-    bool _parents = false;
-
-  private:
-    std::uint64_t _id;
+    explicit Node(const JSValue& nodeType = nullptr);
+    Node(const Node& other) : object_(other.object_) {}
+    Node& operator=(const Node& other) { object_ = other.object_; return *this; }
+    JSValue object() const { return object_; }
+    operator JSValue() const { return object_; }
+    static JSValue constructor() { return nativeNodeConstructor(); }
+    static JSValue prototype() { return constructor().get("prototype"); }
+    JSMember nodeType{&object_, "nodeType"}, updateType{&object_, "updateType"};
+    JSMember updateBeforeType{&object_, "updateBeforeType"}, updateAfterType{&object_, "updateAfterType"};
+    JSMember version{&object_, "version"}, name{&object_, "name"}, global{&object_, "global"};
+    JSMember parents{&object_, "parents"}, isNode{&object_, "isNode"}, id{&object_, "id"};
+    JSMember stackTrace{&object_, "stackTrace"}, needsUpdate{&object_, "needsUpdate"};
+    JSMember uuid{&object_, "uuid"}, type{&object_, "type"};
+    JSValue build(const JSValue& builder, const JSValue& output = nullptr) const;
+    JSValue getNodeType(const JSValue& builder, const JSValue& output = nullptr) const;
+    JSValue getCacheKey(const JSValue& force = false, const JSValue& ignores = nullptr) const;
+    JSValue toJSON(const JSValue& meta = {}) const;
+    void dispose() const;
 };

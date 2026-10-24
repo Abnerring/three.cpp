@@ -1,4 +1,5 @@
 ﻿#pragma once
+#include "core/JSValue.h"
 #include <string>
 
 // Port of src/nodes/core/NodeCode.js: user supplied native shader code that the builder
@@ -14,3 +15,5 @@ class NodeCode {
     std::string type;
     std::string code;
 };
+
+JSValue nativeNodeCodeConstructor();

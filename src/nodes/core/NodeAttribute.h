@@ -1,4 +1,5 @@
 ﻿#pragma once
+#include "core/JSValue.h"
 #include <cstdint>
 #include <string>
 
@@ -29,3 +30,5 @@ class NodeAttribute {
     bool hasNode_ = false;
     std::uint64_t nodeId_ = 0;
 };
+
+JSValue nativeNodeAttributeConstructor();

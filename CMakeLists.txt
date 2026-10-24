@@ -168,6 +168,11 @@ target_sources(threecpp PRIVATE
     src/extras/ImageUtils.cpp
     src/extras/PMREMGenerator.cpp
     src/nodes/core/StackTrace.cpp
+    src/nodes/core/NodeBuilder.cpp
+    src/nodes/core/NodeAttribute.cpp
+    src/nodes/core/NodeUniform.cpp
+    src/nodes/core/NodeVarying.cpp
+    src/nodes/core/StructType.cpp
     src/nodes/core/NodeCode.cpp
     src/nodes/core/NodeFunctionInput.cpp
     src/nodes/core/NodeCache.cpp

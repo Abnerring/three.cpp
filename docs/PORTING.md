@@ -21,20 +21,26 @@
 
 ## C++ 适配
 
-`NodeCache` 与 `NodeFrame` 已改为真实管理对象，字段、原型方法和弱缓存是活状态。NodeCache 保留本地 `undefined` 查询父缓存、动态 `get/set` 与父字段二次读取；NodeFrame 保留三种更新阶段、共享引用、严格 `false`、异常及同步重入时的标记顺序，时钟由每个运行时域的原生宿主提供。WeakMap 支持当前运行时的未注册 Symbol 键及条件回收；Symbol 注册表仍待实现。固定上游差分通过 NodeCache 68 个协议场景、NodeFrame 800 个协议场景，分别另有 8 个实际 Node GC 快照。它们尚未连接完整 NodeBuilder、节点代码生成或现代 Vulkan 渲染管线。
+`NodeCache` 与 `NodeFrame` 已改为真实管理对象，字段、原型方法和弱缓存是活状态。NodeCache 保留本地 `undefined` 查询父缓存、动态 `get/set` 与父字段二次读取；NodeFrame 保留三种更新阶段、共享引用、严格 `false`、异常及同步重入时的标记顺序，时钟由每个运行时域的原生宿主提供。WeakMap 支持当前运行时的未注册 Symbol 键及条件回收；Symbol 注册表仍待实现。固定上游差分通过 NodeCache 68 个协议场景、NodeFrame 800 个协议场景，分别另有 8 个实际 Node GC 快照。它们已与本轮 Node/NodeBuilder 的缓存和三阶段节点构建路径联测；完整节点代码生成与现代 Vulkan 渲染管线仍待实现。
+
+`Node` 已改为真实管理对象，实现子节点遍历、版本缓存、类型与共享缓存、setup/analyze/generate 三阶段、局部 flow 缓存、事件与序列化。getChildren 使用独立生成器状态，保留方法共享/品牌检查、关闭/重入/异常优先级与固定 V8 的接收者保留时机。固定上游差分通过 674 个协议场景和 16 个真实 Node/native GC 快照。它仍依赖原生运行时已支持的内建协议，Object 静态方法任意替换和完整基本类型装箱尚未全量验收。生成器关闭后对 return/throw 完成值的 V8 保留时机尚未对齐；不能把当前 GC 场景视为全部 V8 内存行为一致。
+
+`NodeBuilder` 新增真实构造器、动态原型与缓存/用量/声明/flow/stack/type/format 算法，并接入 NodeVar、NodeAttribute、NodeUniform、NodeVarying、NodeCode、StructType 的管理对象构造器。909 项固定上游结果包含真实 Node.build、NodeCache 和 StackNode 连接；注册的抽象扩展点不计为具体 GPU 能力。尚缺 createRenderTarget、createCubeRenderTarget、_getBindGroup、getBindings、sortBindingGroups、getTypeFromAttribute、buildFunctionNode、flowShaderNode、prebuild、buildAsync、getNodeUniform；默认 build 入口还依赖 prebuild/NodeMaterial。StackNode 已补现有列表/类型/setup/build 算法及动态 super 查找，67 项真实上游差分通过；If/ElseIf/Else/Switch/Case 仍因 ShaderNode/ConditionalNode 未移植而显式拒绝。
+
+`nativeNodeUtils()` 提供 15 个真实模块导出；302 项固定上游差分、4 个 GC 场景及 ArrayBuffer 稳定绑定检查通过。数值数学对象复用现有原生包装；Matrix2、任意非数值分量和不完整矩阵参数等明确抛 Unsupported。完整数学原型/描述符、Object.getPrototypeOf 可替换协议、Base64 浏览器内建及错误类型尚缺。StackTrace 已有真实管理构造器、普通字符串 UTF-16 栈解析与动态 getLocation/getError；捕获函数由原生宿主注入，默认空栈。自定义 split/match、String/RegExp 原型任意替换及旧 C++ 兼容助手尚未全量移植。
 
 原版接口优先，允许修改旧接口。Vector2/3/4 与 Color 的分量使用公开数值字段，例如 `v.x`、`color.r`；Euler/Quaternion 使用公开赋值属性，在直接写入时触发原版旋转回调，批量操作保留原版回调次数与 `update=false` 行为。`Object3D::children` 用 shared_ptr 持有子节点，parent 为非拥有指针。对象不允许直接复制，以 copy/clone 保持身份、监听器和旋转回调的有效性。需要更新版本的属性使用 C++ 赋值代理。矩阵 elements 与部分其余属性尚待接口迁移。
 
 当前 `JsonValue` 覆盖 JSON 数据，不支持 JavaScript 的函数、undefined、循环引用或任意动态原型。堆上共享对象的 `toNonIndexed()` 无索引分支返回自身；栈对象使用此分支会遇到 C++ shared_from_this 的所有权约束。C++ 关键字 `static` 属性对应 `isStatic`，JSON 仍为 `static`。
 
-`JSValue` 是独立的运行时基础：支持 undefined/null、binary64 数值、UTF-16 字符串语义、对象身份、赋值别名、键顺序、稀疏数组、原生函数及接收者/显式捕获、原型链、属性描述符/访问器、SameValue、Reflect.set、基础强制转换及受管理的循环回收。GC 追踪原型、函数捕获、访问器和转换回调；回调重入保留调用对象与描述符快照。`trace()` 明确记录类型、负零、非有限值、属性顺序和图身份；`toJSON()` 支持 getter、toJSON 回调及 lone-surrogate 转义。Symbol 已作为独立基础值与真实属性键接入，保留身份、描述符、枚举顺序、@@toPrimitive、@@toStringTag 及 GC 图边；旧受管理转换钩子仍用于原生适配。BigInt/Proxy、super/bind/跨 realm 构造、完整 Symbol 工厂/注册表/装箱、完整内建库与跨线程堆引用仍待实现；原生函数能力不执行 JS 源码。现有全部类的动态属性和 TypedArray 尚未统一接入此对象图，不能据此宣称完整库语义已完成。
+`JSValue` 是独立的运行时基础：支持 undefined/null、binary64 数值、UTF-16 字符串语义、对象身份、赋值别名、键顺序、稀疏数组、原生函数及接收者/显式捕获、原型链、属性描述符/访问器、SameValue、Reflect.set、基础强制转换及受管理的循环回收。GC 追踪原型、函数捕获、访问器和转换回调；回调重入保留调用对象与描述符快照。`trace()` 明确记录类型、负零、非有限值、属性顺序和图身份；`toJSON()` 支持 getter、toJSON 回调及 lone-surrogate 转义。Symbol 已作为独立基础值与真实属性键接入，保留身份、描述符、枚举顺序、@@toPrimitive、@@toStringTag 及 GC 图边；旧受管理转换钩子仍用于原生适配。BigInt/Proxy、super/跨 realm 构造、完整 Symbol 工厂/注册表/装箱、完整内建库与跨线程堆引用仍待实现；原生函数能力不执行 JS 源码。现有全部类的动态属性和 TypedArray 尚未统一接入此对象图，不能据此宣称完整库语义已完成。
 
 
 Map/Set 提供 SameValueZero 键、插入顺序、动态构造 adder、live iterator、forEach、delete/clear/reinsert、品牌与方法元数据。同步 Iterator Record 保留 next 快照和动态 return 查找，构造输入或 adder 失败按源顺序关闭迭代器。Array keys/values/entries 使用实时 length；String iterator 按 UTF-16 码点推进。可达 iterator 保留集合的共享存储及活条目，不额外保留集合包装；耗尽后释放存储。原生 clear 会比当前 Node/V8 更早释放旧表条目，这是 GC 时机边界；迭代结果、顺序和新增条目仍严格比较。Map.groupBy/getOrInsert、Set 集合运算、Iterator helpers、异步迭代以及弱集合的 Symbol/iterator 接入仍待实现。
 
-StringData 提供 UTF-16 索引只读描述符、valueOf/toString、通用 startsWith 和真实 Symbol.match 检查。字符串基础值属性查找保留原始 receiver。已接入 String 的普通调用/构造钩子、replace/split/trim/toUpperCase，以及受管理 RegExp 的 exec/test 与 Symbol 协议。UTF-16/WTF-8 和 Unicode 17 默认大写由 C++ 实现；完整 String 静态 API、全部正则语法和 Unicode 模式仍待完成，当前未支持的有效模式显式抛 JSRegExpUnsupported。集合、Symbol、迭代器和字符串原型使用每个 heap 的内在根与弱缓存，不增加 owning TLS 根。
+StringData 提供 UTF-16 索引只读描述符、valueOf/toString、通用 startsWith 和真实 Symbol.match 检查。字符串基础值属性查找保留原始 receiver。已接入 String 的普通调用/构造钩子、replace/split/trim/toUpperCase/charCodeAt/slice，以及受管理 RegExp 的 exec/test 与 Symbol 协议。UTF-16/WTF-8 和 Unicode 17 默认大写由 C++ 实现；完整 String 静态 API、全部正则语法和 Unicode 模式仍待完成，当前未支持的有效模式显式抛 JSRegExpUnsupported。集合、Symbol、迭代器和字符串原型使用每个 heap 的内在根与弱缓存，不增加 owning TLS 根。
 
-动画依赖的 Array push/pop/shift/slice/indexOf/splice、Function.call、Object 原型基础方法及运行时 EventDispatcher 已接入；差分验证 holes、继承索引、访问器、强制转换、只读属性的部分修改、监听器快照、抛错和重入。filter、map、slice、splice、concat 通过 ArraySpeciesCreate 保留 constructor/@@species 查找、任意构造结果及失败的部分写入。filter 保留 length 快照、逐项 Has/Get、callback 与 ToBoolean；完整基础值装箱和跨 realm 构造仍待实现。concat 按各输入的长度快照、HasProperty/Get 和自有数据属性创建顺序复制，保留 holes、继承索引、getter 修改后续输入、异常和重入；展开仍仅识别当前运行时 Array，Symbol.isConcatSpreadable 仍待实现。回收目前通过 collectGarbage 显式触发，尚无自动调度策略。原生 payload 分阶段析构：全部别名缓存先退役，保留 JS 记录供析构函数读取或保存普通字段，重新标记后才清除不可达记录；已经开始析构的 C++ 对象不能复活。每个 owner 析构后重新标记，性能仍需优化。
+动画依赖的 Array push/pop/shift/slice/indexOf/includes/splice、Function.call/bind、Object 原型基础方法及运行时 EventDispatcher 已接入；差分验证 holes、继承索引、访问器、强制转换、只读属性的部分修改、监听器快照、抛错和重入。filter、map、slice、splice、concat 通过 ArraySpeciesCreate 保留 constructor/@@species 查找、任意构造结果及失败的部分写入。filter 保留 length 快照、逐项 Has/Get、callback 与 ToBoolean；完整基础值装箱和跨 realm 构造仍待实现。concat 按各输入的长度快照、HasProperty/Get 和自有数据属性创建顺序复制，保留 holes、继承索引、getter 修改后续输入、异常和重入；展开仍仅识别当前运行时 Array，Symbol.isConcatSpreadable 仍待实现。bind 保留绑定接收者/参数、name/length 描述符、可构造性与 newTarget 转发；完整 instanceof、Proxy 与跨 realm 协议仍待完成。回收目前通过 collectGarbage 显式触发，尚无自动调度策略。原生 payload 分阶段析构：全部别名缓存先退役，保留 JS 记录供析构函数读取或保存普通字段，重新标记后才清除不可达记录；已经开始析构的 C++ 对象不能复活。每个 owner 析构后重新标记，性能仍需优化。
 
 `ArrayBuffer` 与 `TypedArray` 已支持共享字节、独立视图身份、只读 length/byteLength/byteOffset/buffer、subarray 与 slice、重叠 set、整数模转换、Uint8Clamped 饱和/偶数舍入、Float32 溢出，以及同类型 set 的原始 NaN 位保留。BufferAttribute 直接接收 TypedArray 时保留视图身份；带类型子类、copy 与 clone 分配独立存储。TypedArray.get 的越界结果是 undefined；普通 BufferAttribute 数值读取越界仍用 NaN 表示其参与数值运算的结果。跨 itemSize 的组件读取按原数组地址计算。ArrayBuffer 的 detach/resize、DataView、原生 Float16Array、BigInt 数组及其运行时对象图接入仍待完成。
 
@@ -74,7 +80,7 @@ AnimationUtils、KeyframeTrack、六种轨道及 AnimationClip 已实现基础�
 
 Uniform、UniformsGroup 已使用管理对象实现 value 克隆、嵌套数组、动态方法、事件与共享引用；ShaderMaterial.uniformsGroups 可直接接收组句柄。UniformsUtils 按上游目录导出 cloneUniforms、mergeUniforms、cloneUniformsGroups 和 getUnlitUniformColorSpace，材质复用相同实现。UniformsLib 的 16 组默认定义由固定源码语法树生成，逐项构建独立数学对象、数组和字段，保留模块内共享与后续可变属性；原生线程对应独立运行时域。GPU UBO、完整着色器库与材质管线仍待实现。
 
-JSValue 新增独立的 constructor/construct(args, newTarget) 和可构造性检查，区分只能构造的类与显式声明可普通调用的构造器；保留构造原型、返回值、描述符、接收者、捕获、异常与 GC。Object/Array 内建接入该入口。Array.map 保留长度快照、holes、继承索引、回调 thisArg 与第三参数、构造器读取及部分失败；完整 species、super、Proxy/bind、跨 realm 和基础值专用包装原型仍待实现，现有所有原生类的 constructor/clone 也需逐项迁移。
+JSValue 新增独立的 constructor/construct(args, newTarget) 和可构造性检查，区分只能构造的类与显式声明可普通调用的构造器；保留构造原型、返回值、描述符、接收者、捕获、异常与 GC。Object/Array 内建接入该入口。Array.map 保留长度快照、holes、继承索引、回调 thisArg 与第三参数、构造器读取及部分失败；完整 species、super、Proxy、跨 realm 和基础值专用包装原型仍待实现，现有所有原生类的 constructor/clone 也需逐项迁移。
 
 InterleavedBuffer/InstancedInterleavedBuffer 使用活管理字段保留数组/视图身份、stride/count、version、updateRanges、严格 true 更新、copyAt 重叠、上传回调及 clone/toJSON 元数据缓存。NativeArray 将原生 View/ArrayBuffer 与管理对象连接，提供 buffer/byteOffset/byteLength/constructor/slice/subarray/set 等该路径所需行为；原生存储父字段纳入所有权图，避免把仅在不可达环中持有的数组误判为外部根。Symbol.iterator/species、detach/resize、SharedArrayBuffer、Float16/BigInt 数组与完整 TypedArray 方法仍待实现。
 

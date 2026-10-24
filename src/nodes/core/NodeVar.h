@@ -1,4 +1,5 @@
 ﻿#pragma once
+#include "core/JSValue.h"
 #include <optional>
 #include <string>
 
@@ -23,3 +24,5 @@ class NodeVar {
     // The size; upstream uses null, which is an empty optional.
     std::optional<double> count;
 };
+
+JSValue nativeNodeVarConstructor();

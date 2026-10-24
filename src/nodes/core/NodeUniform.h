@@ -1,4 +1,5 @@
 ﻿#pragma once
+#include "core/JSValue.h"
 #include <cstdint>
 #include <string>
 
@@ -37,3 +38,5 @@ class NodeUniform {
     std::string groupName_;
     double value_ = 0;
 };
+
+JSValue nativeNodeUniformConstructor();

@@ -17,6 +17,7 @@ add_executable(THREECPPTests
         unit/src/nodes/core/NodeUtils.tests.cpp
         unit/src/nodes/core/NodeConstants.tests.cpp
         unit/src/nodes/core/Node.tests.cpp
+        unit/src/nodes/core/NodeBuilder.tests.cpp
         unit/src/loaders/DataTextureLoader.tests.cpp
         unit/src/loaders/CompressedTextureLoader.tests.cpp
         unit/src/core/BufferGeometryLookAt.tests.cpp
@@ -1660,17 +1661,39 @@ if(THREEJS_SOURCE_DIR AND THREECPP_NODE_EXECUTABLE)
 endif()
 
 add_executable(ThreeJsNodeCacheParityProbe unit/utils/parity/NodeCacheParityProbe.cpp)
+add_executable(ThreeJsNodeBaseParityProbe unit/utils/parity/NodeParityProbe.cpp)
+target_link_libraries(ThreeJsNodeBaseParityProbe PRIVATE threecpp::threecpp)
+add_executable(ThreeJsNodeUtilsParityProbe unit/utils/parity/NodeUtilsParityProbe.cpp)
+target_link_libraries(ThreeJsNodeUtilsParityProbe PRIVATE threecpp::threecpp)
+add_executable(ThreeJsNodeBuilderParityProbe unit/utils/parity/NodeBuilderParityProbe.cpp)
+target_link_libraries(ThreeJsNodeBuilderParityProbe PRIVATE threecpp::threecpp)
+add_executable(ThreeJsStackNodeParityProbe unit/utils/parity/StackNodeParityProbe.cpp)
+target_link_libraries(ThreeJsStackNodeParityProbe PRIVATE threecpp::threecpp)
 target_link_libraries(ThreeJsNodeCacheParityProbe PRIVATE threecpp::threecpp)
 add_executable(ThreeJsNodeFrameParityProbe unit/utils/parity/NodeFrameParityProbe.cpp)
 target_link_libraries(ThreeJsNodeFrameParityProbe PRIVATE threecpp::threecpp)
 if(THREECPP_NODE_EXECUTABLE AND THREEJS_SOURCE_DIR)
+    add_test(NAME threecpp.threejs-node-base-parity
+        COMMAND "${THREECPP_NODE_EXECUTABLE}" --expose-gc "${CMAKE_CURRENT_SOURCE_DIR}/unit/utils/parity/compare-node-base.mjs"
+        "${THREEJS_SOURCE_DIR}" "$<TARGET_FILE:ThreeJsNodeBaseParityProbe>")
+    add_test(NAME threecpp.threejs-node-utils-parity
+        COMMAND "${THREECPP_NODE_EXECUTABLE}" --expose-gc "${CMAKE_CURRENT_SOURCE_DIR}/unit/utils/parity/compare-node-utils.mjs"
+        "${THREEJS_SOURCE_DIR}" "$<TARGET_FILE:ThreeJsNodeUtilsParityProbe>")
+    add_test(NAME threecpp.threejs-node-builder-parity
+        COMMAND "${THREECPP_NODE_EXECUTABLE}" "${CMAKE_CURRENT_SOURCE_DIR}/unit/utils/parity/compare-node-builder.mjs"
+        "${THREEJS_SOURCE_DIR}" "$<TARGET_FILE:ThreeJsNodeBuilderParityProbe>")
+    add_test(NAME threecpp.threejs-stack-node-parity
+        COMMAND "${THREECPP_NODE_EXECUTABLE}" "${CMAKE_CURRENT_SOURCE_DIR}/unit/utils/parity/compare-stack-node.mjs"
+        "${THREEJS_SOURCE_DIR}" "$<TARGET_FILE:ThreeJsStackNodeParityProbe>")
     add_test(NAME threecpp.threejs-node-cache-parity
         COMMAND "${THREECPP_NODE_EXECUTABLE}" "${CMAKE_CURRENT_SOURCE_DIR}/unit/utils/parity/compare-node-cache.mjs"
         "${THREEJS_SOURCE_DIR}" "$<TARGET_FILE:ThreeJsNodeCacheParityProbe>")
     add_test(NAME threecpp.threejs-node-frame-parity
         COMMAND "${THREECPP_NODE_EXECUTABLE}" --expose-gc "${CMAKE_CURRENT_SOURCE_DIR}/unit/utils/parity/compare-node-frame.mjs"
         "${THREEJS_SOURCE_DIR}" "$<TARGET_FILE:ThreeJsNodeFrameParityProbe>")
-    set_tests_properties(threecpp.threejs-node-cache-parity threecpp.threejs-node-frame-parity PROPERTIES TIMEOUT 180)
+    set_tests_properties(threecpp.threejs-node-base-parity threecpp.threejs-node-utils-parity
+        threecpp.threejs-node-builder-parity threecpp.threejs-stack-node-parity threecpp.threejs-node-cache-parity
+        threecpp.threejs-node-frame-parity PROPERTIES TIMEOUT 180)
 endif()
 
 # Native ESSL remains an optional Vulkan compiler candidate.

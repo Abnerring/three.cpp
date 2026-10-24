@@ -1,5 +1,14 @@
 # 验证记录
 
+## 当前追加验证：真实节点构建基础，2026-10-24
+
+- CPU 单测：2,500 cases / 217,049 assertions。上游固定为 `11738a9d55e502fb484cefffcea3a66dc44e9fe9`，开发阶段 Node 仅充当真实源码差分 oracle。
+- Node：674 场景与 16 个 GC 快照；NodeBuilder：909 项；NodeUtils/StackTrace：302 场景、4 GC 与稳定 ArrayBuffer 绑定；StackNode：67 场景。NodeCache 68 + 8 GC、NodeFrame 800 + 8 GC 回归通过。
+- 捕获并修复：动态方法 getter 应先于参数 getter、生成器品牌/共享原型/关闭重入与 receiver 生命周期、for-in 初始原型候选键快照、super 的动态父原型与 getter receiver、UTF-16 栈空白解析。最初 Node metadata 差异来自探针漏编码 undefined，原输入和上游 expected 保留不变。
+- NodeBuilder/StackNode 已与真实 Node/NodeCache 路径连接；未实现的 NodeMaterial/prebuild、bind groups、TSL 条件分支及现代 Vulkan 不计入通过范围。生成器完成值保留、完整内建和宿主适配等边界见 PORTING。
+- 证据位于 `D:\Temp\surui\threecpp-node-base-20261024` 及同级 Builder/Utils/StackNode 验证目录。本阶段未改 Vulkan 生产代码或着色器，未重跑 GPU；此前 Gaussian blur/mipmap 结果保留其原始冻结记录，不作为本轮新结果。
+
+
 ## 当前追加验证：AnimationClipCreator 差分落地，2026-10-17
 
 - 差分补齐：threecpp.threejs-animation-clip-creator-parity **51 个场景 / 44 条轨道 / 884 个时间与数值条目**逐位一致，另有 **7 条与上游一致的抛错路径**（duration 0 使 times 为空，上游 KeyframeTrack 抛 THREE.KeyframeTrack: no keyframes…，原生核心抛同一文本）。两个随机工厂在 JS 侧打桩 Math.random、在 C++ 侧注入同一序列。

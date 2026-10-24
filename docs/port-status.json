@@ -194,8 +194,8 @@
     "note": "Accepted port scope is src and examples/jsm, including tracked third-party dependencies. Editor/manual web applications are excluded from native application rewrites. Native host behavior, packaging and all three platforms require separate implementation and verification evidence."
   },
   "counts": {
-    "partial-unverified": 341,
-    "missing": 600,
+    "partial-unverified": 343,
+    "missing": 598,
     "vulkan-port-pending": 290,
     "dependency-unverified": 20
   },
@@ -203,8 +203,8 @@
     "src": {
       "modules": 755,
       "counts": {
-        "partial-unverified": 257,
-        "missing": 208,
+        "partial-unverified": 259,
+        "missing": 206,
         "vulkan-port-pending": 290
       }
     },
@@ -803,7 +803,7 @@
       "path": "src/nodes/core",
       "upstreamFiles": 42,
       "moduleCount": 42,
-      "modulesWithCppFiles": 38,
+      "modulesWithCppFiles": 40,
       "verifiedComplete": 0
     },
     {
@@ -8990,7 +8990,7 @@
       "kind": "core",
       "upstreamSha256": "6bfcefefc4e32dd4e7d3214e4af22cdf4af95a1a5d9888dc4a9f44a9602f6d13",
       "header": "src/nodes/core/NodeAttribute.h",
-      "implementation": null,
+      "implementation": "src/nodes/core/NodeAttribute.cpp",
       "expectedHeader": "src/nodes/core/NodeAttribute.h",
       "expectedImplementation": "src/nodes/core/NodeAttribute.cpp",
       "status": "partial-unverified",
@@ -9016,11 +9016,11 @@
       "scope": "src",
       "kind": "core",
       "upstreamSha256": "432a7cf883297903d7e429a640ba512fcbf6f742a2f42683ecf65c3e54555581",
-      "header": null,
-      "implementation": null,
+      "header": "src/nodes/core/NodeBuilder.h",
+      "implementation": "src/nodes/core/NodeBuilder.cpp",
       "expectedHeader": "src/nodes/core/NodeBuilder.h",
       "expectedImplementation": "src/nodes/core/NodeBuilder.cpp",
-      "status": "missing",
+      "status": "partial-unverified",
       "verifiedComplete": false,
       "apiExtraction": "partial-static",
       "verification": {
@@ -9029,7 +9029,9 @@
           "pointer": "/modules/274"
         },
         "upstreamUnitTests": [],
-        "cppUnitTests": [],
+        "cppUnitTests": [
+          "test/unit/src/nodes/core/NodeBuilder.tests.cpp"
+        ],
         "reviewedImplementation": [],
         "differentialResults": [],
         "renderingResults": [],
@@ -9235,7 +9237,7 @@
       "kind": "core",
       "upstreamSha256": "9d0bb42d3cb414194c95d29130f5d3622b384b91f220813ed7f3256036e8c2cb",
       "header": "src/nodes/core/NodeUniform.h",
-      "implementation": null,
+      "implementation": "src/nodes/core/NodeUniform.cpp",
       "expectedHeader": "src/nodes/core/NodeUniform.h",
       "expectedImplementation": "src/nodes/core/NodeUniform.cpp",
       "status": "partial-unverified",
@@ -9320,7 +9322,7 @@
       "kind": "core",
       "upstreamSha256": "08e1a61405ef3438bae3409b6f9885f09119bae1ff88cc1a45a0ddb67b92d750",
       "header": "src/nodes/core/NodeVarying.h",
-      "implementation": null,
+      "implementation": "src/nodes/core/NodeVarying.cpp",
       "expectedHeader": "src/nodes/core/NodeVarying.h",
       "expectedImplementation": "src/nodes/core/NodeVarying.cpp",
       "status": "partial-unverified",
@@ -9549,11 +9551,11 @@
       "scope": "src",
       "kind": "core",
       "upstreamSha256": "6d5047d10a574471bdc476e0e90df2c0022040859d15abdfa5af45a97bfe5c32",
-      "header": null,
-      "implementation": null,
+      "header": "src/nodes/core/StructType.h",
+      "implementation": "src/nodes/core/StructType.cpp",
       "expectedHeader": "src/nodes/core/StructType.h",
       "expectedImplementation": "src/nodes/core/StructType.cpp",
-      "status": "missing",
+      "status": "partial-unverified",
       "verifiedComplete": false,
       "apiExtraction": "static-only",
       "verification": {

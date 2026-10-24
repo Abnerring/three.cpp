@@ -1,4 +1,5 @@
 ﻿#pragma once
+#include "core/JSValue.h"
 #include <cstdint>
 #include <span>
 #include <string>
@@ -15,3 +16,14 @@ double hashArray(std::span<const double> values);
 double hashString(const std::string& value);
 // Hashes the parameters in order, equivalent to hashArray over them.
 double hash(std::span<const double> params);
+
+// Realm-local native port of the upstream NodeUtils module. Exported functions
+// retain their lexical collections and use live runtime property access.
+JSValue nativeNodeUtils();
+
+// An explicit boundary for canonical math constructors that are not available
+// in the native runtime. Unsupported inputs are never silently coerced.
+class NodeUtilsUnsupported : public std::logic_error {
+  public:
+    using std::logic_error::logic_error;
+};

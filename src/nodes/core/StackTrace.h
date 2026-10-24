@@ -1,4 +1,5 @@
 ﻿#pragma once
+#include "core/JSValue.h"
 #include <string>
 #include <vector>
 
@@ -18,6 +19,15 @@ struct NodeStackFrame {
 // Parses a stack string in the Chrome ("at fn (file.js:1:2)" or "at file.js:1:2") or
 // Firefox ("fn@file.js:1:2") shapes, drops unparsable lines and the four ignored files.
 std::vector<NodeStackFrame> getFilteredStack(const std::string& stack);
+
+JSValue nativeStackTraceConstructor();
+// Native hosts supply Error.stack-shaped strings; without a provider capture
+// is empty. This port does not invent JavaScript call frames.
+void setNodeStackCaptureFunction(const JSValue& callback);
+class StackTraceUnsupported : public std::logic_error {
+  public:
+    using std::logic_error::logic_error;
+};
 
 class StackTrace {
   public:

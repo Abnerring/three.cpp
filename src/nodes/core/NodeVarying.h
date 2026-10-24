@@ -1,4 +1,5 @@
 ﻿#pragma once
+#include "core/JSValue.h"
 #include <string>
 
 // Port of src/nodes/core/NodeVarying.js at the pinned revision. A varying is what the shader
@@ -39,3 +40,5 @@ class NodeVarying {
     // The flag starts clear, as the source's constructor leaves it.
     bool needsInterpolation_ = false;
 };
+
+JSValue nativeNodeVaryingConstructor();

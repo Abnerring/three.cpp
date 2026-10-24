@@ -1,44 +1,37 @@
 #include "nodes/core/StackNode.h"
-
+#include "nodes/core/Node.h"
 #include "catch.hpp"
 
-#include <string>
-
-TEST_CASE("StackNode's three questions answer the empty type when it has no output") {
-    // With an output all three pass its answer through.
-    REQUIRE(StackNode::elementType(true, "vec3") == "vec3");
-    REQUIRE(StackNode::nodeType(true, "vec3") == "vec3");
-    REQUIRE(StackNode::memberType(true, "float") == "float");
-    // Without one all three are the empty type rather than a refusal, so a stack that was never
-    // given an output is void in every sense.
-    REQUIRE(StackNode::elementType(false, "vec3") == "void");
-    REQUIRE(StackNode::nodeType(false, "vec3") == "void");
-    REQUIRE(StackNode::memberType(false, "float") == "void");
-    REQUIRE(StackNode::nodeType(false, "vec3") != "vec3");
-    REQUIRE(StackNode::isStackNode);
-    REQUIRE(std::string(StackNode::kTypeName) == "StackNode");
+TEST_CASE("StackNode inherits real Node state and forwards its output type") {
+    StackNode stack;
+    auto self = stack.object();
+    REQUIRE(self.get("isNode").strictEquals(true)); REQUIRE(self.get("isStackNode").strictEquals(true));
+    REQUIRE(self.get("getElementType").call(self, {nullptr}).strictEquals("void"));
+    auto output = JSValue::object();
+    output.set("getElementType", JSValue::function([](const JSValue&, const std::vector<JSValue>&, const std::vector<JSValue>&) -> JSValue { return "float"; }));
+    stack.outputNode = output;
+    REQUIRE(self.get("getElementType").call(self, {nullptr}).strictEquals("float"));
+    REQUIRE_FALSE(self.get("isCacheable").call(self).toBoolean());
 }
-
-TEST_CASE("StackNode discards its result in exactly one pairing") {
-    // At the third stage with an empty type the result is thrown away.
-    REQUIRE_FALSE(StackNode::keepsResult("generate", "void"));
-    // At the third stage with any other type it is kept.
-    REQUIRE(StackNode::keepsResult("generate", "vec3"));
-    // And at any other stage it is kept whatever the type.
-    REQUIRE(StackNode::keepsResult("setup", "void"));
-    REQUIRE(StackNode::keepsResult("analyze", "void"));
-    REQUIRE(StackNode::keepsResult("", "void"));
-    // So the one pairing is not reachable by relaxing either half on its own.
-    REQUIRE(StackNode::keepsResult("setup", "void") != StackNode::keepsResult("generate", "void"));
-    REQUIRE(StackNode::keepsResult("generate", "vec3") != StackNode::keepsResult("generate", "void"));
+TEST_CASE("StackNode splices additions relative to the active node") {
+    StackNode stack; Node first, second, third;
+    auto self = stack.object(); stack.addToStack(first.object()); self.set("_currentNode", first.object());
+    stack.addToStack(second.object()); stack.addToStack(third.object());
+    REQUIRE(stack.nodes.get("0").sameValue(first.object()));
+    REQUIRE(stack.nodes.get("1").sameValue(second.object()));
+    REQUIRE(stack.nodes.get("2").sameValue(third.object()));
+    stack.addToStackBefore(third.object());
+    REQUIRE(stack.nodes.get("0").sameValue(third.object()));
+    REQUIRE(stack.nodes.get("length").strictEquals(4));
 }
-
-TEST_CASE("StackNode builds itself when it has no output") {
-    // Without an output there is nothing to build through, so the node falls back to itself.
-    REQUIRE(StackNode::fallsBackToItself(false));
-    REQUIRE_FALSE(StackNode::fallsBackToItself(true));
-    // And the current stack is not put back on a throw, the restore being a plain statement at
-    // the end.
-    REQUIRE_FALSE(StackNode::restoresOnThrow());
-    REQUIRE_FALSE(StackNode::isCacheable());
+TEST_CASE("StackNode preserves active state when child build throws") {
+    StackNode stack, previous;
+    Node child; child.object().set("build", JSValue::function([](const JSValue&, const std::vector<JSValue>&, const std::vector<JSValue>&) -> JSValue { throw JSTypeError("child"); }));
+    stack.addToStack(child.object()); auto builder = JSValue::object(); builder.set("buildStage", "setup");
+    builder.set("setActiveStack", JSValue::function([](const JSValue&, const std::vector<JSValue>&, const std::vector<JSValue>&) -> JSValue { return {}; }));
+    nativeSetCurrentStack(previous.object());
+    REQUIRE_THROWS_AS(stack.build(builder), JSTypeError);
+    REQUIRE(nativeGetCurrentStack().sameValue(stack.object()));
+    REQUIRE(stack.object().get("_currentNode").sameValue(child.object()));
+    nativeSetCurrentStack(nullptr);
 }

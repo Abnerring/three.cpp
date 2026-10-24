@@ -1,9 +1,13 @@
 # 续接说明（Handoff）
 
 本文件记录当前进度、已探明的事实与下一步，供后续（新上下文）直接使用，避免重复摸索。
-2026-10-24 当前阶段验证：`THREECPPTests` 2,490 cases / 216,957 assertions 通过；NodeCache 68 个协议场景 + 8 个实际 Node GC 快照、NodeFrame 800 个协议场景 + 8 个实际 Node GC 快照与固定上游一致。本轮未重跑完整差分网络或全部 addons，不能沿用历史结果作为当前全量验收。
+2026-10-24 当前阶段验证：`THREECPPTests` 2,500 cases / 217,049 assertions 通过。固定上游直接差分：Node 674 场景 + 16 GC 快照，NodeBuilder 909 项，NodeUtils/StackTrace 302 场景 + 4 GC + ArrayBuffer 稳定绑定，StackNode 67 场景；NodeCache 68 场景 + 8 GC、NodeFrame 800 场景 + 8 GC 也已回归。完整跨模块差分、全部 addons 和三平台仍未全量验收。
 
-NodeCache/NodeFrame 已从描述性辅助类改为真实管理对象及 ephemeron WeakMap。注意本地 `undefined` 应继续查父缓存；NodeFrame `_getMaps` 的对象字面量须创建自有数据属性，不能被继承 setter/只读属性拦截。原始 03 差分失败来自探针缺少可选链的空值判断，输入与 Node 预期保持不变，修复探针后 04 全量通过；失败记录与修复后记录分别保存在 `D:\Temp\surui\threecpp-20261024`。NodeBuilder 本体、完整 nodes/TSL 与现代渲染仍待实现，旧的 fact/helper 类不能计为对应模块完成。
+Node 与 StackNode 已从 fact/helper 改为真实管理对象；NodeBuilder、六个声明依赖和 NodeUtils/StackTrace 的管理入口已落地。Node 包含三阶段构建、缓存/共享/序列化及真实生成器协议；StackNode 依据源代码保留异常后的部分状态和动态 super 查找。重入、求值顺序及 V8 for-in 初始原型键快照已实测修正。NodeBuilder 尚缺 11 个具体依赖方法（见 PORTING），默认 build 仍需 prebuild/NodeMaterial。完整 nodes/TSL、节点材质和现代 Vulkan 仍待实现。旧 fact/helper 测试不能计为对应完整模块。
+
+已发现并记录的边界：完整 JS 内建/装箱与原型替换、数学包装、Base64/StackTrace 宿主适配仍有缺口；生成器 return/throw 完成值的 V8 保留时机尚未对齐。NodeFrame/Cache 的历史失败及原始证据继续保存在 `D:\Temp\surui\threecpp-20261024`。本轮构建和 Node 证据位于 `D:\Temp\surui\threecpp-node-base-20261024`；Builder、Utils、StackNode 的独立证据在相邻的 `threecpp-node-builder-20261024`、`threecpp-node-utils-20261024-validation01`、`threecpp-stack-node-20261024-validation02`。
+
+进度只按文件存在统计：固定上游共 1,251 模块，src 755 中 414 有同路径文件，examples/jsm 496 中 84 有同路径文件；合计 498（39.8%），753 尚无同路径文件。异名或放错目录的旧适配也会被算作缺口；这不是功能完成率。审计状态为 partial-unverified 343、missing 598、vulkan-port-pending 290、dependency-unverified 20，全部未登记为完整验收。
 
 本阶段 Vulkan：修复立方体初始 Gaussian blur 的两遍执行、采样布局、fragment push constants、render pass 创建顺序及目标资源释放/恢复。独立 `threecpp.vulkan-cube` 通过 60 项实际 GPU 断言；纯色最大通道误差 0，条纹峰值随 sigma 增大从 255 → 225 → 68，扩散位置为 61。范围仅为 fromScene 的初始球面 Gaussian blur，GGX、HDR mip 及完整 PMREM 入口仍待实现。此前的自动 mipmap 黑色失败已定位并修复：纹理创建遗漏 `VkImageCreateInfo.samples`，补齐 `VK_SAMPLE_COUNT_1_BIT` 后第 2/3 级恢复灰色。现有完整 GPU 回归 1,400 项断言与 cube 60 项断言均通过；源码、exe/SPV 哈希及原始失败/成功记录另存 `D:\Temp\surui\threecpp-mipmap-20261024`。Khronos validation layer 不可用。源码冻结、二进制/着色器哈希和原始日志保存在 `D:\Temp\surui\threecpp-pmrem-blur-20261024`。
 
