@@ -5,6 +5,7 @@
 #include "core/JSIterator.h"
 #include "core/JSString.h"
 #include "core/JSObject.h"
+#include "core/NativeArray.h"
 #include "core/OrderedMap.h"
 #include "core/ArraySort.h"
 #include <algorithm>
@@ -598,6 +599,46 @@ JSValue arrayConstructor(const JSValue&, const Args& args, const Args&) {
     }
     auto array = JSValue::array(); arrayPush(array, args, {}); return array;
 }
+JSValue arrayFrom(const JSValue& constructor, const Args& args, const Args&) {
+    const auto items=argument(args,0), mapper=argument(args,1), thisArg=argument(args,2);
+    const bool mapping=!mapper.isUndefined();
+    if(mapping&&!mapper.isCallable())throw JSTypeError("Array.from mapper must be callable");
+    const auto iteratorMethod=items.get(JSValue::wellKnownSymbol("iterator"));
+    if(!iteratorMethod.isUndefined()&&!iteratorMethod.isNull()) {
+        if(!iteratorMethod.isCallable())throw JSTypeError("Iterator method is not callable");
+        auto result=constructor.isConstructible()?constructor.construct():JSValue::array();
+        const auto iterator=iteratorMethod.call(items);
+        if(!iterator.isObject())throw JSTypeError("Iterator method result is not an object");
+        JSIteratorRecord record{iterator,iterator.get("next"),false};
+        std::uint64_t k=0;
+        while(true) {
+            if(k>=9007199254740991ULL) {
+                try{throw JSTypeError("Array.from length exceeds maximum safe integer");}
+                catch(...){closeJSIterator(record,std::current_exception());}
+            }
+            // Abrupt IteratorStepValue already completes the iterator record.
+            const auto next=stepJSIterator(record);
+            if(!next){result.set("length",double(k));return result;}
+            try{
+                const auto value=mapping?mapper.call(thisArg,{*next,double(k)}):*next;
+                JSPropertyDescriptor descriptor;descriptor.value=value;
+                descriptor.writable=descriptor.enumerable=descriptor.configurable=true;
+                result.defineProperty(std::to_string(k),descriptor);
+            }catch(...){closeJSIterator(record,std::current_exception());}
+            ++k;
+        }
+    }
+    const auto source=arrayMethodObject(items);const auto length=arrayLikeLength(source);
+    auto result=constructor.isConstructible()?constructor.construct({double(length)}):arrayConstructor({}, {double(length)}, {});
+    for(std::uint64_t k=0;k<length;++k) {
+        const auto item=source.get(std::to_string(k));
+        const auto value=mapping?mapper.call(thisArg,{item,double(k)}):item;
+        JSPropertyDescriptor descriptor;descriptor.value=value;
+        descriptor.writable=descriptor.enumerable=descriptor.configurable=true;
+        result.defineProperty(std::to_string(k),descriptor);
+    }
+    result.set("length",double(length));return result;
+}
 JSValue objectLocaleString(const JSValue& receiver, const Args&, const Args&) {
     const auto method = receiver.get("toString"); return method.call(receiver);
 }
@@ -743,7 +784,7 @@ class JSHeap : public std::enable_shared_from_this<JSHeap> {
     std::unordered_map<HostKey, std::uint64_t, HostKeyHash> hosts;
     std::uint64_t nextId = 0;
     std::unordered_set<std::uint64_t> keptObjects;
-    JSValue objectPrototype, arrayPrototype, functionPrototype, intrinsicObject;
+    JSValue objectPrototype, arrayPrototype, functionPrototype, intrinsicObject, intrinsicArray;
     bool initialized = false, collecting = false, initializing = false;
     std::size_t totalRoots = 0, nativeOwnershipRecords = 0, executionDepth = 0;
     struct ExecutionScope {
@@ -983,9 +1024,11 @@ class JSHeap : public std::enable_shared_from_this<JSHeap> {
         install(array, "filter", arrayFilter, 1);
         auto arrayCtor = createFunction(arrayConstructor, {}, "Array", 1);
         record(arrayCtor).intrinsic = true;
+        intrinsicArray = arrayCtor.graphEdge();
         record(arrayCtor).constructMode = Record::ConstructMode::Array;
         arrayCtor.defineProperty("prototype", dataDescriptor(array, false, false, false));
         array.defineProperty("constructor", dataDescriptor(arrayCtor, true, false, true));
+        install(arrayCtor,"from",arrayFrom,1);
         JSPropertyDescriptor arraySpecies;
         arraySpecies.getter = createFunction([](const JSValue& receiver, const Args&, const Args&) {
             return receiver;
@@ -1485,7 +1528,12 @@ JSValue JSValue::iteratorNext(unsigned brand) const {
     if(brand==3) {
         // V8's Array Iterator captures the next index before observing length.
         // A reentrant length getter can advance the same iterator in between.
-        const auto index=cursor->index;const auto length=arrayLikeLength(target);
+        const auto index=cursor->index;
+        // Typed arrays use their internal array length even when an own length
+        // property shadows the prototype getter. Array.prototype.values borrowed
+        // onto a typed array follows this same branch.
+        const auto length=target.isHostObject("three.AnimationArray")
+            ? static_cast<std::uint64_t>(NativeArray_detail::unwrap(target).size()) : arrayLikeLength(target);
         if(index>=length)return finish();
         cursor->index=index+1;
         if(iterator.kind==0)return result(index,false);
@@ -1746,6 +1794,9 @@ JSValue JSValue::toPropertyKey() const {
 }
 JSValue JSValue::intrinsicObjectConstructor() {
     auto heap=JSHeap::current();return JSValue(heap->intrinsicObject);
+}
+JSValue JSValue::intrinsicArrayConstructor() {
+    auto heap=JSHeap::current();return JSValue(heap->intrinsicArray);
 }
 std::size_t JSValue::nativeSafepoint() {
     const auto heap = JSHeap::currentHeapStorage().lock();

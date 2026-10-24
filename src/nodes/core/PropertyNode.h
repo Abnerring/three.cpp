@@ -1,10 +1,21 @@
 ﻿#pragma once
 #include <string>
+#include "core/JSValue.h"
+
+JSValue nativePropertyNodeConstructor();
 
 // Port of the rules in src/nodes/core/PropertyNode.js at the pinned revision. The node names a
 // shader variable the engine expects to exist, and four of its rules are worth writing down.
 class PropertyNode {
+    JSValue object_;
   public:
+    explicit PropertyNode(const JSValue& nodeType = {}, const JSValue& name = nullptr, const JSValue& varying = false, const JSValue& placeholderNode = nullptr);
+    PropertyNode(const PropertyNode& other) : object_(other.object_) {}
+    PropertyNode& operator=(const PropertyNode& other) { object_ = other.object_; return *this; }
+    JSValue object() const { return object_; }
+    operator JSValue() const { return object_; }
+    static JSValue constructor() { return nativePropertyNodeConstructor(); }
+    static JSValue prototype() { return constructor().get("prototype"); }
     static constexpr bool isPropertyNode = true;
     static constexpr const char* kTypeName = "PropertyNode";
 

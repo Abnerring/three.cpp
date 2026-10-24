@@ -56,6 +56,8 @@ for ( const value of [ undef, null, {}, { isNode: 3 }, [], 1, true, 'x' ] ) add(
 for ( const text of [ 'Error', 'Error\n    at myFn (http://host/src/main.js?v=3:12:7)\n    at ignored (http://host/Node.js:2:1)\nfoo@http://host/start.js:33:4\n    at http://host/plain.js:1:9', 'x@file:///d:/root/x.js:1234567891234:2', 'Error\n at internal (StackTrace.js:1:2)\n at tsl (TSLCore.js:1:2)\n at noise (FooNode.js:1:2)\n at bundle (three.webgpu.min.js:1:2)\n at run (entry.js:2:3)' ] ) requests.push( { kind: 'stack', text, message: 'failure' } );
 requests.push( { kind: 'stackProtocol', frames: [ { tag: 'flags', values: { fn: 'run', file: 'custom.cpp', line: 7, column: 8 } } ], message: { tag: 'stringCoerce', name: 'message', values: [ 'dynamic' ] } } );
 requests.push( { kind: 'stack', text: 'Error\n at\u00a0run\u2003(path/场景.js:7:8)', message: 'failure' } );
+// Preserve the previous 302 requests; exercise the canonical Matrix2 constructor.
+for ( const values of [ [], [ 1, 2, 3, 4 ], [ 1 ], [ 'a', false, null, undef ], [ undef, 8 ], [ null ], [ { tag: 'negative-zero' }, { tag: 'nan' }, 3, 4 ] ] ) add( 'getValueFromType', 'mat2', ...values );
 
 function decode( spec, state ) {
     if ( ! spec || typeof spec !== 'object' ) return spec;
@@ -87,7 +89,7 @@ function encode( value ) {
     if ( value instanceof ArrayBuffer ) return [ ...new Uint8Array( value ) ];
     if ( value && typeof value === 'object' ) { const type = U.getValueType( value );
         if ( [ 'vec2', 'vec3', 'vec4', 'color' ].includes( type ) ) { const keys = type === 'color' ? 'rgb' : type === 'vec2' ? 'xy' : type === 'vec3' ? 'xyz' : 'xyzw'; return { type, values: [ ...keys ].map( k => encode( value[ k ] ) ) }; }
-        if ( type === 'mat3' || type === 'mat4' ) return { type, values: value.elements }; return '#object';
+        if ( type === 'mat2' || type === 'mat3' || type === 'mat4' ) return { type, values: value.elements.map( encode ) }; return '#object';
     } return value;
 }
 function run( request ) {

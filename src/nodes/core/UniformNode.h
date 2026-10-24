@@ -1,12 +1,21 @@
 ﻿#pragma once
+#include "core/JSValue.h"
 #include <cstdint>
 #include <string>
 
 // Port of the rules in src/nodes/core/UniformNode.js at the pinned revision. The node holds a
 // value that the shader reads, and four of its rules are worth writing down, one of them being
 // that two nodes can turn out to be one.
+JSValue nativeUniformNodeConstructor();
+JSValue nativeUniformFactory();
 class UniformNode {
+    JSValue object_;
   public:
+    explicit UniformNode(const JSValue& value = {}, const JSValue& nodeType = nullptr);
+    JSValue object() const { return object_; }
+    operator JSValue() const { return object_; }
+    static JSValue constructor() { return nativeUniformNodeConstructor(); }
+    static JSValue prototype() { return constructor().get("prototype"); }
     static constexpr bool isUniformNode = true;
     static constexpr const char* kTypeName = "UniformNode";
 

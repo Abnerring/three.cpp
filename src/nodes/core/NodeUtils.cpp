@@ -8,6 +8,7 @@
 #include "core/NativeArray.h"
 #include "core/NativeObject.h"
 #include "math/Color.h"
+#include "math/Matrix2.h"
 #include "math/Matrix3.h"
 #include "math/Matrix4.h"
 #include "math/Vector2.h"
@@ -202,7 +203,7 @@ JSValue valueFromType(const JSValue&,const Args& args,const Args&){
     if(last4.strictEquals("vec2")){const auto x=numeric(params,0),y=numeric(params,1);return nativeVector(std::make_shared<Vector2>(x,y));}
     if(last4.strictEquals("vec3")){const auto x=numeric(params,0),y=numeric(params,1),z=numeric(params,2);return nativeVector(std::make_shared<Vector3>(x,y,z));}
     if(last4.strictEquals("vec4")){const auto x=numeric(params,0),y=numeric(params,1),z=numeric(params,2),w=numeric(params,3,1);return nativeVector(std::make_shared<Vector4>(x,y,z,w));}
-    if(last4.strictEquals("mat2"))throw NodeUtilsUnsupported("NodeUtils: canonical Matrix2 runtime constructor is not available");
+    if(last4.strictEquals("mat2"))return nativeMatrix2Constructor().construct(params);
     if(last4.strictEquals("mat3")||last4.strictEquals("mat4")){
         const bool matrix4=last4.strictEquals("mat4");const auto value=matrix4?nativeMatrix(std::make_shared<Matrix4>()):nativeMatrix(std::make_shared<Matrix3>());
         if(!arg(params,0).isUndefined()){

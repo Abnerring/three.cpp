@@ -13,7 +13,7 @@
 #include <string>
 #include <vector>
 #include "math/ColorManagement.h"
-#include "constants.h"
+#include "../constants.h"
 
 class Vector3;
 class Vector4;

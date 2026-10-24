@@ -64,6 +64,7 @@ class JSValue {
 
     // Stable intrinsic binding, independent of mutable Object.prototype.constructor.
     static JSValue intrinsicObjectConstructor();
+    static JSValue intrinsicArrayConstructor();
     // Non-allocating test for an existing native realm keeper.
     static bool hasActiveHeap();
     static JSValue object();

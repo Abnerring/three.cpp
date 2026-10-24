@@ -7,6 +7,10 @@
 #include "nodes/core/NodeVarying.h"
 #include "nodes/core/NodeCode.h"
 #include "nodes/core/StructType.h"
+#include "nodes/core/ParameterNode.h"
+#include "nodes/code/FunctionNode.h"
+#include "renderers/common/BindGroup.h"
+#include "renderers/common/nodes/NodeUniform.h"
 #include "core/JSModuleObject.h"
 #include "core/JSIterator.h"
 #include "core/JSSet.h"
@@ -83,18 +87,28 @@ std::vector<std::string> forIn(JSValue value) {
     while (!value.isNull() && !value.isUndefined()) {
         if (!value.isObject()) value = JSValue::intrinsicObjectConstructor().call({}, {value});
         for (const auto& key : value.ownPropertyNames()) {
-            if (!seen.insert(key).second) continue;
+            if (seen.contains(key)) continue;
             const auto d = value.getOwnPropertyDescriptor(key);
-            if (d && d->enumerable.value_or(false)) result.push_back(key);
+            if (!d) continue;
+            seen.insert(key);
+            if (d->enumerable.value_or(false)) result.push_back(key);
         }
         value = value.getPrototype();
     }
     return result;
 }
+template<class F> void forInSnapshot(const JSValue& value, F body) {
+    // The pinned runtime snapshots initial own/prototype candidates, then
+    // suppresses keys deleted before their turn. New keys await the next loop.
+    const auto candidates = forIn(value);
+    for (const auto& key : candidates) if (value.has(key)) body(JSValue(key));
+}
 template<class F> void each(const JSValue& values, F body) {
     auto iterator = getJSIterator(values);
-    try { while (const auto value = stepJSIterator(iterator)) body(*value); }
-    catch (...) { closeJSIterator(iterator, std::current_exception()); }
+    while (const auto value = stepJSIterator(iterator)) {
+        try { body(*value); }
+        catch (...) { closeJSIterator(iterator, std::current_exception()); }
+    }
 }
 bool checkWriteUsage(const JSValue& data) {
     if (data.get("writeUsageCount").toNumber() > 0) return true;
@@ -284,6 +298,18 @@ JSValue dispatch(const JSValue& receiver, const Args& args, const Args& captures
         return "vec4";
     }
     if (name == "getOutputStructName") return {};
+    if (name == "_getBindGroup") {
+        const auto bindings = raw(args, 1);
+        const auto groupNode = bindings.get("0").get("groupNode");
+        auto shared = groupNode.get("shared");
+        if (shared.toBoolean()) {
+            for (double i = 1; i < bindings.get("length").toNumber(); ++i)
+                if (!groupNode.strictEquals(bindings.get(JSValue(i)).get("groupNode"))) shared = false;
+        }
+        if (shared.toBoolean() && !self.get("renderer").get("_bindings").isUndefined())
+            return invoke(self.get("renderer").get("_bindings"), "getSharedBindGroup")({a, bindings});
+        return nativeBindGroupConstructor().construct({a, bindings});
+    }
     if (name == "getBindGroupArray") {
         const auto bindings = self.get("bindings").get(raw(args, 1));
         auto group = bindings.get(a);
@@ -295,6 +321,51 @@ JSValue dispatch(const JSValue& receiver, const Args& args, const Args& captures
             group = JSValue::array(); put(bindings, a, group);
         }
         return group;
+    }
+    if (name == "getBindings") {
+        auto bindingsGroups = self.get("bindGroups");
+        if (bindingsGroups.isNull()) {
+            auto groups = object();
+            const auto bindings = self.get("bindings");
+            for (const auto* stage : {"fragment", "vertex", "compute"}) {
+                forInSnapshot(bindings.get(stage), [&](const JSValue& groupName) {
+                    const auto uniforms = bindings.get(stage).get(groupName);
+                    auto groupUniforms = groups.get(groupName);
+                    if (!groupUniforms.toBoolean()) { groupUniforms = JSValue::array(); groups.set(groupName, groupUniforms); }
+                    each(uniforms, [&](const JSValue& uniform) {
+                        if (invoke(groupUniforms, "includes")({uniform}).strictEquals(false))
+                            invoke(groupUniforms, "push")({uniform});
+                    });
+                });
+            }
+            bindingsGroups = JSValue::array();
+            forInSnapshot(groups, [&](const JSValue& groupName) {
+                const auto group = groups.get(groupName);
+                const auto bindingsGroup = invoke(self, "_getBindGroup")({groupName, group});
+                invoke(bindingsGroups, "push")({bindingsGroup});
+            });
+            self.set("bindGroups", bindingsGroups);
+        }
+        return bindingsGroups;
+    }
+    if (name == "sortBindingGroups") {
+        const auto groups = invoke(self, "getBindings")();
+        const auto comparator = JSValue::function([](const JSValue&, const Args& values, const Args&) {
+            // Get both operands before ToNumeric; either getter may mutate the
+            // other group, and left conversion must precede right conversion.
+            const auto left = raw(values, 0).get("bindings").get("0").get("groupNode").get("order");
+            const auto right = raw(values, 1).get("bindings").get("0").get("groupNode").get("order");
+            const auto leftNumber = left.toNumber(); const auto rightNumber = right.toNumber();
+            return JSValue(leftNumber - rightNumber);
+        }, {}, "", 2);
+        invoke(groups, "sort")({comparator});
+        for (double i = 0; i < groups.get("length").toNumber(); ++i) {
+            const auto group = groups.get(JSValue(i));
+            // Evaluate the base of the assignment before the computed key.
+            auto indexes = self.get("bindingsIndexes");
+            auto index = indexes.get(group.get("name")); index.set("group", i);
+        }
+        return {};
     }
     if (name == "setHashNode") { put(self.get("hashNodes"), raw(args, 1), a); return {}; }
     if (name == "addNode") {
@@ -644,6 +715,49 @@ JSValue dispatch(const JSValue& receiver, const Args& args, const Args& captures
         if (!self.get("currentFunctionNode").isNull()) invoke(self.get("currentFunctionNode").get("includes"), "push")({a});
         return {};
     }
+    if (name == "buildFunctionNode") {
+        const auto backend = self.get("renderer").get("backend");
+        const auto functionNodeCache = captures[1].get("functionNodeCache");
+        auto cache = invoke(functionNodeCache, "get")({backend});
+        if (cache.isUndefined()) {
+            cache = createNativeWeakMap(); invoke(functionNodeCache, "set")({backend, cache});
+        }
+        auto function = invoke(cache, "get")({a});
+        if (function.isUndefined()) {
+            function = nativeFunctionNodeConstructor().construct();
+            const auto previous = self.get("currentFunctionNode"); self.set("currentFunctionNode", function);
+            function.set("code", invoke(self, "buildFunctionCode")({a}));
+            self.set("currentFunctionNode", previous);
+            invoke(cache, "set")({a, function});
+        }
+        return function;
+    }
+    if (name == "flowShaderNode") {
+        const auto layout = a.get("layout");
+        auto inputs = object();
+        inputs.set(JSValue::wellKnownSymbol("iterator"), JSValue::function([](const JSValue& receiver, const Args&, const Args&) {
+            const auto values = invoke(JSValue::intrinsicObjectConstructor(), "values")({receiver});
+            auto state = object({{"index", 0}, {"values", values}});
+            auto iterator = object();
+            iterator.set("next", JSValue::function([](const JSValue&, const Args&, const Args& captures) {
+                auto state = captures[0]; const auto values = state.get("values");
+                const auto value = values.get(state.get("index"));
+                const auto index = state.get("index").toNumber(); state.set("index", index + 1);
+                return object({{"value", value}, {"done", index >= values.get("length").toNumber()}});
+            }, {state}, "next", 0));
+            return iterator;
+        }, {}, "[Symbol.iterator]", 0));
+        each(layout.get("inputs"), [&](const JSValue& input) {
+            const auto name = input.get("name");
+            const auto type = input.get("type"), parameterName = input.get("name");
+            inputs.set(name, nativeParameterNodeConstructor().construct({type, parameterName}));
+        });
+        put(a, "layout", nullptr);
+        const auto callNode = invoke(a, "call")({inputs});
+        const auto flowData = invoke(self, "flowStagesNode")({callNode, layout.get("type")});
+        put(a, "layout", layout);
+        return flowData;
+    }
     if (name == "flowBuildStage") {
         const auto previous = invoke(self, "getBuildStage")(); invoke(self, "setBuildStage")({raw(args, 1)});
         const auto result = invoke(a, "build")({self, arg(args, 2, nullptr)}); invoke(self, "setBuildStage")({previous}); return result;
@@ -727,6 +841,20 @@ JSValue dispatch(const JSValue& receiver, const Args& args, const Args& captures
         invoke(self, "buildCode")(); invoke(self, "buildUpdateNodes")(); return self;
     }
     if (name == "format") return format(self, args);
+    if (name == "getNodeUniform") {
+        const auto type = raw(args, 1);
+        const char* constructorName = nullptr;
+        if (type.strictEquals("float") || type.strictEquals("int") || type.strictEquals("uint")) constructorName = "NumberNodeUniform";
+        else if (type.strictEquals("vec2") || type.strictEquals("ivec2") || type.strictEquals("uvec2")) constructorName = "Vector2NodeUniform";
+        else if (type.strictEquals("vec3") || type.strictEquals("ivec3") || type.strictEquals("uvec3")) constructorName = "Vector3NodeUniform";
+        else if (type.strictEquals("vec4") || type.strictEquals("ivec4") || type.strictEquals("uvec4")) constructorName = "Vector4NodeUniform";
+        else if (type.strictEquals("color")) constructorName = "ColorNodeUniform";
+        else if (type.strictEquals("mat2")) constructorName = "Matrix2NodeUniform";
+        else if (type.strictEquals("mat3")) constructorName = "Matrix3NodeUniform";
+        else if (type.strictEquals("mat4")) constructorName = "Matrix4NodeUniform";
+        if (constructorName) return nativeNodeUniforms().get(constructorName).construct({a});
+        throw std::runtime_error("THREE.NodeBuilder: Uniform \"" + type.toString() + "\" not implemented.");
+    }
     if (name == "getSignature") return std::string("// Three.js r") + REVISION + " - Node System\n";
     if (name == "needsPreviousData") { const auto mrt = invoke(self.get("renderer"), "getMRT")(); return !mrt.isNull() && invoke(mrt, "has")({"velocity"}).toBoolean(); }
     // These are abstract extension points in the upstream base class itself.
@@ -755,16 +883,18 @@ JSValue nativeNodeBuilderConstructor() {
     static thread_local bool initializing = false;
     JSModuleInitializationScope scope(initializing, "NodeBuilder constructor");
     auto state = JSValue::object(nullptr); state.set("id", 0);
+    state.set("functionNodeCache", createNativeWeakMap());
     auto arrayConstructors = JSValue::array();
     for (unsigned i = 0; i < 7; ++i) arrayConstructors.set(std::to_string(i), NativeArray_detail::constructor(i));
     state.set("arrayConstructors", arrayConstructors);
     auto constructor = JSValue::constructor(initialize, {state}, "NodeBuilder", 3);
     auto prototype = constructor.get("prototype");
-    // Unported concrete dependencies (render targets/bind groups/function nodes,
+    // Unported concrete dependencies (render targets/attribute constructors,
     // prebuild/NodeMaterial and async build) deliberately have no pretend implementation.
     for (const auto [name, arity] : {
         std::pair{"isFlatShading", 0u}, {"isOpaque", 0u}, {"includes", 1u}, {"getOutputType", 0u}, {"getOutputStructName", 0u},
-        {"getBindGroupArray", 2u}, {"setHashNode", 2u}, {"addNode", 1u}, {"addSequentialNode", 1u}, {"buildUpdateNodes", 0u}}) method(prototype, name, arity, state);
+        {"_getBindGroup", 2u}, {"getBindGroupArray", 2u}, {"getBindings", 0u}, {"sortBindingGroups", 0u},
+        {"setHashNode", 2u}, {"addNode", 1u}, {"addSequentialNode", 1u}, {"buildUpdateNodes", 0u}}) method(prototype, name, arity, state);
     getter(prototype, "currentNode"); getter(prototype, "renderPipeline");
     for (const auto [name, arity] : {
         std::pair{"isFilteredTexture", 1u}, {"getUniformBufferLimit", 0u}, {"addChain", 1u}, {"removeChain", 1u},
@@ -788,8 +918,8 @@ JSValue nativeNodeBuilderConstructor() {
         {"getStructTypeNode", 1u}, {"getStructTypeFromNode", 2u}, {"getOutputStructTypeFromNode", 2u},
         {"getUniformFromNode", 2u}, {"getVarFromNode", 1u}, {"isDeterministic", 1u}, {"getVaryingFromNode", 1u},
         {"registerDeclaration", 1u}, {"getCodeFromNode", 2u}, {"addLineFlowCode", 1u}, {"addFlowCode", 1u},
-        {"addFlowTab", 0u}, {"removeFlowTab", 0u}, {"getFlowData", 1u}, {"flowNode", 1u}, {"addInclude", 1u},
-        {"flowBuildStage", 2u}, {"flowStagesNode", 1u}, {"getFunctionOperator", 0u}, {"buildFunctionCode", 0u},
+        {"addFlowTab", 0u}, {"removeFlowTab", 0u}, {"getFlowData", 1u}, {"flowNode", 1u}, {"addInclude", 1u}, {"buildFunctionNode", 1u},
+        {"flowShaderNode", 1u}, {"flowBuildStage", 2u}, {"flowStagesNode", 1u}, {"getFunctionOperator", 0u}, {"buildFunctionCode", 0u},
         {"flowChildNode", 1u}, {"flowNodeFromShaderStage", 2u}, {"getAttributesArray", 0u}, {"getAttributes", 0u},
         {"getVaryings", 0u}, {"getVar", 2u}, {"generateConstStatement", 2u}, {"generateVarStatement", 2u},
         {"generateLetStatement", 2u}, {"getVars", 1u}, {"getUniforms", 0u}, {"getCodes", 1u}, {"getHash", 0u},
@@ -797,7 +927,7 @@ JSValue nativeNodeBuilderConstructor() {
     getter(prototype, "subBuild");
     for (const auto [name, arity] : {
         std::pair{"addSubBuild", 1u}, {"removeSubBuild", 0u}, {"getClosestSubBuild", 1u}, {"getSubBuildOutput", 1u},
-        {"getSubBuildProperty", 0u}, {"build", 0u}, {"format", 3u}, {"getSignature", 0u}, {"needsPreviousData", 0u}}) method(prototype, name, arity, state);
+        {"getSubBuildProperty", 0u}, {"build", 0u}, {"getNodeUniform", 2u}, {"format", 3u}, {"getSignature", 0u}, {"needsPreviousData", 0u}}) method(prototype, name, arity, state);
     constructor.retainForHeapLifetime(); weak = JSWeakValue(constructor); return constructor;
 }
 NodeBuilder::NodeBuilder(JSValue nodeObject, JSValue renderer, JSValue parser) {

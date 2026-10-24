@@ -1661,6 +1661,16 @@ if(THREEJS_SOURCE_DIR AND THREECPP_NODE_EXECUTABLE)
 endif()
 
 add_executable(ThreeJsNodeCacheParityProbe unit/utils/parity/NodeCacheParityProbe.cpp)
+add_executable(ThreeJsRendererResourcesParityProbe unit/utils/parity/RendererResourcesParityProbe.cpp)
+target_link_libraries(ThreeJsRendererResourcesParityProbe PRIVATE threecpp::threecpp)
+add_executable(ThreeJsNodeInputParityProbe unit/utils/parity/NodeInputParityProbe.cpp)
+target_link_libraries(ThreeJsNodeInputParityProbe PRIVATE threecpp::threecpp)
+add_executable(ThreeJsFunctionNodeParityProbe unit/utils/parity/FunctionNodeParityProbe.cpp)
+target_link_libraries(ThreeJsFunctionNodeParityProbe PRIVATE threecpp::threecpp)
+add_executable(ThreeJsPropertyNodeParityProbe unit/utils/parity/PropertyNodeParityProbe.cpp)
+target_link_libraries(ThreeJsPropertyNodeParityProbe PRIVATE threecpp::threecpp)
+add_executable(ThreeJsUniformsGroupParityProbe unit/utils/parity/UniformsGroupParityProbe.cpp)
+target_link_libraries(ThreeJsUniformsGroupParityProbe PRIVATE threecpp::threecpp)
 add_executable(ThreeJsNodeBaseParityProbe unit/utils/parity/NodeParityProbe.cpp)
 target_link_libraries(ThreeJsNodeBaseParityProbe PRIVATE threecpp::threecpp)
 add_executable(ThreeJsNodeUtilsParityProbe unit/utils/parity/NodeUtilsParityProbe.cpp)
@@ -1679,6 +1689,21 @@ if(THREECPP_NODE_EXECUTABLE AND THREEJS_SOURCE_DIR)
     add_test(NAME threecpp.threejs-node-utils-parity
         COMMAND "${THREECPP_NODE_EXECUTABLE}" --expose-gc "${CMAKE_CURRENT_SOURCE_DIR}/unit/utils/parity/compare-node-utils.mjs"
         "${THREEJS_SOURCE_DIR}" "$<TARGET_FILE:ThreeJsNodeUtilsParityProbe>")
+    add_test(NAME threecpp.threejs-renderer-resources-parity
+        COMMAND "${THREECPP_NODE_EXECUTABLE}" "${CMAKE_CURRENT_SOURCE_DIR}/unit/utils/parity/compare-renderer-resources.mjs"
+        "${THREEJS_SOURCE_DIR}" "$<TARGET_FILE:ThreeJsRendererResourcesParityProbe>")
+    add_test(NAME threecpp.threejs-node-input-parity
+        COMMAND "${THREECPP_NODE_EXECUTABLE}" "${CMAKE_CURRENT_SOURCE_DIR}/unit/utils/parity/compare-node-input.mjs"
+        "${THREEJS_SOURCE_DIR}" "$<TARGET_FILE:ThreeJsNodeInputParityProbe>")
+    add_test(NAME threecpp.threejs-function-node-parity
+        COMMAND "${THREECPP_NODE_EXECUTABLE}" --expose-gc "${CMAKE_CURRENT_SOURCE_DIR}/unit/utils/parity/compare-function-node.mjs"
+        "${THREEJS_SOURCE_DIR}" "$<TARGET_FILE:ThreeJsFunctionNodeParityProbe>")
+    add_test(NAME threecpp.threejs-property-node-parity
+        COMMAND "${THREECPP_NODE_EXECUTABLE}" "${CMAKE_CURRENT_SOURCE_DIR}/unit/utils/parity/compare-property-node.mjs"
+        "${THREEJS_SOURCE_DIR}" "$<TARGET_FILE:ThreeJsPropertyNodeParityProbe>")
+    add_test(NAME threecpp.threejs-uniforms-group-parity
+        COMMAND "${THREECPP_NODE_EXECUTABLE}" "${CMAKE_CURRENT_SOURCE_DIR}/unit/utils/parity/compare-uniforms-group.mjs"
+        "${THREEJS_SOURCE_DIR}" "$<TARGET_FILE:ThreeJsUniformsGroupParityProbe>")
     add_test(NAME threecpp.threejs-node-builder-parity
         COMMAND "${THREECPP_NODE_EXECUTABLE}" "${CMAKE_CURRENT_SOURCE_DIR}/unit/utils/parity/compare-node-builder.mjs"
         "${THREEJS_SOURCE_DIR}" "$<TARGET_FILE:ThreeJsNodeBuilderParityProbe>")

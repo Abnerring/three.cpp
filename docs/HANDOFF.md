@@ -1,15 +1,22 @@
 # 续接说明（Handoff）
 
-本文件记录当前进度、已探明的事实与下一步，供后续（新上下文）直接使用，避免重复摸索。
-2026-10-24 当前阶段验证：`THREECPPTests` 2,500 cases / 217,049 assertions 通过。固定上游直接差分：Node 674 场景 + 16 GC 快照，NodeBuilder 909 项，NodeUtils/StackTrace 302 场景 + 4 GC + ArrayBuffer 稳定绑定，StackNode 67 场景；NodeCache 68 场景 + 8 GC、NodeFrame 800 场景 + 8 GC 也已回归。完整跨模块差分、全部 addons 和三平台仍未全量验收。
+2026-10-24 当前阶段：CPU 全量 2,508 cases / 217,138 assertions；12 项 CTest 全通过（70.15 秒）。固定上游仍是 `11738a9d55e502fb484cefffcea3a66dc44e9fe9`，生产为原生 C++，Node 仅是开发差分 oracle，无 CEF/浏览器/JS 执行桥。
 
-Node 与 StackNode 已从 fact/helper 改为真实管理对象；NodeBuilder、六个声明依赖和 NodeUtils/StackTrace 的管理入口已落地。Node 包含三阶段构建、缓存/共享/序列化及真实生成器协议；StackNode 依据源代码保留异常后的部分状态和动态 super 查找。重入、求值顺序及 V8 for-in 初始原型键快照已实测修正。NodeBuilder 尚缺 11 个具体依赖方法（见 PORTING），默认 build 仍需 prebuild/NodeMaterial。完整 nodes/TSL、节点材质和现代 Vulkan 仍待实现。旧 fact/helper 测试不能计为对应完整模块。
+本轮实现实际 Input/Const/Uniform/UniformGroup、Code/Function/NodeFunction/Input、Property/Parameter，扩展 NodeBuilder 的绑定组合并/缓存/排序、backend→shaderNode 弱缓存、节点 uniform 映射和 flowShaderNode。现代资源补齐 Binding/Buffer/UniformBuffer、八类 Uniform/NodeUniform、UniformsGroup/NodeUniformsGroup；加入真实 Matrix2、Array.from、Object.values、九类 TypedArray 迭代。
 
-已发现并记录的边界：完整 JS 内建/装箱与原型替换、数学包装、Base64/StackTrace 宿主适配仍有缺口；生成器 return/throw 完成值的 V8 保留时机尚未对齐。NodeFrame/Cache 的历史失败及原始证据继续保存在 `D:\Temp\surui\threecpp-20261024`。本轮构建和 Node 证据位于 `D:\Temp\surui\threecpp-node-base-20261024`；Builder、Utils、StackNode 的独立证据在相邻的 `threecpp-node-builder-20261024`、`threecpp-node-utils-20261024-validation01`、`threecpp-stack-node-20261024-validation02`。
+本轮差分：Builder 1,050，Input 等 303，Function 等 191 + 2 GC，Property/Parameter/TSL 315，资源/内建 336，分组 107。旧 Node 674 + 16 GC、NodeUtils/StackTrace 309 + 4 GC + 稳定 ArrayBuffer、StackNode 67、NodeCache 68 + 8 GC、NodeFrame 800 + 8 GC 均已回归。保留原 Builder 909、Property 156/312、分组 107 的输入/预期，修复后未改 oracle。
 
-进度只按文件存在统计：固定上游共 1,251 模块，src 755 中 414 有同路径文件，examples/jsm 496 中 84 有同路径文件；合计 498（39.8%），753 尚无同路径文件。异名或放错目录的旧适配也会被算作缺口；这不是功能完成率。审计状态为 partial-unverified 343、missing 598、vulkan-port-pending 290、dependency-unverified 20，全部未登记为完整验收。
+发现并修正：Matrix2 静态块的键顺序、for-in 删除检查、step/body 的 IteratorClose 差别、Number 链式赋值的 ToPropertyKey 时机、clearUpdateRanges 不转发 super 返回值、TypedArray 内部长度（忽略覆盖 length）、TSL 私有缓存创建顺序。相对节点 ID `[1,11]` 等已与上游精确比较。完整基本类型装箱、数学/宿主包装、生成器 return/throw 完成值保留时机等仍有边界，详见 PORTING。
 
-本阶段 Vulkan：修复立方体初始 Gaussian blur 的两遍执行、采样布局、fragment push constants、render pass 创建顺序及目标资源释放/恢复。独立 `threecpp.vulkan-cube` 通过 60 项实际 GPU 断言；纯色最大通道误差 0，条纹峰值随 sigma 增大从 255 → 225 → 68，扩散位置为 61。范围仅为 fromScene 的初始球面 Gaussian blur，GGX、HDR mip 及完整 PMREM 入口仍待实现。此前的自动 mipmap 黑色失败已定位并修复：纹理创建遗漏 `VkImageCreateInfo.samples`，补齐 `VK_SAMPLE_COUNT_1_BIT` 后第 2/3 级恢复灰色。现有完整 GPU 回归 1,400 项断言与 cube 60 项断言均通过；源码、exe/SPV 哈希及原始失败/成功记录另存 `D:\Temp\surui\threecpp-mipmap-20261024`。Khronos validation layer 不可用。源码冻结、二进制/着色器哈希和原始日志保存在 `D:\Temp\surui\threecpp-pmrem-blur-20261024`。
+下一步优先：NodeBuilder 还缺 createRenderTarget/createCubeRenderTarget/getTypeFromAttribute/prebuild/buildAsync；默认 build 需 NodeMaterial。TSLCore 当前只导出 nodeObject/getConstNodeType，普通 shader function→Fn、完整 Node.prototype 扩展、节点材质及现代 Vulkan 均未实现；GLSL/WGSL parser 和 code/glslFn/wgslFn 工厂仍待连接。不要把 fact/helper、头文件存在或已注册抽象方法算作完整实现。完整模块初始化图的绝对节点 ID 仍待对齐。
+
+最新主证据：`D:\Temp\surui\threecpp-node-resources-20261024`；分组原始失败/成功保留在 `threecpp-uniforms-group-20261024-validation01/02`；Builder `threecpp-builder-bindings-flow-20261024`；Input `threecpp-node-input-20261024-validation01`；Function `function-parity-20261024c`；Property/TSL `property-parity-20261024f`。上一阶段 Node/Stack/Cache/Frame 证据继续保留。
+
+文件存在统计：src 428/755，examples/jsm 84/496，合计 512/1,251（40.9%），739 尚无同路径文件；这不是功能完成率。审计 partial-unverified 347、missing 594、vulkan-port-pending 290、dependency-unverified 20；全部仍未登记为完整验收。跨模块全量、全部 addons、GPU 和三平台未全量验收。
+
+本轮没有改 Vulkan 源码/着色器，未重跑 GPU。最近历史验证是 Gaussian cube blur 60 GPU 断言、mipmap 修复后的 GPU 1,400 断言；仅支持各自冻结版本，证据保留于 `threecpp-pmrem-blur-20261024` 和 `threecpp-mipmap-20261024`。完整 PMREM/GGX/HDR mip、光照/阴影/完整材质/后处理等仍待实现。
+
+构建注意：MSVC 中文 /showIncludes 依赖可能失效；头文件变化后定向更新受影响 .cpp 时间戳，并核对实际编译日志。不要批量删除对象文件或运行中产物。
 
 ## 一、项目约定（必须遵守）
 

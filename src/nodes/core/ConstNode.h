@@ -1,4 +1,5 @@
 ﻿#pragma once
+#include "core/JSValue.h"
 #include <cmath>
 #include <cstdint>
 #include <string>
@@ -6,8 +7,15 @@
 // Port of the parts of src/nodes/core/ConstNode.js at the pinned revision that decide what a
 // constant's shader text looks like. A constant knows its own type and the type the output
 // wants, and the rule it follows depends on whether both are numbers.
+JSValue nativeConstNodeConstructor();
 class ConstNode {
+    JSValue object_;
   public:
+    explicit ConstNode(const JSValue& value = {}, const JSValue& nodeType = nullptr);
+    JSValue object() const { return object_; }
+    operator JSValue() const { return object_; }
+    static JSValue constructor() { return nativeConstNodeConstructor(); }
+    static JSValue prototype() { return constructor().get("prototype"); }
     // Whether a type name is one of the numeric ones. The source tests the name against
     // /float|u?int/, so three names match and they match anywhere in the string rather than
     // only at its start.

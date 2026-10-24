@@ -1,26 +1,16 @@
-﻿#pragma once
-#include <optional>
-#include <string>
+#pragma once
+#include "core/JSMember.h"
 
-// Port of src/nodes/core/NodeFunctionInput.js: describes one input of a NodeFunction.
+JSValue nativeNodeFunctionInputConstructor();
 class NodeFunctionInput {
+    JSValue object_;
   public:
-    static constexpr bool isNodeFunctionInput = true;
-
-    NodeFunctionInput(std::string type, std::string name, std::optional<double> count = {},
-                      std::string qualifier = {}, bool isConst = false)
-        : type(std::move(type)),
-          name(std::move(name)),
-          count(count),
-          qualifier(std::move(qualifier)),
-          isConst(isConst) {}
-
-    std::string type;
-    std::string name;
-    // If the input is an array, the length; upstream uses null, which is an empty optional.
-    std::optional<double> count;
-    // "in", "out" or "inout"; only relevant for GLSL.
-    std::string qualifier;
-    // Whether the parameter takes a const qualifier; only relevant for GLSL.
-    bool isConst = false;
+    NodeFunctionInput(const JSValue& type = {}, const JSValue& name = {}, const JSValue& count = nullptr, const JSValue& qualifier = "", const JSValue& isConst = false);
+    NodeFunctionInput(const NodeFunctionInput& other) : object_(other.object_) {}
+    NodeFunctionInput& operator=(const NodeFunctionInput& other) { object_ = other.object_; return *this; }
+    JSValue object() const { return object_; }
+    operator JSValue() const { return object_; }
+    static JSValue constructor() { return nativeNodeFunctionInputConstructor(); }
+    static JSValue prototype() { return constructor().get("prototype"); }
+    JSMember type{&object_, "type"}, name{&object_, "name"}, count{&object_, "count"}, qualifier{&object_, "qualifier"}, isConst{&object_, "isConst"};
 };

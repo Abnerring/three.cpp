@@ -1,10 +1,24 @@
 ﻿#pragma once
+#include "core/JSValue.h"
 #include <string>
+
+JSValue nativeUniformGroupNodeConstructor();
+JSValue nativeUniformGroupNodeModule();
+JSValue nativeObjectGroup();
+JSValue nativeRenderGroup();
+JSValue nativeFrameGroup();
 
 // Port of the rules in src/nodes/core/UniformGroupNode.js at the pinned revision. The node groups
 // uniforms so that they can share one buffer, and five of its rules are worth writing down.
 class UniformGroupNode {
+    JSValue object_;
   public:
+    explicit UniformGroupNode(const JSValue& name = {}, const JSValue& shared = false,
+                              const JSValue& order = 1, const JSValue& updateType = nullptr);
+    JSValue object() const { return object_; }
+    operator JSValue() const { return object_; }
+    static JSValue constructor() { return nativeUniformGroupNodeConstructor(); }
+    static JSValue prototype() { return constructor().get("prototype"); }
     static constexpr bool isUniformGroup = true;
     static constexpr const char* kTypeName = "UniformGroupNode";
 

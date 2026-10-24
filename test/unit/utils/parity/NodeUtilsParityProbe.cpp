@@ -62,7 +62,7 @@ JSValue encode(const JSValue& value){
         if(type.strictEquals("vec2")||type.strictEquals("vec3")||type.strictEquals("vec4")||type.strictEquals("color")){
             auto out=JSValue::object();out.set("type",type);auto components=JSValue::array();const auto* keys=type.strictEquals("color")?"rgb":type.strictEquals("vec2")?"xy":type.strictEquals("vec3")?"xyz":"xyzw";for(const auto* p=keys;*p;++p)call(components,"push",{encode(value.get(std::string(1,*p)))});out.set("values",components);return out;
         }
-        if(type.strictEquals("mat3")||type.strictEquals("mat4")){auto out=JSValue::object();out.set("type",type);out.set("values",value.get("elements"));return out;}
+        if(type.strictEquals("mat2")||type.strictEquals("mat3")||type.strictEquals("mat4")){auto out=JSValue::object();out.set("type",type);auto elements=value.get("elements"),values=JSValue::array();for(unsigned i=0;i<elements.length();++i)call(values,"push",{encode(elements.get(std::to_string(i)))});out.set("values",values);return out;}
         return "#object";
     }return value;
 }

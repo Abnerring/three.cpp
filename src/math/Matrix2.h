@@ -2,6 +2,11 @@
 #include <array>
 #include <span>
 #include <vector>
+#include "core/JSValue.h"
+
+// Managed constructor preserves the source's arbitrary element values and live
+// array/prototype operations; the numeric facade below remains available.
+JSValue nativeMatrix2Constructor();
 
 class Matrix2 {
   public:

@@ -1,11 +1,22 @@
 ﻿#pragma once
 #include <cstdint>
 #include <string>
+#include "core/JSValue.h"
+
+JSValue nativeParameterNodeConstructor();
 
 // Port of the rules in src/nodes/core/ParameterNode.js at the pinned revision. The node names a
 // shader parameter, which is a property with a type and a name.
 class ParameterNode {
+    JSValue object_;
   public:
+    explicit ParameterNode(const JSValue& nodeType = {}, const JSValue& name = nullptr);
+    ParameterNode(const ParameterNode& other) : object_(other.object_) {}
+    ParameterNode& operator=(const ParameterNode& other) { object_ = other.object_; return *this; }
+    JSValue object() const { return object_; }
+    operator JSValue() const { return object_; }
+    static JSValue constructor() { return nativeParameterNodeConstructor(); }
+    static JSValue prototype() { return constructor().get("prototype"); }
     static constexpr const char* kTypeName = "ParameterNode";
     static constexpr bool isParameterNode = true;
 

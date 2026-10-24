@@ -175,6 +175,20 @@ target_sources(threecpp PRIVATE
     src/nodes/core/StructType.cpp
     src/nodes/core/NodeCode.cpp
     src/nodes/core/NodeFunctionInput.cpp
+    src/nodes/core/NodeFunction.cpp
+    src/nodes/code/CodeNode.cpp
+    src/nodes/code/FunctionNode.cpp
+    src/nodes/tsl/TSLCore.cpp
+    src/renderers/common/BindGroup.cpp
+    src/renderers/common/Constants.cpp
+    src/renderers/common/Binding.cpp
+    src/renderers/common/BufferUtils.cpp
+    src/renderers/common/Buffer.cpp
+    src/renderers/common/UniformBuffer.cpp
+    src/renderers/common/Uniform.cpp
+    src/renderers/common/UniformsGroup.cpp
+    src/renderers/common/nodes/NodeUniform.cpp
+    src/renderers/common/nodes/NodeUniformsGroup.cpp
     src/nodes/core/NodeCache.cpp
     src/nodes/core/NodeVar.cpp
     src/nodes/core/NodeUtils.cpp

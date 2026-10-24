@@ -1,11 +1,20 @@
 ﻿#pragma once
+#include "core/JSValue.h"
 #include <string>
+
+JSValue nativeInputNodeConstructor();
 
 // Port of the rules in src/nodes/core/InputNode.js at the pinned revision. The node holds a value
 // and reports two types for it, and four of its rules are worth writing down, one of them a round
 // trip that does not come back.
 class InputNode {
+    JSValue object_;
   public:
+    explicit InputNode(const JSValue& value = {}, const JSValue& nodeType = nullptr);
+    JSValue object() const { return object_; }
+    operator JSValue() const { return object_; }
+    static JSValue constructor() { return nativeInputNodeConstructor(); }
+    static JSValue prototype() { return constructor().get("prototype"); }
     static constexpr bool isInputNode = true;
     static constexpr const char* kTypeName = "InputNode";
 

@@ -1,5 +1,15 @@
 # 验证记录
 
+## 当前追加验证：节点、绑定组与 uniform 资源，2026-10-24
+
+- 固定上游仍为 `11738a9d55e502fb484cefffcea3a66dc44e9fe9`。CPU 全量通过 2,508 cases / 217,138 assertions；包含本轮五组新差分的 12 项 CTest 全部通过，耗时 70.15 秒。
+- 新增/扩展真实上游差分：NodeBuilder 1,050 项；Input/Const/Uniform/UniformGroup 节点 303 项；Code/Function/NodeFunction/NodeFunctionInput 191 项 + 2 GC；Property/Parameter/TSLCore 315 项；资源与 Array.from/Object.values/TypedArray 协议 336 项；UniformsGroup/NodeUniformsGroup 107 项。分别保留 Builder 原 909、Property 原 156/312、分组首轮 107 的输入和上游结果；后续修复未改变这些预期。
+- NodeUtils/StackTrace 扩至 309 项 + 4 GC + 稳定 ArrayBuffer 绑定；Node 674 + 16 GC、StackNode 67、NodeCache 68 + 8 GC、NodeFrame 800 + 8 GC 均在上述 CTest 回归通过。
+- 实测修正：Matrix2 静态块后的原型键顺序；for-in 初始候选/删除检查；迭代 step 失败不关闭而 body 失败关闭；Number 连续赋值的对象 key 转换必须先写 values 再转换 buffer key；clearUpdateRanges 丢弃 super 返回值；TypedArray 迭代使用内部长度；TSL 常量缓存按原顺序创建。相对节点 ID `[1,11]`、完整 float 序列及相对 bool 缓存 ID 均与真实源码一致。
+- 主证据：`D:\Temp\surui\threecpp-node-resources-20261024`，包含构建/CTest/资源差分、源码和二进制冻结。独立证据：`threecpp-builder-bindings-flow-20261024`、`threecpp-node-input-20261024-validation01`、`function-parity-20261024c`、`property-parity-20261024f`、`threecpp-uniforms-group-20261024-validation02`。
+- 审计 1,251 个模块：partial-unverified 347、missing 594、vulkan-port-pending 290、dependency-unverified 20；Acorn 8.8.2，解析错误 0。文件覆盖 src 428/755、examples/jsm 84/496，合计 512/1,251（40.9%），只表示文件存在。
+- 完整 TSL、GLSL/WGSL 解析器与工厂、NodeMaterial/prebuild/buildAsync、现代 Vulkan、全部模块绝对 ID 初始化顺序仍未完成。未重跑 GPU；历史 GPU 记录仅支持其原冻结版本。
+
 ## 当前追加验证：真实节点构建基础，2026-10-24
 
 - CPU 单测：2,500 cases / 217,049 assertions。上游固定为 `11738a9d55e502fb484cefffcea3a66dc44e9fe9`，开发阶段 Node 仅充当真实源码差分 oracle。

@@ -13,6 +13,10 @@ const load = async name => (await import(pathToFileURL(path.join(upstream, `src/
 const [NodeBuilder, Node, NodeCache, NodeAttribute, NodeUniform, NodeVar, NodeVarying, NodeCode, StructType] =
     await Promise.all(['NodeBuilder', 'Node', 'NodeCache', 'NodeAttribute', 'NodeUniform', 'NodeVar', 'NodeVarying', 'NodeCode', 'StructType'].map(load));
 const { setConsoleFunction } = await import(pathToFileURL(path.join(upstream, 'src/utils.js')));
+const { default: BindGroup } = await import(pathToFileURL(path.join(upstream, 'src/renderers/common/BindGroup.js')));
+const { default: FunctionNode } = await import(pathToFileURL(path.join(upstream, 'src/nodes/code/FunctionNode.js')));
+const { default: ParameterNode } = await import(pathToFileURL(path.join(upstream, 'src/nodes/core/ParameterNode.js')));
+const RendererNodeUniforms = await import(pathToFileURL(path.join(upstream, 'src/renderers/common/nodes/NodeUniform.js')));
 setConsoleFunction(() => {});
 const encode = value => value === undefined ? '#undefined' : typeof value === 'function' ? '#function' :
     typeof value === 'symbol' ? '#symbol' : value !== null && typeof value === 'object' ? '#object' :
@@ -121,9 +125,239 @@ function callOrder(mode) {
     }
     expected.push({ kind: 'callOrder', mode, events, result });
 }
+function bindGroupMetadata() {
+    const first = new BindGroup(), second = new BindGroup(), bindings = [], explicitGroup = new BindGroup(null, bindings);
+    const normalized = snapshot(first); normalized.id.value = 0;
+    expected.push({ kind: 'bindGroupMetadata', constructor: snapshot(BindGroup), prototype: snapshot(BindGroup.prototype), default: normalized,
+        idGap: second.id - first.id, separateArrays: first.bindings !== second.bindings, explicitName: encode(explicitGroup.name),
+        bindingsIdentity: explicitGroup.bindings === bindings, instancePrototype: Object.getPrototypeOf(first) === BindGroup.prototype, call: attempt(() => BindGroup()) });
+}
+function bindGroupShared(mode) {
+    const events = [], group = {}, otherGroup = {}, bindings = {}, manager = {}, otherManager = {}, first = {}, second = {}, third = {}, sharedResult = {}, renderer = {}, self = {};
+    const accessor = (object, key, get) => Object.defineProperty(object, key, { get, configurable: true, enumerable: true });
+    accessor(group, 'shared', () => { events.push('shared'); return mode & 1 ? 'shared' : false; });
+    for (const [index, value] of [first, second, third].entries()) {
+        accessor(value, 'groupNode', () => { events.push(`group${index}`); if (index === 2 && (mode & 16)) throw RangeError('third group'); return index === 1 && (mode & 2) ? otherGroup : group; });
+        accessor(bindings, String(index), () => { events.push(`binding${index}`); return value; });
+    }
+    accessor(bindings, 'length', () => { events.push('length'); return 3; });
+    for (const value of [manager, otherManager]) accessor(value, 'getSharedBindGroup', function () {
+        events.push('method.get'); const receiver = this;
+        return function getSharedBindGroup(name, values) { events.push(['method.call', this === receiver, name, values === bindings]); return sharedResult; };
+    });
+    let reads = 0;
+    accessor(renderer, '_bindings', () => { const count = reads++; events.push(`_bindings${count}`); if (mode & 4) return undefined; return count !== 0 && (mode & 8) ? otherManager : manager; });
+    accessor(self, 'renderer', () => { events.push('renderer'); return renderer; });
+    let result; const outcome = attempt(() => result = NodeBuilder.prototype._getBindGroup.call(self, 'frame', bindings));
+    expected.push({ kind: 'bindGroupShared', mode, events, outcome, shared: result === sharedResult,
+        local: result !== undefined && Object.getPrototypeOf(result) === BindGroup.prototype,
+        bindingsIdentity: result !== undefined && result !== sharedResult && result.bindings === bindings });
+}
+function bindGroupBasic() {
+    const b = builder(), group = { shared: false, order: 7 }, other = { shared: false, order: -1 }, a = { label: 'a', groupNode: group }, c = { label: 'c', groupNode: group }, z = { label: 'z', groupNode: other };
+    b.getBindGroupArray('frame', 'fragment').push(a, a); b.getBindGroupArray('frame', 'vertex').push(c, a); b.getBindGroupArray('frame', 'compute').push(c); b.getBindGroupArray('object', 'vertex').push(z);
+    const groups = b.getBindings(), rows = groups.map(value => ({ name: encode(value.name), labels: value.bindings.map(item => encode(item.label)), prototype: Object.getPrototypeOf(value) === BindGroup.prototype }));
+    const cached = b.getBindings() === groups; b.sortBindingGroups();
+    expected.push({ kind: 'bindGroupBasic', groups: rows, cached, sorted: [encode(groups[0].name), encode(groups[1].name)], indexes: b.bindingsIndexes });
+}
+function bindGroupsEnumeration(mode) {
+    const self = builder(), events = [], inherited = {}, fragment = Object.create(inherited), vertex = {}, bindings = self.bindings;
+    const values = label => [{ label }]; fragment[2] = values('two'); fragment.later = values('later'); inherited.inherited = values('inherited');
+    Object.defineProperty(fragment, 'shadow', { value: values('hidden') }); inherited.shadow = values('shadow');
+    Object.defineProperty(fragment, '1', { configurable: true, enumerable: true, get() {
+        events.push('first.get'); if (mode & 1) delete fragment.later;
+        if (mode & 2) { fragment.added = values('added'); inherited.addedPrototype = values('addedPrototype'); }
+        if (mode & 4) vertex.nextStage = values('nextStage');
+        if (mode & 8) self.bindings = { fragment: { replaced: values('replaced') } };
+        return values('one');
+    } });
+    bindings.fragment = fragment; bindings.vertex = vertex;
+    Object.defineProperty(self, '_getBindGroup', { configurable: true, enumerable: true, get() {
+        events.push('factory.get'); return function _getBindGroup(name, group) { events.push(['factory.call', name, this === self]); return { name, labels: group.map(value => value.label) }; };
+    } });
+    let result; const outcome = attempt(() => result = NodeBuilder.prototype.getBindings.call(self));
+    expected.push({ kind: 'bindGroupsEnumeration', mode, outcome, events, groups: result ?? null, cached: result === self.bindGroups, bindingsReplaced: self.bindings !== bindings });
+}
+function bindGroupsFailure(mode) {
+    const self = builder(), events = [], bindings = self.bindings; let count = 0;
+    bindings.fragment = { first: [1, 1, 2], second: [3] };
+    const original = Object.getOwnPropertyDescriptor(Array.prototype, 'includes');
+    if (mode < 3) Object.defineProperty(Array.prototype, 'includes', { configurable: true, writable: true, value: function includes(value) {
+        events.push(['includes', value]); return mode === 0 ? false : mode === 1 ? 0 : undefined;
+    } });
+    self._getBindGroup = function _getBindGroup(name, group) { const index = count++; events.push(['factory', name, group]); if (mode === 3 && index === 1) throw RangeError('factory'); return { name, values: group }; };
+    if (mode === 4) Object.defineProperty(self, 'bindGroups', { configurable: true, enumerable: true, get() { return null; }, set(value) { events.push('bindGroups.set'); throw RangeError('set'); } });
+    if (mode >= 5 && mode <= 7) { const special = {}; special[mode === 5 ? 'constructor' : mode === 6 ? 'toString' : '__proto__'] = [1]; bindings.fragment = special; }
+    if (mode >= 8) self.bindGroups = mode === 8 ? undefined : mode === 9 ? false : mode === 10 ? 0 : 'cached';
+    let result; const outcome = attempt(() => result = NodeBuilder.prototype.getBindings.call(self));
+    if (mode < 3) Object.defineProperty(Array.prototype, 'includes', original);
+    expected.push({ kind: 'bindGroupsFailure', mode, events, outcome, groups: result !== null && typeof result === 'object' ? result : encode(result), cache: encode(self.bindGroups) });
+}
+function bindGroupsSort(mode) {
+    const self = builder(), events = [], groups = [], indexes = {}, replacement = {}; let conversions = 0;
+    for (let i = 0; i < 8; ++i) {
+        const label = `group${i}`, order = { [Symbol.toPrimitive](hint) { events.push(['convert', label, hint]); const count = conversions++; if (mode === 2 && count === 1) throw RangeError('convert'); return (i * 5 + 3) % 6; } };
+        const groupNode = {}; Object.defineProperty(groupNode, 'order', { configurable: true, enumerable: true, get() { events.push(['order.get', label]); if (mode === 1) throw RangeError('order'); return order; } });
+        const group = { bindings: [{ groupNode }], testLabel: label };
+        Object.defineProperty(group, 'name', { configurable: true, enumerable: true, get() { events.push(['name.get', label]); if (mode === 6) self.bindingsIndexes = replacement; return label; } });
+        const entry = { group: -1 };
+        if (mode === 5) Object.defineProperty(entry, 'group', { configurable: true, enumerable: true, get() { return -1; }, set(value) { events.push(['group.set', label, value]); if (value === 1) throw RangeError('index'); } });
+        indexes[label] = entry; replacement[label] = { group: -2 }; groups.push(group);
+    }
+    self.bindingsIndexes = indexes;
+    Object.defineProperty(self, 'getBindings', { configurable: true, enumerable: true, get() {
+        events.push('getBindings.get'); if (mode === 4) throw RangeError('getBindings'); return function getBindings() { events.push('getBindings.call'); return groups; };
+    } });
+    const nativeSort = groups.sort;
+    Object.defineProperty(groups, 'sort', { configurable: true, enumerable: true, get() {
+        events.push('sort.get'); if (mode === 3) throw RangeError('sort'); return function sort(compare) { events.push(['sort.call', this === groups, compare.length]); if (mode === 7) return []; return nativeSort.call(this, compare); };
+    } });
+    const outcome = attempt(() => NodeBuilder.prototype.sortBindingGroups.call(self));
+    expected.push({ kind: 'bindGroupsSort', mode, outcome, events, names: groups.map(value => value.testLabel),
+        indexes: Array.from({ length: 8 }, (_, i) => encode(indexes[`group${i}`].group)), replacement: Array.from({ length: 8 }, (_, i) => encode(replacement[`group${i}`].group)) });
+}
+function bindGroupsIterator(mode) {
+    const self = builder(), events = []; let count = 0;
+    const iterator = { next() {
+        events[events.length] = 'next'; const index = count++;
+        if (mode === 0) throw RangeError('next'); if (mode === 4) return 1;
+        const result = { done: index !== 0 };
+        if (mode === 5) Object.defineProperty(result, 'value', { configurable: true, enumerable: true, get() { events[events.length] = 'value.get'; throw RangeError('value'); } }); else result.value = 1;
+        return result;
+    } };
+    Object.defineProperty(iterator, 'return', { configurable: true, enumerable: true, get() {
+        events[events.length] = 'return.get'; if (mode === 3) throw TypeError('return getter'); return function () { events[events.length] = 'return.call'; return {}; };
+    } });
+    self.bindings.fragment = { frame: { [Symbol.iterator]() { return iterator; } } };
+    self._getBindGroup = function (name, values) { return { name, values }; };
+    const original = Object.getOwnPropertyDescriptor(Array.prototype, 'includes');
+    if (mode === 1 || mode === 2 || mode === 3) Object.defineProperty(Array.prototype, 'includes', { configurable: true, get() {
+        events[events.length] = 'includes.get'; if (mode !== 2) throw RangeError('includes getter');
+        return function () { events[events.length] = 'includes.call'; throw RangeError('includes call'); };
+    } });
+    const outcome = attempt(() => NodeBuilder.prototype.getBindings.call(self));
+    if (mode === 1 || mode === 2 || mode === 3) Object.defineProperty(Array.prototype, 'includes', original);
+    expected.push({ kind: 'bindGroupsIterator', mode, outcome, events, cache: encode(self.bindGroups) });
+}
+function functionCacheBasic() {
+    const backend = {}, otherBackend = {}, shader = {}, otherShader = {}, calls = [], first = builder(), second = builder();
+    for (const self of [first, second]) {
+        self.renderer.backend = backend; self.buildFunctionCode = function (input) { calls.push([Object.getPrototypeOf(this.currentFunctionNode) === FunctionNode.prototype, input === shader]); return 'float functionCode() { return 2.0; }'; };
+    }
+    const a = first.buildFunctionNode(shader), again = second.buildFunctionNode(shader), other = second.buildFunctionNode(otherShader);
+    second.renderer.backend = otherBackend; const differentBackend = second.buildFunctionNode(shader);
+    expected.push({ kind: 'functionCacheBasic', same: a === again, otherShader: a !== other, otherBackend: a !== differentBackend,
+        prototype: Object.getPrototypeOf(a) === FunctionNode.prototype, code: encode(a.code), calls, restored: first.currentFunctionNode === null && second.currentFunctionNode === null });
+}
+function functionCacheProtocol(mode) {
+    const self = {}, events = [], backend = mode & 4 ? 7 : {}, shader = mode & 8 ? 9 : {}, previous = {}, renderer = {}; let current = previous;
+    const accessor = (target, name, get, set) => Object.defineProperty(target, name, { get, set, configurable: true, enumerable: true });
+    accessor(self, 'renderer', () => { events.push('renderer'); return renderer; }); accessor(renderer, 'backend', () => { events.push('backend'); return backend; });
+    accessor(self, 'currentFunctionNode', () => { events.push('current.get'); return current; }, value => { events.push(['current.set', value === previous ? 'previous' : 'function']); current = value; });
+    accessor(self, 'buildFunctionCode', () => {
+        events.push('build.get'); if (mode & 1) throw RangeError('build getter');
+        return function (input) { events.push(['build.call', this === self, input === shader, Object.getPrototypeOf(current) === FunctionNode.prototype]); if (mode & 2) throw RangeError('build call'); return 'compiled'; };
+    });
+    let first, second; const outcome = attempt(() => first = NodeBuilder.prototype.buildFunctionNode.call(self, shader)); const partial = current;
+    const repeated = attempt(() => second = NodeBuilder.prototype.buildFunctionNode.call(self, shader));
+    expected.push({ kind: 'functionCacheProtocol', mode, outcome, repeated, events, cached: first !== undefined && first === second,
+        partialPrevious: partial === previous, currentPrevious: current === previous, partialChanged: partial !== current, code: first === undefined ? null : encode(first.code) });
+}
+function rendererNodeUniform(index) {
+    const names = ['float', 'int', 'uint', 'vec2', 'ivec2', 'uvec2', 'vec3', 'ivec3', 'uvec3', 'vec4', 'ivec4', 'uvec4', 'color', 'mat2', 'mat3', 'mat4', 'bool', 'bvec2', 'texture', 'unknown'];
+    const type = names[index], self = builder(), source = { name: 'uniform', value: 7, type }; let result;
+    const outcome = attempt(() => result = self.getNodeUniform(source, type)); const row = { kind: 'rendererNodeUniform', index, type, outcome };
+    if (result !== undefined) {
+        row.snapshot = snapshot(result); row.nodeIdentity = result.nodeUniform === source; row.firstValue = encode(result.getValue());
+        source.value = 19; row.liveValue = encode(result.getValue()); row.liveType = encode(result.getType());
+        const className = index < 3 ? 'NumberNodeUniform' : index < 6 ? 'Vector2NodeUniform' : index < 9 ? 'Vector3NodeUniform' : index < 12 ? 'Vector4NodeUniform' : index === 12 ? 'ColorNodeUniform' : index === 13 ? 'Matrix2NodeUniform' : index === 14 ? 'Matrix3NodeUniform' : 'Matrix4NodeUniform';
+        row.prototype = Object.getPrototypeOf(result) === RendererNodeUniforms[className].prototype;
+    }
+    expected.push(row);
+}
+function flowShaderProtocol(mode) {
+    const events = [], self = {}, shader = {}, layout = {}, iterable = {}, iterator = {}, input = {}, callNode = {}, result = {};
+    const state = {events, mode, shader, layout, currentLayout: layout, iterator, input, callNode, result, count: 0, inputs: undefined, names: 0};
+    Object.defineProperty(shader, 'layout', {enumerable: true, configurable: true,
+        get() { events.push('layout.get'); if (mode === 16) throw RangeError('layout'); return state.currentLayout; },
+        set(value) { events.push(['layout.set', value === null ? 'null' : 'original']); if ((mode === 6 && value === null) || (mode === 7 && value !== null)) throw RangeError('layout set'); state.currentLayout = value; }});
+    Object.defineProperty(layout, 'inputs', {enumerable: true, configurable: true, get() { events.push('inputs.get'); if (mode === 17) throw RangeError('inputs'); return iterable; }});
+    Object.defineProperty(layout, 'type', {enumerable: true, configurable: true, get() { events.push('type.get'); if (mode === 4) throw RangeError('type'); return 'vec3'; }});
+    Object.defineProperty(iterable, Symbol.iterator, {enumerable: true, configurable: true, get() {
+        events.push('iterator.get'); if (mode === 15) throw RangeError('iterator'); return function () { events.push('iterator.call'); return iterator; };
+    }});
+    iterator.next = function next() { events.push('next'); if (mode === 10) throw RangeError('next'); return {done: state.count++ !== 0, value: input}; };
+    Object.defineProperty(iterator, 'return', {enumerable: true, configurable: true, get() {
+        events.push('return.get'); if (mode === 11) throw TypeError('return'); return function () { events.push('return.call'); return {}; };
+    }});
+    Object.defineProperty(input, 'name', {enumerable: true, configurable: true, get() {
+        const count = state.names++; events.push(['name.get', count]);
+        if (mode === 8 || mode === 11 || (mode === 12 && count === 1)) throw RangeError('name');
+        return mode === 13 ? undefined : mode === 14 ? null : 'weight';
+    }});
+    Object.defineProperty(input, 'type', {enumerable: true, configurable: true, get() { events.push('input.type'); if (mode === 9) throw RangeError('input type'); return 'float'; }});
+    Object.defineProperty(shader, 'call', {enumerable: true, configurable: true, get() {
+        events.push('call.get'); if (mode === 1) throw RangeError('call getter'); if (mode === 18) return 0;
+        return function (inputs) { events.push(['call.call', this === shader, state.currentLayout === null]); state.inputs = inputs; if (mode === 2) throw RangeError('call'); return callNode; };
+    }});
+    Object.defineProperty(self, 'flowStagesNode', {enumerable: true, configurable: true, get() {
+        events.push('flow.get'); if (mode === 3) throw RangeError('flow getter'); if (mode === 19) return 0;
+        return function (node, type) { events.push(['flow.call', node === callNode, type]); if (mode === 5) throw RangeError('flow'); return result; };
+    }});
+    let value; const outcome = attempt(() => value = NodeBuilder.prototype.flowShaderNode.call(self, shader));
+    const inputs = state.inputs ? Object.getOwnPropertyNames(state.inputs).map(key => {
+        const n = state.inputs[key]; return {key, name: encode(n.name), nodeType: encode(n.nodeType), parameter: Object.getPrototypeOf(n) === ParameterNode.prototype, global: encode(n.global), varying: encode(n.varying), placeholder: encode(n.placeholderNode)};
+    }) : [];
+    expected.push({kind: 'flowShaderProtocol', mode, outcome, events, inputs, restored: state.currentLayout === layout, nullLayout: state.currentLayout === null, resultIdentity: value === result});
+}
+function flowShaderIterator(mode) {
+    const self = {}, shader = {layout: {inputs: [], type: 'float'}}, events = [], state = {mode, events, rows: []};
+    shader.call = function (inputs) {
+        const borrowed = {2: 2, 1: 1, tail: 4}; borrowed[Symbol('skip')] = 99;
+        Object.defineProperty(borrowed, 'first', {enumerable: true, configurable: true, get() { events.push('first.get'); delete borrowed.tail; borrowed.added = 5; return 3; }});
+        delete borrowed.tail; borrowed.tail = 4;
+        const original = Object.getOwnPropertyDescriptor(Object, 'values');
+        if (mode !== 0) Object.defineProperty(Object, 'values', {configurable: true, get() {
+            events.push('values.get'); if (mode === 1) throw RangeError('values getter'); if (mode === 5) return 0;
+            return function (value) {
+                events.push(['values.call', this === Object, value === borrowed]); if (mode === 2) throw RangeError('values'); if (mode === 6) return null;
+                const values = {};
+                for (let i = 0; i < 4; ++i) Object.defineProperty(values, i, {enumerable: true, configurable: true, get() {
+                    events.push(['value.get', i]); if (mode === 3 && i === 1) throw RangeError('value'); return 9 - i;
+                }});
+                Object.defineProperty(values, 'length', {enumerable: true, configurable: true, get() { events.push('length.get'); if (mode === 7) throw RangeError('length'); return 1; }});
+                return values;
+            };
+        }});
+        const method = inputs[Symbol.iterator]; let iterator;
+        state.outcome = attempt(() => iterator = method.call(borrowed));
+        Object.defineProperty(Object, 'values', original);
+        const rows = [];
+        if (iterator !== undefined) for (let i = 0; i < 4; ++i) {
+            let row; const outcome = attempt(() => row = iterator.next.call(i === 1 ? null : iterator)); rows.push({outcome, row: row === undefined ? encode(row) : JSON.parse(JSON.stringify(row))});
+        }
+        state.protocol = {methodName: method.name, methodLength: method.length, symbolEnumerable: Object.getOwnPropertyDescriptor(inputs, Symbol.iterator).enumerable,
+            iteratorKeys: iterator ? [Object.getOwnPropertyNames(iterator)[0] ?? ''] : [], iterable: iterator !== undefined && iterator[Symbol.iterator] !== undefined};
+        state.rows = rows; return {};
+    };
+    self.flowStagesNode = function () { return 'flow'; };
+    const flow = attempt(() => NodeBuilder.prototype.flowShaderNode.call(self, shader));
+    expected.push({kind: 'flowShaderIterator', mode, flow, outcome: state.outcome, protocol: state.protocol, rows: state.rows, events});
+}
 metadata(); typesAndFormat(); dataAndUsage(); declarationAndFlow(); nodeBuild(); dynamic();
 for (let mode = 0; mode < 32; ++mode) dataProtocol(mode);
 for (let mode = 0; mode < 4; ++mode) callOrder(mode);
+bindGroupMetadata(); bindGroupBasic();
+for (let mode = 0; mode < 32; ++mode) bindGroupShared(mode);
+for (let mode = 0; mode < 16; ++mode) bindGroupsEnumeration(mode);
+for (let mode = 0; mode < 12; ++mode) bindGroupsFailure(mode);
+for (let mode = 0; mode < 8; ++mode) bindGroupsSort(mode);
+for (let mode = 0; mode < 6; ++mode) bindGroupsIterator(mode);
+functionCacheBasic();
+for (let mode = 0; mode < 16; ++mode) functionCacheProtocol(mode);
+for (let index = 0; index < 20; ++index) rendererNodeUniform(index);
+for (let mode = 0; mode < 20; ++mode) flowShaderProtocol(mode);
+for (let mode = 0; mode < 8; ++mode) flowShaderIterator(mode);
 if (output) {
     mkdirSync(output, { recursive: true });
     writeFileSync(path.join(output, 'node-builder-upstream.jsonl'), expected.map(x => JSON.stringify(x)).join('\n') + '\n');

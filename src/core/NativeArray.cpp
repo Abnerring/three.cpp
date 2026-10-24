@@ -1,4 +1,5 @@
 #include "core/NativeArray.h"
+#include "core/JSIterator.h"
 #include <array>
 #include <cmath>
 #include <limits>
@@ -167,6 +168,15 @@ JSValue typedBase() {
         }
         for(const auto& [name,arity]:std::initializer_list<std::pair<const char*,unsigned>>{{"set",1},{"slice",2},{"subarray",2}})
             install(value,name,typedMethod,arity,{name});
+        for(unsigned i=0;i<3;++i){
+            const char* iteratorNames[]={"keys","values","entries"};
+            const auto function=JSValue::function([](const JSValue& self,const Args&,const Args& c)->JSValue{
+                static_cast<void>(kindOf(self)); // TypedArray methods validate their receiver eagerly.
+                return JSIterator::array(self,static_cast<JSIterator::Kind>(static_cast<unsigned>(c[0].number())));
+            },{i},iteratorNames[i],0);
+            value.defineProperty(iteratorNames[i],data(function));
+            if(i==1)value.defineProperty(JSValue::wellKnownSymbol("iterator"),data(function));
+        }
         auto array=JSValue::array();value.defineProperty("toString",data(array.get("toString")));
         value.defineProperty("join",data(array.get("join")));return value;
     }();
