@@ -240,6 +240,7 @@ target_sources(threecpp PRIVATE
     src/nodes/core/NodeBeforeChain.cpp
     src/nodes/core/NodeAccessors.cpp
     src/nodes/core/NodeTypeCache.cpp
+    src/nodes/core/NodeShared.cpp
     src/nodes/core/OutputStructNode.cpp
     src/nodes/core/LightingModel.cpp
     src/nodes/core/IsolateNode.cpp

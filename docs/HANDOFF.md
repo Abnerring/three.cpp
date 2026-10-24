@@ -3478,6 +3478,16 @@
    - **默认的 `generateNodeType` 是转发而不是计算**：`if ( nodeProperties.outputNode ) return nodeProperties.outputNode.getNodeType( builder, output )`——**有输出节点就把问题连着 `output` 一起交给它**，没有才答自己声明的类型。**所以"计算类型"这件事，默认实现是空壳，真正的计算都在子类里**。
    - **测试（4 个用例、16 条断言）**：两个槽三处；命中与未中七处；空类型四处；转发四处。
    - **验证**：核心 **2451 用例 / 216,742 断言**（+4 / +16，从 216,726 增长）、`primitive-geometry`、`port-audit`、addons、`--cube` 全绿。
+555. **第 247 轮：`Node.getShared` 的两道检查与一道递归守卫**。
+   - **哈希指回自己不算共享**：`if ( nodeFromHash && nodeFromHash !== this )`——**两个条件都要成立**。**所以一个指向自己的哈希会落到第二道检查，而不是在第一道里返回自己**。
+   - **哈希共享优先于 override**：两道检查是 `if / else if`，**所以有孪生兄弟的节点永远不会被 override**——**哪一道生效取决于一次查找，而不是调用方的偏好**。
+   - **递归守卫在调回调之前置位**：`nodeData.isOverwritten = true` 在 `callback( builder )` 之前。**所以回调回来再问到同一个节点时会读到已置位的标记、返回存下的结果，而不是再跑一次回调**——**没有这一步回调会自己调自己到无穷**。
+   - **回调结果会把自身的 override 去掉**：`callback( builder ).overrideNode( this, null )`——**这样回调内部用到同一个节点时不会被正在构建它的那个 override 替换**。
+   - **都没有时返回 `this`**：`return sharedNode || this`。
+   - **缓存键同时用子节点值与自定键**：`hash( hashArray( values ), this.customCacheKey() )`——**所以两个子节点相同但自定键不同的节点是不同的键**。
+   - **本轮的一个失误**：`overrideState` 里把 `isOverwritten` 写成了无条件 `true`，而它应该报"这次调用之前是否已标记"，所以应是 `alreadyMarked`。**第一次调用应为 `false`**。**发现方式是"core exit=1 且第 31 行红"**。
+   - **测试（4 个用例、16 条断言）**：只共享不同节点四处；override 只在哈希落空时四处；标记与取消四处；回退与键两处。
+   - **验证**：核心 **2455 用例 / 216,754 断言**、`primitive-geometry`、`port-audit`、addons、`--cube` 全绿。
 70. **第 520 轮：完整 Vulkan 套件 211/211 全绿，耗时 270.72 秒**。
    - 命令：`ctest --test-dir build-vulkan -j 4 -E "lights-states" --output-on-failure`（仍排除第 46 条那个已知项；它在 Vulkan 构建里同样慢）。
    - 结果：**100% tests passed, 0 tests failed out of 211**，总耗时 **270.72 秒**。对比同一套件在 **Debug** 配置下的 **3784.56 秒 / 2 失败**，差了约 14 倍——再次印证第 69 条"是构建类型不是代码"的结论。
