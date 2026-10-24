@@ -271,6 +271,7 @@ target_sources(threecpp PRIVATE
     src/loaders/KTX2Loader.cpp
     src/loaders/ThreeDMLoader.cpp
     src/loaders/VRMLLoader.cpp
+    src/loaders/FBXLoader.cpp
     src/nodes/core/ParameterNode.cpp
     src/nodes/core/NodeConstants.cpp
     src/nodes/core/Node.cpp
