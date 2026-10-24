@@ -43,7 +43,7 @@ void main() {
         // Correct the planar sample density to solid angle.
         float weight = sin( theta ) / theta;
 
-        accumColor += weight * texture( envMap, sampleDirection ).rgb;
+        accumColor += weight * textureLod( envMap, sampleDirection, 0.0 ).rgb;
         accumWeight += weight;
     }
 

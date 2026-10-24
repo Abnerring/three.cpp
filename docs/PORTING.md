@@ -203,6 +203,8 @@ Vulkan 仍需窗口 Surface/Swapchain 与呈现、其余 GPU 资源生命周期�
 
 ## 验证
 
+立方体初始 Gaussian blur 已按固定 `PMREMGenerator.fromScene` 的 `_blur` 顺序执行 source → temporary → source，两遍均使用 `min(sigma, pi) / sqrt(2)`；Vulkan 使用反射得到的 push constant 阶段与范围，在 render pass 外转换采样图像布局，并恢复之前的目标/面/尺寸。该步骤没有实现后续 GGX 预过滤、HDR PMREM mip 链或完整 PMREMGenerator 入口。`threecpp.vulkan-cube` 实际 GPU 读回通过 60 项断言，覆盖纯色保持、条纹扩散、两遍结果、sigma 钳制和目标恢复。完整 GPU 测试仍有既存的自动 mipmap 缩小采样黑色失败；本机缺少 Khronos validation layer，不能宣称验证层通过。
+
 CPU 单元测试通过库目标链接实际实现。Node 差分测试直接执行固定 checkout 中的 three.js，不依赖手写预期值。GPU 测试调用真正 Vulkan 图形管线并读回像素；CPU 差分测试通过不能证明全部渲染等价。Validation Layers 需要运行时可用；必须单独记录是否真正启用。
 
 ```powershell

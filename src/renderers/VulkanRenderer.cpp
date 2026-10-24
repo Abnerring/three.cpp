@@ -428,6 +428,7 @@ struct VulkanRenderer::Impl {
     void useTarget(const RenderTarget* key) {
         if (activeKey == key) return;
         if (activeKey) parkedTargets[activeKey] = std::move(active);
+        else if (active) destroyGpuTarget(*active);
         active.reset();
         activeKey = key;
         if (!key) return;
@@ -887,6 +888,7 @@ struct VulkanRenderer::Impl {
             throw std::runtime_error("PMREM shader requires one descriptor set");
         pmremTextureLayout = pmremReflectedLayout->setLayouts()[0];
         pmremPipelineLayout = pmremReflectedLayout->handle();
+        createRenderPass();
         createPmremGeometry();
         {
             VkSamplerCreateInfo pmremSamplerInfo{VK_STRUCTURE_TYPE_SAMPLER_CREATE_INFO};
@@ -918,7 +920,6 @@ struct VulkanRenderer::Impl {
         pmremBlurPipelineLayout = pmremBlurReflectedLayout->handle();
         createPmremBlurPipeline();
         pipelineLayout = reflectedLayout->handle();
-        createRenderPass();
         resize(parameters.width, parameters.height);
         attributeCommands = std::make_unique<VulkanBufferCommands>([this] {
             return std::make_shared<AttributeStorage>(*this);
@@ -1035,6 +1036,18 @@ struct VulkanRenderer::Impl {
             noFog.reset();
             emptyStorage.reset();
             destroyTargets();
+            for (auto& [key, target] : parkedTargets)
+                if (target) destroyGpuTarget(*target);
+            parkedTargets.clear();
+            if (spareTarget) { destroyGpuTarget(*spareTarget); spareTarget.reset(); }
+            destroyBuffer(pmremVertices);
+            if (pmremSampler) api.vkDestroySampler(device, pmremSampler, nullptr);
+            if (pmremPipelineHandle) api.vkDestroyPipeline(device, pmremPipelineHandle, nullptr);
+            if (pmremBlurPipelineHandle) api.vkDestroyPipeline(device, pmremBlurPipelineHandle, nullptr);
+            pmremReflectedLayout.reset();
+            pmremBlurReflectedLayout.reset();
+            pmremModules.reset();
+            pmremBlurModules.reset();
             for (const auto& entry : pipelines)
                 api.vkDestroyPipeline(device, entry.second, nullptr);
             reflectedLayout.reset();
@@ -2148,7 +2161,8 @@ struct VulkanRenderer::Impl {
         target->height = targetHeight;
         target->layers = targetLayerCount;
         createImage(target->color, VK_FORMAT_R8G8B8A8_UNORM,
-                    VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT | VK_IMAGE_USAGE_TRANSFER_SRC_BIT,
+                    VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT | VK_IMAGE_USAGE_TRANSFER_SRC_BIT |
+                        VK_IMAGE_USAGE_SAMPLED_BIT,
                     VK_IMAGE_ASPECT_COLOR_BIT, targetLayerCount, targetWidth, targetHeight);
         createImage(target->depth, depthFormat, VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT,
                     VK_IMAGE_ASPECT_DEPTH_BIT, 1, targetWidth, targetHeight);
@@ -2165,6 +2179,8 @@ struct VulkanRenderer::Impl {
         return target;
     }
     void destroyGpuTarget(GpuTarget& target) {
+        if (target.faceFramebuffer) api.vkDestroyFramebuffer(device, target.faceFramebuffer, nullptr);
+        if (target.faceView) api.vkDestroyImageView(device, target.faceView, nullptr);
         if (target.framebuffer) api.vkDestroyFramebuffer(device, target.framebuffer, nullptr);
         destroyImage(target.color);
         destroyImage(target.depth);
@@ -2179,8 +2195,16 @@ struct VulkanRenderer::Impl {
             newHeight > properties.limits.maxFramebufferHeight)
             throw std::invalid_argument("Renderer dimensions exceed Vulkan device limits");
         if (active && newWidth == active->width && newHeight == active->height &&
-            layers == active->layers)
+            layers == active->layers) {
+            width = newWidth;
+            height = newHeight;
+            const auto bytes = static_cast<VkDeviceSize>(width) * height * 4;
+            if (readback.size != bytes) {
+                destroyBuffer(readback);
+                readback = createBuffer(bytes, VK_BUFFER_USAGE_TRANSFER_DST_BIT);
+            }
             return;
+        }
         check(api.vkDeviceWaitIdle(device), "vkDeviceWaitIdle");
         destroyTargets();
         width = newWidth;
@@ -2464,8 +2488,15 @@ struct VulkanRenderer::Impl {
         api.vkCmdBindVertexBuffers(commandBuffer, 0, 1, &pmremVertices.buffer, &offset);
         api.vkCmdBindDescriptorSets(commandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS,
                                     pmremBlurPipelineLayout, 0, 1, &set, 0, nullptr);
-        api.vkCmdPushConstants(commandBuffer, pmremBlurPipelineLayout, VK_SHADER_STAGE_VERTEX_BIT,
-                               0, sizeof(float) * block.size(), block.data());
+        // Reflection supplies the stage masks and byte ranges. In particular, the
+        // fragment stage consumes sigma even though the matrices belong to the vertex.
+        for (const auto& range : pmremBlurReflectedLayout->description().pushConstants) {
+            if (std::uint64_t(range.offset) + range.size > sizeof(float) * block.size())
+                throw std::runtime_error("PMREM blur push constants exceed the native block");
+            api.vkCmdPushConstants(commandBuffer, pmremBlurPipelineLayout, range.stageFlags,
+                                   range.offset, range.size,
+                                   reinterpret_cast<const std::byte*>(block.data()) + range.offset);
+        }
         api.vkCmdDraw(commandBuffer, 36, 1, 0, 0);
     }
 
@@ -2596,7 +2627,7 @@ struct VulkanRenderer::Impl {
                                  nullptr, 1, &barrier);
     }
     void beginFrame(bool clearColorAttachment, bool clearDepthAttachment, const Color& color,
-                    HIGH_PRECISION alpha, bool srgb) {
+                    HIGH_PRECISION alpha, bool srgb, GpuTarget* sampledCube = nullptr) {
         activeDescriptorPool = 0;
         for (const auto pool : descriptorPools)
             check(api.vkResetDescriptorPool(device, pool, 0), "vkResetDescriptorPool");
@@ -2604,6 +2635,14 @@ struct VulkanRenderer::Impl {
         VkCommandBufferBeginInfo begin{VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO};
         begin.flags = VK_COMMAND_BUFFER_USAGE_ONE_TIME_SUBMIT_BIT;
         check(api.vkBeginCommandBuffer(commandBuffer, &begin), "vkBeginCommandBuffer");
+        if (sampledCube)
+            for (std::uint32_t layer = 0; layer < sampledCube->layers; ++layer)
+                imageBarrier(sampledCube->color.image, VK_IMAGE_ASPECT_COLOR_BIT,
+                             VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL,
+                             VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL,
+                             VK_ACCESS_COLOR_ATTACHMENT_WRITE_BIT, VK_ACCESS_SHADER_READ_BIT,
+                             VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT,
+                             VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT, layer);
         if ((active->initializedLayers & (1u << activeCubeFace)) == 0) {
             imageBarrier(active->color.image, VK_IMAGE_ASPECT_COLOR_BIT, VK_IMAGE_LAYOUT_UNDEFINED,
                          VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL, 0,
@@ -2666,8 +2705,17 @@ struct VulkanRenderer::Impl {
             recording = false;
         }
     }
-    void endFrame() {
+    void endFrame(GpuTarget* sampledCube = nullptr) {
         api.vkCmdEndRenderPass(commandBuffer);
+        if (sampledCube)
+            for (std::uint32_t layer = 0; layer < sampledCube->layers; ++layer)
+                imageBarrier(sampledCube->color.image, VK_IMAGE_ASPECT_COLOR_BIT,
+                             VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL,
+                             VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL,
+                             VK_ACCESS_SHADER_READ_BIT,
+                             VK_ACCESS_COLOR_ATTACHMENT_READ_BIT | VK_ACCESS_COLOR_ATTACHMENT_WRITE_BIT,
+                             VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT,
+                             VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT, layer);
         imageBarrier(active->color.image, VK_IMAGE_ASPECT_COLOR_BIT,
                      VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL, VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL,
                      VK_ACCESS_COLOR_ATTACHMENT_WRITE_BIT, VK_ACCESS_TRANSFER_READ_BIT,
@@ -2775,6 +2823,8 @@ void VulkanRenderer::setRenderTarget(std::shared_ptr<RenderTarget> target,
         // Park the target before resizing back, otherwise resize rebuilds it at one
         // layer: the unbind path has no target to derive a layer count from.
         impl->useTarget(nullptr);
+        impl->activeCubeFace = 0;
+        impl->activeMipmapLevel = 0;
         impl->resize(impl->savedWidth, impl->savedHeight);
     }
 }
@@ -2822,51 +2872,65 @@ void VulkanRenderer::renderEquirectangularToCube(const std::shared_ptr<Texture>&
 }
 void VulkanRenderer::blurCube(const std::shared_ptr<RenderTarget>& source,
                               const std::shared_ptr<RenderTarget>& destination, double sigma) {
+    // PMREMGenerator.fromScene only invokes its initial blur for a positive sigma.
+    if (!(sigma > 0)) return;
     auto sourceCube = std::dynamic_pointer_cast<WebGLCubeRenderTarget>(source);
     auto destinationCube = std::dynamic_pointer_cast<WebGLCubeRenderTarget>(destination);
     if (!sourceCube || !destinationCube)
         throw std::invalid_argument("blurCube needs cube render targets");
+    if (sourceCube == destinationCube)
+        throw std::invalid_argument("blurCube needs separate source and temporary targets");
+    if (sourceCube->width != destinationCube->width || sourceCube->height != destinationCube->height)
+        throw std::invalid_argument("blurCube targets must have the same size");
+    auto* sourceStorage = impl->activeKey == sourceCube.get() ? impl->active.get() : nullptr;
+    if (!sourceStorage) {
+        const auto found = impl->parkedTargets.find(sourceCube.get());
+        if (found != impl->parkedTargets.end()) sourceStorage = found->second.get();
+    }
+    if (!sourceStorage || sourceStorage->initializedLayers != 0x3fu)
+        throw std::logic_error("blurCube needs all six source faces to have been rendered first");
     const auto previous = getRenderTarget();
     const auto previousFace = getActiveCubeFace();
     const auto previousMip = getActiveMipmapLevel();
-    setRenderTarget(destinationCube);
-    const auto parkedSource = impl->parkedTargets.find(sourceCube.get());
-    if (parkedSource == impl->parkedTargets.end() || !parkedSource->second)
-        throw std::logic_error("blurCube needs the source to have been rendered into first");
-    const auto sourceView = parkedSource->second->color.cubeView;
-    if (!sourceView) throw std::logic_error("blurCube source has no cube view");
     CubeCamera rig(0.1, 100, JSValue::object());
     rig.updateMatrixWorld();
     PerspectiveCamera faceProjection(90, 1, 0.1, 100);
     const auto projection = faceProjection.projectionMatrix.elements();
     const float model[16] = {1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1};
-    for (std::uint32_t face = 0; face < 6; ++face) {
-        auto eye = std::dynamic_pointer_cast<PerspectiveCamera>(rig.children[face]);
-        if (!eye) throw std::runtime_error("cube camera rig needs six eyes");
-        eye->updateMatrixWorld();
-        std::array<float, 49> block{};
-        std::copy(std::begin(model), std::end(model), block.begin());
-        const auto view = eye->matrixWorldInverse.elements();
-        for (int i = 0; i < 16; ++i)
-            block[16 + i] = static_cast<float>(view[static_cast<std::size_t>(i)]);
-        for (int i = 0; i < 16; ++i)
-            block[32 + i] = static_cast<float>(projection[static_cast<std::size_t>(i)]);
-        block[48] = static_cast<float>(sigma);
-        setRenderTarget(destinationCube, face);
-        // Clear on open so the draw is what the per target readback observes.
-        impl->beginFrame(true, false, Color(0, 0, 0), 1, false);
-        if (face == 0) {
-            for (std::uint32_t layer = 0; layer < parkedSource->second->layers; ++layer) {
-                impl->imageBarrier(parkedSource->second->color.image, VK_IMAGE_ASPECT_COLOR_BIT,
-                                   VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL,
-                                   VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL,
-                                   VK_ACCESS_COLOR_ATTACHMENT_WRITE_BIT, VK_ACCESS_SHADER_READ_BIT,
-                                   VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT,
-                                   VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT, layer);
+    // Upstream _blur splits the variance equally, renders source -> temporary,
+    // then temporary -> source. The GGX prefilter that follows is a separate step.
+    const auto passSigma = static_cast<float>(std::min(sigma, 3.141592653589793) / 1.4142135623730951);
+    try {
+        for (const auto& [input, output] : {
+                 std::pair{sourceCube, destinationCube}, std::pair{destinationCube, sourceCube}}) {
+            setRenderTarget(output);
+            const auto found = impl->parkedTargets.find(input.get());
+            if (found == impl->parkedTargets.end() || !found->second || !found->second->color.cubeView)
+                throw std::logic_error("blurCube source has no cube view");
+            // Ownership transfers between active/parked storage; the pointee stays stable.
+            auto* sampled = found->second.get();
+            for (std::uint32_t face = 0; face < 6; ++face) {
+                auto eye = std::dynamic_pointer_cast<PerspectiveCamera>(rig.children[face]);
+                if (!eye) throw std::runtime_error("cube camera rig needs six eyes");
+                eye->updateMatrixWorld();
+                std::array<float, 49> block{};
+                std::copy(std::begin(model), std::end(model), block.begin());
+                const auto view = eye->matrixWorldInverse.elements();
+                for (int i = 0; i < 16; ++i)
+                    block[16 + i] = static_cast<float>(view[static_cast<std::size_t>(i)]);
+                for (int i = 0; i < 16; ++i)
+                    block[32 + i] = static_cast<float>(projection[static_cast<std::size_t>(i)]);
+                block[48] = passSigma;
+                setRenderTarget(output, face);
+                impl->beginFrame(true, false, Color(0, 0, 0), 1, false, sampled);
+                impl->drawPmremBlurFace(sampled->color.cubeView, block);
+                impl->endFrame(sampled);
             }
         }
-        impl->drawPmremBlurFace(sourceView, block);
-        impl->endFrame();
+    } catch (...) {
+        impl->abortFrame();
+        setRenderTarget(previous, previousFace, previousMip);
+        throw;
     }
     setRenderTarget(previous, previousFace, previousMip);
 }

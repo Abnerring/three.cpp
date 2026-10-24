@@ -1824,16 +1824,80 @@ void equirectangularDirectionTests(bool validation) {
 
 void blurCubeTests(bool validation) {
     VulkanRenderer renderer({64, 64, validation});
+    renderer.srgbOutput = false;
     auto source = std::make_shared<WebGLCubeRenderTarget>(16);
     auto destination = std::make_shared<WebGLCubeRenderTarget>(16);
-    renderer.setRenderTarget(destination);
-    renderer.blurCube(source, destination, 0.04);
-    auto face = renderer.readRenderTargetPixels(*destination, 0, 0, 16, 16);
+    auto previous = std::make_shared<WebGLCubeRenderTarget>(8);
+    auto solid = [](std::uint8_t r, std::uint8_t g, std::uint8_t b) {
+        std::vector<std::uint8_t> pixels(8 * 4 * 4, 255);
+        for (std::size_t i = 0; i < pixels.size(); i += 4) {
+            pixels[i] = r; pixels[i + 1] = g; pixels[i + 2] = b;
+        }
+        auto texture = std::make_shared<DataTexture>(Uint8Array(std::move(pixels)), 8, 4);
+        texture->needsUpdate = true;
+        return texture;
+    };
+    renderer.renderEquirectangularToCube(solid(32, 128, 224), source);
+    renderer.setRenderTarget(previous, 3);
+    renderer.blurCube(source, destination, 4);
+    require(renderer.getRenderTarget() == previous && renderer.getActiveCubeFace() == 3,
+            "Gaussian blur restores the previous target and cube face");
+    require(renderer.getWidth() == 8 && renderer.getHeight() == 8,
+            "Gaussian blur restores the previous target dimensions");
+    const auto face = renderer.readRenderTargetPixels(*source, 0, 0, 16, 16);
+    const auto intermediate = renderer.readRenderTargetPixels(*destination, 0, 0, 16, 16);
+    require(face.size() == 16 * 16 * 4 && intermediate.size() == face.size(),
+            "Gaussian blur renders both passes into their respective targets");
+    int maximumSolidError = 0;
+    for (const auto* result : {&face, &intermediate})
+        for (std::size_t i = 0; i < result->size(); i += 4)
+            for (int c = 0; c < 4; ++c)
+                maximumSolidError = std::max(maximumSolidError,
+                    std::abs(int((*result)[i + c]) - std::array<int, 4>{32, 128, 224, 255}[c]));
+    require(maximumSolidError <= 1, "Both spherical Gaussian passes preserve a solid colour");
+
+    // A narrow equatorial stripe appears at the centre of the negative-z face.
+    // A wider spherical kernel must lower its peak and spread it to other pixels.
+    constexpr int width = 128, height = 64;
+    std::vector<std::uint8_t> pixels(width * height * 4, 0);
+    for (int y = 0; y < height; ++y)
+        for (int x = 0; x < width; ++x) {
+            const auto i = (std::size_t(y) * width + x) * 4;
+            pixels[i] = pixels[i + 1] = pixels[i + 2] = (x >= 28 && x < 36) ? 255 : 0;
+            pixels[i + 3] = 255;
+        }
+    auto stripe = std::make_shared<DataTexture>(Uint8Array(std::move(pixels)), width, height);
+    stripe->needsUpdate = true;
     const std::size_t middle = (static_cast<std::size_t>(8) * 16 + 8) * 4;
-    std::cerr << "clear probe centre = " << static_cast<int>(face[middle]) << ","
-              << static_cast<int>(face[middle + 1]) << "," << static_cast<int>(face[middle + 2]) << "\n";
-    require(face[middle] > 200, "clear only blurCube fills the face red");
+    renderer.renderEquirectangularToCube(stripe, source);
+    const auto unblurred = renderer.readRenderTargetPixels(*source, 0, 0, 16, 16);
+    renderer.blurCube(source, destination, 0.05);
+    const auto narrow = renderer.readRenderTargetPixels(*source, 0, 0, 16, 16);
+    renderer.renderEquirectangularToCube(stripe, source);
+    renderer.blurCube(source, destination, 0.6);
+    const auto wide = renderer.readRenderTargetPixels(*source, 0, 0, 16, 16);
+    const auto firstPass = renderer.readRenderTargetPixels(*destination, 0, 0, 16, 16);
+    require(narrow[middle] > wide[middle] + 40,
+            "A larger spherical sigma lowers the narrow stripe's peak");
+    require(wide[middle + 4 * 4] > unblurred[middle + 4 * 4] + 5,
+            "A larger spherical sigma spreads radiance outside the stripe");
+    require(wide != firstPass, "The final source contains the second Gaussian pass");
+    renderer.blurCube(source, destination, 0);
+    require(renderer.readRenderTargetPixels(*source, 0, 0, 16, 16) == wide,
+            "A zero fromScene blur leaves the captured source unchanged");
+    renderer.renderEquirectangularToCube(stripe, source);
+    renderer.blurCube(source, destination, 10);
+    const auto clamped = renderer.readRenderTargetPixels(*source, 0, 0, 16, 16);
+    renderer.renderEquirectangularToCube(stripe, source);
+    renderer.blurCube(source, destination, 3.141592653589793);
+    require(renderer.readRenderTargetPixels(*source, 0, 0, 16, 16) == clamped,
+            "fromScene Gaussian sigma is clamped to pi before splitting the variance");
+    std::cout << "Gaussian GPU: solid max error " << maximumSolidError
+              << ", stripe peak " << int(unblurred[middle]) << " -> " << int(narrow[middle])
+              << " -> " << int(wide[middle]) << ", spread " << int(wide[middle + 4 * 4]) << '\n';
     renderer.setRenderTarget(nullptr);
+    if (validation)
+        require(renderer.getValidationMessages().empty(), "Gaussian blur emits no Vulkan validation messages");
 }
 
 
@@ -1873,11 +1937,13 @@ void parkRestoreTests(bool validation) {
 }
 int main(int argc, char** argv) {
     try {
-        const bool validation = argc > 1 && std::string(argv[1]) == "--validation";
+        bool validation = false;
+        for (int i = 1; i < argc; ++i)
+            if (std::string(argv[i]) == "--validation") validation = true;
         if (argc > 1 && std::string(argv[1]) == "--first") { unsupportedMeshTests(validation); std::cout << "first group ok\n"; return 0; }
         if (argc > 1 && std::string(argv[1]) == "--third") { instancingTests(validation); std::cout << "third group ok\n"; return 0; }
         if (argc > 1 && std::string(argv[1]) == "--second") { unsupportedPrimitiveTests(validation); std::cout << "second group ok\n"; return 0; }
-        if (argc > 1 && std::string(argv[1]) == "--cube") { std::cerr << "[group] renderTargetTests\n"; renderTargetTests(validation); std::cerr << "[group] cubeRenderTargetTests\n"; cubeRenderTargetTests(validation); std::cerr << "[group] cubeCameraUpdateTests\n"; cubeCameraUpdateTests(validation); std::cerr << "[group] equirectangularToCubeTests\n"; equirectangularToCubeTests(validation); std::cerr << "[group] equirectangularDirectionTests\n"; equirectangularDirectionTests(validation); std::cerr << "[group] parkRestoreTests\n"; parkRestoreTests(validation); std::cerr << "[group] done\n"; return 0; }
+        if (argc > 1 && std::string(argv[1]) == "--cube") { std::cerr << "[group] renderTargetTests\n"; renderTargetTests(validation); std::cerr << "[group] cubeRenderTargetTests\n"; cubeRenderTargetTests(validation); std::cerr << "[group] cubeCameraUpdateTests\n"; cubeCameraUpdateTests(validation); std::cerr << "[group] equirectangularToCubeTests\n"; equirectangularToCubeTests(validation); std::cerr << "[group] equirectangularDirectionTests\n"; equirectangularDirectionTests(validation); std::cerr << "[group] blurCubeTests\n"; blurCubeTests(validation); std::cerr << "[group] parkRestoreTests\n"; parkRestoreTests(validation); std::cout << "cube group: " << assertions << " assertions\n"; return 0; }
         std::cerr << "[group] unsupportedMeshTests" << '\n';
         unsupportedMeshTests(validation);
         std::cerr << "[group] unsupportedPrimitiveTests" << '\n';
@@ -1906,6 +1972,8 @@ int main(int argc, char** argv) {
         geometryObjectProtocolTests(validation);
         std::cerr << "[group] renderTargetTests" << '\n';
         renderTargetTests(validation);
+        std::cerr << "[group] blurCubeTests" << '\n';
+        blurCubeTests(validation);
         VulkanRenderer renderer({64, 64, validation});
         OrthographicCamera camera(-1, 1, 1, -1, 0.1, 20);
         camera.position.set(0, 0, 5);

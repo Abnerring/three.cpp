@@ -5,6 +5,8 @@
 
 NodeCache/NodeFrame 已从描述性辅助类改为真实管理对象及 ephemeron WeakMap。注意本地 `undefined` 应继续查父缓存；NodeFrame `_getMaps` 的对象字面量须创建自有数据属性，不能被继承 setter/只读属性拦截。原始 03 差分失败来自探针缺少可选链的空值判断，输入与 Node 预期保持不变，修复探针后 04 全量通过；失败记录与修复后记录分别保存在 `D:\Temp\surui\threecpp-20261024`。NodeBuilder 本体、完整 nodes/TSL 与现代渲染仍待实现，旧的 fact/helper 类不能计为对应模块完成。
 
+本阶段 Vulkan：修复立方体初始 Gaussian blur 的两遍执行、采样布局、fragment push constants、render pass 创建顺序及目标资源释放/恢复。独立 `threecpp.vulkan-cube` 通过 60 项实际 GPU 断言；纯色最大通道误差 0，条纹峰值随 sigma 增大从 255 → 225 → 68，扩散位置为 61。范围仅为 fromScene 的初始球面 Gaussian blur，GGX、HDR mip 及完整 PMREM 入口仍待实现。完整 GPU 回归在变更前后均有相同既存失败：自动 mipmap 棋盘缩小预期 `(128,128,128,255)`，实际 `(0,0,0,255)`；独立复现确认第 1 级有值而第 2/3 级为空，继续定位生成路径。Khronos validation layer 不可用。源码冻结、二进制/着色器哈希和原始日志保存在 `D:\Temp\surui\threecpp-pmrem-blur-20261024`。
+
 ## 一、项目约定（必须遵守）
 
 - 差分验证：探针（`test/unit/utils/parity/*ParityProbe.cpp`，stdin 逐行场景、stdout 逐行 JSON）+ 脚本（`compare-*.mjs`，导入固定 checkout 的上游模块，`assert.deepEqual`，**无容差**）。NaN/-0/±Infinity 统一编码为 `"NaN"`/`"-0"`/`"Infinity"`/`"-Infinity"`。
