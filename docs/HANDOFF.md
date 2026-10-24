@@ -3431,6 +3431,16 @@
    - **库路径初值是空串**，所以使用前必须设。
    - **测试（3 个用例、15 条断言）**：库四处；细分七处；worker 与共享四处。
    - **验证**：核心 **2426 用例 / 216,638 断言**（+3 / +15，从 216,623 增长）、`primitive-geometry`、`port-audit`、addons、`--cube` 全绿。
+549. **第 241 轮：`VRMLLoader` 的三种依赖风格里的第三种**。
+   - **`chevrotain` 是绑定在 `../libs/` 的**：`import chevrotain from '../libs/chevrotain.module.min.js'`——**相对路径，随代码走**。**而 `TTFLoader` 与 `3DMLoader` 用的是 CDN 地址**。**所以三个 loader 两种风格，没有统一约定**：
+     - `TTFLoader`：`https://cdn.jsdelivr.net/npm/opentype.js@1.3.4/+esm` ✗
+     - `3DMLoader`：`https://cdn.jsdelivr.net/npm/rhino3dm@8.32.1/` ✗
+     - `VRMLLoader`：`../libs/chevrotain.module.min.js` ✗✓
+   - **失败时只调 `itemError`**：**所以它与 `ColladaLoader`/`TTFLoader` 同组，而不是与 `MaterialXLoader`（调两次）同组**。
+   - **路径回退用 `=== ''`**：与 `ColladaLoader`/`USDLoader` 一致。
+   - **解析返回 `Scene` 而不是 `Group`**，**文件按文本读**。
+   - **测试（3 个用例、12 条断言）**：依赖六处；管理器两处；路径与类型四处。
+   - **验证**：核心 **2429 用例 / 216,650 断言**（+3 / +12，从 216,638 增长）、`primitive-geometry`、`port-audit`、addons、`--cube` 全绿。
 70. **第 520 轮：完整 Vulkan 套件 211/211 全绿，耗时 270.72 秒**。
    - 命令：`ctest --test-dir build-vulkan -j 4 -E "lights-states" --output-on-failure`（仍排除第 46 条那个已知项；它在 Vulkan 构建里同样慢）。
    - 结果：**100% tests passed, 0 tests failed out of 211**，总耗时 **270.72 秒**。对比同一套件在 **Debug** 配置下的 **3784.56 秒 / 2 失败**，差了约 14 倍——再次印证第 69 条"是构建类型不是代码"的结论。
