@@ -356,6 +356,7 @@ add_executable(THREECPPTests
         unit/src/nodes/core/SubBuildAndParameter.tests.cpp
         unit/src/nodes/core/NodeConstantsTables.tests.cpp
         unit/src/nodes/core/NodeBaseFields.tests.cpp
+        unit/src/nodes/core/NodeBeforeChain.tests.cpp
         unit/src/nodes/core/OutputStructNode.tests.cpp
         unit/src/nodes/core/LightingModel.tests.cpp
         unit/src/nodes/core/IsolateNode.tests.cpp
