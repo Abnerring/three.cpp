@@ -3464,6 +3464,14 @@
    - **本轮的一个失误**：`NodeBeforeChain.h` 里用了 `std::string` 却只 include 了 `<cstdint>` 与 `<vector>`，**27 个编译错误**。**发现方式是"build errors = 27 但 core exit=0"**——**旧二进制还在，所以测试仍然"通过"**。这正是第 236 轮教训的镜像：**看退出码不够，必须看断言数**。
    - **测试（4 个用例、18 条断言）**：列表八处；去重三处；三阶段六处；两回事两处。
    - **验证**：核心 **2442 用例 / 216,706 断言**（+4 / +18）、`primitive-geometry`、`port-audit`、addons、`--cube` 全绿。
+553. **第 245 轮：`Node` 的访问器缺省，以及一个悬了几轮的疑问的答案**。
+   - **`getMemberType` 的基类返回 `'void'`**：**这解开了前面几轮的一个疑问**——`MemberNode`（193）、`ParameterNode`（206）、`AttributeNode`（214）返回 `'float'`，而 `StructTypeNode`（216）、`StorageArrayElementNode`（195）返回 `'void'`。**现在知道：`void` 才是基类答案，三个 `float` 是刻意的覆写**。**所以"缺失成员给什么"这个问题上，规则是 `void`，例外是 `float`**。
+   - **子节点名要剥掉末尾四个字符**：`hashString( property.slice( 0, - 4 ) )`——**因为子节点按"拥有它的属性名"存放，而那些名字都以 `Node` 结尾**。**所以 `colourNode` 存进去、`colour` 参与哈希**。**一个把存储名当属性名的读法会差四个字符**。
+   - **`force` 与版本检查是"或"关系**：`force = force || this.version !== this._cacheKeyVersion`——**所以两件事之后不可区分**，而**节点自己改过就会作废自己的键，不需要任何人强制**。
+   - **同一个 id 两个答案**：`getHash` 给文本（`String( this.id )`），`customCacheKey` 给数字（`this.id`）——**两个不同的问题**。
+   - **`getScope` 返回节点自身**，不是名字也不是查表。
+   - **测试（5 个用例、20 条断言）**：成员类型三处；作用域一处；两个答案六处；剥名五处；重算五处。
+   - **验证**：核心 **2447 用例 / 216,726 断言**（+5 / +20，从 216,706 增长）、`primitive-geometry`、`port-audit`、addons、`--cube` 全绿。
 70. **第 520 轮：完整 Vulkan 套件 211/211 全绿，耗时 270.72 秒**。
    - 命令：`ctest --test-dir build-vulkan -j 4 -E "lights-states" --output-on-failure`（仍排除第 46 条那个已知项；它在 Vulkan 构建里同样慢）。
    - 结果：**100% tests passed, 0 tests failed out of 211**，总耗时 **270.72 秒**。对比同一套件在 **Debug** 配置下的 **3784.56 秒 / 2 失败**，差了约 14 倍——再次印证第 69 条"是构建类型不是代码"的结论。
