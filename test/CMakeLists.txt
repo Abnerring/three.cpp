@@ -382,6 +382,7 @@ add_executable(THREECPPTests
         unit/src/nodes/core/ViewportDepthNode.tests.cpp
         unit/src/loaders/USDZAndTTF.tests.cpp
         unit/src/loaders/ColladaLoader.tests.cpp
+        unit/src/loaders/USDLoader.tests.cpp
         unit/src/loaders/EXRSamplesToBytes.tests.cpp
         unit/src/loaders/EXRDecompressBlock.tests.cpp
         unit/src/loaders/Zlib.tests.cpp
