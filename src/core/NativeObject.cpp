@@ -44,6 +44,9 @@
 #include "scenes/Scene.h"
 #include "textures/Texture.h"
 #include "textures/DepthTexture.h"
+#include "extras/DataUtils.h"
+#include "math/MathUtils.h"
+#include "utils.h"
 #include <cmath>
 #include <limits>
 #include <optional>
@@ -2106,14 +2109,14 @@ namespace {
 JSValue attributeRead(const JSValue& self,const Args&,const Args& capture) {
     const auto attribute=bufferAttributeRuntimeValue(self);const auto& key=capture[0].string();
     if(key=="array") return nativeArray(attribute->getArray());
-    if(key=="itemSize"&&!self.getHostSlot("rawItemSize").isUndefined()) return self.getHostSlot("rawItemSize");
+    if(key=="itemSize"&&self.getHostSlot("rawItemSizePresent").toBoolean()) return self.getHostSlot("rawItemSize");
     if(key=="normalized"&&!self.getHostSlot("rawNormalized").isUndefined()) return self.getHostSlot("rawNormalized");
     return attribute->getProperty(key);
 }
 JSValue attributeWrite(const JSValue& self,const Args& args,const Args& capture) {
     const auto attribute=bufferAttributeRuntimeValue(self);const auto& key=capture[0].string();const auto value=argument(args,0);
     if(key=="name") attribute->name=value.toString();
-    else if(key=="itemSize") {attribute->itemSize=value.toNumber();auto wrapper=self;wrapper.setHostSlot("rawItemSize",value);}
+    else if(key=="itemSize") {attribute->itemSize=value.toNumber();auto wrapper=self;wrapper.setHostSlot("rawItemSize",value);wrapper.setHostSlot("rawItemSizePresent",true);}
     else if(key=="count") attribute->count=value.toNumber();
     else if(key=="normalized") {attribute->normalized=value.toBoolean();auto wrapper=self;wrapper.setHostSlot("rawNormalized",value);}
     else if(key=="array") {
@@ -2154,15 +2157,18 @@ JSValue attributeMethod(const JSValue& self,const Args& args,const Args& capture
     else throw JSTypeError("Unknown BufferAttribute method");
     return self;
 }
-JSValue attributePrototype() {
-    static thread_local JSWeakValue cachedPrototype;
-    return cachedModuleValue(cachedPrototype, [] {
+JSValue attributeModule() {
+    static thread_local JSWeakValue cachedModule;
+    return cachedModuleValue(cachedModule, [] {
         auto constructor=JSValue::constructor([](const JSValue& receiver,const Args& args,const Args&)->JSValue {
-            const auto array=animationArray(argument(args,0));const auto size=argument(args,1).toNumber();const auto normalized=argument(args,2);
+            const auto array=animationArray(argument(args,0));const auto itemSize=argument(args,1);const auto size=itemSize.toNumber();
+            const auto normalized=argument(args,2).isUndefined()?JSValue(false):argument(args,2);
             const auto attribute=std::visit([&](const auto& input)->std::shared_ptr<BufferAttribute> {
                 if constexpr(std::is_same_v<std::decay_t<decltype(input)>,JSValue>) throw JSTypeError("Expected TypedArray");
                 else return std::make_shared<BufferAttribute>(input,size,normalized.toBoolean());
-            },array.storage());auto result=nativeAttribute(attribute);result.setPrototype(receiver.getPrototype());return result;
+            },array.storage());auto result=nativeAttribute(attribute);result.setPrototype(receiver.getPrototype());
+            result.setHostSlot("rawItemSize",itemSize);result.setHostSlot("rawItemSizePresent",true);
+            result.setHostSlot("rawNormalized",normalized);return result;
         },{},"BufferAttribute",2);auto result=constructor.get("prototype");
         for(const auto& [name,arity]:std::initializer_list<std::pair<const char*,unsigned>>{{"getX",1},{"getY",1},{"getZ",1},{"getW",1},
             {"setX",2},{"setY",2},{"setZ",2},{"setW",2},{"setXY",3},{"setXYZ",4},{"setXYZW",5},{"clone",0},{"toJSON",0},
@@ -2170,9 +2176,106 @@ JSValue attributePrototype() {
             auto d=dataDescriptor(JSValue::function(attributeMethod,{name},name,arity),true,false,true);result.defineProperty(name,d);
         }
         JSPropertyDescriptor needsUpdate;needsUpdate.setter=JSValue::function(attributeMethod,{"needsUpdate"},"set needsUpdate",1);needsUpdate.configurable=true;
-        result.defineProperty("needsUpdate",needsUpdate);return result;
+        result.defineProperty("needsUpdate",needsUpdate);
+        auto module=JSValue::object();module.set("constructor",constructor);module.set("prototype",result);return module;
     });
 }
+JSValue attributePrototype() { return attributeModule().get("prototype"); }
+std::int32_t halfInt32(const JSValue& value) {
+    const auto number=value.toNumber();auto wrapped=std::isfinite(number)?std::fmod(std::trunc(number),4294967296.):0.;
+    if(wrapped<0)wrapped+=4294967296.;
+    const auto bits=static_cast<std::uint32_t>(wrapped);
+    return bits<=INT32_MAX?static_cast<std::int32_t>(bits):static_cast<std::int32_t>(static_cast<std::int64_t>(bits)-4294967296LL);
+}
+double halfRead(const JSValue& value) {
+    // DataUtils uses val twice, with a separate ToInt32 at each bitwise operation.
+    const auto m=halfInt32(value)>>10;
+    const auto low=static_cast<std::uint32_t>(halfInt32(value))&0x3ff;
+    return m<0||m>63?0.:fromHalfFloat(double(static_cast<std::uint32_t>(m)*1024+low));
+}
+double halfWrite(const JSValue& value) {
+    if(std::abs(value.toNumber())>65504.)ThreeUtils::warn({"DataUtils.toHalfFloat(): Value out of range."});
+    return toHalfFloat(MathUtils::clamp(value.toNumber(),-65504.,65504.));
+}
+JSValue normalizedHalfComponent(const JSValue& value,const JSValue& array,bool write) {
+    const auto constructor=array.get("constructor");
+    static constexpr double scales[]{127.,255.,32767.,65535.,2147483647.,4294967295.,1.,0.,255.};
+    for(std::size_t kind=0;kind<9;++kind)if(constructor.strictEquals(NativeArray_detail::constructor(kind))) {
+        if(kind==6)return value;
+        if(kind==7)break;
+        if(write)return MathUtils::round(value.toNumber()*scales[kind]);
+        const auto component=value.toNumber()/scales[kind];
+        return kind==0||kind==2||kind==4?MathUtils::max(component,-1.):component;
+    }
+    throw std::runtime_error("THREE.MathUtils: Invalid component type.");
+}
+JSValue halfAttributeMethod(const JSValue& self,const Args& args,const Args& capture) {
+    const auto name=capture[0].string();const auto index=argument(args,0);
+    if(name[0]=='g') {
+        const auto array=self.get("array");const auto size=self.get("itemSize");
+        const auto component=name.back()=='X'?0:name.back()=='Y'?1:name.back()=='Z'?2:3;
+        const auto numericIndex=index.toNumber();const auto numericSize=size.toNumber();
+        const auto offset=numericIndex*numericSize+component;
+        auto value=JSValue(halfRead(array.get(JSValue(offset))));
+        if(self.get("normalized").toBoolean())value=normalizedHalfComponent(value,self.get("array"),false);
+        return value;
+    }
+    const auto count=name.size()-3;
+    if(count==1) {
+        auto value=argument(args,1);
+        if(self.get("normalized").toBoolean())value=normalizedHalfComponent(value,self.get("array"),true);
+        auto array=self.get("array");const auto size=self.get("itemSize");
+        const auto component=name.back()=='X'?0:name.back()=='Y'?1:name.back()=='Z'?2:3;
+        const auto numericIndex=index.toNumber();const auto numericSize=size.toNumber();
+        const auto offset=numericIndex*numericSize+component;
+        array.set(JSValue(offset),halfWrite(value));return self;
+    }
+    const auto size=self.get("itemSize");const auto numericIndex=index.toNumber();const auto numericSize=size.toNumber();const auto offset=numericIndex*numericSize;
+    Args values;for(std::size_t i=0;i<count;++i)values.push_back(argument(args,i+1));
+    if(self.get("normalized").toBoolean())for(auto& value:values)value=normalizedHalfComponent(value,self.get("array"),true);
+    for(std::size_t i=0;i<count;++i) {auto array=self.get("array");array.set(JSValue(offset+double(i)),halfWrite(values[i]));}
+    return self;
+}
+JSValue halfAttributeModule() {
+    static thread_local JSWeakValue cachedModule;
+    return cachedModuleValue(cachedModule, [] {
+        auto module=JSValue::object();
+        auto constructor=JSValue::builtinConstructor([](const JSValue& target,const Args& args,const Args& captures)->JSValue {
+            // Derived construction evaluates the Uint16Array before entering
+            // the dynamic super constructor and reading newTarget.prototype.
+            const auto array=NativeArray_detail::constructor(3).construct({argument(args,0)});
+            const auto super=captures[0].get("constructor").getPrototype();
+            auto result=super.construct({array,argument(args,1),argument(args,2)},target);
+            result.set("isFloat16BufferAttribute",true);
+            if(result.isHostObject("three.BufferAttribute")) {
+                const auto state=payload<BufferAttributeRuntime>(result,"three.BufferAttribute");
+                if(state->owner.expired())static_cast<void>(Float16BufferAttribute::restoreRuntime(state->storage,result));
+            }
+            return result;
+        },{module},"Float16BufferAttribute",3);
+        constructor.setPrototype(attributeModule().get("constructor"));
+        auto prototype=constructor.get("prototype");prototype.setPrototype(attributePrototype());
+        for(const auto& [name,arity]:std::initializer_list<std::pair<const char*,unsigned>>{
+            {"getX",1},{"setX",2},{"getY",1},{"setY",2},{"getZ",1},{"setZ",2},{"getW",1},{"setW",2},
+            {"setXY",3},{"setXYZ",4},{"setXYZW",5}})
+            prototype.defineProperty(name,dataDescriptor(JSValue::function(halfAttributeMethod,{name},name,arity),true,false,true));
+        module.set("constructor",constructor);module.set("prototype",prototype);return module;
+    });
+}
+}
+JSValue nativeBufferAttributeConstructor() { return attributeModule().get("constructor"); }
+JSValue nativeFloat16BufferAttributeConstructor() { return halfAttributeModule().get("constructor"); }
+bool instanceOfFloat16BufferAttribute(const JSValue& value) {
+    const auto constructor=nativeFloat16BufferAttributeConstructor();
+    const auto method=constructor.get(JSValue::wellKnownSymbol("hasInstance"));
+    if(!method.isUndefined()&&!method.isNull())return method.call(constructor,{value}).toBoolean();
+    if(!value.isObject())return false;
+    const auto prototype=constructor.get("prototype");if(!prototype.isObject())throw JSTypeError("Non-object instanceof prototype");
+    for(auto current=value.getPrototype();!current.isNull();current=current.getPrototype())if(current.strictEquals(prototype))return true;
+    return false;
+}
+void initializeFloat16BufferAttributeRuntime(BufferAttribute& attribute) {
+    auto object=attribute.object();object.setPrototype(halfAttributeModule().get("prototype"));
 }
 void initializeBufferAttributeRuntime(BufferAttribute& attribute) {
     auto state=std::make_shared<BufferAttributeRuntime>();state->storage=attribute.runtimeStorage();

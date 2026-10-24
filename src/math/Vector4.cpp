@@ -13,6 +13,70 @@
 #include <algorithm>
 #include <cmath>
 #include <stdexcept>
+#include "core/JSModuleObject.h"
+
+namespace {
+using RuntimeVectorArgs = std::vector<JSValue>;
+JSValue vector4Arg(const RuntimeVectorArgs& args, std::size_t i) { return i < args.size() ? args[i] : JSValue{}; }
+JSValue vector4Add(JSValue a, JSValue b) {
+    const auto left = a.toPrimitive(), right = b.toPrimitive();
+    if (left.type() == JSValue::Type::String || right.type() == JSValue::Type::String) return left.toString() + right.toString();
+    return left.toNumber() + right.toNumber();
+}
+JSValue runtimeVector4Method(const JSValue& receiver, const RuntimeVectorArgs& args, const RuntimeVectorArgs& captures) {
+    auto self = receiver; const auto name = captures[0].string(); const auto value = vector4Arg(args, 0);
+    if (name == "get width" || name == "get height") return self.get(name == "get width" ? "z" : "w");
+    if (name == "set width" || name == "set height") { self.set(name == "set width" ? "z" : "w", value); return {}; }
+    if (name == "clone") return self.get("constructor").construct({self.get("x"), self.get("y"), self.get("z"), self.get("w")});
+    if (name == "set" || name == "setScalar" || name == "copy") {
+        for (unsigned i = 0; i < 4; ++i) {
+            const std::string key(1, "xyzw"[i]);
+            JSValue next;
+            if (name == "set") next = vector4Arg(args, i);
+            else if (name == "setScalar") next = value;
+            else if (i == 3) next = value.get("w").isUndefined() ? JSValue(1) : value.get("w");
+            else next = value.get(key);
+            self.set(key, next);
+        }
+        return self;
+    }
+    if (name == "equals") {
+        for (const auto* key : {"x", "y", "z", "w"}) { const auto left = value.get(key); if (!left.strictEquals(self.get(key))) return false; }
+        return true;
+    }
+    if (name == "toArray" || name == "fromArray") {
+        auto array = value; if (name == "toArray" && array.isUndefined()) array = JSValue::array();
+        const auto raw = vector4Arg(args, 1), offset = raw.isUndefined() ? JSValue(0) : raw;
+        for (unsigned i = 0; i < 4; ++i) {
+            const auto index = i ? vector4Add(offset, i) : offset;
+            const std::string key(1, "xyzw"[i]);
+            if (name == "toArray") array.set(index, self.get(key)); else self.set(key, array.get(index));
+        }
+        return name == "toArray" ? array : self;
+    }
+    throw std::logic_error("Unknown managed Vector4 method");
+}
+}
+
+JSValue nativeVector4Constructor() {
+    static thread_local JSWeakValue weak; static thread_local bool initializing = false;
+    if (const auto ctor = weak.lock(); ctor && ctor->isConstructible()) return *ctor;
+    JSModuleInitializationScope scope(initializing, "Vector4");
+    auto ctor = JSValue::constructor([](const JSValue& receiver, const RuntimeVectorArgs& args, const RuntimeVectorArgs&) -> JSValue {
+        auto self = receiver;
+        for (unsigned i = 0; i < 4; ++i) { const auto value = vector4Arg(args, i); self.set(std::string(1, "xyzw"[i]), value.isUndefined() ? JSValue(i == 3 ? 1 : 0) : value); }
+        return {};
+    }, {}, "Vector4", 0);
+    auto prototype = ctor.get("prototype");
+    for (const auto* key : {"width", "height"}) {
+        JSPropertyDescriptor d; d.getter = JSValue::function(runtimeVector4Method, {std::string("get ") + key}, std::string("get ") + key, 0);
+        d.setter = JSValue::function(runtimeVector4Method, {std::string("set ") + key}, std::string("set ") + key, 1); d.configurable = true; prototype.defineProperty(key, d);
+    }
+    for (const auto& [name, arity] : std::initializer_list<std::pair<const char*, unsigned>>{{"set", 4}, {"setScalar", 1}, {"clone", 0}, {"copy", 1}, {"equals", 1}, {"fromArray", 1}, {"toArray", 0}}) {
+        JSPropertyDescriptor d; d.value = JSValue::function(runtimeVector4Method, {name}, name, arity); d.writable = d.configurable = true; prototype.defineProperty(name, d);
+    }
+    prototype.set("isVector4", true); ctor.retainForHeapLifetime(); weak = JSWeakValue(ctor); return ctor;
+}
 
 Vector4::Vector4(HIGH_PRECISION x, HIGH_PRECISION y, HIGH_PRECISION z, HIGH_PRECISION w)
     : x(x), y(y), z(z), w(w)

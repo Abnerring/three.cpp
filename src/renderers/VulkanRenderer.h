@@ -1,7 +1,7 @@
 #ifndef THREECPP_VULKAN_RENDERER_H
 #define THREECPP_VULKAN_RENDERER_H
 
-#include "constants.h"
+#include "../constants.h"
 #include "math/Color.h"
 #include "core/JSValue.h"
 #include <cstdint>

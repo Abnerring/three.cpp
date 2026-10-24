@@ -599,6 +599,9 @@ JSValue arrayConstructor(const JSValue&, const Args& args, const Args&) {
     }
     auto array = JSValue::array(); arrayPush(array, args, {}); return array;
 }
+JSValue arrayIsArray(const JSValue&, const Args& args, const Args&) {
+    return argument(args, 0).type() == JSValue::Type::Array;
+}
 JSValue arrayFrom(const JSValue& constructor, const Args& args, const Args&) {
     const auto items=argument(args,0), mapper=argument(args,1), thisArg=argument(args,2);
     const bool mapping=!mapper.isUndefined();
@@ -1029,6 +1032,7 @@ class JSHeap : public std::enable_shared_from_this<JSHeap> {
         arrayCtor.defineProperty("prototype", dataDescriptor(array, false, false, false));
         array.defineProperty("constructor", dataDescriptor(arrayCtor, true, false, true));
         install(arrayCtor,"from",arrayFrom,1);
+        install(arrayCtor,"isArray",arrayIsArray,1);
         JSPropertyDescriptor arraySpecies;
         arraySpecies.getter = createFunction([](const JSValue& receiver, const Args&, const Args&) {
             return receiver;

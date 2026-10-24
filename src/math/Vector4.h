@@ -4,6 +4,11 @@
 #include "core/BasicType.h"
 #include "core/Property.h"
 #include <vector>
+#include "core/JSValue.h"
+
+// Managed constructor used by render targets. Its set/copy/array protocols
+// preserve runtime values without passing through the numerical facade.
+JSValue nativeVector4Constructor();
 
 class Vector3;
 

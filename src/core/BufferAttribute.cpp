@@ -85,6 +85,13 @@ std::shared_ptr<BufferAttribute> Float16BufferAttribute::clone() const {
     result->copy(*this);
     return result;
 }
+std::shared_ptr<Float16BufferAttribute> Float16BufferAttribute::restoreRuntime(std::shared_ptr<BufferAttributeStorage> storage,JSValue object) {
+    storage->factory=+[](std::shared_ptr<BufferAttributeStorage> retained,JSValue wrapper)->std::shared_ptr<BufferAttribute> {
+        return std::shared_ptr<BufferAttribute>(new Float16BufferAttribute(std::move(retained),std::move(wrapper),RuntimeTag{}));
+    };
+    auto result=std::shared_ptr<Float16BufferAttribute>(new Float16BufferAttribute(std::move(storage),std::move(object),RuntimeTag{}));
+    bindBufferAttributeRuntime(result->object(),result);return result;
+}
 double Float16BufferAttribute::getHalf(double offset) const {
     double value = std::visit([&](const auto& values) {
         return fromHalfFloat(values.get(offset).toNumber());

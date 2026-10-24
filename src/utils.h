@@ -11,6 +11,8 @@ JSValue nativeReversedDepthFuncs();
 inline constexpr JSModuleObject ReversedDepthFuncs{nativeReversedDepthFuncs};
 void setConsoleFunction(const JSValue& callback);
 JSValue getConsoleFunction();
+// Browser scheduling is adapted to the native main loop (JSJobs host tasks).
+JSValue yieldToMain();
 void warn(const std::vector<JSValue>& params);
 void warnOnce(const std::vector<JSValue>& params);
 void error(const std::vector<JSValue>& params);

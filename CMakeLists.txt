@@ -170,6 +170,16 @@ target_sources(threecpp PRIVATE
     src/extras/PMREMGenerator.cpp
     src/nodes/core/StackTrace.cpp
     src/nodes/core/NodeBuilder.cpp
+    src/nodes/core/NodeBuilderAsync.cpp
+    src/nodes/core/constants.cpp
+    src/core/RenderTargetRuntime.cpp
+    src/textures/TextureRuntime.cpp
+    src/math/VectorRuntime.cpp
+    src/renderers/common/CubeRenderTarget.cpp
+    src/nodes/parsers/GLSLNodeParser.cpp
+    src/nodes/parsers/GLSLNodeFunction.cpp
+    src/renderers/webgpu/nodes/WGSLNodeParser.cpp
+    src/renderers/webgpu/nodes/WGSLNodeFunction.cpp
     src/nodes/core/NodeAttribute.cpp
     src/nodes/core/NodeUniform.cpp
     src/nodes/core/NodeVarying.cpp

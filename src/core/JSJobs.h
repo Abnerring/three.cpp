@@ -14,6 +14,11 @@ std::size_t drainMicrotasks();
 // End one host job after its complete microtask checkpoint. WeakRef construction
 // and successful deref keep their target alive until this boundary.
 void endJSJob();
+// Native main-loop tasks. Each callback gets a full microtask checkpoint;
+// tasks queued by a yield remain separate from the current microtask turn.
+void queueHostTask(JSValue callback);
+bool hasPendingHostTasks();
+std::size_t drainHostTasks(std::size_t maximumJobs = 1);
 // Finalization cleanup is an asynchronous host task, separate from microtasks.
 // The weak queue cancels tasks whose registry/runtime no longer exists.
 bool hasPendingFinalizationJobs();

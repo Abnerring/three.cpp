@@ -181,8 +181,11 @@ class Float16BufferAttribute : public BufferAttribute {
         :BufferAttribute(std::move(storage),std::move(object),tag) {}
     void preserveRuntimeType() { setRuntimeFactory(+[](std::shared_ptr<BufferAttributeStorage> storage,JSValue object)->std::shared_ptr<BufferAttribute> {
         return std::shared_ptr<BufferAttribute>(new Float16BufferAttribute(std::move(storage),std::move(object),RuntimeTag{}));
-    }); }
+    }); initializeFloat16BufferAttributeRuntime(*this); }
   public:
+    // Recreate a native handle for the managed derived constructor without
+    // allocating another array or replacing newTarget's prototype.
+    static std::shared_ptr<Float16BufferAttribute> restoreRuntime(std::shared_ptr<BufferAttributeStorage> storage, JSValue object);
     Float16BufferAttribute(std::initializer_list<std::uint16_t> values, double size, bool normalize = false)
         : BufferAttribute(Uint16Array(values), size, normalize) { preserveRuntimeType(); isFloat16BufferAttribute = true; }
     Float16BufferAttribute(ArrayBuffer values, double size, bool normalize = false)

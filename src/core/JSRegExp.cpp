@@ -2,7 +2,10 @@
 #include "core/JSNumber.h"
 #include "core/JSString.h"
 #include "core/JSStringEncoding.h"
+#include "core/UnicodeCase.h"
 #include <algorithm>
+#include <array>
+#include <bitset>
 #include <cmath>
 #include <cstdint>
 #include <limits>
@@ -76,7 +79,7 @@ using Regex = std::basic_regex<wchar_t, ECMATraits>;
 struct RegExpData {
     std::string source, flags;
     Regex matcher;
-    bool global = false, sticky = false;
+    bool global = false, sticky = false, ignoreCase = false;
 };
 std::shared_ptr<RegExpData> requireData(const JSValue& value) {
     check(value);
@@ -97,7 +100,51 @@ void unitEscape(std::wstring& out, unsigned value) {
     for (int shift = 12; shift >= 0; shift -= 4)
         out += digits[(value >> shift) & 15];
 }
-std::wstring compilePattern(std::u16string_view source, bool dotAll) {
+char16_t canonicalize(char16_t unit) {
+    // Non-Unicode Canonicalize uses full uppercase on one UTF-16 unit, retaining
+    // multi-unit expansions and excluding non-ASCII -> ASCII conversions.
+    static const auto table = [] {
+        std::array<char16_t, 65536> result{};
+        for (unsigned i = 0; i < result.size(); ++i) {
+            const auto c = static_cast<char16_t>(i); const auto upper = unicodeToUpperCase(std::u16string_view(&c, 1));
+            result[i] = upper.size() != 1 || (i >= 128 && upper[0] < 128) ? c : upper[0];
+        }
+        return result;
+    }();
+    return table[unit];
+}
+std::wstring compilePattern(std::u16string_view source, bool dotAll, bool ignoreCase = false);
+std::wstring canonicalClass(std::u16string_view source) {
+    const auto negative = source.size() > 2 && source[1] == '^';
+    auto body = std::u16string(source.substr(negative ? 2 : 1, source.size() - (negative ? 3 : 2)));
+    std::bitset<65536> included;
+    if (!body.empty()) {
+        if (body[0] == '^') body.replace(0, 1, u"\\u005e");
+        const auto pattern = compilePattern(u"[" + body + u"]", false);
+        Regex original;
+        try { original.assign(pattern.begin(), pattern.end(), std::regex_constants::ECMAScript); }
+        catch (const std::regex_error& error) {
+            if (error.code() == std::regex_constants::error_complexity || error.code() == std::regex_constants::error_space || error.code() == std::regex_constants::error_stack) throw JSRegExpUnsupported("RegExp matcher resource limit");
+            throw JSSyntaxError("Invalid regular expression pattern");
+        }
+        for (unsigned i = 0; i < included.size(); ++i) {
+            const auto c = static_cast<wchar_t>(i);
+            if (std::regex_match(&c, &c + 1, original)) included.set(canonicalize(static_cast<char16_t>(i)));
+        }
+    }
+    if (included.none()) return negative ? L"[\\s\\S]" : L"[]";
+    std::wstring out = negative ? L"[^" : L"[";
+    for (unsigned first = 0; first < included.size();) {
+        if (!included[first]) { ++first; continue; }
+        auto last = first; while (last + 1 < included.size() && included[last + 1]) ++last;
+        unitEscape(out, first);
+        if (last == first + 1) unitEscape(out, last);
+        else if (last > first + 1) { out += '-'; unitEscape(out, last); }
+        first = last + 1;
+    }
+    out += ']'; return out;
+}
+std::wstring compilePattern(std::u16string_view source, bool dotAll, bool ignoreCase) {
     std::size_t captures = 0;
     bool scanningClass = false;
     for (std::size_t i = 0; i < source.size(); ++i) {
@@ -120,6 +167,12 @@ std::wstring compilePattern(std::u16string_view source, bool dotAll) {
     std::size_t openedCaptures = 0;
     for (std::size_t i = 0; i < source.size(); ++i) {
         const auto c = source[i];
+        if (ignoreCase && c == '[' && !inClass) {
+            auto end = i + 1;
+            for (; end < source.size(); ++end) { if (source[end] == '\\') ++end; else if (source[end] == ']') break; }
+            if (end >= source.size()) throw JSSyntaxError("Invalid regular expression pattern");
+            out += canonicalClass(source.substr(i, end - i + 1)); i = end; continue;
+        }
         if (c == u'\\') {
             if (i + 1 == source.size()) {
                 out += L'\\';
@@ -163,7 +216,7 @@ std::wstring compilePattern(std::u16string_view source, bool dotAll) {
                                      source[i + 1] >= u'0' && source[i + 1] <= u'7';
                      ++j)
                     value = value * 8 + (source[++i] - u'0');
-                unitEscape(out, value);
+                unitEscape(out, ignoreCase ? canonicalize(static_cast<char16_t>(value)) : value);
                 continue;
             }
             if (escape == u'x' || escape == u'u') {
@@ -172,8 +225,13 @@ std::wstring compilePattern(std::u16string_view source, bool dotAll) {
                 for (std::size_t j = 1; valid && j <= count; ++j)
                     valid = hexadecimal(source[i + j]);
                 if (!valid) {
-                    out += static_cast<wchar_t>(escape);
+                    out += static_cast<wchar_t>(ignoreCase ? canonicalize(escape) : escape);
                     continue;
+                }
+                if (ignoreCase) {
+                    unsigned value = 0;
+                    for (std::size_t j = 1; j <= count; ++j) { const auto digit = source[i + j]; value = value * 16 + (digit <= '9' ? digit - '0' : digit <= 'F' ? digit - 'A' + 10 : digit - 'a' + 10); }
+                    unitEscape(out, canonicalize(static_cast<char16_t>(value))); i += count; continue;
                 }
             }
             if (escape == u'c') {
@@ -184,9 +242,12 @@ std::wstring compilePattern(std::u16string_view source, bool dotAll) {
                     continue;
                 }
                 if (!((next >= u'a' && next <= u'z') || (next >= u'A' && next <= u'Z'))) {
-                    out += L"\\\\c";
+                    out += ignoreCase ? L"\\\\C" : L"\\\\c";
                     continue;
                 }
+            }
+            if (ignoreCase && !classEscape(escape) && std::u16string_view(u"bBfnrtvc").find(escape) == std::u16string_view::npos) {
+                unitEscape(out, canonicalize(escape)); continue;
             }
             out += L'\\';
             out += static_cast<wchar_t>(escape);
@@ -256,7 +317,7 @@ std::wstring compilePattern(std::u16string_view source, bool dotAll) {
         if (c == u'.' && !inClass && dotAll)
             out += L"[\\s\\S]";
         else
-            out += static_cast<wchar_t>(c);
+            out += static_cast<wchar_t>(ignoreCase ? canonicalize(c) : c);
     }
     return out;
 }
@@ -271,17 +332,18 @@ std::shared_ptr<RegExpData> compile(const std::string& source, const std::string
     }
     if (seen['u'] && seen['v'])
         throw JSSyntaxError("Incompatible Unicode regular expression flags");
-    if (seen['d'] || seen['i'] || seen['u'] || seen['v'])
-        throw JSRegExpUnsupported("RegExp flags d, i, u and v are not implemented");
+    if (seen['d'] || seen['u'] || seen['v'])
+        throw JSRegExpUnsupported("RegExp flags d, u and v are not implemented");
     auto result = std::make_shared<RegExpData>();
     result->source = source;
     result->flags = flags;
     result->global = seen['g'];
     result->sticky = seen['y'];
+    result->ignoreCase = seen['i'];
     auto options = std::regex_constants::ECMAScript;
     if (seen['m'])
         options |= std::regex_constants::multiline;
-    const auto pattern = compilePattern(jsUTF16(source), seen['s']);
+    const auto pattern = compilePattern(jsUTF16(source), seen['s'], seen['i']);
     try {
         result->matcher.assign(pattern.begin(), pattern.end(), options);
     } catch (const std::regex_error& error) {
@@ -338,7 +400,8 @@ JSValue builtinExec(const JSValue& receiver, const JSValue& string) {
             self.set("lastIndex", 0);
         return nullptr;
     }
-    const std::wstring wide(text.begin(), text.end());
+    std::wstring wide(text.begin(), text.end());
+    if (payload->ignoreCase) for (auto& c : wide) c = canonicalize(static_cast<char16_t>(c));
     const auto offset = static_cast<std::size_t>(start);
     std::match_results<std::wstring::const_iterator> match;
     auto options = std::regex_constants::match_default;

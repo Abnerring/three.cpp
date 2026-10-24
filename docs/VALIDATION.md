@@ -1,5 +1,17 @@
 # 验证记录
 
+## 当前追加验证：构建流水线、函数解析器与渲染资源协议，2026-10-24
+
+- 固定上游为 `11738a9d55e502fb484cefffcea3a66dc44e9fe9`。最终 build-09 后，CPU 全量 **2,528 cases / 217,372 assertions**、String/RegExp 独立单测 **12 cases / 158 assertions** 全部通过；选定回归 **16/16 CTest** 通过，文本日志实测 **91.00 秒**。CPU 断言数比首轮增加的 2 项对应空类量词回归；XML 的总耗时字段取整，不替代文本实测。详见 [最终 CPU/CTest 原始日志](D:/Temp/surui/threecpp-builder-pipeline-20261024/ctest-regression-02-last-test.log) 与 [CTest 汇总](D:/Temp/surui/threecpp-builder-pipeline-20261024/ctest-regression-02.log)。
+- 本轮接入实际 NodeBuilder `build/prebuild/buildAsync` 流程、原生 Promise/微任务与宿主让出调度；新增实际 NodeParser、GLSLNodeParser/Function、WGSLNodeParser/Function，按固定源码处理正则、参数、类型与 `getCode`，并串接真实 FunctionNode。Float16BufferAttribute 身份与原生半精度方法、Texture/RenderTarget/CubeRenderTarget 的资源对象协议也有本轮差分证据；这些结果限定于已覆盖的 CPU 行为。
+- 独立最终差分全部通过：Float16BufferAttribute **923** 项；NodeBuilder 构建流程 **100** 项；RenderTarget/CubeRenderTarget **161 个真实上游场景 + 1 个实际原生 GC 快照**；String `match/substring` **237** 项。结果和耗时见 [direct-final-results.json](D:/Temp/surui/threecpp-builder-pipeline-20261024/direct-final-results.json)，对应原始输出均保存在同目录。
+- 四项最终独立验收全部通过：[函数解析器 479 项](D:/Temp/surui/shader-parsers-20261024-validation03/run.log)，2.37 秒；[RegExp 非 Unicode `i` 6,997 项 + 3 项明确不支持检查](D:/Temp/surui/regexp-ignore-case-20261024-validation02/run.log)，8.25 秒；[NodeBuilder.prebuild 115 项](D:/Temp/surui/node-builder-prebuild-20261024-validation03/run.log)，2.38 秒；[原 RegExp 93,707 项回归](D:/Temp/surui/regexp-base-20261024-validation02/run.log)，30.50 秒，其中 704 项仍按原脚本记录为明确不支持。各目录保留输入、上游结果、实际结果、差异和 `timing.json`；原 RegExp 回归以其既有 summary 格式保存结果。
+- 既有输入及原始 oracle 证据保留：parser 原 461 项、RegExp `i` 原 5,665 项均继续纳入扩展语料，原 RegExp 回归脚本和预期未改。parser 首轮的 3 处失败定位为 `99/100/447.result.fields.inputs.0.count` 的 JSON 表示损失：前两处实际为 Number `Infinity`，后一处为 Number `-0`。最终双端无损编码 `NaN/±Infinity/-0`，确认实际类型、数值及符号一致；只改变上述 3 个字段的传输表示，普通值期望不变，未修改生产解析逻辑。原失败文件仍在 `shader-parsers-20261024-validation02`，精确表示变化见 [wire-representation-changes.json](D:/Temp/surui/shader-parsers-20261024-oracle06/wire-representation-changes.json)。
+- RegExp `i` 原 5,665 项首轮已全部一致；追加空类/否定空类量词、分组、非贪婪、锚点、边界与 replace/split 后，实际捕获 **555 项生产差异**：空正类被转换成不可直接加量词的 `(?!)`，导致错误 SyntaxError。实现已保留普通空字符类 `[]`，最终 6,997 项全部一致；原失败证据保留在 [首轮空类量词差异](D:/Temp/surui/regexp-ignore-case-20261024-validation01/regexp-ignore-case-differences.json)。Canonicalize 覆盖完整非 Unicode UTF-16 大写规则、字符类范围和反向引用；实测无需添加缓存。`d/u/v`、命名捕获等既有未支持范围仍明确保留。
+- MSVC UTF-8 `/showIncludes` 的 Ninja 头文件依赖识别修复已独立提交 **`3da3db9`**。独立 fixture 证明修改头文件后对象确实重编，程序返回值从 17 变为 23，`headerTracked: true`；证据见 [dependency-fixture/verified.json](D:/Temp/surui/threecpp-builder-pipeline-20261024/dependency-fixture/verified.json)。本轮总证据目录为 `D:\Temp\surui\threecpp-builder-pipeline-20261024`，另有上述四个最终差分目录；首轮失败和后续修复证据均未覆盖删除。
+- 审计仍为 **1,251 个模块**：partial-unverified **350**、missing **591**、vulkan-port-pending **290**、dependency-unverified **20**；解析错误 **0**。文件存在 **518** 个（src **434**、examples/jsm **84**），不作为行为完成率。
+- 完整 NodeMaterial 及其 fallback、TSL 工厂与节点系统、GLSL/WGSL 编译器和现代 Vulkan 后端仍 pending；GLSL parser 的 `Number.parseInt/Number.isNaN` 动态属性替换也尚缺原生 Number 构造器支持。prebuild 已验证的 library 协议不代表 NodeMaterial fallback 完成。本轮未改 GPU 算法、未运行 GPU 验证；历史 GPU 结果仅适用于其各自冻结版本。
+
 ## 当前追加验证：节点、绑定组与 uniform 资源，2026-10-24
 
 - 固定上游仍为 `11738a9d55e502fb484cefffcea3a66dc44e9fe9`。CPU 全量通过 2,508 cases / 217,138 assertions；包含本轮五组新差分的 12 项 CTest 全部通过，耗时 70.15 秒。

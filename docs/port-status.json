@@ -194,8 +194,8 @@
     "note": "Accepted port scope is src and examples/jsm, including tracked third-party dependencies. Editor/manual web applications are excluded from native application rewrites. Native host behavior, packaging and all three platforms require separate implementation and verification evidence."
   },
   "counts": {
-    "partial-unverified": 347,
-    "missing": 594,
+    "partial-unverified": 350,
+    "missing": 591,
     "vulkan-port-pending": 290,
     "dependency-unverified": 20
   },
@@ -203,8 +203,8 @@
     "src": {
       "modules": 755,
       "counts": {
-        "partial-unverified": 263,
-        "missing": 202,
+        "partial-unverified": 266,
+        "missing": 199,
         "vulkan-port-pending": 290
       }
     },
@@ -803,7 +803,7 @@
       "path": "src/nodes/core",
       "upstreamFiles": 42,
       "moduleCount": 42,
-      "modulesWithCppFiles": 41,
+      "modulesWithCppFiles": 42,
       "verifiedComplete": 0
     },
     {
@@ -880,7 +880,7 @@
       "path": "src/nodes/parsers",
       "upstreamFiles": 2,
       "moduleCount": 2,
-      "modulesWithCppFiles": 0,
+      "modulesWithCppFiles": 2,
       "verifiedComplete": 0
     },
     {
@@ -936,7 +936,7 @@
       "path": "src/renderers/common",
       "upstreamFiles": 58,
       "moduleCount": 58,
-      "modulesWithCppFiles": 8,
+      "modulesWithCppFiles": 9,
       "verifiedComplete": 0
     },
     {
@@ -1020,7 +1020,7 @@
       "path": "src/renderers/webgpu/nodes",
       "upstreamFiles": 5,
       "moduleCount": 5,
-      "modulesWithCppFiles": 0,
+      "modulesWithCppFiles": 2,
       "verifiedComplete": 0
     },
     {
@@ -9781,11 +9781,11 @@
       "scope": "src",
       "kind": "core",
       "upstreamSha256": "9254fd210643513bb34aecc3f95d31e751198345fd79bbae72549cd2cec490e1",
-      "header": null,
-      "implementation": null,
+      "header": "src/nodes/core/constants.h",
+      "implementation": "src/nodes/core/constants.cpp",
       "expectedHeader": "src/nodes/core/constants.h",
       "expectedImplementation": "src/nodes/core/constants.cpp",
-      "status": "missing",
+      "status": "partial-unverified",
       "verifiedComplete": false,
       "apiExtraction": "static-only",
       "verification": {
@@ -12215,11 +12215,11 @@
       "scope": "src",
       "kind": "core",
       "upstreamSha256": "0895f9911ffbb766d0655e56fa8c3966b672cfd8c84fccf8d3e4774e98c7a7eb",
-      "header": null,
-      "implementation": null,
+      "header": "src/nodes/parsers/GLSLNodeFunction.h",
+      "implementation": "src/nodes/parsers/GLSLNodeFunction.cpp",
       "expectedHeader": "src/nodes/parsers/GLSLNodeFunction.h",
       "expectedImplementation": "src/nodes/parsers/GLSLNodeFunction.cpp",
-      "status": "missing",
+      "status": "partial-unverified",
       "verifiedComplete": false,
       "apiExtraction": "static-only",
       "verification": {
@@ -12242,11 +12242,11 @@
       "scope": "src",
       "kind": "core",
       "upstreamSha256": "501ed0adbf4551cf0055a92cc59caa23400060523719006f3dc73c41c9711e54",
-      "header": null,
-      "implementation": null,
+      "header": "src/nodes/parsers/GLSLNodeParser.h",
+      "implementation": "src/nodes/parsers/GLSLNodeParser.cpp",
       "expectedHeader": "src/nodes/parsers/GLSLNodeParser.h",
       "expectedImplementation": "src/nodes/parsers/GLSLNodeParser.cpp",
-      "status": "missing",
+      "status": "partial-unverified",
       "verifiedComplete": false,
       "apiExtraction": "static-only",
       "verification": {
@@ -14282,8 +14282,8 @@
       "scope": "src",
       "kind": "core",
       "upstreamSha256": "c4746bd02e5b3261c1a819e5befeb343f910c6f997754bdf69159e849696c1d3",
-      "header": null,
-      "implementation": null,
+      "header": "src/renderers/common/CubeRenderTarget.h",
+      "implementation": "src/renderers/common/CubeRenderTarget.cpp",
       "expectedHeader": "src/renderers/common/CubeRenderTarget.h",
       "expectedImplementation": "src/renderers/common/CubeRenderTarget.cpp",
       "status": "vulkan-port-pending",
@@ -21182,8 +21182,8 @@
       "scope": "src",
       "kind": "core",
       "upstreamSha256": "123894a920c4e107af9c2fa7979cec20594af8d17424102e8c5b4f1a87211491",
-      "header": null,
-      "implementation": null,
+      "header": "src/renderers/webgpu/nodes/WGSLNodeFunction.h",
+      "implementation": "src/renderers/webgpu/nodes/WGSLNodeFunction.cpp",
       "expectedHeader": "src/renderers/webgpu/nodes/WGSLNodeFunction.h",
       "expectedImplementation": "src/renderers/webgpu/nodes/WGSLNodeFunction.cpp",
       "status": "vulkan-port-pending",
@@ -21209,8 +21209,8 @@
       "scope": "src",
       "kind": "core",
       "upstreamSha256": "a35e71807b19b2388ac8b795bd02c0b6f09d7bd9f183d6a392d7449126292bb0",
-      "header": null,
-      "implementation": null,
+      "header": "src/renderers/webgpu/nodes/WGSLNodeParser.h",
+      "implementation": "src/renderers/webgpu/nodes/WGSLNodeParser.cpp",
       "expectedHeader": "src/renderers/webgpu/nodes/WGSLNodeParser.h",
       "expectedImplementation": "src/renderers/webgpu/nodes/WGSLNodeParser.cpp",
       "status": "vulkan-port-pending",

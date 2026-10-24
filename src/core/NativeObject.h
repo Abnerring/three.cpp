@@ -39,5 +39,10 @@ JSValue nativePlanePrototype();
 JSValue nativeArray(const AnimationArray& array);
 AnimationArray animationArray(const JSValue& value);
 JSValue nativeAttribute(const std::shared_ptr<VertexAttribute>& attribute);
+// Stable module bindings; mutable prototype.constructor properties do not
+// replace the imported constructors used by source instanceof expressions.
+JSValue nativeBufferAttributeConstructor();
+JSValue nativeFloat16BufferAttributeConstructor();
+bool instanceOfFloat16BufferAttribute(const JSValue& value);
 JSValue nativeGeometry(const std::shared_ptr<BufferGeometry>& geometry);
 std::shared_ptr<VertexAttribute> vertexAttribute(const JSValue& value);

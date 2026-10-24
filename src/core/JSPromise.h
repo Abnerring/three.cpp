@@ -15,3 +15,7 @@ JSPromiseCapability createNativePromiseCapability();
 JSValue resolveNativePromise(JSValue value = {});
 JSValue rejectNativePromise(JSValue reason = {});
 bool isNativePromise(const JSValue& value);
+// Await uses the intrinsic promise operations, without looking up a mutable
+// .then property or constructing the otherwise unused reaction result promise.
+void awaitNativePromise(JSValue value, JSValue onFulfilled, JSValue onRejected);
+JSValue nativeExceptionValue(std::exception_ptr error);

@@ -45,10 +45,30 @@ JSValue values(const JSValue&,const Args& args,const Args&) {
     }
     return result;
 }
+JSValue keys(const JSValue&,const Args& args,const Args&) {
+    auto source=args.empty()?JSValue{}:args[0];
+    if(source.isNull()||source.isUndefined())throw JSTypeError("Cannot convert undefined or null to object");
+    auto result=JSValue::array();
+    if(!source.isObject()) {
+        if(source.type()==JSValue::Type::String)source=createNativeStringObject(source);
+        else return result;
+    }
+    const auto candidates=source.ownPropertyKeys();std::uint32_t index=0;
+    for(const auto& key:candidates) {
+        if(key.isSymbol())continue;
+        const auto descriptor=source.getOwnPropertyDescriptor(key);
+        if(descriptor&&descriptor->enumerable.value_or(false)) {
+            JSPropertyDescriptor d;d.value=key;d.writable=d.enumerable=d.configurable=true;
+            result.defineProperty(std::to_string(index++),d);
+        }
+    }
+    return result;
+}
 }
 void initializeNativeObjectMethods(const JSValue& constructor) {
     JSPropertyDescriptor d;d.value=JSValue::function(assign,{},"assign",2);
     d.writable=d.configurable=true;d.enumerable=false;
     auto object=constructor;object.defineProperty("assign",d);
     d.value=JSValue::function(values,{},"values",1);object.defineProperty("values",d);
+    d.value=JSValue::function(keys,{},"keys",1);object.defineProperty("keys",d);
 }

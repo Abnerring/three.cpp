@@ -1,5 +1,6 @@
 #pragma once
 #include "textures/Texture.h"
+JSValue nativeCubeTextureConstructor();
 class CubeTexture : public Texture {
   public:
     ImageProperty images{this};

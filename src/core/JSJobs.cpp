@@ -12,6 +12,8 @@ struct Jobs {
     std::list<JSWeakValue> activeFinalization;
     bool finalizing = false;
     bool invokingCleanup = false;
+    std::deque<JSValue> hostTasks;
+    bool runningHostTask = false;
 };
 thread_local Jobs jobs;
 }
@@ -40,6 +42,30 @@ std::size_t drainMicrotasks() {
     return count;
 }
 void endJSJob() { JSValue::clearKeptObjects(); }
+void queueHostTask(JSValue callback) {
+    if (!callback.isCallable()) throw JSTypeError("Host task callback must be callable");
+    jobs.hostTasks.push_back(std::move(callback));
+}
+bool hasPendingHostTasks() { return !jobs.hostTasks.empty(); }
+std::size_t drainHostTasks(std::size_t maximumJobs) {
+    if (jobs.running || jobs.finalizing || jobs.runningHostTask || maximumJobs == 0) return 0;
+    struct Guard {
+        Guard() { jobs.runningHostTask = true; }
+        ~Guard() { jobs.runningHostTask = false; }
+    } guard;
+    std::size_t count = 0;
+    std::exception_ptr firstError;
+    try { drainMicrotasks(); } catch (...) { firstError = std::current_exception(); }
+    while (!jobs.hostTasks.empty() && count < maximumJobs) {
+        endJSJob();
+        auto callback = std::move(jobs.hostTasks.front()); jobs.hostTasks.pop_front(); ++count;
+        try { callback.call(); } catch (...) { if (!firstError) firstError = std::current_exception(); }
+        try { drainMicrotasks(); } catch (...) { if (!firstError) firstError = std::current_exception(); }
+        endJSJob();
+    }
+    if (firstError) std::rethrow_exception(firstError);
+    return count;
+}
 void queueFinalizationRegistryCleanup(JSWeakValue registry) { jobs.finalization.push_back(std::move(registry)); }
 bool hasPendingFinalizationJobs() {
     std::erase_if(jobs.finalization, [](const auto& registry) { return registry.expired(); });

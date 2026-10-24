@@ -18,6 +18,9 @@ add_executable(THREECPPTests
         unit/src/nodes/core/NodeConstants.tests.cpp
         unit/src/nodes/core/Node.tests.cpp
         unit/src/nodes/core/NodeBuilder.tests.cpp
+        unit/src/nodes/core/NodeBuilderAsync.tests.cpp
+        unit/src/core/Float16BufferAttributeRuntime.tests.cpp
+        unit/src/nodes/parsers/ShaderParsers.tests.cpp
         unit/src/loaders/DataTextureLoader.tests.cpp
         unit/src/loaders/CompressedTextureLoader.tests.cpp
         unit/src/core/BufferGeometryLookAt.tests.cpp
@@ -1069,6 +1072,9 @@ if(THREECPP_NODE_EXECUTABLE)
     add_test(NAME threecpp.regexp-parity
         COMMAND "${THREECPP_NODE_EXECUTABLE}" "${CMAKE_CURRENT_SOURCE_DIR}/unit/utils/parity/compare-native-regexp.mjs"
         "$<TARGET_FILE:RegExpParityProbe>")
+    add_test(NAME threecpp.regexp-ignore-case-parity
+        COMMAND "${THREECPP_NODE_EXECUTABLE}" "${CMAKE_CURRENT_SOURCE_DIR}/unit/utils/parity/compare-native-regexp-ignore-case.mjs"
+        "$<TARGET_FILE:RegExpParityProbe>")
     add_test(NAME threecpp.regexp-protocol-parity
         COMMAND "${THREECPP_NODE_EXECUTABLE}" "${CMAKE_CURRENT_SOURCE_DIR}/unit/utils/parity/compare-native-regexp-protocol.mjs"
         "$<TARGET_FILE:RegExpProtocolProbe>")
@@ -1660,6 +1666,16 @@ if(THREEJS_SOURCE_DIR AND THREECPP_NODE_EXECUTABLE)
         "$<TARGET_FILE:ThreeJsQueryParityProbe>" "${THREEJS_SOURCE_DIR}")
 endif()
 
+add_executable(ThreeJsFloat16BufferAttributeParityProbe unit/utils/parity/Float16BufferAttributeParityProbe.cpp)
+add_executable(ThreeJsNodeBuilderBuildParityProbe unit/utils/parity/NodeBuilderBuildParityProbe.cpp)
+target_link_libraries(ThreeJsNodeBuilderBuildParityProbe PRIVATE threecpp::threecpp)
+add_executable(ThreeJsNodeBuilderPrebuildParityProbe unit/utils/parity/NodeBuilderPrebuildParityProbe.cpp)
+target_link_libraries(ThreeJsNodeBuilderPrebuildParityProbe PRIVATE threecpp::threecpp)
+target_link_libraries(ThreeJsFloat16BufferAttributeParityProbe PRIVATE threecpp::threecpp)
+add_executable(ThreeJsShaderParserParityProbe unit/utils/parity/ShaderParserParityProbe.cpp)
+target_link_libraries(ThreeJsShaderParserParityProbe PRIVATE threecpp::threecpp)
+add_executable(ThreeJsManagedRenderTargetParityProbe unit/utils/parity/ManagedRenderTargetParityProbe.cpp)
+target_link_libraries(ThreeJsManagedRenderTargetParityProbe PRIVATE threecpp::threecpp)
 add_executable(ThreeJsNodeCacheParityProbe unit/utils/parity/NodeCacheParityProbe.cpp)
 add_executable(ThreeJsRendererResourcesParityProbe unit/utils/parity/RendererResourcesParityProbe.cpp)
 target_link_libraries(ThreeJsRendererResourcesParityProbe PRIVATE threecpp::threecpp)
@@ -1683,6 +1699,24 @@ target_link_libraries(ThreeJsNodeCacheParityProbe PRIVATE threecpp::threecpp)
 add_executable(ThreeJsNodeFrameParityProbe unit/utils/parity/NodeFrameParityProbe.cpp)
 target_link_libraries(ThreeJsNodeFrameParityProbe PRIVATE threecpp::threecpp)
 if(THREECPP_NODE_EXECUTABLE AND THREEJS_SOURCE_DIR)
+    add_test(NAME threecpp.threejs-node-builder-build-parity
+        COMMAND "${THREECPP_NODE_EXECUTABLE}" "${CMAKE_CURRENT_SOURCE_DIR}/unit/utils/parity/compare-node-builder-build.mjs"
+        "${THREEJS_SOURCE_DIR}" "$<TARGET_FILE:ThreeJsNodeBuilderBuildParityProbe>")
+    add_test(NAME threecpp.threejs-node-builder-prebuild-parity
+        COMMAND "${THREECPP_NODE_EXECUTABLE}" "${CMAKE_CURRENT_SOURCE_DIR}/unit/utils/parity/compare-node-builder-prebuild.mjs"
+        "${THREEJS_SOURCE_DIR}" "$<TARGET_FILE:ThreeJsNodeBuilderPrebuildParityProbe>")
+    add_test(NAME threecpp.threejs-string-parser-protocol-parity
+        COMMAND "${THREECPP_NODE_EXECUTABLE}" "${CMAKE_CURRENT_SOURCE_DIR}/unit/utils/parity/compare-string-parser-protocol.mjs"
+        "$<TARGET_FILE:ThreeJsNodeBuilderBuildParityProbe>")
+    add_test(NAME threecpp.threejs-float16-buffer-attribute-parity
+        COMMAND "${THREECPP_NODE_EXECUTABLE}" "${CMAKE_CURRENT_SOURCE_DIR}/unit/utils/parity/compare-float16-buffer-attribute.mjs"
+        "${THREEJS_SOURCE_DIR}" "$<TARGET_FILE:ThreeJsFloat16BufferAttributeParityProbe>")
+    add_test(NAME threecpp.threejs-shader-parsers-parity
+        COMMAND "${THREECPP_NODE_EXECUTABLE}" "${CMAKE_CURRENT_SOURCE_DIR}/unit/utils/parity/compare-shader-parsers.mjs"
+        "${THREEJS_SOURCE_DIR}" "$<TARGET_FILE:ThreeJsShaderParserParityProbe>")
+    add_test(NAME threecpp.threejs-managed-render-target-parity
+        COMMAND "${THREECPP_NODE_EXECUTABLE}" "${CMAKE_CURRENT_SOURCE_DIR}/unit/utils/parity/compare-managed-render-target.mjs"
+        "${THREEJS_SOURCE_DIR}" "$<TARGET_FILE:ThreeJsManagedRenderTargetParityProbe>")
     add_test(NAME threecpp.threejs-node-base-parity
         COMMAND "${THREECPP_NODE_EXECUTABLE}" --expose-gc "${CMAKE_CURRENT_SOURCE_DIR}/unit/utils/parity/compare-node-base.mjs"
         "${THREEJS_SOURCE_DIR}" "$<TARGET_FILE:ThreeJsNodeBaseParityProbe>")

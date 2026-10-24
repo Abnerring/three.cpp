@@ -28,5 +28,6 @@ struct BufferAttributeRuntime {
     std::weak_ptr<BufferAttribute> owner;
 };
 void initializeBufferAttributeRuntime(BufferAttribute& attribute);
+void initializeFloat16BufferAttributeRuntime(BufferAttribute& attribute);
 void bindBufferAttributeRuntime(const JSValue& object,const std::shared_ptr<BufferAttribute>& attribute);
 std::shared_ptr<BufferAttribute> bufferAttributeRuntimeValue(const JSValue& object);

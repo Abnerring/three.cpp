@@ -1,5 +1,5 @@
 #pragma once
-#include "constants.h"
+#include "../constants.h"
 #include "core/BufferGeometry.h"
 #include "core/EventDispatcher.h"
 #include "core/SharedArray.h"

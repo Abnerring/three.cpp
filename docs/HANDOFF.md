@@ -1,22 +1,22 @@
 # 续接说明（Handoff）
 
-2026-10-24 当前阶段：CPU 全量 2,508 cases / 217,138 assertions；12 项 CTest 全通过（70.15 秒）。固定上游仍是 `11738a9d55e502fb484cefffcea3a66dc44e9fe9`，生产为原生 C++，Node 仅是开发差分 oracle，无 CEF/浏览器/JS 执行桥。
+2026-10-24 当前阶段：CPU 全量 2,528 cases / 217,372 assertions；16 项 CTest 全通过（91.00 秒），独立字符串/正则测试 12 cases / 158 assertions。固定上游 `11738a9d55e502fb484cefffcea3a66dc44e9fe9`；生产实现为原生 C++，Node 仅用于开发差分，不引入 CEF、浏览器或 JS 执行桥。以下当前说明优先于后面的历史记录。
 
-本轮实现实际 Input/Const/Uniform/UniformGroup、Code/Function/NodeFunction/Input、Property/Parameter，扩展 NodeBuilder 的绑定组合并/缓存/排序、backend→shaderNode 弱缓存、节点 uniform 映射和 flowShaderNode。现代资源补齐 Binding/Buffer/UniformBuffer、八类 Uniform/NodeUniform、UniformsGroup/NodeUniformsGroup；加入真实 Matrix2、Array.from、Object.values、九类 TypedArray 迭代。
+本轮实现 NodeBuilder 的 createRenderTarget/createCubeRenderTarget/getTypeFromAttribute/prebuild/buildAsync；新增节点阶段常量模块、原生 await 状态机、Promise constructor/@@species、独立 host task 与微任务检查点。异步构建持有真实迭代器，保留 yield/reject/IteratorClose、重入与失败后的部分状态；原生宿主仍需驱动任务队列。
 
-本轮差分：Builder 1,050，Input 等 303，Function 等 191 + 2 GC，Property/Parameter/TSL 315，资源/内建 336，分组 107。旧 Node 674 + 16 GC、NodeUtils/StackTrace 309 + 4 GC + 稳定 ArrayBuffer、StackNode 67、NodeCache 68 + 8 GC、NodeFrame 800 + 8 GC 均已回归。保留原 Builder 909、Property 156/312、分组 107 的输入/预期，修复后未改 oracle。
+新增真实管理 RenderTarget/common.CubeRenderTarget、Texture/Source/CubeTexture、Vector2/3/4 基础方法，以及 Float16BufferAttribute 构造器/原型与九种数值 TypedArray 构造入口。GLSLNodeParser/Function、WGSLNodeParser/Function 接入实际 FunctionNode；这里只完成函数文本解析与元数据，不代表完整 GLSL/WGSL 编译器或 GPU 路径。
 
-发现并修正：Matrix2 静态块的键顺序、for-in 删除检查、step/body 的 IteratorClose 差别、Number 链式赋值的 ToPropertyKey 时机、clearUpdateRanges 不转发 super 返回值、TypedArray 内部长度（忽略覆盖 length）、TSL 私有缓存创建顺序。相对节点 ID `[1,11]` 等已与上游精确比较。完整基本类型装箱、数学/宿主包装、生成器 return/throw 完成值保留时机等仍有边界，详见 PORTING。
+本轮固定源码差分通过：build 100、prebuild 115、Float16/TypedArray 923、parser 479、字符串协议 237、管理资源 161，另有 1 条原生实际 GC 检查。RegExp 非 Unicode i 模式 6,997 条与 3 条明确不支持检查通过；旧 RegExp 共 93,707 个场景回归通过，其中 704 项为既定不支持检查。修复空字符类量词导致的 555 项真实差异。parser 的三处 Infinity/-0 字段改用保留数值类型的无损编码，两侧普通预期未变；原始失败证据和旧输入/预期均保留。
 
-下一步优先：NodeBuilder 还缺 createRenderTarget/createCubeRenderTarget/getTypeFromAttribute/prebuild/buildAsync；默认 build 需 NodeMaterial。TSLCore 当前只导出 nodeObject/getConstNodeType，普通 shader function→Fn、完整 Node.prototype 扩展、节点材质及现代 Vulkan 均未实现；GLSL/WGSL parser 和 code/glslFn/wgslFn 工厂仍待连接。不要把 fact/helper、头文件存在或已注册抽象方法算作完整实现。完整模块初始化图的绝对节点 ID 仍待对齐。
+旧 Node、NodeUtils、Builder、Input、Function、Property、UniformsGroup、资源、Stack、Cache、Frame，以及 Promise/RegExp 协议与 GC 均完成本轮回归。主证据目录 `D:\Temp\surui\threecpp-builder-pipeline-20261024`；外部最终证据分别为 `shader-parsers-20261024-validation03`、`node-builder-prebuild-20261024-validation03`、`regexp-ignore-case-20261024-validation02`、`regexp-base-20261024-validation02`，均在 `D:\Temp\surui`。详细记录见 VALIDATION.md。
 
-最新主证据：`D:\Temp\surui\threecpp-node-resources-20261024`；分组原始失败/成功保留在 `threecpp-uniforms-group-20261024-validation01/02`；Builder `threecpp-builder-bindings-flow-20261024`；Input `threecpp-node-input-20261024-validation01`；Function `function-parity-20261024c`；Property/TSL `property-parity-20261024f`。上一阶段 Node/Stack/Cache/Frame 证据继续保留。
+文件对应统计：src 434/755，examples/jsm 84/496，合计 518/1,251（41.4%）；仍有 733 个尚无同路径文件。这是文件存在率，不是功能完成率。审计状态：partial-unverified 350、missing 591、vulkan-port-pending 290、dependency-unverified 20，解析错误 0；尚无模块按完整验收登记。审计单测 5 项及 --check 均通过。
 
-文件存在统计：src 428/755，examples/jsm 84/496，合计 512/1,251（40.9%），739 尚无同路径文件；这不是功能完成率。审计 partial-unverified 347、missing 594、vulkan-port-pending 290、dependency-unverified 20；全部仍未登记为完整验收。跨模块全量、全部 addons、GPU 和三平台未全量验收。
+下一步优先：NodeMaterial fallback、完整 TSL 的 Fn/节点工厂/Node.prototype 扩展与模块初始化图；现代节点材质、计算/存储资源及 Vulkan 后端。管理纹理/渲染目标尚需与旧数值 façade、NativeObject 和实际 Vulkan 分配/上传/dispose 统一桥接；完整向量/矩阵任意值、BufferAttribute 动态属性/构造/clone、TypedArray 全方法/species、Number.parseInt/isNaN 动态替换、全局 JSON 与图像/视频宿主适配仍有缺口。传统路径的完整材质、光照、阴影、后处理，以及剩余 addons 与跨平台/GPU 全量验证仍待推进。
 
-本轮没有改 Vulkan 源码/着色器，未重跑 GPU。最近历史验证是 Gaussian cube blur 60 GPU 断言、mipmap 修复后的 GPU 1,400 断言；仅支持各自冻结版本，证据保留于 `threecpp-pmrem-blur-20261024` 和 `threecpp-mipmap-20261024`。完整 PMREM/GGX/HDR mip、光照/阴影/完整材质/后处理等仍待实现。
+本轮没有修改 Vulkan 渲染算法或着色器，未重跑 GPU；VulkanRenderer.h 仅调整 constants.h 的明确路径，防止节点常量同名遮蔽。历史 Gaussian cube blur 60 GPU 断言、mipmap 1,400 GPU 断言仅支持各自冻结版本；不能外推到本轮新增管理资源。
 
-构建注意：MSVC 中文 /showIncludes 依赖可能失效；头文件变化后定向更新受影响 .cpp 时间戳，并核对实际编译日志。不要批量删除对象文件或运行中产物。
+构建依赖问题已修复并独立提交 `3da3db9`：配置时以 UTF-8 捕获真实 MSVC /showIncludes 本地化前缀，Ninja 正确跟踪头文件；独立 fixture 验证只改头文件后重编、结果由 17 变为 23。已完整重编并重链接本轮相关探针。历史要求删除对象或手动改时间戳的规避方式不再作为当前构建规则；不要删除运行中的产物。一次仅为提升并行度而中断的构建保留在 build-07-interruption.json，最终 build-08/build-09 均以 0 退出。
 
 ## 一、项目约定（必须遵守）
 

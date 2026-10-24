@@ -2,6 +2,7 @@
 // https://tc39.es/ecma262/multipage/control-abstraction-objects.html#sec-promise-objects
 #include "core/JSPromise.h"
 #include "core/AbortController.h"
+#include "core/JSRegExp.h"
 #include <exception>
 
 namespace {
@@ -35,6 +36,7 @@ JSValue caughtValue() {
     catch (const JSValue& thrown) { return thrown; }
     catch (const JSTypeError& error) { return errorValue("TypeError",error.what()); }
     catch (const JSRangeError& error) { return errorValue("RangeError",error.what()); }
+    catch (const JSSyntaxError& error) { return errorValue("SyntaxError",error.what()); }
     catch (const std::exception& error) { return errorValue("Error",error.what()); }
 }
 void install(JSValue object, const char* name, JSValue::NativeFunction callback, std::uint32_t length) {
@@ -56,7 +58,8 @@ void enqueueReaction(JSValue reaction, JSValue argument) {
             try { result=handler.call({}, {argument}); }
             catch (...) { result=caughtValue(); abrupt=true; }
         }
-        (abrupt?reject:resolve).call({}, {result});
+        const auto continuation = abrupt ? reject : resolve;
+        if (!continuation.isUndefined()) continuation.call({}, {result});
         return {};
     },{reaction,argument}));
 }
@@ -137,9 +140,10 @@ JSValue speciesConstructor(JSValue promise) {
     const auto constructor=promise.get("constructor");
     if (constructor.isUndefined()) return nativePromiseConstructor();
     if (!constructor.isObject()) throw JSTypeError("Promise constructor property must be an object");
-    // Symbol properties are not yet part of JSValue. Ordinary constructors with
-    // no supported species hook use the intrinsic constructor, as the spec does.
-    return nativePromiseConstructor();
+    const auto species=constructor.get(JSValue::wellKnownSymbol("species"));
+    if (species.isUndefined() || species.isNull()) return nativePromiseConstructor();
+    if (!species.isConstructible()) throw JSTypeError("Promise species is not a constructor");
+    return species;
 }
 JSValue thenMethod(const JSValue& promise,const Args& args,const Args&) {
     if (!isNativePromise(promise)) throw JSTypeError("Promise.then receiver is not a promise");
@@ -186,6 +190,10 @@ bool isNativePromise(const JSValue& value) {
 JSValue nativePromiseConstructor() {
     static thread_local JSValue constructor=[] {
         auto result=JSValue::builtinConstructor(initializePromise,{},"Promise",1);
+        JSPropertyDescriptor species;
+        species.getter=JSValue::function(+[](const JSValue& self,const Args&,const Args&)->JSValue { return self; },{},"get [Symbol.species]",0);
+        species.enumerable=false; species.configurable=true;
+        result.defineProperty(JSValue::wellKnownSymbol("species"),species);
         auto prototype=result.get("prototype");
         install(prototype,"then",thenMethod,2);
         install(prototype,"catch",+[](const JSValue& self,const Args& args,const Args&)->JSValue {
@@ -218,4 +226,26 @@ JSPromiseCapability createNativePromiseCapability() { return capability(nativePr
 JSValue resolveNativePromise(JSValue value) { return promiseResolve(nativePromiseConstructor(),std::move(value)); }
 JSValue rejectNativePromise(JSValue reason) {
     const auto result=createNativePromiseCapability(); result.reject.call({}, {reason}); return result.promise;
+}
+void awaitNativePromise(JSValue value, JSValue onFulfilled, JSValue onRejected) {
+    auto promise = promiseResolve(nativePromiseConstructor(), std::move(value));
+    const auto make = [&](bool rejected) {
+        auto reaction = JSValue::object(nullptr);
+        reaction.set("handler", rejected ? onRejected : onFulfilled);
+        reaction.set("rejectReaction", rejected);
+        reaction.set("resolve", {}); reaction.set("reject", {});
+        return reaction;
+    };
+    const auto state = promise.getHostSlot(stateSlot);
+    if (state.strictEquals("pending")) {
+        auto fulfilled = promise.getHostSlot(fulfillSlot), rejected = promise.getHostSlot(rejectSlot);
+        fulfilled.set(std::to_string(fulfilled.length()), make(false));
+        rejected.set(std::to_string(rejected.length()), make(true));
+    } else enqueueReaction(make(state.strictEquals("rejected")), promise.getHostSlot(resultSlot));
+    promise.setHostSlot("Promise.handled", true);
+}
+JSValue nativeExceptionValue(std::exception_ptr error) {
+    if (!error) throw std::logic_error("No native exception to translate");
+    try { std::rethrow_exception(error); }
+    catch (...) { return caughtValue(); }
 }

@@ -1,11 +1,13 @@
 #pragma once
-#include "constants.h"
+#include "../constants.h"
 #include "core/EventDispatcher.h"
 #include "core/JSValue.h"
 #include "math/Matrix3.h"
 #include "textures/TextureSource.h"
 #include <functional>
 #include <optional>
+
+JSValue nativeTextureConstructor();
 
 class RenderTarget;
 class Texture : public EventDispatcher {

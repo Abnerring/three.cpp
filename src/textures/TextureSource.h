@@ -8,6 +8,8 @@
 #include <memory>
 #include <variant>
 
+JSValue nativeTextureSourceConstructor();
+
 class Texture;
 struct TextureJSONContext {
     OrderedMap<JsonValue> textures, images;

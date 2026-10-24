@@ -43,8 +43,20 @@ TEST_CASE("RegExp construction preserves slots call identity and new target", "[
     REQUIRE_THROWS_AS(createNativeRegExp("a", "gg"), JSSyntaxError);
     REQUIRE_THROWS_AS(createNativeRegExp("a", "z"), JSSyntaxError);
     REQUIRE_THROWS_AS(createNativeRegExp("a", "uv"), JSSyntaxError);
-    for (const auto* flags : {"d", "i", "u", "v"})
+    for (const auto* flags : {"d", "u", "v"})
         REQUIRE_THROWS_AS(createNativeRegExp("a", flags), JSRegExpUnsupported);
+    REQUIRE(method("test").call(createNativeRegExp("a", "i"), {"A"}).strictEquals(true));
+}
+TEST_CASE("RegExp ignoreCase follows non-Unicode Canonicalize and preserves captures", "[native-regexp]") {
+    const auto test = [](const JSValue& pattern, const JSValue& text) { return method("test").call(createNativeRegExp(pattern, "i"), {text}).toBoolean(); };
+    REQUIRE(test("[a-z]+", "ABC")); REQUIRE(test("ä", "Ä")); REQUIRE(test("ς", "Σ")); REQUIRE(test("µ", "Μ"));
+    REQUIRE_FALSE(test("[a-z]", "ſ")); REQUIRE_FALSE(test("[a-z]", "K")); REQUIRE_FALSE(test("s", "ſ")); REQUIRE_FALSE(test("k", "K"));
+    REQUIRE_FALSE(test("ß", "SS")); REQUIRE(test("[a-ß]", "Μ")); REQUIRE_FALSE(test("[^a-ß]", "Μ"));
+    REQUIRE(test("[^^a]", "b")); REQUIRE_FALSE(test("[^^a]", "A")); REQUIRE_FALSE(test("[^^a]", "^"));
+    REQUIRE(test("[^]", "A")); REQUIRE_FALSE(test("[]", "A")); REQUIRE(test("[]*", "")); REQUIRE_FALSE(test("[]+", "A"));
+    REQUIRE(test(R"(\141\u0062\x63)", "ABC"));
+    const auto value = method("exec").call(createNativeRegExp(R"(([a-z])\1)", "i"), {"aA"});
+    REQUIRE(value.get("0").strictEquals("aA")); REQUIRE(value.get("1").strictEquals("a")); REQUIRE(value.get("index").strictEquals(0));
 }
 TEST_CASE("RegExp lastIndex descriptors preserve arbitrary values and write failures",
           "[native-regexp]") {

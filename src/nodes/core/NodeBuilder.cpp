@@ -1,4 +1,6 @@
 #include "nodes/core/NodeBuilder.h"
+#include "nodes/core/NodeBuilderAsync.h"
+#include "nodes/core/constants.h"
 #include "nodes/core/NodeCache.h"
 #include "nodes/core/NodeUtils.h"
 #include "nodes/core/NodeAttribute.h"
@@ -14,14 +16,17 @@
 #include "core/JSModuleObject.h"
 #include "core/JSIterator.h"
 #include "core/JSSet.h"
+#include "core/JSString.h"
 #include "core/JSWeakMap.h"
 #include "core/NativeArray.h"
 #include "core/NativeObject.h"
+#include "core/RenderTarget.h"
+#include "renderers/common/CubeRenderTarget.h"
 #include "math/Color.h"
 #include "math/Vector2.h"
 #include "math/Vector3.h"
 #include "math/Vector4.h"
-#include "constants.h"
+#include "../../constants.h"
 #include "utils.h"
 #include <algorithm>
 #include <cmath>
@@ -64,11 +69,12 @@ JSValue stages(bool arrays, bool index = false) {
     if (index) result.set("index", 0);
     return result;
 }
-JSValue spread(const Args& sources) {
-    auto result = JSValue::object();
-    for (auto source : sources) {
-        if (source.isUndefined() || source.isNull()) continue;
-        if (!source.isObject()) source = JSValue::intrinsicObjectConstructor().call({}, {source});
+void spreadInto(JSValue result, JSValue source) {
+        if (source.isUndefined() || source.isNull()) return;
+        if (!source.isObject()) {
+            if (source.type() == JSValue::Type::String) source = createNativeStringObject(source);
+            else return;
+        }
         for (const auto& key : source.ownPropertyKeys()) {
             const auto descriptor = source.getOwnPropertyDescriptor(key);
             if (descriptor && descriptor->enumerable.value_or(false)) {
@@ -78,7 +84,10 @@ JSValue spread(const Args& sources) {
                 result.defineProperty(key, copy);
             }
         }
-    }
+}
+JSValue spread(const Args& sources) {
+    auto result = JSValue::object();
+    for (auto source : sources) spreadInto(result, source);
     return result;
 }
 std::vector<std::string> forIn(JSValue value) {
@@ -288,6 +297,18 @@ JSValue dispatch(const JSValue& receiver, const Args& args, const Args& captures
     if (name == "isOpaque") {
         const auto material = self.get("material");
         return material.get("transparent").strictEquals(false) && material.get("blending").strictEquals(NormalBlending) && material.get("alphaToCoverage").strictEquals(false);
+    }
+    if (name == "createRenderTarget") return nativeRenderTargetConstructor().construct({a, raw(args, 1), raw(args, 2)});
+    if (name == "createCubeRenderTarget") return nativeCubeRenderTargetConstructor().construct({a, raw(args, 1)});
+    if (name == "getTypeFromAttribute") {
+        auto dataAttribute = a;
+        if (a.get("isInterleavedBufferAttribute").toBoolean()) dataAttribute = a.get("data");
+        const auto array = dataAttribute.get("array");
+        const auto itemSize = a.get("itemSize");
+        const auto normalized = a.get("normalized");
+        JSValue arrayType;
+        if (!instanceOfFloat16BufferAttribute(a) && !normalized.strictEquals(true)) arrayType = invoke(self, "getTypeFromArray")({array});
+        return invoke(self, "getTypeFromLength")({itemSize, arrayType});
     }
     if (name == "includes") return invoke(self.get("nodes"), "has")({a});
     if (name == "getOutputType") {
@@ -824,19 +845,48 @@ JSValue dispatch(const JSValue& receiver, const Args& args, const Args& captures
         const auto subBuild = !node.isNull() ? invoke(self, "getClosestSubBuild")({node}) : self.get("subBuildFn");
         return subBuild.toBoolean() ? (property.toBoolean() ? add(add(subBuild, "_"), property) : subBuild) : property;
     }
+    if (name == "prebuild") {
+        const auto renderer = self.get("renderer");
+        const auto material = self.get("material");
+        if (renderer.get("contextNode").get("isContextNode").strictEquals(true)) {
+            auto context = spread({self.get("context")});
+            const auto data = invoke(renderer.get("contextNode"), "getFlowContextData")();
+            spreadInto(context, data); self.set("context", context);
+        } else ThreeUtils::error({"NodeBuilder: \"renderer.contextNode\" must be an instance of `context()`."});
+        if (material.toBoolean() && material.get("contextNode").toBoolean()) {
+            if (material.get("contextNode").get("isContextNode").strictEquals(true)) {
+                auto context = spread({self.get("context")});
+                const auto data = invoke(material.get("contextNode"), "getFlowContextData")();
+                spreadInto(context, data); self.set("context", context);
+            } else ThreeUtils::error({"NodeBuilder: \"material.contextNode\" must be an instance of `context()`."});
+        }
+        if (!material.isNull()) {
+            const auto nodeMaterial = invoke(renderer.get("library"), "fromMaterial")({material});
+            if (nodeMaterial.isNull()) {
+                ThreeUtils::error({"NodeBuilder: Material \"" + material.get("type").toString() + "\" is not compatible."});
+                throw std::logic_error("NodeBuilder fallback requires the pending NodeMaterial implementation");
+            }
+            invoke(nodeMaterial, "build")({self});
+        } else invoke(self, "addFlow")({"compute", self.get("compute")});
+        return {};
+    }
+    if (name == "buildAsync") {
+        const auto state = captures[1];
+        return buildNodeBuilderAsync(self, arg(args, 0, state.get("yieldToMain")), state.get("buildStages"), state.get("shaderStages"));
+    }
     if (name == "build") {
         invoke(self, "prebuild")();
-        for (const auto* stage : {"setup", "analyze", "generate"}) {
+        each(captures[1].get("buildStages"), [&](const JSValue& stage) {
             invoke(self, "setBuildStage")({stage});
             if (self.get("context").get("position").toBoolean() && self.get("context").get("position").get("isNode").toBoolean())
                 invoke(self, "flowNodeFromShaderStage")({"vertex", self.get("context").get("position")});
-            for (const auto* shaderStage : {"fragment", "vertex", "compute"}) {
+            each(captures[1].get("shaderStages"), [&](const JSValue& shaderStage) {
                 invoke(self, "setShaderStage")({shaderStage});
                 each(self.get("flowNodes").get(shaderStage), [&](const JSValue& node) {
-                    if (std::string(stage) == "generate") invoke(self, "flowNode")({node}); else invoke(node, "build")({self});
+                    if (stage.strictEquals("generate")) invoke(self, "flowNode")({node}); else invoke(node, "build")({self});
                 });
-            }
-        }
+            });
+        });
         invoke(self, "setBuildStage")({nullptr}); invoke(self, "setShaderStage")({nullptr});
         invoke(self, "buildCode")(); invoke(self, "buildUpdateNodes")(); return self;
     }
@@ -887,12 +937,13 @@ JSValue nativeNodeBuilderConstructor() {
     auto arrayConstructors = JSValue::array();
     for (unsigned i = 0; i < 7; ++i) arrayConstructors.set(std::to_string(i), NativeArray_detail::constructor(i));
     state.set("arrayConstructors", arrayConstructors);
+    const auto constants = nativeNodeConstants();
+    state.set("buildStages", constants.get("defaultBuildStages")); state.set("shaderStages", constants.get("shaderStages"));
+    state.set("yieldToMain", JSValue::function(+[](const JSValue&, const Args&, const Args&) { return ThreeUtils::yieldToMain(); }, {}, "yieldToMain", 0));
     auto constructor = JSValue::constructor(initialize, {state}, "NodeBuilder", 3);
     auto prototype = constructor.get("prototype");
-    // Unported concrete dependencies (render targets/attribute constructors,
-    // prebuild/NodeMaterial and async build) deliberately have no pretend implementation.
     for (const auto [name, arity] : {
-        std::pair{"isFlatShading", 0u}, {"isOpaque", 0u}, {"includes", 1u}, {"getOutputType", 0u}, {"getOutputStructName", 0u},
+        std::pair{"isFlatShading", 0u}, {"isOpaque", 0u}, {"createRenderTarget", 3u}, {"createCubeRenderTarget", 2u}, {"includes", 1u}, {"getOutputType", 0u}, {"getOutputStructName", 0u},
         {"_getBindGroup", 2u}, {"getBindGroupArray", 2u}, {"getBindings", 0u}, {"sortBindingGroups", 0u},
         {"setHashNode", 2u}, {"addNode", 1u}, {"addSequentialNode", 1u}, {"buildUpdateNodes", 0u}}) method(prototype, name, arity, state);
     getter(prototype, "currentNode"); getter(prototype, "renderPipeline");
@@ -910,7 +961,7 @@ JSValue nativeNodeBuilderConstructor() {
         {"getType", 1u}, {"hasGeometryAttribute", 1u}, {"getAttribute", 2u}, {"getPropertyName", 1u},
         {"isScalar", 1u}, {"isReservedKeyword", 0u}, {"isVector", 1u}, {"isMatrix", 1u}, {"isReference", 1u},
         {"needsToWorkingColorSpace", 0u}, {"getComponentTypeFromTexture", 1u}, {"getElementType", 1u},
-        {"getComponentType", 1u}, {"getVectorType", 1u}, {"getTypeFromLength", 1u}, {"getTypeFromArray", 1u},
+        {"getComponentType", 1u}, {"getVectorType", 1u}, {"getTypeFromLength", 1u}, {"getTypeFromArray", 1u}, {"getTypeFromAttribute", 1u},
         {"isInteger", 1u}, {"getTypeLength", 1u}, {"getVectorFromMatrix", 1u}, {"changeComponentType", 2u},
         {"getPromotedComponentType", 0u}, {"getIntegerType", 1u}, {"setActiveStack", 1u}, {"removeActiveStack", 1u},
         {"getActiveStack", 0u}, {"getBaseStack", 0u}, {"addStack", 0u}, {"removeStack", 0u},
@@ -927,7 +978,7 @@ JSValue nativeNodeBuilderConstructor() {
     getter(prototype, "subBuild");
     for (const auto [name, arity] : {
         std::pair{"addSubBuild", 1u}, {"removeSubBuild", 0u}, {"getClosestSubBuild", 1u}, {"getSubBuildOutput", 1u},
-        {"getSubBuildProperty", 0u}, {"build", 0u}, {"getNodeUniform", 2u}, {"format", 3u}, {"getSignature", 0u}, {"needsPreviousData", 0u}}) method(prototype, name, arity, state);
+        {"getSubBuildProperty", 0u}, {"prebuild", 0u}, {"build", 0u}, {"buildAsync", 0u}, {"getNodeUniform", 2u}, {"format", 3u}, {"getSignature", 0u}, {"needsPreviousData", 0u}}) method(prototype, name, arity, state);
     constructor.retainForHeapLifetime(); weak = JSWeakValue(constructor); return constructor;
 }
 NodeBuilder::NodeBuilder(JSValue nodeObject, JSValue renderer, JSValue parser) {

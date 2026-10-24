@@ -98,33 +98,56 @@ JSValue typedConstructor(std::size_t kind);
 JSValue bufferConstructor();
 JSValue constructTyped(const JSValue& receiver,const Args& args,const Args& captures) {
     const auto kind=std::size_t(captures[0].number()); const auto first=arg(args,0);
-    auto result=select(kind,[&]<class T>()->JSValue {
+    const auto allocationPrototype=[&] {
+        const auto prototype=receiver.get("prototype");
+        return prototype.isObject()?prototype:typedConstructor(kind).get("prototype");
+    };
+    const auto inherit=[](const InterpolantArray& array,const JSValue& prototype) {
+        auto result=NativeArray_detail::wrap(array);result.setPrototype(prototype);return result;
+    };
+    return select(kind,[&]<class T>()->JSValue {
         if(first.isHostObject(bufferTag)) {
+            const auto prototype=allocationPrototype();
             const auto storage=arrayBuffer(first);
             const auto offset=TypedArray_detail::toIndex(arg(args,1).toNumber());
             // Misalignment is checked before converting the optional length.
             if(offset%T::BYTES_PER_ELEMENT) throw JSRangeError("TypedArray byteOffset is unaligned");
             std::optional<double> count;
             if(!arg(args,2).isUndefined()) count=double(TypedArray_detail::toIndex(arg(args,2).toNumber()));
-            return NativeArray_detail::wrap(T(storage,double(offset),count));
+            return inherit(T(storage,double(offset),count),prototype);
         }
         if(first.isHostObject(typedTag)) {
+            const auto prototype=allocationPrototype();
             const auto source=NativeArray_detail::unwrap(first);
-            return std::visit([](const auto& values)->JSValue {
+            return std::visit([&](const auto& values)->JSValue {
                 using S=std::decay_t<decltype(values)>;
                 if constexpr(std::is_same_v<S,JSValue>) throw JSTypeError("Expected typed array");
-                else if constexpr(std::is_same_v<S,T>) return NativeArray_detail::wrap(values.slice());
-                else return NativeArray_detail::wrap(T(values));
+                else if constexpr(std::is_same_v<S,T>) return inherit(values.slice(),prototype);
+                else return inherit(T(values),prototype);
             },source.storage());
         }
         if(first.isObject()) {
-            const auto length=lengthOf(first.get("length")); T array(TypedArray_detail::toIndex(length));
+            const auto iteratorMethod=first.get(JSValue::wellKnownSymbol("iterator"));
+            if(!iteratorMethod.isUndefined()&&!iteratorMethod.isNull()) {
+                // TypedArray construction runs IterableToList before allocating
+                // the backing store or coercing any collected element.
+                const auto iterator=iteratorMethod.call(first);
+                if(!iterator.isObject()) throw JSTypeError("Iterator must return an object");
+                JSIteratorRecord record{iterator,iterator.get("next")};
+                std::vector<JSValue> values;
+                while(const auto value=stepJSIterator(record)) values.push_back(*value);
+                const auto prototype=allocationPrototype();
+                T array(values.size());
+                for(std::size_t i=0;i<values.size();++i) array.setIndex(double(i),values[i].toNumber());
+                return inherit(array,prototype);
+            }
+            const auto length=lengthOf(first.get("length"));const auto prototype=allocationPrototype();T array(TypedArray_detail::toIndex(length));
             for(double i=0;i<length;++i) array.setIndex(i,first.get(JSValue(i).toString()).toNumber());
-            return NativeArray_detail::wrap(array);
+            return inherit(array,prototype);
         }
-        return NativeArray_detail::wrap(T(TypedArray_detail::toIndex(first.toNumber())));
+        const auto length=TypedArray_detail::toIndex(first.toNumber());const auto prototype=allocationPrototype();
+        return inherit(T(length),prototype);
     });
-    result.setPrototype(receiver.getPrototype());return result;
 }
 JSValue typedMethod(const JSValue& self,const Args& args,const Args& captures) {
     const auto kind=kindOf(self);const auto& name=captures[0].string();
@@ -185,7 +208,7 @@ JSValue typedBase() {
 JSValue typedConstructor(std::size_t kind) {
     static thread_local std::array<JSWeakValue,9> constructors;
     if(const auto value=constructors[kind].lock();value&&value->isObject())return *value;
-    auto constructor=JSValue::constructor(constructTyped,{double(kind)},names[kind],3);
+    auto constructor=JSValue::builtinConstructor(constructTyped,{double(kind)},names[kind],3);
     auto prototype=constructor.get("prototype");prototype.setPrototype(typedBase());
     const auto bytes=select(kind,[]<class T>{return double(T::BYTES_PER_ELEMENT);});
     constructor.defineProperty("BYTES_PER_ELEMENT",data(bytes,false,false,false));

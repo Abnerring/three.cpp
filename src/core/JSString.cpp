@@ -71,6 +71,33 @@ JSValue getMethod(const JSValue& object,const char* symbol) {
     if(!method.isCallable())throw JSTypeError("String protocol method is not callable");
     return method;
 }
+JSValue match(const JSValue& self,const Args& args,const Args&) {
+    if(self.isNull()||self.isUndefined())throw JSTypeError("String method called on null or undefined");
+    const auto pattern=argument(args,0);
+    if(!pattern.isNull()&&!pattern.isUndefined()) {
+        const auto method=getMethod(pattern,"match");
+        if(!method.isUndefined())return method.call(pattern,{self});
+    }
+    const auto text=self.toString();
+    const auto regexp=nativeRegExpConstructor().construct({pattern});
+    const auto method=regexp.get(JSValue::wellKnownSymbol("match"));
+    return method.call(regexp,{text});
+}
+JSValue substring(const JSValue& self,const Args& args,const Args&) {
+    if(self.isNull()||self.isUndefined())throw JSTypeError("String method called on null or undefined");
+    const auto text=jsUTF16(self.toString());
+    const auto length=double(text.size());
+    const auto clamp=[&](const JSValue& value) {
+        const auto number=value.toNumber();
+        const auto integer=std::isnan(number)||number==0?0:std::trunc(number);
+        return std::min(std::max(integer,0.0),length);
+    };
+    const auto start=clamp(argument(args,0));
+    const auto endValue=argument(args,1);
+    const auto end=endValue.isUndefined()?length:clamp(endValue);
+    const auto from=std::min(start,end),to=std::max(start,end);
+    return jsUTF8(std::u16string_view(text).substr(static_cast<std::size_t>(from),static_cast<std::size_t>(to-from)));
+}
 void coercible(const JSValue& self) {
     if(self.isNull()||self.isUndefined())throw JSTypeError("String method called on null or undefined");
 }
@@ -157,6 +184,7 @@ JSValue createNativeStringPrototype(){
     };
     install("indexOf",indexOf,1);install("replace",replace,2);install("split",split,2);install("trim",trim,0);install("toUpperCase",toUpperCase,0);
     install("charCodeAt",charCodeAt,1);install("slice",slice,2);
+    install("match",match,1);install("substring",substring,2);
     return prototype;
 }
 JSValue createNativeStringObject(const JSValue& text){

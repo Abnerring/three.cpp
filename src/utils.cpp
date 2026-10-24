@@ -1,5 +1,6 @@
 // Ported warning/console protocol from three.js utils.js; see THREEJS-LICENSE.
 #include "utils.h"
+#include "core/JSPromise.h"
 #include "constants.h"
 #include "core/JSIterator.h"
 #include "renderers/webgl/WebGLInfo.h"
@@ -70,6 +71,11 @@ JSValue ThreeUtils::nativeReversedDepthFuncs(){
     result.retainForHeapLifetime();weak=JSWeakValue(result);return result;
 }
 void ThreeUtils::setConsoleFunction(const JSValue& callback){static_cast<void>(JSWeakValue(callback));WebGLInfo::setConsoleFunction(callback);}
+JSValue ThreeUtils::yieldToMain() {
+    const auto capability = createNativePromiseCapability();
+    queueHostTask(capability.resolve);
+    return capability.promise;
+}
 JSValue ThreeUtils::getConsoleFunction(){return WebGLInfo::getConsoleFunction();}
 void ThreeUtils::warn(const Args& params){for(const auto& value:params)static_cast<void>(JSWeakValue(value));logArray(rest(params),"warn");}
 void ThreeUtils::error(const Args& params){for(const auto& value:params)static_cast<void>(JSWeakValue(value));logArray(rest(params),"error");}

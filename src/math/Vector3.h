@@ -8,6 +8,8 @@
 
 #ifndef VECTOR3_H
 #define VECTOR3_H
+#include "core/JSValue.h"
+JSValue nativeVector3Constructor();
 
 #include "core/BasicType.h"
 #include <vector>

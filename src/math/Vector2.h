@@ -8,6 +8,8 @@
 
 #ifndef VECTOR2_H
 #define VECTOR2_H
+#include "core/JSValue.h"
+JSValue nativeVector2Constructor();
 
 #include "core/BasicType.h"
 #include "core/Property.h"

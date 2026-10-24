@@ -4,6 +4,10 @@
 #include "math/Vector4.h"
 #include "textures/Texture.h"
 
+// Canonical managed constructor. The numerical facade below remains available
+// to the existing renderer; its GPU resource bridge is separate.
+JSValue nativeRenderTargetConstructor();
+
 class RenderTarget : public EventDispatcher {
   public:
     struct TextureProperty {
