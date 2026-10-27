@@ -21,6 +21,8 @@
 
 ## C++ 适配
 
+2026-10-28 最新追加：新增管理 Material/共享 Constants、Position/Normal/UV/纹理尺寸/正反面节点与 NodeMaterialObserver，修复实际运行时内建与原生资源字段依赖。所选 CPU75/75、Vulkan5/5通过；Material1099+11fresh、纹理访问器511、Proxy923通过，Position与Observer的绝对导入编号缺口仍明确保留。完整 NodeMaterial、TextureNode、现代Vulkan及全库一致性未完成，精确范围见 VALIDATION。
+
 2026-10-28 最新追加：实际移植 Attribute/Buffer/UniformArray/Builtin、Camera/Screen、Object3D/Model 与所需管理数学运算，目录按上游迁移；修复 Node/NodeFrame 可变枚举、Builder 注释误执行及 Model 弱缓存。所选 CPU65/65、Vulkan5/5通过；Screen/Model 完整绝对导入仍有真实 id 差异，relative范围与管理数学子集明确保留。完整 NodeMaterial/现代Vulkan及全功能目标尚未完成，准确证据见 VALIDATION。
 
 2026-10-28 最新追加：TSLBase接25真实模块/217导出，补属性、计算、引用、Inspector与颜色输出链及完整ToneMappingFunctions图。修复TSL普通函数构造语义、UniformGroup首导入及Interleaved/复制生命周期。所选CPU55/55、Vulkan5/5通过；四套节点默认绝对编号仍有差异，relative范围明确记录。新增节点图尚未全部接入现代Vulkan GPU链，完整功能目标未完成。准确范围与原始证据见VALIDATION.md。

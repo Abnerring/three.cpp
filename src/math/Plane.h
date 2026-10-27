@@ -1,6 +1,7 @@
 #pragma once
 #include "core/JsonValue.h"
 #include "math/Vector3.h"
+JSValue nativePlaneConstructor();
 class Line3;
 class Box3;
 class Sphere;

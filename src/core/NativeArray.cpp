@@ -273,6 +273,9 @@ JSValue NativeArray_detail::wrap(const InterpolantArray& array) {
         }
     },array.storage());
 }
+bool NativeArray_detail::isNumericProperty(const JSValue& value, const std::string& key) {
+    return value.isHostObject(typedTag) && numeric(key);
+}
 JSValue NativeArray_detail::constructor(std::size_t kind) { return typedConstructor(kind); }
 InterpolantArray NativeArray_detail::unwrap(const JSValue& value) {
     if(!value.isHostObject(typedTag)) return value;

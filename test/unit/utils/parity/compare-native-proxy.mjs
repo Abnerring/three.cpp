@@ -9,6 +9,8 @@ function decode(v,s){if(!v||typeof v!=='object')return v;if(v.tag==='undefined')
 function descriptor(v,s){const out={};for(const key of ['value','writable','get','set','enumerable','configurable'])if(Object.hasOwn(v,key))out[key]=decode(v[key],s);return out;}
 function descriptorObject(d,s){if(!d)return '#undefined';const out={};for(const key of ['value','writable','get','set','enumerable','configurable'])if(Object.hasOwn(d,key))out[key]=normal(d[key],s);return out;}
 function run(r){
+    if(r.kind==='typedArrayLookup')return typedArrayLookup(r);
+    if(r.kind==='ordinarySetPrototype')return ordinarySetPrototype(r);
     if(r.kind==='arrayMethods')return arrayMethods(r);
     const s={r,events:[],symbol:Symbol('key'),proto:{},otherProto:{},receiver:{}};let target=Object.create(s.proto);
     if(r.target==='array'){target=[1];Object.setPrototypeOf(target,s.proto);}
@@ -68,6 +70,20 @@ function arrayMethods(r){
     let result;try{result=normal(method.apply(actual,args),s);}catch(e){result='#'+e.name;}
     return {result,events:s.events,fields:Object.getOwnPropertyNames(target).filter(key=>key!=='length').map(key=>{const d=Object.getOwnPropertyDescriptor(target,key);return [key,normal(target[key],s),!!d.writable,!!d.enumerable,!!d.configurable];}),arity:method.length};
 }
+function ordinarySetPrototype(r){const out={},events=[],target=Object.create(null);if(r.scenario==='ordinaryCycle'){const child=Object.create(target);out.result=Reflect.setPrototypeOf(target,child);out.selfCycle=Reflect.setPrototypeOf(target,target);out.parentUnchanged=Object.getPrototypeOf(target)===null;out.childBacklink=Object.getPrototypeOf(child)===target;out.cleanup=Reflect.setPrototypeOf(child,null);}else{const protoTarget=Object.create(r.scenario==='proxyCycle'?target:null),handler={};if(r.scenario==='proxyTrapThrows')handler.getPrototypeOf=function(){events.push(['getPrototypeOf']);throw new TypeError('prototype trap must not be called');};const proxy=new Proxy(protoTarget,handler);try{out.result=Reflect.setPrototypeOf(target,proxy);}catch(e){out.result='#'+e.name;}out.linked=Object.getPrototypeOf(target)===proxy;out.cleanup=Reflect.setPrototypeOf(target,null);if(r.scenario==='proxyCycle'){out.targetBacklink=Object.getPrototypeOf(protoTarget)===target;out.proxyBacklink=Object.getPrototypeOf(proxy)===target;}}out.events=events;return out;}
+function typedArrayLookup(r){
+    const s={events:[]},proto=Object.create(null),constructors=[Int8Array,Uint8Array,Int16Array,Uint16Array,Int32Array,Uint32Array,Float32Array,Float64Array,Uint8ClampedArray];
+    const target=s.target=r.mode==='spoof'?{isTypedArray:true,type:'Uint8Array'}:new constructors[r.arrayKind]([17]);Object.setPrototypeOf(target,proto);
+    const keys=['0','1','2','-0','NaN','Infinity','-Infinity','-1','0.5','9007199254740992','1e+21','1e-7','01','+0','1.0','1e0','1e21','0.0000001',' 1 ','','foo'];
+    for(const key of keys)Object.defineProperty(proto,key,{enumerable:true,configurable:true,get(){s.events.push(['inheritedGet',key,normal(this,s)]);return 'inherited:'+key;}});
+    let actual=target;
+    if(r.mode==='proxy'||r.mode==='forward'){
+        const handler=r.mode==='forward'?{get(target,key,receiver){s.events.push(['forwardGet',key,normal(receiver,s)]);return Reflect.get(target,key,receiver);},has(target,key){s.events.push(['forwardHas',key]);return Reflect.has(target,key);}}:{};
+        actual=s.proxy=new Proxy(target,handler);
+    }else if(r.mode==='child')actual=s.receiver=Object.create(target);
+    const rows=keys.map(key=>{let value;try{value=normal(Reflect.get(actual,key),s);}catch(e){value='#'+e.name;}return [key,value,key in actual,Object.hasOwn(actual,key)];});
+    return {rows,events:s.events};
+}
 const cases=[];
 const operations=['get','set','has','deleteProperty','getOwnPropertyDescriptor','defineProperty','ownKeys','getPrototypeOf','setPrototypeOf','isExtensible','preventExtensions','apply','construct'];
 for(const operation of operations)for(const mode of ['absent','null','forward','noncallable','throw'])for(const getter of [false,true])cases.push({operation,trap:operation,mode,getter,target:operation==='apply'||operation==='construct'?'function':'plain',extensible:true,configurable:true,writable:true,descriptor:{value:8,writable:true,configurable:true,enumerable:true}});
@@ -102,6 +118,11 @@ for(const nested of [false,true])for(const mode of ['absent','null','forward'])c
 for(const nested of [false,true])for(const getterThrow of [false,true])cases.push({operation:'reflectPreventExtensions',trap:'preventExtensions',mode:'throw',nested,extensible:true,getter:true,getterThrow});
 for(const nested of [false,true])cases.push({operation:'reflectPreventExtensions',trap:'preventExtensions',mode:'return',nested,extensible:true,result:true,mutateTarget:true});
 const preventExtensionsCases=cases.length-preventExtensionsStart;
+assert.equal(cases.length,883,'Preserve the original Proxy/Array protocol prefix');
+for(const scenario of ['proxyTrapThrows','ordinaryCycle','proxyCycle'])cases.push({kind:'ordinarySetPrototype',scenario});
+assert.equal(cases.length,886,'Preserve the OrdinarySetPrototypeOf regression prefix');
+for(let arrayKind=0;arrayKind<9;arrayKind++)for(const mode of ['raw','proxy','forward','child'])cases.push({kind:'typedArrayLookup',arrayKind,mode});
+cases.push({kind:'typedArrayLookup',arrayKind:1,mode:'spoof'});
 const expected=cases.map(run);
 if(outputDirectory){fs.mkdirSync(outputDirectory,{recursive:true});fs.writeFileSync(path.join(outputDirectory,'input.json'),JSON.stringify(cases));fs.writeFileSync(path.join(outputDirectory,'expected.json'),JSON.stringify(expected,null,2));}
 if(!binary){console.log(`Prepared ${cases.length} native Proxy oracle scenarios using ${process.version}`);process.exit(0);}
@@ -111,4 +132,4 @@ assert.equal(actual.length,expected.length);const differences=[];for(let i=0;i<c
 if(outputDirectory)fs.writeFileSync(path.join(outputDirectory,'differences.json'),JSON.stringify(differences,null,2));
 assert.equal(differences.length,0,JSON.stringify(differences.slice(0,4),null,2));
 const gc=JSON.parse(execFileSync(binary,['gc'],{encoding:'utf8'}));assert.deepEqual(gc,[[true,true,true],[false,false,false]]);if(outputDirectory)fs.writeFileSync(path.join(outputDirectory,'native-gc.json'),JSON.stringify(gc));
-console.log(`Native Proxy: ${proxyCases+preventExtensionsCases} real ECMAScript scenarios; Array reduce/every/fill: ${arrayCases} real ECMAScript scenarios; + 1 native GC snapshot passed`);
+console.log(`Native Proxy: ${proxyCases+preventExtensionsCases} real ECMAScript scenarios; Array reduce/every/fill: ${arrayCases} real ECMAScript scenarios; OrdinarySetPrototypeOf: 3 real ECMAScript scenarios; IntegerIndexed Get/Has: 37 real ECMAScript scenarios; + 1 native GC snapshot passed`);

@@ -25,11 +25,12 @@ set(THREEJS_SOURCE_DIR "" CACHE PATH "Pinned upstream three.js checkout for diff
 find_package(Threads REQUIRED)
 
 add_library(threecpp
+    src/constants.cpp
     src/math/MathUtils.cpp src/math/Vector2.cpp src/math/Vector3.cpp src/math/Vector4.cpp
     src/math/Matrix3.cpp src/math/Matrix4.cpp src/math/Quaternion.cpp src/math/Euler.cpp
     src/math/Color.cpp src/math/ColorManagement.cpp src/math/Box3.cpp src/math/Sphere.cpp src/math/SphereRuntime.cpp
     src/math/Box2.cpp src/math/Cylindrical.cpp src/math/Spherical.cpp src/math/Matrix2.cpp
-    src/math/Plane.cpp src/math/Line3.cpp src/math/Triangle.cpp src/math/Ray.cpp src/math/Frustum.cpp
+    src/math/Plane.cpp src/math/PlaneRuntime.cpp src/math/Line3.cpp src/math/Triangle.cpp src/math/Ray.cpp src/math/Frustum.cpp
     src/math/Interpolant.cpp src/math/JSNumberMath.cpp
     src/math/interpolants/DiscreteInterpolant.cpp src/math/interpolants/LinearInterpolant.cpp
     src/math/interpolants/CubicInterpolant.cpp src/math/interpolants/QuaternionLinearInterpolant.cpp
@@ -66,7 +67,7 @@ add_library(threecpp
     src/geometries/TubeGeometry.cpp
     src/geometries/EdgesGeometry.cpp
     src/geometries/WireframeGeometry.cpp
-    src/materials/Material.cpp src/materials/MeshBasicMaterial.cpp src/objects/Mesh.cpp
+    src/materials/Material.cpp src/materials/MaterialRuntime.cpp src/materials/nodes/manager/NodeMaterialObserver.cpp src/materials/MeshBasicMaterial.cpp src/objects/Mesh.cpp
     src/textures/TextureSource.cpp src/textures/Texture.cpp src/textures/DataTexture.cpp
     src/textures/CanvasTexture.cpp
     src/textures/VideoTexture.cpp
@@ -221,7 +222,10 @@ target_sources(threecpp PRIVATE
     src/nodes/accessors/BuiltinNode.cpp
     src/nodes/core/SceneProperties.cpp
     src/nodes/core/Tangent.cpp
-    src/nodes/core/Normal.cpp
+    src/nodes/accessors/Normal.cpp
+    src/nodes/accessors/Position.cpp
+    src/nodes/accessors/UV.cpp
+    src/nodes/accessors/TextureSizeNode.cpp
     src/nodes/accessors/ReferenceElementNode.cpp
     src/nodes/accessors/ReferenceBaseNode.cpp
     src/nodes/accessors/RendererReferenceNode.cpp
@@ -233,7 +237,7 @@ target_sources(threecpp PRIVATE
     src/nodes/core/MaterialProperties.cpp
     src/nodes/accessors/ModelNode.cpp
     src/nodes/accessors/Object3DNode.cpp
-    src/nodes/core/FrontFacing.cpp
+    src/nodes/display/FrontFacingNode.cpp
     src/nodes/display/ColorSpaceFunctions.cpp
     src/nodes/display/ToneMappingNode.cpp
     src/nodes/display/ToneMappingNodeRuntime.cpp
@@ -266,7 +270,7 @@ target_sources(threecpp PRIVATE
     src/nodes/core/PassTexture.cpp
     src/nodes/core/UVUtils.cpp
     src/nodes/utils/ConvertNode.cpp
-    src/nodes/core/MaxMipLevel.cpp
+    src/nodes/utils/MaxMipLevelNode.cpp
     src/nodes/utils/Remap.cpp
     src/nodes/core/SampleNode.cpp
     src/nodes/core/RotateNode.cpp

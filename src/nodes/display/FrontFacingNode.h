@@ -1,4 +1,5 @@
-﻿#pragma once
+#pragma once
+#include "core/JSValue.h"
 #include <string>
 
 // Port of the rules in src/nodes/display/FrontFacingNode.js at the pinned revision. The module
@@ -31,4 +32,17 @@ class FrontFacing {
 
     // The sentence the renamed function prints when it is called.
     static std::string deprecatedRenameWarning();
+};
+JSValue nativeFrontFacingNodeConstructor();
+JSValue nativeFrontFacingNodeModule();
+JSValue nativeFrontFacingNodeBinding(const std::string& name);
+class FrontFacingNode {
+    JSValue object_;
+public:
+    FrontFacingNode();
+    JSValue object()const{return object_;}
+    operator JSValue()const{return object_;}
+    static JSValue constructor(){return nativeFrontFacingNodeBinding("default");}
+    static JSValue prototype(){return constructor().get("prototype");}
+    JSValue generate(const JSValue& builder)const;
 };

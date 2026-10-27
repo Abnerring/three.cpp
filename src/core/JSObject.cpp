@@ -2,7 +2,31 @@
 #include "core/JSString.h"
 #include "core/JSNumber.h"
 namespace {
+JSPropertyDescriptor toPropertyDescriptor(const JSValue& object) {
+    if(!object.isObject())throw JSTypeError("Property description must be an object");
+    JSPropertyDescriptor descriptor;
+    if(object.has("enumerable"))descriptor.enumerable=object.get("enumerable").toBoolean();
+    if(object.has("configurable"))descriptor.configurable=object.get("configurable").toBoolean();
+    if(object.has("value"))descriptor.value=object.get("value");
+    if(object.has("writable"))descriptor.writable=object.get("writable").toBoolean();
+    for(const auto* name:{"get","set"})if(object.has(name)) {
+        const auto method=object.get(name);
+        if(!method.isUndefined()&&!method.isCallable())throw JSTypeError("Property accessor must be callable or undefined");
+        if(name[0]=='g')descriptor.getter=method;else descriptor.setter=method;
+    }
+    if((descriptor.getter||descriptor.setter)&&(descriptor.value||descriptor.writable))
+        throw JSTypeError("Property descriptor cannot mix accessors and a value or writable field");
+    return descriptor;
+}
 using Args=std::vector<JSValue>;
+JSValue defineProperty(const JSValue&,const Args& args,const Args&) {
+    auto target=args.empty()?JSValue{}:args[0];
+    if(!target.isObject())throw JSTypeError("Object.defineProperty requires an object");
+    const auto key=(args.size()>1?args[1]:JSValue{}).toPropertyKey();
+    const auto descriptor=toPropertyDescriptor(args.size()>2?args[2]:JSValue{});
+    if(!target.defineOwnProperty(key,descriptor))throw JSTypeError("Cannot define property");
+    return target;
+}
 JSValue assign(const JSValue&,const Args& args,const Args&) {
     auto target=args.empty()?JSValue():args[0];
     if(target.isUndefined()||target.isNull())throw JSTypeError("Cannot convert undefined or null to object");
@@ -83,4 +107,5 @@ void initializeNativeObjectMethods(const JSValue& constructor) {
     d.value=JSValue::function(values,{},"values",1);object.defineProperty("values",d);
     d.value=JSValue::function(keys,{},"keys",1);object.defineProperty("keys",d);
     d.value=JSValue::function(getPrototypeOf,{},"getPrototypeOf",1);object.defineProperty("getPrototypeOf",d);
+    d.value=JSValue::function(defineProperty,{},"defineProperty",3);object.defineProperty("defineProperty",d);
 }

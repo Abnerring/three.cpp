@@ -19,6 +19,9 @@ THREE_NATIVE_ARRAY_OWNER(Float32Array) THREE_NATIVE_ARRAY_OWNER(Float64Array)
 THREE_NATIVE_ARRAY_OWNER(Uint8ClampedArray)
 #undef THREE_NATIVE_ARRAY_OWNER
 namespace NativeArray_detail {
+// Integer-indexed objects terminate lookup for canonical numeric keys, even
+// when the index has no own descriptor. Proxies are handled by their target.
+bool isNumericProperty(const JSValue& value, const std::string& key);
 JSValue constructor(std::size_t kind);
 JSValue wrap(const InterpolantArray& array);
 InterpolantArray unwrap(const JSValue& value);

@@ -305,13 +305,13 @@ add_executable(THREECPPTests
         unit/src/nodes/accessors/BuiltinNode.tests.cpp
         unit/src/nodes/core/SceneProperties.tests.cpp
         unit/src/nodes/core/Tangent.tests.cpp
-        unit/src/nodes/core/Normal.tests.cpp
+        unit/src/nodes/accessors/Normal.tests.cpp
         unit/src/nodes/accessors/ReferenceElementNode.tests.cpp
         unit/src/nodes/accessors/Camera.tests.cpp
         unit/src/nodes/core/MaterialProperties.tests.cpp
         unit/src/nodes/accessors/ModelNode.tests.cpp
         unit/src/nodes/accessors/Object3DNode.tests.cpp
-        unit/src/nodes/core/FrontFacing.tests.cpp
+        unit/src/nodes/display/FrontFacingNode.tests.cpp
         unit/src/nodes/display/ColorSpaceFunctions.tests.cpp
         unit/src/nodes/display/ToneMappingNode.tests.cpp
         unit/src/nodes/core/NormalMap.tests.cpp
@@ -338,7 +338,7 @@ add_executable(THREECPPTests
         unit/src/nodes/core/PassTexture.tests.cpp
         unit/src/nodes/core/UVUtils.tests.cpp
         unit/src/nodes/utils/ConvertNode.tests.cpp
-        unit/src/nodes/core/MaxMipLevel.tests.cpp
+        unit/src/nodes/utils/MaxMipLevelNode.tests.cpp
         unit/src/nodes/utils/Remap.tests.cpp
         unit/src/nodes/core/SampleNode.tests.cpp
         unit/src/nodes/core/RotateNode.tests.cpp
@@ -2055,4 +2055,34 @@ if(THREECPP_NODE_EXECUTABLE AND THREEJS_SOURCE_DIR)
     add_test(NAME threecpp.threejs-node-update-types-parity
         COMMAND "${THREECPP_NODE_EXECUTABLE}" "${CMAKE_CURRENT_SOURCE_DIR}/unit/utils/parity/compare-node-update-types.mjs"
         "${THREEJS_SOURCE_DIR}" "$<TARGET_FILE:ThreeJsNodeUpdateTypesParityProbe>" "${CMAKE_BINARY_DIR}/parity/node-update-types")
+endif()
+
+add_executable(ThreeJsPositionNormalNodesParityProbe unit/utils/parity/PositionNormalNodesParityProbe.cpp)
+target_link_libraries(ThreeJsPositionNormalNodesParityProbe PRIVATE threecpp::threecpp)
+add_test(NAME threecpp.position-normal-node-lifetime COMMAND ThreeJsPositionNormalNodesParityProbe --lifetime)
+
+add_executable(ThreeJsTextureAccessorsParityProbe unit/utils/parity/TextureAccessorsParityProbe.cpp)
+target_link_libraries(ThreeJsTextureAccessorsParityProbe PRIVATE threecpp::threecpp)
+add_test(NAME threecpp.texture-accessor-lifetime COMMAND ThreeJsTextureAccessorsParityProbe --fresh-gc)
+
+add_executable(ThreeJsNodeMaterialObserverParityProbe unit/utils/parity/NodeMaterialObserverParityProbe.cpp)
+target_link_libraries(ThreeJsNodeMaterialObserverParityProbe PRIVATE threecpp::threecpp)
+add_test(NAME threecpp.node-material-observer-lifetime COMMAND ThreeJsNodeMaterialObserverParityProbe --lifetime)
+
+add_executable(ThreeJsMaterialRuntimeParityProbe unit/utils/parity/MaterialRuntimeParityProbe.cpp)
+target_link_libraries(ThreeJsMaterialRuntimeParityProbe PRIVATE threecpp::threecpp)
+add_test(NAME threecpp.material-runtime-lifetime COMMAND ThreeJsMaterialRuntimeParityProbe --lifetime)
+if(THREECPP_NODE_EXECUTABLE AND THREEJS_SOURCE_DIR)
+    add_test(NAME threecpp.threejs-position-normal-nodes-relative-parity
+        COMMAND "${THREECPP_NODE_EXECUTABLE}" "${CMAKE_CURRENT_SOURCE_DIR}/unit/utils/parity/compare-position-normal-nodes.mjs"
+        "${THREEJS_SOURCE_DIR}" "$<TARGET_FILE:ThreeJsPositionNormalNodesParityProbe>" "${CMAKE_BINARY_DIR}/parity/position-normal-nodes-relative" --relative-integration-node-ids)
+    add_test(NAME threecpp.threejs-texture-accessors-parity
+        COMMAND "${THREECPP_NODE_EXECUTABLE}" "${CMAKE_CURRENT_SOURCE_DIR}/unit/utils/parity/compare-texture-accessors.mjs"
+        "${THREEJS_SOURCE_DIR}" "$<TARGET_FILE:ThreeJsTextureAccessorsParityProbe>" "${CMAKE_BINARY_DIR}/parity/texture-accessors")
+    add_test(NAME threecpp.threejs-material-runtime-parity
+        COMMAND "${THREECPP_NODE_EXECUTABLE}" "${CMAKE_CURRENT_SOURCE_DIR}/unit/utils/parity/compare-material-runtime.mjs"
+        "${THREEJS_SOURCE_DIR}" "$<TARGET_FILE:ThreeJsMaterialRuntimeParityProbe>" "${CMAKE_BINARY_DIR}/parity/material-runtime")
+    add_test(NAME threecpp.threejs-node-material-observer-relative-parity
+        COMMAND "${THREECPP_NODE_EXECUTABLE}" "${CMAKE_CURRENT_SOURCE_DIR}/unit/utils/parity/compare-node-material-observer.mjs"
+        "${THREEJS_SOURCE_DIR}" "$<TARGET_FILE:ThreeJsNodeMaterialObserverParityProbe>" "${CMAKE_BINARY_DIR}/parity/node-material-observer-relative" --relative-import-resource-ids)
 endif()

@@ -1,4 +1,5 @@
 #include "math/Color.h"
+#include "math/MathUtils.h"
 #include "core/JSModuleObject.h"
 #include "core/JSRegExp.h"
 #include "core/JSStringEncoding.h"
@@ -8,6 +9,7 @@
 
 namespace {
 using Args = std::vector<JSValue>;
+JSWeakValue& scratchColor(){static thread_local JSWeakValue weak;return weak;}
 JSValue arg(const Args& args, unsigned i) { return i < args.size() ? args[i] : JSValue{}; }
 JSPropertyDescriptor data(JSValue value) { JSPropertyDescriptor d; d.value = value; d.writable = d.enumerable = d.configurable = true; return d; }
 JSValue add(const JSValue& a, const JSValue& b) {
@@ -87,6 +89,14 @@ double hue(double p, double q, double t) {
 }
 JSValue method(const JSValue& receiver, const Args& args, const Args& captures) {
     auto self = receiver; const auto name = captures[0].string(); const auto first = arg(args, 0);
+    if(name=="getHex"){
+        const auto space=first.isUndefined()?JSValue(SRGBColorSpace):first;
+        const auto management=nativeColorManagement(),convert=management.get("workingToColorSpace");
+        const auto scratch=*scratchColor().lock();const auto copied=scratch.get("copy").call(scratch,{self});convert.call(management,{copied,space});
+        const auto channel=[&](const char* key){const auto value=minimum(255,product(scratch.get(key),255));return std::isnan(value)?value:MathUtils::round(std::max(0.,value));};
+        const auto r=channel("r")*65536,g=channel("g")*256,b=channel("b");return (r+g)+b;
+    }
+    if(name=="toJSON")return self.get("getHex").call(self);
     if (name == "set") {
         if (arg(args, 1).isUndefined() && arg(args, 2).isUndefined()) {
             if (first.toBoolean() && first.get("isColor").toBoolean()) { const auto fn = self.get("copy"); fn.call(self, {first}); }
@@ -218,9 +228,10 @@ JSValue nativeColorConstructor() {
     auto prototype = ctor.get("prototype"); const auto names = keywords();
     for (const auto& [key, arity] : std::initializer_list<std::pair<const char*, unsigned>>{
         {"set",3},{"setScalar",1},{"setHex",1},{"setRGB",3},{"setHSL",3},{"setStyle",1},{"setColorName",1},
-        {"clone",0},{"copy",1},{"applyMatrix3",1},{"equals",1},{"fromArray",1},{"toArray",0}}) {
+        {"clone",0},{"copy",1},{"getHex",0},{"applyMatrix3",1},{"equals",1},{"fromArray",1},{"toArray",0},{"toJSON",0}}) {
         JSPropertyDescriptor d; d.value = JSValue::function(method, {key, names}, key, arity);
         d.writable = d.configurable = true; prototype.defineProperty(key, d);
     }
-    ctor.set("NAMES", names); ctor.retainForHeapLifetime(); weak = JSWeakValue(ctor); return ctor;
+    ctor.set("NAMES", names); ctor.retainForHeapLifetime(); weak = JSWeakValue(ctor);
+    const auto scratch=ctor.construct();scratch.retainForHeapLifetime();scratchColor()=JSWeakValue(scratch);return ctor;
 }

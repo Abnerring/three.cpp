@@ -1,4 +1,4 @@
-#include "nodes/core/FrontFacing.h"
+#include "nodes/display/FrontFacingNode.h"
 
 #include "catch.hpp"
 

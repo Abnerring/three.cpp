@@ -1,5 +1,9 @@
 ﻿#pragma once
+#include "core/JSValue.h"
 #include <string>
+
+JSValue nativeNormalModule();
+JSValue nativeNormalBinding(const std::string& name);
 
 // Port of the decisions in src/nodes/accessors/Normal.js at the pinned revision. What matters
 // here is what the module does when a geometry has no normal, and a difference between two

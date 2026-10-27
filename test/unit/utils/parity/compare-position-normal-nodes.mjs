@@ -1,0 +1,78 @@
+import fs from 'node:fs';
+import path from 'node:path';
+import assert from 'node:assert/strict';
+import {execFileSync} from 'node:child_process';
+import {pathToFileURL,fileURLToPath} from 'node:url';
+const upstream=path.resolve(process.argv[2]);
+assert.equal(execFileSync('git',['-C',upstream,'rev-parse','HEAD'],{encoding:'utf8'}).trim(),'11738a9d55e502fb484cefffcea3a66dc44e9fe9');
+const load=p=>import(pathToFileURL(path.join(upstream,'src',p+'.js')));
+function graph(root,baseline=0,relative=false){const seen=new Map(),objects=[];function encode(v){if(v===undefined)return ['undefined'];if(typeof v==='function')return ['function'];if(typeof v==='symbol')return ['symbol'];if(typeof v==='number'){if(Number.isNaN(v))return ['number','NaN'];if(!Number.isFinite(v))return ['number',v>0?'Infinity':'-Infinity'];if(Object.is(v,-0))return ['number','-0'];}if(v===null||typeof v!=='object')return v;if(seen.has(v))return ['ref',seen.get(v)];const index=objects.length;seen.set(v,index);const record={kind:Array.isArray(v)?'array':'object',properties:[]};objects.push(record);if(Array.isArray(v))record.length=v.length;const node=v.isNode===true;if(node)record.nodeType=v.type;for(const k of Object.keys(v)){const value=v[k];record.properties.push([k,relative&&node&&k==='id'&&value>baseline?['integrationId',value-baseline]:encode(value)]);}return ['ref',index];}return {root:encode(root),objects};}
+if(process.argv[3]==='--fresh'){
+ const name=process.argv[4],m=await load('nodes/accessors/'+name),{default:Node}=await load('nodes/core/Node'),out={exports:m,nextNode:new Node()},tsl=await load('nodes/tsl/TSLBase');out.transformNormalChain=typeof tsl.vec3(1,2,3).transformNormal==='function';process.stdout.write(JSON.stringify(graph(out)));process.exit(0);
+}
+const binary=process.argv[3]&&process.argv[3]!=='--oracle'?path.resolve(process.argv[3]):undefined,directory=process.argv[4]&&path.resolve(process.argv[4]),relative=process.argv.includes('--relative-integration-node-ids');
+const pm=await load('nodes/accessors/Position'),nm=await load('nodes/accessors/Normal'),{default:Node}=await load('nodes/core/Node'),tsl=await load('nodes/tsl/TSLBase'),{default:StackNode}=await load('nodes/core/StackNode'),utils=await load('utils');
+const binding=name=>Object.hasOwn(pm,name)?pm[name]:nm[name];
+function callback(n){for(let i=0;i<16;++i){if(n.shaderNode!==undefined)return n.shaderNode.jsFunc;n=n.node;}throw Error('Export has no shader callback');}
+function metadata(r){const m=r.normal?nm:pm,out={exports:m},functions=[];for(const k of Object.keys(m)){const v=m[k];if(typeof v==='function')functions.push({name:k,functionName:v.name,length:v.length,constructible:isConstructor(v),shaderNode:v.shaderNode});else if(v.isVarNode&&k!=='normalFlat'&&k!=='normalWorld')functions.push({name:k,callbackLength:callback(v).length});}out.functions=functions;return graph(out);}
+function isConstructor(f){try{Reflect.construct(Object,[],f);return true;}catch{return false;}}
+function decode(v){if(v===null||typeof v!=='object')return v;if(v.tag==='undefined')return undefined;if(v.tag==='symbol')return Symbol('fixture');if(v.tag==='NaN')return NaN;return v;}
+function state(r){return {request:r,events:[],active:true};}
+function event(s,a){if(s.active)s.events.push(a);}
+function checkpoint(s,label){event(s,[label]);if(s.active&&s.request.throwAt===label)throw new TypeError(label);}
+function observe(s,o,key,label){let value=o[key];Object.defineProperty(o,key,{configurable:true,enumerable:true,get(){checkpoint(s,'get:'+label);return value;},set(v){checkpoint(s,'set:'+label);value=v;}});}
+const vec=(a=[1,2,3])=>tsl.vec3(...a),mat=()=>tsl.mat3();
+function method(s,name,receiver,value){return function(...a){checkpoint(s,name);event(s,['this:'+name,this===receiver]);if(name==='hasAttribute')event(s,['attribute',a[0]]);if(name==='getSubBuildProperty')event(s,['property',a[0]]);return value;};}
+function fixture(s){
+ const r=s.request,b={shaderStage:Object.hasOwn(r,'stage')?decode(r.stage):'fragment',subBuildFn:Object.hasOwn(r,'subBuildFn')?decode(r.subBuildFn):'OTHER'},camera={isOrthographicCamera:decode(r.orthographic)},material={vertexNode:decode(r.vertexNode),side:Object.hasOwn(r,'side')?r.side:0},ctx={clipSpace:tsl.vec4(1,2,3,4),modelNormalViewMatrix:r.matrixContext==='node'?mat():decode(r.matrixContext)},geometry={};
+ for(const name of ['setupPositionView','setupNormal','setupClearcoatNormal'])ctx[name]=method(s,name,ctx,vec());
+ geometry.hasAttribute=method(s,'hasAttribute',geometry,Object.hasOwn(r,'hasAttribute')?decode(r.hasAttribute):true);b.isFlatShading=method(s,'isFlatShading',b,decode(r.flat));b.getSubBuildProperty=method(s,'getSubBuildProperty',b,Object.hasOwn(r,'property')?decode(r.property):'v_positionWorld_sub');b.camera=camera;b.material=material;b.geometry=geometry;b.context=ctx;
+ if(r.observed){for(const k of ['shaderStage','subBuildFn','camera','material','geometry','context','isFlatShading','getSubBuildProperty'])observe(s,b,k,'builder.'+k);for(const k of ['clipSpace','modelNormalViewMatrix','setupPositionView','setupNormal','setupClearcoatNormal'])observe(s,ctx,k,'context.'+k);observe(s,camera,'isOrthographicCamera','camera.isOrthographicCamera');observe(s,material,'vertexNode','material.vertexNode');observe(s,geometry,'hasAttribute','geometry.hasAttribute');}
+ if(Object.hasOwn(r,'subBuildSequence')){let i=0;Object.defineProperty(b,'subBuildFn',{enumerable:true,configurable:true,get(){checkpoint(s,'get:builder.subBuildFn');return decode(r.subBuildSequence[i++]);}});}
+ return b;
+}
+function iterable(s,values){return {[Symbol.iterator](){checkpoint(s,'iterator');let i=0;const it={next(){checkpoint(s,'next');const at=i++,result={value:values[at],done:at>=values.length};observe(s,result,'value','iterator.value');observe(s,result,'done','iterator.done');return result;},return(){checkpoint(s,'return');return s.request.returnPrimitive?7:{};}};observe(s,it,'next','iterator.next');observe(s,it,'return','iterator.return');return it;}};}
+const consoleCapture=s=>(...a)=>{event(s,['console',a]);checkpoint(s,'console');};
+function runCallback(r){const s=state(r),out={},before=new Node(),b=fixture(s),previous=tsl.getCurrentStack(),stack=new StackNode();tsl.setCurrentStack(stack);const old=utils.getConsoleFunction();utils.setConsoleFunction(consoleCapture(s));try{
+ const name=r.name,fn=callback(binding(name));let result;
+ if(name==='transformNormal'||name==='transformNormalToView'){
+  const values=[],mode=r.input;if(mode!=='empty'){values.push(vec());if(mode!=='single')values.push(mode==='nullMatrix'?null:mode==='undefinedMatrix'?undefined:mat());if(mode==='extra')values.push(vec());}
+  const input=mode==='null'?null:mode==='undefined'?undefined:mode==='number'?1:r.iterator?iterable(s,values):values;result=fn(input,r.nullBuilder?null:b);
+ }else result=fn(r.nullBuilder?null:b);
+ out.result=result;if(r.repeat)out.again=fn(b);
+ }catch(e){out.error='#'+e.name;}
+ s.active=false;tsl.setCurrentStack(previous);utils.setConsoleFunction(old);out.events=s.events;out.stackNodes=stack.nodes;out.allocations=new Node().id-before.id-1;return graph(out);
+}
+function factory(r){const out={},before=new Node(),n=vec(),matrix=mat();try{const params=[n];if(r.matrix)params.push(matrix);out.result=r.chaining?n.transformNormal(...(r.matrix?[matrix]:[])):binding(r.name)(...params);}catch(e){out.error='#'+e.name;}out.allocations=new Node().id-before.id-1;return graph(out);}
+let integrationBaseline=0,integrationStarted=false;
+async function integration(r){
+ const {default:Builder}=await load('nodes/core/NodeBuilder');if(r.relativeIntegrationNodeIds&&!integrationStarted){integrationBaseline=new Node().id;integrationStarted=true;}
+ const s=state(r),out={},results=[],f=fixture(s),attr={array:new Float32Array([1,2,3,4,5,6]),itemSize:3,normalized:false},geometry={getAttribute(){return r.missingAttribute?undefined:attr;},hasAttribute(){return !r.missingAttribute;}},renderer={debug:{diagnostics:{keywords:false}},coordinateSystem:2000},object={geometry,material:f.material},b=new Builder(object,renderer,null);b.shaderStage=r.stage;b.camera=f.camera;b.subBuildFn=r.subBuildFn;Object.assign(b.context,f.context);b.isFlatShading=()=>decode(r.flat);const old=utils.getConsoleFunction();utils.setConsoleFunction(consoleCapture(s));try{const n=binding(r.name);for(const stage of ['setup','analyze','generate']){b.buildStage=stage;results.push(n.build(b,r.output));}out.results=results;out.flow=b.flow;out.uniforms=b.uniforms;out.attributes=b.attributes;out.varyings=b.varyings;}catch(e){out.error='#'+e.name;}s.active=false;utils.setConsoleFunction(old);out.events=s.events;return graph(out,integrationBaseline,r.relativeIntegrationNodeIds);
+}
+const cases=[{kind:'metadata'},{kind:'metadata',normal:true}],U={tag:'undefined'};
+for(const stage of ['fragment','vertex','compute',U])cases.push({kind:'callback',name:'clipSpace',stage,observed:true,repeat:true});
+for(const property of ['v_positionWorld_sub',null,17,U])cases.push({kind:'callback',name:'positionWorld',property,observed:true});
+cases.push({kind:'callback',name:'positionWorldDirection',observed:true});
+for(const stage of ['fragment','vertex',U])for(const vertexNode of [false,true,null,1,{},U])cases.push({kind:'callback',name:'positionView',stage,vertexNode,observed:true});
+for(const orthographic of [false,true,0,1,'yes',null,U])cases.push({kind:'callback',name:'positionViewDirection',orthographic,observed:true});
+for(const hasAttribute of [false,true,0,1,'',null,U])cases.push({kind:'callback',name:'normalLocal',hasAttribute,observed:true});
+for(const name of ['normalViewGeometry','normalWorldGeometry'])for(const flat of [false,true,0,1,'yes',null,U])cases.push({kind:'callback',name,flat,observed:true});
+for(const name of ['normalView','clearcoatNormalView'])for(const subBuildFn of ['NORMAL','VERTEX','OTHER',null,U])for(const flat of [false,true,1])cases.push({kind:'callback',name,subBuildFn,flat,observed:true});
+for(const name of ['normalView','clearcoatNormalView'])for(const subBuildSequence of [['NORMAL','OTHER'],['OTHER','VERTEX'],['OTHER','NORMAL'],['VERTEX','OTHER']])cases.push({kind:'callback',name,subBuildSequence,observed:true});
+for(const name of ['clipSpace','positionWorld','positionWorldDirection','positionView','positionViewDirection','normalLocal','normalViewGeometry','normalWorldGeometry','normalView','clearcoatNormalView'])cases.push({kind:'callback',name,nullBuilder:true,observed:true});
+for(const name of ['transformNormal','transformNormalToView'])for(const input of ['empty','single','node','extra','nullMatrix','undefinedMatrix','null','undefined','number'])for(const iterator of [false,true])for(const matrixContext of [null,'node',false,1])cases.push({kind:'callback',name,input,iterator,matrixContext,observed:true});
+for(const name of ['transformNormal','transformNormalToView'])for(const throwAt of ['iterator','get:iterator.next','next','get:iterator.done','get:iterator.value','get:iterator.return','return','get:builder.context','get:context.modelNormalViewMatrix'])cases.push({kind:'callback',name,input:'extra',iterator:true,matrixContext:'node',observed:true,throwAt});
+for(const name of ['transformNormal','transformNormalToView'])cases.push({kind:'callback',name,input:'extra',iterator:true,returnPrimitive:true,observed:true});
+for(const [name,setup] of [['clipSpace',{}],['positionWorld',{}],['positionView',{}],['positionView',{vertexNode:true}],['positionViewDirection',{}],['normalLocal',{hasAttribute:false}],['normalViewGeometry',{}],['normalWorldGeometry',{}],['normalView',{}],['normalView',{subBuildFn:'NORMAL'}],['clearcoatNormalView',{}],['clearcoatNormalView',{subBuildFn:'NORMAL'}]])for(const throwAt of ['get:builder.shaderStage','get:builder.context','get:builder.material','get:material.vertexNode','get:builder.getSubBuildProperty','getSubBuildProperty','get:context.clipSpace','get:context.setupPositionView','setupPositionView','get:builder.camera','get:camera.isOrthographicCamera','get:builder.geometry','get:geometry.hasAttribute','hasAttribute','console','get:builder.isFlatShading','isFlatShading','get:builder.subBuildFn','get:context.setupNormal','setupNormal','get:context.setupClearcoatNormal','setupClearcoatNormal'])cases.push({kind:'callback',name,observed:true,...setup,throwAt});
+for(const name of ['transformNormal','transformNormalToView'])for(const matrix of [false,true])cases.push({kind:'factory',name,matrix});
+for(const matrix of [false,true])cases.push({kind:'factory',name:'transformNormal',matrix,chaining:true});
+for(const stage of ['vertex','fragment'])for(const name of [...Object.keys(pm),...Object.keys(nm).filter(k=>!k.startsWith('transform'))])cases.push({kind:'integration',name,stage,output:name==='clipSpace'?'vec4':'vec3',subBuildFn:name==='normalView'||name==='clearcoatNormalView'?'NORMAL':'POSITION',relativeIntegrationNodeIds:relative});
+for(const name of ['positionGeometry','normalGeometry','normalLocal','normalView','clearcoatNormalView'])cases.push({kind:'integration',name,stage:'fragment',output:'vec3',missingAttribute:true,flat:true,subBuildFn:'NORMAL',relativeIntegrationNodeIds:relative});
+for(const name of ['positionView','positionViewDirection','normalView','clearcoatNormalView'])cases.push({kind:'integration',name,stage:'fragment',output:'vec3',vertexNode:true,orthographic:true,flat:1,subBuildFn:'OTHER',matrixContext:'node',relativeIntegrationNodeIds:relative});
+const expected=[];for(const r of cases)expected.push(r.kind==='metadata'?metadata(r):r.kind==='callback'?runCallback(r):r.kind==='factory'?factory(r):await integration(r));const wireExpected=JSON.parse(JSON.stringify(expected)),freshExpected={};for(const name of ['Position','Normal'])freshExpected[name]=JSON.parse(execFileSync(process.execPath,[fileURLToPath(import.meta.url),upstream,'--fresh',name],{encoding:'utf8',maxBuffer:64*1024*1024}));
+if(directory){fs.mkdirSync(directory,{recursive:true});fs.writeFileSync(path.join(directory,'input.json'),JSON.stringify(cases,null,2));fs.writeFileSync(path.join(directory,'expected.json'),JSON.stringify(wireExpected,null,2));fs.writeFileSync(path.join(directory,'fresh-expected.json'),JSON.stringify(freshExpected,null,2));}
+if(!binary){console.log(`Generated ${cases.length} real Position/Normal scenarios + 2 fresh imports`);process.exit(0);}
+const actual=JSON.parse(execFileSync(binary,[],{input:JSON.stringify(cases),encoding:'utf8',maxBuffer:512*1024*1024})),differences=[],freshActual={};assert.equal(actual.length,cases.length);for(let i=0;i<cases.length;++i)try{assert.deepEqual(actual[i],wireExpected[i]);}catch{differences.push({index:i,input:cases[i],expected:wireExpected[i],actual:actual[i]});}
+for(const name of ['Position','Normal']){freshActual[name]=JSON.parse(execFileSync(binary,['--fresh',name],{encoding:'utf8',maxBuffer:64*1024*1024}));try{assert.deepEqual(freshActual[name],freshExpected[name]);}catch{differences.push({fresh:name,expected:freshExpected[name],actual:freshActual[name]});}}
+if(directory){fs.writeFileSync(path.join(directory,'actual.json'),JSON.stringify(actual,null,2));fs.writeFileSync(path.join(directory,'differences.json'),JSON.stringify(differences,null,2));fs.writeFileSync(path.join(directory,'fresh-actual.json'),JSON.stringify(freshActual,null,2));}
+assert.equal(differences.length,0,JSON.stringify(differences.slice(0,1),null,2).slice(0,4000));const lifetime=execFileSync(binary,['--lifetime'],{encoding:'utf8'});if(directory)fs.writeFileSync(path.join(directory,'lifetime.log'),lifetime);console.log(`Position/Normal: ${cases.length} pinned scenarios + 2 fresh imports passed (${relative?'explicit relative integration':'absolute'} IDs); ${lifetime.trim()}`);

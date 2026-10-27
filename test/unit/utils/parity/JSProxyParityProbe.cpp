@@ -1,6 +1,7 @@
 #include "animation/AnimationUtils.h"
 #include "core/JSProxy.h"
 #include "core/JSIterator.h"
+#include "core/NativeArray.h"
 #include <cmath>
 #include <iostream>
 
@@ -106,7 +107,53 @@ JSValue arrayMethods(const JSValue& r){
         const auto d=target.getOwnPropertyDescriptor(key).value();auto push=fields.get("push");push.call(fields,{array({key,normal(target.get(key),s),d.writable.value_or(false),d.enumerable.value_or(false),d.configurable.value_or(false)})});}
     out.set("fields",fields);out.set("arity",method.get("length"));return out;
 }
+JSValue ordinarySetPrototype(const JSValue& r){
+    auto out=JSValue::object(),s=JSValue::object(),target=JSValue::object(nullptr);s.set("events",array());
+    const auto scenario=r.get("scenario");
+    if(scenario.strictEquals("ordinaryCycle")){
+        auto child=JSValue::object(target);
+        out.set("result",target.setPrototype(child));out.set("selfCycle",target.setPrototype(target));
+        out.set("parentUnchanged",target.getPrototype().isNull());out.set("childBacklink",child.getPrototype().sameValue(target));
+        out.set("cleanup",child.setPrototype(nullptr));
+    }else{
+        auto protoTarget=JSValue::object(scenario.strictEquals("proxyCycle")?target:JSValue(nullptr)),handler=JSValue::object();
+        if(scenario.strictEquals("proxyTrapThrows"))handler.set("getPrototypeOf",JSValue::function(+[](const JSValue&,const Args&,const Args& c)->JSValue{event(c[0],{"getPrototypeOf"});throw JSTypeError("prototype trap must not be called");},{s}));
+        const auto proxy=createNativeProxy(protoTarget,handler);
+        try{out.set("result",target.setPrototype(proxy));}catch(const JSTypeError&){out.set("result","#TypeError");}
+        out.set("linked",target.getPrototype().sameValue(proxy));
+        // Break the indirect cycle before reading through the Proxy or encoding
+        // any graph. The ordinary identity check above never traverses it.
+        out.set("cleanup",target.setPrototype(nullptr));
+        if(scenario.strictEquals("proxyCycle")){
+            out.set("targetBacklink",protoTarget.getPrototype().sameValue(target));
+            out.set("proxyBacklink",proxy.getPrototype().sameValue(target));
+        }
+    }
+    out.set("events",s.get("events"));return out;
+}
+JSValue typedArrayLookup(const JSValue& r){
+    auto s=JSValue::object(),proto=JSValue::object(nullptr);s.set("events",array());
+    const auto mode=r.get("mode");
+    auto target=mode.strictEquals("spoof")?JSValue::object():NativeArray_detail::constructor(std::size_t(r.get("arrayKind").toNumber())).construct({array({17})});
+    if(mode.strictEquals("spoof")){target.set("isTypedArray",true);target.set("type","Uint8Array");}
+    s.set("target",target);target.setPrototype(proto);
+    const std::vector<std::string> keys{"0","1","2","-0","NaN","Infinity","-Infinity","-1","0.5","9007199254740992","1e+21","1e-7","01","+0","1.0","1e0","1e21","0.0000001"," 1 ","","foo"};
+    for(const auto& key:keys){JSPropertyDescriptor d;d.enumerable=d.configurable=true;d.getter=JSValue::function(+[](const JSValue& self,const Args&,const Args& c)->JSValue{event(c[0],{"inheritedGet",c[1],normal(self,c[0])});return "inherited:"+c[1].string();},{s,key});proto.defineProperty(key,d);}
+    auto actual=target;
+    if(mode.strictEquals("proxy")||mode.strictEquals("forward")){
+        auto handler=JSValue::object();
+        if(mode.strictEquals("forward")){
+            handler.set("get",JSValue::function(+[](const JSValue&,const Args& args,const Args& c)->JSValue{event(c[0],{"forwardGet",arg(args,1),normal(arg(args,2),c[0])});return arg(args,0).get(arg(args,1),arg(args,2));},{s}));
+            handler.set("has",JSValue::function(+[](const JSValue&,const Args& args,const Args& c)->JSValue{event(c[0],{"forwardHas",arg(args,1)});return arg(args,0).has(arg(args,1));},{s}));
+        }
+        actual=createNativeProxy(target,handler);s.set("proxy",actual);
+    }else if(mode.strictEquals("child")){actual=JSValue::object(target);s.set("receiver",actual);}
+    auto rows=array();for(const auto& key:keys){JSValue value;try{value=normal(actual.get(key),s);}catch(const JSTypeError&){value="#TypeError";}rows.get("push").call(rows,{array({key,value,actual.has(key),actual.hasOwn(key)})});}
+    auto out=JSValue::object();out.set("rows",rows);out.set("events",s.get("events"));return out;
+}
 JSValue run(const JSValue& r){
+    if(r.get("kind").strictEquals("typedArrayLookup"))return typedArrayLookup(r);
+    if(r.get("kind").strictEquals("ordinarySetPrototype"))return ordinarySetPrototype(r);
     if(r.get("kind").strictEquals("arrayMethods"))return arrayMethods(r);
     auto s=JSValue::object();s.set("r",r);s.set("events",array());s.set("symbol",JSValue::symbol("key"));
     auto proto=JSValue::object(),otherProto=JSValue::object(),receiver=JSValue::object();s.set("proto",proto);s.set("otherProto",otherProto);s.set("receiver",receiver);

@@ -201,8 +201,8 @@
     "note": "Accepted port scope is src and examples/jsm, including tracked third-party dependencies. Editor/manual web applications are excluded from native application rewrites. Native host behavior, packaging and all three platforms require separate implementation and verification evidence."
   },
   "counts": {
-    "partial-unverified": 385,
-    "missing": 556,
+    "partial-unverified": 392,
+    "missing": 549,
     "vulkan-port-pending": 290,
     "dependency-unverified": 20
   },
@@ -210,8 +210,8 @@
     "src": {
       "modules": 755,
       "counts": {
-        "partial-unverified": 301,
-        "missing": 164,
+        "partial-unverified": 308,
+        "missing": 157,
         "vulkan-port-pending": 290
       }
     },
@@ -768,7 +768,7 @@
       "path": "src/materials/nodes/manager",
       "upstreamFiles": 1,
       "moduleCount": 1,
-      "modulesWithCppFiles": 0,
+      "modulesWithCppFiles": 1,
       "verifiedComplete": 0
     },
     {
@@ -796,7 +796,7 @@
       "path": "src/nodes/accessors",
       "upstreamFiles": 43,
       "moduleCount": 43,
-      "modulesWithCppFiles": 10,
+      "modulesWithCppFiles": 14,
       "verifiedComplete": 0
     },
     {
@@ -817,7 +817,7 @@
       "path": "src/nodes/display",
       "upstreamFiles": 18,
       "moduleCount": 18,
-      "modulesWithCppFiles": 7,
+      "modulesWithCppFiles": 8,
       "verifiedComplete": 0
     },
     {
@@ -922,7 +922,7 @@
       "path": "src/nodes/utils",
       "upstreamFiles": 31,
       "moduleCount": 31,
-      "modulesWithCppFiles": 10,
+      "modulesWithCppFiles": 11,
       "verifiedComplete": 0
     },
     {
@@ -2063,7 +2063,7 @@
       "kind": "core",
       "upstreamSha256": "b0c972b30156f282057cc9aa0d6593f8df205cf2882553bc56cd8aba73aa9712",
       "header": "src/constants.h",
-      "implementation": null,
+      "implementation": "src/constants.cpp",
       "expectedHeader": "src/constants.h",
       "expectedImplementation": "src/constants.cpp",
       "status": "partial-unverified",
@@ -6410,11 +6410,11 @@
       "scope": "src",
       "kind": "core",
       "upstreamSha256": "98e73431742a4206ba64b30ea12c5208376b062c4f4c008b521554e718f379f5",
-      "header": null,
-      "implementation": null,
+      "header": "src/materials/nodes/manager/NodeMaterialObserver.h",
+      "implementation": "src/materials/nodes/manager/NodeMaterialObserver.cpp",
       "expectedHeader": "src/materials/nodes/manager/NodeMaterialObserver.h",
       "expectedImplementation": "src/materials/nodes/manager/NodeMaterialObserver.cpp",
-      "status": "missing",
+      "status": "partial-unverified",
       "verifiedComplete": false,
       "apiExtraction": "static-only",
       "verification": {
@@ -7842,11 +7842,11 @@
       "scope": "src",
       "kind": "core",
       "upstreamSha256": "bf218abdb3b9729898fb71ffbbe08052501c57ca2502f29386e7b00a77b405ad",
-      "header": null,
-      "implementation": null,
+      "header": "src/nodes/accessors/Normal.h",
+      "implementation": "src/nodes/accessors/Normal.cpp",
       "expectedHeader": "src/nodes/accessors/Normal.h",
       "expectedImplementation": "src/nodes/accessors/Normal.cpp",
-      "status": "missing",
+      "status": "partial-unverified",
       "verifiedComplete": false,
       "apiExtraction": "partial-static",
       "verification": {
@@ -7855,7 +7855,9 @@
           "pointer": "/modules/231"
         },
         "upstreamUnitTests": [],
-        "cppUnitTests": [],
+        "cppUnitTests": [
+          "test/unit/src/nodes/accessors/Normal.tests.cpp"
+        ],
         "reviewedImplementation": [],
         "differentialResults": [],
         "renderingResults": [],
@@ -7925,11 +7927,11 @@
       "scope": "src",
       "kind": "core",
       "upstreamSha256": "ba2f23475cff68abbf0b35c76b89d4d0fc17f31321ebef8a5f4633f2f34f2564",
-      "header": null,
-      "implementation": null,
+      "header": "src/nodes/accessors/Position.h",
+      "implementation": "src/nodes/accessors/Position.cpp",
       "expectedHeader": "src/nodes/accessors/Position.h",
       "expectedImplementation": "src/nodes/accessors/Position.cpp",
-      "status": "missing",
+      "status": "partial-unverified",
       "verifiedComplete": false,
       "apiExtraction": "partial-static",
       "verification": {
@@ -8359,11 +8361,11 @@
       "scope": "src",
       "kind": "core",
       "upstreamSha256": "1aa19e690956bb55067f8dc116962a128e95102a5409ebc0dee3681612fa6466",
-      "header": null,
-      "implementation": null,
+      "header": "src/nodes/accessors/TextureSizeNode.h",
+      "implementation": "src/nodes/accessors/TextureSizeNode.cpp",
       "expectedHeader": "src/nodes/accessors/TextureSizeNode.h",
       "expectedImplementation": "src/nodes/accessors/TextureSizeNode.cpp",
-      "status": "missing",
+      "status": "partial-unverified",
       "verifiedComplete": false,
       "apiExtraction": "partial-static",
       "verification": {
@@ -8386,11 +8388,11 @@
       "scope": "src",
       "kind": "core",
       "upstreamSha256": "a4b0289e9fd76d44e3bc7127adc70d8f2d1f747ef1d049a60daaea892c6c3430",
-      "header": null,
-      "implementation": null,
+      "header": "src/nodes/accessors/UV.h",
+      "implementation": "src/nodes/accessors/UV.cpp",
       "expectedHeader": "src/nodes/accessors/UV.h",
       "expectedImplementation": "src/nodes/accessors/UV.cpp",
-      "status": "missing",
+      "status": "partial-unverified",
       "verifiedComplete": false,
       "apiExtraction": "static-only",
       "verification": {
@@ -9964,11 +9966,11 @@
       "scope": "src",
       "kind": "core",
       "upstreamSha256": "d187c0ecea9a5d5a14539c2a9d513fca40562543cb6ad77aaa9665384f679c39",
-      "header": null,
-      "implementation": null,
+      "header": "src/nodes/display/FrontFacingNode.h",
+      "implementation": "src/nodes/display/FrontFacingNode.cpp",
       "expectedHeader": "src/nodes/display/FrontFacingNode.h",
       "expectedImplementation": "src/nodes/display/FrontFacingNode.cpp",
-      "status": "missing",
+      "status": "partial-unverified",
       "verifiedComplete": false,
       "apiExtraction": "partial-static",
       "verification": {
@@ -9977,7 +9979,9 @@
           "pointer": "/modules/307"
         },
         "upstreamUnitTests": [],
-        "cppUnitTests": [],
+        "cppUnitTests": [
+          "test/unit/src/nodes/display/FrontFacingNode.tests.cpp"
+        ],
         "reviewedImplementation": [],
         "differentialResults": [],
         "renderingResults": [],
@@ -12800,11 +12804,11 @@
       "scope": "src",
       "kind": "core",
       "upstreamSha256": "456e258eecc37485e66d9940b5254bfa413fef7943085b340e2aab5c89cf5f0d",
-      "header": null,
-      "implementation": null,
+      "header": "src/nodes/utils/MaxMipLevelNode.h",
+      "implementation": "src/nodes/utils/MaxMipLevelNode.cpp",
       "expectedHeader": "src/nodes/utils/MaxMipLevelNode.h",
       "expectedImplementation": "src/nodes/utils/MaxMipLevelNode.cpp",
-      "status": "missing",
+      "status": "partial-unverified",
       "verifiedComplete": false,
       "apiExtraction": "partial-static",
       "verification": {
@@ -12813,7 +12817,9 @@
           "pointer": "/modules/411"
         },
         "upstreamUnitTests": [],
-        "cppUnitTests": [],
+        "cppUnitTests": [
+          "test/unit/src/nodes/utils/MaxMipLevelNode.tests.cpp"
+        ],
         "reviewedImplementation": [],
         "differentialResults": [],
         "renderingResults": [],

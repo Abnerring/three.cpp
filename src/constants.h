@@ -242,3 +242,8 @@ inline constexpr auto ZeroCurvatureEnding = 2400;
 inline constexpr auto ZeroFactor = 200;
 inline constexpr auto ZeroSlopeEnding = 2401;
 inline constexpr auto ZeroStencilOp = 0;
+// Native managed module bindings; object constants retain shared mutable identity.
+#include <string>
+class JSValue;
+JSValue nativeConstantsModule();
+JSValue nativeConstantsBinding(const std::string& name);

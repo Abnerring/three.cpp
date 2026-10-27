@@ -1,4 +1,4 @@
-#include "nodes/core/MaxMipLevel.h"
+#include "nodes/utils/MaxMipLevelNode.h"
 
 #include "catch.hpp"
 

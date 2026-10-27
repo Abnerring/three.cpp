@@ -110,6 +110,19 @@ void installNativeGeometryRenderingBridge(JSValue object, const std::shared_ptr<
     // A stable data property holds the live map. Replacement must use native
     // attributes, whose actual shared_ptr slots remain the ownership authority.
     object.defineProperty("attributes", data(map, false, true, true));
+    auto range = JSValue::hostObject(geometry, &geometry->drawRange, "three.BufferGeometry");
+    for (const char* name : {"start", "count"}) {
+        accessor(range, name, +[](const JSValue& self, const Args&, const Args& captures)->JSValue {
+            const auto geometry = payload<BufferGeometry>(self, "three.BufferGeometry");
+            return captures[0].strictEquals("start") ? geometry->drawRange.start : geometry->drawRange.count;
+        }, +[](const JSValue& self, const Args& args, const Args& captures)->JSValue {
+            const auto geometry = payload<BufferGeometry>(self, "three.BufferGeometry");
+            const auto value = arg(args, 0).toNumber();
+            (captures[0].strictEquals("start") ? geometry->drawRange.start : geometry->drawRange.count) = value;
+            return {};
+        });
+    }
+    object.defineProperty("drawRange", data(range));
     object.setPrototype(eventPrototype(object.getPrototype(), "geometry")); installDisposeBridge(object, geometry);
 }
 void installNativeObjectRenderingBridge(JSValue object, const std::shared_ptr<Object3D>& owner) {

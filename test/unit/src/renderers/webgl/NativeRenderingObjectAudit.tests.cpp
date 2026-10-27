@@ -7,8 +7,12 @@
 #include "objects/InstancedMesh.h"
 #include "objects/SkinnedMesh.h"
 #include "objects/Skeleton.h"
+#include "math/Vector2.h"
+#include "math/Euler.h"
 #include "renderers/webgl/WebGLGeometries.h"
 #include "renderers/webgl/WebGLObjects.h"
+#include <cmath>
+#include <limits>
 
 namespace {
 using Args = std::vector<JSValue>;
@@ -45,6 +49,42 @@ struct Commands {
         for (auto value : Args{updates, removes, geometryReleases, objectReleases}) value.set("length", 0);
     }
 };
+}
+TEST_CASE("Native draw ranges remain live through wrapper and native updates and retain their owner", "[renderaudit][native][gc]") {
+    auto witness = JSValue::object(); auto geometry = std::make_shared<BufferGeometry>();
+    auto wrapper = nativeGeometry(geometry), range = wrapper.get("drawRange");
+    REQUIRE(range.sameValue(nativeGeometry(geometry).get("drawRange")));
+    geometry->setDrawRange(2.5, 7.25);
+    REQUIRE(range.get("start").strictEquals(2.5)); REQUIRE(range.get("count").strictEquals(7.25));
+    range.set("start", 4.5); range.set("count", std::numeric_limits<double>::infinity());
+    REQUIRE(geometry->drawRange.start == 4.5); REQUIRE(std::isinf(geometry->drawRange.count));
+    std::weak_ptr<BufferGeometry> weak = geometry;
+    geometry.reset(); wrapper = {}; collect(witness);
+    REQUIRE_FALSE(weak.expired());
+    weak.lock()->setDrawRange(8, 13); REQUIRE(range.get("count").strictEquals(13));
+    range = {}; collect(witness); REQUIRE(weak.expired());
+}
+TEST_CASE("Native Vector2 size aliases share fields and preserve dynamic borrowed accessors", "[renderaudit][native]") {
+    auto vector = std::make_shared<Vector2>(512, 256); auto wrapper = nativeVector(vector);
+    REQUIRE(wrapper.get("width").strictEquals(512)); REQUIRE(wrapper.get("height").strictEquals(256));
+    wrapper.set("width", 1024); wrapper.set("height", 128);
+    REQUIRE(vector->x == 1024); REQUIRE(vector->y == 128);
+    vector->set(80, 40); REQUIRE(wrapper.get("width").strictEquals(80));
+    const auto width = wrapper.getPrototype().getOwnPropertyDescriptor("width");
+    REQUIRE(width.has_value()); REQUIRE_FALSE(width->enumerable.value_or(false)); REQUIRE(width->configurable.value_or(false));
+    auto borrowed = JSValue::object(); borrowed.set("x", "raw");
+    REQUIRE(width->getter->call(borrowed).strictEquals("raw"));
+    width->setter->call(borrowed, {nullptr}); REQUIRE(borrowed.get("x").isNull());
+}
+TEST_CASE("Native Euler equality compares live private values and short circuits in source order", "[renderaudit][native]") {
+    auto euler = std::make_shared<Euler>(1,2,3); auto wrapper = nativeEuler(euler);
+    auto other = JSValue::object(); other.set("_x",1); other.set("_y",2); other.set("_z",3); other.set("_order","XYZ");
+    REQUIRE(call(wrapper,"equals",{other}).strictEquals(true));
+    other.set("_order","YXZ"); REQUIRE(call(wrapper,"equals",{other}).strictEquals(false));
+    other.set("_x",9); JSPropertyDescriptor d;d.configurable = true;
+    d.getter = JSValue::function(+[](const JSValue&,const Args&,const Args&)->JSValue {throw JSTypeError("unreached");});
+    other.defineProperty("_y",d); REQUIRE(call(wrapper,"equals",{other}).strictEquals(false));
+    other.set("_x",1); REQUIRE_THROWS_AS(call(wrapper,"equals",{other}),JSTypeError);
 }
 TEST_CASE("Native geometry external ownership retains wrapper map attribute and managed extension graphs", "[renderaudit][gc]") {
     auto witness = JSValue::object(); auto geometry = std::make_shared<BufferGeometry>();

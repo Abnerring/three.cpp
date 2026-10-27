@@ -2175,6 +2175,7 @@ JSValue JSValue::get(const std::string& rawKey, const JSValue& receiver) const {
         if (descriptor->value) return *descriptor->value;
         return descriptor->getter->isUndefined() ? JSValue{} : descriptor->getter->call(rootedReceiver);
     }
+    if (NativeArray_detail::isNumericProperty(self, key)) return {};
     const auto prototype = self.getPrototype();
     return prototype.isNull() ? JSValue{} : prototype.get(key, rootedReceiver);
 }
@@ -2193,6 +2194,7 @@ bool JSValue::has(const std::string& rawKey) const {
     if (!self.isObject()) throw JSTypeError("Right operand of 'in' must be an object");
     if (self.isProxy()) return JSProxyDetail::has(self, key);
     if (self.hasOwn(key)) return true;
+    if (NativeArray_detail::isNumericProperty(self, key)) return false;
     const auto prototype = self.getPrototype(); return !prototype.isNull() && prototype.has(key);
 }
 bool JSValue::reflectSet(const std::string& rawKey, const JSValue& value, const JSValue& receiver) const {
@@ -2516,8 +2518,11 @@ bool JSValue::setPrototype(const JSValue& prototype) {
     auto& record = heap_->record(*this);
     if (record.prototype.strictEquals(prototype)) return true;
     if (!record.extensible || record.immutablePrototype) return false;
-    for (auto previous = prototype; !previous.isNull(); previous = previous.getPrototype())
+    for (auto previous = prototype; !previous.isNull(); previous = previous.getPrototype()) {
         if (previous.strictEquals(*this)) return false;
+        // OrdinarySetPrototypeOf stops before invoking an exotic [[GetPrototypeOf]].
+        if (previous.isProxy()) break;
+    }
     record.prototype = prototype.graphEdge(); return true;
 }
 void JSValue::preventExtensions() { if (!isObject()) throw JSTypeError("Expected runtime object"); if(isProxy()){if(!JSProxyDetail::preventExtensions(*this))throw JSTypeError("Proxy refused preventExtensions");return;} heap_->record(*this).extensible = false; }

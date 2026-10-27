@@ -1,4 +1,5 @@
-﻿#pragma once
+#pragma once
+#include "core/JSValue.h"
 #include <cstdint>
 #include <string>
 
@@ -36,4 +37,19 @@ class MaxMipLevel {
     enum class ImageSource { FirstImage, FirstImageOrItself, TextureImage };
 
     static ImageSource imageSource(bool hasImages, bool hasFirstImage, bool firstImageHasImage);
+};
+JSValue nativeMaxMipLevelNodeConstructor();
+JSValue nativeMaxMipLevelNodeModule();
+JSValue nativeMaxMipLevelNodeBinding(const std::string& name);
+class MaxMipLevelNode {
+    JSValue object_;
+public:
+    explicit MaxMipLevelNode(const JSValue& textureNode={});
+    JSValue object()const{return object_;}
+    operator JSValue()const{return object_;}
+    static JSValue constructor(){return nativeMaxMipLevelNodeBinding("default");}
+    static JSValue prototype(){return constructor().get("prototype");}
+    JSValue update()const;
+    JSValue textureNode()const{return object_.get("textureNode");}
+    JSValue texture()const{return object_.get("texture");}
 };

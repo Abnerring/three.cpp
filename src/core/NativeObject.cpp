@@ -492,6 +492,13 @@ JSValue colorScratch();
 JSValue mathEquals(const JSValue& self,const Args& args,const Args& captures) {
     const auto other=argument(args,0);
     const auto& tag=captures[1].string();
+    if(tag=="three.Euler") {
+        for(const auto* key:{"_x","_y","_z","_order"}) {
+            const auto left=other.get(key);const auto right=self.get(key);
+            if(!left.strictEquals(right))return false;
+        }
+        return true;
+    }
     const char* components=tag=="three.Color"?"rgb":tag=="three.Vector2"?"xy":tag=="three.Vector4"?"xyzw":"xyz";
     for(const char* component=components;*component;++component) {
         const std::string key(1,*component);
@@ -514,6 +521,19 @@ JSValue mathPrototype(const char* tag,const char* components,const char* flag,bo
     return cachedModuleValue(prototypes[tag], [&] {
             auto p = JSValue::object();
             if (!privateComponents && std::string(tag) != "three.Color") p.set(flag,true);
+            if (std::string(tag) == "three.Vector2") {
+                for (const auto* name : {"width", "height"}) {
+                    JSPropertyDescriptor d; d.configurable = true;
+                    const auto component = std::string(name) == "width" ? "x" : "y";
+                    d.getter = JSValue::function(+[](const JSValue& self,const Args&,const Args& cap)->JSValue {
+                        return self.get(cap[0].string());
+                    }, {component}, std::string("get ") + name, 0);
+                    d.setter = JSValue::function(+[](const JSValue& self,const Args& args,const Args& cap)->JSValue {
+                        auto target = self; target.set(cap[0].string(), argument(args,0)); return {};
+                    }, {component}, std::string("set ") + name, 1);
+                    p.defineProperty(name,d);
+                }
+            }
             if (privateComponents) {
                 for (const char* c = components; *c; ++c) {
                     const std::string key(1,*c); accessor(p,key.c_str(),mathRead,mathWrite,false);
@@ -536,6 +556,10 @@ JSValue mathPrototype(const char* tag,const char* components,const char* flag,bo
             }
             method(p, "clone", mathClone, tag);
             method(p, "copy", mathCopy, tag);
+            if (std::string(tag)=="three.Euler") {
+                lightingMethod(p,"equals",mathEquals,tag,1);
+                p.get("equals").setFunctionSourceText(source_equals_Euler);
+            }
             if (std::string(tag)=="three.Vector2" || std::string(tag)=="three.Vector3" ||
                 std::string(tag)=="three.Vector4" || std::string(tag)=="three.Color") {
                 lightingMethod(p,"equals",mathEquals,tag,1);

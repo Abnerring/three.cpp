@@ -1,4 +1,4 @@
-#include "nodes/core/Normal.h"
+#include "nodes/accessors/Normal.h"
 
 #include "catch.hpp"
 

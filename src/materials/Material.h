@@ -18,6 +18,9 @@ class Scene;
 class Camera;
 class Object3D;
 class Texture;
+JSValue nativeMaterialConstructor();
+JSValue nativeMaterialModule();
+JSValue nativeMaterialBinding(const std::string& name);
 struct TextureJSONContext;
 class Material : public EventDispatcher {
   public:
