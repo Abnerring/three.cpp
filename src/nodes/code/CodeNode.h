@@ -2,6 +2,7 @@
 #include "core/JSMember.h"
 
 JSValue nativeCodeNodeConstructor();
+JSValue nativeCodeNodeModule();
 class CodeNode {
     JSValue object_;
   public:

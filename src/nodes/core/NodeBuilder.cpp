@@ -1,4 +1,5 @@
 #include "nodes/core/NodeBuilder.h"
+#include "nodes/core/VarNode.h"
 #include "nodes/core/NodeBuilderAsync.h"
 #include "nodes/core/constants.h"
 #include "nodes/core/NodeCache.h"
@@ -932,6 +933,7 @@ JSValue nativeNodeBuilderConstructor() {
     if (auto value = weak.lock(); value && value->isConstructible()) return *value;
     static thread_local bool initializing = false;
     JSModuleInitializationScope scope(initializing, "NodeBuilder constructor");
+    nativeVarNodeModule();
     auto state = JSValue::object(nullptr); state.set("id", 0);
     state.set("functionNodeCache", createNativeWeakMap());
     auto arrayConstructors = JSValue::array();

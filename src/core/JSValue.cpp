@@ -1,5 +1,6 @@
 #include "core/JSValue.h"
 #include "core/JSNumber.h"
+#include "core/JSProxy.h"
 #include "core/JSRegExp.h"
 #include "core/JSJobs.h"
 #include "core/JSIterator.h"
@@ -247,8 +248,10 @@ JSValue objectValueOf(const JSValue& receiver, const std::vector<JSValue>&, cons
 JSValue objectToString(const JSValue& receiver, const std::vector<JSValue>&, const std::vector<JSValue>&) {
     if(receiver.isUndefined())return "[object Undefined]";
     if(receiver.isNull())return "[object Null]";
+    const auto array=isNativeArray(receiver);
     const auto custom=receiver.get(JSValue::wellKnownSymbol("toStringTag"));
     if(custom.type()==JSValue::Type::String)return "[object "+custom.string()+"]";
+    if(array)return "[object Array]";
     if(isNativeStringObject(receiver))return "[object String]";
     if(isNativeNumberObject(receiver))return "[object Number]";
     if(isNativeRegExpObject(receiver))return "[object RegExp]";
@@ -400,7 +403,7 @@ JSValue arrayShift(const JSValue& receiver, const Args&, const Args&) {
 }
 JSValue arrayResult(JSValue original, std::uint64_t length) {
     JSValue constructor;
-    if (original.type() == JSValue::Type::Array) {
+    if (isNativeArray(original)) {
         constructor = original.get("constructor");
         // Cross-realm intrinsic replacement is outside the single-realm
         // runtime. All supported constructor/species reads are live.
@@ -423,7 +426,7 @@ JSValue arrayConcat(const JSValue& receiver, const Args& args, const Args&) {
     const auto append = [&](const JSValue& item) {
         // Custom species is handled by arrayResult. The remaining
         // @@isConcatSpreadable hook still needs its own implementation.
-        if (item.type() == JSValue::Type::Array) {
+        if (isNativeArray(item)) {
             const auto length = arrayLikeLength(item);
             if (length > 9007199254740991ULL - next)
                 throw JSTypeError("Array-like length exceeds maximum safe integer");
@@ -502,6 +505,33 @@ JSValue arrayFilter(const JSValue& receiver, const Args& args, const Args&) {
         }
     }
     return result;
+}
+JSValue arrayReduce(const JSValue& receiver, const Args& args, const Args&) {
+    const auto object=arrayMethodObject(receiver);const auto length=arrayLikeLength(object);
+    const auto callback=argument(args,0);if(!callback.isCallable())throw JSTypeError("Array.reduce callback is not callable");
+    std::uint64_t index=0;JSValue accumulator;
+    if(args.size()>1)accumulator=args[1];
+    else {
+        bool found=false;
+        while(index<length){const auto key=std::to_string(index++);if(object.has(key)){accumulator=object.get(key);found=true;break;}}
+        if(!found)throw JSTypeError("Reduce of empty array with no initial value");
+    }
+    for(;index<length;++index){const auto key=std::to_string(index);if(object.has(key)){const auto value=object.get(key);accumulator=callback.call({}, {accumulator,value,index,object});}}
+    return accumulator;
+}
+JSValue arrayEvery(const JSValue& receiver, const Args& args, const Args&) {
+    const auto object=arrayMethodObject(receiver);const auto length=arrayLikeLength(object);
+    const auto callback=argument(args,0),thisArg=argument(args,1);if(!callback.isCallable())throw JSTypeError("Array.every callback is not callable");
+    for(std::uint64_t index=0;index<length;++index){const auto key=std::to_string(index);if(object.has(key)){const auto value=object.get(key);if(!callback.call(thisArg,{value,index,object}).toBoolean())return false;}}
+    return true;
+}
+JSValue arrayFill(const JSValue& receiver, const Args& args, const Args&) {
+    auto object=arrayMethodObject(receiver);const auto length=arrayLikeLength(object);
+    const auto relative=integerOrInfinity(argument(args,1));
+    auto from=relative<0?std::max(double(length)+relative,0.0):std::min(relative,double(length));
+    const auto end=argument(args,2);const auto limit=end.isUndefined()?double(length):integerOrInfinity(end);
+    const auto to=limit<0?std::max(double(length)+limit,0.0):std::min(limit,double(length));
+    for(;from<to;++from)object.set(JSValue(from).toString(),argument(args,0));return object;
 }
 JSValue arrayIndexOf(const JSValue& receiver, const Args& args, const Args&) {
     auto object = arrayObject(receiver); const auto length = arrayLikeLength(object);
@@ -600,7 +630,7 @@ JSValue arrayConstructor(const JSValue&, const Args& args, const Args&) {
     auto array = JSValue::array(); arrayPush(array, args, {}); return array;
 }
 JSValue arrayIsArray(const JSValue&, const Args& args, const Args&) {
-    return argument(args, 0).type() == JSValue::Type::Array;
+    return isNativeArray(argument(args, 0));
 }
 JSValue arrayFrom(const JSValue& constructor, const Args& args, const Args&) {
     const auto items=argument(args,0), mapper=argument(args,1), thisArg=argument(args,2);
@@ -736,6 +766,7 @@ class JSHeap : public std::enable_shared_from_this<JSHeap> {
         std::optional<std::string> symbolDescription;
         std::shared_ptr<void> hostPayload;
         std::shared_ptr<const JSHostObjectHooks> hostHooks;
+        bool proxy = false, proxyConstructor = false;
         std::string hostTag;
         JSValue::Type hostType = JSValue::Type::Object;
         JSValue prototype = nullptr, primitiveConverter;
@@ -1025,6 +1056,9 @@ class JSHeap : public std::enable_shared_from_this<JSHeap> {
         install(array, "splice", arraySplice, 2);
         install(array, "map", arrayMap, 1);
         install(array, "filter", arrayFilter, 1);
+        install(array, "reduce", arrayReduce, 1);
+        install(array, "every", arrayEvery, 1);
+        install(array, "fill", arrayFill, 1);
         auto arrayCtor = createFunction(arrayConstructor, {}, "Array", 1);
         record(arrayCtor).intrinsic = true;
         intrinsicArray = arrayCtor.graphEdge();
@@ -1806,6 +1840,16 @@ std::size_t JSValue::nativeSafepoint() {
     const auto heap = JSHeap::currentHeapStorage().lock();
     return heap ? heap->safepoint() : 0;
 }
+JSValue JSValue::proxy(const JSValue& target, const JSValue& handler) {
+    if (!target.isObject() || !handler.isObject()) throw JSTypeError("Proxy target and handler must be objects");
+    auto heap = JSHeap::current(); heap->validateEdge(target); heap->validateEdge(handler);
+    auto result = heap->allocate(target.isCallable() ? Type::Function : Type::Object);
+    auto& record = heap->record(result); record.proxy = true; record.proxyConstructor = target.isConstructible();
+    result.setHostSlot("Proxy.target", target); result.setHostSlot("Proxy.handler", handler);
+    return result;
+}
+bool JSValue::isProxy() const { return isObject() && heap_->record(*this).proxy; }
+JSValue createNativeProxy(const JSValue& target, const JSValue& handler) { return JSValue::proxy(target, handler); }
 bool JSValue::hasActiveHeap() {
     static_cast<void>(nativeSafepoint());
     return !JSHeap::currentHeapStorage().expired();
@@ -1855,12 +1899,12 @@ void JSValue::setHostHooks(std::shared_ptr<const JSHostObjectHooks> hooks) {
     record.hostHooks = std::move(hooks);
 }
 void JSValue::setHostSlot(const std::string& key, const JSValue& value) {
-    if (!isObject() || !heap_->record(*this).hostPayload) throw JSTypeError("Expected native host");
+    if (!isObject() || (!heap_->record(*this).hostPayload && !heap_->record(*this).proxy)) throw JSTypeError("Expected native host");
     heap_->validateEdge(value);
     heap_->record(*this).hostSlots[key] = value.graphEdge();
 }
 JSValue JSValue::getHostSlot(const std::string& key) const {
-    if (!isObject() || !heap_->record(*this).hostPayload) throw JSTypeError("Expected native host");
+    if (!isObject() || (!heap_->record(*this).hostPayload && !heap_->record(*this).proxy)) throw JSTypeError("Expected native host");
     const auto& slots = heap_->record(*this).hostSlots;
     const auto found = slots.find(key);
     return found == slots.end() ? JSValue{} : found->second;
@@ -1904,6 +1948,7 @@ JSValue JSValue::callableBuiltinConstructor(NativeBuiltinFunction callback,
     return value;
 }
 bool JSValue::isConstructible() const {
+    if (isProxy()) return heap_->record(*this).proxyConstructor;
     return isCallable() && heap_->record(*this).constructMode != JSHeap::Record::ConstructMode::None;
 }
 JSValue::Type JSValue::type() const {
@@ -1984,6 +2029,7 @@ JSValue JSValue::call(const JSValue& receiver, const std::vector<JSValue>& args)
     static_cast<void>(JSWeakValue(receiver));
     for (const auto& argument : args) static_cast<void>(JSWeakValue(argument));
     if (!isCallable()) throw JSTypeError("Value is not callable");
+    if (isProxy()) return JSProxyDetail::call(*this, receiver, args);
     // Root everything before user code detaches properties or runs collection.
     const JSValue function = *this, rootedReceiver = receiver;
     JSHeap::ExecutionScope execution(*heap_);
@@ -2034,6 +2080,7 @@ JSValue JSValue::bind(const JSValue& receiver, const std::vector<JSValue>& args)
 JSValue JSValue::construct(const std::vector<JSValue>& args, const JSValue& newTarget) const {
     if (!isConstructible()) throw JSTypeError("Value is not a constructor");
     if (!newTarget.isConstructible()) throw JSTypeError("newTarget is not a constructor");
+    if (isProxy()) return JSProxyDetail::construct(*this, args, newTarget);
     // Prototype access can invoke user code, detach the constructor and its
     // arguments, collect garbage, or reenter construction. Root them first.
     const JSValue function = *this, rootedNewTarget = newTarget;
@@ -2074,6 +2121,7 @@ JSValue JSValue::construct(const std::vector<JSValue>& args, const JSValue& newT
 std::string JSValue::nativeFunctionSource() const {
     static_cast<void>(JSWeakValue(*this));
     if (!isCallable()) throw JSTypeError("Function.prototype.toString requires a function");
+    if(isProxy())return "function () { [native code] }";
     const auto& function = heap_->record(*this);
     if (function.functionSourceText) return *function.functionSourceText;
     return "function " + function.nativeName + "() { [native code] }";
@@ -2088,6 +2136,7 @@ std::optional<JSValue::PropertyDescriptor> JSValue::getOwnPropertyDescriptor(con
     const auto key = normalizeString(rawKey);
     if (!isObject()) throw JSTypeError("Expected runtime object");
     const JSValue self = *this;
+    if (self.isProxy()) return JSProxyDetail::descriptor(self, key);
     const auto hooks = heap_->record(self).hostHooks;
     if (hooks && hooks->getOwnProperty) {
         auto result = hooks->getOwnProperty(self, key);
@@ -2119,6 +2168,7 @@ JSValue JSValue::get(const std::string& rawKey, const JSValue& receiver) const {
     }
     if (self.type() == Type::Number) return nativeNumberPrototype().get(key, rootedReceiver);
     if (!self.isObject()) return {};
+    if (self.isProxy()) return JSProxyDetail::get(self, key, rootedReceiver);
     const auto descriptor = self.getOwnPropertyDescriptor(key);
     if (descriptor) {
         if (descriptor->value) return *descriptor->value;
@@ -2140,6 +2190,7 @@ bool JSValue::has(const std::string& rawKey) const {
     const auto key = normalizeString(rawKey);
     const JSValue self = *this;
     if (!self.isObject()) throw JSTypeError("Right operand of 'in' must be an object");
+    if (self.isProxy()) return JSProxyDetail::has(self, key);
     if (self.hasOwn(key)) return true;
     const auto prototype = self.getPrototype(); return !prototype.isNull() && prototype.has(key);
 }
@@ -2148,6 +2199,7 @@ bool JSValue::reflectSet(const std::string& rawKey, const JSValue& value, const 
     const JSValue self = *this, rootedValue = value, rootedReceiver = receiver;
     if (!self.isObject()) throw JSTypeError("Expected runtime object");
     self.heap_->validateEdge(rootedValue); self.heap_->validateEdge(rootedReceiver);
+    if (self.isProxy()) return JSProxyDetail::set(self, key, rootedValue, rootedReceiver);
     const auto hooks = self.heap_->record(self).hostHooks;
     if (hooks && hooks->reflectSet) {
         const auto handled = hooks->reflectSet(self, key, rootedValue, rootedReceiver);
@@ -2186,6 +2238,7 @@ bool JSValue::defineOwnProperty(const std::string& rawKey, const PropertyDescrip
     for (const auto* method : {&descriptor.getter, &descriptor.setter})
         if (*method && !(**method).isUndefined() && !(**method).isCallable())
             throw JSTypeError("Getter/setter must be callable or undefined");
+    if (self.isProxy()) return JSProxyDetail::define(self, key, descriptor);
     const auto hooks = self.heap_->record(self).hostHooks;
     if (hooks && hooks->defineOwnProperty) {
         const auto handled = hooks->defineOwnProperty(self, key, descriptor);
@@ -2271,6 +2324,7 @@ bool JSValue::erase(const std::string& rawKey) {
     if (!isObject()) throw JSTypeError("Expected runtime object");
     const JSValue self = *this;
     const auto hooks = heap_->record(self).hostHooks;
+    if (self.isProxy()) return JSProxyDetail::erase(self, key);
     if (hooks && hooks->erase) {
         const auto handled = hooks->erase(self, key);
         if (handled) return *handled;
@@ -2294,6 +2348,11 @@ std::vector<std::string> JSValue::ownPropertyNames() const {
     if (!isObject()) throw JSTypeError("Expected runtime object");
     const JSValue self = *this;
     const auto hooks = heap_->record(self).hostHooks;
+    if (self.isProxy()) {
+        std::vector<std::string> result;
+        for (const auto& key : JSProxyDetail::keys(self)) if (!key.isSymbol()) result.push_back(key.string());
+        return result;
+    }
     std::vector<std::string> nativeKeys;
     if (hooks && hooks->ownPropertyNames) nativeKeys = hooks->ownPropertyNames(self);
     std::vector<std::string> result;
@@ -2324,6 +2383,7 @@ std::optional<JSValue::PropertyDescriptor> JSValue::getOwnPropertyDescriptor(con
     const auto key=input.toPropertyKey();if(!key.isSymbol())return getOwnPropertyDescriptor(key.string());
     static_cast<void>(JSWeakValue(*this));static_cast<void>(JSWeakValue(key));
     if(!isObject())throw JSTypeError("Expected runtime object");heap_->validateEdge(key);
+    if(isProxy())return JSProxyDetail::descriptor(*this,key);
     const auto& properties=heap_->record(*this).symbolProperties;
     const auto found=std::find_if(properties.begin(),properties.end(),[&](const auto& entry){return entry.key.sameValue(key);});
     if(found==properties.end())return {};
@@ -2342,6 +2402,7 @@ JSValue JSValue::get(const JSValue& input,const JSValue& receiver) const {
     if(self.type()==Type::String)return nativeStringPrototype().get(key,rootedReceiver);
     if(self.type()==Type::Number)return nativeNumberPrototype().get(key,rootedReceiver);
     if(!self.isObject())return {};
+    if(self.isProxy())return JSProxyDetail::get(self,key,rootedReceiver);
     const auto d=self.getOwnPropertyDescriptor(key);
     if(d){if(d->value)return *d->value;return d->getter->isUndefined()?JSValue{}:d->getter->call(rootedReceiver);}
     const auto prototype=self.getPrototype();return prototype.isNull()?JSValue{}:prototype.get(key,rootedReceiver);
@@ -2360,6 +2421,7 @@ bool JSValue::has(const JSValue& input) const {
     const auto key=input.toPropertyKey();if(!key.isSymbol())return has(key.string());
     static_cast<void>(JSWeakValue(*this));static_cast<void>(JSWeakValue(key));
     if(!isObject())throw JSTypeError("Right operand of 'in' must be an object");
+    if(isProxy())return JSProxyDetail::has(*this,key);
     if(hasOwn(key))return true;const auto prototype=getPrototype();return !prototype.isNull()&&prototype.has(key);
 }
 bool JSValue::reflectSet(const JSValue& input,const JSValue& value,const JSValue& receiver) const {
@@ -2370,6 +2432,7 @@ bool JSValue::reflectSet(const JSValue& input,const JSValue& value,const JSValue
     const JSValue self=*this,rootedValue=value,rootedReceiver=receiver;
     if(!self.isObject())throw JSTypeError("Expected runtime object");
     self.heap_->validateEdge(key);self.heap_->validateEdge(rootedValue);self.heap_->validateEdge(rootedReceiver);
+    if(self.isProxy())return JSProxyDetail::set(self,key,rootedValue,rootedReceiver);
     auto d=self.getOwnPropertyDescriptor(key);
     if(!d){const auto prototype=self.getPrototype();if(!prototype.isNull())return prototype.reflectSet(key,rootedValue,rootedReceiver);d=dataDescriptor(JSValue{});}
     if(d->value){
@@ -2397,6 +2460,7 @@ bool JSValue::defineOwnProperty(const JSValue& input,const PropertyDescriptor& d
     if(accessor&&data)throw JSTypeError("Invalid property descriptor: accessor and value/writable");
     for(const auto* value:{&descriptor.value,&descriptor.getter,&descriptor.setter})if(*value){static_cast<void>(JSWeakValue(**value));heap_->validateEdge(**value);}
     for(const auto* method:{&descriptor.getter,&descriptor.setter})if(*method&&!(**method).isUndefined()&&!(**method).isCallable())throw JSTypeError("Getter/setter must be callable or undefined");
+    if(isProxy())return JSProxyDetail::define(*this,key,descriptor);
     auto& record=heap_->record(*this);auto& properties=record.symbolProperties;
     auto found=std::find_if(properties.begin(),properties.end(),[&](const auto& entry){return entry.key.sameValue(key);});
     const bool present=found!=properties.end();if(!present&&!record.extensible)return false;
@@ -2423,26 +2487,31 @@ bool JSValue::erase(const JSValue& input) {
     const auto key=input.toPropertyKey();if(!key.isSymbol())return erase(key.string());
     static_cast<void>(JSWeakValue(*this));static_cast<void>(JSWeakValue(key));
     if(!isObject())throw JSTypeError("Expected runtime object");heap_->validateEdge(key);
+    if(isProxy())return JSProxyDetail::erase(*this,key);
     auto& properties=heap_->record(*this).symbolProperties;
     const auto found=std::find_if(properties.begin(),properties.end(),[&](const auto& entry){return entry.key.sameValue(key);});
     if(found==properties.end())return true;if(!found->property.configurable)return false;properties.erase(found);return true;
 }
 std::vector<JSValue> JSValue::ownPropertySymbols() const {
     static_cast<void>(JSWeakValue(*this));if(!isObject())throw JSTypeError("Expected runtime object");
+    if(isProxy()){std::vector<JSValue> result;for(const auto& key:JSProxyDetail::keys(*this))if(key.isSymbol())result.push_back(key);return result;}
     std::vector<JSValue> result;for(const auto& entry:heap_->record(*this).symbolProperties)result.push_back(entry.key);return result;
 }
 std::vector<JSValue> JSValue::ownPropertyKeys() const {
+    if(isProxy())return JSProxyDetail::keys(*this);
     static_cast<void>(JSWeakValue(*this));
     std::vector<JSValue> result;for(const auto& name:ownPropertyNames())result.emplace_back(name);
     for(const auto& symbol:ownPropertySymbols())result.push_back(symbol);return result;
 }
 JSValue JSValue::getPrototype() const {
     if (!isObject()) throw JSTypeError("Expected runtime object");
+    if(isProxy())return JSProxyDetail::prototype(*this);
     return heap_->record(*this).prototype;
 }
 bool JSValue::setPrototype(const JSValue& prototype) {
     if (!isObject() || (!prototype.isObject() && !prototype.isNull())) throw JSTypeError("Invalid prototype");
     heap_->validateEdge(prototype);
+    if(isProxy())return JSProxyDetail::setPrototype(*this,prototype);
     auto& record = heap_->record(*this);
     if (record.prototype.strictEquals(prototype)) return true;
     if (!record.extensible || record.immutablePrototype) return false;
@@ -2450,8 +2519,8 @@ bool JSValue::setPrototype(const JSValue& prototype) {
         if (previous.strictEquals(*this)) return false;
     record.prototype = prototype.graphEdge(); return true;
 }
-void JSValue::preventExtensions() { if (!isObject()) throw JSTypeError("Expected runtime object"); heap_->record(*this).extensible = false; }
-bool JSValue::isExtensible() const { if (!isObject()) throw JSTypeError("Expected runtime object"); return heap_->record(*this).extensible; }
+void JSValue::preventExtensions() { if (!isObject()) throw JSTypeError("Expected runtime object"); if(isProxy()){if(!JSProxyDetail::preventExtensions(*this))throw JSTypeError("Proxy refused preventExtensions");return;} heap_->record(*this).extensible = false; }
+bool JSValue::isExtensible() const { if (!isObject()) throw JSTypeError("Expected runtime object"); if(isProxy())return JSProxyDetail::extensible(*this);return heap_->record(*this).extensible; }
 void JSValue::setPrimitiveConverter(const JSValue& converter) {
     defineProperty(wellKnownSymbol("toPrimitive"),dataDescriptor(converter,true,false,true));
 }
@@ -2497,10 +2566,10 @@ std::optional<JsonValue> JSValue::toJSON() const {
         const auto id = std::get<Reference>(value.value_).id;
         if (!active.insert(id).second) throw JSTypeError("Circular structure in JSON");
         JsonValue result;
-        if (value.type() == Type::Array) {
+        if (isNativeArray(value)) {
             JsonValue::Array entries;
-            const auto length = value.length(); entries.reserve(length);
-            for (std::uint32_t i = 0; i < length; ++i) {
+            const auto length = arrayLikeLength(value);
+            for (std::uint64_t i = 0; i < length; ++i) {
                 const auto name = std::to_string(i);
                 entries.push_back(encode(value.get(name), name).value_or(JsonValue(nullptr)));
             }

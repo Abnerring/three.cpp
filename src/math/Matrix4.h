@@ -10,6 +10,7 @@
 #define MATRIX4_H
 
 #include "core/BasicType.h"
+#include "core/JSValue.h"
 #include <span>
 #include <vector>
 #include <memory>
@@ -17,6 +18,7 @@
 class Vector3;
 class Matrix3;
 class Object3D;
+JSValue nativeMatrix4Constructor();
 
 /**
  * @class Matrix4

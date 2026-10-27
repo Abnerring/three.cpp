@@ -1,5 +1,6 @@
 #include "nodes/code/CodeNode.h"
 #include "nodes/core/Node.h"
+#include "nodes/tsl/TSLCore.h"
 #include "core/JSIterator.h"
 #include "core/JSModuleObject.h"
 
@@ -51,6 +52,26 @@ JSValue nativeCodeNodeConstructor() {
     constructor.retainForHeapLifetime(); weak = JSWeakValue(constructor); return constructor;
 }
 CodeNode::CodeNode(const JSValue& code, const JSValue& includes, const JSValue& language) : object_(constructor().construct({code, includes, language})) {}
+JSValue nativeCodeNodeModule() {
+    static thread_local JSWeakValue weak;
+    if (const auto module = weak.lock(); module && module->isObject()) return *module;
+    static thread_local bool initializing = false; JSModuleInitializationScope scope(initializing, "CodeNode exports");
+    const auto tsl = nativeTSLCore();
+    const auto proxy = tsl.get("nodeProxy").call({}, {nativeCodeNodeConstructor()});
+    const auto code = proxy.get("setParameterLength").call(proxy, {1, 3});
+    auto module = JSValue::object();
+    const auto define = [&](const char* name, const JSValue& value) {
+        JSPropertyDescriptor descriptor; descriptor.value = value;
+        descriptor.writable = descriptor.enumerable = descriptor.configurable = true; module.defineProperty(name, descriptor);
+    };
+    define("code", code); define("default", nativeCodeNodeConstructor());
+    for (const auto* language : {"glsl", "js", "wgsl"}) {
+        define(language, JSValue::function([](const JSValue&, const Args& args, const Args& captures) -> JSValue {
+            return captures[0].call({}, {args.empty() ? JSValue{} : args[0], args.size() < 2 ? JSValue{} : args[1], captures[1]});
+        }, {code, language}, language, 2));
+    }
+    module.retainForHeapLifetime(); weak = JSWeakValue(module); return module;
+}
 JSValue CodeNode::setIncludes(const JSValue& includes) const { return invoke(object_, "setIncludes")({includes}); }
 JSValue CodeNode::getIncludes(const JSValue& builder) const { return invoke(object_, "getIncludes")({builder}); }
 JSValue CodeNode::generate(const JSValue& builder) const { return invoke(object_, "generate")({builder}); }

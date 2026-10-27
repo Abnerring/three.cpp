@@ -21,17 +21,23 @@
 
 ## C++ 适配
 
+TSLCore 已从两个导出扩展到节点转换/工厂、类型转换、Node.prototype 链式方法、340 种 swizzle 及 32 个数组索引缓存、Fn/ShaderNode/Stack 等实际实现。ArrayElement/Convert/Join/Split/Set/Flip/Member 节点及其测试移到与上游相同的 nodes/utils 路径，旧 core 转发文件删除。VarNode 接入真实 Var/Const/VarIntent 与 NodeBuilder 导入副作用。对应差分为 TSLCore 953、工具节点 541、VarNode 222；完整 TSL、操作/条件/显示节点和 NodeMaterial 依赖仍未完成。
+
+Fn/ShaderNode/Stack 在先加载 TSLCore、到集成用例才加载 NodeBuilder 的隔离导入范围通过 141 项。上游完整 NodeBuilder 导入会执行尚未移植模块的顶层工厂；默认全图比较仍有 13 个场景的 Fn 名称编号差 8。两种范围各自保存真实 oracle，隔离范围不代表完整导入图通过。TSLCore 的普通 nodeObjects(ConstNode) 绝对 id 差异也保留在初始失败证据；后续普通输入 fixture 显式设 id=42 验证枚举/转换，没有声称完整初始化编号一致。
+
+原生 C++ Proxy 内部方法已接入属性/描述符、String/Symbol 键、原型、可扩展性、调用、构造、撤销与 GC；代理及相关数组协议共 883 项差分和实际 GC 检查通过。Array reduce/every/fill 与动态迭代器/方法替换支撑真实 TSL 逻辑，不执行 JS 源码。全局内建、跨 realm、完整基本类型装箱及所有生成器共享内建身份仍有边界。
+
 `NodeCache` 与 `NodeFrame` 已改为真实管理对象，字段、原型方法和弱缓存是活状态。NodeCache 保留本地 `undefined` 查询父缓存、动态 `get/set` 与父字段二次读取；NodeFrame 保留三种更新阶段、共享引用、严格 `false`、异常及同步重入时的标记顺序，时钟由每个运行时域的原生宿主提供。WeakMap 支持当前运行时的未注册 Symbol 键及条件回收；Symbol 注册表仍待实现。固定上游差分通过 NodeCache 68 个协议场景、NodeFrame 800 个协议场景，分别另有 8 个实际 Node GC 快照。它们已与本轮 Node/NodeBuilder 的缓存和三阶段节点构建路径联测；完整节点代码生成与现代 Vulkan 渲染管线仍待实现。
 
 `Node` 已改为真实管理对象，实现子节点遍历、版本缓存、类型与共享缓存、setup/analyze/generate 三阶段、局部 flow 缓存、事件与序列化。getChildren 使用独立生成器状态，保留方法共享/品牌检查、关闭/重入/异常优先级与固定 V8 的接收者保留时机。固定上游差分通过 674 个协议场景和 16 个真实 Node/native GC 快照。它仍依赖原生运行时已支持的内建协议，Object 静态方法任意替换和完整基本类型装箱尚未全量验收。生成器关闭后对 return/throw 完成值的 V8 保留时机尚未对齐；不能把当前 GC 场景视为全部 V8 内存行为一致。
 
 `NodeBuilder` 已有真实构造器、动态原型与缓存/用量/声明/flow/stack/type/format 算法，并接入 NodeVar、NodeAttribute、NodeUniform、NodeVarying、NodeCode、StructType 的管理对象构造器。本轮接入 BindGroup 的跨阶段合并、共享/缓存与排序，backend→shaderNode 弱缓存、真实 FunctionNode、renderer NodeUniform 类型映射及 ParameterNode 的 flowShaderNode。1,050 项固定上游差分通过，原 909 项输入与预期保留；新增异常/重入保留源码的部分状态，for-in 保留初始候选键和删除检查。新增 createRenderTarget、createCubeRenderTarget、getTypeFromAttribute、prebuild、buildAsync 的实际实现：前两者构造真实管理 RenderTarget/CubeRenderTarget；属性类型按交错 data、array、itemSize、normalized 和 Float16 实例关系读取；prebuild 保留 renderer/material context 合并、材质库查询、动态 build 与计算流分支。材质库返回 null 时的 NodeMaterial fallback 尚缺，当前明确报错，不能据此宣称完整材质构建完成。
 
-`buildAsync` 使用原生 Promise 和可恢复构建状态，按上游同步执行到首个 await，逐 shader stage 调用 yield 函数，在实际 Promise/thenable 完成后继续；保留拒绝值、异常时的迭代关闭与部分构建状态。默认 yieldToMain 投递独立的原生 host task，宿主需驱动任务与微任务检查点；没有用同步循环代替异步。build/prebuild 的可运行分支仍不等于完整节点代码生成或现代 Vulkan 管线。注册的抽象扩展点不计为具体 GPU 能力。StackNode 的现有列表/类型/setup/build 算法及动态 super 查找通过 67 项差分；If/ElseIf/Else/Switch/Case 仍因 ShaderNode/ConditionalNode 未移植而显式拒绝。
+`buildAsync` 使用原生 Promise 和可恢复构建状态，按上游同步执行到首个 await，逐 shader stage 调用 yield 函数，在实际 Promise/thenable 完成后继续；保留拒绝值、异常时的迭代关闭与部分构建状态。默认 yieldToMain 投递独立的原生 host task，宿主需驱动任务与微任务检查点；没有用同步循环代替异步。build/prebuild 的可运行分支仍不等于完整节点代码生成或现代 Vulkan 管线。注册的抽象扩展点不计为具体 GPU 能力。StackNode 的现有列表/类型/setup/build 算法及动态 super 查找通过 67 项差分。TSL 的 If/Switch 已按上游转发当前 stack；StackNode 的完整条件节点实现仍受 ConditionalNode 等未移植依赖限制。
 
-`nativeNodeUtils()` 提供 15 个真实模块导出；309 项固定上游差分、4 个 GC 场景及 ArrayBuffer 稳定绑定检查通过。Matrix2 新增真实管理构造器，保留任意元素值、可替换 elements、动态方法和静态块后的原型键顺序；getValueFromType('mat2') 已连接。其余数值数学对象复用现有原生包装，任意非数值分量和不完整矩阵参数等仍有 Unsupported 边界。完整数学原型/描述符、Object.getPrototypeOf 可替换协议、Base64 浏览器内建及错误类型尚缺。StackTrace 已有真实管理构造器、普通字符串 UTF-16 栈解析与动态 getLocation/getError；捕获函数由原生宿主注入，默认空栈。自定义 split/match、String/RegExp 原型任意替换及旧 C++ 兼容助手尚未全量移植。
+`nativeNodeUtils()` 提供 15 个真实模块导出，原 309 项固定上游差分及 4 个 GC 场景继续通过。Matrix2/3/4、Vector2/3/4、Color 的类型工厂现接真实管理构造器，保留任意元素值、原型与 newTarget、动态 set/clone/fromArray/toArray 及异常部分状态；新数学构造器协议通过 438 项差分。Matrix3/4 和 Color 只完成当前依赖的基础方法子集，完整数学原型、运算、迭代器和描述符仍待完成。Object.getPrototypeOf 已能动态调用并处理对象/Proxy、String/Number；Boolean/Symbol 装箱仍明确不支持。StackTrace 保留原生宿主捕获入口，默认空栈；完整宿主栈、Base64 和错误类型仍待补齐。
 
-InputNode、ConstNode、UniformNode、UniformGroupNode 已从静态 fact/helper 扩展为真实管理对象，303 项固定源码差分涵盖类型/精度、序列化、回调绑定、bool uniform 缓存及真实 NodeBuilder 三阶段连接。CodeNode、FunctionNode、NodeFunction、NodeFunctionInput 实现实际 include/parser/声明与代码生成，191 项差分及 2 个 GC 快照通过；FunctionNode 已能连接真实 GLSL/WGSL parser 的函数缓存、输入与 generate 路径，TSL code、Fn/fn、glslFn/wgslFn 工厂闭包仍待实现。PropertyNode、ParameterNode 与 TSLCore 的 nodeObject/getConstNodeType 共通过 315 项差分；私有常量缓存保留身份、isWeak、altType、Map 创建顺序和相对 ID。Uniform 的 uniform(value,type) 工厂已连接类型推断、默认数学值与遍历。TSLCore 当前只有这两个导出，普通 shader 函数转 Fn 仍显式拒绝；完整 TSL、Node.prototype 扩展和全部模块初始化图的绝对 ID 顺序尚未实现。
+InputNode、ConstNode、UniformNode、UniformGroupNode、CodeNode、FunctionNode、PropertyNode 与 ParameterNode 保留此前真实管理对象与三阶段构建差分。现新增 FunctionCallNode 和 code/js/glsl/wgsl/glslFn/wgslFn/call 工厂闭包，与真实 GLSL/WGSL parser、FunctionNode、NodeBuilder 联测。函数工厂在两端实际模块载入后各创建基线 Node 的相对编号范围通过 179 项；默认绝对编号比较仍有 13 个场景、22 个 id 字段相差 425。旧默认输入和预期逐字节保留，未通过硬编码分配次数补差。
 
 NodeParser、GLSLNodeParser/GLSLNodeFunction、WGSLNodeParser/WGSLNodeFunction 已有真实管理构造器与原型链，按固定源码解析函数文本、构造 NodeFunctionInput 并生成重命名函数代码。GLSL 保留 pragma、注释、precision、qualifier 和数组 token；WGSL 保留 typeLib、pointer 与 texture 类型规则。字符串/RegExp 方法、捕获值 getter、动态 super、原型 setter 和 push 的读取/调用顺序属于验证范围。Number.parseInt/Number.isNaN 当前只实现标准数值语义，尚不支持这两个动态属性被替换。此处是函数文本解析与元数据层，不能视为完整 GLSL/WGSL 编译器、glslang/Tint 后端接入、完整 TSL 图执行或 GPU 支持；本轮精确验证结果统一记录在 VALIDATION.md。
 
@@ -46,7 +52,7 @@ renderers/common 的 Binding、Buffer、UniformBuffer、八种 Uniform 和八种
 
 Map/Set 提供 SameValueZero 键、插入顺序、动态构造 adder、live iterator、forEach、delete/clear/reinsert、品牌与方法元数据。同步 Iterator Record 保留 next 快照和动态 return 查找，构造输入或 adder 失败按源顺序关闭迭代器。Array keys/values/entries 使用实时 length；String iterator 按 UTF-16 码点推进。可达 iterator 保留集合的共享存储及活条目，不额外保留集合包装；耗尽后释放存储。原生 clear 会比当前 Node/V8 更早释放旧表条目，这是 GC 时机边界；迭代结果、顺序和新增条目仍严格比较。Map.groupBy/getOrInsert、Set 集合运算、Iterator helpers、异步迭代以及弱集合的 Symbol/iterator 接入仍待实现。
 
-StringData 提供 UTF-16 索引只读描述符、valueOf/toString、通用 startsWith 和真实 Symbol.match 检查。字符串基础值属性查找保留原始 receiver。已接入 String 的普通调用/构造钩子、replace/split/trim/toUpperCase/charCodeAt/slice，以及受管理 RegExp 的 exec/test 与 Symbol 协议。UTF-16/WTF-8 和 Unicode 17 默认大写由 C++ 实现；完整 String 静态 API、全部正则语法和 Unicode 模式仍待完成，当前未支持的有效模式显式抛 JSRegExpUnsupported。集合、Symbol、迭代器和字符串原型使用每个 heap 的内在根与弱缓存，不增加 owning TLS 根。
+StringData 提供 UTF-16 索引只读描述符、valueOf/toString、通用 startsWith 和真实 Symbol.match 检查。字符串基础值属性查找保留原始 receiver。已接入 String 的普通调用/构造钩子、replace/split/trim/toUpperCase/toLowerCase/charAt/charCodeAt/slice，以及受管理 RegExp 的 exec/test 与 Symbol 协议。UTF-16/WTF-8 和 Unicode 17 默认大小写（含 Final_Sigma）由 C++ 实现；完整 String 静态 API、全部正则语法和 Unicode 模式仍待完成，当前未支持的有效模式显式抛 JSRegExpUnsupported。集合、Symbol、迭代器和字符串原型使用每个 heap 的内在根与弱缓存，不增加 owning TLS 根。
 
 动画依赖的 Array push/pop/shift/slice/indexOf/includes/splice、Function.call/bind、Object 原型基础方法及运行时 EventDispatcher 已接入；差分验证 holes、继承索引、访问器、强制转换、只读属性的部分修改、监听器快照、抛错和重入。filter、map、slice、splice、concat 通过 ArraySpeciesCreate 保留 constructor/@@species 查找、任意构造结果及失败的部分写入。filter 保留 length 快照、逐项 Has/Get、callback 与 ToBoolean；完整基础值装箱和跨 realm 构造仍待实现。concat 按各输入的长度快照、HasProperty/Get 和自有数据属性创建顺序复制，保留 holes、继承索引、getter 修改后续输入、异常和重入；展开仍仅识别当前运行时 Array，Symbol.isConcatSpreadable 仍待实现。bind 保留绑定接收者/参数、name/length 描述符、可构造性与 newTarget 转发；完整 instanceof、Proxy 与跨 realm 协议仍待完成。回收目前通过 collectGarbage 显式触发，尚无自动调度策略。原生 payload 分阶段析构：全部别名缓存先退役，保留 JS 记录供析构函数读取或保存普通字段，重新标记后才清除不可达记录；已经开始析构的 C++ 对象不能复活。每个 owner 析构后重新标记，性能仍需优化。
 

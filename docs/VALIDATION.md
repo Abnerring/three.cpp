@@ -1,5 +1,17 @@
 # 验证记录
 
+## 当前追加验证：TSL/Fn、原生代理与节点工厂，2026-10-27
+
+- 固定上游仍为 `11738a9d55e502fb484cefffcea3a66dc44e9fe9`。最终 build-07 成功；**26/26 CTest** 通过，文本耗时 **57.24 秒**。CPU 全量 **2,528 cases / 217,372 assertions**，独立 String/RegExp **12 cases / 158 assertions**。原始记录：[CTest 汇总](D:/Temp/surui/threecpp-tsl-core-20261027/ctest-final07.log)、[完整输出](D:/Temp/surui/threecpp-tsl-core-20261027/ctest-final07-last-test.log)、[JUnit](D:/Temp/surui/threecpp-tsl-core-20261027/ctest-final07.xml)。先前失败构建及差分均保留。
+- 新增真实 CPU 实现：TSL 节点/类型转换、工厂、链式方法与 swizzle 缓存，ShaderNode/Fn/Stack，FunctionCallNode/code/glslFn/wgslFn 工厂，VarNode/VarIntent，及实际 Proxy 内部协议。七个工具节点及其原有单测移到上游对应的 nodes/utils；删除旧 core 转发文件。没有增加 CEF、JS 执行桥或 GPU 替代桩。
+- 真实上游差分通过：TSLCore **953**（[最终证据](D:/Temp/surui/tsl-core-20261027-validation07/differences.json)）；七个工具节点 **541**（[证据](D:/Temp/surui/utility-nodes-20261027-validation06/differences.json)）；VarNode **222**；代理及相关数组协议 **883 + 1 项实际原生 GC**；基础数学构造器 **438**（[最终证据](D:/Temp/surui/managed-math-constructors-20261027-validation07/differences.json)）。各目录保留 input/expected/actual/differences；原 NodeUtils 309 + 4 GC 同样回归通过。
+- Shader/Fn/Stack 的**隔离导入范围 141** 项通过：先加载真实 TSLCore，到集成用例才加载真实 NodeBuilder；函数工厂的**相对节点编号范围 179** 项通过：各端实际加载全部对应模块后创建一个真实基线 Node，记录后续 id 与基线的差。CTest 名称明确为 tsl-shader-isolated / native-function-factories-relative，未将结果外推为完整模块导入图通过。
+- 原始完整导入比较继续保留失败：Shader 141 项中 13 项仅 Fn 名称编号相差 8；函数工厂默认 179 项中 13 项、22 个 Node.id 字段相差 425。其余字段/事件一致。默认函数工厂 179 项 input/expected 与 validation03 字节完全相同；Shader 原 132 项前缀完整保留。[导入图差异](D:/Temp/surui/tsl-import-graph-20261027-validation06-pending.json)。未硬编码补分配次数，也未覆盖原 oracle。完整 Math/ColorSpace/PremultiplyAlpha/AlphaHash 等模块顶层初始化尚需真实移植。
+- 初始 TSLCore nodeObjects(ConstNode) 捕获绝对 id 差异 4912/68，保留在 validation01/02；后续普通输入 fixture 两端显式写 id=42，仅验枚举/转换逻辑。Fn 探针对自身临时 own undefined 字段按实际 JSON 传输契约比较；Var fixture 则恢复序列化前真实存在的 own forceDeclaration:undefined。生产字段未省略，原保存的预期未改。Math validation06 的 18 项真实求值顺序差异通过修 Matrix/Color.toArray 后消除，原 414 项预期保留。
+- 新增 charAt/toLowerCase。Unicode 17 小写对照通过 **1,114,112 全码点、4,456,448 Sigma 上下文、10,021 UTF-16 字符串、282 项实际方法场景**；包含 Final_Sigma、Cased/Case_Ignorable、孤立代理、转换顺序与异常。[原始数据及双 SHA](D:/Temp/surui/unicode-lowercase-20261027-validation06/manifest.json)。旧大写全码点及 10,012 UTF-16 字符串回归也通过；官方数据、SHA、许可证和可重生成工具记录在 upstream.json，缓存位于 D 盘。
+- 审计：**1,251 模块**，partial-unverified **358**、missing **583**、vulkan-port-pending **290**、dependency-unverified **20**，解析错误 **0**；文件存在 **526**（src **442/755**、examples/jsm **84/496**），尚有 **725** 无对应文件。文件存在不等于功能完成；仍无模块登记完整验收。审计单测 **5/5** 与 --check 通过。
+- 本轮未改 Vulkan 渲染算法、未运行 GPU 验证。完整导入图、NodeMaterial fallback、其余 TSL/节点、传统完整材质/灯光/阴影/后处理、现代 Vulkan/计算存储、剩余 addons 和跨平台验收仍待完成。完整 Matrix/Color 管理原型、全局内建与基本类型装箱、生成器共享内建身份仍有边界。
+
 ## 当前追加验证：构建流水线、函数解析器与渲染资源协议，2026-10-24
 
 - 固定上游为 `11738a9d55e502fb484cefffcea3a66dc44e9fe9`。最终 build-09 后，CPU 全量 **2,528 cases / 217,372 assertions**、String/RegExp 独立单测 **12 cases / 158 assertions** 全部通过；选定回归 **16/16 CTest** 通过，文本日志实测 **91.00 秒**。CPU 断言数比首轮增加的 2 项对应空类量词回归；XML 的总耗时字段取整，不替代文本实测。详见 [最终 CPU/CTest 原始日志](D:/Temp/surui/threecpp-builder-pipeline-20261024/ctest-regression-02-last-test.log) 与 [CTest 汇总](D:/Temp/surui/threecpp-builder-pipeline-20261024/ctest-regression-02.log)。

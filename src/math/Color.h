@@ -17,6 +17,7 @@
 
 class Vector3;
 class Vector4;
+JSValue nativeColorConstructor();
 
 /**
  * @class Color

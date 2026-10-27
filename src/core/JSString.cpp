@@ -50,6 +50,14 @@ JSValue charCodeAt(const JSValue& self,const Args& args,const Args&) {
     if(index<0||index>=double(text.size()))return std::numeric_limits<double>::quiet_NaN();
     return text[static_cast<std::size_t>(index)];
 }
+JSValue charAt(const JSValue& self,const Args& args,const Args&) {
+    if(self.isNull()||self.isUndefined())throw JSTypeError("String method called on null or undefined");
+    const auto text=jsUTF16(self.toString());
+    const auto position=argument(args,0).toNumber();
+    const auto index=std::isnan(position)||position==0?0:std::trunc(position);
+    if(index<0||index>=double(text.size()))return "";
+    return jsUTF8(std::u16string_view(text).substr(static_cast<std::size_t>(index),1));
+}
 JSValue slice(const JSValue& self,const Args& args,const Args&) {
     if(self.isNull()||self.isUndefined())throw JSTypeError("String method called on null or undefined");
     const auto text=jsUTF16(self.toString());
@@ -157,6 +165,9 @@ JSValue trim(const JSValue& self,const Args&,const Args&) {
 JSValue toUpperCase(const JSValue& self,const Args&,const Args&) {
     coercible(self);return jsUTF8(unicodeToUpperCase(jsUTF16(self.toString())));
 }
+JSValue toLowerCase(const JSValue& self,const Args&,const Args&) {
+    coercible(self);return jsUTF8(unicodeToLowerCase(jsUTF16(self.toString())));
+}
 JSValue allocate(const JSValue& text){
     if(text.type()!=JSValue::Type::String)throw JSTypeError("StringData requires a primitive string");
     auto payload=std::make_shared<StringData>();payload->value=text.string();
@@ -183,7 +194,7 @@ JSValue createNativeStringPrototype(){
         prototype.defineProperty(name,data(method,true,false,true));
     };
     install("indexOf",indexOf,1);install("replace",replace,2);install("split",split,2);install("trim",trim,0);install("toUpperCase",toUpperCase,0);
-    install("charCodeAt",charCodeAt,1);install("slice",slice,2);
+    install("charCodeAt",charCodeAt,1);install("charAt",charAt,1);install("toLowerCase",toLowerCase,0);install("slice",slice,2);
     install("match",match,1);install("substring",substring,2);
     return prototype;
 }

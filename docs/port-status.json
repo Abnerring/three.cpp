@@ -75,7 +75,7 @@
         "purpose": "Native stable sorting with the pinned oracle comparator order, including NaN and inconsistent comparators; no JavaScript engine"
       },
       {
-        "name": "Unicode default uppercase data",
+        "name": "Unicode default case data",
         "revision": "Unicode 17.0.0",
         "sources": [
           {
@@ -85,13 +85,20 @@
           {
             "source": "https://www.unicode.org/Public/17.0.0/ucd/SpecialCasing.txt",
             "sourceSHA256": "efc25faf19de21b92c1194c111c932e03d2a5eaf18194e33f1156e96de4c9588"
+          },
+          {
+            "source": "https://www.unicode.org/Public/17.0.0/ucd/DerivedCoreProperties.txt",
+            "sourceSHA256": "24c7fed1195c482faaefd5c1e7eb821c5ee1fb6de07ecdbaa64b56a99da22c08"
           }
         ],
         "implementation": "src/core/UnicodeCase.cpp",
-        "generatedData": "src/core/UnicodeCaseData.h",
+        "generatedData": [
+          "src/core/UnicodeCaseData.h",
+          "src/core/UnicodeLowerCaseData.h"
+        ],
         "generator": "utils/generate-unicode-case.py",
         "license": "src/core/Unicode-LICENSE.txt",
-        "purpose": "Native default full uppercase conversion of UTF-16 strings, preserving lone surrogates; no JavaScript engine"
+        "purpose": "Native Unicode default full uppercase and lowercase conversion of UTF-16 strings, including Final_Sigma using Cased and Case_Ignorable properties and preserving lone surrogates; no JavaScript engine"
       },
       {
         "name": "Khronos SPIRV-Reflect",
@@ -194,8 +201,8 @@
     "note": "Accepted port scope is src and examples/jsm, including tracked third-party dependencies. Editor/manual web applications are excluded from native application rewrites. Native host behavior, packaging and all three platforms require separate implementation and verification evidence."
   },
   "counts": {
-    "partial-unverified": 350,
-    "missing": 591,
+    "partial-unverified": 358,
+    "missing": 583,
     "vulkan-port-pending": 290,
     "dependency-unverified": 20
   },
@@ -203,8 +210,8 @@
     "src": {
       "modules": 755,
       "counts": {
-        "partial-unverified": 266,
-        "missing": 199,
+        "partial-unverified": 274,
+        "missing": 191,
         "vulkan-port-pending": 290
       }
     },
@@ -796,7 +803,7 @@
       "path": "src/nodes/code",
       "upstreamFiles": 4,
       "moduleCount": 4,
-      "modulesWithCppFiles": 2,
+      "modulesWithCppFiles": 3,
       "verifiedComplete": 0
     },
     {
@@ -915,7 +922,7 @@
       "path": "src/nodes/utils",
       "upstreamFiles": 31,
       "moduleCount": 31,
-      "modulesWithCppFiles": 0,
+      "modulesWithCppFiles": 7,
       "verifiedComplete": 0
     },
     {
@@ -8558,11 +8565,11 @@
       "scope": "src",
       "kind": "core",
       "upstreamSha256": "fa49682409ffd2fb7343952f74954c1edc1207424dd59b8e2687625994f6a98c",
-      "header": null,
-      "implementation": null,
+      "header": "src/nodes/code/FunctionCallNode.h",
+      "implementation": "src/nodes/code/FunctionCallNode.cpp",
       "expectedHeader": "src/nodes/code/FunctionCallNode.h",
       "expectedImplementation": "src/nodes/code/FunctionCallNode.cpp",
-      "status": "missing",
+      "status": "partial-unverified",
       "verifiedComplete": false,
       "apiExtraction": "static-only",
       "verification": {
@@ -12433,11 +12440,11 @@
       "scope": "src",
       "kind": "core",
       "upstreamSha256": "385fa0e433b20eb92a595f69702a5603c064faa4601de6762a99627dc3812f0c",
-      "header": null,
-      "implementation": null,
+      "header": "src/nodes/utils/ArrayElementNode.h",
+      "implementation": "src/nodes/utils/ArrayElementNode.cpp",
       "expectedHeader": "src/nodes/utils/ArrayElementNode.h",
       "expectedImplementation": "src/nodes/utils/ArrayElementNode.cpp",
-      "status": "missing",
+      "status": "partial-unverified",
       "verifiedComplete": false,
       "apiExtraction": "static-only",
       "verification": {
@@ -12446,7 +12453,9 @@
           "pointer": "/modules/399"
         },
         "upstreamUnitTests": [],
-        "cppUnitTests": [],
+        "cppUnitTests": [
+          "test/unit/src/nodes/utils/ArrayElementNode.tests.cpp"
+        ],
         "reviewedImplementation": [],
         "differentialResults": [],
         "renderingResults": [],
@@ -12460,11 +12469,11 @@
       "scope": "src",
       "kind": "core",
       "upstreamSha256": "5eccc621388aaa042d560ecc9753d2be587da4312d7232d6707afb9528352082",
-      "header": null,
-      "implementation": null,
+      "header": "src/nodes/utils/ConvertNode.h",
+      "implementation": "src/nodes/utils/ConvertNode.cpp",
       "expectedHeader": "src/nodes/utils/ConvertNode.h",
       "expectedImplementation": "src/nodes/utils/ConvertNode.cpp",
-      "status": "missing",
+      "status": "partial-unverified",
       "verifiedComplete": false,
       "apiExtraction": "static-only",
       "verification": {
@@ -12473,7 +12482,9 @@
           "pointer": "/modules/400"
         },
         "upstreamUnitTests": [],
-        "cppUnitTests": [],
+        "cppUnitTests": [
+          "test/unit/src/nodes/utils/ConvertNode.tests.cpp"
+        ],
         "reviewedImplementation": [],
         "differentialResults": [],
         "renderingResults": [],
@@ -12622,11 +12633,11 @@
       "scope": "src",
       "kind": "core",
       "upstreamSha256": "7f417823d2d50212f708aabfe644887b17e71565dc0c76a63bf4dcc2c9ad2f8f",
-      "header": null,
-      "implementation": null,
+      "header": "src/nodes/utils/FlipNode.h",
+      "implementation": "src/nodes/utils/FlipNode.cpp",
       "expectedHeader": "src/nodes/utils/FlipNode.h",
       "expectedImplementation": "src/nodes/utils/FlipNode.cpp",
-      "status": "missing",
+      "status": "partial-unverified",
       "verifiedComplete": false,
       "apiExtraction": "static-only",
       "verification": {
@@ -12635,7 +12646,9 @@
           "pointer": "/modules/406"
         },
         "upstreamUnitTests": [],
-        "cppUnitTests": [],
+        "cppUnitTests": [
+          "test/unit/src/nodes/utils/FlipNode.tests.cpp"
+        ],
         "reviewedImplementation": [],
         "differentialResults": [],
         "renderingResults": [],
@@ -12676,11 +12689,11 @@
       "scope": "src",
       "kind": "core",
       "upstreamSha256": "c5ee699edc907fdce5d9d08f2aa79caa53bed02d334f70fdf4cea6a1d9cab8eb",
-      "header": null,
-      "implementation": null,
+      "header": "src/nodes/utils/JoinNode.h",
+      "implementation": "src/nodes/utils/JoinNode.cpp",
       "expectedHeader": "src/nodes/utils/JoinNode.h",
       "expectedImplementation": "src/nodes/utils/JoinNode.cpp",
-      "status": "missing",
+      "status": "partial-unverified",
       "verifiedComplete": false,
       "apiExtraction": "static-only",
       "verification": {
@@ -12689,7 +12702,9 @@
           "pointer": "/modules/408"
         },
         "upstreamUnitTests": [],
-        "cppUnitTests": [],
+        "cppUnitTests": [
+          "test/unit/src/nodes/utils/JoinNode.tests.cpp"
+        ],
         "reviewedImplementation": [],
         "differentialResults": [],
         "renderingResults": [],
@@ -12784,11 +12799,11 @@
       "scope": "src",
       "kind": "core",
       "upstreamSha256": "da1e0a1c1648af620c6517dca7870da2fcba909e84e6a8534c57146050ea4216",
-      "header": null,
-      "implementation": null,
+      "header": "src/nodes/utils/MemberNode.h",
+      "implementation": "src/nodes/utils/MemberNode.cpp",
       "expectedHeader": "src/nodes/utils/MemberNode.h",
       "expectedImplementation": "src/nodes/utils/MemberNode.cpp",
-      "status": "missing",
+      "status": "partial-unverified",
       "verifiedComplete": false,
       "apiExtraction": "static-only",
       "verification": {
@@ -12797,7 +12812,9 @@
           "pointer": "/modules/412"
         },
         "upstreamUnitTests": [],
-        "cppUnitTests": [],
+        "cppUnitTests": [
+          "test/unit/src/nodes/utils/MemberNode.tests.cpp"
+        ],
         "reviewedImplementation": [],
         "differentialResults": [],
         "renderingResults": [],
@@ -13027,11 +13044,11 @@
       "scope": "src",
       "kind": "core",
       "upstreamSha256": "249416bf554fcaa67f44077caada936b72f0a45e321406adcbadc371879bb161",
-      "header": null,
-      "implementation": null,
+      "header": "src/nodes/utils/SetNode.h",
+      "implementation": "src/nodes/utils/SetNode.cpp",
       "expectedHeader": "src/nodes/utils/SetNode.h",
       "expectedImplementation": "src/nodes/utils/SetNode.cpp",
-      "status": "missing",
+      "status": "partial-unverified",
       "verifiedComplete": false,
       "apiExtraction": "static-only",
       "verification": {
@@ -13040,7 +13057,9 @@
           "pointer": "/modules/421"
         },
         "upstreamUnitTests": [],
-        "cppUnitTests": [],
+        "cppUnitTests": [
+          "test/unit/src/nodes/utils/SetNode.tests.cpp"
+        ],
         "reviewedImplementation": [],
         "differentialResults": [],
         "renderingResults": [],
@@ -13054,11 +13073,11 @@
       "scope": "src",
       "kind": "core",
       "upstreamSha256": "f8ab1cebb279469ed312fd86403cfc951159540d5e8137545d98e5c6196a5d0b",
-      "header": null,
-      "implementation": null,
+      "header": "src/nodes/utils/SplitNode.h",
+      "implementation": "src/nodes/utils/SplitNode.cpp",
       "expectedHeader": "src/nodes/utils/SplitNode.h",
       "expectedImplementation": "src/nodes/utils/SplitNode.cpp",
-      "status": "missing",
+      "status": "partial-unverified",
       "verifiedComplete": false,
       "apiExtraction": "static-only",
       "verification": {
@@ -13067,7 +13086,9 @@
           "pointer": "/modules/422"
         },
         "upstreamUnitTests": [],
-        "cppUnitTests": [],
+        "cppUnitTests": [
+          "test/unit/src/nodes/utils/SplitNode.tests.cpp"
+        ],
         "reviewedImplementation": [],
         "differentialResults": [],
         "renderingResults": [],

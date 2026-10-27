@@ -1,5 +1,7 @@
 #include "nodes/code/FunctionNode.h"
 #include "nodes/code/CodeNode.h"
+#include "nodes/code/FunctionCallNode.h"
+#include "nodes/tsl/TSLCore.h"
 #include "core/JSModuleObject.h"
 
 namespace {
@@ -56,6 +58,30 @@ JSValue nativeFunctionNodeConstructor() {
     constructor.retainForHeapLifetime(); weak = JSWeakValue(constructor); return constructor;
 }
 FunctionNode::FunctionNode(const JSValue& code, const JSValue& includes, const JSValue& language) : object_(constructor().construct({code, includes, language})) {}
+JSValue nativeFunctionNodeModule() {
+    static thread_local JSWeakValue weak;
+    if (const auto module = weak.lock(); module && module->isObject()) return *module;
+    static thread_local bool initializing = false; JSModuleInitializationScope scope(initializing, "FunctionNode exports");
+    nativeCodeNodeModule(); nativeFunctionCallNodeModule();
+    const auto proxyConstructor = nativeTSLCore().get("nodeProxyConstructor");
+    auto module = JSValue::object();
+    const auto define = [&](const char* name, const JSValue& value) {
+        JSPropertyDescriptor descriptor; descriptor.value = value;
+        descriptor.writable = descriptor.enumerable = descriptor.configurable = true; module.defineProperty(name, descriptor);
+    };
+    define("default", nativeFunctionNodeConstructor());
+    for (const auto* language : {"glsl", "wgsl"}) {
+        const auto name = std::string(language) + "Fn";
+        define(name.c_str(), JSValue::function([](const JSValue&, const Args& args, const Args& captures) -> JSValue {
+            const auto functionNode = captures[0].construct({args.empty() ? JSValue{} : args[0], arg(args, 1, JSValue::array()), captures[1]});
+            const auto function = JSValue::function([](const JSValue&, const Args& parameters, const Args& captures) -> JSValue {
+                const auto method = captures[0].get("call"); return method.call(captures[0], parameters);
+            }, {functionNode}, "fn", 0);
+            return captures[2].call({}, {function, functionNode});
+        }, {nativeFunctionNodeConstructor(), language, proxyConstructor}, name, 2));
+    }
+    module.retainForHeapLifetime(); weak = JSWeakValue(module); return module;
+}
 JSValue FunctionNode::getNodeFunction(const JSValue& builder) const { return invoke(object_, "getNodeFunction")({builder}); }
 JSValue FunctionNode::getInputs(const JSValue& builder) const { return invoke(object_, "getInputs")({builder}); }
 JSValue FunctionNode::generate(const JSValue& builder, const JSValue& output) const { return invoke(object_, "generate")({builder, output}); }

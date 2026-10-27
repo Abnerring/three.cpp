@@ -182,35 +182,17 @@ JSValue decodeBuffer(const JSValue&,const Args& args,const Args&){
     for(const char character:input){const auto found=std::string_view(alphabet,64).find(character);if(found==std::string_view::npos)invalid();bits=(bits<<6)|static_cast<std::uint32_t>(found);count+=6;if(count>=8){count-=8;bytes.push_back(static_cast<std::uint8_t>((bits>>count)&255));}}
     Uint8Array array(bytes.size());for(std::size_t i=0;i<bytes.size();++i)array.setIndex(double(i),bytes[i]);return nativeArrayBuffer(array.buffer);
 }
-double numeric(const Args& args,std::size_t index,double fallback=0){
-    const auto value=arg(args,index);if(value.isUndefined())return fallback;
-    if(value.type()!=JSValue::Type::Number)throw NodeUtilsUnsupported("NodeUtils: raw non-number math components require canonical JSValue constructors");return value.number();
-}
 JSValue valueFromType(const JSValue&,const Args& args,const Args&){
     const auto type=arg(args,0);auto params=Args(args.begin()+std::min<std::size_t>(args.size(),1),args.end());
     const auto last4=type.toBoolean()?call(type,"slice",{-4}):JSValue{};
     if(params.size()==1&&(last4.strictEquals("vec2")||last4.strictEquals("vec3")||last4.strictEquals("vec4")))params.resize(last4.strictEquals("vec2")?2:last4.strictEquals("vec3")?3:4,params[0]);
-    if(type.strictEquals("color")){
-        if(arg(params,1).isUndefined()&&arg(params,2).isUndefined()){
-            const auto first=arg(params,0);if(first.isUndefined())return nativeColor(std::make_shared<Color>());
-            if(first.type()==JSValue::Type::Number)return nativeColor(std::make_shared<Color>(first.number()));
-            if(first.type()==JSValue::Type::String)return nativeColor(std::make_shared<Color>(first.string()));
-            throw NodeUtilsUnsupported("NodeUtils: canonical Color constructor requires its full dynamic set protocol");
-        }
-        if(arg(params,0).isUndefined()||arg(params,1).isUndefined()||arg(params,2).isUndefined())throw NodeUtilsUnsupported("NodeUtils: raw undefined Color components require its canonical JSValue constructor");
-        return nativeColor(std::make_shared<Color>(numeric(params,0),numeric(params,1),numeric(params,2)));
-    }
-    if(last4.strictEquals("vec2")){const auto x=numeric(params,0),y=numeric(params,1);return nativeVector(std::make_shared<Vector2>(x,y));}
-    if(last4.strictEquals("vec3")){const auto x=numeric(params,0),y=numeric(params,1),z=numeric(params,2);return nativeVector(std::make_shared<Vector3>(x,y,z));}
-    if(last4.strictEquals("vec4")){const auto x=numeric(params,0),y=numeric(params,1),z=numeric(params,2),w=numeric(params,3,1);return nativeVector(std::make_shared<Vector4>(x,y,z,w));}
+    if(type.strictEquals("color"))return nativeColorConstructor().construct(params);
+    if(last4.strictEquals("vec2"))return nativeVector2Constructor().construct(params);
+    if(last4.strictEquals("vec3"))return nativeVector3Constructor().construct(params);
+    if(last4.strictEquals("vec4"))return nativeVector4Constructor().construct(params);
     if(last4.strictEquals("mat2"))return nativeMatrix2Constructor().construct(params);
-    if(last4.strictEquals("mat3")||last4.strictEquals("mat4")){
-        const bool matrix4=last4.strictEquals("mat4");const auto value=matrix4?nativeMatrix(std::make_shared<Matrix4>()):nativeMatrix(std::make_shared<Matrix3>());
-        if(!arg(params,0).isUndefined()){
-            const auto size=matrix4?16:9;if(params.size()<static_cast<std::size_t>(size))throw NodeUtilsUnsupported("NodeUtils: incomplete raw matrix arguments require canonical JSValue constructors");
-            Args values;for(int i=0;i<size;++i)values.emplace_back(numeric(params,i));call(value,"set",values);
-        }return value;
-    }
+    if(last4.strictEquals("mat3"))return nativeMatrix3Constructor().construct(params);
+    if(last4.strictEquals("mat4"))return nativeMatrix4Constructor().construct(params);
     const auto first=arg(params,0);
     if(type.strictEquals("bool"))return first.toBoolean()?first:JSValue(false);
     if(type.strictEquals("float")||type.strictEquals("int")||type.strictEquals("uint"))return first.toBoolean()?first:JSValue(0);

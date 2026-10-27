@@ -337,19 +337,19 @@ add_executable(THREECPPTests
         unit/src/nodes/core/ToonOutlinePass.tests.cpp
         unit/src/nodes/core/PassTexture.tests.cpp
         unit/src/nodes/core/UVUtils.tests.cpp
-        unit/src/nodes/core/ConvertNode.tests.cpp
+        unit/src/nodes/utils/ConvertNode.tests.cpp
         unit/src/nodes/core/MaxMipLevel.tests.cpp
         unit/src/nodes/core/Remap.tests.cpp
         unit/src/nodes/core/SampleNode.tests.cpp
         unit/src/nodes/core/RotateNode.tests.cpp
-        unit/src/nodes/core/FlipNode.tests.cpp
-        unit/src/nodes/core/SplitNode.tests.cpp
-        unit/src/nodes/core/JoinNode.tests.cpp
-        unit/src/nodes/core/MemberNode.tests.cpp
-        unit/src/nodes/core/ArrayElementNode.tests.cpp
+        unit/src/nodes/utils/FlipNode.tests.cpp
+        unit/src/nodes/utils/SplitNode.tests.cpp
+        unit/src/nodes/utils/JoinNode.tests.cpp
+        unit/src/nodes/utils/MemberNode.tests.cpp
+        unit/src/nodes/utils/ArrayElementNode.tests.cpp
         unit/src/nodes/core/StorageArrayElementNode.tests.cpp
         unit/src/nodes/core/SpriteUtils.tests.cpp
-        unit/src/nodes/core/SetNode.tests.cpp
+        unit/src/nodes/utils/SetNode.tests.cpp
         unit/src/nodes/core/TriplanarTextures.tests.cpp
         unit/src/nodes/core/FunctionOverloadingNode.tests.cpp
         unit/src/nodes/core/CubeMapNode.tests.cpp
@@ -1066,6 +1066,9 @@ target_link_libraries(ThreeJsArraySortParityProbe PRIVATE threecpp::threecpp)
 add_executable(ThreeJsControlsParityProbe unit/utils/parity/ControlsParityProbe.cpp)
 target_link_libraries(ThreeJsControlsParityProbe PRIVATE threecpp::threecpp)
 if(THREECPP_NODE_EXECUTABLE)
+    add_test(NAME threecpp.unicode-lowercase-parity
+        COMMAND "${THREECPP_NODE_EXECUTABLE}" "${CMAKE_CURRENT_SOURCE_DIR}/unit/utils/parity/compare-unicode-lowercase.mjs"
+        "$<TARGET_FILE:UnicodeCaseParityProbe>" "${CMAKE_BINARY_DIR}/parity/unicode-lowercase")
     add_test(NAME threecpp.unicode-case-parity
         COMMAND "${THREECPP_NODE_EXECUTABLE}" "${CMAKE_CURRENT_SOURCE_DIR}/unit/utils/parity/compare-unicode-case.mjs"
         "$<TARGET_FILE:UnicodeCaseParityProbe>")
@@ -1664,6 +1667,59 @@ if(THREEJS_SOURCE_DIR AND THREECPP_NODE_EXECUTABLE)
     add_test(NAME threecpp.threejs-query-parity
         COMMAND "${THREECPP_NODE_EXECUTABLE}" "${CMAKE_CURRENT_SOURCE_DIR}/unit/utils/parity/compare-query.mjs"
         "$<TARGET_FILE:ThreeJsQueryParityProbe>" "${THREEJS_SOURCE_DIR}")
+endif()
+
+add_executable(JSProxyParityProbe unit/utils/parity/JSProxyParityProbe.cpp)
+target_link_libraries(JSProxyParityProbe PRIVATE threecpp::threecpp)
+if(THREECPP_NODE_EXECUTABLE)
+    add_test(NAME threecpp.native-proxy-parity
+        COMMAND "${THREECPP_NODE_EXECUTABLE}" "${CMAKE_CURRENT_SOURCE_DIR}/unit/utils/parity/compare-native-proxy.mjs" "$<TARGET_FILE:JSProxyParityProbe>")
+endif()
+add_executable(ThreeJsTSLCoreParityProbe unit/utils/parity/TSLCoreParityProbe.cpp)
+target_link_libraries(ThreeJsTSLCoreParityProbe PRIVATE threecpp::threecpp)
+if(THREECPP_NODE_EXECUTABLE AND THREEJS_SOURCE_DIR)
+    add_test(NAME threecpp.threejs-tsl-core-parity
+        COMMAND "${THREECPP_NODE_EXECUTABLE}" "${CMAKE_CURRENT_SOURCE_DIR}/unit/utils/parity/compare-tsl-core.mjs"
+        "${THREEJS_SOURCE_DIR}" "$<TARGET_FILE:ThreeJsTSLCoreParityProbe>")
+endif()
+add_executable(ThreeJsTSLShaderParityProbe unit/utils/parity/TSLShaderParityProbe.cpp)
+target_link_libraries(ThreeJsTSLShaderParityProbe PRIVATE threecpp::threecpp)
+if(THREECPP_NODE_EXECUTABLE AND THREEJS_SOURCE_DIR)
+    add_test(NAME threecpp.threejs-tsl-shader-isolated-parity
+        COMMAND "${THREECPP_NODE_EXECUTABLE}" "${CMAKE_CURRENT_SOURCE_DIR}/unit/utils/parity/compare-tsl-shader.mjs"
+        "${THREEJS_SOURCE_DIR}" "$<TARGET_FILE:ThreeJsTSLShaderParityProbe>"
+        "${CMAKE_BINARY_DIR}/parity/tsl-shader-isolated" --isolated)
+endif()
+add_executable(ThreeJsUtilityNodesParityProbe unit/utils/parity/UtilityNodesParityProbe.cpp)
+target_link_libraries(ThreeJsUtilityNodesParityProbe PRIVATE threecpp::threecpp)
+if(THREECPP_NODE_EXECUTABLE AND THREEJS_SOURCE_DIR)
+    add_test(NAME threecpp.threejs-utility-nodes-parity
+        COMMAND "${THREECPP_NODE_EXECUTABLE}" "${CMAKE_CURRENT_SOURCE_DIR}/unit/utils/parity/compare-utility-nodes.mjs"
+        "${THREEJS_SOURCE_DIR}" "$<TARGET_FILE:ThreeJsUtilityNodesParityProbe>")
+endif()
+add_executable(ThreeJsNativeFunctionFactoriesParityProbe unit/utils/parity/NativeFunctionFactoriesParityProbe.cpp)
+target_link_libraries(ThreeJsNativeFunctionFactoriesParityProbe PRIVATE threecpp::threecpp)
+if(THREECPP_NODE_EXECUTABLE AND THREEJS_SOURCE_DIR)
+    add_test(NAME threecpp.threejs-native-function-factories-relative-parity
+        COMMAND "${THREECPP_NODE_EXECUTABLE}" "${CMAKE_CURRENT_SOURCE_DIR}/unit/utils/parity/compare-native-function-factories.mjs"
+        "${THREEJS_SOURCE_DIR}" "$<TARGET_FILE:ThreeJsNativeFunctionFactoriesParityProbe>"
+        "${CMAKE_BINARY_DIR}/parity/native-function-factories-relative" --relative-node-ids)
+endif()
+
+add_executable(ThreeJsVarNodeParityProbe unit/utils/parity/VarNodeParityProbe.cpp)
+target_link_libraries(ThreeJsVarNodeParityProbe PRIVATE threecpp::threecpp)
+if(THREECPP_NODE_EXECUTABLE AND THREEJS_SOURCE_DIR)
+    add_test(NAME threecpp.threejs-var-node-parity
+        COMMAND "${THREECPP_NODE_EXECUTABLE}" "${CMAKE_CURRENT_SOURCE_DIR}/unit/utils/parity/compare-var-node.mjs"
+        "${THREEJS_SOURCE_DIR}" "$<TARGET_FILE:ThreeJsVarNodeParityProbe>")
+endif()
+
+add_executable(ThreeJsManagedMathConstructorsParityProbe unit/utils/parity/ManagedMathConstructorsParityProbe.cpp)
+target_link_libraries(ThreeJsManagedMathConstructorsParityProbe PRIVATE threecpp::threecpp)
+if(THREECPP_NODE_EXECUTABLE AND THREEJS_SOURCE_DIR)
+    add_test(NAME threecpp.threejs-managed-math-constructors-parity
+        COMMAND "${THREECPP_NODE_EXECUTABLE}" "${CMAKE_CURRENT_SOURCE_DIR}/unit/utils/parity/compare-managed-math-constructors.mjs"
+        "${THREEJS_SOURCE_DIR}" "$<TARGET_FILE:ThreeJsManagedMathConstructorsParityProbe>")
 endif()
 
 add_executable(ThreeJsFloat16BufferAttributeParityProbe unit/utils/parity/Float16BufferAttributeParityProbe.cpp)

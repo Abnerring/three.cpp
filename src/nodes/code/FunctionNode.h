@@ -2,6 +2,7 @@
 #include "core/JSMember.h"
 
 JSValue nativeFunctionNodeConstructor();
+JSValue nativeFunctionNodeModule();
 class FunctionNode {
     JSValue object_;
   public:

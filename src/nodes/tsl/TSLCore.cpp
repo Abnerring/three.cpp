@@ -1,10 +1,12 @@
 #include "nodes/tsl/TSLCore.h"
+#include "nodes/tsl/TSLCoreRuntime.h"
 #include "nodes/core/ConstNode.h"
 #include "nodes/core/NodeUtils.h"
 #include "core/JSMap.h"
 #include "core/JSIterator.h"
 #include "core/JSModuleObject.h"
 #include <numbers>
+#include <algorithm>
 
 namespace {
 using Args = std::vector<JSValue>;
@@ -62,9 +64,17 @@ JSValue nativeTSLCore() {
             return constNode(value, altType, captures[0], captures[1]);
         if (type.strictEquals("shader")) {
             if (value.get("isFn").toBoolean()) return value;
-            throw std::logic_error("TSLCore.nodeObject shader functions require the pending Fn implementation");
+            return captures[4].get("Fn").call({}, {value});
         }
         return value;
-    }, {cache, constructor, nativeNodeUtils().get("getValueType"), cacheMaps}, "nodeObject", 1));
-    module.retainForHeapLifetime(); weak = JSWeakValue(module); return module;
+    }, {cache, constructor, nativeNodeUtils().get("getValueType"), cacheMaps, module}, "nodeObject", 1));
+    const auto getConstNode = JSValue::function([](const JSValue&,const Args& args,const Args& captures)->JSValue {
+        return constNode(arg(args,0),arg(args,1),captures[0],captures[1]);
+    },{cache,constructor},"getConstNode",2);
+    installNativeTSLCoreExtensions(module,getConstNode,cacheMaps);
+    // Export a separate namespace object. Internal closures hold the lexical
+    // bindings, so replacing an exported property cannot replace an import.
+    auto exports=JSValue::object();auto names=module.ownPropertyNames();std::sort(names.begin(),names.end());
+    for(const auto& name:names){JSPropertyDescriptor d;d.value=module.get(name);d.writable=d.enumerable=d.configurable=true;exports.defineProperty(name,d);}
+    exports.retainForHeapLifetime(); weak = JSWeakValue(exports); return exports;
 }

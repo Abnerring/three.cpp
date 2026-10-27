@@ -1,5 +1,6 @@
 #include "core/JSObject.h"
 #include "core/JSString.h"
+#include "core/JSNumber.h"
 namespace {
 using Args=std::vector<JSValue>;
 JSValue assign(const JSValue&,const Args& args,const Args&) {
@@ -64,6 +65,16 @@ JSValue keys(const JSValue&,const Args& args,const Args&) {
     }
     return result;
 }
+JSValue getPrototypeOf(const JSValue&,const Args& args,const Args&) {
+    auto value=args.empty()?JSValue{}:args[0];
+    if(value.isNull()||value.isUndefined())throw JSTypeError("Cannot convert undefined or null to object");
+    if(!value.isObject()) {
+        if(value.type()==JSValue::Type::String)value=createNativeStringObject(value);
+        else if(value.type()==JSValue::Type::Number)value=createNativeNumberObject(value);
+        else throw std::logic_error("Object.getPrototypeOf Boolean and Symbol boxing is not implemented");
+    }
+    return value.getPrototype();
+}
 }
 void initializeNativeObjectMethods(const JSValue& constructor) {
     JSPropertyDescriptor d;d.value=JSValue::function(assign,{},"assign",2);
@@ -71,4 +82,5 @@ void initializeNativeObjectMethods(const JSValue& constructor) {
     auto object=constructor;object.defineProperty("assign",d);
     d.value=JSValue::function(values,{},"values",1);object.defineProperty("values",d);
     d.value=JSValue::function(keys,{},"keys",1);object.defineProperty("keys",d);
+    d.value=JSValue::function(getPrototypeOf,{},"getPrototypeOf",1);object.defineProperty("getPrototypeOf",d);
 }

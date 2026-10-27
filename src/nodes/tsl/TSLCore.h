@@ -1,7 +1,6 @@
 #pragma once
 #include "core/JSValue.h"
 
-// Canonical live subset of TSLCore.js: nodeObject/getConstNodeType and their
-// primitive constant cache. Shader/Fn construction and other TSL exports remain
-// separate, unimplemented module work.
+// Canonical TSL module: live node conversion, method chaining, swizzles,
+// callable shader graphs and native function constructor proxies.
 JSValue nativeTSLCore();

@@ -75,7 +75,7 @@
         "purpose": "Native stable sorting with the pinned oracle comparator order, including NaN and inconsistent comparators; no JavaScript engine"
       },
       {
-        "name": "Unicode default uppercase data",
+        "name": "Unicode default case data",
         "revision": "Unicode 17.0.0",
         "sources": [
           {
@@ -85,13 +85,20 @@
           {
             "source": "https://www.unicode.org/Public/17.0.0/ucd/SpecialCasing.txt",
             "sourceSHA256": "efc25faf19de21b92c1194c111c932e03d2a5eaf18194e33f1156e96de4c9588"
+          },
+          {
+            "source": "https://www.unicode.org/Public/17.0.0/ucd/DerivedCoreProperties.txt",
+            "sourceSHA256": "24c7fed1195c482faaefd5c1e7eb821c5ee1fb6de07ecdbaa64b56a99da22c08"
           }
         ],
         "implementation": "src/core/UnicodeCase.cpp",
-        "generatedData": "src/core/UnicodeCaseData.h",
+        "generatedData": [
+          "src/core/UnicodeCaseData.h",
+          "src/core/UnicodeLowerCaseData.h"
+        ],
         "generator": "utils/generate-unicode-case.py",
         "license": "src/core/Unicode-LICENSE.txt",
-        "purpose": "Native default full uppercase conversion of UTF-16 strings, preserving lone surrogates; no JavaScript engine"
+        "purpose": "Native Unicode default full uppercase and lowercase conversion of UTF-16 strings, including Final_Sigma using Cased and Case_Ignorable properties and preserving lone surrogates; no JavaScript engine"
       },
       {
         "name": "Khronos SPIRV-Reflect",

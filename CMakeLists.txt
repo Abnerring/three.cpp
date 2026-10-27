@@ -96,6 +96,9 @@ add_library(threecpp
     src/extras/curves/SplineCurve.cpp src/extras/curves/CatmullRomCurve3.cpp
 )
 target_sources(threecpp PRIVATE
+    src/core/JSProxy.cpp
+    src/math/MatrixRuntime.cpp
+    src/math/ColorRuntime.cpp
     src/core/JSJobs.cpp src/core/JSPromise.cpp src/core/AbortController.cpp
     src/core/NativeEventLoop.cpp
     src/core/JSWeakMap.cpp
@@ -190,6 +193,9 @@ target_sources(threecpp PRIVATE
     src/nodes/code/CodeNode.cpp
     src/nodes/code/FunctionNode.cpp
     src/nodes/tsl/TSLCore.cpp
+    src/nodes/tsl/TSLCoreRuntime.cpp
+    src/nodes/tsl/TSLShaderNodes.cpp
+    src/nodes/code/FunctionCallNode.cpp
     src/renderers/common/BindGroup.cpp
     src/renderers/common/Constants.cpp
     src/renderers/common/Binding.cpp
@@ -244,19 +250,19 @@ target_sources(threecpp PRIVATE
     src/nodes/core/ToonOutlinePass.cpp
     src/nodes/core/PassTexture.cpp
     src/nodes/core/UVUtils.cpp
-    src/nodes/core/ConvertNode.cpp
+    src/nodes/utils/ConvertNode.cpp
     src/nodes/core/MaxMipLevel.cpp
     src/nodes/core/Remap.cpp
     src/nodes/core/SampleNode.cpp
     src/nodes/core/RotateNode.cpp
-    src/nodes/core/FlipNode.cpp
-    src/nodes/core/SplitNode.cpp
-    src/nodes/core/JoinNode.cpp
-    src/nodes/core/MemberNode.cpp
-    src/nodes/core/ArrayElementNode.cpp
+    src/nodes/utils/FlipNode.cpp
+    src/nodes/utils/SplitNode.cpp
+    src/nodes/utils/JoinNode.cpp
+    src/nodes/utils/MemberNode.cpp
+    src/nodes/utils/ArrayElementNode.cpp
     src/nodes/core/StorageArrayElementNode.cpp
     src/nodes/core/SpriteUtils.cpp
-    src/nodes/core/SetNode.cpp
+    src/nodes/utils/SetNode.cpp
     src/nodes/core/TriplanarTextures.cpp
     src/nodes/core/FunctionOverloadingNode.cpp
     src/nodes/core/CubeMapNode.cpp
@@ -296,6 +302,7 @@ target_sources(threecpp PRIVATE
     src/nodes/core/UniformNode.cpp
     src/nodes/core/IndexNode.cpp
     src/nodes/core/VarNode.cpp
+    src/nodes/core/VarNodeRuntime.cpp
     src/nodes/core/ContextNode.cpp
     src/nodes/core/StackNode.cpp
     src/nodes/core/PropertyNode.cpp

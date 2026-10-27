@@ -70,6 +70,8 @@ class JSValue {
     static JSValue object();
     static JSValue object(const JSValue& prototype);
     static JSValue array(std::uint32_t length = 0);
+    static JSValue proxy(const JSValue& target, const JSValue& handler);
+    bool isProxy() const;
     static JSValue symbol(const std::optional<std::string>& description = std::nullopt);
     static JSValue wellKnownSymbol(const std::string& name);
     std::optional<std::string> symbolDescription() const;

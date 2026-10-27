@@ -1,22 +1,18 @@
 # 续接说明（Handoff）
 
-2026-10-24 当前阶段：CPU 全量 2,528 cases / 217,372 assertions；16 项 CTest 全通过（91.00 秒），独立字符串/正则测试 12 cases / 158 assertions。固定上游 `11738a9d55e502fb484cefffcea3a66dc44e9fe9`；生产实现为原生 C++，Node 仅用于开发差分，不引入 CEF、浏览器或 JS 执行桥。以下当前说明优先于后面的历史记录。
+2026-10-27 当前阶段：固定上游 `11738a9d55e502fb484cefffcea3a66dc44e9fe9`。原生 C++ 实现，不引入 CEF、浏览器或 JS 执行桥；Node 只作开发差分。目标仍是完整复现 src 与 examples/jsm，尚未完成。以下当前说明优先于后面的历史记录。
 
-本轮实现 NodeBuilder 的 createRenderTarget/createCubeRenderTarget/getTypeFromAttribute/prebuild/buildAsync；新增节点阶段常量模块、原生 await 状态机、Promise constructor/@@species、独立 host task 与微任务检查点。异步构建持有真实迭代器，保留 yield/reject/IteratorClose、重入与失败后的部分状态；原生宿主仍需驱动任务队列。
+本轮实现实际 TSLCore 转换/工厂、Node.prototype 链式方法与 swizzle/数组索引缓存、ShaderNode/Fn/Stack、FunctionCallNode 与 code/glslFn/wgslFn 工厂、VarNode/VarIntent；补原生 Proxy/Array 协议及基础 Matrix3/4、Color 管理构造器。七个工具节点和单测移到 nodes/utils，旧 core 转发文件删除。新增 String charAt 与 Unicode 17 完整默认小写，保留 Final_Sigma、UTF-16 孤立代理和动态转换顺序。
 
-新增真实管理 RenderTarget/common.CubeRenderTarget、Texture/Source/CubeTexture、Vector2/3/4 基础方法，以及 Float16BufferAttribute 构造器/原型与九种数值 TypedArray 构造入口。GLSLNodeParser/Function、WGSLNodeParser/Function 接入实际 FunctionNode；这里只完成函数文本解析与元数据，不代表完整 GLSL/WGSL 编译器或 GPU 路径。
+最终 build-07 成功；26/26 CTest 通过，57.24 秒。CPU 2,528 cases / 217,372 assertions；独立 String/RegExp 12/158。新增差分：TSLCore 953、工具节点 541、VarNode 222、Proxy/Array 883 + 实际 GC、基础数学构造器 438；Shader 隔离导入 141、函数工厂相对节点编号 179。Unicode lower 1,114,112 码点、4,456,448 Sigma 上下文、10,021 UTF-16 字符串、282 方法场景通过；旧 Unicode upper 及旧节点/Promise/RegExp 回归通过。范围与原始证据见 VALIDATION.md。
 
-本轮固定源码差分通过：build 100、prebuild 115、Float16/TypedArray 923、parser 479、字符串协议 237、管理资源 161，另有 1 条原生实际 GC 检查。RegExp 非 Unicode i 模式 6,997 条与 3 条明确不支持检查通过；旧 RegExp 共 93,707 个场景回归通过，其中 704 项为既定不支持检查。修复空字符类量词导致的 555 项真实差异。parser 的三处 Infinity/-0 字段改用保留数值类型的无损编码，两侧普通预期未变；原始失败证据和旧输入/预期均保留。
+完整导入图仍未通过：Shader 默认 eager 13 项仅 Fn 编号差 8；函数工厂默认 13 项、22 个 Node.id 差 425。原 179 项默认输入/预期逐字节保全，旧 Shader132 前缀保留，原始失败与新 scoped 证据分开保存。不得将 isolated/relative 通过当全图通过；不得硬编码补分配次数。TSLCore 初始普通 nodeObjects(ConstNode) 的绝对 id 差异也保留，后续 id42 fixture 仅验枚举与转换。
 
-旧 Node、NodeUtils、Builder、Input、Function、Property、UniformsGroup、资源、Stack、Cache、Frame，以及 Promise/RegExp 协议与 GC 均完成本轮回归。主证据目录 `D:\Temp\surui\threecpp-builder-pipeline-20261024`；外部最终证据分别为 `shader-parsers-20261024-validation03`、`node-builder-prebuild-20261024-validation03`、`regexp-ignore-case-20261024-validation02`、`regexp-base-20261024-validation02`，均在 `D:\Temp\surui`。详细记录见 VALIDATION.md。
+文件存在统计：src 442/755、examples/jsm 84/496，共526/1,251；725 尚无同路径文件。这不是功能完成率。审计 partial-unverified358、missing583、vulkan-port-pending290、dependency-unverified20，解析错误0；没有模块登记完整验收。审计5测试及--check通过。
 
-文件对应统计：src 434/755，examples/jsm 84/496，合计 518/1,251（41.4%）；仍有 733 个尚无同路径文件。这是文件存在率，不是功能完成率。审计状态：partial-unverified 350、missing 591、vulkan-port-pending 290、dependency-unverified 20，解析错误 0；尚无模块按完整验收登记。审计单测 5 项及 --check 均通过。
+下一步：真实补齐 Math/ColorSpace/PremultiplyAlpha/AlphaHash 等模块初始化图，再推进其余 TSL 操作/条件/显示节点与 NodeMaterial fallback；完成现代节点材质、计算/存储和 Vulkan 后端。传统完整材质、灯光、阴影、后处理，剩余 addons、原生图像/音视频宿主、管理资源与旧 NativeObject/Vulkan 桥接、跨平台/GPU 验收仍待完成。Matrix/Color 只实现当前基础方法子集，全局内建/Boolean与Symbol装箱/共享Generator内建身份等仍有边界。
 
-下一步优先：NodeMaterial fallback、完整 TSL 的 Fn/节点工厂/Node.prototype 扩展与模块初始化图；现代节点材质、计算/存储资源及 Vulkan 后端。管理纹理/渲染目标尚需与旧数值 façade、NativeObject 和实际 Vulkan 分配/上传/dispose 统一桥接；完整向量/矩阵任意值、BufferAttribute 动态属性/构造/clone、TypedArray 全方法/species、Number.parseInt/isNaN 动态替换、全局 JSON 与图像/视频宿主适配仍有缺口。传统路径的完整材质、光照、阴影、后处理，以及剩余 addons 与跨平台/GPU 全量验证仍待推进。
-
-本轮没有修改 Vulkan 渲染算法或着色器，未重跑 GPU；VulkanRenderer.h 仅调整 constants.h 的明确路径，防止节点常量同名遮蔽。历史 Gaussian cube blur 60 GPU 断言、mipmap 1,400 GPU 断言仅支持各自冻结版本；不能外推到本轮新增管理资源。
-
-构建依赖问题已修复并独立提交 `3da3db9`：配置时以 UTF-8 捕获真实 MSVC /showIncludes 本地化前缀，Ninja 正确跟踪头文件；独立 fixture 验证只改头文件后重编、结果由 17 变为 23。已完整重编并重链接本轮相关探针。历史要求删除对象或手动改时间戳的规避方式不再作为当前构建规则；不要删除运行中的产物。一次仅为提升并行度而中断的构建保留在 build-07-interruption.json，最终 build-08/build-09 均以 0 退出。
+本轮未改 GPU 渲染算法、未重跑 GPU，历史 GPU 结果只支持原冻结版本。主证据 D:\Temp\surui\threecpp-tsl-core-20261027；本轮各 *-20261027-validation06/07 的输入/预期/实际/差异，以及默认导入图 pending 汇总在同级目录。阶段提交后 freeze-final.json 冻结完整源码、固定上游、实际二进制和证据 SHA。历史后缀按字节保全。
 
 ## 一、项目约定（必须遵守）
 
