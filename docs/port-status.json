@@ -201,8 +201,8 @@
     "note": "Accepted port scope is src and examples/jsm, including tracked third-party dependencies. Editor/manual web applications are excluded from native application rewrites. Native host behavior, packaging and all three platforms require separate implementation and verification evidence."
   },
   "counts": {
-    "partial-unverified": 358,
-    "missing": 583,
+    "partial-unverified": 364,
+    "missing": 577,
     "vulkan-port-pending": 290,
     "dependency-unverified": 20
   },
@@ -210,8 +210,8 @@
     "src": {
       "modules": 755,
       "counts": {
-        "partial-unverified": 274,
-        "missing": 191,
+        "partial-unverified": 280,
+        "missing": 185,
         "vulkan-port-pending": 290
       }
     },
@@ -817,7 +817,7 @@
       "path": "src/nodes/display",
       "upstreamFiles": 18,
       "moduleCount": 18,
-      "modulesWithCppFiles": 0,
+      "modulesWithCppFiles": 2,
       "verifiedComplete": 0
     },
     {
@@ -845,7 +845,7 @@
       "path": "src/nodes/functions/material",
       "upstreamFiles": 5,
       "moduleCount": 5,
-      "modulesWithCppFiles": 0,
+      "modulesWithCppFiles": 1,
       "verifiedComplete": 0
     },
     {
@@ -880,7 +880,7 @@
       "path": "src/nodes/math",
       "upstreamFiles": 11,
       "moduleCount": 11,
-      "modulesWithCppFiles": 0,
+      "modulesWithCppFiles": 3,
       "verifiedComplete": 0
     },
     {
@@ -9107,7 +9107,7 @@
       "kind": "core",
       "upstreamSha256": "a536e678b8747b8693254dd27d213bd0c24416317c5586d1ba4c544c20cdd33f",
       "header": "src/nodes/core/NodeError.h",
-      "implementation": null,
+      "implementation": "src/nodes/core/NodeError.cpp",
       "expectedHeader": "src/nodes/core/NodeError.h",
       "expectedImplementation": "src/nodes/core/NodeError.cpp",
       "status": "partial-unverified",
@@ -9896,11 +9896,11 @@
       "scope": "src",
       "kind": "core",
       "upstreamSha256": "f6a6822cc3c0b140bfe974d65da8f94183c2c2af60c435f22a5db41ecedaa93f",
-      "header": null,
-      "implementation": null,
+      "header": "src/nodes/display/ColorSpaceFunctions.h",
+      "implementation": "src/nodes/display/ColorSpaceFunctions.cpp",
       "expectedHeader": "src/nodes/display/ColorSpaceFunctions.h",
       "expectedImplementation": "src/nodes/display/ColorSpaceFunctions.cpp",
-      "status": "missing",
+      "status": "partial-unverified",
       "verifiedComplete": false,
       "apiExtraction": "partial-static",
       "verification": {
@@ -9909,7 +9909,9 @@
           "pointer": "/modules/305"
         },
         "upstreamUnitTests": [],
-        "cppUnitTests": [],
+        "cppUnitTests": [
+          "test/unit/src/nodes/display/ColorSpaceFunctions.tests.cpp"
+        ],
         "reviewedImplementation": [],
         "differentialResults": [],
         "renderingResults": [],
@@ -10031,11 +10033,11 @@
       "scope": "src",
       "kind": "core",
       "upstreamSha256": "ac32ff49a12748c509d72e323cada2dd5b0002c1622de0f981fb0e891411e0d0",
-      "header": null,
-      "implementation": null,
+      "header": "src/nodes/display/PremultiplyAlphaFunctions.h",
+      "implementation": "src/nodes/display/PremultiplyAlphaFunctions.cpp",
       "expectedHeader": "src/nodes/display/PremultiplyAlphaFunctions.h",
       "expectedImplementation": "src/nodes/display/PremultiplyAlphaFunctions.cpp",
-      "status": "missing",
+      "status": "partial-unverified",
       "verifiedComplete": false,
       "apiExtraction": "partial-static",
       "verification": {
@@ -10044,7 +10046,9 @@
           "pointer": "/modules/310"
         },
         "upstreamUnitTests": [],
-        "cppUnitTests": [],
+        "cppUnitTests": [
+          "test/unit/src/nodes/display/PremultiplyAlphaFunctions.tests.cpp"
+        ],
         "reviewedImplementation": [],
         "differentialResults": [],
         "renderingResults": [],
@@ -10845,11 +10849,11 @@
       "scope": "src",
       "kind": "core",
       "upstreamSha256": "8139d1a52979478286047b9aca7afefdf162c0fbd5e8c97c90b722431ceda66a",
-      "header": null,
-      "implementation": null,
+      "header": "src/nodes/functions/material/getAlphaHashThreshold.h",
+      "implementation": "src/nodes/functions/material/getAlphaHashThreshold.cpp",
       "expectedHeader": "src/nodes/functions/material/getAlphaHashThreshold.h",
       "expectedImplementation": "src/nodes/functions/material/getAlphaHashThreshold.cpp",
-      "status": "missing",
+      "status": "partial-unverified",
       "verifiedComplete": false,
       "apiExtraction": "partial-static",
       "verification": {
@@ -11979,11 +11983,11 @@
       "scope": "src",
       "kind": "core",
       "upstreamSha256": "96acb68b227375aff488e3340cd9248440e67987ffbffa085bb48a0b4e82cf1e",
-      "header": null,
-      "implementation": null,
+      "header": "src/nodes/math/ConditionalNode.h",
+      "implementation": "src/nodes/math/ConditionalNode.cpp",
       "expectedHeader": "src/nodes/math/ConditionalNode.h",
       "expectedImplementation": "src/nodes/math/ConditionalNode.cpp",
-      "status": "missing",
+      "status": "partial-unverified",
       "verifiedComplete": false,
       "apiExtraction": "partial-static",
       "verification": {
@@ -12033,11 +12037,11 @@
       "scope": "src",
       "kind": "core",
       "upstreamSha256": "83550995f8da4538845f5532c74210a3b64fd5ff76fc29d034de5e0b9d7695be",
-      "header": null,
-      "implementation": null,
+      "header": "src/nodes/math/MathNode.h",
+      "implementation": "src/nodes/math/MathNode.cpp",
       "expectedHeader": "src/nodes/math/MathNode.h",
       "expectedImplementation": "src/nodes/math/MathNode.cpp",
-      "status": "missing",
+      "status": "partial-unverified",
       "verifiedComplete": false,
       "apiExtraction": "partial-static",
       "verification": {
@@ -12087,11 +12091,11 @@
       "scope": "src",
       "kind": "core",
       "upstreamSha256": "b8358ff78a3c774ff156882696ade9ec9d5c4d5d81deaf662fdfa7bcf7fc3f9f",
-      "header": null,
-      "implementation": null,
+      "header": "src/nodes/math/OperatorNode.h",
+      "implementation": "src/nodes/math/OperatorNode.cpp",
       "expectedHeader": "src/nodes/math/OperatorNode.h",
       "expectedImplementation": "src/nodes/math/OperatorNode.cpp",
-      "status": "missing",
+      "status": "partial-unverified",
       "verifiedComplete": false,
       "apiExtraction": "partial-static",
       "verification": {

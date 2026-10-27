@@ -1,10 +1,20 @@
 ﻿#pragma once
 #include <string>
+#include "core/JSValue.h"
+
+JSValue nativeAssignNodeConstructor();
+JSValue nativeAssignNodeModule();
 
 // Port of the rules in src/nodes/core/AssignNode.js at the pinned revision. The node writes one
 // node's value into another, and five of its rules do not follow from that description.
 class AssignNode {
+    JSValue object_;
   public:
+    AssignNode(const JSValue& targetNode, const JSValue& sourceNode);
+    JSValue object() const { return object_; }
+    operator JSValue() const { return object_; }
+    static JSValue constructor() { return nativeAssignNodeConstructor(); }
+    static JSValue prototype() { return constructor().get("prototype"); }
     static constexpr bool isAssignNode = true;
     static constexpr const char* kTypeName = "AssignNode";
 

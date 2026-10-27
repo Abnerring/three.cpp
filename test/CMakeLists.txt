@@ -312,11 +312,11 @@ add_executable(THREECPPTests
         unit/src/nodes/core/ModelNode.tests.cpp
         unit/src/nodes/core/Object3DNode.tests.cpp
         unit/src/nodes/core/FrontFacing.tests.cpp
-        unit/src/nodes/core/ColorSpaceFunctions.tests.cpp
+        unit/src/nodes/display/ColorSpaceFunctions.tests.cpp
         unit/src/nodes/core/ToneMapping.tests.cpp
         unit/src/nodes/core/NormalMap.tests.cpp
         unit/src/nodes/core/BumpMap.tests.cpp
-        unit/src/nodes/core/PremultiplyAlpha.tests.cpp
+        unit/src/nodes/display/PremultiplyAlphaFunctions.tests.cpp
         unit/src/nodes/core/Packing.tests.cpp
         unit/src/nodes/core/MatcapUV.tests.cpp
         unit/src/nodes/core/EquirectUV.tests.cpp
@@ -1685,6 +1685,10 @@ endif()
 add_executable(ThreeJsTSLShaderParityProbe unit/utils/parity/TSLShaderParityProbe.cpp)
 target_link_libraries(ThreeJsTSLShaderParityProbe PRIVATE threecpp::threecpp)
 if(THREECPP_NODE_EXECUTABLE AND THREEJS_SOURCE_DIR)
+    add_test(NAME threecpp.threejs-tsl-shader-eager-parity
+        COMMAND "${THREECPP_NODE_EXECUTABLE}" "${CMAKE_CURRENT_SOURCE_DIR}/unit/utils/parity/compare-tsl-shader.mjs"
+        "${THREEJS_SOURCE_DIR}" "$<TARGET_FILE:ThreeJsTSLShaderParityProbe>"
+        "${CMAKE_BINARY_DIR}/parity/tsl-shader-eager")
     add_test(NAME threecpp.threejs-tsl-shader-isolated-parity
         COMMAND "${THREECPP_NODE_EXECUTABLE}" "${CMAKE_CURRENT_SOURCE_DIR}/unit/utils/parity/compare-tsl-shader.mjs"
         "${THREEJS_SOURCE_DIR}" "$<TARGET_FILE:ThreeJsTSLShaderParityProbe>"
@@ -1814,4 +1818,72 @@ endif()
 # Native ESSL remains an optional Vulkan compiler candidate.
 if(TARGET threecpp_vulkan AND THREECPP_NATIVE_ESSL)
     add_subdirectory(native-essl)
+endif()
+
+add_executable(ThreeJsOperatorNodeParityProbe unit/utils/parity/OperatorNodeParityProbe.cpp)
+target_link_libraries(ThreeJsOperatorNodeParityProbe PRIVATE threecpp::threecpp)
+if(THREECPP_NODE_EXECUTABLE AND THREEJS_SOURCE_DIR)
+    add_test(NAME threecpp.threejs-operator-node-parity
+        COMMAND "${THREECPP_NODE_EXECUTABLE}" "${CMAKE_CURRENT_SOURCE_DIR}/unit/utils/parity/compare-operator-node.mjs"
+        "${THREEJS_SOURCE_DIR}" "$<TARGET_FILE:ThreeJsOperatorNodeParityProbe>" "${CMAKE_BINARY_DIR}/parity/operator-node")
+endif()
+
+add_executable(ThreeJsMathNodeParityProbe unit/utils/parity/MathNodeParityProbe.cpp)
+target_link_libraries(ThreeJsMathNodeParityProbe PRIVATE threecpp::threecpp)
+if(THREECPP_NODE_EXECUTABLE AND THREEJS_SOURCE_DIR)
+    add_test(NAME threecpp.threejs-math-node-relative-parity
+        COMMAND "${THREECPP_NODE_EXECUTABLE}" "${CMAKE_CURRENT_SOURCE_DIR}/unit/utils/parity/compare-math-node.mjs"
+        "${THREEJS_SOURCE_DIR}" "$<TARGET_FILE:ThreeJsMathNodeParityProbe>" "${CMAKE_BINARY_DIR}/parity/math-node-relative" --relative-integration-node-ids)
+endif()
+
+add_executable(ThreeJsPropertyNodeModuleParityProbe unit/utils/parity/PropertyNodeModuleParityProbe.cpp)
+target_link_libraries(ThreeJsPropertyNodeModuleParityProbe PRIVATE threecpp::threecpp)
+if(THREECPP_NODE_EXECUTABLE AND THREEJS_SOURCE_DIR)
+    add_test(NAME threecpp.threejs-property-node-module-parity
+        COMMAND "${THREECPP_NODE_EXECUTABLE}" "${CMAKE_CURRENT_SOURCE_DIR}/unit/utils/parity/compare-property-node-module.mjs"
+        "${THREEJS_SOURCE_DIR}" "$<TARGET_FILE:ThreeJsPropertyNodeModuleParityProbe>" "${CMAKE_BINARY_DIR}/parity/property-node-module")
+endif()
+
+add_executable(ThreeJsConditionalNodeParityProbe unit/utils/parity/ConditionalNodeParityProbe.cpp)
+target_link_libraries(ThreeJsConditionalNodeParityProbe PRIVATE threecpp::threecpp)
+if(THREECPP_NODE_EXECUTABLE AND THREEJS_SOURCE_DIR)
+    add_test(NAME threecpp.threejs-conditional-node-parity
+        COMMAND "${THREECPP_NODE_EXECUTABLE}" "${CMAKE_CURRENT_SOURCE_DIR}/unit/utils/parity/compare-conditional-node.mjs"
+        "${THREEJS_SOURCE_DIR}" "$<TARGET_FILE:ThreeJsConditionalNodeParityProbe>" "${CMAKE_BINARY_DIR}/parity/conditional-node")
+endif()
+
+add_executable(ThreeJsAssignNodeParityProbe unit/utils/parity/AssignNodeParityProbe.cpp)
+target_link_libraries(ThreeJsAssignNodeParityProbe PRIVATE threecpp::threecpp)
+if(THREECPP_NODE_EXECUTABLE AND THREEJS_SOURCE_DIR)
+    add_test(NAME threecpp.threejs-assign-node-parity
+        COMMAND "${THREECPP_NODE_EXECUTABLE}" "${CMAKE_CURRENT_SOURCE_DIR}/unit/utils/parity/compare-assign-node.mjs"
+        "${THREEJS_SOURCE_DIR}" "$<TARGET_FILE:ThreeJsAssignNodeParityProbe>" "${CMAKE_BINARY_DIR}/parity/assign-node")
+endif()
+
+add_executable(ThreeJsNativeTSLFunctionsParityProbe unit/utils/parity/NativeTSLFunctionsParityProbe.cpp)
+target_link_libraries(ThreeJsNativeTSLFunctionsParityProbe PRIVATE threecpp::threecpp)
+if(THREECPP_NODE_EXECUTABLE AND THREEJS_SOURCE_DIR)
+    add_test(NAME threecpp.threejs-native-tsl-functions-structural-parity
+        COMMAND "${THREECPP_NODE_EXECUTABLE}" "${CMAKE_CURRENT_SOURCE_DIR}/unit/utils/parity/compare-native-tsl-functions.mjs"
+        "${THREEJS_SOURCE_DIR}" "$<TARGET_FILE:ThreeJsNativeTSLFunctionsParityProbe>" "${CMAKE_BINARY_DIR}/parity/native-tsl-functions-structural" --structural-node-ids)
+endif()
+
+add_executable(ThreeJsAlphaHashBodiesParityProbe unit/utils/parity/AlphaHashBodiesParityProbe.cpp)
+target_link_libraries(ThreeJsAlphaHashBodiesParityProbe PRIVATE threecpp::threecpp)
+if(THREECPP_NODE_EXECUTABLE AND THREEJS_SOURCE_DIR)
+    add_test(NAME threecpp.threejs-alpha-hash-bodies-relative-parity
+        COMMAND "${THREECPP_NODE_EXECUTABLE}" "${CMAKE_CURRENT_SOURCE_DIR}/unit/utils/parity/compare-alpha-hash-bodies.mjs"
+        "${THREEJS_SOURCE_DIR}" "$<TARGET_FILE:ThreeJsAlphaHashBodiesParityProbe>" "${CMAKE_BINARY_DIR}/parity/alpha-hash-bodies-relative" --relative-node-ids)
+endif()
+
+add_executable(ThreeJsNativeBindingLifetimeProbe unit/utils/parity/NativeBindingLifetimeProbe.cpp)
+target_link_libraries(ThreeJsNativeBindingLifetimeProbe PRIVATE threecpp::threecpp)
+add_test(NAME threecpp.native-node-binding-lifetime COMMAND ThreeJsNativeBindingLifetimeProbe)
+
+add_executable(ThreeJsNativeNodeImportsParityProbe unit/utils/parity/NativeNodeImportsParityProbe.cpp)
+target_link_libraries(ThreeJsNativeNodeImportsParityProbe PRIVATE threecpp::threecpp)
+if(THREECPP_NODE_EXECUTABLE AND THREEJS_SOURCE_DIR)
+    add_test(NAME threecpp.threejs-native-node-imports-parity
+        COMMAND "${THREECPP_NODE_EXECUTABLE}" "${CMAKE_CURRENT_SOURCE_DIR}/unit/utils/parity/compare-native-node-imports.mjs"
+        "${THREEJS_SOURCE_DIR}" "$<TARGET_FILE:ThreeJsNativeNodeImportsParityProbe>" "${CMAKE_BINARY_DIR}/parity/native-node-imports")
 endif()

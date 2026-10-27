@@ -3,6 +3,8 @@
 #include "core/JSValue.h"
 
 JSValue nativePropertyNodeConstructor();
+JSValue nativePropertyNodeModule();
+JSValue nativePropertyNodeBinding(const std::string& name);
 
 // Port of the rules in src/nodes/core/PropertyNode.js at the pinned revision. The node names a
 // shader variable the engine expects to exist, and four of its rules are worth writing down.

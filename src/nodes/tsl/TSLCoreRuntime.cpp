@@ -239,7 +239,7 @@ void installNativeTSLCoreExtensions(const JSValue& module,const JSValue& constNo
             }
             const auto nodes=invoke(params,"map")({JSValue::function([](const JSValue&,const Args& args,const Args& cap)->JSValue{return cap[0].call({}, {arg(args,0)});},{cap[3]},"",1)});
             return cap[4].call({}, {nativeJoinNodeConstructor().construct({nodes,type})});
-        },{type,cache,nativeNodeUtils().get("getValueFromType"),constNode,module.get("nodeObjectIntent")},"",0);
+        },{type,cache,nativeNodeUtilsBinding("getValueFromType"),constNode,module.get("nodeObjectIntent")},"",0);
     };
     for(const auto* type:{"color","float","int","uint","bool","vec2","ivec2","uvec2","bvec2","vec3","ivec3","uvec3","bvec3","vec4","ivec4","uvec4","bvec4","mat2","mat3","mat4"}) {
         const auto cache=cacheMaps.get(std::string(type)=="int"?"ints":type);own(module,type,convertType(type,cache.isUndefined()?JSValue(nullptr):cache));

@@ -255,6 +255,7 @@ JSValue objectToString(const JSValue& receiver, const std::vector<JSValue>&, con
     if(isNativeStringObject(receiver))return "[object String]";
     if(isNativeNumberObject(receiver))return "[object Number]";
     if(isNativeRegExpObject(receiver))return "[object RegExp]";
+    if(receiver.isHostObject("runtime.Error"))return "[object Error]";
     switch(receiver.type()){
     case JSValue::Type::Array:return "[object Array]";
     case JSValue::Type::Function:return "[object Function]";

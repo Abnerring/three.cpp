@@ -1,6 +1,8 @@
 #include "nodes/core/StackNode.h"
 #include "nodes/core/Node.h"
 #include "nodes/core/StackTrace.h"
+#include "nodes/math/ConditionalNode.h"
+#include "nodes/tsl/TSLCore.h"
 #include "core/JSMap.h"
 #include "core/JSIterator.h"
 #include "core/JSModuleObject.h"
@@ -52,8 +54,29 @@ JSValue method(const JSValue& receiver, const Args& args, const Args& captures) 
         const auto index = self.get("_currentNode").toBoolean() ? invoke(self.get("nodes"), "indexOf")({self.get("_currentNode")}) : JSValue(0);
         return invoke(self, "addToStack")({arg(args, 0), index});
     }
-    if (name == "If" || name == "ElseIf" || name == "Else" || name == "Switch" || name == "Case")
-        throw std::logic_error("StackNode conditional methods require the pending ShaderNode/ConditionalNode TSL implementation");
+    if (name == "If" || name == "ElseIf") {
+        const auto methodNode = captures[1].construct({arg(args, 1)}); const auto condition = captures[2].call({}, {arg(args, 0), methodNode});
+        if (name == "If") { self.set("_currentCond", condition); const auto add = invoke(self, "addToStack"); return add({self.get("_currentCond")}); }
+        auto current = self.get("_currentCond"); current.set("elseNode", condition); self.set("_currentCond", condition); return self;
+    }
+    if (name == "Else") {
+        auto current = self.get("_currentCond"); const auto methodNode = captures[1].construct({arg(args, 0)}); current.set("elseNode", methodNode); return self;
+    }
+    if (name == "Switch") { self.set("_expressionNode", captures[3].call({}, {arg(args, 0)})); return self; }
+    if (name == "Case") {
+        const auto cases = JSValue::array(); auto params = JSValue::array();
+        for (unsigned i = 0; i < args.size(); ++i) { JSPropertyDescriptor d; d.value = args[i]; d.writable = d.enumerable = d.configurable = true; params.defineProperty(std::to_string(i), d); }
+        if (params.get("length").toNumber() >= 2) {
+            for (double i = 0; i < params.get("length").toNumber() - 1; ++i) {
+                const auto push = invoke(cases, "push"); const auto equal = invoke(self.get("_expressionNode"), "equal"); const auto node = captures[3].call({}, {params.get(JSValue(i))}); push({equal({node})});
+            }
+        } else ThreeUtils::error({"TSL: Invalid parameter length. Case() requires at least two parameters.", nativeStackTraceConstructor().construct()});
+        const auto method = params.get(JSValue(params.get("length").toNumber() - 1)); const auto methodNode = captures[1].construct({method}); auto condition = cases.get("0");
+        for (double i = 1; i < cases.get("length").toNumber(); ++i) { const auto combine = invoke(condition, "or"); condition = combine({cases.get(JSValue(i))}); }
+        const auto selected = captures[2].call({}, {condition, methodNode});
+        if (self.get("_currentCond").isNull()) { self.set("_currentCond", selected); const auto add = invoke(self, "addToStack"); return add({self.get("_currentCond")}); }
+        auto current = self.get("_currentCond"); current.set("elseNode", selected); self.set("_currentCond", selected); return self;
+    }
     if (name == "Default") { invoke(self, "Else")({arg(args, 0)}); return self; }
     if (name == "setup") {
         auto properties = invoke(builder, "getNodeProperties")({self}); double index = 0;
@@ -101,21 +124,29 @@ JSValue nativeStackNodeConstructor() {
     static thread_local JSWeakValue weak;
     if (const auto value = weak.lock(); value && value->isConstructible()) return *value;
     static thread_local bool initializing = false; JSModuleInitializationScope scope(initializing, "StackNode");
-    const auto base = nativeNodeConstructor();
+    const auto base = nativeNodeConstructor(); const auto tsl = nativeTSLCore(); const auto shader = nativeTSLCoreBinding("ShaderNode"); const auto select = nativeConditionalNodeBinding("select"); const auto nodeObject = nativeTSLCoreBinding("nodeObject");
+    auto holder = JSValue::object(nullptr);
     auto constructor = JSValue::builtinConstructor([](const JSValue& newTarget, const Args& args, const Args& captures) -> JSValue {
-        auto self = captures[0].construct({}, newTarget);
+        auto self = captures[0].get("constructor").getPrototype().construct({}, newTarget);
         self.set("nodes", JSValue::array()); self.set("outputNode", nullptr);
         const auto parent = arg(args, 0); self.set("parent", parent.isUndefined() ? JSValue(nullptr) : parent);
         self.set("_currentCond", nullptr); self.set("_expressionNode", nullptr); self.set("_currentNode", nullptr);
         self.set("_nodeDataLibrary", createNativeMap()); self.set("isStackNode", true); return self;
-    }, {base}, "StackNode", 0);
+    }, {holder}, "StackNode", 0);
+    holder.set("constructor", constructor);
     constructor.setPrototype(base); auto prototype = constructor.get("prototype"); prototype.setPrototype(base.get("prototype"));
     JSPropertyDescriptor type; type.getter = JSValue::function([](const JSValue&, const Args&, const Args&) -> JSValue { return "StackNode"; }, {}, "get type", 0); type.configurable = true; constructor.defineProperty("type", type);
     for (const auto& [name, arity] : std::initializer_list<std::pair<const char*, unsigned>>{
         {"isCacheable", 0}, {"getElementType", 1}, {"generateNodeType", 1}, {"getMemberType", 2}, {"addToStack", 1}, {"addToStackBefore", 1}, {"If", 2}, {"ElseIf", 2}, {"Else", 1}, {"Switch", 1}, {"Case", 0}, {"Default", 1}, {"setup", 1}, {"build", 1}}) {
-        JSPropertyDescriptor descriptor; descriptor.value = JSValue::function(method, {name}, name, arity); descriptor.writable = descriptor.configurable = true; prototype.defineProperty(name, descriptor);
+        JSPropertyDescriptor descriptor; descriptor.value = JSValue::function(method, {name, shader, select, nodeObject}, name, arity); descriptor.writable = descriptor.configurable = true; prototype.defineProperty(name, descriptor);
     }
     constructor.retainForHeapLifetime(); weak = JSWeakValue(constructor); return constructor;
+}
+JSValue nativeStackNodeModule() {
+    static thread_local JSWeakValue weak; if (const auto value = weak.lock(); value && value->isObject()) return *value;
+    static thread_local bool initializing = false; JSModuleInitializationScope scope(initializing, "StackNode exports"); const auto ctor = nativeStackNodeConstructor();
+    const auto proxy = nativeTSLCoreBinding("nodeProxy").call({}, {ctor}); const auto stack = invoke(proxy, "setParameterLength")({0,1}); auto module = JSValue::object(); module.set("default", ctor); module.set("stack", stack);
+    module.retainForHeapLifetime(); weak = JSWeakValue(module); return module;
 }
 StackNode::StackNode(const JSValue& parent) : object_(constructor().construct({parent})) {}
 JSValue StackNode::addToStack(const JSValue& node, const JSValue& index) const { return invoke(object_, "addToStack")({node, index}); }

@@ -1,4 +1,4 @@
-#include "nodes/core/ColorSpaceFunctions.h"
+#include "nodes/display/ColorSpaceFunctions.h"
 
 #include "catch.hpp"
 

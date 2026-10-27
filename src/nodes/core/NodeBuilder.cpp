@@ -1,5 +1,6 @@
 #include "nodes/core/NodeBuilder.h"
 #include "nodes/core/VarNode.h"
+#include "nodes/functions/material/getAlphaHashThreshold.h"
 #include "nodes/core/NodeBuilderAsync.h"
 #include "nodes/core/constants.h"
 #include "nodes/core/NodeCache.h"
@@ -933,7 +934,9 @@ JSValue nativeNodeBuilderConstructor() {
     if (auto value = weak.lock(); value && value->isConstructible()) return *value;
     static thread_local bool initializing = false;
     JSModuleInitializationScope scope(initializing, "NodeBuilder constructor");
-    nativeVarNodeModule();
+    // NodeMaterial imports alpha hashing and TSLBase. Load their real ported
+    // dependencies; the remaining NodeMaterial graph is still incomplete.
+    nativeAlphaHashThreshold();
     auto state = JSValue::object(nullptr); state.set("id", 0);
     state.set("functionNodeCache", createNativeWeakMap());
     auto arrayConstructors = JSValue::array();

@@ -93,7 +93,7 @@ JSValue nativeUniformFactory(){
     auto function=JSValue::function([](const JSValue&,const Args& args,const Args&)->JSValue{
         auto value=arg(args,0);const auto type=arg(args,1);
         const auto nodeType=nativeTSLCore().get("getConstNodeType").call({}, {type.toBoolean()?type:value});
-        if(nodeType.strictEquals(value))value=nativeNodeUtils().get("getValueFromType").call({}, {nodeType});
+        if(nodeType.strictEquals(value))value=nativeNodeUtilsBinding("getValueFromType").call({}, {nodeType});
         if(value.toBoolean()&&value.get("isNode").strictEquals(true)){
             auto state=JSValue::object(nullptr);state.set("value",value.get("value"));
             const auto traverse=value.get("traverse");

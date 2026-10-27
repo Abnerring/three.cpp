@@ -97,6 +97,7 @@ add_library(threecpp
 )
 target_sources(threecpp PRIVATE
     src/core/JSProxy.cpp
+    src/core/JSError.cpp
     src/math/MatrixRuntime.cpp
     src/math/ColorRuntime.cpp
     src/core/JSJobs.cpp src/core/JSPromise.cpp src/core/AbortController.cpp
@@ -225,11 +226,11 @@ target_sources(threecpp PRIVATE
     src/nodes/core/ModelNode.cpp
     src/nodes/core/Object3DNode.cpp
     src/nodes/core/FrontFacing.cpp
-    src/nodes/core/ColorSpaceFunctions.cpp
+    src/nodes/display/ColorSpaceFunctions.cpp
     src/nodes/core/ToneMapping.cpp
     src/nodes/core/NormalMap.cpp
     src/nodes/core/BumpMap.cpp
-    src/nodes/core/PremultiplyAlpha.cpp
+    src/nodes/display/PremultiplyAlphaFunctions.cpp
     src/nodes/core/Packing.cpp
     src/nodes/core/MatcapUV.cpp
     src/nodes/core/EquirectUV.cpp
@@ -297,6 +298,13 @@ target_sources(threecpp PRIVATE
     src/nodes/core/ArrayNode.cpp
     src/nodes/core/OverrideContextNode.cpp
     src/nodes/core/AssignNode.cpp
+    src/nodes/core/AssignNodeRuntime.cpp
+    src/nodes/core/ContextNodeRuntime.cpp
+    src/nodes/core/NodeError.cpp
+    src/nodes/math/OperatorNode.cpp
+    src/nodes/math/MathNode.cpp
+    src/nodes/math/ConditionalNode.cpp
+    src/nodes/functions/material/getAlphaHashThreshold.cpp
     src/nodes/core/VaryingNode.cpp
     src/nodes/core/MRTNode.cpp
     src/nodes/core/UniformNode.cpp

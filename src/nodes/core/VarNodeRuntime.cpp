@@ -71,7 +71,7 @@ JSValue nativeVarNodeConstructor(){
 JSValue nativeVarNodeModule(){
     static thread_local JSWeakValue weak;if(const auto module=weak.lock();module&&module->isObject())return *module;
     static thread_local bool initializing=false;JSModuleInitializationScope scope(initializing,"VarNode exports");const auto tsl=nativeTSLCore(),ctor=nativeVarNodeConstructor();
-    const auto createVar=tsl.get("nodeProxy").call({}, {ctor});auto module=JSValue::object();
+    const auto createVar=nativeTSLCoreBinding("nodeProxy").call({}, {ctor});auto module=JSValue::object();
     const auto factory=[&](const char* name,JSValue flag)->JSValue{return JSValue::function([](const JSValue&,const Args& args,const Args& cap)->JSValue{
         JSValue value;
         if(cap[1].strictEquals("intent")){value=cap[0].call({}, {arg(args,0)});value=invoke(value,"setIntent")({true});}
@@ -80,7 +80,7 @@ JSValue nativeVarNodeModule(){
     },{createVar,flag},name,1);};
     const auto constant=factory("Const",true),variable=factory("Var",false),intent=factory("VarIntent","intent");
     for(const auto& [name,value]:std::initializer_list<std::pair<const char*,JSValue>>{{"Const",constant},{"Var",variable},{"VarIntent",intent},{"default",ctor}}){JSPropertyDescriptor d;d.value=value;d.writable=d.enumerable=d.configurable=true;module.defineProperty(name,d);}
-    tsl.get("addMethodChaining").call({}, {"toVar",variable});tsl.get("addMethodChaining").call({}, {"toConst",constant});tsl.get("addMethodChaining").call({}, {"toVarIntent",intent});
+    nativeTSLCoreBinding("addMethodChaining").call({}, {"toVar",variable});nativeTSLCoreBinding("addMethodChaining").call({}, {"toConst",constant});nativeTSLCoreBinding("addMethodChaining").call({}, {"toVarIntent",intent});
     module.retainForHeapLifetime();weak=JSWeakValue(module);return module;
 }
 VarNode::VarNode(const JSValue& node,const JSValue& name,const JSValue& readOnly):object_(constructor().construct({node,name,readOnly})){}

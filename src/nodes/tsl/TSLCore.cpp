@@ -10,6 +10,7 @@
 
 namespace {
 using Args = std::vector<JSValue>;
+JSWeakValue& lexicalBindings() { static thread_local JSWeakValue weak; return weak; }
 JSValue arg(const Args& args, std::size_t i, const JSValue& fallback = {}) { return i < args.size() && !args[i].isUndefined() ? args[i] : fallback; }
 struct Invocation { JSValue object, method; JSValue operator()(const Args& args = {}) const { return method.call(object, args); } };
 Invocation invoke(const JSValue& object, const char* key) { return {object, object.get(key)}; }
@@ -67,14 +68,20 @@ JSValue nativeTSLCore() {
             return captures[4].get("Fn").call({}, {value});
         }
         return value;
-    }, {cache, constructor, nativeNodeUtils().get("getValueType"), cacheMaps, module}, "nodeObject", 1));
+    }, {cache, constructor, nativeNodeUtilsBinding("getValueType"), cacheMaps, module}, "nodeObject", 1));
     const auto getConstNode = JSValue::function([](const JSValue&,const Args& args,const Args& captures)->JSValue {
         return constNode(arg(args,0),arg(args,1),captures[0],captures[1]);
     },{cache,constructor},"getConstNode",2);
     installNativeTSLCoreExtensions(module,getConstNode,cacheMaps);
-    // Export a separate namespace object. Internal closures hold the lexical
-    // bindings, so replacing an exported property cannot replace an import.
+    // The writable compatibility facade does not expose the lexical binding
+    // table used by internal callbacks and imports from other native modules.
     auto exports=JSValue::object();auto names=module.ownPropertyNames();std::sort(names.begin(),names.end());
     for(const auto& name:names){JSPropertyDescriptor d;d.value=module.get(name);d.writable=d.enumerable=d.configurable=true;exports.defineProperty(name,d);}
+    module.retainForHeapLifetime(); lexicalBindings() = JSWeakValue(module);
     exports.retainForHeapLifetime(); weak = JSWeakValue(exports); return exports;
+}
+JSValue nativeTSLCoreBinding(const std::string& name) {
+    if (const auto module = lexicalBindings().lock(); module && module->isObject()) return module->get(name);
+    const auto keeper = nativeTSLCore();
+    return lexicalBindings().lock().value().get(name);
 }

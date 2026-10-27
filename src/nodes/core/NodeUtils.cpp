@@ -211,6 +211,7 @@ void install(JSValue module,const char* name,JSValue::NativeFunction callback,un
     const auto function=arrow?JSValue::function(callback,captures,name,arity):JSValue::constructor(callback,captures,name,arity,JSValue::ConstructorKind::Callable);module.defineProperty(name,data(function));
 }
 }
+namespace {JSWeakValue& nodeUtilsBindings(){static thread_local JSWeakValue weak;return weak;}}
 JSValue nativeNodeUtils(){
     static thread_local JSWeakValue weak;static thread_local bool initializing=false;
     if(const auto module=weak.lock();module&&module->isObject())return *module;
@@ -221,5 +222,8 @@ JSValue nativeNodeUtils(){
     install(module,"getLengthFromType",dimensions,1,{0});install(module,"getMemoryLengthFromType",dimensions,1,{1});install(module,"getAlignmentFromType",dimensions,1,{2});
     const auto bufferConstructor=nativeArrayBufferConstructor();install(module,"getValueType",valueType,1,{bufferConstructor});install(module,"getTextureType",textureType,1,{types});
     install(module,"getValueFromType",valueFromType,1);install(module,"getDataFromObject",dataFromObject,1,{objects});install(module,"arrayBufferToBase64",encodeBuffer,1);install(module,"base64ToArrayBuffer",decodeBuffer,1);install(module,"isArrayAsParameter",arrayAsParameter,1);
+    auto lexical=JSValue::object(nullptr);for(const auto& key:module.ownPropertyNames())lexical.defineProperty(key,data(module.get(key)));
+    lexical.retainForHeapLifetime();nodeUtilsBindings()=JSWeakValue(lexical);
     module.retainForHeapLifetime();weak=JSWeakValue(module);return module;
 }
+JSValue nativeNodeUtilsBinding(const std::string& name){const auto keeper=nativeNodeUtils();return nodeUtilsBindings().lock()->get(name);}

@@ -1,4 +1,4 @@
-#include "nodes/core/PremultiplyAlpha.h"
+#include "nodes/display/PremultiplyAlphaFunctions.h"
 
 #include "catch.hpp"
 

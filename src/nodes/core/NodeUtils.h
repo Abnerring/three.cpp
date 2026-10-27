@@ -20,6 +20,7 @@ double hash(std::span<const double> params);
 // Realm-local native port of the upstream NodeUtils module. Exported functions
 // retain their lexical collections and use live runtime property access.
 JSValue nativeNodeUtils();
+JSValue nativeNodeUtilsBinding(const std::string& name);
 
 // An explicit boundary for canonical math constructors that are not available
 // in the native runtime. Unsupported inputs are never silently coerced.

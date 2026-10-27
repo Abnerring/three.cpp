@@ -1,9 +1,12 @@
-﻿#pragma once
+#pragma once
 
 // Port of the two transfer functions in src/nodes/display/ColorSpaceFunctions.js at the pinned
 // revision. Each is the usual piecewise curve written as a mix of its two pieces, and the order
 // the two are given to the mix is the thing to notice: the power piece comes first and the
 // straight line second, so the flag that says the colour is small selects the straight line.
+#include "core/JSValue.h"
+JSValue nativeColorSpaceFunctions();
+
 class ColorSpaceFunctions {
   public:
     // The threshold below which the straight line applies, going each way.

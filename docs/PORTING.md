@@ -21,9 +21,13 @@
 
 ## C++ 适配
 
-TSLCore 已从两个导出扩展到节点转换/工厂、类型转换、Node.prototype 链式方法、340 种 swizzle 及 32 个数组索引缓存、Fn/ShaderNode/Stack 等实际实现。ArrayElement/Convert/Join/Split/Set/Flip/Member 节点及其测试移到与上游相同的 nodes/utils 路径，旧 core 转发文件删除。VarNode 接入真实 Var/Const/VarIntent 与 NodeBuilder 导入副作用。对应差分为 TSLCore 953、工具节点 541、VarNode 222；完整 TSL、操作/条件/显示节点和 NodeMaterial 依赖仍未完成。
+2026-10-28 当前实现：Math/Operator/Conditional/Assign/Context 的真实管理对象、模块工厂与链式调用已落地；Property 导出与 33 个预定义节点、Stack 条件/分支、Error/NodeError 的当前协议也有上游差分。颜色转换和预乘透明度移到 nodes/display，AlphaHash 使用真实 TSL 图并验证私有 hash2D/hash3D body。完整 eager Shader/Fn 141 项现已通过；完整 Node.id 导入图仍有差异，结构/相对编号检查不得当完整导入通过。36 项 CTest 与具体范围记录在 VALIDATION.md。
 
-Fn/ShaderNode/Stack 在先加载 TSLCore、到集成用例才加载 NodeBuilder 的隔离导入范围通过 141 项。上游完整 NodeBuilder 导入会执行尚未移植模块的顶层工厂；默认全图比较仍有 13 个场景的 Fn 名称编号差 8。两种范围各自保存真实 oracle，隔离范围不代表完整导入图通过。TSLCore 的普通 nodeObjects(ConstNode) 绝对 id 差异也保留在初始失败证据；后续普通输入 fixture 显式设 id=42 验证枚举/转换，没有声称完整初始化编号一致。
+内部导入通过私有 lexical binding 表读取；相关导出仍是可写 C++ 兼容 façade，并非完整 ESM namespace/loader。52 个独立进程场景验证改写 façade 不劫持本轮相关 imports，10 个空 realm 检查验证 heap 生命周期。Error 的宿主 CallSite、stackTraceLimit、跳帧和 primordial 隔离仍有边界；其他运行时与旧模块导入协议继续逐项审计。Vulkan、完整节点材质与整个库的一致性仍未完成。
+
+TSLCore 已从两个导出扩展到节点转换/工厂、类型转换、Node.prototype 链式方法、340 种 swizzle 及 32 个数组索引缓存、Fn/ShaderNode/Stack 等实际实现。ArrayElement/Convert/Join/Split/Set/Flip/Member 节点及其测试移到与上游相同的 nodes/utils 路径，旧 core 转发文件删除。VarNode 接入真实 Var/Const/VarIntent 与 NodeBuilder 导入副作用。对应差分为 TSLCore 953、工具节点 541、VarNode 222；其余 TSL/显示节点和 NodeMaterial 依赖仍未完成；本段数字为上一阶段基线，本轮验证见前段。
+
+Fn/ShaderNode/Stack 在先加载 TSLCore、到集成用例才加载 NodeBuilder 的隔离导入范围通过 141 项。上游完整 NodeBuilder 导入会执行尚未移植模块的顶层工厂；本轮真实依赖补齐后默认 eager 141 项通过；旧的 13 项 Fn 名称编号差 8 已消除。两种范围各自保存真实 oracle，隔离范围不代表完整导入图通过。TSLCore 的普通 nodeObjects(ConstNode) 绝对 id 差异也保留在初始失败证据；后续普通输入 fixture 显式设 id=42 验证枚举/转换，没有声称完整初始化编号一致。
 
 原生 C++ Proxy 内部方法已接入属性/描述符、String/Symbol 键、原型、可扩展性、调用、构造、撤销与 GC；代理及相关数组协议共 883 项差分和实际 GC 检查通过。Array reduce/every/fill 与动态迭代器/方法替换支撑真实 TSL 逻辑，不执行 JS 源码。全局内建、跨 realm、完整基本类型装箱及所有生成器共享内建身份仍有边界。
 
@@ -33,11 +37,11 @@ Fn/ShaderNode/Stack 在先加载 TSLCore、到集成用例才加载 NodeBuilder 
 
 `NodeBuilder` 已有真实构造器、动态原型与缓存/用量/声明/flow/stack/type/format 算法，并接入 NodeVar、NodeAttribute、NodeUniform、NodeVarying、NodeCode、StructType 的管理对象构造器。本轮接入 BindGroup 的跨阶段合并、共享/缓存与排序，backend→shaderNode 弱缓存、真实 FunctionNode、renderer NodeUniform 类型映射及 ParameterNode 的 flowShaderNode。1,050 项固定上游差分通过，原 909 项输入与预期保留；新增异常/重入保留源码的部分状态，for-in 保留初始候选键和删除检查。新增 createRenderTarget、createCubeRenderTarget、getTypeFromAttribute、prebuild、buildAsync 的实际实现：前两者构造真实管理 RenderTarget/CubeRenderTarget；属性类型按交错 data、array、itemSize、normalized 和 Float16 实例关系读取；prebuild 保留 renderer/material context 合并、材质库查询、动态 build 与计算流分支。材质库返回 null 时的 NodeMaterial fallback 尚缺，当前明确报错，不能据此宣称完整材质构建完成。
 
-`buildAsync` 使用原生 Promise 和可恢复构建状态，按上游同步执行到首个 await，逐 shader stage 调用 yield 函数，在实际 Promise/thenable 完成后继续；保留拒绝值、异常时的迭代关闭与部分构建状态。默认 yieldToMain 投递独立的原生 host task，宿主需驱动任务与微任务检查点；没有用同步循环代替异步。build/prebuild 的可运行分支仍不等于完整节点代码生成或现代 Vulkan 管线。注册的抽象扩展点不计为具体 GPU 能力。StackNode 的现有列表/类型/setup/build 算法及动态 super 查找通过 67 项差分。TSL 的 If/Switch 已按上游转发当前 stack；StackNode 的完整条件节点实现仍受 ConditionalNode 等未移植依赖限制。
+`buildAsync` 使用原生 Promise 和可恢复构建状态，按上游同步执行到首个 await，逐 shader stage 调用 yield 函数，在实际 Promise/thenable 完成后继续；保留拒绝值、异常时的迭代关闭与部分构建状态。默认 yieldToMain 投递独立的原生 host task，宿主需驱动任务与微任务检查点；没有用同步循环代替异步。build/prebuild 的可运行分支仍不等于完整节点代码生成或现代 Vulkan 管线。注册的抽象扩展点不计为具体 GPU 能力。StackNode 的现有列表/类型/setup/build 算法及动态 super 查找通过 67 项差分。TSL 的 If/Switch 已按上游转发当前 stack；本轮 StackNode 条件/分支已接真实 ConditionalNode；完整渲染构建仍受其余节点和 NodeMaterial 缺口限制。
 
-`nativeNodeUtils()` 提供 15 个真实模块导出，原 309 项固定上游差分及 4 个 GC 场景继续通过。Matrix2/3/4、Vector2/3/4、Color 的类型工厂现接真实管理构造器，保留任意元素值、原型与 newTarget、动态 set/clone/fromArray/toArray 及异常部分状态；新数学构造器协议通过 438 项差分。Matrix3/4 和 Color 只完成当前依赖的基础方法子集，完整数学原型、运算、迭代器和描述符仍待完成。Object.getPrototypeOf 已能动态调用并处理对象/Proxy、String/Number；Boolean/Symbol 装箱仍明确不支持。StackTrace 保留原生宿主捕获入口，默认空栈；完整宿主栈、Base64 和错误类型仍待补齐。
+`nativeNodeUtils()` 提供 15 个真实模块导出，原 309 项固定上游差分及 4 个 GC 场景继续通过。Matrix2/3/4、Vector2/3/4、Color 的类型工厂现接真实管理构造器，保留任意元素值、原型与 newTarget、动态 set/clone/fromArray/toArray 及异常部分状态；新数学构造器协议通过 438 项差分。Matrix3/4 和 Color 只完成当前依赖的基础方法子集，完整数学原型、运算、迭代器和描述符仍待完成。Object.getPrototypeOf 已能动态调用并处理对象/Proxy、String/Number；Boolean/Symbol 装箱仍明确不支持。StackTrace 保留原生宿主捕获入口，默认空栈；完整宿主栈/CallSite、Base64 和其余错误内建仍待补齐。
 
-InputNode、ConstNode、UniformNode、UniformGroupNode、CodeNode、FunctionNode、PropertyNode 与 ParameterNode 保留此前真实管理对象与三阶段构建差分。现新增 FunctionCallNode 和 code/js/glsl/wgsl/glslFn/wgslFn/call 工厂闭包，与真实 GLSL/WGSL parser、FunctionNode、NodeBuilder 联测。函数工厂在两端实际模块载入后各创建基线 Node 的相对编号范围通过 179 项；默认绝对编号比较仍有 13 个场景、22 个 id 字段相差 425。旧默认输入和预期逐字节保留，未通过硬编码分配次数补差。
+InputNode、ConstNode、UniformNode、UniformGroupNode、CodeNode、FunctionNode、PropertyNode 与 ParameterNode 保留此前真实管理对象与三阶段构建差分。现新增 FunctionCallNode 和 code/js/glsl/wgsl/glslFn/wgslFn/call 工厂闭包，与真实 GLSL/WGSL parser、FunctionNode、NodeBuilder 联测。函数工厂在两端实际模块载入后各创建基线 Node 的相对编号范围通过 179 项；默认绝对编号比较仍有 13 个场景、22 个 id 字段相差 368（上一阶段为 425）。旧默认输入和预期逐字节保留，未通过硬编码分配次数补差。
 
 NodeParser、GLSLNodeParser/GLSLNodeFunction、WGSLNodeParser/WGSLNodeFunction 已有真实管理构造器与原型链，按固定源码解析函数文本、构造 NodeFunctionInput 并生成重命名函数代码。GLSL 保留 pragma、注释、precision、qualifier 和数组 token；WGSL 保留 typeLib、pointer 与 texture 类型规则。字符串/RegExp 方法、捕获值 getter、动态 super、原型 setter 和 push 的读取/调用顺序属于验证范围。Number.parseInt/Number.isNaN 当前只实现标准数值语义，尚不支持这两个动态属性被替换。此处是函数文本解析与元数据层，不能视为完整 GLSL/WGSL 编译器、glslang/Tint 后端接入、完整 TSL 图执行或 GPU 支持；本轮精确验证结果统一记录在 VALIDATION.md。
 

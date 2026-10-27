@@ -46,7 +46,7 @@ Invocation invoke(const JSValue& object,const char* key){return {object,object.g
 JSValue superCall(const JSValue& self,const char* key,const Args& args){
     return nativeInputNodeConstructor().get("prototype").getPrototype().get(key,self).call(self,args);
 }
-JSValue utilsCall(const char* key,const Args& args){return nativeNodeUtils().get(key).call({},args);}
+JSValue utilsCall(const char* key,const Args& args){return nativeNodeUtilsBinding(key).call({},args);}
 JSValue method(const JSValue& receiver,const Args& args,const Args& captures){
     auto self=receiver;const auto name=captures[0].string();
     if(name=="isCacheable")return false;
@@ -66,7 +66,7 @@ JSValue method(const JSValue& receiver,const Args& args,const Args& captures){
         const auto data=arg(args,0);superCall(self,"deserialize",{data});self.set("nodeType",data.get("nodeType"));
         JSValue value;
         if(data.get("value").type()==JSValue::Type::Array){
-            const auto function=nativeNodeUtils().get("getValueFromType");Args params{data.get("valueType")};
+            const auto function=nativeNodeUtilsBinding("getValueFromType");Args params{data.get("valueType")};
             auto iterator=getJSIterator(data.get("value"));while(const auto item=stepJSIterator(iterator))params.push_back(*item);value=function.call({},params);
         }else value=data.get("value");
         self.set("value",value);const auto precision=data.get("precision");self.set("precision",precision.toBoolean()?precision:JSValue(nullptr));

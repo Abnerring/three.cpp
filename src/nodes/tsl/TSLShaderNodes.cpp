@@ -350,7 +350,7 @@ void installMethods(JSValue prototype, JSValue::NativeFunction callback, const J
 void installNativeTSLShaderExports(const JSValue& module) {
     const auto base = nativeNodeConstructor();
     auto helpers = literal({{"nodeObject", module.get("nodeObject")}, {"nodeObjects", module.get("nodeObjects")},
-                            {"isArrayAsParameter", nativeNodeUtils().get("isArrayAsParameter")}});
+                            {"isArrayAsParameter", nativeNodeUtilsBinding("isArrayAsParameter")}});
     auto callHolder = JSValue::object(nullptr);
     auto callConstructor = JSValue::builtinConstructor([](const JSValue& newTarget, const Args& args, const Args& captures) {
         auto self = captures[0].get("constructor").getPrototype().construct({}, newTarget);

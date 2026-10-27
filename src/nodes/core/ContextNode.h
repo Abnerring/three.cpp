@@ -3,6 +3,10 @@
 #include <map>
 #include <string>
 #include <vector>
+#include "core/JSValue.h"
+
+JSValue nativeContextNodeConstructor();
+JSValue nativeContextNodeModule();
 
 // Port of the rules in src/nodes/core/ContextNode.js at the pinned revision. The node wraps
 // another so that the builder works on it in a different context, and it is meant to be invisible

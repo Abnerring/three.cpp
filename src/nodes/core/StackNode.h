@@ -2,6 +2,7 @@
 #include "core/JSMember.h"
 
 JSValue nativeStackNodeConstructor();
+JSValue nativeStackNodeModule();
 JSValue nativeGetCurrentStack();
 void nativeSetCurrentStack(const JSValue& stack);
 class StackNode {

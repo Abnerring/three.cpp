@@ -5,6 +5,8 @@
 #include <stdexcept>
 #include <string>
 
+JSValue nativeNodeErrorConstructor();
+
 // Port of src/nodes/core/NodeError.js: an error carrying a node stack trace.
 class NodeError : public std::runtime_error {
   public:

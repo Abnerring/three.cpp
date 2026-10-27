@@ -81,7 +81,7 @@ template<class F> void forIn(JSValue object, F body) {
     for (const auto& key : candidates) if (object.has(key)) body(JSValue(key));
 }
 JSValue hashCall(const char* name, const Args& args) {
-    return nativeNodeUtils().get(name).call({}, args);
+    return nativeNodeUtilsBinding(name).call({}, args);
 }
 JSValue children(JSValue self, JSValue ignores) {
     auto result = JSValue::array();
