@@ -194,15 +194,15 @@ void installNativeTSLCoreExtensions(const JSValue& module,const JSValue& constNo
         if(!element.isCallable())throw std::runtime_error("THREE.TSL: Node element "+name.toString()+" is not a function");
         invoke(elements,"set")({name,element});if(name.strictEquals("assign"))return {};
         auto proto=nativeNodeConstructor().get("prototype");
-        proto.set(name,JSValue::function([](const JSValue& self,const Args& args,const Args& cap)->JSValue {
+        proto.set(name,JSValue::constructor([](const JSValue& self,const Args& args,const Args& cap)->JSValue {
             if(self.get("isStackNode").toBoolean()){const auto add=invoke(self,"addToStack");return add({cap[0].call({},args)});}
             Args values{self};values.insert(values.end(),args.begin(),args.end());return cap[0].call({},values);
-        },{element},"",0));
-        proto.set(plus(name,"Assign"),JSValue::function([](const JSValue& self,const Args& args,const Args& cap)->JSValue {
+        },{element},"",0,JSValue::ConstructorKind::Callable));
+        proto.set(plus(name,"Assign"),JSValue::constructor([](const JSValue& self,const Args& args,const Args& cap)->JSValue {
             const auto stack=self.get("isStackNode").toBoolean();const auto assign=invoke(self,"assign");
             if(stack)return assign({arg(args,0),cap[0].call({},args)});
             Args values{self};values.insert(values.end(),args.begin(),args.end());return assign({cap[0].call({},values)});
-        },{element},"",0));return {};
+        },{element},"",0,JSValue::ConstructorKind::Callable));return {};
     },{elements},"addMethodChaining",2));
     installPrototype(module,elements);
     own(module,"defined",JSValue::function([](const JSValue&,const Args& args,const Args&)->JSValue {

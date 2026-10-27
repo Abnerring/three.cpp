@@ -38,6 +38,7 @@ bool ColorSpaceFunctions::exponentsAreReciprocal() {
     return kOetfExponent == 1.0 / kEotfExponent;
 }
 
+namespace {JSWeakValue& colorFunctionBindings(){static thread_local JSWeakValue weak;return weak;}}
 JSValue nativeColorSpaceFunctions() {
     using namespace TSLFunctionRuntime;
     static thread_local JSWeakValue weak;if(const auto value=weak.lock();value&&value->isObject())return *value;
@@ -56,5 +57,8 @@ JSValue nativeColorSpaceFunctions() {
         const auto b=invoke(color,"mul")({12.92});const auto factor=invoke(color,"lessThanEqual")({0.0031308});
         return captures[0].call({}, {a,b,factor});
     },{mix},"color","vec3","vec3"));
+    auto bindings=JSValue::object(nullptr);for(const auto& key:exports.ownPropertyNames())own(bindings,key.c_str(),exports.get(key));
+    bindings.retainForHeapLifetime();colorFunctionBindings()=JSWeakValue(bindings);
     exports.retainForHeapLifetime();weak=JSWeakValue(exports);return exports;
 }
+JSValue nativeColorSpaceFunctionsBinding(const std::string& name){const auto keeper=nativeColorSpaceFunctions();return colorFunctionBindings().lock()->get(name);}

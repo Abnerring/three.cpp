@@ -1,16 +1,11 @@
 ﻿// Ported from three.js ColorManagement.js; see THREEJS-LICENSE.
 #include "math/ColorManagement.h"
-#include "math/JSNumberMath.h"
-#include "math/Color.h"
-#include "math/JSNumberMath.h"
 #include "math/Matrix3.h"
 #include "math/JSNumberMath.h"
+#include "math/Color.h"
 #include "core/NativeObject.h"
-#include "math/JSNumberMath.h"
 #include "core/JSModuleObject.h"
-#include "math/JSNumberMath.h"
 #include "constants.h"
-#include "math/JSNumberMath.h"
 namespace {
 using Args=std::vector<JSValue>;
 JSValue arg(const Args& args,std::size_t i){return i<args.size()?args[i]:JSValue();}
@@ -69,7 +64,7 @@ JSValue build() {
     method(object,"getPrimaries",getPrimaries,1);method(object,"getTransfer",getTransfer,1);method(object,"getToneMappingMode",getToneMappingMode,1);
     method(object,"getLuminanceCoefficients",getLuminanceCoefficients,1);method(object,"define",define,1);method(object,"_getMatrix",getMatrix,3);
     method(object,"_getDrawingBufferColorSpace",getDrawingBufferColorSpace,1);method(object,"_getUnpackColorSpace",getUnpackColorSpace,0);
-    auto makeMatrix=[](const Args& values){auto matrix=JSValue::object(nativeMatrix3Prototype());matrix.set("elements",array({1,0,0,0,1,0,0,0,1}));const auto set=matrix.get("set");set.call(matrix,values);return matrix;};
+    auto makeMatrix=[](const Args& values){auto matrix=nativeMatrix3Constructor().construct();const auto set=matrix.get("set");set.call(matrix,values);return matrix;};
     auto toXYZ=makeMatrix({.4123908,.3575843,.1804808,.2126390,.7151687,.0721923,.0193308,.1191948,.9505322});
     auto fromXYZ=makeMatrix({3.2409699,-1.5373832,-.4986108,-.9692436,1.8759675,.0415551,.0556301,-.2039770,1.0569715});
     // These two are module-level source globals, independent of replacement spaces.

@@ -1,11 +1,24 @@
 ﻿#pragma once
 #include <string>
+#include "core/JSValue.h"
+
+JSValue nativeBypassNodeConstructor();
+JSValue nativeBypassNodeModule();
+JSValue nativeBypassNodeBinding(const std::string& name);
 
 // Port of the rules in src/nodes/core/BypassNode.js at the pinned revision. The node runs one
 // thing and answers with another, so that a call which returns nothing can stand where a value
 // is required.
 class BypassNode {
+    JSValue object_;
   public:
+    BypassNode(const JSValue& outputNode={},const JSValue& callNode={}):object_(constructor().construct({outputNode,callNode})){}
+    JSValue object()const{return object_;}
+    operator JSValue()const{return object_;}
+    static JSValue constructor(){return nativeBypassNodeBinding("default");}
+    static JSValue prototype(){return constructor().get("prototype");}
+    JSValue generateNodeType(const JSValue& builder)const{return object_.get("generateNodeType").call(object_,{builder});}
+    JSValue generate(const JSValue& builder)const{return object_.get("generate").call(object_,{builder});}
     static constexpr bool isBypassNode = true;
     static constexpr const char* kTypeName = "BypassNode";
 

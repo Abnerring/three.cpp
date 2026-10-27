@@ -942,8 +942,8 @@ JSValue nativeNodeBuilderConstructor() {
     auto arrayConstructors = JSValue::array();
     for (unsigned i = 0; i < 7; ++i) arrayConstructors.set(std::to_string(i), NativeArray_detail::constructor(i));
     state.set("arrayConstructors", arrayConstructors);
-    const auto constants = nativeNodeConstants();
-    state.set("buildStages", constants.get("defaultBuildStages")); state.set("shaderStages", constants.get("shaderStages"));
+    state.set("buildStages", nativeNodeConstantsBinding("defaultBuildStages"));
+    state.set("shaderStages", nativeNodeConstantsBinding("shaderStages"));
     state.set("yieldToMain", JSValue::function(+[](const JSValue&, const Args&, const Args&) { return ThreeUtils::yieldToMain(); }, {}, "yieldToMain", 0));
     auto constructor = JSValue::constructor(initialize, {state}, "NodeBuilder", 3);
     auto prototype = constructor.get("prototype");

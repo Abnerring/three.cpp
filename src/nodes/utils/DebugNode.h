@@ -1,11 +1,21 @@
-﻿#pragma once
+#pragma once
 #include <string>
+#include "core/JSValue.h"
+JSValue nativeDebugNodeConstructor();
+JSValue nativeDebugNodeModule();
+JSValue nativeDebugNodeBinding(const std::string& name);
 
 // Port of the text the debug node assembles in src/nodes/utils/DebugNode.js at the pinned
 // revision, when it is given no callback of its own. What is worth writing down is how the
 // border is sized and what the tidying of the shader text leaves alone.
 class DebugNode {
+    JSValue object_;
   public:
+    DebugNode(const JSValue& node,const JSValue& callback=nullptr);
+    JSValue object()const{return object_;}
+    operator JSValue()const{return object_;}
+    static JSValue constructor(){return nativeDebugNodeBinding("default");}
+    static JSValue prototype(){return constructor().get("prototype");}
     static constexpr const char* kTypeName = "DebugNode";
 
     // The title a stage is given. The two dashes at each end are part of it, so the border that

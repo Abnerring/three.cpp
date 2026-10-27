@@ -21,6 +21,8 @@
 
 ## C++ 适配
 
+2026-10-28 最新追加：Array/Isolate/Bypass、SubBuild/Varying、Expression/Discard/Remap/Debug 与 ColorSpaceNode 接真实管理对象和模块逻辑，显示/工具文件路径按上游调整。补 String.repeat、管理 Matrix3 乘法与颜色矩阵身份，修复 wrapper 首次初始化、链包装可构造性和 NodeBuilder 阶段数组导入。最终43/43 CTest通过；工具164与颜色106仅为显式relative范围通过，完整绝对编号图与非恒等颜色shader生成仍待完成。ToneMapping/RenderOutput尚为旧helper。准确范围、失败和原始证据见VALIDATION.md。
+
 2026-10-28 当前实现：Math/Operator/Conditional/Assign/Context 的真实管理对象、模块工厂与链式调用已落地；Property 导出与 33 个预定义节点、Stack 条件/分支、Error/NodeError 的当前协议也有上游差分。颜色转换和预乘透明度移到 nodes/display，AlphaHash 使用真实 TSL 图并验证私有 hash2D/hash3D body。完整 eager Shader/Fn 141 项现已通过；完整 Node.id 导入图仍有差异，结构/相对编号检查不得当完整导入通过。36 项 CTest 与具体范围记录在 VALIDATION.md。
 
 内部导入通过私有 lexical binding 表读取；相关导出仍是可写 C++ 兼容 façade，并非完整 ESM namespace/loader。52 个独立进程场景验证改写 façade 不劫持本轮相关 imports，10 个空 realm 检查验证 heap 生命周期。Error 的宿主 CallSite、stackTraceLimit、跳帧和 primordial 隔离仍有边界；其他运行时与旧模块导入协议继续逐项审计。Vulkan、完整节点材质与整个库的一致性仍未完成。

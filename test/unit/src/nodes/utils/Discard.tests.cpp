@@ -1,4 +1,4 @@
-#include "nodes/core/Discard.h"
+#include "nodes/utils/Discard.h"
 
 #include "catch.hpp"
 

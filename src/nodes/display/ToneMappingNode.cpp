@@ -1,4 +1,4 @@
-﻿#include "nodes/core/ToneMapping.h"
+﻿#include "nodes/display/ToneMappingNode.h"
 
 namespace {
 // The hash the source uses for a number, which mixes the bits so that small neighbouring

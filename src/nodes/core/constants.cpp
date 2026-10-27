@@ -19,6 +19,7 @@ JSValue array(std::initializer_list<const char*> values) {
     return result;
 }
 }
+namespace {JSWeakValue& lexicalConstants(){static thread_local JSWeakValue weak;return weak;}}
 JSValue nativeNodeConstants() {
     static thread_local JSWeakValue weak;
     if (const auto module = weak.lock(); module && module->isObject()) return *module;
@@ -32,5 +33,8 @@ JSValue nativeNodeConstants() {
     define(module, "defaultBuildStages", array({"setup", "analyze", "generate"}));
     define(module, "shaderStages", array({"fragment", "vertex", "compute"}));
     define(module, "vectorComponents", array({"x", "y", "z", "w"}));
+    auto bindings=JSValue::object(nullptr);for(const auto& key:module.ownPropertyNames())define(bindings,key,module.get(key));
+    bindings.retainForHeapLifetime();lexicalConstants()=JSWeakValue(bindings);
     module.retainForHeapLifetime(); weak = JSWeakValue(module); return module;
 }
+JSValue nativeNodeConstantsBinding(const std::string& name){const auto keeper=nativeNodeConstants();return lexicalConstants().lock()->get(name);}

@@ -58,7 +58,7 @@ JSValue method(const JSValue& receiver,const Args& args,const Args& captures) {
 JSValue nativeAssignNodeConstructor() {
     using namespace UtilityNodeRuntime;
     static thread_local JSWeakValue weak;if(const auto value=weak.lock();value&&value->isConstructible())return *value;
-    const auto components=nativeNodeConstants().get("vectorComponents");
+    const auto components=nativeNodeConstantsBinding("vectorComponents");
     auto constructor=makeConstructor("AssignNode",2,+[](const JSValue& newTarget,const Args& args,const Args& captures)->JSValue {
         auto self=superConstruct(newTarget,captures);self.set("targetNode",arg(args,0));self.set("sourceNode",arg(args,1));self.set("isAssignNode",true);return self;
     },{{"isCacheable",0},{"generateNodeType",2},{"needsSplitAssign",1},{"setup",1},{"generate",2}},method,{components});weak=JSWeakValue(constructor);return constructor;

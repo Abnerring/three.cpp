@@ -1,4 +1,4 @@
-#include "nodes/core/DebugNode.h"
+#include "nodes/utils/DebugNode.h"
 
 #include "catch.hpp"
 
@@ -32,8 +32,8 @@ TEST_CASE("DebugNode removes tabs at the start of lines only") {
     // A tab at a line start goes, and one after text stays.
     REQUIRE(DebugNode::stripLeadingTabs("\tfloat a;") == "float a;");
     REQUIRE(DebugNode::stripLeadingTabs("x\tfloat a;") == "x\tfloat a;");
-    // Two tabs at a line start both go, since the removal repeats while it can.
-    REQUIRE(DebugNode::stripLeadingTabs("\t\tfloat a;") == "float a;");
+    // /^\t/mg removes one tab per line, leaving the second tab.
+    REQUIRE(DebugNode::stripLeadingTabs("\t\tfloat a;") == "\tfloat a;");
     // Spaces are not tabs and stay, which is the part worth pinning: a reader would expect both
     // to be treated the same.
     REQUIRE(DebugNode::stripLeadingTabs("    float a;") == "    float a;");

@@ -66,7 +66,7 @@ JSValue method(const JSValue& self,const Args& args,const Args& c) {
 JSValue nativeFlipNodeConstructor() {
     using namespace UtilityNodeRuntime;
     static thread_local JSWeakValue weak;if(const auto value=weak.lock();value&&value->isConstructible())return *value;
-    const auto components=nativeNodeConstants().get("vectorComponents");
+    const auto components=nativeNodeConstantsBinding("vectorComponents");
     auto constructor=makeConstructor("FlipNode",2,+[](const JSValue& newTarget,const Args& args,const Args& c)->JSValue {
         auto self=superConstruct(newTarget,c);self.set("sourceNode",arg(args,0));self.set("components",arg(args,1));return self;
     },{{"generateNodeType",1},{"generate",1}},method,{components});weak=JSWeakValue(constructor);return constructor;

@@ -2,11 +2,27 @@
 #include <cstdint>
 #include <string>
 #include <vector>
+#include "core/JSValue.h"
+
+JSValue nativeArrayNodeConstructor();
+JSValue nativeArrayNodeModule();
+JSValue nativeArrayNodeBinding(const std::string& name);
 
 // Port of the rules in src/nodes/core/ArrayNode.js at the pinned revision. The node stands for a
 // list of values, and how the list is made decides two things that look independent.
 class ArrayNode {
+    JSValue object_;
   public:
+    ArrayNode(const JSValue& nodeType={},const JSValue& count={},const JSValue& values=nullptr):object_(constructor().construct({nodeType,count,values})){}
+    JSValue object()const{return object_;}
+    operator JSValue()const{return object_;}
+    static JSValue constructor(){return nativeArrayNodeBinding("default");}
+    static JSValue prototype(){return constructor().get("prototype");}
+    JSValue getArrayCount()const{return object_.get("getArrayCount").call(object_);}
+    JSValue generateNodeType(const JSValue& builder)const{return object_.get("generateNodeType").call(object_,{builder});}
+    JSValue getElementType(const JSValue& builder)const{return object_.get("getElementType").call(object_,{builder});}
+    JSValue getMemberType(const JSValue& builder,const JSValue& name)const{return object_.get("getMemberType").call(object_,{builder,name});}
+    JSValue generate(const JSValue& builder)const{return object_.get("generate").call(object_,{builder});}
     static constexpr bool isArrayNode = true;
     static constexpr const char* kTypeName = "ArrayNode";
 

@@ -1,10 +1,28 @@
 ﻿#pragma once
 #include <string>
+#include "core/JSValue.h"
+
+JSValue nativeVaryingNodeConstructor();
+JSValue nativeVaryingNodeModule();
+JSValue nativeVaryingNodeBinding(const std::string& name);
 
 // Port of the rules in src/nodes/core/VaryingNode.js at the pinned revision. The node passes one
 // value from the vertex stage to the others, and five of its rules are worth writing down.
 class VaryingNode {
+    JSValue object_;
   public:
+    explicit VaryingNode(const JSValue& node = {}, const JSValue& name = nullptr);
+    JSValue object() const { return object_; }
+    operator JSValue() const { return object_; }
+    static JSValue constructor() { return nativeVaryingNodeBinding("default"); }
+    static JSValue prototype() { return constructor().get("prototype"); }
+    JSValue setInterpolation(const JSValue& type, const JSValue& sampling = nullptr) const;
+    JSValue getHash(const JSValue& builder) const;
+    JSValue generateNodeType(const JSValue& builder) const;
+    JSValue setupVarying(const JSValue& builder) const;
+    JSValue setup(const JSValue& builder) const;
+    JSValue analyze(const JSValue& builder) const;
+    JSValue generate(const JSValue& builder) const;
     static constexpr bool isVaryingNode = true;
     static constexpr const char* kTypeName = "VaryingNode";
 

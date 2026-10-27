@@ -313,7 +313,7 @@ add_executable(THREECPPTests
         unit/src/nodes/core/Object3DNode.tests.cpp
         unit/src/nodes/core/FrontFacing.tests.cpp
         unit/src/nodes/display/ColorSpaceFunctions.tests.cpp
-        unit/src/nodes/core/ToneMapping.tests.cpp
+        unit/src/nodes/display/ToneMappingNode.tests.cpp
         unit/src/nodes/core/NormalMap.tests.cpp
         unit/src/nodes/core/BumpMap.tests.cpp
         unit/src/nodes/display/PremultiplyAlphaFunctions.tests.cpp
@@ -323,23 +323,23 @@ add_executable(THREECPPTests
         unit/src/nodes/core/SpriteSheetUV.tests.cpp
         unit/src/nodes/core/Oscillators.tests.cpp
         unit/src/nodes/core/ViewportUtils.tests.cpp
-        unit/src/nodes/core/DebugNode.tests.cpp
-        unit/src/nodes/core/Discard.tests.cpp
+        unit/src/nodes/utils/DebugNode.tests.cpp
+        unit/src/nodes/utils/Discard.tests.cpp
         unit/src/nodes/core/ScreenNode.tests.cpp
         unit/src/nodes/core/DepthConversion.tests.cpp
         unit/src/nodes/core/ViewportDepthTexture.tests.cpp
-        unit/src/nodes/core/ColorSpaceNode.tests.cpp
+        unit/src/nodes/display/ColorSpaceNode.tests.cpp
         unit/src/nodes/core/BlendModes.tests.cpp
-        unit/src/nodes/core/ToneMappingFunctions.tests.cpp
+        unit/src/nodes/display/ToneMappingFunctions.tests.cpp
         unit/src/nodes/core/ColorAdjustment.tests.cpp
         unit/src/nodes/core/ViewportTexture.tests.cpp
-        unit/src/nodes/core/RenderOutput.tests.cpp
+        unit/src/nodes/display/RenderOutputNode.tests.cpp
         unit/src/nodes/core/ToonOutlinePass.tests.cpp
         unit/src/nodes/core/PassTexture.tests.cpp
         unit/src/nodes/core/UVUtils.tests.cpp
         unit/src/nodes/utils/ConvertNode.tests.cpp
         unit/src/nodes/core/MaxMipLevel.tests.cpp
-        unit/src/nodes/core/Remap.tests.cpp
+        unit/src/nodes/utils/Remap.tests.cpp
         unit/src/nodes/core/SampleNode.tests.cpp
         unit/src/nodes/core/RotateNode.tests.cpp
         unit/src/nodes/utils/FlipNode.tests.cpp
@@ -1886,4 +1886,53 @@ if(THREECPP_NODE_EXECUTABLE AND THREEJS_SOURCE_DIR)
     add_test(NAME threecpp.threejs-native-node-imports-parity
         COMMAND "${THREECPP_NODE_EXECUTABLE}" "${CMAKE_CURRENT_SOURCE_DIR}/unit/utils/parity/compare-native-node-imports.mjs"
         "${THREEJS_SOURCE_DIR}" "$<TARGET_FILE:ThreeJsNativeNodeImportsParityProbe>" "${CMAKE_BINARY_DIR}/parity/native-node-imports")
+endif()
+
+add_executable(ThreeJsCoreCollectionNodesParityProbe unit/utils/parity/CoreCollectionNodesParityProbe.cpp)
+target_link_libraries(ThreeJsCoreCollectionNodesParityProbe PRIVATE threecpp::threecpp)
+if(THREECPP_NODE_EXECUTABLE AND THREEJS_SOURCE_DIR)
+    add_test(NAME threecpp.threejs-core-collection-nodes-parity
+        COMMAND "${THREECPP_NODE_EXECUTABLE}" "${CMAKE_CURRENT_SOURCE_DIR}/unit/utils/parity/compare-core-collection-nodes.mjs"
+        "${THREEJS_SOURCE_DIR}" "$<TARGET_FILE:ThreeJsCoreCollectionNodesParityProbe>" "${CMAKE_BINARY_DIR}/parity/core-collection-nodes")
+endif()
+
+add_executable(ThreeJsUtilityShaderNodesParityProbe unit/utils/parity/UtilityShaderNodesParityProbe.cpp)
+target_link_libraries(ThreeJsUtilityShaderNodesParityProbe PRIVATE threecpp::threecpp)
+if(THREECPP_NODE_EXECUTABLE AND THREEJS_SOURCE_DIR)
+    add_test(NAME threecpp.threejs-utility-shader-nodes-relative-parity
+        COMMAND "${THREECPP_NODE_EXECUTABLE}" "${CMAKE_CURRENT_SOURCE_DIR}/unit/utils/parity/compare-utility-shader-nodes.mjs"
+        "${THREEJS_SOURCE_DIR}" "$<TARGET_FILE:ThreeJsUtilityShaderNodesParityProbe>" "${CMAKE_BINARY_DIR}/parity/utility-shader-nodes-relative" --relative-node-ids)
+endif()
+
+add_executable(ThreeJsSubBuildVaryingNodeParityProbe unit/utils/parity/SubBuildVaryingNodeParityProbe.cpp)
+target_link_libraries(ThreeJsSubBuildVaryingNodeParityProbe PRIVATE threecpp::threecpp)
+if(THREECPP_NODE_EXECUTABLE AND THREEJS_SOURCE_DIR)
+    add_test(NAME threecpp.threejs-sub-build-varying-node-parity
+        COMMAND "${THREECPP_NODE_EXECUTABLE}" "${CMAKE_CURRENT_SOURCE_DIR}/unit/utils/parity/compare-sub-build-varying-node.mjs"
+        "${THREEJS_SOURCE_DIR}" "$<TARGET_FILE:ThreeJsSubBuildVaryingNodeParityProbe>" "${CMAKE_BINARY_DIR}/parity/sub-build-varying-node")
+endif()
+add_test(NAME threecpp.sub-build-varying-node-lifetime COMMAND ThreeJsSubBuildVaryingNodeParityProbe --lifetime)
+
+add_executable(ThreeJsRuntimeDisplayDependenciesParityProbe unit/utils/parity/RuntimeDisplayDependenciesParityProbe.cpp)
+target_link_libraries(ThreeJsRuntimeDisplayDependenciesParityProbe PRIVATE threecpp::threecpp)
+if(THREECPP_NODE_EXECUTABLE AND THREEJS_SOURCE_DIR)
+    add_test(NAME threecpp.threejs-runtime-display-dependencies-parity
+        COMMAND "${THREECPP_NODE_EXECUTABLE}" "${CMAKE_CURRENT_SOURCE_DIR}/unit/utils/parity/compare-runtime-display-dependencies.mjs"
+        "${THREEJS_SOURCE_DIR}" "$<TARGET_FILE:ThreeJsRuntimeDisplayDependenciesParityProbe>" "${CMAKE_BINARY_DIR}/parity/runtime-display-dependencies")
+endif()
+
+add_executable(ThreeJsColorSpaceNodeParityProbe unit/utils/parity/ColorSpaceNodeParityProbe.cpp)
+target_link_libraries(ThreeJsColorSpaceNodeParityProbe PRIVATE threecpp::threecpp)
+if(THREECPP_NODE_EXECUTABLE AND THREEJS_SOURCE_DIR)
+    add_test(NAME threecpp.threejs-color-space-node-relative-parity
+        COMMAND "${THREECPP_NODE_EXECUTABLE}" "${CMAKE_CURRENT_SOURCE_DIR}/unit/utils/parity/compare-color-space-node.mjs"
+        "${THREEJS_SOURCE_DIR}" "$<TARGET_FILE:ThreeJsColorSpaceNodeParityProbe>" "${CMAKE_BINARY_DIR}/parity/color-space-node-relative" --relative-node-ids)
+endif()
+
+add_executable(ThreeJsTSLBaseWrapperImportsParityProbe unit/utils/parity/TSLBaseWrapperImportsParityProbe.cpp)
+target_link_libraries(ThreeJsTSLBaseWrapperImportsParityProbe PRIVATE threecpp::threecpp)
+if(THREECPP_NODE_EXECUTABLE AND THREEJS_SOURCE_DIR)
+    add_test(NAME threecpp.threejs-tsl-base-wrapper-imports-parity
+        COMMAND "${THREECPP_NODE_EXECUTABLE}" "${CMAKE_CURRENT_SOURCE_DIR}/unit/utils/parity/compare-tsl-base-wrapper-imports.mjs"
+        "${THREEJS_SOURCE_DIR}" "$<TARGET_FILE:ThreeJsTSLBaseWrapperImportsParityProbe>" "${CMAKE_BINARY_DIR}/parity/tsl-base-wrapper-imports")
 endif()

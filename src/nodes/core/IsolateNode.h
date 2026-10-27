@@ -1,12 +1,27 @@
 ﻿#pragma once
 #include <string>
 #include <vector>
+#include "core/JSValue.h"
+
+JSValue nativeIsolateNodeConstructor();
+JSValue nativeIsolateNodeModule();
+JSValue nativeIsolateNodeBinding(const std::string& name);
 
 // Port of the rules in src/nodes/core/IsolateNode.js at the pinned revision. The node swaps the
 // builder's cache for its own while its child is worked on, and four things about that are worth
 // writing down.
 class IsolateNode {
+    JSValue object_;
   public:
+    IsolateNode(const JSValue& node={},const JSValue& parent=true):object_(constructor().construct({node,parent})){}
+    JSValue object()const{return object_;}
+    operator JSValue()const{return object_;}
+    static JSValue constructor(){return nativeIsolateNodeBinding("default");}
+    static JSValue prototype(){return constructor().get("prototype");}
+    JSValue generateNodeType(const JSValue& builder)const{return object_.get("generateNodeType").call(object_,{builder});}
+    JSValue build(const JSValue& builder,const std::vector<JSValue>& params={})const{std::vector<JSValue> args{builder};args.insert(args.end(),params.begin(),params.end());return object_.get("build").call(object_,args);}
+    JSValue setParent(const JSValue& parent)const{return object_.get("setParent").call(object_,{parent});}
+    JSValue getParent()const{return object_.get("getParent").call(object_);}
     static constexpr bool isIsolateNode = true;
     static constexpr const char* kTypeName = "IsolateNode";
 

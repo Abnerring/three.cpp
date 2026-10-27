@@ -1,4 +1,4 @@
-#include "nodes/core/Remap.h"
+#include "nodes/utils/Remap.h"
 
 #include "catch.hpp"
 
@@ -41,15 +41,10 @@ TEST_CASE("Remap's clamp changes only values outside the input range") {
     REQUIRE(Remap::clamped(0.6, 0.3, 0.5, 0.0, 1.0) == Approx(1.0).margin(1e-12));
 }
 
-TEST_CASE("Remap's clamp step asks whether the argument is there") {
-    // The test is against the argument being defined, and the argument has a default, so it is
-    // always defined; the default is false and that still counts. A truth test would not clamp
-    // for a call that left the argument alone.
+TEST_CASE("Remap's clamp step uses the result of TSL defined") {
     REQUIRE(Remap::runsClampStep(true));
-    // A defined false is still defined, which is the whole point.
+    // defined(bool(false)) evaluates to false; presence alone does not clamp.
     REQUIRE(Remap::runsClampStep(true) != Remap::runsClampStep(false));
-    // And the only way the step is skipped is an argument that is not there at all, which a
-    // call cannot produce because of the default.
     REQUIRE_FALSE(Remap::runsClampStep(false));
 }
 

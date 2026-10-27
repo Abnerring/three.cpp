@@ -1,4 +1,4 @@
-﻿#include "nodes/core/RenderOutput.h"
+﻿#include "nodes/display/RenderOutputNode.h"
 
 std::vector<RenderOutput::Step> RenderOutput::steps(bool premultipliedAlpha, bool appliesToneMapping,
                                                     bool convertsColorSpace) {

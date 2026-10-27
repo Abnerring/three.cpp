@@ -1,4 +1,4 @@
-#include "nodes/core/RenderOutput.h"
+#include "nodes/display/RenderOutputNode.h"
 
 #include "catch.hpp"
 

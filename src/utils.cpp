@@ -77,6 +77,15 @@ JSValue ThreeUtils::yieldToMain() {
     return capability.promise;
 }
 JSValue ThreeUtils::getConsoleFunction(){return WebGLInfo::getConsoleFunction();}
+void ThreeUtils::log(const Args& params){
+    for(const auto& value:params)static_cast<void>(JSWeakValue(value));
+    auto values=rest(params);const auto shift=values.get("shift");const auto message=plus("THREE.",shift.call(values));
+    if(getConsoleFunction().toBoolean()){
+        const auto callback=getConsoleFunction();Args args{"log",message};const auto remaining=spread(values);args.insert(args.end(),remaining.begin(),remaining.end());callback.call({},args);
+    }else{
+        const auto remaining=spread(values);std::cout<<message.toString();for(const auto& value:remaining)std::cout<<' '<<value.trace().dump();std::cout<<'\n';
+    }
+}
 void ThreeUtils::warn(const Args& params){for(const auto& value:params)static_cast<void>(JSWeakValue(value));logArray(rest(params),"warn");}
 void ThreeUtils::error(const Args& params){for(const auto& value:params)static_cast<void>(JSWeakValue(value));logArray(rest(params),"error");}
 void ThreeUtils::warnOnce(const Args& params){

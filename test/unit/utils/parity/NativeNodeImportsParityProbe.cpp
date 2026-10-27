@@ -1,6 +1,8 @@
 #include "animation/AnimationUtils.h"
 #include "nodes/core/Node.h"
 #include "nodes/core/NodeUtils.h"
+#include "nodes/core/NodeBuilder.h"
+#include "nodes/core/constants.h"
 #include "nodes/core/PropertyNode.h"
 #include "nodes/core/ContextNode.h"
 #include "nodes/core/StackNode.h"
@@ -55,6 +57,7 @@ JSValue module(const std::string& name) {
     if (name == "Conditional") return nativeConditionalNodeModule();
     if (name == "Operator") return nativeOperatorNodeModule();
     if (name == "Math") return nativeMathNodeModule();
+    if (name == "Constants") return nativeNodeConstants();
     throw std::logic_error("Unknown import source");
 }
 JSValue behavior(const std::string& target) {
@@ -117,6 +120,20 @@ JSValue behavior(const std::string& target) {
         try { result.set("result", normal(threshold.get("shaderNode").get("jsFunc").call({}, {array({position})}))); result.set("stack", normal(stack.get("nodes"))); }
         catch (...) { nativeSetCurrentStack(previous); throw; }
         nativeSetCurrentStack(previous);
+    } else if (target == "NodeBuilder") {
+        const auto constructor = nativeNodeBuilderConstructor();
+        auto receiver = JSValue::object(), flowNodes = JSValue::object(), stages = array();
+        receiver.set("context", JSValue::object());
+        for (const auto* stage : {"vertex", "fragment", "compute", "customShader"}) flowNodes.set(stage, array());
+        receiver.set("flowNodes", flowNodes);
+        for (const auto* name : {"prebuild", "setBuildStage", "setShaderStage", "buildCode", "buildUpdateNodes"}) {
+            receiver.set(name, JSValue::function([](const JSValue&, const Args& args, const Args& captures) -> JSValue {
+                auto row = array({captures[1]}); for (const auto& value : args) call(row, "push", {normal(value)});
+                call(captures[0], "push", {row}); return {};
+            }, {stages, name}, name));
+        }
+        const auto returned = constructor.get("prototype").get("build").call(receiver);
+        result.set("returnedSelf", returned.sameValue(receiver)); result.set("stages", stages);
     } else throw std::logic_error("Unknown import target");
     return result;
 }
@@ -126,7 +143,13 @@ int main() {
         auto realm = JSValue::object(); const std::string input(std::istreambuf_iterator<char>(std::cin), {}); const auto request = Animation_detail::parseJSON(input);
         auto source = module(request.get("source").string()), state = JSValue::object(); state.set("calls", 0);
         const auto poison = JSValue::function([](const JSValue&, const Args&, const Args& captures) -> JSValue { auto state = captures[0]; state.set("calls", state.get("calls").toNumber()+1); throw JSTypeError("facade export must not be imported"); }, {state});
-        auto output = JSValue::object(); output.set("mutationAccepted", source.reflectSet(request.get("key"), poison, source)); output.set("sourceReplaced", source.get(request.get("key")).sameValue(poison));
+        if (request.get("mutationTiming").strictEquals("afterTarget")) nativeNodeBuilderConstructor();
+        auto output = JSValue::object();
+        if (request.get("mutationKind").strictEquals("contents")) {
+            auto underlying = source.get(request.get("key"));
+            output.set("mutationAccepted", underlying.reflectSet("0", request.get("value"), underlying));
+        } else output.set("mutationAccepted", source.reflectSet(request.get("key"), poison, source));
+        output.set("sourceReplaced", source.get(request.get("key")).sameValue(poison));
         auto events = array(); const auto previousConsole = ThreeUtils::getConsoleFunction(); ThreeUtils::setConsoleFunction(JSValue::function([](const JSValue&, const Args& args, const Args& captures) -> JSValue { call(captures[0], "push", {normal(array(args))}); return {}; }, {events}));
         try { output.set("behavior", behavior(request.get("target").string())); } catch (const JSTypeError&) { output.set("behavior", "#TypeError"); } catch (const std::exception& e) { output.set("behavior", "#Error"); output.set("nativeError", e.what()); }
         ThreeUtils::setConsoleFunction(previousConsole); output.set("poisonCalls", state.get("calls")); output.set("events", events); std::cout << output.toJSON()->dump();

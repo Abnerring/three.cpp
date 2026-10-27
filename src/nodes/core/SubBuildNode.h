@@ -1,10 +1,23 @@
 ﻿#pragma once
 #include <string>
+#include "core/JSValue.h"
+
+JSValue nativeSubBuildNodeConstructor();
+JSValue nativeSubBuildNodeModule();
+JSValue nativeSubBuildNodeBinding(const std::string& name);
 
 // Port of the rules in src/nodes/core/SubBuildNode.js at the pinned revision. The node builds a
 // child under a named sub-build, which the builder brackets with an add and a remove.
 class SubBuildNode {
+    JSValue object_;
   public:
+    SubBuildNode(const JSValue& node = {}, const JSValue& name = {}, const JSValue& nodeType = nullptr);
+    JSValue object() const { return object_; }
+    operator JSValue() const { return object_; }
+    static JSValue constructor() { return nativeSubBuildNodeBinding("default"); }
+    static JSValue prototype() { return constructor().get("prototype"); }
+    JSValue generateNodeType(const JSValue& builder) const;
+    JSValue build(const JSValue& builder, const std::vector<JSValue>& params = {}) const;
     static constexpr const char* kTypeName = "SubBuild";
     static constexpr bool isSubBuildNode = true;
 

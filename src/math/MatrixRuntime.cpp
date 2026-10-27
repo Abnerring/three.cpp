@@ -45,6 +45,21 @@ JSValue method(const JSValue& receiver, const Args& args, const Args& captures) 
         }
         return name == "copy" ? self : JSValue(true);
     }
+    if(width==3&&(name=="multiply"||name=="premultiply")){
+        const auto fn=self.get("multiplyMatrices");return fn.call(self,name=="multiply"?Args{self,arg(args,0)}:Args{arg(args,0),self});
+    }
+    if(width==3&&name=="multiplyMatrices"){
+        const auto ae=arg(args,0).get("elements");const auto be=arg(args,1).get("elements");auto te=self.get("elements");
+        JSValue a[3][3],b[3][3];
+        for(unsigned row=0;row<3;++row)for(unsigned column=0;column<3;++column)a[row][column]=ae.get(std::to_string(row+column*3));
+        for(unsigned row=0;row<3;++row)for(unsigned column=0;column<3;++column)b[row][column]=be.get(std::to_string(row+column*3));
+        const auto product=[](const JSValue& x,const JSValue& y){const auto left=x.toNumber();const auto right=y.toNumber();return left*right;};
+        for(unsigned row=0;row<3;++row)for(unsigned column=0;column<3;++column){
+            const auto first=product(a[row][0],b[0][column]);const auto second=product(a[row][1],b[1][column]);
+            const auto partial=first+second;const auto third=product(a[row][2],b[2][column]);te.set(std::to_string(row+column*3),partial+third);
+        }
+        return self;
+    }
     const auto rawOffset = arg(args, 1), offset = rawOffset.isUndefined() ? JSValue(0) : rawOffset;
     auto array = arg(args, 0);
     if (name == "fromArray") {
@@ -91,7 +106,7 @@ JSValue constructor(unsigned width) {
     auto prototype = ctor.get("prototype");
     // Preserve source order among the implemented class methods.
     const auto methods = width == 3
-        ? std::vector<std::pair<const char*, unsigned>>{{"set",9},{"identity",0},{"copy",1},{"equals",1},{"fromArray",1},{"toArray",0},{"clone",0}}
+        ? std::vector<std::pair<const char*, unsigned>>{{"set",9},{"identity",0},{"copy",1},{"multiply",1},{"premultiply",1},{"multiplyMatrices",2},{"equals",1},{"fromArray",1},{"toArray",0},{"clone",0}}
         : std::vector<std::pair<const char*, unsigned>>{{"set",16},{"identity",0},{"clone",0},{"copy",1},{"equals",1},{"fromArray",1},{"toArray",0}};
     for (const auto& [key, arity] : methods) {
         JSPropertyDescriptor d; d.value = JSValue::function(method, {key,width}, key, arity);

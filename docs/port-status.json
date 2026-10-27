@@ -201,8 +201,8 @@
     "note": "Accepted port scope is src and examples/jsm, including tracked third-party dependencies. Editor/manual web applications are excluded from native application rewrites. Native host behavior, packaging and all three platforms require separate implementation and verification evidence."
   },
   "counts": {
-    "partial-unverified": 364,
-    "missing": 577,
+    "partial-unverified": 372,
+    "missing": 569,
     "vulkan-port-pending": 290,
     "dependency-unverified": 20
   },
@@ -210,8 +210,8 @@
     "src": {
       "modules": 755,
       "counts": {
-        "partial-unverified": 280,
-        "missing": 185,
+        "partial-unverified": 288,
+        "missing": 177,
         "vulkan-port-pending": 290
       }
     },
@@ -803,7 +803,7 @@
       "path": "src/nodes/code",
       "upstreamFiles": 4,
       "moduleCount": 4,
-      "modulesWithCppFiles": 3,
+      "modulesWithCppFiles": 4,
       "verifiedComplete": 0
     },
     {
@@ -817,7 +817,7 @@
       "path": "src/nodes/display",
       "upstreamFiles": 18,
       "moduleCount": 18,
-      "modulesWithCppFiles": 2,
+      "modulesWithCppFiles": 6,
       "verifiedComplete": 0
     },
     {
@@ -922,7 +922,7 @@
       "path": "src/nodes/utils",
       "upstreamFiles": 31,
       "moduleCount": 31,
-      "modulesWithCppFiles": 7,
+      "modulesWithCppFiles": 10,
       "verifiedComplete": 0
     },
     {
@@ -8538,11 +8538,11 @@
       "scope": "src",
       "kind": "core",
       "upstreamSha256": "72f04d51ea4776b13d4a82a943d649435ee105cf3482d1105046afae61d4d9fb",
-      "header": null,
-      "implementation": null,
+      "header": "src/nodes/code/ExpressionNode.h",
+      "implementation": "src/nodes/code/ExpressionNode.cpp",
       "expectedHeader": "src/nodes/code/ExpressionNode.h",
       "expectedImplementation": "src/nodes/code/ExpressionNode.cpp",
-      "status": "missing",
+      "status": "partial-unverified",
       "verifiedComplete": false,
       "apiExtraction": "partial-static",
       "verification": {
@@ -9925,11 +9925,11 @@
       "scope": "src",
       "kind": "core",
       "upstreamSha256": "e2aa2f2db7349a80a60c3115ac5278b28caf9993fe45e2d993e614a265768861",
-      "header": null,
-      "implementation": null,
+      "header": "src/nodes/display/ColorSpaceNode.h",
+      "implementation": "src/nodes/display/ColorSpaceNode.cpp",
       "expectedHeader": "src/nodes/display/ColorSpaceNode.h",
       "expectedImplementation": "src/nodes/display/ColorSpaceNode.cpp",
-      "status": "missing",
+      "status": "partial-unverified",
       "verifiedComplete": false,
       "apiExtraction": "static-only",
       "verification": {
@@ -9938,7 +9938,9 @@
           "pointer": "/modules/306"
         },
         "upstreamUnitTests": [],
-        "cppUnitTests": [],
+        "cppUnitTests": [
+          "test/unit/src/nodes/display/ColorSpaceNode.tests.cpp"
+        ],
         "reviewedImplementation": [],
         "differentialResults": [],
         "renderingResults": [],
@@ -10062,11 +10064,11 @@
       "scope": "src",
       "kind": "core",
       "upstreamSha256": "d54f9a9f0719bf515532490c7e99fdb81f1f2174d40f27358a51c432b24e4c09",
-      "header": null,
-      "implementation": null,
+      "header": "src/nodes/display/RenderOutputNode.h",
+      "implementation": "src/nodes/display/RenderOutputNode.cpp",
       "expectedHeader": "src/nodes/display/RenderOutputNode.h",
       "expectedImplementation": "src/nodes/display/RenderOutputNode.cpp",
-      "status": "missing",
+      "status": "partial-unverified",
       "verifiedComplete": false,
       "apiExtraction": "static-only",
       "verification": {
@@ -10075,7 +10077,9 @@
           "pointer": "/modules/311"
         },
         "upstreamUnitTests": [],
-        "cppUnitTests": [],
+        "cppUnitTests": [
+          "test/unit/src/nodes/display/RenderOutputNode.tests.cpp"
+        ],
         "reviewedImplementation": [],
         "differentialResults": [],
         "renderingResults": [],
@@ -10116,11 +10120,11 @@
       "scope": "src",
       "kind": "core",
       "upstreamSha256": "2e176d9696f3f2d364621eae82520730b37cd77a12044efe1160a98270ad3293",
-      "header": null,
-      "implementation": null,
+      "header": "src/nodes/display/ToneMappingFunctions.h",
+      "implementation": "src/nodes/display/ToneMappingFunctions.cpp",
       "expectedHeader": "src/nodes/display/ToneMappingFunctions.h",
       "expectedImplementation": "src/nodes/display/ToneMappingFunctions.cpp",
-      "status": "missing",
+      "status": "partial-unverified",
       "verifiedComplete": false,
       "apiExtraction": "partial-static",
       "verification": {
@@ -10129,7 +10133,9 @@
           "pointer": "/modules/313"
         },
         "upstreamUnitTests": [],
-        "cppUnitTests": [],
+        "cppUnitTests": [
+          "test/unit/src/nodes/display/ToneMappingFunctions.tests.cpp"
+        ],
         "reviewedImplementation": [],
         "differentialResults": [],
         "renderingResults": [],
@@ -10143,11 +10149,11 @@
       "scope": "src",
       "kind": "core",
       "upstreamSha256": "9669807a25be05c38738b302d5bf6d4b197069666e8acf98f177e10f6e55db04",
-      "header": null,
-      "implementation": null,
+      "header": "src/nodes/display/ToneMappingNode.h",
+      "implementation": "src/nodes/display/ToneMappingNode.cpp",
       "expectedHeader": "src/nodes/display/ToneMappingNode.h",
       "expectedImplementation": "src/nodes/display/ToneMappingNode.cpp",
-      "status": "missing",
+      "status": "partial-unverified",
       "verifiedComplete": false,
       "apiExtraction": "partial-static",
       "verification": {
@@ -10156,7 +10162,9 @@
           "pointer": "/modules/314"
         },
         "upstreamUnitTests": [],
-        "cppUnitTests": [],
+        "cppUnitTests": [
+          "test/unit/src/nodes/display/ToneMappingNode.tests.cpp"
+        ],
         "reviewedImplementation": [],
         "differentialResults": [],
         "renderingResults": [],
@@ -12529,11 +12537,11 @@
       "scope": "src",
       "kind": "core",
       "upstreamSha256": "14918b211dc2545431bb6c48dafeaacbe4e5e99e9966059ddf0a7172cfe528fa",
-      "header": null,
-      "implementation": null,
+      "header": "src/nodes/utils/DebugNode.h",
+      "implementation": "src/nodes/utils/DebugNode.cpp",
       "expectedHeader": "src/nodes/utils/DebugNode.h",
       "expectedImplementation": "src/nodes/utils/DebugNode.cpp",
-      "status": "missing",
+      "status": "partial-unverified",
       "verifiedComplete": false,
       "apiExtraction": "static-only",
       "verification": {
@@ -12542,7 +12550,9 @@
           "pointer": "/modules/402"
         },
         "upstreamUnitTests": [],
-        "cppUnitTests": [],
+        "cppUnitTests": [
+          "test/unit/src/nodes/utils/DebugNode.tests.cpp"
+        ],
         "reviewedImplementation": [],
         "differentialResults": [],
         "renderingResults": [],
@@ -12556,11 +12566,11 @@
       "scope": "src",
       "kind": "core",
       "upstreamSha256": "ef61955a7896a78cdf0f885b14e465d1159a2035f08fbd546b59a500d83c616d",
-      "header": null,
-      "implementation": null,
+      "header": "src/nodes/utils/Discard.h",
+      "implementation": "src/nodes/utils/Discard.cpp",
       "expectedHeader": "src/nodes/utils/Discard.h",
       "expectedImplementation": "src/nodes/utils/Discard.cpp",
-      "status": "missing",
+      "status": "partial-unverified",
       "verifiedComplete": false,
       "apiExtraction": "static-only",
       "verification": {
@@ -12569,7 +12579,9 @@
           "pointer": "/modules/403"
         },
         "upstreamUnitTests": [],
-        "cppUnitTests": [],
+        "cppUnitTests": [
+          "test/unit/src/nodes/utils/Discard.tests.cpp"
+        ],
         "reviewedImplementation": [],
         "differentialResults": [],
         "renderingResults": [],
@@ -12967,11 +12979,11 @@
       "scope": "src",
       "kind": "core",
       "upstreamSha256": "c87edfec369fe6b6725275658e7e1272c453f0e75a4e5929dc31df534f5aefba",
-      "header": null,
-      "implementation": null,
+      "header": "src/nodes/utils/Remap.h",
+      "implementation": "src/nodes/utils/Remap.cpp",
       "expectedHeader": "src/nodes/utils/Remap.h",
       "expectedImplementation": "src/nodes/utils/Remap.cpp",
-      "status": "missing",
+      "status": "partial-unverified",
       "verifiedComplete": false,
       "apiExtraction": "partial-static",
       "verification": {
@@ -12980,7 +12992,9 @@
           "pointer": "/modules/418"
         },
         "upstreamUnitTests": [],
-        "cppUnitTests": [],
+        "cppUnitTests": [
+          "test/unit/src/nodes/utils/Remap.tests.cpp"
+        ],
         "reviewedImplementation": [],
         "differentialResults": [],
         "renderingResults": [],

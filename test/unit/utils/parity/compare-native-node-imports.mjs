@@ -4,7 +4,7 @@ import assert from 'node:assert/strict';
 import {execFileSync} from 'node:child_process';
 import {fileURLToPath,pathToFileURL} from 'node:url';
 
-const paths={TSL:'nodes/tsl/TSLCore',NodeUtils:'nodes/core/NodeUtils',Property:'nodes/core/PropertyNode',Conditional:'nodes/math/ConditionalNode',Operator:'nodes/math/OperatorNode',Math:'nodes/math/MathNode',Context:'nodes/core/ContextNode',Stack:'nodes/core/StackNode',Color:'nodes/display/ColorSpaceFunctions',Alpha:'nodes/functions/material/getAlphaHashThreshold'};
+const paths={TSL:'nodes/tsl/TSLCore',NodeUtils:'nodes/core/NodeUtils',Property:'nodes/core/PropertyNode',Conditional:'nodes/math/ConditionalNode',Operator:'nodes/math/OperatorNode',Math:'nodes/math/MathNode',Context:'nodes/core/ContextNode',Stack:'nodes/core/StackNode',Color:'nodes/display/ColorSpaceFunctions',Alpha:'nodes/functions/material/getAlphaHashThreshold',Constants:'nodes/core/constants',NodeBuilder:'nodes/core/NodeBuilder'};
 const pinned='11738a9d55e502fb484cefffcea3a66dc44e9fe9';
 function normal(v,seen=[],ids=new Map()){
     if(v===undefined)return '#undefined';if(typeof v==='function')return '#function';if(typeof v==='symbol')return '#symbol';
@@ -17,7 +17,8 @@ function normal(v,seen=[],ids=new Map()){
 async function run(upstream,r){
     const load=name=>import(pathToFileURL(path.join(upstream,'src',paths[name]+'.js')));
     const source=await load(r.source);let poisonCalls=0;const poison=()=>{poisonCalls++;throw new TypeError('facade export must not be imported');};
-    const output={mutationAccepted:Reflect.set(source,r.key,poison),sourceReplaced:source[r.key]===poison};
+    if(r.mutationTiming==='afterTarget')await load(r.target);
+    const output={mutationAccepted:r.mutationKind==='contents'?Reflect.set(source[r.key],'0',r.value):Reflect.set(source,r.key,poison),sourceReplaced:source[r.key]===poison};
     const utils=await import(pathToFileURL(path.join(upstream,'src/utils.js'))),events=[],oldConsole=utils.getConsoleFunction();utils.setConsoleFunction((...args)=>events.push(normal(args)));
     try{
         const target=await load(r.target),tsl=await load('TSL'),result={};
@@ -45,6 +46,10 @@ async function run(upstream,r){
         }else if(r.target==='Alpha'){
             const {default:StackNode}=await load('Stack'),position=tsl.vec3(.1,.2,.3),previous=tsl.getCurrentStack(),stack=new StackNode();tsl.setCurrentStack(stack);
             try{result.result=normal(target.default.shaderNode.jsFunc([position]));result.stack=normal(stack.nodes);}finally{tsl.setCurrentStack(previous);}
+        }else if(r.target==='NodeBuilder'){
+            const stages=[],receiver={context:{},flowNodes:{vertex:[],fragment:[],compute:[],customShader:[]}};
+            for(const name of ['prebuild','setBuildStage','setShaderStage','buildCode','buildUpdateNodes'])receiver[name]=(...args)=>{stages.push([name,...args.map(value=>normal(value))]);};
+            result.returnedSelf=target.default.prototype.build.call(receiver)===receiver;result.stages=stages;
         }
         output.behavior=result;
     }catch(e){output.behavior='#'+e.name;}
@@ -64,12 +69,15 @@ add('Property','Conditional',['property','default']);add('Conditional','Stack',[
 add('Operator','Math',['sub','mul','div','mod']);add('Math','Color',['mix']);
 add('Math','Alpha',['abs','ceil','clamp','dFdx','dFdy','exp2','floor','fract','length','log2','max','min','sin']);
 add('TSL','Color',['Fn']);add('TSL','Alpha',['Fn','float','vec2','vec3','nodeProxy','addMethodChaining']);
+add('Constants','NodeBuilder',['defaultBuildStages','shaderStages']);
+cases.push({source:'Constants',target:'NodeBuilder',key:'defaultBuildStages',mutationKind:'contents',mutationTiming:'afterTarget',value:'customBuild'});
+cases.push({source:'Constants',target:'NodeBuilder',key:'shaderStages',mutationKind:'contents',mutationTiming:'afterTarget',value:'customShader'});
 const pending=[];
 const expected=[],actual=[],differences=[];
 for(let i=0;i<cases.length;i++){
     const r=cases[i],oracle=JSON.parse(execFileSync(process.execPath,[fileURLToPath(import.meta.url),'--case',upstream,JSON.stringify(r)],{encoding:'utf8',maxBuffer:64*1024*1024}));
-    assert.equal(oracle.mutationAccepted,false);assert.equal(oracle.sourceReplaced,false);assert.equal(oracle.poisonCalls,0);assert.equal(typeof oracle.behavior,'object',JSON.stringify(r));expected.push(oracle);
-    if(binary){const native=JSON.parse(execFileSync(binary,[],{input:JSON.stringify(r),encoding:'utf8',maxBuffer:64*1024*1024}));actual.push(native);try{assert.equal(native.mutationAccepted,true);assert.equal(native.sourceReplaced,true);assert.equal(native.poisonCalls,0);assert.deepEqual(native.behavior,oracle.behavior);assert.deepEqual(native.events,oracle.events);}catch{differences.push({index:i,input:r,expected:oracle,actual:native});}}
+    assert.equal(oracle.mutationAccepted,r.mutationKind==='contents');assert.equal(oracle.sourceReplaced,false);assert.equal(oracle.poisonCalls,0);assert.equal(typeof oracle.behavior,'object',JSON.stringify(r));expected.push(oracle);
+    if(binary){const native=JSON.parse(execFileSync(binary,[],{input:JSON.stringify(r),encoding:'utf8',maxBuffer:64*1024*1024}));actual.push(native);try{assert.equal(native.mutationAccepted,true);assert.equal(native.sourceReplaced,r.mutationKind!=='contents');assert.equal(native.poisonCalls,0);assert.deepEqual(native.behavior,oracle.behavior);assert.deepEqual(native.events,oracle.events);}catch{differences.push({index:i,input:r,expected:oracle,actual:native});}}
 }
 if(directory){fs.mkdirSync(directory,{recursive:true});for(const [name,value]of Object.entries({input:cases,expected,actual,differences,pending}))fs.writeFileSync(path.join(directory,name+'.json'),JSON.stringify(value,null,2));}
 if(!binary){console.log(`Prepared ${cases.length} fresh-process native import cases; ${pending.length} recorded boundary`);process.exit(0);}

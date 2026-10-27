@@ -1,4 +1,4 @@
-#include "nodes/core/ToneMapping.h"
+#include "nodes/display/ToneMappingNode.h"
 
 #include "catch.hpp"
 

@@ -1,5 +1,8 @@
-﻿#pragma once
+#pragma once
 #include <string>
+#include "core/JSValue.h"
+JSValue nativeDiscardModule();
+JSValue nativeDiscardBinding(const std::string& name);
 
 // Port of the two expressions in src/nodes/utils/Discard.js at the pinned revision. Both are
 // shader statements rather than values, and one of them takes an optional condition whose

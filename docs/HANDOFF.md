@@ -1,20 +1,20 @@
 # 续接说明（Handoff）
 
-2026-10-28 当前阶段：固定上游 `11738a9d55e502fb484cefffcea3a66dc44e9fe9`。目标仍是原生 C++ 完整复现 src 与 examples/jsm 的全部逻辑并使用 Vulkan，尚未完成。禁止 CEF、浏览器和 JS 执行桥；Node 仅用于开发差分。以下当前说明优先于历史记录。
+2026-10-28 当前阶段：固定上游 `11738a9d55e502fb484cefffcea3a66dc44e9fe9`。原生 C++ 完整复现 src 与 examples/jsm 全部逻辑、Vulkan 后端的目标尚未完成。禁止 CEF、浏览器和 JS 执行桥；Node 仅用于开发差分。以下当前说明优先于历史记录。
 
-本轮实现 Math/Operator/Conditional/Assign/Context 的真实管理对象与全部当前模块工厂，Property 的36导出/33预定义节点，Stack If/ElseIf/Else/Switch/Case/Default，及部分 Error/NodeError 协议。ColorSpaceFunctions/PremultiplyAlphaFunctions及单测移到nodes/display，删除旧core路径；AlphaHash完整顶层和私有hash2D/hash3D body接实际Fn图。原数值helpers保留兼容。
+本轮移植真实 Array/Isolate/Bypass、SubBuild/Varying、Expression/Discard/Remap/Debug 与 ColorSpaceNode；后四个显示 helper 和测试按上游移到 display，工具节点移到 utils。ToneMapping/RenderOutput 仍为旧数值 helper，路径修正不表示完整实现。新增 String.repeat、管理 Matrix3 三个乘法方法与 ColorManagement 真实矩阵身份。
 
-最终build-10成功，36/36 CTest通过，73.16秒。CPU2528 cases/217372 assertions，String/RegExp12/158。上游差分：Operator1326、Assign244、PropertyModule510、Conditional/Context/Stack/Error815（含144真实NodeBuilder三阶段）；Math显式relative1764、显示/材质显式结构151、私有Hash显式relative42。完整eager Shader/Fn141现已通过，旧Fn编号差8消除。详见VALIDATION.md与主证据D:/Temp/surui/threecpp-tsl-math-20261028。
+最终 build-05 成功，43/43 CTest 通过，67.69秒。CPU2528 cases/217372 assertions，String/RegExp12/158。真实差分：集合377、SubBuild/Varying745、运行时依赖504、fresh wrappers8、imports56；另4个新生命周期检查。工具节点164、ColorSpace106在显式relative范围通过。详见VALIDATION.md与 D:/Temp/surui/threecpp-tsl-base-20261028。
 
-完整Node.id导入图仍未通过：最终默认Math6项/22字段差368，函数工厂13项/22字段差368（上阶段425），显示/材质107项仅id，私有Hash24项仅id；所有非id字段一致。默认输入/上游/实际/差异原样保留，不用补分配次数修饰结果。结构/relative检查有明确参数与CTest名，不代表完整编号一致。absolute-import-graph-pending.json汇总最新build10结果。
+完整绝对Node.id导入图仍未通过：本轮工具默认24项/134字段差366，ColorSpace默认40项/373字段差368或3；非id字段一致。默认input/expected/actual/differences与审计全保留。ColorSpace仅3个恒等转换Builder联测，实际转换已验setup图但未证明转换shader生成。既有完整Math/材质函数编号缺口仍为待办，旧证据保留；禁止靠补分配次数伪造一致。
 
-新增TSL/NodeUtils/Math/Operator/Property/Conditional私有binding读取；相关新模块和Var内部imports隔离可写C++ façade。52个独立进程验证真实行为，明确JS namespace不接受赋值、C++ façade仍接受；10个空realm检查覆盖getter/GC/最终heap回收。TLS只存JSWeakValue，不存owning heap root。当前接口不是完整ESM loader/TDZ。Error有真实品牌/继承、message/cause、延迟栈、prepareStackTrace重入和Proxy捕获拒绝；自动宿主栈/CallSite、stackTraceLimit/provider裁剪、跳帧、primordial join隔离待完成。
+修复8个C++ wrapper首次创建未执行module初始化，以及TSL链包装普通function的可构造性；native*Constructor仍是底层内部入口。新增constants/ColorSpaceFunctions私有binding，NodeBuilder阶段数组隔离façade槽替换而保留原数组变异。56个独立进程检查保留旧52前缀，JS namespace拒绝赋值、本端façade可写差异明确记录。新4个与既有10个生命周期检查通过；TLS只存弱值。完整ESM loader/TDZ、Error宿主栈/CallSite等仍未完成。
 
-审计1251模块：partial364、missing577、Vulkan待实现290、第三方待验20，0解析错误；有对应文件src448/755、addons84/496，共532，719无文件。不是功能完成率，没有模块登记完整验收。审计5测试与--check通过。本轮没有修改GPU算法或运行GPU，历史GPU证据仅适用原冻结版本。
+审计1251模块：partial372、missing569、Vulkan待实现290、第三方待验20，0解析错误；有对应文件src456/755、addons84/496，共540，711无文件。不是功能完成率，没有模块登记完整验收。审计5测试与--check通过。本轮未改GPU算法或运行GPU，历史GPU证据仅适用原冻结版本。
 
-下一步继续真实补齐TSLBase及NodeMaterial依赖/初始化时序、其余显示和节点材质，完成GLSL/WGSL编译、现代Vulkan计算/存储、传统完整材质/光照/阴影/后处理、剩余addons及宿主能力。旧NativeObject/Vulkan与管理对象桥接、完整数学原型、基本类型装箱、其余内建与跨平台验收仍未完成。保持原目标；阶段提交不表示整个任务完成。
+下一步继续真实补齐TSLBase及NodeMaterial依赖/初始化、其余显示/节点材质，完成GLSL/WGSL编译、现代Vulkan计算/存储、传统完整材质/光照/阴影/后处理、剩余addons与原生宿主能力。完整数学/内建协议、旧NativeObject/Vulkan桥接和跨平台验收仍未完成。保持原目标；阶段提交不表示全部完成。
 
-本轮各*-20261028-*证据均在D:/Temp/surui，保留所有失败和初始oracle。freeze-final.json在本阶段提交后冻结完整源码/固定上游/实际二进制/证据SHA。本文历史后缀按字节保全。
+本轮各*-20261028-*证据保留于D:/Temp/surui；freeze-final.json在阶段提交后冻结源码/固定上游/实际二进制/证据SHA。历史后缀按字节保全。
 
 ## 一、项目约定（必须遵守）
 

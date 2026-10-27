@@ -6,6 +6,7 @@
 // straight line second, so the flag that says the colour is small selects the straight line.
 #include "core/JSValue.h"
 JSValue nativeColorSpaceFunctions();
+JSValue nativeColorSpaceFunctionsBinding(const std::string& name);
 
 class ColorSpaceFunctions {
   public:

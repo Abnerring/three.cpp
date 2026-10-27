@@ -58,6 +58,21 @@ JSValue charAt(const JSValue& self,const Args& args,const Args&) {
     if(index<0||index>=double(text.size()))return "";
     return jsUTF8(std::u16string_view(text).substr(static_cast<std::size_t>(index),1));
 }
+JSValue repeat(const JSValue& self,const Args& args,const Args&) {
+    if(self.isNull()||self.isUndefined())throw JSTypeError("String method called on null or undefined");
+    const auto text=jsUTF16(self.toString());const auto number=argument(args,0).toNumber();
+    const auto integer=std::isnan(number)||number==0?0:std::trunc(number);
+    if(integer<0||!std::isfinite(integer))throw JSRangeError("Invalid count value");
+    if(text.empty()||integer==0)return "";
+    // The native runtime uses the pinned differential host's UTF-16 string
+    // ceiling. Check before allocating or converting the count to size_t.
+    constexpr double maxStringLength=536870888;
+    if(integer>maxStringLength/double(text.size()))throw JSRangeError("Invalid string length");
+    auto count=static_cast<std::size_t>(integer);std::u16string block=text,result;
+    result.reserve(text.size()*count);
+    while(count){if(count&1)result+=block;count>>=1;if(count)block+=block;}
+    return jsUTF8(result);
+}
 JSValue slice(const JSValue& self,const Args& args,const Args&) {
     if(self.isNull()||self.isUndefined())throw JSTypeError("String method called on null or undefined");
     const auto text=jsUTF16(self.toString());
@@ -194,7 +209,7 @@ JSValue createNativeStringPrototype(){
         prototype.defineProperty(name,data(method,true,false,true));
     };
     install("indexOf",indexOf,1);install("replace",replace,2);install("split",split,2);install("trim",trim,0);install("toUpperCase",toUpperCase,0);
-    install("charCodeAt",charCodeAt,1);install("charAt",charAt,1);install("toLowerCase",toLowerCase,0);install("slice",slice,2);
+    install("charCodeAt",charCodeAt,1);install("charAt",charAt,1);install("repeat",repeat,1);install("toLowerCase",toLowerCase,0);install("slice",slice,2);
     install("match",match,1);install("substring",substring,2);
     return prototype;
 }

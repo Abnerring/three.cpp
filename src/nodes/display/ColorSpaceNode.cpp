@@ -1,4 +1,4 @@
-﻿#include "nodes/core/ColorSpaceNode.h"
+﻿#include "nodes/display/ColorSpaceNode.h"
 
 bool ColorSpaceNode::converts(bool managementEnabled, const std::string& source,
                               const std::string& target) {

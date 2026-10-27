@@ -227,7 +227,7 @@ target_sources(threecpp PRIVATE
     src/nodes/core/Object3DNode.cpp
     src/nodes/core/FrontFacing.cpp
     src/nodes/display/ColorSpaceFunctions.cpp
-    src/nodes/core/ToneMapping.cpp
+    src/nodes/display/ToneMappingNode.cpp
     src/nodes/core/NormalMap.cpp
     src/nodes/core/BumpMap.cpp
     src/nodes/display/PremultiplyAlphaFunctions.cpp
@@ -237,23 +237,25 @@ target_sources(threecpp PRIVATE
     src/nodes/core/SpriteSheetUV.cpp
     src/nodes/core/Oscillators.cpp
     src/nodes/core/ViewportUtils.cpp
-    src/nodes/core/DebugNode.cpp
-    src/nodes/core/Discard.cpp
+    src/nodes/utils/DebugNode.cpp
+    src/nodes/utils/Discard.cpp
     src/nodes/core/ScreenNode.cpp
     src/nodes/core/DepthConversion.cpp
     src/nodes/core/ViewportDepthTexture.cpp
-    src/nodes/core/ColorSpaceNode.cpp
+    src/nodes/display/ColorSpaceNode.cpp
+    src/nodes/display/ColorSpaceNodeRuntime.cpp
+    src/nodes/code/ExpressionNode.cpp
     src/nodes/core/BlendModes.cpp
-    src/nodes/core/ToneMappingFunctions.cpp
+    src/nodes/display/ToneMappingFunctions.cpp
     src/nodes/core/ColorAdjustment.cpp
     src/nodes/core/ViewportTexture.cpp
-    src/nodes/core/RenderOutput.cpp
+    src/nodes/display/RenderOutputNode.cpp
     src/nodes/core/ToonOutlinePass.cpp
     src/nodes/core/PassTexture.cpp
     src/nodes/core/UVUtils.cpp
     src/nodes/utils/ConvertNode.cpp
     src/nodes/core/MaxMipLevel.cpp
-    src/nodes/core/Remap.cpp
+    src/nodes/utils/Remap.cpp
     src/nodes/core/SampleNode.cpp
     src/nodes/core/RotateNode.cpp
     src/nodes/utils/FlipNode.cpp
@@ -271,6 +273,7 @@ target_sources(threecpp PRIVATE
     src/nodes/core/PostProcessingUtils.cpp
     src/nodes/core/NodeParser.cpp
     src/nodes/core/BypassNode.cpp
+    src/nodes/core/BypassNodeRuntime.cpp
     src/nodes/core/SubBuildNode.cpp
     src/nodes/core/NodeConstantsTables.cpp
     src/nodes/core/NodeBaseFields.cpp
@@ -289,6 +292,7 @@ target_sources(threecpp PRIVATE
     src/nodes/core/OutputStructNode.cpp
     src/nodes/core/LightingModel.cpp
     src/nodes/core/IsolateNode.cpp
+    src/nodes/core/IsolateNodeRuntime.cpp
     src/nodes/core/InspectorNode.cpp
     src/nodes/core/StructNode.cpp
     src/nodes/core/InputNode.cpp
@@ -296,6 +300,7 @@ target_sources(threecpp PRIVATE
     src/nodes/core/StructTypeNode.cpp
     src/nodes/core/UniformGroupNode.cpp
     src/nodes/core/ArrayNode.cpp
+    src/nodes/core/ArrayNodeRuntime.cpp
     src/nodes/core/OverrideContextNode.cpp
     src/nodes/core/AssignNode.cpp
     src/nodes/core/AssignNodeRuntime.cpp

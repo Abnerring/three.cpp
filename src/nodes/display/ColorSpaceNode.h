@@ -1,12 +1,25 @@
 ﻿#pragma once
 #include <string>
 #include <vector>
+#include "core/JSValue.h"
+
+JSValue nativeColorSpaceNodeConstructor();
+JSValue nativeColorSpaceNodeModule();
+JSValue nativeColorSpaceNodeBinding(const std::string& name);
 
 // Port of the decisions in src/nodes/display/ColorSpaceNode.js at the pinned revision. A
 // conversion applies three steps in a fixed order and is skipped in four cases, and the way
 // those four are tested is not uniform.
 class ColorSpaceNode {
+    JSValue object_;
   public:
+    ColorSpaceNode(const JSValue& colorNode,const JSValue& source,const JSValue& target);
+    JSValue object()const{return object_;}
+    operator JSValue()const{return object_;}
+    static JSValue constructor(){return nativeColorSpaceNodeBinding("default");}
+    static JSValue prototype(){return constructor().get("prototype");}
+    JSValue resolveColorSpace(const JSValue& builder,const JSValue& colorSpace)const;
+    JSValue setup(const JSValue& builder)const;
     static constexpr const char* kTypeName = "ColorSpaceNode";
     static constexpr const char* kNodeType = "vec4";
 

@@ -84,7 +84,7 @@ JSValue method(const JSValue& self,const Args& args,const Args& c) {
 JSValue nativeSplitNodeConstructor() {
     using namespace UtilityNodeRuntime;
     static thread_local JSWeakValue weak;if(const auto value=weak.lock();value&&value->isConstructible())return *value;
-    const auto components=nativeNodeConstants().get("vectorComponents");const auto text=invoke(components,"join")({""});
+    const auto components=nativeNodeConstantsBinding("vectorComponents");const auto text=invoke(components,"join")({""});
     auto constructor=makeConstructor("SplitNode",1,+[](const JSValue& newTarget,const Args& args,const Args& c)->JSValue {
         auto self=superConstruct(newTarget,c);self.set("node",arg(args,0));self.set("components",arg(args,1,"x"));self.set("isSplitNode",true);return self;
     },{{"isCacheable",0},{"getVectorLength",0},{"getComponentType",1},{"generateNodeType",1},{"getScope",0},{"generate",2},{"serialize",1},{"deserialize",1}},method,{components,text});
