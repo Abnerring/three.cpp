@@ -218,10 +218,22 @@ target_sources(threecpp PRIVATE
     src/nodes/core/TempNode.cpp
     src/nodes/core/AccessorNames.cpp
     src/nodes/core/PointUVNode.cpp
-    src/nodes/core/TangentUtils.cpp
+    src/nodes/accessors/TangentUtils.cpp
+    src/nodes/accessors/Bitangent.cpp
+    src/nodes/accessors/AccessorsUtils.cpp
+    src/nodes/accessors/ReferenceNode.cpp
+    src/nodes/accessors/MaterialReferenceNode.cpp
+    src/nodes/accessors/MaterialNode.cpp
+    src/nodes/accessors/ModelViewProjectionNode.cpp
+    src/nodes/accessors/VertexColorNode.cpp
+    src/nodes/accessors/ClippingNode.cpp
+    src/nodes/lighting/LightingNode.cpp
+    src/nodes/lighting/LightingContextNode.cpp
+    src/nodes/lighting/AONode.cpp
+    src/nodes/lighting/IrradianceNode.cpp
     src/nodes/accessors/BuiltinNode.cpp
     src/nodes/core/SceneProperties.cpp
-    src/nodes/core/Tangent.cpp
+    src/nodes/accessors/Tangent.cpp
     src/nodes/accessors/Normal.cpp
     src/nodes/accessors/Position.cpp
     src/nodes/accessors/UV.cpp
@@ -245,10 +257,10 @@ target_sources(threecpp PRIVATE
     src/nodes/display/ColorSpaceFunctions.cpp
     src/nodes/display/ToneMappingNode.cpp
     src/nodes/display/ToneMappingNodeRuntime.cpp
-    src/nodes/core/NormalMap.cpp
-    src/nodes/core/BumpMap.cpp
+    src/nodes/display/NormalMapNode.cpp
+    src/nodes/display/BumpMapNode.cpp
     src/nodes/display/PremultiplyAlphaFunctions.cpp
-    src/nodes/core/Packing.cpp
+    src/nodes/utils/Packing.cpp
     src/nodes/core/MatcapUV.cpp
     src/nodes/core/EquirectUV.cpp
     src/nodes/core/SpriteSheetUV.cpp
@@ -289,7 +301,7 @@ target_sources(threecpp PRIVATE
     src/nodes/core/TriplanarTextures.cpp
     src/nodes/core/FunctionOverloadingNode.cpp
     src/nodes/core/CubeMapNode.cpp
-    src/nodes/core/EventNode.cpp
+    src/nodes/utils/EventNode.cpp
     src/nodes/core/PostProcessingUtils.cpp
     src/nodes/core/NodeParser.cpp
     src/nodes/core/BypassNode.cpp
@@ -341,7 +353,7 @@ target_sources(threecpp PRIVATE
     src/nodes/core/ContextNode.cpp
     src/nodes/core/StackNode.cpp
     src/nodes/core/PropertyNode.cpp
-    src/nodes/core/LoopNode.cpp
+    src/nodes/utils/LoopNode.cpp
     src/nodes/core/RTTNode.cpp
     src/nodes/core/ReflectorNode.cpp
     src/nodes/core/ViewportSharedTextureNode.cpp

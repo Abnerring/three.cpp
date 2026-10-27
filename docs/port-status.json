@@ -201,8 +201,8 @@
     "note": "Accepted port scope is src and examples/jsm, including tracked third-party dependencies. Editor/manual web applications are excluded from native application rewrites. Native host behavior, packaging and all three platforms require separate implementation and verification evidence."
   },
   "counts": {
-    "partial-unverified": 399,
-    "missing": 542,
+    "partial-unverified": 418,
+    "missing": 523,
     "vulkan-port-pending": 290,
     "dependency-unverified": 20
   },
@@ -210,8 +210,8 @@
     "src": {
       "modules": 755,
       "counts": {
-        "partial-unverified": 315,
-        "missing": 150,
+        "partial-unverified": 334,
+        "missing": 131,
         "vulkan-port-pending": 290
       }
     },
@@ -796,7 +796,7 @@
       "path": "src/nodes/accessors",
       "upstreamFiles": 43,
       "moduleCount": 43,
-      "modulesWithCppFiles": 18,
+      "modulesWithCppFiles": 28,
       "verifiedComplete": 0
     },
     {
@@ -817,7 +817,7 @@
       "path": "src/nodes/display",
       "upstreamFiles": 18,
       "moduleCount": 18,
-      "modulesWithCppFiles": 11,
+      "modulesWithCppFiles": 13,
       "verifiedComplete": 0
     },
     {
@@ -866,7 +866,7 @@
       "path": "src/nodes/lighting",
       "upstreamFiles": 23,
       "moduleCount": 23,
-      "modulesWithCppFiles": 0,
+      "modulesWithCppFiles": 4,
       "verifiedComplete": 0
     },
     {
@@ -922,7 +922,7 @@
       "path": "src/nodes/utils",
       "upstreamFiles": 31,
       "moduleCount": 31,
-      "modulesWithCppFiles": 11,
+      "modulesWithCppFiles": 14,
       "verifiedComplete": 0
     },
     {
@@ -7350,11 +7350,11 @@
       "scope": "src",
       "kind": "core",
       "upstreamSha256": "01c22c4e05e32f9a1c4c0b75090bd9baf41c4c23309afef35b31180661de078c",
-      "header": null,
-      "implementation": null,
+      "header": "src/nodes/accessors/AccessorsUtils.h",
+      "implementation": "src/nodes/accessors/AccessorsUtils.cpp",
       "expectedHeader": "src/nodes/accessors/AccessorsUtils.h",
       "expectedImplementation": "src/nodes/accessors/AccessorsUtils.cpp",
-      "status": "missing",
+      "status": "partial-unverified",
       "verifiedComplete": false,
       "apiExtraction": "partial-static",
       "verification": {
@@ -7431,11 +7431,11 @@
       "scope": "src",
       "kind": "core",
       "upstreamSha256": "20177b22acc63be38a7119121fb9cce2045fc323625107b26e8089f8f1fd6563",
-      "header": null,
-      "implementation": null,
+      "header": "src/nodes/accessors/Bitangent.h",
+      "implementation": "src/nodes/accessors/Bitangent.cpp",
       "expectedHeader": "src/nodes/accessors/Bitangent.h",
       "expectedImplementation": "src/nodes/accessors/Bitangent.cpp",
-      "status": "missing",
+      "status": "partial-unverified",
       "verifiedComplete": false,
       "apiExtraction": "partial-static",
       "verification": {
@@ -7570,11 +7570,11 @@
       "scope": "src",
       "kind": "core",
       "upstreamSha256": "af8a8a78396285b40e709316daf089a49d8340d93bcf42759de323e020cc5e2c",
-      "header": null,
-      "implementation": null,
+      "header": "src/nodes/accessors/ClippingNode.h",
+      "implementation": "src/nodes/accessors/ClippingNode.cpp",
       "expectedHeader": "src/nodes/accessors/ClippingNode.h",
       "expectedImplementation": "src/nodes/accessors/ClippingNode.cpp",
-      "status": "missing",
+      "status": "partial-unverified",
       "verifiedComplete": false,
       "apiExtraction": "static-only",
       "verification": {
@@ -7678,11 +7678,11 @@
       "scope": "src",
       "kind": "core",
       "upstreamSha256": "ad4d498474c2c652c1d874ee2bddbb69566058a81bcdb84ee57e35a8f23e49d1",
-      "header": null,
-      "implementation": null,
+      "header": "src/nodes/accessors/MaterialNode.h",
+      "implementation": "src/nodes/accessors/MaterialNode.cpp",
       "expectedHeader": "src/nodes/accessors/MaterialNode.h",
       "expectedImplementation": "src/nodes/accessors/MaterialNode.cpp",
-      "status": "missing",
+      "status": "partial-unverified",
       "verifiedComplete": false,
       "apiExtraction": "partial-static",
       "verification": {
@@ -7732,11 +7732,11 @@
       "scope": "src",
       "kind": "core",
       "upstreamSha256": "d434b259d8b21d289934c217d8328ccb55dfa49bf42003e8fc256b77258c14b5",
-      "header": null,
-      "implementation": null,
+      "header": "src/nodes/accessors/MaterialReferenceNode.h",
+      "implementation": "src/nodes/accessors/MaterialReferenceNode.cpp",
       "expectedHeader": "src/nodes/accessors/MaterialReferenceNode.h",
       "expectedImplementation": "src/nodes/accessors/MaterialReferenceNode.cpp",
-      "status": "missing",
+      "status": "partial-unverified",
       "verifiedComplete": false,
       "apiExtraction": "static-only",
       "verification": {
@@ -7788,11 +7788,11 @@
       "scope": "src",
       "kind": "core",
       "upstreamSha256": "0aa43acb3c477e2bd06e07a6dcb5fc27c14cc0d21b3e6edb0f4934bc6f65e1e1",
-      "header": null,
-      "implementation": null,
+      "header": "src/nodes/accessors/ModelViewProjectionNode.h",
+      "implementation": "src/nodes/accessors/ModelViewProjectionNode.cpp",
       "expectedHeader": "src/nodes/accessors/ModelViewProjectionNode.h",
       "expectedImplementation": "src/nodes/accessors/ModelViewProjectionNode.cpp",
-      "status": "missing",
+      "status": "partial-unverified",
       "verifiedComplete": false,
       "apiExtraction": "partial-static",
       "verification": {
@@ -8010,11 +8010,11 @@
       "scope": "src",
       "kind": "core",
       "upstreamSha256": "bb6c78f7c67ede19c4eb36c1958a35c6e9d5642ce635f4eb68523ff42ec8bd11",
-      "header": null,
-      "implementation": null,
+      "header": "src/nodes/accessors/ReferenceNode.h",
+      "implementation": "src/nodes/accessors/ReferenceNode.cpp",
       "expectedHeader": "src/nodes/accessors/ReferenceNode.h",
       "expectedImplementation": "src/nodes/accessors/ReferenceNode.cpp",
-      "status": "missing",
+      "status": "partial-unverified",
       "verifiedComplete": false,
       "apiExtraction": "static-only",
       "verification": {
@@ -8226,11 +8226,11 @@
       "scope": "src",
       "kind": "core",
       "upstreamSha256": "4c03039483fc03bc7ea098c318768ee8a59097dffc9740dc9276fa070725c686",
-      "header": null,
-      "implementation": null,
+      "header": "src/nodes/accessors/Tangent.h",
+      "implementation": "src/nodes/accessors/Tangent.cpp",
       "expectedHeader": "src/nodes/accessors/Tangent.h",
       "expectedImplementation": "src/nodes/accessors/Tangent.cpp",
-      "status": "missing",
+      "status": "partial-unverified",
       "verifiedComplete": false,
       "apiExtraction": "partial-static",
       "verification": {
@@ -8239,7 +8239,9 @@
           "pointer": "/modules/245"
         },
         "upstreamUnitTests": [],
-        "cppUnitTests": [],
+        "cppUnitTests": [
+          "test/unit/src/nodes/accessors/Tangent.tests.cpp"
+        ],
         "reviewedImplementation": [],
         "differentialResults": [],
         "renderingResults": [],
@@ -8253,11 +8255,11 @@
       "scope": "src",
       "kind": "core",
       "upstreamSha256": "75531810d930a7337f607a6409c3fe266cddef9a78dbedcd83d6891eba7a5b15",
-      "header": null,
-      "implementation": null,
+      "header": "src/nodes/accessors/TangentUtils.h",
+      "implementation": "src/nodes/accessors/TangentUtils.cpp",
       "expectedHeader": "src/nodes/accessors/TangentUtils.h",
       "expectedImplementation": "src/nodes/accessors/TangentUtils.cpp",
-      "status": "missing",
+      "status": "partial-unverified",
       "verifiedComplete": false,
       "apiExtraction": "partial-static",
       "verification": {
@@ -8266,7 +8268,9 @@
           "pointer": "/modules/246"
         },
         "upstreamUnitTests": [],
-        "cppUnitTests": [],
+        "cppUnitTests": [
+          "test/unit/src/nodes/accessors/TangentUtils.tests.cpp"
+        ],
         "reviewedImplementation": [],
         "differentialResults": [],
         "renderingResults": [],
@@ -8496,11 +8500,11 @@
       "scope": "src",
       "kind": "core",
       "upstreamSha256": "a21eca9808794886e85e0c71f194a150a69b2dad790d4651a7b400011ae3741c",
-      "header": null,
-      "implementation": null,
+      "header": "src/nodes/accessors/VertexColorNode.h",
+      "implementation": "src/nodes/accessors/VertexColorNode.cpp",
       "expectedHeader": "src/nodes/accessors/VertexColorNode.h",
       "expectedImplementation": "src/nodes/accessors/VertexColorNode.cpp",
-      "status": "missing",
+      "status": "partial-unverified",
       "verifiedComplete": false,
       "apiExtraction": "static-only",
       "verification": {
@@ -9854,11 +9858,11 @@
       "scope": "src",
       "kind": "core",
       "upstreamSha256": "f0ba8dc6a6215d31f559bc760fe98cc66c526cd3aaad04f34a85e908a03491fd",
-      "header": null,
-      "implementation": null,
+      "header": "src/nodes/display/BumpMapNode.h",
+      "implementation": "src/nodes/display/BumpMapNode.cpp",
       "expectedHeader": "src/nodes/display/BumpMapNode.h",
       "expectedImplementation": "src/nodes/display/BumpMapNode.cpp",
-      "status": "missing",
+      "status": "partial-unverified",
       "verifiedComplete": false,
       "apiExtraction": "partial-static",
       "verification": {
@@ -9867,7 +9871,9 @@
           "pointer": "/modules/303"
         },
         "upstreamUnitTests": [],
-        "cppUnitTests": [],
+        "cppUnitTests": [
+          "test/unit/src/nodes/display/BumpMapNode.tests.cpp"
+        ],
         "reviewedImplementation": [],
         "differentialResults": [],
         "renderingResults": [],
@@ -9995,11 +10001,11 @@
       "scope": "src",
       "kind": "core",
       "upstreamSha256": "1567010b16b6acb2cf1faf18d726873f56b84fb1ddb10d0523e446ff15d97dcc",
-      "header": null,
-      "implementation": null,
+      "header": "src/nodes/display/NormalMapNode.h",
+      "implementation": "src/nodes/display/NormalMapNode.cpp",
       "expectedHeader": "src/nodes/display/NormalMapNode.h",
       "expectedImplementation": "src/nodes/display/NormalMapNode.cpp",
-      "status": "missing",
+      "status": "partial-unverified",
       "verifiedComplete": false,
       "apiExtraction": "partial-static",
       "verification": {
@@ -10008,7 +10014,9 @@
           "pointer": "/modules/308"
         },
         "upstreamUnitTests": [],
-        "cppUnitTests": [],
+        "cppUnitTests": [
+          "test/unit/src/nodes/display/NormalMapNode.tests.cpp"
+        ],
         "reviewedImplementation": [],
         "differentialResults": [],
         "renderingResults": [],
@@ -11203,11 +11211,11 @@
       "scope": "src",
       "kind": "core",
       "upstreamSha256": "ee397d57e3acd33a658c339a948ed0968b75734be46649b02ae96d52035afeec",
-      "header": null,
-      "implementation": null,
+      "header": "src/nodes/lighting/AONode.h",
+      "implementation": "src/nodes/lighting/AONode.cpp",
       "expectedHeader": "src/nodes/lighting/AONode.h",
       "expectedImplementation": "src/nodes/lighting/AONode.cpp",
-      "status": "missing",
+      "status": "partial-unverified",
       "verifiedComplete": false,
       "apiExtraction": "static-only",
       "verification": {
@@ -11446,11 +11454,11 @@
       "scope": "src",
       "kind": "core",
       "upstreamSha256": "7533718c76569be8654c81c699df712b972d6ae5a59d6cfc8bf879ee4ee2b305",
-      "header": null,
-      "implementation": null,
+      "header": "src/nodes/lighting/IrradianceNode.h",
+      "implementation": "src/nodes/lighting/IrradianceNode.cpp",
       "expectedHeader": "src/nodes/lighting/IrradianceNode.h",
       "expectedImplementation": "src/nodes/lighting/IrradianceNode.cpp",
-      "status": "missing",
+      "status": "partial-unverified",
       "verifiedComplete": false,
       "apiExtraction": "static-only",
       "verification": {
@@ -11527,11 +11535,11 @@
       "scope": "src",
       "kind": "core",
       "upstreamSha256": "72be732dcd5067506fcefbc930c7f3d7edd5481e75a30305ce45ace6ac2b4d18",
-      "header": null,
-      "implementation": null,
+      "header": "src/nodes/lighting/LightingContextNode.h",
+      "implementation": "src/nodes/lighting/LightingContextNode.cpp",
       "expectedHeader": "src/nodes/lighting/LightingContextNode.h",
       "expectedImplementation": "src/nodes/lighting/LightingContextNode.cpp",
-      "status": "missing",
+      "status": "partial-unverified",
       "verifiedComplete": false,
       "apiExtraction": "partial-static",
       "verification": {
@@ -11554,11 +11562,11 @@
       "scope": "src",
       "kind": "core",
       "upstreamSha256": "2cae48ca627206339a92c8bf6d39f1bcc63fecb53fedb726ddad000a64d40b2b",
-      "header": null,
-      "implementation": null,
+      "header": "src/nodes/lighting/LightingNode.h",
+      "implementation": "src/nodes/lighting/LightingNode.cpp",
       "expectedHeader": "src/nodes/lighting/LightingNode.h",
       "expectedImplementation": "src/nodes/lighting/LightingNode.cpp",
-      "status": "missing",
+      "status": "partial-unverified",
       "verifiedComplete": false,
       "apiExtraction": "static-only",
       "verification": {
@@ -12644,11 +12652,11 @@
       "scope": "src",
       "kind": "core",
       "upstreamSha256": "0a700438bcbc679863feb75d86638126cb0c0b173b9ccf22c2b9b4e36b2070ad",
-      "header": null,
-      "implementation": null,
+      "header": "src/nodes/utils/EventNode.h",
+      "implementation": "src/nodes/utils/EventNode.cpp",
       "expectedHeader": "src/nodes/utils/EventNode.h",
       "expectedImplementation": "src/nodes/utils/EventNode.cpp",
-      "status": "missing",
+      "status": "partial-unverified",
       "verifiedComplete": false,
       "apiExtraction": "static-only",
       "verification": {
@@ -12657,7 +12665,9 @@
           "pointer": "/modules/405"
         },
         "upstreamUnitTests": [],
-        "cppUnitTests": [],
+        "cppUnitTests": [
+          "test/unit/src/nodes/utils/EventNode.tests.cpp"
+        ],
         "reviewedImplementation": [],
         "differentialResults": [],
         "renderingResults": [],
@@ -12756,11 +12766,11 @@
       "scope": "src",
       "kind": "core",
       "upstreamSha256": "09bf70fb66a7ef02509782216bba1226689fc5689dad570defe2d5ff3ceab7c5",
-      "header": null,
-      "implementation": null,
+      "header": "src/nodes/utils/LoopNode.h",
+      "implementation": "src/nodes/utils/LoopNode.cpp",
       "expectedHeader": "src/nodes/utils/LoopNode.h",
       "expectedImplementation": "src/nodes/utils/LoopNode.cpp",
-      "status": "missing",
+      "status": "partial-unverified",
       "verifiedComplete": false,
       "apiExtraction": "static-only",
       "verification": {
@@ -12769,7 +12779,9 @@
           "pointer": "/modules/409"
         },
         "upstreamUnitTests": [],
-        "cppUnitTests": [],
+        "cppUnitTests": [
+          "test/unit/src/nodes/utils/LoopNode.tests.cpp"
+        ],
         "reviewedImplementation": [],
         "differentialResults": [],
         "renderingResults": [],
@@ -12895,11 +12907,11 @@
       "scope": "src",
       "kind": "core",
       "upstreamSha256": "05a9bb00b9a5eb6f983c3947f6da3cd7b1270e7ecbec2226722a43ea3e76acf6",
-      "header": null,
-      "implementation": null,
+      "header": "src/nodes/utils/Packing.h",
+      "implementation": "src/nodes/utils/Packing.cpp",
       "expectedHeader": "src/nodes/utils/Packing.h",
       "expectedImplementation": "src/nodes/utils/Packing.cpp",
-      "status": "missing",
+      "status": "partial-unverified",
       "verifiedComplete": false,
       "apiExtraction": "static-only",
       "verification": {
@@ -12908,7 +12920,9 @@
           "pointer": "/modules/414"
         },
         "upstreamUnitTests": [],
-        "cppUnitTests": [],
+        "cppUnitTests": [
+          "test/unit/src/nodes/utils/Packing.tests.cpp"
+        ],
         "reviewedImplementation": [],
         "differentialResults": [],
         "renderingResults": [],

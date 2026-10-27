@@ -1946,9 +1946,16 @@ JSValue JSValue::builtinConstructor(NativeFunction callback, const std::vector<J
 }
 JSValue JSValue::callableBuiltinConstructor(NativeBuiltinFunction callback,
                                            const std::vector<JSValue>& captures,
-                                           const std::string& name, std::size_t arity) {
+                                           const std::string& name, std::size_t arity,
+                                           const JSValue& instancePrototype) {
     if (!callback) throw JSTypeError("Intrinsic constructor requires a callback");
-    auto value = constructor(emptyFunction, captures, name, arity);
+    if (!instancePrototype.isUndefined() && !instancePrototype.isObject())
+        throw JSTypeError("Intrinsic constructor prototype must be an object");
+    const auto heap = JSHeap::current();
+    auto value = heap->createFunction(emptyFunction, captures, name, arity);
+    auto prototype = instancePrototype.isUndefined() ? object() : instancePrototype;
+    prototype.defineProperty("constructor", dataDescriptor(value, true, false, true));
+    value.defineProperty("prototype", dataDescriptor(prototype, false, false, false));
     auto& record = value.heap_->record(value);
     record.constructMode = JSHeap::Record::ConstructMode::CallableBuiltin;
     record.builtinCallback = callback;

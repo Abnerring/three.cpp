@@ -108,7 +108,8 @@ class JSValue {
                                       const std::string& name = "", std::size_t arity = 0);
     static JSValue callableBuiltinConstructor(NativeBuiltinFunction callback,
                                              const std::vector<JSValue>& captures = {},
-                                             const std::string& name = "", std::size_t arity = 0);
+                                             const std::string& name = "", std::size_t arity = 0,
+                                             const JSValue& instancePrototype = {});
     static JSValue fromJSON(const JsonValue& value);
     Type type() const;
     bool isUndefined() const { return type() == Type::Undefined; }

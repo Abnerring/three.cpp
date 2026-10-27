@@ -21,6 +21,8 @@
 
 ## C++ 适配
 
+2026-10-28 最新追加：19 个材质引用/切线/法线/裁剪/循环/光照前置模块已实现并按源目录合并旧 helper；Reference402、Material477、MVP/Loop1019、Lighting513、Tangent750 在明确相对编号及后者非空宿主栈 fixture 范围通过。所选 CPU 首轮92/93、单项修复1/1，其他68二进制不变；最终 Vulkan5/5。默认绝对导入与宿主栈差异完整保留。NodeMaterial直接依赖现22/26有真实入口，剩4模块及资源/场景桥递归前置、现代GPU和全库一致性未闭合。精确范围见 VALIDATION。
+
 2026-10-28 最新追加：实际移植 Texture/Cube/Reflect/MaterialProperties 与 Viewport 三模块、管理 Depth/Framebuffer 纹理、六顺序 Euler 矩阵及反射/instanceof。所选 CPU83/83、Vulkan5/5；纹理依赖619默认绝对通过，节点586/620/772在明确相对编号范围通过，完整导入绝对编号缺口仍保留。完整 NodeMaterial、实际现代 GPU 链和全库一致性尚未完成；精确范围及原始失败见 VALIDATION。
 
 2026-10-28 最新追加：新增管理 Material/共享 Constants、Position/Normal/UV/纹理尺寸/正反面节点与 NodeMaterialObserver，修复实际运行时内建与原生资源字段依赖。所选 CPU75/75、Vulkan5/5通过；Material1099+11fresh、纹理访问器511、Proxy923通过，Position与Observer的绝对导入编号缺口仍明确保留。完整 NodeMaterial、TextureNode、现代Vulkan及全库一致性未完成，精确范围见 VALIDATION。

@@ -301,10 +301,10 @@ add_executable(THREECPPTests
         unit/src/nodes/core/NodeVarying.tests.cpp
         unit/src/nodes/core/AccessorNames.tests.cpp
         unit/src/nodes/core/PointUVNode.tests.cpp
-        unit/src/nodes/core/TangentUtils.tests.cpp
+        unit/src/nodes/accessors/TangentUtils.tests.cpp
         unit/src/nodes/accessors/BuiltinNode.tests.cpp
         unit/src/nodes/core/SceneProperties.tests.cpp
-        unit/src/nodes/core/Tangent.tests.cpp
+        unit/src/nodes/accessors/Tangent.tests.cpp
         unit/src/nodes/accessors/Normal.tests.cpp
         unit/src/nodes/accessors/ReferenceElementNode.tests.cpp
         unit/src/nodes/accessors/Camera.tests.cpp
@@ -314,10 +314,10 @@ add_executable(THREECPPTests
         unit/src/nodes/display/FrontFacingNode.tests.cpp
         unit/src/nodes/display/ColorSpaceFunctions.tests.cpp
         unit/src/nodes/display/ToneMappingNode.tests.cpp
-        unit/src/nodes/core/NormalMap.tests.cpp
-        unit/src/nodes/core/BumpMap.tests.cpp
+        unit/src/nodes/display/NormalMapNode.tests.cpp
+        unit/src/nodes/display/BumpMapNode.tests.cpp
         unit/src/nodes/display/PremultiplyAlphaFunctions.tests.cpp
-        unit/src/nodes/core/Packing.tests.cpp
+        unit/src/nodes/utils/Packing.tests.cpp
         unit/src/nodes/core/MatcapUV.tests.cpp
         unit/src/nodes/core/EquirectUV.tests.cpp
         unit/src/nodes/core/SpriteSheetUV.tests.cpp
@@ -353,7 +353,7 @@ add_executable(THREECPPTests
         unit/src/nodes/core/TriplanarTextures.tests.cpp
         unit/src/nodes/core/FunctionOverloadingNode.tests.cpp
         unit/src/nodes/core/CubeMapNode.tests.cpp
-        unit/src/nodes/core/EventNode.tests.cpp
+        unit/src/nodes/utils/EventNode.tests.cpp
         unit/src/nodes/core/PostProcessingUtils.tests.cpp
         unit/src/nodes/core/NodeParserAndAttribute.tests.cpp
         unit/src/nodes/core/BypassNode.tests.cpp
@@ -392,7 +392,7 @@ add_executable(THREECPPTests
         unit/src/nodes/core/ContextNode.tests.cpp
         unit/src/nodes/core/StackNode.tests.cpp
         unit/src/nodes/core/PropertyNode.tests.cpp
-        unit/src/nodes/core/LoopNode.tests.cpp
+        unit/src/nodes/utils/LoopNode.tests.cpp
         unit/src/nodes/core/RTTNode.tests.cpp
         unit/src/nodes/core/ReflectorNode.tests.cpp
         unit/src/nodes/core/ViewportSharedAndDepth.tests.cpp
@@ -2110,4 +2110,49 @@ if(THREECPP_NODE_EXECUTABLE AND THREEJS_SOURCE_DIR)
     add_test(NAME threecpp.threejs-node-material-observer-relative-parity
         COMMAND "${THREECPP_NODE_EXECUTABLE}" "${CMAKE_CURRENT_SOURCE_DIR}/unit/utils/parity/compare-node-material-observer.mjs"
         "${THREEJS_SOURCE_DIR}" "$<TARGET_FILE:ThreeJsNodeMaterialObserverParityProbe>" "${CMAKE_BINARY_DIR}/parity/node-material-observer-relative" --relative-import-resource-ids)
+endif()
+
+add_executable(ThreeJsReferenceMaterialNodeParityProbe unit/utils/parity/ReferenceMaterialNodeParityProbe.cpp)
+target_link_libraries(ThreeJsReferenceMaterialNodeParityProbe PRIVATE threecpp::threecpp)
+add_test(NAME threecpp.reference-material-node-lifetime COMMAND ThreeJsReferenceMaterialNodeParityProbe --fresh-gc)
+if(THREECPP_NODE_EXECUTABLE AND THREEJS_SOURCE_DIR)
+    add_test(NAME threecpp.threejs-reference-material-node-relative-parity
+        COMMAND "${THREECPP_NODE_EXECUTABLE}" "${CMAKE_CURRENT_SOURCE_DIR}/unit/utils/parity/compare-reference-material-node.mjs"
+        "${THREEJS_SOURCE_DIR}" "$<TARGET_FILE:ThreeJsReferenceMaterialNodeParityProbe>" "${CMAKE_BINARY_DIR}/parity/reference-material-node-relative" --relative-node-ids)
+endif()
+
+add_executable(ThreeJsLightingEventNodesParityProbe unit/utils/parity/LightingEventNodesParityProbe.cpp)
+target_link_libraries(ThreeJsLightingEventNodesParityProbe PRIVATE threecpp::threecpp)
+add_test(NAME threecpp.lighting-event-nodes-lifetime COMMAND ThreeJsLightingEventNodesParityProbe --lifetime)
+if(THREECPP_NODE_EXECUTABLE AND THREEJS_SOURCE_DIR)
+    add_test(NAME threecpp.threejs-lighting-event-nodes-relative-parity
+        COMMAND "${THREECPP_NODE_EXECUTABLE}" "${CMAKE_CURRENT_SOURCE_DIR}/unit/utils/parity/compare-lighting-event-nodes.mjs"
+        "${THREEJS_SOURCE_DIR}" "$<TARGET_FILE:ThreeJsLightingEventNodesParityProbe>" "${CMAKE_BINARY_DIR}/parity/lighting-event-nodes-relative" --relative-integration-node-ids)
+endif()
+
+add_executable(ThreeJsMaterialNodeParityProbe unit/utils/parity/MaterialNodeParityProbe.cpp)
+target_link_libraries(ThreeJsMaterialNodeParityProbe PRIVATE threecpp::threecpp)
+add_test(NAME threecpp.material-node-lifetime COMMAND ThreeJsMaterialNodeParityProbe --fresh-gc)
+if(THREECPP_NODE_EXECUTABLE AND THREEJS_SOURCE_DIR)
+    add_test(NAME threecpp.threejs-material-node-relative-parity
+        COMMAND "${THREECPP_NODE_EXECUTABLE}" "${CMAKE_CURRENT_SOURCE_DIR}/unit/utils/parity/compare-material-node.mjs"
+        "${THREEJS_SOURCE_DIR}" "$<TARGET_FILE:ThreeJsMaterialNodeParityProbe>" "${CMAKE_BINARY_DIR}/parity/material-node-relative" --relative-node-ids)
+endif()
+
+add_executable(ThreeJsModelVertexClippingLoopParityProbe unit/utils/parity/ModelVertexClippingLoopParityProbe.cpp)
+target_link_libraries(ThreeJsModelVertexClippingLoopParityProbe PRIVATE threecpp::threecpp)
+add_test(NAME threecpp.model-vertex-clipping-loop-lifetime COMMAND ThreeJsModelVertexClippingLoopParityProbe --lifetime)
+if(THREECPP_NODE_EXECUTABLE AND THREEJS_SOURCE_DIR)
+    add_test(NAME threecpp.threejs-model-vertex-clipping-loop-relative-parity
+        COMMAND "${THREECPP_NODE_EXECUTABLE}" "${CMAKE_CURRENT_SOURCE_DIR}/unit/utils/parity/compare-model-vertex-clipping-loop.mjs"
+        "${THREEJS_SOURCE_DIR}" "$<TARGET_FILE:ThreeJsModelVertexClippingLoopParityProbe>" "${CMAKE_BINARY_DIR}/parity/model-vertex-clipping-loop-relative" --relative-node-ids)
+endif()
+
+add_executable(ThreeJsTangentNormalBumpParityProbe unit/utils/parity/TangentNormalBumpParityProbe.cpp)
+target_link_libraries(ThreeJsTangentNormalBumpParityProbe PRIVATE threecpp::threecpp)
+add_test(NAME threecpp.tangent-normal-bump-lifetime COMMAND ThreeJsTangentNormalBumpParityProbe --lifetime)
+if(THREECPP_NODE_EXECUTABLE AND THREEJS_SOURCE_DIR)
+    add_test(NAME threecpp.threejs-tangent-normal-bump-relative-parity
+        COMMAND "${THREECPP_NODE_EXECUTABLE}" "${CMAKE_CURRENT_SOURCE_DIR}/unit/utils/parity/compare-tangent-normal-bump.mjs"
+        "${THREEJS_SOURCE_DIR}" "$<TARGET_FILE:ThreeJsTangentNormalBumpParityProbe>" "${CMAKE_BINARY_DIR}/parity/tangent-normal-bump-relative" --relative-integration-node-ids --fixture-host-stack)
 endif()

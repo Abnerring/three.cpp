@@ -42,6 +42,17 @@ JSValue startsWith(const JSValue& self,const Args& args,const Args&){
     if(searchUnits.size()>stringUnits.size()-start)return false;
     return std::equal(searchUnits.begin(),searchUnits.end(),stringUnits.begin()+start);
 }
+JSValue includes(const JSValue& self,const Args& args,const Args&){
+    if(self.isNull()||self.isUndefined())throw JSTypeError("String.prototype.includes called on null or undefined");
+    const auto text=jsUTF16(self.toString());
+    const auto search=argument(args,0);
+    if(jsIsRegExp(search))throw JSTypeError("String.prototype.includes does not accept a regular expression");
+    const auto needle=jsUTF16(search.toString());
+    const auto number=argument(args,1).toNumber();
+    const double integer=std::isnan(number)||number==0?0:std::trunc(number);
+    const auto start=static_cast<std::size_t>(std::min(std::max(integer,0.0),double(text.size())));
+    return text.find(needle,start)!=std::u16string::npos;
+}
 JSValue charCodeAt(const JSValue& self,const Args& args,const Args&) {
     if(self.isNull()||self.isUndefined())throw JSTypeError("String method called on null or undefined");
     const auto text=jsUTF16(self.toString());
@@ -208,7 +219,7 @@ JSValue createNativeStringPrototype(){
         auto method=JSValue::function(callback,{},name,arity);method.retainForHeapLifetime();
         prototype.defineProperty(name,data(method,true,false,true));
     };
-    install("indexOf",indexOf,1);install("replace",replace,2);install("split",split,2);install("trim",trim,0);install("toUpperCase",toUpperCase,0);
+    install("indexOf",indexOf,1);install("includes",includes,1);install("replace",replace,2);install("split",split,2);install("trim",trim,0);install("toUpperCase",toUpperCase,0);
     install("charCodeAt",charCodeAt,1);install("charAt",charAt,1);install("repeat",repeat,1);install("toLowerCase",toLowerCase,0);install("slice",slice,2);
     install("match",match,1);install("substring",substring,2);
     return prototype;

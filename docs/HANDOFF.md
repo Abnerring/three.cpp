@@ -1,5 +1,16 @@
 # 续接说明（Handoff）
 
+## 当前阶段：材质访问器与着色前置，2026-10-28
+
+- 基线提交7729de6；本阶段已完成19模块真实实现及七组helper/测试目录迁移。统一CPU69targets/74steps，随后只重编Tangent宿主栈探针2steps。所选93项首轮92过/1失败（356秒）；修复测试keeper后该项1/1过26.88秒，其余68目标二进制SHA不变。原失败JUnit/完整输出保留，不写成单轮93/93。CPU2523cases/217356assertions。
+- 五组差分：Reference402、Material477、MVP/Vertex/Clipping/Loop1019、Lighting/Event513、Tangent/Normal/Bump750；分别有明确relative Node.id范围，最后一组另有非空fixture-host-stack。默认编号偏差181/39/249/356/96及Tangent59个宿主栈字段仍保留。默认actual重放一致，不补编号、不删除栈字段。真实Builder成功与异常数量见VALIDATION，资源属性声明不冒充纹理采样/GPU。
+- 真全局Array/Map/Math.sin/cos/String转换/fromCharCode，String.includes及可选原型注入已接入。其余全局/静态API仍未完成。Bump导出顺序由实际差分发现并修正。没有CEF/浏览器/JS执行桥。
+- 最后生产Vulkan验证03：6步构建、5/5过31.05秒；RTX1400/cube60，glslang27、buffer103、binding46。validation=0；新节点完整现代GPU路径未闭合。
+- 全局审计1251：partial418/missing523/Vulkan290/dependency20，src503/755、addons84/496，587有文件/664无文件，不能当功能完成率。NodeMaterial26直接imports已有22真实入口，剩Instance/Batch/Skinning/Morph；递归资源、instanced属性、StorageArrayElement/StorageBuffer、Skeleton/BatchedMesh等仍待补。完整传统/现代Vulkan、addons、宿主及跨平台目标保持未完成。
+- 权威证据 D:/Temp/surui/threecpp-material-node-20261028；validation-final-summary.json保留93+1组合及二进制校验，五组final audit/逐字段失败及next-node-material-recursive-gap-audit.json完整保存。所有新日志/JUnit在本阶段，旧冻结目录未写。阶段git提交后由freeze-phase.py冻结73实际二进制、完整跟踪源码/固定上游及全部证据；是否已冻结以freeze-final.json为准。
+- 历史约定后缀798619字节及SHA f6b73f2e259a5a5518d1760ca0c6ac3d1ceed98ed915f0cec5a236a5107dcc4c保持；HANDOFF必须git -c core.autocrlf=false add。
+
+
 2026-10-28 当前阶段：固定上游 `11738a9d55e502fb484cefffcea3a66dc44e9fe9`。完整原生 C++ 复现 src 与 examples/jsm，Vulkan 后端；禁止 CEF、浏览器与 JS 执行桥。全功能目标保持未完成，阶段性本地 Git 提交，不推送。
 
 本轮真实移植 TextureNode、CubeTextureNode、ReflectVector、MaterialProperties、ViewportTextureNode、ViewportDepthTextureNode、ViewportDepthNode；旧 core 视口辅助/测试合并迁 display。管理 DepthTexture/FramebufferTexture 动态 super/newTarget/copy/JSON、Matrix4.makeRotationFromEuler 六序、Object 反射、Function@@hasInstance/bound/Proxy 与 native host globals 均有实际差分。源码元数据转义保留 CRLF，不执行 JS。
