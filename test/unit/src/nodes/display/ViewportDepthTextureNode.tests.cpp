@@ -1,4 +1,4 @@
-#include "nodes/core/ViewportDepthTexture.h"
+#include "nodes/display/ViewportDepthTextureNode.h"
 
 #include "catch.hpp"
 

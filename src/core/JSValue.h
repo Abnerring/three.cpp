@@ -28,6 +28,10 @@ class JSRangeError : public std::out_of_range {
   public:
     using std::out_of_range::out_of_range;
 };
+class JSReferenceError : public std::invalid_argument {
+  public:
+    using std::invalid_argument::invalid_argument;
+};
 
 // Runtime values are distinct from JSON. Object assignment preserves identity;
 // missing properties and sparse array slots return undefined without insertion.
@@ -113,6 +117,8 @@ class JSValue {
     bool isObject() const { return type() == Type::Object || type() == Type::Array || isCallable(); }
     bool isCallable() const { return type() == Type::Function; }
     bool isConstructible() const;
+    bool instanceOf(const JSValue& constructor) const;
+    bool ordinaryHasInstance(const JSValue& value) const;
     bool strictEquals(const JSValue& other) const;
     bool sameValue(const JSValue& other) const;
     bool toBoolean() const;

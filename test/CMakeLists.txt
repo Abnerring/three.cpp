@@ -327,12 +327,12 @@ add_executable(THREECPPTests
         unit/src/nodes/utils/Discard.tests.cpp
         unit/src/nodes/display/ScreenNode.tests.cpp
         unit/src/nodes/core/DepthConversion.tests.cpp
-        unit/src/nodes/core/ViewportDepthTexture.tests.cpp
+        unit/src/nodes/display/ViewportDepthTextureNode.tests.cpp
         unit/src/nodes/display/ColorSpaceNode.tests.cpp
         unit/src/nodes/core/BlendModes.tests.cpp
         unit/src/nodes/display/ToneMappingFunctions.tests.cpp
         unit/src/nodes/core/ColorAdjustment.tests.cpp
-        unit/src/nodes/core/ViewportTexture.tests.cpp
+        unit/src/nodes/display/ViewportTextureNode.tests.cpp
         unit/src/nodes/display/RenderOutputNode.tests.cpp
         unit/src/nodes/core/ToonOutlinePass.tests.cpp
         unit/src/nodes/core/PassTexture.tests.cpp
@@ -396,7 +396,7 @@ add_executable(THREECPPTests
         unit/src/nodes/core/RTTNode.tests.cpp
         unit/src/nodes/core/ReflectorNode.tests.cpp
         unit/src/nodes/core/ViewportSharedAndDepth.tests.cpp
-        unit/src/nodes/core/ViewportDepthNode.tests.cpp
+        unit/src/nodes/display/ViewportDepthNode.tests.cpp
         unit/src/loaders/USDZAndTTF.tests.cpp
         unit/src/loaders/ColladaLoader.tests.cpp
         unit/src/loaders/USDLoader.tests.cpp
@@ -2072,7 +2072,32 @@ add_test(NAME threecpp.node-material-observer-lifetime COMMAND ThreeJsNodeMateri
 add_executable(ThreeJsMaterialRuntimeParityProbe unit/utils/parity/MaterialRuntimeParityProbe.cpp)
 target_link_libraries(ThreeJsMaterialRuntimeParityProbe PRIVATE threecpp::threecpp)
 add_test(NAME threecpp.material-runtime-lifetime COMMAND ThreeJsMaterialRuntimeParityProbe --lifetime)
+
+add_executable(ThreeJsTextureDependenciesParityProbe unit/utils/parity/TextureDependenciesParityProbe.cpp)
+target_link_libraries(ThreeJsTextureDependenciesParityProbe PRIVATE threecpp::threecpp)
+add_test(NAME threecpp.texture-dependencies-lifetime COMMAND ThreeJsTextureDependenciesParityProbe --lifetime)
+add_executable(ThreeJsCubeReflectMaterialPropertiesParityProbe unit/utils/parity/CubeReflectMaterialPropertiesParityProbe.cpp)
+target_link_libraries(ThreeJsCubeReflectMaterialPropertiesParityProbe PRIVATE threecpp::threecpp)
+add_test(NAME threecpp.cube-reflect-material-properties-lifetime COMMAND ThreeJsCubeReflectMaterialPropertiesParityProbe --lifetime)
+add_executable(ThreeJsViewportNodesParityProbe unit/utils/parity/ViewportNodesParityProbe.cpp)
+target_link_libraries(ThreeJsViewportNodesParityProbe PRIVATE threecpp::threecpp)
+add_test(NAME threecpp.viewport-nodes-lifetime COMMAND ThreeJsViewportNodesParityProbe --lifetime)
+add_executable(ThreeJsTextureNodeParityProbe unit/utils/parity/TextureNodeParityProbe.cpp)
+target_link_libraries(ThreeJsTextureNodeParityProbe PRIVATE threecpp::threecpp)
+add_test(NAME threecpp.texture-node-lifetime COMMAND ThreeJsTextureNodeParityProbe --fresh-gc)
 if(THREECPP_NODE_EXECUTABLE AND THREEJS_SOURCE_DIR)
+    add_test(NAME threecpp.threejs-texture-node-relative-parity
+        COMMAND "${THREECPP_NODE_EXECUTABLE}" "${CMAKE_CURRENT_SOURCE_DIR}/unit/utils/parity/compare-texture-node.mjs"
+        "${THREEJS_SOURCE_DIR}" "$<TARGET_FILE:ThreeJsTextureNodeParityProbe>" "${CMAKE_BINARY_DIR}/parity/texture-node-relative" --relative-node-ids --relative-import-resource-ids)
+    add_test(NAME threecpp.threejs-viewport-nodes-relative-parity
+        COMMAND "${THREECPP_NODE_EXECUTABLE}" "${CMAKE_CURRENT_SOURCE_DIR}/unit/utils/parity/compare-viewport-nodes.mjs"
+        "${THREEJS_SOURCE_DIR}" "$<TARGET_FILE:ThreeJsViewportNodesParityProbe>" "${CMAKE_BINARY_DIR}/parity/viewport-nodes-relative" --relative-integration-node-ids)
+    add_test(NAME threecpp.threejs-cube-reflect-material-properties-relative-parity
+        COMMAND "${THREECPP_NODE_EXECUTABLE}" "${CMAKE_CURRENT_SOURCE_DIR}/unit/utils/parity/compare-cube-reflect-material-properties.mjs"
+        "${THREEJS_SOURCE_DIR}" "$<TARGET_FILE:ThreeJsCubeReflectMaterialPropertiesParityProbe>" "${CMAKE_BINARY_DIR}/parity/cube-reflect-material-properties-relative" --relative-node-ids --relative-import-resource-ids)
+    add_test(NAME threecpp.threejs-texture-dependencies-parity
+        COMMAND "${THREECPP_NODE_EXECUTABLE}" "${CMAKE_CURRENT_SOURCE_DIR}/unit/utils/parity/compare-texture-dependencies.mjs"
+        "${THREEJS_SOURCE_DIR}" "$<TARGET_FILE:ThreeJsTextureDependenciesParityProbe>" "${CMAKE_BINARY_DIR}/parity/texture-dependencies")
     add_test(NAME threecpp.threejs-position-normal-nodes-relative-parity
         COMMAND "${THREECPP_NODE_EXECUTABLE}" "${CMAKE_CURRENT_SOURCE_DIR}/unit/utils/parity/compare-position-normal-nodes.mjs"
         "${THREEJS_SOURCE_DIR}" "$<TARGET_FILE:ThreeJsPositionNormalNodesParityProbe>" "${CMAKE_BINARY_DIR}/parity/position-normal-nodes-relative" --relative-integration-node-ids)

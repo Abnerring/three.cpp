@@ -1,4 +1,8 @@
-﻿#pragma once
+#pragma once
+#include "core/JSValue.h"
+JSValue nativeViewportDepthNodeConstructor();
+JSValue nativeViewportDepthNodeModule();
+JSValue nativeViewportDepthNodeBinding(const std::string& name);
 #include <string>
 #include <vector>
 
@@ -6,6 +10,12 @@
 // answers one of three questions about depth depending on its scope, and three of its rules are
 // worth writing down.
 class ViewportDepthNode {
+    JSValue object_;
+  public:
+    explicit ViewportDepthNode(const JSValue& scope={},const JSValue& valueNode={});
+    JSValue object()const{return object_;}
+    operator JSValue()const{return object_;}
+    static JSValue constructor(){return nativeViewportDepthNodeBinding("default");}
   public:
     static constexpr bool isViewportDepthNode = true;
     static constexpr const char* kTypeName = "ViewportDepthNode";

@@ -2290,13 +2290,7 @@ JSValue halfAttributeModule() {
 JSValue nativeBufferAttributeConstructor() { return attributeModule().get("constructor"); }
 JSValue nativeFloat16BufferAttributeConstructor() { return halfAttributeModule().get("constructor"); }
 bool instanceOfFloat16BufferAttribute(const JSValue& value) {
-    const auto constructor=nativeFloat16BufferAttributeConstructor();
-    const auto method=constructor.get(JSValue::wellKnownSymbol("hasInstance"));
-    if(!method.isUndefined()&&!method.isNull())return method.call(constructor,{value}).toBoolean();
-    if(!value.isObject())return false;
-    const auto prototype=constructor.get("prototype");if(!prototype.isObject())throw JSTypeError("Non-object instanceof prototype");
-    for(auto current=value.getPrototype();!current.isNull();current=current.getPrototype())if(current.strictEquals(prototype))return true;
-    return false;
+    return value.instanceOf(nativeFloat16BufferAttributeConstructor());
 }
 void initializeFloat16BufferAttributeRuntime(BufferAttribute& attribute) {
     auto object=attribute.object();object.setPrototype(halfAttributeModule().get("prototype"));

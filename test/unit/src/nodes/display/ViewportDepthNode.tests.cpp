@@ -1,4 +1,4 @@
-#include "nodes/core/ViewportDepthNode.h"
+#include "nodes/display/ViewportDepthNode.h"
 
 #include "catch.hpp"
 

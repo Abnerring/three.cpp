@@ -99,6 +99,41 @@ JSValue getPrototypeOf(const JSValue&,const Args& args,const Args&) {
     }
     return value.getPrototype();
 }
+JSValue reflectionObject(JSValue value){
+    if(value.isNull()||value.isUndefined())throw JSTypeError("Cannot convert undefined or null to object");
+    if(value.isObject())return value;
+    if(value.type()==JSValue::Type::String)return createNativeStringObject(value);
+    if(value.type()==JSValue::Type::Number)return createNativeNumberObject(value);
+    // Boolean/Symbol wrapper identity is not exposed by these static methods;
+    // their own-key/own-descriptor sets are empty.
+    return JSValue::object();
+}
+void own(JSValue object,const JSValue& key,const JSValue& value){
+    JSPropertyDescriptor d;d.value=value;d.writable=d.enumerable=d.configurable=true;object.defineProperty(key,d);
+}
+JSValue descriptorObject(const std::optional<JSPropertyDescriptor>& descriptor){
+    if(!descriptor)return {};
+    const auto& d=*descriptor;auto object=JSValue::object();
+    if(d.value||d.writable){own(object,"value",d.value.value_or(JSValue{}));own(object,"writable",d.writable.value_or(false));}
+    else {own(object,"get",d.getter.value_or(JSValue{}));own(object,"set",d.setter.value_or(JSValue{}));}
+    own(object,"enumerable",d.enumerable.value_or(false));own(object,"configurable",d.configurable.value_or(false));return object;
+}
+JSValue getOwnPropertyNames(const JSValue&,const Args& args,const Args&){
+    const auto object=reflectionObject(args.empty()?JSValue{}:args[0]);auto result=JSValue::array();unsigned index=0;
+    for(const auto& key:object.ownPropertyKeys())if(!key.isSymbol())own(result,std::to_string(index++),key);
+    return result;
+}
+JSValue getOwnPropertyDescriptor(const JSValue&,const Args& args,const Args&){
+    const auto object=reflectionObject(args.empty()?JSValue{}:args[0]);
+    const auto key=(args.size()>1?args[1]:JSValue{}).toPropertyKey();
+    return descriptorObject(object.getOwnPropertyDescriptor(key));
+}
+JSValue getOwnPropertyDescriptors(const JSValue&,const Args& args,const Args&){
+    const auto object=reflectionObject(args.empty()?JSValue{}:args[0]);auto result=JSValue::object();
+    const auto keys=object.ownPropertyKeys();
+    for(const auto& key:keys){const auto descriptor=object.getOwnPropertyDescriptor(key);if(descriptor)own(result,key,descriptorObject(descriptor));}
+    return result;
+}
 }
 void initializeNativeObjectMethods(const JSValue& constructor) {
     JSPropertyDescriptor d;d.value=JSValue::function(assign,{},"assign",2);
@@ -108,4 +143,7 @@ void initializeNativeObjectMethods(const JSValue& constructor) {
     d.value=JSValue::function(keys,{},"keys",1);object.defineProperty("keys",d);
     d.value=JSValue::function(getPrototypeOf,{},"getPrototypeOf",1);object.defineProperty("getPrototypeOf",d);
     d.value=JSValue::function(defineProperty,{},"defineProperty",3);object.defineProperty("defineProperty",d);
+    d.value=JSValue::function(getOwnPropertyNames,{},"getOwnPropertyNames",1);object.defineProperty("getOwnPropertyNames",d);
+    d.value=JSValue::function(getOwnPropertyDescriptor,{},"getOwnPropertyDescriptor",2);object.defineProperty("getOwnPropertyDescriptor",d);
+    d.value=JSValue::function(getOwnPropertyDescriptors,{},"getOwnPropertyDescriptors",1);object.defineProperty("getOwnPropertyDescriptors",d);
 }

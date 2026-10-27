@@ -1,5 +1,8 @@
 #pragma once
 #include "textures/Texture.h"
+JSValue nativeDepthTextureConstructor();
+JSValue nativeDepthTextureModule();
+JSValue nativeDepthTextureBinding(const std::string& name);
 class DepthTexture : public Texture {
   public:
     std::optional<double> compareFunction;

@@ -1,4 +1,5 @@
-﻿#pragma once
+#pragma once
+#include "core/JSValue.h"
 #include <string>
 
 // Port of the defaults in src/nodes/display/ViewportTextureNode.js at the pinned revision. Two
@@ -35,4 +36,16 @@ class ViewportTexture {
 
     // Whether the node keeps one texture per render target.
     static constexpr bool cachesPerRenderTarget = true;
+};
+
+JSValue nativeViewportTextureNodeConstructor();
+JSValue nativeViewportTextureNodeModule();
+JSValue nativeViewportTextureNodeBinding(const std::string& name);
+class ViewportTextureNode {
+    JSValue object_;
+public:
+    explicit ViewportTextureNode(const JSValue& uvNode={},const JSValue& levelNode={},const JSValue& framebufferTexture={});
+    JSValue object()const{return object_;}
+    operator JSValue()const{return object_;}
+    static JSValue constructor(){return nativeViewportTextureNodeBinding("default");}
 };

@@ -796,6 +796,7 @@ class JSHeap : public std::enable_shared_from_this<JSHeap> {
         JSValue::NativeFunction callback = nullptr;
         JSValue::NativeBuiltinFunction builtinCallback = nullptr;
         ConstructMode constructMode = ConstructMode::None;
+        bool boundFunction = false;
         std::string nativeName;
         std::optional<std::string> functionSourceText;
         std::uint32_t length = 0;
@@ -1045,6 +1046,11 @@ class JSHeap : public std::enable_shared_from_this<JSHeap> {
         proto.enumerable = false; proto.configurable = true; object.defineProperty("__proto__", proto);
         install(function, "toString", nativeToString, 0);
         install(function, "call", functionCall, 1);
+        auto hasInstance=createFunction([](const JSValue& receiver,const Args& args,const Args&)->JSValue {
+            return receiver.ordinaryHasInstance(argument(args,0));
+        },{},"[Symbol.hasInstance]",1);
+        record(hasInstance).intrinsic=true;
+        function.defineProperty(JSValue::wellKnownSymbol("hasInstance"),dataDescriptor(hasInstance,false,false,false));
         install(function, "bind", [](const JSValue& receiver, const Args& args, const Args&) -> JSValue {
             return receiver.bind(argument(args, 0), args.empty() ? Args{} : Args(args.begin() + 1, args.end()));
         }, 1);
@@ -2046,6 +2052,27 @@ JSValue JSValue::call(const JSValue& receiver, const std::vector<JSValue>& args)
     return callback(rootedReceiver, rootedArgs, captures);
 }
 JSValue JSValue::construct(const std::vector<JSValue>& args) const { return construct(args, *this); }
+bool JSValue::instanceOf(const JSValue& constructor) const {
+    if(!constructor.isObject())throw JSTypeError("Right-hand side of instanceof is not an object");
+    const auto method=constructor.get(wellKnownSymbol("hasInstance"));
+    if(!method.isUndefined()&&!method.isNull())return method.call(constructor,{*this}).toBoolean();
+    if(!constructor.isCallable())throw JSTypeError("Right-hand side of instanceof is not callable");
+    return constructor.ordinaryHasInstance(*this);
+}
+bool JSValue::ordinaryHasInstance(const JSValue& value) const {
+    if(!isCallable())return false;
+    // A bound function delegates the full instanceof operation to its target,
+    // including a target's custom @@hasInstance and subsequent mutations.
+    if(!isProxy()&&heap_->record(*this).boundFunction){
+        const auto target=heap_->record(*this).captures[0];return value.instanceOf(target);
+    }
+    if(!value.isObject())return false;
+    const auto prototype=get("prototype");
+    if(!prototype.isObject())throw JSTypeError("Function has non-object prototype in instanceof check");
+    for(auto current=value.getPrototype();!current.isNull();current=current.getPrototype())
+        if(current.sameValue(prototype))return true;
+    return false;
+}
 JSValue JSValue::bind(const JSValue& receiver, const std::vector<JSValue>& args) const {
     static_cast<void>(JSWeakValue(*this));
     if (!isCallable()) throw JSTypeError("Bind must be called on a function");
@@ -2059,6 +2086,7 @@ JSValue JSValue::bind(const JSValue& receiver, const std::vector<JSValue>& args)
         return captures[0].call(captures[1], combined);
     }, captures, "", 0);
     bound.setPrototype(prototype);
+    bound.heap_->record(bound).boundFunction=true;
     if (target.isConstructible())
         bound.heap_->record(bound).constructMode = JSHeap::Record::ConstructMode::Bound;
     double length = 0;

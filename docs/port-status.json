@@ -201,8 +201,8 @@
     "note": "Accepted port scope is src and examples/jsm, including tracked third-party dependencies. Editor/manual web applications are excluded from native application rewrites. Native host behavior, packaging and all three platforms require separate implementation and verification evidence."
   },
   "counts": {
-    "partial-unverified": 392,
-    "missing": 549,
+    "partial-unverified": 399,
+    "missing": 542,
     "vulkan-port-pending": 290,
     "dependency-unverified": 20
   },
@@ -210,8 +210,8 @@
     "src": {
       "modules": 755,
       "counts": {
-        "partial-unverified": 308,
-        "missing": 157,
+        "partial-unverified": 315,
+        "missing": 150,
         "vulkan-port-pending": 290
       }
     },
@@ -796,7 +796,7 @@
       "path": "src/nodes/accessors",
       "upstreamFiles": 43,
       "moduleCount": 43,
-      "modulesWithCppFiles": 14,
+      "modulesWithCppFiles": 18,
       "verifiedComplete": 0
     },
     {
@@ -817,7 +817,7 @@
       "path": "src/nodes/display",
       "upstreamFiles": 18,
       "moduleCount": 18,
-      "modulesWithCppFiles": 8,
+      "modulesWithCppFiles": 11,
       "verifiedComplete": 0
     },
     {
@@ -7597,11 +7597,11 @@
       "scope": "src",
       "kind": "core",
       "upstreamSha256": "f0518dfdb1c55208900d49216390adcd7398b8272b4a35ec9858bc2ac9b0f87f",
-      "header": null,
-      "implementation": null,
+      "header": "src/nodes/accessors/CubeTextureNode.h",
+      "implementation": "src/nodes/accessors/CubeTextureNode.cpp",
       "expectedHeader": "src/nodes/accessors/CubeTextureNode.h",
       "expectedImplementation": "src/nodes/accessors/CubeTextureNode.cpp",
-      "status": "missing",
+      "status": "partial-unverified",
       "verifiedComplete": false,
       "apiExtraction": "partial-static",
       "verification": {
@@ -7705,11 +7705,11 @@
       "scope": "src",
       "kind": "core",
       "upstreamSha256": "ecc26855124358921eec27cd1f5858e03ac669ef617816e257e5f7e1409e0326",
-      "header": null,
-      "implementation": null,
+      "header": "src/nodes/accessors/MaterialProperties.h",
+      "implementation": "src/nodes/accessors/MaterialProperties.cpp",
       "expectedHeader": "src/nodes/accessors/MaterialProperties.h",
       "expectedImplementation": "src/nodes/accessors/MaterialProperties.cpp",
-      "status": "missing",
+      "status": "partial-unverified",
       "verifiedComplete": false,
       "apiExtraction": "partial-static",
       "verification": {
@@ -8037,11 +8037,11 @@
       "scope": "src",
       "kind": "core",
       "upstreamSha256": "c3b40b9fe613d0c129444e1b133b43d24711a878878597b18bfaed8935dc9459",
-      "header": null,
-      "implementation": null,
+      "header": "src/nodes/accessors/ReflectVector.h",
+      "implementation": "src/nodes/accessors/ReflectVector.cpp",
       "expectedHeader": "src/nodes/accessors/ReflectVector.h",
       "expectedImplementation": "src/nodes/accessors/ReflectVector.cpp",
-      "status": "missing",
+      "status": "partial-unverified",
       "verifiedComplete": false,
       "apiExtraction": "partial-static",
       "verification": {
@@ -8334,11 +8334,11 @@
       "scope": "src",
       "kind": "core",
       "upstreamSha256": "5a25a1b9133d7e0546f4c09f5989576db588759c94234ba7b6dd39fe9fc0458c",
-      "header": null,
-      "implementation": null,
+      "header": "src/nodes/accessors/TextureNode.h",
+      "implementation": "src/nodes/accessors/TextureNode.cpp",
       "expectedHeader": "src/nodes/accessors/TextureNode.h",
       "expectedImplementation": "src/nodes/accessors/TextureNode.cpp",
-      "status": "missing",
+      "status": "partial-unverified",
       "verifiedComplete": false,
       "apiExtraction": "static-only",
       "verification": {
@@ -10221,11 +10221,11 @@
       "scope": "src",
       "kind": "core",
       "upstreamSha256": "f29c1e9e4530c9d7f2fc880a1cd27bc005c4e79531ef7ad3f9ae895dd9c17a66",
-      "header": null,
-      "implementation": null,
+      "header": "src/nodes/display/ViewportDepthNode.h",
+      "implementation": "src/nodes/display/ViewportDepthNode.cpp",
       "expectedHeader": "src/nodes/display/ViewportDepthNode.h",
       "expectedImplementation": "src/nodes/display/ViewportDepthNode.cpp",
-      "status": "missing",
+      "status": "partial-unverified",
       "verifiedComplete": false,
       "apiExtraction": "partial-static",
       "verification": {
@@ -10234,7 +10234,9 @@
           "pointer": "/modules/316"
         },
         "upstreamUnitTests": [],
-        "cppUnitTests": [],
+        "cppUnitTests": [
+          "test/unit/src/nodes/display/ViewportDepthNode.tests.cpp"
+        ],
         "reviewedImplementation": [],
         "differentialResults": [],
         "renderingResults": [],
@@ -10248,11 +10250,11 @@
       "scope": "src",
       "kind": "core",
       "upstreamSha256": "8b62b84b8eb62482bfe20e6ae0016b73fab9ff9f8b759d9b94bcf6c2549b280a",
-      "header": null,
-      "implementation": null,
+      "header": "src/nodes/display/ViewportDepthTextureNode.h",
+      "implementation": "src/nodes/display/ViewportDepthTextureNode.cpp",
       "expectedHeader": "src/nodes/display/ViewportDepthTextureNode.h",
       "expectedImplementation": "src/nodes/display/ViewportDepthTextureNode.cpp",
-      "status": "missing",
+      "status": "partial-unverified",
       "verifiedComplete": false,
       "apiExtraction": "partial-static",
       "verification": {
@@ -10263,7 +10265,9 @@
         "upstreamUnitTests": [
           "test/unit/src/nodes/display/ViewportDepthTextureNode.tests.js"
         ],
-        "cppUnitTests": [],
+        "cppUnitTests": [
+          "test/unit/src/nodes/display/ViewportDepthTextureNode.tests.cpp"
+        ],
         "reviewedImplementation": [],
         "differentialResults": [],
         "renderingResults": [],
@@ -10304,11 +10308,11 @@
       "scope": "src",
       "kind": "core",
       "upstreamSha256": "300311158e510546f600e865e5da1e3dcf83b9551a3994aff1e4da43325067da",
-      "header": null,
-      "implementation": null,
+      "header": "src/nodes/display/ViewportTextureNode.h",
+      "implementation": "src/nodes/display/ViewportTextureNode.cpp",
       "expectedHeader": "src/nodes/display/ViewportTextureNode.h",
       "expectedImplementation": "src/nodes/display/ViewportTextureNode.cpp",
-      "status": "missing",
+      "status": "partial-unverified",
       "verifiedComplete": false,
       "apiExtraction": "partial-static",
       "verification": {
@@ -10319,7 +10323,9 @@
         "upstreamUnitTests": [
           "test/unit/src/nodes/display/ViewportTextureNode.tests.js"
         ],
-        "cppUnitTests": [],
+        "cppUnitTests": [
+          "test/unit/src/nodes/display/ViewportTextureNode.tests.cpp"
+        ],
         "reviewedImplementation": [],
         "differentialResults": [],
         "renderingResults": [],

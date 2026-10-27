@@ -1,18 +1,20 @@
 # 续接说明（Handoff）
 
-2026-10-28 当前阶段：固定上游 `11738a9d55e502fb484cefffcea3a66dc44e9fe9`。目标仍为完整原生 C++ 复现 src 与 examples/jsm，渲染用 Vulkan。禁止 CEF、浏览器与 JS 执行桥；Node 仅作开发 oracle。当前全功能目标尚未完成。
+2026-10-28 当前阶段：固定上游 `11738a9d55e502fb484cefffcea3a66dc44e9fe9`。完整原生 C++ 复现 src 与 examples/jsm，Vulkan 后端；禁止 CEF、浏览器与 JS 执行桥。全功能目标保持未完成，阶段性本地 Git 提交，不推送。
 
-本轮：真实管理 Material 全部源方法与 211 Constants/7共享对象；Position/Normal/UV/TextureSize/MaxMip/FrontFacing 与 NodeMaterialObserver。Material1099+11fresh+2GC、纹理访问器511+3GC、Proxy923+GC通过。修复 Object.defineProperty、for-in、primitive cache delete、id/回调源码、Color舍入、普通原型遇Proxy停止、TypedArray Get/Has、live drawRange/Vector2尺寸/Euler.equals。旧Normal/FrontFacing/MaxMip与测试迁入上游目录，旧core文件删除。
+本轮真实移植 TextureNode、CubeTextureNode、ReflectVector、MaterialProperties、ViewportTextureNode、ViewportDepthTextureNode、ViewportDepthNode；旧 core 视口辅助/测试合并迁 display。管理 DepthTexture/FramebufferTexture 动态 super/newTarget/copy/JSON、Matrix4.makeRotationFromEuler 六序、Object 反射、Function@@hasInstance/bound/Proxy 与 native host globals 均有实际差分。源码元数据转义保留 CRLF，不执行 JS。
 
-最终60 CPU目标106步，75/75 CTest通过（361.06秒），unit 2523/217356。Vulkan最终增量69步、5/5通过（35.84秒），未启用validation layers；不等于新增节点全部上GPU。此前75首轮72过/3初始化失败、次轮74过/1原型遍历失败均保留，修复后统一重建回归。
+最终64 CPU目标329步，83/83 CTest（349.85秒），unit2523/217356。Vulkan独立415步、5/5（31.67秒），validation=0；不表示新节点已经接完整现代GPU。当前全部编译失败/fixture错误/相对scope初始失败保留。
 
-默认绝对缺口：Position18case/143 Node.id差198；Observer原687中32case/55 material.map Texture.id差4，所有其它字段与事件相同。相对模式分别是真实Builder实例基线、仅实际纹理快照的真实Texture基线，禁止补造分配/覆写id。Position580+2fresh+2GC、Observer753+66绝对边界+3fresh/ephemeron GC在声明范围通过；以VALIDATION和逐字段审计为准。
+差分：纹理依赖619默认绝对+3GC；Texture586显式相对+3GC；Cube620+6fresh回调+3GC；Viewport772+3fresh+3GC。默认绝对缺口：Texture282case/840Node.id差356及2纹理分配字段差3；Cube151case/597Node.id差181+85Texture.id差2；Viewport48case/198Node.id差247。其余字段/长度无差异。只在明确flags下以真实分配基线比较，不改counter、不补造分配；Cube imported EmptyTexture仍绝对。Texture原496 inputs保持，18旧预期仅修4随机UUID；预演收集已独立进程避免warnOnce/分配污染，原证据全保留。源码metadata/Fn bodies/Builder范围见VALIDATION。
 
-边界：管理Plane/Color/数学原型仍有子集；Material新管理类与旧typed Vulkan adapter并存。Observer的RenderObject/LightsNode为host fixture，特殊实例字段为源形状记录；SpotLight.map使用真实可写data property，旧typed setter接managed Texture尚缺。完整TextureNode/NodeMaterial、现代Vulkan、全部exotic for-in、Boolean/Symbol boxing、全global/跨realm/ESM仍待完成。下一步优先实际TextureNode及依赖导入，再接完整NodeMaterial和GPU链，继续固定源差分，不能用文件数量代替完成。
+边界：管理对象与旧typed GPU adapter仍分离，真实GPU资源/renderer链未统一。Viewport54 Builder中30完整三阶段/24上游fixture异常。ImageBitmap仅原生宿主能力接口/缺失ReferenceError，无浏览器。完整 NodeMaterial、ReferenceNode/MaterialReferenceNode/MaterialNode、RenderObject/NodeManager、现代Vulkan/计算/存储/Tint、传统完整材质/光影/后处理、其余addons与跨平台均待完成。全ESM导入图/绝对ID/基本类型装箱/跨realm仍pending。
 
-当前证据：`D:/Temp/surui/threecpp-material-accessors-20261028`，提交后freeze-final.json冻结源码、固定上游、60CPU+4Vulkan实际二进制及原始证据SHA。历史JUnit误覆盖限制保留在VALIDATION前阶段记录，未改旧清单；本轮所有新JUnit位于独立当前phase。历史suffix 798619字节/SHA f6b73f2e259a5a5518d1760ca0c6ac3d1ceed98ed915f0cec5a236a5107dcc4c不改。
+下一步审计：NodeMaterial26直接imports=14真实入口/12缺失。真实ReferenceNode缺失，不能把ReferenceBaseNode当完成；其10直接依赖已有真实入口，可先移植，再MaterialReference/MaterialNode与剩余NodeMaterial依赖。递归闭环仍pending。详见本阶段 next-node-material-after-textures-audit.json。
 
-审计1251：partial392/missing549/VulkanPending290/dependency20，0解析错误；src477/755、addons84/496，561有文件/690无文件，未登记完整验收。生成器与审计通过。保持完整目标active，按阶段本地git提交，不推送。
+证据 `D:/Temp/surui/threecpp-texture-node-20261028`。提交后 freeze-final.json 固定tracked源码、上游、64CPU+4GPU实际二进制与全部原始证据SHA。历史JUnit覆盖限制仍见VALIDATION前阶段，旧清单不改；本轮新JUnit全部独立当前phase。HANDOFF历史suffix798619bytes/SHA f6b73f2e259a5a5518d1760ca0c6ac3d1ceed98ed915f0cec5a236a5107dcc4c保持。
+
+审计1251：partial399/missing542/VulkanPending290/dependency20，0解析错误；src484/755、addons84/496，568有文件/683无文件，未登记完整验收。审计与四新元数据生成器通过；文件存在不代表功能完成。工作目录实际 D:/project/DX/GitHub/three.cpp，TEMP/TMP始终D:/Temp/surui。
 
 ## 一、项目约定（必须遵守）
 

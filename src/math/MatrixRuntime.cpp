@@ -1,11 +1,13 @@
 #include "math/Matrix3.h"
 #include "math/Matrix4.h"
 #include "core/JSModuleObject.h"
+#include "math/JSNumberMath.h"
 #include <algorithm>
 #include <cmath>
 #include <limits>
 
 namespace {
+#include "math/Matrix4RotationSource.inc"
 using Args = std::vector<JSValue>;
 JSValue arg(const Args& args, unsigned index) { return index < args.size() ? args[index] : JSValue{}; }
 JSValue add(const JSValue& a, const JSValue& b) {
@@ -23,9 +25,52 @@ Args identity(unsigned width) {
     Args values; for (unsigned i = 0; i < width * width; ++i) values.emplace_back(i % (width + 1) == 0 ? 1 : 0);
     return values;
 }
+JSValue rotationFromEuler(const JSValue& self,const Args& args,const Args&) {
+    auto te=self.get("elements");
+    const auto euler=arg(args,0);
+    const auto x=euler.get("x"),y=euler.get("y"),z=euler.get("z");
+    const auto a=JSNumberMath::cos(x.toNumber()),b=JSNumberMath::sin(x.toNumber());
+    const auto c=JSNumberMath::cos(y.toNumber()),d=JSNumberMath::sin(y.toNumber());
+    const auto e=JSNumberMath::cos(z.toNumber()),f=JSNumberMath::sin(z.toNumber());
+    if(euler.get("order").strictEquals("XYZ")) {
+        const auto ae=a*e,af=a*f,be=b*e,bf=b*f;
+        te.set("0",c*e);te.set("4",-c*f);te.set("8",d);
+        te.set("1",af+be*d);te.set("5",ae-bf*d);te.set("9",-b*c);
+        te.set("2",bf-ae*d);te.set("6",be+af*d);te.set("10",a*c);
+    } else if(euler.get("order").strictEquals("YXZ")) {
+        const auto ce=c*e,cf=c*f,de=d*e,df=d*f;
+        te.set("0",ce+df*b);te.set("4",de*b-cf);te.set("8",a*d);
+        te.set("1",a*f);te.set("5",a*e);te.set("9",-b);
+        te.set("2",cf*b-de);te.set("6",df+ce*b);te.set("10",a*c);
+    } else if(euler.get("order").strictEquals("ZXY")) {
+        const auto ce=c*e,cf=c*f,de=d*e,df=d*f;
+        te.set("0",ce-df*b);te.set("4",-a*f);te.set("8",de+cf*b);
+        te.set("1",cf+de*b);te.set("5",a*e);te.set("9",df-ce*b);
+        te.set("2",-a*d);te.set("6",b);te.set("10",a*c);
+    } else if(euler.get("order").strictEquals("ZYX")) {
+        const auto ae=a*e,af=a*f,be=b*e,bf=b*f;
+        te.set("0",c*e);te.set("4",be*d-af);te.set("8",ae*d+bf);
+        te.set("1",c*f);te.set("5",bf*d+ae);te.set("9",af*d-be);
+        te.set("2",-d);te.set("6",b*c);te.set("10",a*c);
+    } else if(euler.get("order").strictEquals("YZX")) {
+        const auto ac=a*c,ad=a*d,bc=b*c,bd=b*d;
+        te.set("0",c*e);te.set("4",bd-ac*f);te.set("8",bc*f+ad);
+        te.set("1",f);te.set("5",a*e);te.set("9",-b*e);
+        te.set("2",-d*e);te.set("6",ad*f+bc);te.set("10",ac-bd*f);
+    } else if(euler.get("order").strictEquals("XZY")) {
+        const auto ac=a*c,ad=a*d,bc=b*c,bd=b*d;
+        te.set("0",c*e);te.set("4",-f);te.set("8",d*e);
+        te.set("1",ac*f+bd);te.set("5",a*e);te.set("9",ad*f-bc);
+        te.set("2",bc*f-ad);te.set("6",b*e);te.set("10",bd*f+ac);
+    }
+    for(const auto* key:{"3","7","11","12","13","14"})te.set(key,0);
+    te.set("15",1);
+    return self;
+}
 JSValue method(const JSValue& receiver, const Args& args, const Args& captures) {
     auto self = receiver; const auto name = captures[0].string();
     const auto width = static_cast<unsigned>(captures[1].number()), count = width * width;
+    if (width == 4 && name == "makeRotationFromEuler") return rotationFromEuler(self, args, {});
     if (name == "identity") {
         const auto fn = self.get("set"); fn.call(self, identity(width)); return self;
     }
@@ -171,9 +216,10 @@ JSValue constructor(unsigned width) {
     // Preserve source order among the implemented class methods.
     const auto methods = width == 3
         ? std::vector<std::pair<const char*, unsigned>>{{"set",9},{"identity",0},{"copy",1},{"setFromMatrix4",1},{"multiply",1},{"premultiply",1},{"multiplyMatrices",2},{"invert",0},{"transpose",0},{"getNormalMatrix",1},{"equals",1},{"fromArray",1},{"toArray",0},{"clone",0}}
-        : std::vector<std::pair<const char*, unsigned>>{{"set",16},{"identity",0},{"clone",0},{"copy",1},{"multiply",1},{"premultiply",1},{"multiplyMatrices",2},{"transpose",0},{"invert",0},{"getMaxScaleOnAxis",0},{"equals",1},{"fromArray",1},{"toArray",0}};
+        : std::vector<std::pair<const char*, unsigned>>{{"set",16},{"identity",0},{"clone",0},{"copy",1},{"makeRotationFromEuler",1},{"multiply",1},{"premultiply",1},{"multiplyMatrices",2},{"transpose",0},{"invert",0},{"getMaxScaleOnAxis",0},{"equals",1},{"fromArray",1},{"toArray",0}};
     for (const auto& [key, arity] : methods) {
         JSPropertyDescriptor d; d.value = JSValue::function(method, {key,width}, key, arity);
+        if(width==4&&std::string(key)=="makeRotationFromEuler")d.value->setFunctionSourceText(matrix4RotationSource);
         d.writable = d.configurable = true; prototype.defineProperty(key, d);
     }
     prototype.set(std::string("is") + name, true);

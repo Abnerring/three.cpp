@@ -42,7 +42,7 @@ add_library(threecpp
     src/audio/AudioListener.cpp
     src/audio/Audio.cpp
     src/core/NativeRenderingObject.cpp src/core/Layers.cpp src/core/JSObject.cpp src/core/JSNumber.cpp
-    src/core/JSWeakRef.cpp src/core/JSFinalizationRegistry.cpp
+    src/core/JSWeakRef.cpp src/core/JSFinalizationRegistry.cpp src/core/JSGlobal.cpp
     src/core/BufferAttribute.cpp src/core/BufferGeometry.cpp src/core/JSDataSnapshot.cpp
     src/core/Raycaster.cpp
     src/cameras/Camera.cpp src/cameras/PerspectiveCamera.cpp src/cameras/OrthographicCamera.cpp
@@ -226,6 +226,10 @@ target_sources(threecpp PRIVATE
     src/nodes/accessors/Position.cpp
     src/nodes/accessors/UV.cpp
     src/nodes/accessors/TextureSizeNode.cpp
+    src/nodes/accessors/TextureNode.cpp
+    src/nodes/accessors/CubeTextureNode.cpp
+    src/nodes/accessors/ReflectVector.cpp
+    src/nodes/accessors/MaterialProperties.cpp
     src/nodes/accessors/ReferenceElementNode.cpp
     src/nodes/accessors/ReferenceBaseNode.cpp
     src/nodes/accessors/RendererReferenceNode.cpp
@@ -255,7 +259,7 @@ target_sources(threecpp PRIVATE
     src/nodes/display/ScreenNode.cpp
     src/nodes/display/ScreenNodeRuntime.cpp
     src/nodes/core/DepthConversion.cpp
-    src/nodes/core/ViewportDepthTexture.cpp
+    src/nodes/display/ViewportDepthTextureNode.cpp
     src/nodes/display/ColorSpaceNode.cpp
     src/nodes/display/ColorSpaceNodeRuntime.cpp
     src/nodes/code/ExpressionNode.cpp
@@ -263,7 +267,7 @@ target_sources(threecpp PRIVATE
     src/nodes/display/ToneMappingFunctions.cpp
     src/nodes/display/ToneMappingFunctionsRuntime.cpp
     src/nodes/core/ColorAdjustment.cpp
-    src/nodes/core/ViewportTexture.cpp
+    src/nodes/display/ViewportTextureNode.cpp
     src/nodes/display/RenderOutputNode.cpp
     src/nodes/display/RenderOutputNodeRuntime.cpp
     src/nodes/core/ToonOutlinePass.cpp
@@ -341,8 +345,7 @@ target_sources(threecpp PRIVATE
     src/nodes/core/RTTNode.cpp
     src/nodes/core/ReflectorNode.cpp
     src/nodes/core/ViewportSharedTextureNode.cpp
-    src/nodes/core/ViewportDepthTextureNode.cpp
-    src/nodes/core/ViewportDepthNode.cpp
+    src/nodes/display/ViewportDepthNode.cpp
     src/loaders/USDZLoader.cpp
     src/loaders/TTFLoader.cpp
     src/loaders/ColladaLoader.cpp
