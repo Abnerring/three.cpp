@@ -16,6 +16,7 @@ class InterleavedBuffer {
     InterleavedBuffer& operator=(InterleavedBuffer&& other) noexcept { object_=std::move(other.object_); return *this; }
     static InterleavedBuffer fromObject(JSValue object) { return InterleavedBuffer(std::move(object), Existing{}); }
     static JSValue prototype();
+    static JSValue constructor();
     JSValue object() const { return object_; }
     operator JSValue() const { return object_; }
     JSValue get(const std::string& key) const { return object_.get(key); }

@@ -1,21 +1,10 @@
 ﻿#include "nodes/display/ToneMappingNode.h"
 
-namespace {
-// The hash the source uses for a number, which mixes the bits so that small neighbouring
-// values do not give neighbouring keys.
-std::uint32_t mix(std::uint32_t value) {
-    value = (value ^ 61u) ^ (value >> 16);
-    value = value + (value << 3);
-    value = value ^ (value >> 4);
-    value = value * 0x27d4eb2du;
-    value = value ^ (value >> 15);
-    return value;
-}
-}  // namespace
+#include "nodes/core/NodeUtils.h"
+#include <array>
 
-std::uint32_t ToneMapping::customCacheKey(int toneMapping) {
-    // The mapping is folded in, so the key changes with it.
-    return mix(static_cast<std::uint32_t>(toneMapping));
+double ToneMapping::customCacheKey(int toneMapping) {
+    return hash(std::array<double,1>{static_cast<double>(toneMapping)});
 }
 
 bool ToneMapping::keysCollide(int first, int second) {

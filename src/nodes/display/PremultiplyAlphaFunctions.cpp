@@ -31,6 +31,7 @@ PremultiplyAlpha::Colour PremultiplyAlpha::unpremultiply(const Colour& colour) {
     return out;
 }
 
+namespace {JSWeakValue& premultiplyBindings(){static thread_local JSWeakValue weak;return weak;}}
 JSValue nativePremultiplyAlphaFunctions() {
     using namespace TSLFunctionRuntime;
     static thread_local JSWeakValue weak;if(const auto value=weak.lock();value&&value->isObject())return *value;
@@ -45,5 +46,8 @@ JSValue nativePremultiplyAlphaFunctions() {
         const auto zero=captures[0].call({}, {0});const auto divide=invoke(color.get("rgb"),"div");const auto rgb=divide({color.get("a")});const auto alpha=color.get("a");
         const auto value=captures[0].call({}, {rgb,alpha});return select({zero,value});
     },{vec4},"color","vec4","vec4"));
+    auto bindings=JSValue::object(nullptr);for(const auto& name:exports.ownPropertyNames())own(bindings,name.c_str(),exports.get(name));
+    bindings.retainForHeapLifetime();premultiplyBindings()=JSWeakValue(bindings);
     exports.retainForHeapLifetime();weak=JSWeakValue(exports);return exports;
 }
+JSValue nativePremultiplyAlphaFunctionsBinding(const std::string& name){const auto keeper=nativePremultiplyAlphaFunctions();return premultiplyBindings().lock()->get(name);}

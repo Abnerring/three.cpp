@@ -201,8 +201,8 @@
     "note": "Accepted port scope is src and examples/jsm, including tracked third-party dependencies. Editor/manual web applications are excluded from native application rewrites. Native host behavior, packaging and all three platforms require separate implementation and verification evidence."
   },
   "counts": {
-    "partial-unverified": 372,
-    "missing": 569,
+    "partial-unverified": 378,
+    "missing": 563,
     "vulkan-port-pending": 290,
     "dependency-unverified": 20
   },
@@ -210,8 +210,8 @@
     "src": {
       "modules": 755,
       "counts": {
-        "partial-unverified": 288,
-        "missing": 177,
+        "partial-unverified": 294,
+        "missing": 171,
         "vulkan-port-pending": 290
       }
     },
@@ -796,7 +796,7 @@
       "path": "src/nodes/accessors",
       "upstreamFiles": 43,
       "moduleCount": 43,
-      "modulesWithCppFiles": 0,
+      "modulesWithCppFiles": 4,
       "verifiedComplete": 0
     },
     {
@@ -859,7 +859,7 @@
       "path": "src/nodes/gpgpu",
       "upstreamFiles": 6,
       "moduleCount": 6,
-      "modulesWithCppFiles": 0,
+      "modulesWithCppFiles": 1,
       "verifiedComplete": 0
     },
     {
@@ -915,7 +915,7 @@
       "path": "src/nodes/tsl",
       "upstreamFiles": 2,
       "moduleCount": 2,
-      "modulesWithCppFiles": 1,
+      "modulesWithCppFiles": 2,
       "verifiedComplete": 0
     },
     {
@@ -943,7 +943,7 @@
       "path": "src/renderers/common",
       "upstreamFiles": 58,
       "moduleCount": 58,
-      "modulesWithCppFiles": 9,
+      "modulesWithCppFiles": 10,
       "verifiedComplete": 0
     },
     {
@@ -7458,11 +7458,11 @@
       "scope": "src",
       "kind": "core",
       "upstreamSha256": "e3e8456ac3c3753cb8dc2027bf1d56dca4ff498526690f1abb1b110dd13a808f",
-      "header": null,
-      "implementation": null,
+      "header": "src/nodes/accessors/BufferAttributeNode.h",
+      "implementation": "src/nodes/accessors/BufferAttributeNode.cpp",
       "expectedHeader": "src/nodes/accessors/BufferAttributeNode.h",
       "expectedImplementation": "src/nodes/accessors/BufferAttributeNode.cpp",
-      "status": "missing",
+      "status": "partial-unverified",
       "verifiedComplete": false,
       "apiExtraction": "static-only",
       "verification": {
@@ -7944,11 +7944,11 @@
       "scope": "src",
       "kind": "core",
       "upstreamSha256": "9240c4be1dda8238ed97043d64d8effcb25c3ef8b9812a9f87a9bccbafe7f7d8",
-      "header": null,
-      "implementation": null,
+      "header": "src/nodes/accessors/ReferenceBaseNode.h",
+      "implementation": "src/nodes/accessors/ReferenceBaseNode.cpp",
       "expectedHeader": "src/nodes/accessors/ReferenceBaseNode.h",
       "expectedImplementation": "src/nodes/accessors/ReferenceBaseNode.cpp",
-      "status": "missing",
+      "status": "partial-unverified",
       "verifiedComplete": false,
       "apiExtraction": "static-only",
       "verification": {
@@ -7971,11 +7971,11 @@
       "scope": "src",
       "kind": "core",
       "upstreamSha256": "d4ac3d497d4315c0db26605816fd82f2d174eac40e9ce7788e2ac731f1399eb3",
-      "header": null,
-      "implementation": null,
+      "header": "src/nodes/accessors/ReferenceElementNode.h",
+      "implementation": "src/nodes/accessors/ReferenceElementNode.cpp",
       "expectedHeader": "src/nodes/accessors/ReferenceElementNode.h",
       "expectedImplementation": "src/nodes/accessors/ReferenceElementNode.cpp",
-      "status": "missing",
+      "status": "partial-unverified",
       "verifiedComplete": false,
       "apiExtraction": "static-only",
       "verification": {
@@ -7984,7 +7984,9 @@
           "pointer": "/modules/236"
         },
         "upstreamUnitTests": [],
-        "cppUnitTests": [],
+        "cppUnitTests": [
+          "test/unit/src/nodes/accessors/ReferenceElementNode.tests.cpp"
+        ],
         "reviewedImplementation": [],
         "differentialResults": [],
         "renderingResults": [],
@@ -8052,11 +8054,11 @@
       "scope": "src",
       "kind": "core",
       "upstreamSha256": "ada17e5eb15a649e838c749a869d275e45f822b643d17542c568eeb075f11041",
-      "header": null,
-      "implementation": null,
+      "header": "src/nodes/accessors/RendererReferenceNode.h",
+      "implementation": "src/nodes/accessors/RendererReferenceNode.cpp",
       "expectedHeader": "src/nodes/accessors/RendererReferenceNode.h",
       "expectedImplementation": "src/nodes/accessors/RendererReferenceNode.cpp",
-      "status": "missing",
+      "status": "partial-unverified",
       "verifiedComplete": false,
       "apiExtraction": "static-only",
       "verification": {
@@ -11100,11 +11102,11 @@
       "scope": "src",
       "kind": "core",
       "upstreamSha256": "72952481ccd24e089067ef33338944efbf351d8df2fcda68e1eef3465407677f",
-      "header": null,
-      "implementation": null,
+      "header": "src/nodes/gpgpu/ComputeNode.h",
+      "implementation": "src/nodes/gpgpu/ComputeNode.cpp",
       "expectedHeader": "src/nodes/gpgpu/ComputeNode.h",
       "expectedImplementation": "src/nodes/gpgpu/ComputeNode.cpp",
-      "status": "missing",
+      "status": "partial-unverified",
       "verifiedComplete": false,
       "apiExtraction": "static-only",
       "verification": {
@@ -12396,11 +12398,11 @@
       "scope": "src",
       "kind": "core",
       "upstreamSha256": "1b9570e00f565ea5bd9d433f94b65fb18bbc27d535d2041e5510dd0129649262",
-      "header": null,
-      "implementation": null,
+      "header": "src/nodes/tsl/TSLBase.h",
+      "implementation": "src/nodes/tsl/TSLBase.cpp",
       "expectedHeader": "src/nodes/tsl/TSLBase.h",
       "expectedImplementation": "src/nodes/tsl/TSLBase.cpp",
-      "status": "missing",
+      "status": "partial-unverified",
       "verifiedComplete": false,
       "apiExtraction": "static-only",
       "verification": {
@@ -14483,8 +14485,8 @@
       "scope": "src",
       "kind": "core",
       "upstreamSha256": "d37f2d89800195e5fd3b9afbdb514da6a303ae1b74e6a436b7d7e100ce3d14ab",
-      "header": null,
-      "implementation": null,
+      "header": "src/renderers/common/InspectorBase.h",
+      "implementation": "src/renderers/common/InspectorBase.cpp",
       "expectedHeader": "src/renderers/common/InspectorBase.h",
       "expectedImplementation": "src/renderers/common/InspectorBase.cpp",
       "status": "vulkan-port-pending",

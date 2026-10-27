@@ -50,6 +50,7 @@ JSValue nativeContextNodeConstructor() {
     }
     ctor.retainForHeapLifetime(); weak = JSWeakValue(ctor); return ctor;
 }
+namespace {JSWeakValue& contextBindings(){static thread_local JSWeakValue weak;return weak;}}
 JSValue nativeContextNodeModule() {
     static thread_local JSWeakValue weak; if (const auto value = weak.lock(); value && value->isObject()) return *value;
     static thread_local bool initializing = false; JSModuleInitializationScope scope(initializing, "ContextNode exports"); const auto ctor = nativeContextNodeConstructor();
@@ -91,5 +92,8 @@ JSValue nativeContextNodeModule() {
     add.call({}, {"builtinShadowContext", JSValue::function([](const JSValue&, const Args& a, const Args& c) -> JSValue { return c[0].call({}, {arg(a, 1), arg(a, 2), arg(a, 0)}); }, {shadow}, "", 3)});
     add.call({}, {"builtinAOContext", JSValue::function([](const JSValue&, const Args& a, const Args& c) -> JSValue { return c[0].call({}, {arg(a, 1), arg(a, 0)}); }, {ao}, "", 2)});
     add.call({}, {"builtinGIContext", JSValue::function([](const JSValue&, const Args& a, const Args& c) -> JSValue { return c[0].call({}, {arg(a, 1), arg(a, 2), arg(a, 0)}); }, {gi}, "", 3)});
+    auto bindings=JSValue::object(nullptr);for(const auto& name:module.ownPropertyNames())bindings.set(name,module.get(name));
+    bindings.retainForHeapLifetime();contextBindings()=JSWeakValue(bindings);
     module.retainForHeapLifetime(); weak = JSWeakValue(module); return module;
 }
+JSValue nativeContextNodeBinding(const std::string& name){const auto keeper=nativeContextNodeModule();return contextBindings().lock()->get(name);}

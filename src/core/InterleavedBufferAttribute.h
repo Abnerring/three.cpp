@@ -11,6 +11,7 @@ class InterleavedBufferAttribute : public VertexAttribute {
     InterleavedBufferAttribute& operator=(InterleavedBufferAttribute&& other) noexcept {object_=std::move(other.object_);return *this;}
     static InterleavedBufferAttribute fromObject(JSValue value) {return InterleavedBufferAttribute(std::move(value),Existing{});}
     static JSValue prototype();
+    static JSValue constructor();
     JSValue object() const {return object_;}
     operator JSValue() const {return object_;}
     JSMember isInterleavedBufferAttribute{&object_,"isInterleavedBufferAttribute"},name{&object_,"name"};

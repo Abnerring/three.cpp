@@ -1,6 +1,22 @@
 ﻿#pragma once
+#include "core/JSValue.h"
 #include <cstdint>
 #include <string>
+
+JSValue nativeToneMappingNodeConstructor();
+JSValue nativeToneMappingNodeModule();
+JSValue nativeToneMappingNodeBinding(const std::string& name);
+
+class ToneMappingNode {
+    JSValue object_;
+  public:
+    explicit ToneMappingNode(const JSValue& toneMapping = {}, const JSValue& exposureNode = {}, const JSValue& colorNode = nullptr)
+        : object_(constructor().construct({toneMapping,exposureNode,colorNode})) {}
+    JSValue object() const { return object_; }
+    operator JSValue() const { return object_; }
+    static JSValue constructor() { return nativeToneMappingNodeBinding("default"); }
+    static JSValue prototype() { return constructor().get("prototype"); }
+};
 
 // Port of the rules in src/nodes/display/ToneMappingNode.js at the pinned revision. The node
 // applies a tone mapping to a colour; what is portable is its cache key, which has to tell the
@@ -16,7 +32,7 @@ class ToneMapping {
     // The key the node caches under. Since the mapping is part of what the node does, two nodes
     // that differ only in their mapping must not share a cache entry, so the number is folded
     // into the key rather than the key being fixed.
-    static std::uint32_t customCacheKey(int toneMapping);
+    static double customCacheKey(int toneMapping);
 
     // Whether the same key comes out for two mappings, which must be false for any pair a
     // caller is likely to use. The node's own defaults occupy the low numbers.

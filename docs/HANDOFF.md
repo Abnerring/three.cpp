@@ -1,20 +1,20 @@
 # 续接说明（Handoff）
 
-2026-10-28 当前阶段：固定上游 `11738a9d55e502fb484cefffcea3a66dc44e9fe9`。原生 C++ 完整复现 src 与 examples/jsm 全部逻辑、Vulkan 后端的目标尚未完成。禁止 CEF、浏览器和 JS 执行桥；Node 仅用于开发差分。以下当前说明优先于历史记录。
+2026-10-28 当前阶段：固定上游 `11738a9d55e502fb484cefffcea3a66dc44e9fe9`。完整原生 C++ 复现 src 与 examples/jsm、Vulkan 后端的目标尚未完成。禁止 CEF、浏览器和 JS 执行桥；Node 仅作开发 oracle。以下当前说明优先于历史记录。
 
-本轮移植真实 Array/Isolate/Bypass、SubBuild/Varying、Expression/Discard/Remap/Debug 与 ColorSpaceNode；后四个显示 helper 和测试按上游移到 display，工具节点移到 utils。ToneMapping/RenderOutput 仍为旧数值 helper，路径修正不表示完整实现。新增 String.repeat、管理 Matrix3 三个乘法方法与 ColorManagement 真实矩阵身份。
+本轮新增真实 TSLBase（25源模块/217导出）、BufferAttribute、Compute/Index、ReferenceBase/Element/RendererReference、InspectorBase/Node、ToneMapping/RenderOutput 与完整 ToneMappingFunctions 图。ReferenceElement 移到 accessors；旧 helper 保留兼容。补 UniformGroup default/首导入/preset/可变枚举读取；TSLCore 普通 function 构造语义、Interleaved 稳定构造器与退休 heap、Index/Compute wrapper 复制 owner 已修。
 
-最终 build-05 成功，43/43 CTest 通过，67.69秒。CPU2528 cases/217372 assertions，String/RegExp12/158。真实差分：集合377、SubBuild/Varying745、运行时依赖504、fresh wrappers8、imports56；另4个新生命周期检查。工具节点164、ColorSpace106在显式relative范围通过。详见VALIDATION.md与 D:/Temp/surui/threecpp-tsl-base-20261028。
+最终 build-06 成功（48 CPU targets），55/55 所选 CPU CTest，85.97秒；CPU2528 cases/217372 assertions，String/RegExp12/158。真实默认差分：Compute/Index323、Inspector616+2fresh、ToneMappingFunctions54、UniformGroup14、TSLCore999（保留旧953前缀）。显式relative：Buffer402、Reference461+4fresh、TSLBase484、RenderOutput187；另Buffer3/Inspector2/TSLBase3 fresh heap及Compute/Index8 copy生命周期检查通过。TSLBase全部217导出元数据、3419原型描述符、28工厂图已绝对通过。
 
-完整绝对Node.id导入图仍未通过：本轮工具默认24项/134字段差366，ColorSpace默认40项/373字段差368或3；非id字段一致。默认input/expected/actual/differences与审计全保留。ColorSpace仅3个恒等转换Builder联测，实际转换已验setup图但未证明转换shader生成。既有完整Math/材质函数编号缺口仍为待办，旧证据保留；禁止靠补分配次数伪造一致。
+完整绝对编号仍未对齐：当前Buffer12项/12字段、Reference3项/6字段、TSLBase4项/5字段均差356；RenderOutput155项/1820字段（1749处差356、71处差33），四套均无非id差异。input/expected/actual/differences与absolute-import-graph-pending.json全保留；禁止补造分配次数。旧完整Math/NativeFunction导入图等仍待验收。RenderOutput8个Builder组合仅1个生成，其余7个真实JS抽象Builder也TypeError；54个曲线图不等于6种曲线GPU像素验收。
 
-修复8个C++ wrapper首次创建未执行module初始化，以及TSL链包装普通function的可构造性；native*Constructor仍是底层内部入口。新增constants/ColorSpaceFunctions私有binding，NodeBuilder阶段数组隔离façade槽替换而保留原数组变异。56个独立进程检查保留旧52前缀，JS namespace拒绝赋值、本端façade可写差异明确记录。新4个与既有10个生命周期检查通过；TLS只存弱值。完整ESM loader/TDZ、Error宿主栈/CallSite等仍未完成。
+独立干净 Vulkan 构建646步通过，同步最新源码增量链接后5/5 CTest，39.44秒。RTX3070 Laptop主用例1400断言、cube60；glslang3cases/27、buffer12/103、binding46。validation=0，无validation layer。本轮未改GPU算法；新节点不代表现代Vulkan dispatch/storage/sync、完整材质/光照/阴影/后处理已经完成。
 
-审计1251模块：partial372、missing569、Vulkan待实现290、第三方待验20，0解析错误；有对应文件src456/755、addons84/496，共540，711无文件。不是功能完成率，没有模块登记完整验收。审计5测试与--check通过。本轮未改GPU算法或运行GPU，历史GPU证据仅适用原冻结版本。
+审计1251模块：partial378、missing563、Vulkan待实现290、依赖待验20，0解析错误；对应文件src463/755、addons84/496，共547，704无对应文件。审计5测试、生成器与--check通过；仍无模块登记完整验收。计数不是功能完成率。
 
-下一步继续真实补齐TSLBase及NodeMaterial依赖/初始化、其余显示/节点材质，完成GLSL/WGSL编译、现代Vulkan计算/存储、传统完整材质/光照/阴影/后处理、剩余addons与原生宿主能力。完整数学/内建协议、旧NativeObject/Vulkan桥接和跨平台验收仍未完成。保持原目标；阶段提交不表示全部完成。
+下一步继续真实 NodeMaterial 依赖/初始化与完整绝对导入图，现代节点材质及Vulkan计算/存储/编译链，传统完整材质/灯光/阴影/后处理、剩余addons。完整ESM loader/TDZ、Error宿主栈、旧NativeObject/Vulkan桥接及跨平台仍未完成。阶段提交不表示全目标完成。
 
-本轮各*-20261028-*证据保留于D:/Temp/surui；freeze-final.json在阶段提交后冻结源码/固定上游/实际二进制/证据SHA。历史后缀按字节保全。
+本轮证据 D:/Temp/surui/threecpp-tsl-output-20261028，详见VALIDATION.md。阶段提交后freeze-final.json冻结实际源码/固定上游/48 CPU与4 Vulkan二进制/证据SHA；历史后缀按字节保全。
 
 ## 一、项目约定（必须遵守）
 

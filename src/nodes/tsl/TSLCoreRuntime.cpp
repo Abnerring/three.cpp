@@ -59,7 +59,7 @@ JSValue normalizedSwizzle(const std::string& text) {
 
 void installPrototype(const JSValue& module,const JSValue& elements) {
     auto proto=nativeNodeConstructor().get("prototype");
-    proto.set("assign",JSValue::function([](const JSValue& self,const Args& args,const Args& cap)->JSValue {
+    proto.set("assign",JSValue::constructor([](const JSValue& self,const Args& args,const Args& cap)->JSValue {
         if(!self.get("isStackNode").strictEquals(true)) {
             const auto stack=nativeGetCurrentStack();
             if(!stack.isNull()){const auto method=invoke(stack,"assign");Args params{self};params.insert(params.end(),args.begin(),args.end());method(params);}
@@ -67,9 +67,9 @@ void installPrototype(const JSValue& module,const JSValue& elements) {
             return self;
         }
         const auto element=invoke(cap[0],"get")({"assign"});const auto add=invoke(self,"addToStack");return add({element.call({},args)});
-    },{elements},"",0));
-    proto.set("toVarIntent",JSValue::function([](const JSValue& self,const Args&,const Args&)->JSValue{return self;},{},"",0));
-    proto.set("get",JSValue::function([](const JSValue& self,const Args& args,const Args&)->JSValue{return nativeMemberNodeConstructor().construct({self,arg(args,0)});},{},"",1));
+    },{elements},"",0,JSValue::ConstructorKind::Callable));
+    proto.set("toVarIntent",JSValue::constructor([](const JSValue& self,const Args&,const Args&)->JSValue{return self;},{},"",0,JSValue::ConstructorKind::Callable));
+    proto.set("get",JSValue::constructor([](const JSValue& self,const Args& args,const Args&)->JSValue{return nativeMemberNodeConstructor().construct({self,arg(args,0)});},{},"",1,JSValue::ConstructorKind::Callable));
     // Object.defineProperties observes numeric keys first. Gather descriptors
     // before installing them, preserving alias getter/setter identity.
     auto descriptors=JSValue::object();
@@ -85,10 +85,10 @@ void installPrototype(const JSValue& module,const JSValue& elements) {
         },{key,module.get("nodeObject")},"set",1));
         own(descriptors,aliasB,descriptor);own(descriptors,aliasA,descriptor);own(descriptors,key,descriptor);
         auto upper=key,upperA=aliasA,upperB=aliasB;for(auto* s:{&upper,&upperA,&upperB})for(auto& c:*s)c=static_cast<char>(c-'a'+'A');
-        const auto set=JSValue::function([](const JSValue& self,const Args& args,const Args& cap)->JSValue {
+        const auto set=JSValue::constructor([](const JSValue& self,const Args& args,const Args& cap)->JSValue {
             const auto channels=normalizedSwizzle(cap[0].string());const auto value=cap[1].call({}, {arg(args,0)});return nativeSetNodeConstructor().construct({self,channels,value});
-        },{key,module.get("nodeObject")},"",1);
-        const auto flip=JSValue::function([](const JSValue& self,const Args&,const Args& cap)->JSValue{return nativeFlipNodeConstructor().construct({self,normalizedSwizzle(cap[0].string())});},{key},"",0);
+        },{key,module.get("nodeObject")},"",1,JSValue::ConstructorKind::Callable);
+        const auto flip=JSValue::constructor([](const JSValue& self,const Args&,const Args& cap)->JSValue{return nativeFlipNodeConstructor().construct({self,normalizedSwizzle(cap[0].string())});},{key},"",0,JSValue::ConstructorKind::Callable);
         // Assignment chains evaluate the rightmost assignment first.
         for(const auto& property:{upperB,upperA,upper})proto.set("set"+property,set);
         for(const auto& property:{upperB,upperA,upper})proto.set("flip"+property,flip);
@@ -188,7 +188,7 @@ void installNativeTSLCoreExtensions(const JSValue& module,const JSValue& constNo
         own(handler,"set",JSValue::function([](const JSValue&,const Args& args,const Args& cap)->JSValue{return cap[0].reflectSet(arg(args,1),arg(args,2),cap[0]);},{node},"set",3));
         return createNativeProxy(arg(args,0),handler);
     },{},"nodeProxyConstructor",2));
-    own(module,"addMethodChaining",JSValue::function([](const JSValue&,const Args& args,const Args& cap)->JSValue {
+    own(module,"addMethodChaining",JSValue::constructor([](const JSValue&,const Args& args,const Args& cap)->JSValue {
         const auto name=arg(args,0),element=arg(args,1),elements=cap[0];
         if(invoke(elements,"has")({name}).toBoolean()){ThreeUtils::warn({"TSL: Redefinition of method chaining '"+name.toString()+"'."});return {};}
         if(!element.isCallable())throw std::runtime_error("THREE.TSL: Node element "+name.toString()+" is not a function");
@@ -203,13 +203,13 @@ void installNativeTSLCoreExtensions(const JSValue& module,const JSValue& constNo
             if(stack)return assign({arg(args,0),cap[0].call({},args)});
             Args values{self};values.insert(values.end(),args.begin(),args.end());return assign({cap[0].call({},values)});
         },{element},"",0,JSValue::ConstructorKind::Callable));return {};
-    },{elements},"addMethodChaining",2));
+    },{elements},"addMethodChaining",2,JSValue::ConstructorKind::Callable));
     installPrototype(module,elements);
-    own(module,"defined",JSValue::function([](const JSValue&,const Args& args,const Args&)->JSValue {
+    own(module,"defined",JSValue::constructor([](const JSValue&,const Args& args,const Args&)->JSValue {
         auto state=JSValue::object(nullptr);state.set("value",arg(args,0));const auto value=state.get("value");
         if(value.toBoolean()&&value.get("isNode").toBoolean())invoke(value,"traverse")({JSValue::function([](const JSValue&,const Args& args,const Args& cap)->JSValue {const auto node=arg(args,0);if(node.get("isConstNode").toBoolean()){auto state=cap[0];state.set("value",node.get("value"));}return {};},{state},"",1)});
         return state.get("value").toBoolean();
-    },{},"defined",1));
+    },{},"defined",1,JSValue::ConstructorKind::Callable));
     installNativeTSLShaderExports(module);
     const auto convertType=[&](const char* type,JSValue cache) {
         return JSValue::function([](const JSValue&,const Args& args,const Args& cap)->JSValue {

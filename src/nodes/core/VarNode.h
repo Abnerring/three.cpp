@@ -4,6 +4,7 @@
 
 JSValue nativeVarNodeConstructor();
 JSValue nativeVarNodeModule();
+JSValue nativeVarNodeBinding(const std::string& name);
 
 // Port of the field rules in src/nodes/core/VarNode.js at the pinned revision. The node makes a
 // shader variable out of another node, and the flags it carries say how the builder should treat

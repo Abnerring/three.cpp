@@ -1,0 +1,26 @@
+// Generated from pinned three.js 11738a9d55e502fb484cefffcea3a66dc44e9fe9 by utils/generate-tsl-base-exports.mjs.
+merge(nativeTSLCoreBinding, {"Fn","If","ShaderNode","Stack","Switch","addMethodChaining","bool","bvec2","bvec3","bvec4","color","convert","defined","element","float","getConstNodeType","getCurrentStack","int","ivec2","ivec3","ivec4","mat2","mat3","mat4","nodeArray","nodeImmutable","nodeObject","nodeObjectIntent","nodeObjects","nodeProxy","nodeProxyConstructor","nodeProxyIntent","setCurrentStack","split","uint","uvec2","uvec3","uvec4","vec2","vec3","vec4"});
+merge(nativeArrayNodeBinding, {"array"});
+merge(uniformBinding, {"uniform"});
+merge(nativePropertyNodeBinding, {"alphaT","ambientOcclusion","anisotropy","anisotropyB","anisotropyT","attenuationColor","attenuationDistance","clearcoat","clearcoatRoughness","dashSize","diffuseColor","diffuseContribution","diffuseRoughness","dispersion","emissive","gapSize","ior","iridescence","iridescenceIOR","iridescenceThickness","metalness","output","pointWidth","property","retroreflectivity","roughness","sheen","sheenRoughness","shininess","specularColor","specularColorBlended","specularF90","thickness","transmission","varyingProperty"});
+merge(nativeAssignNodeBinding, {"assign"});
+merge(nativeFunctionCallNodeBinding, {"call"});
+merge(nativeOperatorNodeBinding, {"add","and","bitAnd","bitNot","bitOr","bitXor","decrement","decrementBefore","div","equal","greaterThan","greaterThanEqual","increment","incrementBefore","lessThan","lessThanEqual","mod","mul","not","notEqual","or","shiftLeft","shiftRight","sub","xor"});
+merge(nativeMathNodeBinding, {"EPSILON","HALF_PI","INFINITY","PI","PI2","TWO_PI","abs","acos","acosh","all","any","asin","asinh","atan","atanh","cbrt","ceil","clamp","cos","cosh","cross","dFdx","dFdy","degrees","determinant","difference","distance","dot","exp","exp2","faceForward","faceforward","floor","fract","fwidth","inverse","inverseSqrt","inversesqrt","length","lengthSq","log","log2","max","min","mix","mixElement","negate","normalize","oneMinus","pow","pow2","pow3","pow4","radians","rand","reciprocal","reflect","refract","round","saturate","sign","sin","sinh","smoothstep","smoothstepElement","sqrt","step","stepElement","tan","tanh","transformDirection","transformNormalByInverseViewMatrix","transformNormalByViewMatrix","transpose","trunc"});
+merge(nativeConditionalNodeBinding, {"select"});
+merge(nativeContextNodeBinding, {"builtinAOContext","builtinGIContext","builtinShadowContext","context","label","setName","uniformFlow"});
+merge(nativeVarNodeBinding, {"Const","Var","VarIntent"});
+merge(nativeVaryingNodeBinding, {"varying","vertexStage"});
+merge(nativeColorSpaceNodeBinding, {"colorSpaceToWorking","convertColorSpace","workingToColorSpace"});
+merge(nativeToneMappingNodeBinding, {"toneMapping","toneMappingExposure"});
+merge(nativeBufferAttributeNodeBinding, {"bufferAttribute","dynamicBufferAttribute","instancedBufferAttribute","instancedDynamicBufferAttribute"});
+merge(nativeComputeNodeBinding, {"compute","computeKernel"});
+merge(nativeIsolateNodeBinding, {"cache","isolate"});
+merge(nativeBypassNodeBinding, {"bypass"});
+merge(nativeRemapBinding, {"remap","remapClamp"});
+merge(nativeExpressionNodeBinding, {"expression"});
+merge(nativeDiscardBinding, {"Discard","Return"});
+merge(nativeRenderOutputNodeBinding, {"renderOutput"});
+merge(nativeDebugNodeBinding, {"debug"});
+merge(nativeSubBuildNodeBinding, {"subBuild"});
+merge(nativeInspectorNodeBinding, {"inspect"});

@@ -1,11 +1,26 @@
 ﻿#pragma once
 #include <string>
+#include "core/JSValue.h"
+
+JSValue nativeInspectorNodeConstructor();
+JSValue nativeInspectorNodeModule();
+JSValue nativeInspectorNodeBinding(const std::string& name);
 
 // Port of the rules in src/nodes/core/InspectorNode.js at the pinned revision. The node wraps
 // another so that its value can be looked at while rendering, and three of its rules are about
 // what happens when the name or the condition is not what a reader assumes.
 class InspectorNode {
+    JSValue object_;
   public:
+    InspectorNode(const JSValue& node,const JSValue& name="",const JSValue& callback=nullptr);
+    JSValue object()const{return object_;}
+    operator JSValue()const{return object_;}
+    static JSValue constructor(){return nativeInspectorNodeBinding("default");}
+    static JSValue prototype(){return constructor().get("prototype");}
+    JSValue getName()const{return object_.get("getName").call(object_);}
+    JSValue update(const JSValue& frame)const{return object_.get("update").call(object_,{frame});}
+    JSValue generateNodeType(const JSValue& builder)const{return object_.get("generateNodeType").call(object_,{builder});}
+    JSValue setup(const JSValue& builder)const{return object_.get("setup").call(object_,{builder});}
     static constexpr const char* kTypeName = "InspectorNode";
     static constexpr bool isInspectorNode = true;
 

@@ -161,8 +161,9 @@ void InterleavedBufferAttribute::initialize(JSValue self,JSValue data,JSValue it
     if(normalized.isUndefined()) normalized=false;
     self.set("isInterleavedBufferAttribute",true);self.set("name","");self.set("data",data);self.set("itemSize",itemSize);self.set("offset",offset);self.set("normalized",normalized);
 }
-JSValue InterleavedBufferAttribute::prototype() {
-    static thread_local auto value=[] {
+JSValue InterleavedBufferAttribute::constructor() {
+    static thread_local JSWeakValue weak;
+    if(const auto value=weak.lock();value&&value->isConstructible())return *value;
         const auto constructor=JSValue::constructor([](const JSValue& self,const Args& args,const Args&)->JSValue {
             initialize(self,arg(args,0),arg(args,1),arg(args,2),arg(args,3));return {};
         },{},"InterleavedBufferAttribute",3);auto result=constructor.get("prototype");
@@ -174,11 +175,11 @@ JSValue InterleavedBufferAttribute::prototype() {
             JSPropertyDescriptor d;const auto function=JSValue::function(method,{name},std::string(name==std::string("needsUpdate")?"set ":"get ")+name,name==std::string("needsUpdate")?1:0);
             if(name==std::string("needsUpdate")) d.setter=function;else d.getter=function;d.configurable=true;result.defineProperty(name,d);
         }
-        return result;
-    }();return value;
+        constructor.retainForHeapLifetime();weak=JSWeakValue(constructor);return constructor;
 }
+JSValue InterleavedBufferAttribute::prototype() { return constructor().get("prototype"); }
 InterleavedBufferAttribute::InterleavedBufferAttribute(JSValue data,JSValue itemSize,JSValue offset,JSValue normalized)
-    :object_(JSValue::object(prototype())) {initialize(object_,data,itemSize,offset,normalized);}
+    :object_(constructor().construct({data,itemSize,offset,normalized})) {}
 JSValue InterleavedBufferAttribute::getComponent(JSValue index,JSValue component) const {return call(object_,"getComponent",{index,component});}
 JSValue InterleavedBufferAttribute::setComponent(JSValue index,JSValue component,JSValue value) {return call(object_,"setComponent",{index,component,value});}
 #define THREE_INTERLEAVED_GET(Name) double InterleavedBufferAttribute::Name(double index) const {return call(object_,#Name,{index}).toNumber();}

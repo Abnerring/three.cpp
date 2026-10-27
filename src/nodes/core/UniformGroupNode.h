@@ -4,6 +4,7 @@
 
 JSValue nativeUniformGroupNodeConstructor();
 JSValue nativeUniformGroupNodeModule();
+JSValue nativeUniformGroupNodeBinding(const std::string& name);
 JSValue nativeObjectGroup();
 JSValue nativeRenderGroup();
 JSValue nativeFrameGroup();
@@ -17,7 +18,7 @@ class UniformGroupNode {
                               const JSValue& order = 1, const JSValue& updateType = nullptr);
     JSValue object() const { return object_; }
     operator JSValue() const { return object_; }
-    static JSValue constructor() { return nativeUniformGroupNodeConstructor(); }
+    static JSValue constructor() { return nativeUniformGroupNodeBinding("default"); }
     static JSValue prototype() { return constructor().get("prototype"); }
     static constexpr bool isUniformGroup = true;
     static constexpr const char* kTypeName = "UniformGroupNode";

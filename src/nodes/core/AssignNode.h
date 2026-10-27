@@ -4,6 +4,7 @@
 
 JSValue nativeAssignNodeConstructor();
 JSValue nativeAssignNodeModule();
+JSValue nativeAssignNodeBinding(const std::string& name);
 
 // Port of the rules in src/nodes/core/AssignNode.js at the pinned revision. The node writes one
 // node's value into another, and five of its rules do not follow from that description.

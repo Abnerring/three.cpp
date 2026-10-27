@@ -3,6 +3,7 @@
 
 JSValue nativeFunctionCallNodeConstructor();
 JSValue nativeFunctionCallNodeModule();
+JSValue nativeFunctionCallNodeBinding(const std::string& name);
 class FunctionCallNode {
     JSValue object_;
   public:

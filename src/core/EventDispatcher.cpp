@@ -51,10 +51,10 @@ JSValue eventMethod(const JSValue& receiver, const Args& args, const Args& captu
 }
 }
 
-JSValue EventDispatcher::runtimePrototype() {
+JSValue EventDispatcher::runtimeConstructor() {
     static thread_local JSWeakValue cached;
     if (const auto constructor = cached.lock(); constructor && constructor->isCallable())
-        return constructor->get("prototype");
+        return *constructor;
     auto constructor = JSValue::constructor([](const JSValue&, const Args&, const Args&) -> JSValue {
         return {};
     }, {}, "EventDispatcher", 0);
@@ -67,8 +67,9 @@ JSValue EventDispatcher::runtimePrototype() {
     }
     constructor.retainForHeapLifetime();
     cached = JSWeakValue(constructor);
-    return object;
+    return constructor;
 }
+JSValue EventDispatcher::runtimePrototype() { return runtimeConstructor().get("prototype"); }
 
 JSValue EventDispatcher::runtimeObject() { return JSValue::object(runtimePrototype()); }
 

@@ -108,8 +108,9 @@ void InterleavedBuffer::initialize(JSValue self, JSValue array, JSValue stride) 
     self.set("count",count); self.set("usage",StaticDrawUsage); self.set("updateRanges",JSValue::array());
     self.set("version",0); self.set("uuid",MathUtils::generateUUID());
 }
-JSValue InterleavedBuffer::prototype() {
-    static thread_local auto value=[] {
+JSValue InterleavedBuffer::constructor() {
+    static thread_local JSWeakValue weak;
+    if(const auto value=weak.lock();value&&value->isConstructible())return *value;
         auto constructor=JSValue::constructor([](const JSValue& self,const Args& args,const Args&)->JSValue {
             initialize(self,arg(args,0),arg(args,1)); return {};
         },{},"InterleavedBuffer",2);
@@ -121,10 +122,11 @@ JSValue InterleavedBuffer::prototype() {
             descriptor.value=JSValue::function(method,{name},name,arity); result.defineProperty(name,descriptor);
         }
         JSPropertyDescriptor setter; setter.setter=JSValue::function(method,{"needsUpdate"},"set needsUpdate",1);
-        setter.configurable=true; result.defineProperty("needsUpdate",setter); return result;
-    }(); return value;
+        setter.configurable=true; result.defineProperty("needsUpdate",setter);
+        constructor.retainForHeapLifetime();weak=JSWeakValue(constructor);return constructor;
 }
-InterleavedBuffer::InterleavedBuffer(JSValue array,JSValue stride):object_(JSValue::object(prototype())) { initialize(object_,array,stride); }
+JSValue InterleavedBuffer::prototype() { return constructor().get("prototype"); }
+InterleavedBuffer::InterleavedBuffer(JSValue array,JSValue stride):object_(constructor().construct({array,stride})) {}
 JSValue InterleavedBuffer::setUsage(JSValue value) { return call(object_,"setUsage",{value}); }
 JSValue InterleavedBuffer::addUpdateRange(JSValue start,JSValue count) { return call(object_,"addUpdateRange",{start,count}); }
 JSValue InterleavedBuffer::clearUpdateRanges() { return call(object_,"clearUpdateRanges"); }

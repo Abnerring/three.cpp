@@ -1,6 +1,24 @@
 ﻿#pragma once
 #include <string>
 #include <vector>
+#include "core/JSValue.h"
+
+JSValue nativeRenderOutputNodeConstructor();
+JSValue nativeRenderOutputNodeModule();
+JSValue nativeRenderOutputNodeBinding(const std::string& name);
+
+class RenderOutputNode {
+    JSValue object_;
+public:
+    RenderOutputNode(const JSValue& colorNode={},const JSValue& toneMapping={},const JSValue& outputColorSpace={});
+    JSValue object()const{return object_;}
+    operator JSValue()const{return object_;}
+    static JSValue constructor(){return nativeRenderOutputNodeBinding("default");}
+    static JSValue prototype(){return constructor().get("prototype");}
+    JSValue setToneMapping(const JSValue& value)const{return object_.get("setToneMapping").call(object_,{value});}
+    JSValue getToneMapping()const{return object_.get("getToneMapping").call(object_);}
+    JSValue setup(const JSValue& builder)const{return object_.get("setup").call(object_,{builder});}
+};
 
 // Port of the ordering and the two fallbacks in src/nodes/display/RenderOutputNode.js at the
 // pinned revision. The node runs five steps when it is built, and two of the five undo one

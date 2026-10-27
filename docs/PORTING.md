@@ -21,7 +21,7 @@
 
 ## C++ 适配
 
-2026-10-28 最新追加：Array/Isolate/Bypass、SubBuild/Varying、Expression/Discard/Remap/Debug 与 ColorSpaceNode 接真实管理对象和模块逻辑，显示/工具文件路径按上游调整。补 String.repeat、管理 Matrix3 乘法与颜色矩阵身份，修复 wrapper 首次初始化、链包装可构造性和 NodeBuilder 阶段数组导入。最终43/43 CTest通过；工具164与颜色106仅为显式relative范围通过，完整绝对编号图与非恒等颜色shader生成仍待完成。ToneMapping/RenderOutput尚为旧helper。准确范围、失败和原始证据见VALIDATION.md。
+2026-10-28 最新追加：TSLBase接25真实模块/217导出，补属性、计算、引用、Inspector与颜色输出链及完整ToneMappingFunctions图。修复TSL普通函数构造语义、UniformGroup首导入及Interleaved/复制生命周期。所选CPU55/55、Vulkan5/5通过；四套节点默认绝对编号仍有差异，relative范围明确记录。新增节点图尚未全部接入现代Vulkan GPU链，完整功能目标未完成。准确范围与原始证据见VALIDATION.md。
 
 2026-10-28 当前实现：Math/Operator/Conditional/Assign/Context 的真实管理对象、模块工厂与链式调用已落地；Property 导出与 33 个预定义节点、Stack 条件/分支、Error/NodeError 的当前协议也有上游差分。颜色转换和预乘透明度移到 nodes/display，AlphaHash 使用真实 TSL 图并验证私有 hash2D/hash3D body。完整 eager Shader/Fn 141 项现已通过；完整 Node.id 导入图仍有差异，结构/相对编号检查不得当完整导入通过。36 项 CTest 与具体范围记录在 VALIDATION.md。
 

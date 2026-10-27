@@ -1,11 +1,26 @@
 ﻿#pragma once
 #include <string>
 #include <vector>
+#include "core/JSMember.h"
+
+JSValue nativeIndexNodeConstructor();
+JSValue nativeIndexNodeModule();
+JSValue nativeIndexNodeBinding(const std::string& name);
 
 // Port of the rules in src/nodes/core/IndexNode.js at the pinned revision. The node reads one of
 // six indices the shader is given, and three of its rules are worth writing down.
 class IndexNode {
+    JSValue object_;
   public:
+    explicit IndexNode(const JSValue& scope = {});
+    IndexNode(const IndexNode& other):object_(other.object_){}
+    IndexNode& operator=(const IndexNode& other){object_=other.object_;return *this;}
+    JSValue object() const { return object_; }
+    operator JSValue() const { return object_; }
+    static JSValue constructor() { return nativeIndexNodeBinding("default"); }
+    static JSValue prototype() { return constructor().get("prototype"); }
+    JSMember scope{&object_,"scope"};
+    JSValue generate(const JSValue& builder) const;
     static constexpr bool isIndexNode = true;
     static constexpr const char* kTypeName = "IndexNode";
 

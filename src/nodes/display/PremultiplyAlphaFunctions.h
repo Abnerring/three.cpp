@@ -3,6 +3,7 @@
 #include "core/JSValue.h"
 
 JSValue nativePremultiplyAlphaFunctions();
+JSValue nativePremultiplyAlphaFunctionsBinding(const std::string& name);
 
 // Port of the two functions in src/nodes/display/PremultiplyAlphaFunctions.js at the pinned
 // revision. One multiplies a colour's parts by its alpha and the other divides them by it, and

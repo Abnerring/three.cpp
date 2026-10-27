@@ -1,5 +1,11 @@
 ﻿#pragma once
 
+#include "core/JSValue.h"
+#include <string>
+
+JSValue nativeToneMappingFunctions();
+JSValue nativeToneMappingFunctionsBinding(const std::string& name);
+
 // Port of three of the curves in src/nodes/display/ToneMappingFunctions.js at the pinned
 // revision. Each takes a colour and an exposure and answers a colour brought into the range
 // nought to one. The third carries six constants whose arrangement matters more than their

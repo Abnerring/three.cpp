@@ -25,6 +25,7 @@ class EventDispatcher {
     // Runtime-backed classes share this prototype and keep listener/event
     // identities in the managed object graph.
     static JSValue runtimePrototype();
+    static JSValue runtimeConstructor();
     static JSValue runtimeObject();
     Listener addEventListener(const std::string& type, std::function<void(Event&)> callback);
     void addEventListener(const std::string& type, const Listener& listener);

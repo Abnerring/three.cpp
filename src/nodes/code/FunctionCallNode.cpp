@@ -102,6 +102,7 @@ JSValue nativeFunctionCallNodeConstructor() {
     }
     ctor.retainForHeapLifetime(); weak = JSWeakValue(ctor); return ctor;
 }
+namespace {JSWeakValue& functionCallBindings(){static thread_local JSWeakValue weak;return weak;}}
 JSValue nativeFunctionCallNodeModule() {
     static thread_local JSWeakValue weak;
     if (const auto module = weak.lock(); module && module->isObject()) return *module;
@@ -114,13 +115,16 @@ JSValue nativeFunctionCallNodeModule() {
         if (!positional && params.get("0").toBoolean()) positional = params.get("0").get("isNode").strictEquals(true);
         const auto processed = captures[positional ? 1 : 2].call({}, {positional ? params : params.get("0")});
         const auto functionNode = captures[3].call({}, {func}); return captures[0].construct({functionNode, processed});
-    }, {ctor, tsl.get("nodeArray"), tsl.get("nodeObjects"), tsl.get("nodeObject")}, "call", 1);
+    }, {ctor, nativeTSLCoreBinding("nodeArray"), nativeTSLCoreBinding("nodeObjects"), nativeTSLCoreBinding("nodeObject")}, "call", 1);
     for (const auto& [name, value] : std::initializer_list<std::pair<const char*, JSValue>>{{"call", call}, {"default", ctor}}) {
         JSPropertyDescriptor d; d.value = value; d.writable = d.enumerable = d.configurable = true; module.defineProperty(name, d);
     }
-    tsl.get("addMethodChaining").call({}, {"call", call});
+    nativeTSLCoreBinding("addMethodChaining").call({}, {"call", call});
+    auto bindings=JSValue::object(nullptr);for(const auto& name:module.ownPropertyNames())bindings.set(name,module.get(name));
+    bindings.retainForHeapLifetime();functionCallBindings()=JSWeakValue(bindings);
     module.retainForHeapLifetime(); weak = JSWeakValue(module); return module;
 }
+JSValue nativeFunctionCallNodeBinding(const std::string& name){const auto keeper=nativeFunctionCallNodeModule();return functionCallBindings().lock()->get(name);}
 FunctionCallNode::FunctionCallNode(const JSValue& functionNode, const JSValue& parameters) : object_(constructor().construct({functionNode, parameters})) {}
 JSValue FunctionCallNode::setParameters(const JSValue& value) const { return invoke(object_, "setParameters")({value}); }
 JSValue FunctionCallNode::getParameters() const { return invoke(object_, "getParameters")(); }

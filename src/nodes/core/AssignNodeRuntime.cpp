@@ -63,6 +63,7 @@ JSValue nativeAssignNodeConstructor() {
         auto self=superConstruct(newTarget,captures);self.set("targetNode",arg(args,0));self.set("sourceNode",arg(args,1));self.set("isAssignNode",true);return self;
     },{{"isCacheable",0},{"generateNodeType",2},{"needsSplitAssign",1},{"setup",1},{"generate",2}},method,{components});weak=JSWeakValue(constructor);return constructor;
 }
+namespace {JSWeakValue& assignBindings(){static thread_local JSWeakValue weak;return weak;}}
 JSValue nativeAssignNodeModule() {
     using namespace UtilityNodeRuntime;
     static thread_local JSWeakValue weak;if(const auto value=weak.lock();value&&value->isObject())return *value;
@@ -70,6 +71,9 @@ JSValue nativeAssignNodeModule() {
     const auto tsl=nativeTSLCore(),constructor=nativeAssignNodeConstructor();
     const auto factory=nativeTSLCoreBinding("nodeProxy").call({}, {constructor});const auto assign=invoke(factory,"setParameterLength")({2});
     nativeTSLCoreBinding("addMethodChaining").call({}, {"assign",assign});auto exports=JSValue::object();own(exports,"assign",assign);own(exports,"default",constructor);
+    auto bindings=JSValue::object(nullptr);for(const auto& name:exports.ownPropertyNames())own(bindings,name.c_str(),exports.get(name));
+    bindings.retainForHeapLifetime();assignBindings()=JSWeakValue(bindings);
     exports.retainForHeapLifetime();weak=JSWeakValue(exports);return exports;
 }
+JSValue nativeAssignNodeBinding(const std::string& name){const auto keeper=nativeAssignNodeModule();return assignBindings().lock()->get(name);}
 AssignNode::AssignNode(const JSValue& target,const JSValue& source):object_(constructor().construct({target,source})){}

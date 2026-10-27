@@ -194,12 +194,14 @@ target_sources(threecpp PRIVATE
     src/nodes/code/CodeNode.cpp
     src/nodes/code/FunctionNode.cpp
     src/nodes/tsl/TSLCore.cpp
+    src/nodes/tsl/TSLBase.cpp
     src/nodes/tsl/TSLCoreRuntime.cpp
     src/nodes/tsl/TSLShaderNodes.cpp
     src/nodes/code/FunctionCallNode.cpp
     src/renderers/common/BindGroup.cpp
     src/renderers/common/Constants.cpp
     src/renderers/common/Binding.cpp
+    src/renderers/common/InspectorBase.cpp
     src/renderers/common/BufferUtils.cpp
     src/renderers/common/Buffer.cpp
     src/renderers/common/UniformBuffer.cpp
@@ -220,7 +222,11 @@ target_sources(threecpp PRIVATE
     src/nodes/core/SceneProperties.cpp
     src/nodes/core/Tangent.cpp
     src/nodes/core/Normal.cpp
-    src/nodes/core/ReferenceElementNode.cpp
+    src/nodes/accessors/ReferenceElementNode.cpp
+    src/nodes/accessors/ReferenceBaseNode.cpp
+    src/nodes/accessors/RendererReferenceNode.cpp
+    src/nodes/accessors/BufferAttributeNode.cpp
+    src/nodes/gpgpu/ComputeNode.cpp
     src/nodes/core/CameraNames.cpp
     src/nodes/core/MaterialProperties.cpp
     src/nodes/core/ModelNode.cpp
@@ -228,6 +234,7 @@ target_sources(threecpp PRIVATE
     src/nodes/core/FrontFacing.cpp
     src/nodes/display/ColorSpaceFunctions.cpp
     src/nodes/display/ToneMappingNode.cpp
+    src/nodes/display/ToneMappingNodeRuntime.cpp
     src/nodes/core/NormalMap.cpp
     src/nodes/core/BumpMap.cpp
     src/nodes/display/PremultiplyAlphaFunctions.cpp
@@ -247,9 +254,11 @@ target_sources(threecpp PRIVATE
     src/nodes/code/ExpressionNode.cpp
     src/nodes/core/BlendModes.cpp
     src/nodes/display/ToneMappingFunctions.cpp
+    src/nodes/display/ToneMappingFunctionsRuntime.cpp
     src/nodes/core/ColorAdjustment.cpp
     src/nodes/core/ViewportTexture.cpp
     src/nodes/display/RenderOutputNode.cpp
+    src/nodes/display/RenderOutputNodeRuntime.cpp
     src/nodes/core/ToonOutlinePass.cpp
     src/nodes/core/PassTexture.cpp
     src/nodes/core/UVUtils.cpp
@@ -294,6 +303,7 @@ target_sources(threecpp PRIVATE
     src/nodes/core/IsolateNode.cpp
     src/nodes/core/IsolateNodeRuntime.cpp
     src/nodes/core/InspectorNode.cpp
+    src/nodes/core/InspectorNodeRuntime.cpp
     src/nodes/core/StructNode.cpp
     src/nodes/core/InputNode.cpp
     src/nodes/core/AttributeNode.cpp

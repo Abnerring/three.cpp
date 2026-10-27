@@ -68,6 +68,7 @@ JSValue nativeVarNodeConstructor(){
     for(const auto& [name,arity]:std::initializer_list<std::pair<const char*,unsigned>>{{"isCacheable",0},{"setIntent",1},{"isIntent",1},{"getIntent",0},{"getMemberType",2},{"getElementType",1},{"generateNodeType",1},{"getArrayCount",1},{"isAssign",1},{"build",0},{"generate",1},{"_hasStack",1}}){JSPropertyDescriptor d;d.value=JSValue::function(method,{name,proto},name,arity);d.writable=d.configurable=true;proto.defineProperty(name,d);}
     ctor.retainForHeapLifetime();weak=JSWeakValue(ctor);return ctor;
 }
+namespace {JSWeakValue& varBindings(){static thread_local JSWeakValue weak;return weak;}}
 JSValue nativeVarNodeModule(){
     static thread_local JSWeakValue weak;if(const auto module=weak.lock();module&&module->isObject())return *module;
     static thread_local bool initializing=false;JSModuleInitializationScope scope(initializing,"VarNode exports");const auto tsl=nativeTSLCore(),ctor=nativeVarNodeConstructor();
@@ -81,8 +82,11 @@ JSValue nativeVarNodeModule(){
     const auto constant=factory("Const",true),variable=factory("Var",false),intent=factory("VarIntent","intent");
     for(const auto& [name,value]:std::initializer_list<std::pair<const char*,JSValue>>{{"Const",constant},{"Var",variable},{"VarIntent",intent},{"default",ctor}}){JSPropertyDescriptor d;d.value=value;d.writable=d.enumerable=d.configurable=true;module.defineProperty(name,d);}
     nativeTSLCoreBinding("addMethodChaining").call({}, {"toVar",variable});nativeTSLCoreBinding("addMethodChaining").call({}, {"toConst",constant});nativeTSLCoreBinding("addMethodChaining").call({}, {"toVarIntent",intent});
+    auto bindings=JSValue::object(nullptr);for(const auto& name:module.ownPropertyNames())bindings.set(name,module.get(name));
+    bindings.retainForHeapLifetime();varBindings()=JSWeakValue(bindings);
     module.retainForHeapLifetime();weak=JSWeakValue(module);return module;
 }
+JSValue nativeVarNodeBinding(const std::string& name){const auto keeper=nativeVarNodeModule();return varBindings().lock()->get(name);}
 VarNode::VarNode(const JSValue& node,const JSValue& name,const JSValue& readOnly):object_(constructor().construct({node,name,readOnly})){}
 JSValue VarNode::build(const Args& args)const{return invoke(object_,"build")(args);}
 JSValue VarNode::generate(const JSValue& builder)const{return invoke(object_,"generate")({builder});}
