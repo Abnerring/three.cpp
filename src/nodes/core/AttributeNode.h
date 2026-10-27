@@ -1,10 +1,23 @@
 ﻿#pragma once
+#include "core/JSValue.h"
 #include <string>
+
+JSValue nativeAttributeNodeConstructor();
+JSValue nativeAttributeNodeModule();
+JSValue nativeAttributeNodeBinding(const std::string& name);
 
 // Port of the rules in src/nodes/core/AttributeNode.js at the pinned revision. The node reads a
 // vertex attribute, and four of its rules are worth writing down.
 class AttributeNode {
+    JSValue object_;
   public:
+    explicit AttributeNode(const JSValue& name = {}, const JSValue& type = nullptr);
+    JSValue object() const { return object_; }
+    operator JSValue() const { return object_; }
+    static JSValue constructor() { return nativeAttributeNodeBinding("default"); }
+    static JSValue prototype() { return constructor().get("prototype"); }
+    JSValue setAttributeName(const JSValue& name) const;
+    JSValue getAttributeName(const JSValue& builder = {}) const;
     static constexpr const char* kTypeName = "AttributeNode";
 
     // The type a missing attribute takes. It is a float, and a warning is printed, so a shader

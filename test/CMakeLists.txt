@@ -302,15 +302,15 @@ add_executable(THREECPPTests
         unit/src/nodes/core/AccessorNames.tests.cpp
         unit/src/nodes/core/PointUVNode.tests.cpp
         unit/src/nodes/core/TangentUtils.tests.cpp
-        unit/src/nodes/core/BuiltinNode.tests.cpp
+        unit/src/nodes/accessors/BuiltinNode.tests.cpp
         unit/src/nodes/core/SceneProperties.tests.cpp
         unit/src/nodes/core/Tangent.tests.cpp
         unit/src/nodes/core/Normal.tests.cpp
         unit/src/nodes/accessors/ReferenceElementNode.tests.cpp
-        unit/src/nodes/core/CameraNames.tests.cpp
+        unit/src/nodes/accessors/Camera.tests.cpp
         unit/src/nodes/core/MaterialProperties.tests.cpp
-        unit/src/nodes/core/ModelNode.tests.cpp
-        unit/src/nodes/core/Object3DNode.tests.cpp
+        unit/src/nodes/accessors/ModelNode.tests.cpp
+        unit/src/nodes/accessors/Object3DNode.tests.cpp
         unit/src/nodes/core/FrontFacing.tests.cpp
         unit/src/nodes/display/ColorSpaceFunctions.tests.cpp
         unit/src/nodes/display/ToneMappingNode.tests.cpp
@@ -325,7 +325,7 @@ add_executable(THREECPPTests
         unit/src/nodes/core/ViewportUtils.tests.cpp
         unit/src/nodes/utils/DebugNode.tests.cpp
         unit/src/nodes/utils/Discard.tests.cpp
-        unit/src/nodes/core/ScreenNode.tests.cpp
+        unit/src/nodes/display/ScreenNode.tests.cpp
         unit/src/nodes/core/DepthConversion.tests.cpp
         unit/src/nodes/core/ViewportDepthTexture.tests.cpp
         unit/src/nodes/display/ColorSpaceNode.tests.cpp
@@ -1809,7 +1809,7 @@ if(THREECPP_NODE_EXECUTABLE AND THREEJS_SOURCE_DIR)
         "${THREEJS_SOURCE_DIR}" "$<TARGET_FILE:ThreeJsNodeCacheParityProbe>")
     add_test(NAME threecpp.threejs-node-frame-parity
         COMMAND "${THREECPP_NODE_EXECUTABLE}" --expose-gc "${CMAKE_CURRENT_SOURCE_DIR}/unit/utils/parity/compare-node-frame.mjs"
-        "${THREEJS_SOURCE_DIR}" "$<TARGET_FILE:ThreeJsNodeFrameParityProbe>")
+        "${THREEJS_SOURCE_DIR}" "$<TARGET_FILE:ThreeJsNodeFrameParityProbe>" "${CMAKE_BINARY_DIR}/parity/node-frame")
     set_tests_properties(threecpp.threejs-node-base-parity threecpp.threejs-node-utils-parity
         threecpp.threejs-node-builder-parity threecpp.threejs-stack-node-parity threecpp.threejs-node-cache-parity
         threecpp.threejs-node-frame-parity PROPERTIES TIMEOUT 180)
@@ -2003,4 +2003,56 @@ if(THREECPP_NODE_EXECUTABLE AND THREEJS_SOURCE_DIR)
     add_test(NAME threecpp.threejs-uniform-group-node-parity
         COMMAND "${THREECPP_NODE_EXECUTABLE}" "${CMAKE_CURRENT_SOURCE_DIR}/unit/utils/parity/compare-uniform-group-node.mjs"
         "${THREEJS_SOURCE_DIR}" "$<TARGET_FILE:ThreeJsUniformGroupNodeParityProbe>" "${CMAKE_BINARY_DIR}/parity/uniform-group-node")
+endif()
+
+add_executable(ThreeJsSceneMathParityProbe unit/utils/parity/SceneMathParityProbe.cpp)
+target_link_libraries(ThreeJsSceneMathParityProbe PRIVATE threecpp::threecpp)
+if(THREECPP_NODE_EXECUTABLE AND THREEJS_SOURCE_DIR)
+    add_test(NAME threecpp.threejs-scene-math-parity
+        COMMAND "${THREECPP_NODE_EXECUTABLE}" "${CMAKE_CURRENT_SOURCE_DIR}/unit/utils/parity/compare-scene-math.mjs"
+        "${THREEJS_SOURCE_DIR}" "$<TARGET_FILE:ThreeJsSceneMathParityProbe>" "${CMAKE_BINARY_DIR}/parity/scene-math")
+endif()
+
+add_executable(ThreeJsScreenCameraNodesParityProbe unit/utils/parity/ScreenCameraNodesParityProbe.cpp)
+target_link_libraries(ThreeJsScreenCameraNodesParityProbe PRIVATE threecpp::threecpp)
+if(THREECPP_NODE_EXECUTABLE AND THREEJS_SOURCE_DIR)
+    add_test(NAME threecpp.threejs-screen-camera-nodes-relative-parity
+        COMMAND "${THREECPP_NODE_EXECUTABLE}" "${CMAKE_CURRENT_SOURCE_DIR}/unit/utils/parity/compare-screen-camera-nodes.mjs"
+        "${THREEJS_SOURCE_DIR}" "$<TARGET_FILE:ThreeJsScreenCameraNodesParityProbe>" "${CMAKE_BINARY_DIR}/parity/screen-camera-nodes-relative" --relative-integration-node-ids)
+endif()
+add_test(NAME threecpp.screen-camera-node-lifetime COMMAND ThreeJsScreenCameraNodesParityProbe --lifetime)
+
+add_executable(ThreeJsObjectModelNodesParityProbe unit/utils/parity/ObjectModelNodesParityProbe.cpp)
+target_link_libraries(ThreeJsObjectModelNodesParityProbe PRIVATE threecpp::threecpp)
+if(THREECPP_NODE_EXECUTABLE AND THREEJS_SOURCE_DIR)
+    add_test(NAME threecpp.threejs-object-model-nodes-relative-parity
+        COMMAND "${THREECPP_NODE_EXECUTABLE}" "${CMAKE_CURRENT_SOURCE_DIR}/unit/utils/parity/compare-object-model-nodes.mjs"
+        "${THREEJS_SOURCE_DIR}" "$<TARGET_FILE:ThreeJsObjectModelNodesParityProbe>" "${CMAKE_BINARY_DIR}/parity/object-model-nodes-relative" --relative-integration-node-ids)
+endif()
+add_test(NAME threecpp.object-model-node-lifetime COMMAND ThreeJsObjectModelNodesParityProbe --lifetime)
+
+add_executable(ThreeJsUniformBufferNodesParityProbe unit/utils/parity/UniformBufferNodesParityProbe.cpp)
+target_link_libraries(ThreeJsUniformBufferNodesParityProbe PRIVATE threecpp::threecpp)
+if(THREECPP_NODE_EXECUTABLE AND THREEJS_SOURCE_DIR)
+    add_test(NAME threecpp.threejs-uniform-buffer-nodes-parity
+        COMMAND "${THREECPP_NODE_EXECUTABLE}" "${CMAKE_CURRENT_SOURCE_DIR}/unit/utils/parity/compare-uniform-buffer-nodes.mjs"
+        "${THREEJS_SOURCE_DIR}" "$<TARGET_FILE:ThreeJsUniformBufferNodesParityProbe>" "${CMAKE_BINARY_DIR}/parity/uniform-buffer-nodes")
+endif()
+add_test(NAME threecpp.uniform-buffer-node-lifetime COMMAND ThreeJsUniformBufferNodesParityProbe --fresh-gc)
+
+add_executable(ThreeJsAttributeNodeParityProbe unit/utils/parity/AttributeNodeParityProbe.cpp)
+target_link_libraries(ThreeJsAttributeNodeParityProbe PRIVATE threecpp::threecpp)
+if(THREECPP_NODE_EXECUTABLE AND THREEJS_SOURCE_DIR)
+    add_test(NAME threecpp.threejs-attribute-node-parity
+        COMMAND "${THREECPP_NODE_EXECUTABLE}" "${CMAKE_CURRENT_SOURCE_DIR}/unit/utils/parity/compare-attribute-node.mjs"
+        "${THREEJS_SOURCE_DIR}" "$<TARGET_FILE:ThreeJsAttributeNodeParityProbe>" "${CMAKE_BINARY_DIR}/parity/attribute-node")
+endif()
+add_test(NAME threecpp.attribute-node-lifetime COMMAND ThreeJsAttributeNodeParityProbe --fresh-gc)
+
+add_executable(ThreeJsNodeUpdateTypesParityProbe unit/utils/parity/NodeUpdateTypesParityProbe.cpp)
+target_link_libraries(ThreeJsNodeUpdateTypesParityProbe PRIVATE threecpp::threecpp)
+if(THREECPP_NODE_EXECUTABLE AND THREEJS_SOURCE_DIR)
+    add_test(NAME threecpp.threejs-node-update-types-parity
+        COMMAND "${THREECPP_NODE_EXECUTABLE}" "${CMAKE_CURRENT_SOURCE_DIR}/unit/utils/parity/compare-node-update-types.mjs"
+        "${THREEJS_SOURCE_DIR}" "$<TARGET_FILE:ThreeJsNodeUpdateTypesParityProbe>" "${CMAKE_BINARY_DIR}/parity/node-update-types")
 endif()

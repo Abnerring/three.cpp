@@ -27,7 +27,7 @@ find_package(Threads REQUIRED)
 add_library(threecpp
     src/math/MathUtils.cpp src/math/Vector2.cpp src/math/Vector3.cpp src/math/Vector4.cpp
     src/math/Matrix3.cpp src/math/Matrix4.cpp src/math/Quaternion.cpp src/math/Euler.cpp
-    src/math/Color.cpp src/math/ColorManagement.cpp src/math/Box3.cpp src/math/Sphere.cpp
+    src/math/Color.cpp src/math/ColorManagement.cpp src/math/Box3.cpp src/math/Sphere.cpp src/math/SphereRuntime.cpp
     src/math/Box2.cpp src/math/Cylindrical.cpp src/math/Spherical.cpp src/math/Matrix2.cpp
     src/math/Plane.cpp src/math/Line3.cpp src/math/Triangle.cpp src/math/Ray.cpp src/math/Frustum.cpp
     src/math/Interpolant.cpp src/math/JSNumberMath.cpp
@@ -218,7 +218,7 @@ target_sources(threecpp PRIVATE
     src/nodes/core/AccessorNames.cpp
     src/nodes/core/PointUVNode.cpp
     src/nodes/core/TangentUtils.cpp
-    src/nodes/core/BuiltinNode.cpp
+    src/nodes/accessors/BuiltinNode.cpp
     src/nodes/core/SceneProperties.cpp
     src/nodes/core/Tangent.cpp
     src/nodes/core/Normal.cpp
@@ -226,11 +226,13 @@ target_sources(threecpp PRIVATE
     src/nodes/accessors/ReferenceBaseNode.cpp
     src/nodes/accessors/RendererReferenceNode.cpp
     src/nodes/accessors/BufferAttributeNode.cpp
+    src/nodes/accessors/BufferNode.cpp
+    src/nodes/accessors/UniformArrayNode.cpp
+    src/nodes/accessors/Camera.cpp
     src/nodes/gpgpu/ComputeNode.cpp
-    src/nodes/core/CameraNames.cpp
     src/nodes/core/MaterialProperties.cpp
-    src/nodes/core/ModelNode.cpp
-    src/nodes/core/Object3DNode.cpp
+    src/nodes/accessors/ModelNode.cpp
+    src/nodes/accessors/Object3DNode.cpp
     src/nodes/core/FrontFacing.cpp
     src/nodes/display/ColorSpaceFunctions.cpp
     src/nodes/display/ToneMappingNode.cpp
@@ -246,7 +248,8 @@ target_sources(threecpp PRIVATE
     src/nodes/core/ViewportUtils.cpp
     src/nodes/utils/DebugNode.cpp
     src/nodes/utils/Discard.cpp
-    src/nodes/core/ScreenNode.cpp
+    src/nodes/display/ScreenNode.cpp
+    src/nodes/display/ScreenNodeRuntime.cpp
     src/nodes/core/DepthConversion.cpp
     src/nodes/core/ViewportDepthTexture.cpp
     src/nodes/display/ColorSpaceNode.cpp
@@ -307,6 +310,7 @@ target_sources(threecpp PRIVATE
     src/nodes/core/StructNode.cpp
     src/nodes/core/InputNode.cpp
     src/nodes/core/AttributeNode.cpp
+    src/nodes/core/AttributeNodeRuntime.cpp
     src/nodes/core/StructTypeNode.cpp
     src/nodes/core/UniformGroupNode.cpp
     src/nodes/core/ArrayNode.cpp

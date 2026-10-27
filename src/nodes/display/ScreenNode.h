@@ -1,12 +1,22 @@
 ﻿#pragma once
+#include "core/JSValue.h"
 #include <string>
 #include <vector>
 
 // Port of the rules in src/nodes/display/ScreenNode.js at the pinned revision. The node reports
 // one of four screen measurements; what is portable is how its type follows the measurement, how
 // often it is refreshed, and how the viewport is worked out with or without a render target.
+JSValue nativeScreenNodeConstructor();
+JSValue nativeScreenNodeModule();
+JSValue nativeScreenNodeBinding(const std::string& name);
+
 class ScreenNode {
+    JSValue object_;
   public:
+    explicit ScreenNode(const JSValue& scope = {}) : object_(constructor().construct({scope})) {}
+    JSValue object() const { return object_; }
+    operator JSValue() const { return object_; }
+    static JSValue constructor() { return nativeScreenNodeBinding("default"); }
     static constexpr const char* kTypeName = "ScreenNode";
     static constexpr bool isViewportNode = true;
 

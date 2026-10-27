@@ -1,4 +1,5 @@
 #include "nodes/core/NodeFrame.h"
+#include "nodes/core/constants.h"
 #include "core/JSModuleObject.h"
 #include "core/JSWeakMap.h"
 #include <chrono>
@@ -65,7 +66,7 @@ JSValue getMaps(JSValue referenceMap, const JSValue& reference) {
     }
     return maps;
 }
-void updateNode(JSValue self, const JSValue& node, const std::string& name) {
+void updateNode(JSValue self, const JSValue& node, const std::string& name, const JSValue& updateTypes) {
     const bool before = name == "updateBeforeNode";
     const bool after = name == "updateAfterNode";
     const char* getType = before ? "getUpdateBeforeType" : after ? "getUpdateAfterType" : "getUpdateType";
@@ -75,8 +76,14 @@ void updateNode(JSValue self, const JSValue& node, const std::string& name) {
     const auto type = typeMethod.call(node, {self});
     const auto referenceMethod = node.get("updateReference");
     const auto reference = referenceMethod.call(node, {self});
-    if (type.strictEquals("frame") || type.strictEquals("render")) {
-        const char* field = type.strictEquals("frame") ? "frameId" : "renderId";
+    const char* field = nullptr;
+    if (type.strictEquals(updateTypes.get("FRAME"))) field = "frameId";
+    else if (type.strictEquals(updateTypes.get("RENDER"))) field = "renderId";
+    else if (type.strictEquals(updateTypes.get("OBJECT"))) {
+        const auto update = node.get(callback);
+        update.call(node, {self});
+    }
+    if (field) {
         const auto method = self.get("_getMaps");
         const auto referenceMap = self.get(mapName);
         auto maps = method.call(self, {referenceMap, reference});
@@ -93,9 +100,6 @@ void updateNode(JSValue self, const JSValue& node, const std::string& name) {
                 if (!update.call(node, {self}).strictEquals(false)) maps.set(field, self.get(field));
             }
         }
-    } else if (type.strictEquals("object")) {
-        const auto update = node.get(callback);
-        update.call(node, {self});
     }
 }
 JSValue dispatch(const JSValue& receiver, const Args& args, const Args& captures) {
@@ -103,7 +107,7 @@ JSValue dispatch(const JSValue& receiver, const Args& args, const Args& captures
     const auto& name = captures[0].string();
     if (name == "_getMaps") return getMaps(argument(args, 0), argument(args, 1));
     if (name != "update") {
-        updateNode(self, argument(args, 0), name);
+        updateNode(self, argument(args, 0), name, captures[1]);
         return {};
     }
     self.set("frameId", self.get("frameId").toNumber() + 1);
@@ -127,6 +131,7 @@ JSValue NodeFrame::prototype() {
     if (const auto found = cached.lock(); found && found->isObject()) return *found;
     static thread_local bool initializing = false;
     JSModuleInitializationScope scope(initializing, "NodeFrame prototype");
+    const auto updateTypes = nativeNodeConstantsBinding("NodeUpdateType");
     auto constructor = JSValue::constructor([](const JSValue& self, const Args&, const Args&) -> JSValue {
         initialize(self);
         return {};
@@ -136,7 +141,7 @@ JSValue NodeFrame::prototype() {
              {"_getMaps", 2}, {"updateBeforeNode", 1}, {"updateAfterNode", 1}, {"updateNode", 1}, {"update", 0}}) {
         JSPropertyDescriptor descriptor;
         descriptor.configurable = descriptor.writable = true;
-        descriptor.value = JSValue::function(dispatch, {name}, name, arity);
+        descriptor.value = JSValue::function(dispatch, {name, updateTypes}, name, arity);
         prototype.defineProperty(name, descriptor);
     }
     constructor.retainForHeapLifetime();

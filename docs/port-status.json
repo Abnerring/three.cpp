@@ -201,8 +201,8 @@
     "note": "Accepted port scope is src and examples/jsm, including tracked third-party dependencies. Editor/manual web applications are excluded from native application rewrites. Native host behavior, packaging and all three platforms require separate implementation and verification evidence."
   },
   "counts": {
-    "partial-unverified": 378,
-    "missing": 563,
+    "partial-unverified": 385,
+    "missing": 556,
     "vulkan-port-pending": 290,
     "dependency-unverified": 20
   },
@@ -210,8 +210,8 @@
     "src": {
       "modules": 755,
       "counts": {
-        "partial-unverified": 294,
-        "missing": 171,
+        "partial-unverified": 301,
+        "missing": 164,
         "vulkan-port-pending": 290
       }
     },
@@ -796,7 +796,7 @@
       "path": "src/nodes/accessors",
       "upstreamFiles": 43,
       "moduleCount": 43,
-      "modulesWithCppFiles": 4,
+      "modulesWithCppFiles": 10,
       "verifiedComplete": 0
     },
     {
@@ -817,7 +817,7 @@
       "path": "src/nodes/display",
       "upstreamFiles": 18,
       "moduleCount": 18,
-      "modulesWithCppFiles": 6,
+      "modulesWithCppFiles": 7,
       "verifiedComplete": 0
     },
     {
@@ -7485,11 +7485,11 @@
       "scope": "src",
       "kind": "core",
       "upstreamSha256": "89c42fd2b918c1ff165bb10d9f43b16f7bf58f72d6f20da7e6f649dc3ce86336",
-      "header": null,
-      "implementation": null,
+      "header": "src/nodes/accessors/BufferNode.h",
+      "implementation": "src/nodes/accessors/BufferNode.cpp",
       "expectedHeader": "src/nodes/accessors/BufferNode.h",
       "expectedImplementation": "src/nodes/accessors/BufferNode.cpp",
-      "status": "missing",
+      "status": "partial-unverified",
       "verifiedComplete": false,
       "apiExtraction": "static-only",
       "verification": {
@@ -7512,11 +7512,11 @@
       "scope": "src",
       "kind": "core",
       "upstreamSha256": "5bc3256a61dca246bfd9229dc6b001effcb1bffe7e00f49e557fd153b24dc176",
-      "header": null,
-      "implementation": null,
+      "header": "src/nodes/accessors/BuiltinNode.h",
+      "implementation": "src/nodes/accessors/BuiltinNode.cpp",
       "expectedHeader": "src/nodes/accessors/BuiltinNode.h",
       "expectedImplementation": "src/nodes/accessors/BuiltinNode.cpp",
-      "status": "missing",
+      "status": "partial-unverified",
       "verifiedComplete": false,
       "apiExtraction": "partial-static",
       "verification": {
@@ -7525,7 +7525,9 @@
           "pointer": "/modules/219"
         },
         "upstreamUnitTests": [],
-        "cppUnitTests": [],
+        "cppUnitTests": [
+          "test/unit/src/nodes/accessors/BuiltinNode.tests.cpp"
+        ],
         "reviewedImplementation": [],
         "differentialResults": [],
         "renderingResults": [],
@@ -7539,11 +7541,11 @@
       "scope": "src",
       "kind": "core",
       "upstreamSha256": "f760d9c9fac90eb5216632029b6c9e1ce0f521658a96ab4d1ac7d00be065b307",
-      "header": null,
-      "implementation": null,
+      "header": "src/nodes/accessors/Camera.h",
+      "implementation": "src/nodes/accessors/Camera.cpp",
       "expectedHeader": "src/nodes/accessors/Camera.h",
       "expectedImplementation": "src/nodes/accessors/Camera.cpp",
-      "status": "missing",
+      "status": "partial-unverified",
       "verifiedComplete": false,
       "apiExtraction": "partial-static",
       "verification": {
@@ -7552,7 +7554,9 @@
           "pointer": "/modules/220"
         },
         "upstreamUnitTests": [],
-        "cppUnitTests": [],
+        "cppUnitTests": [
+          "test/unit/src/nodes/accessors/Camera.tests.cpp"
+        ],
         "reviewedImplementation": [],
         "differentialResults": [],
         "renderingResults": [],
@@ -7755,11 +7759,11 @@
       "scope": "src",
       "kind": "core",
       "upstreamSha256": "de35a47924b541b956ad24048b068a657489e18173e57603a9f757e2e892885b",
-      "header": null,
-      "implementation": null,
+      "header": "src/nodes/accessors/ModelNode.h",
+      "implementation": "src/nodes/accessors/ModelNode.cpp",
       "expectedHeader": "src/nodes/accessors/ModelNode.h",
       "expectedImplementation": "src/nodes/accessors/ModelNode.cpp",
-      "status": "missing",
+      "status": "partial-unverified",
       "verifiedComplete": false,
       "apiExtraction": "partial-static",
       "verification": {
@@ -7768,7 +7772,9 @@
           "pointer": "/modules/228"
         },
         "upstreamUnitTests": [],
-        "cppUnitTests": [],
+        "cppUnitTests": [
+          "test/unit/src/nodes/accessors/ModelNode.tests.cpp"
+        ],
         "reviewedImplementation": [],
         "differentialResults": [],
         "renderingResults": [],
@@ -7863,11 +7869,11 @@
       "scope": "src",
       "kind": "core",
       "upstreamSha256": "20fba24475cfaba8130a43add49e8d3fd6cd330c998bb57e4cd78f17f6ccd606",
-      "header": null,
-      "implementation": null,
+      "header": "src/nodes/accessors/Object3DNode.h",
+      "implementation": "src/nodes/accessors/Object3DNode.cpp",
       "expectedHeader": "src/nodes/accessors/Object3DNode.h",
       "expectedImplementation": "src/nodes/accessors/Object3DNode.cpp",
-      "status": "missing",
+      "status": "partial-unverified",
       "verifiedComplete": false,
       "apiExtraction": "partial-static",
       "verification": {
@@ -7876,7 +7882,9 @@
           "pointer": "/modules/232"
         },
         "upstreamUnitTests": [],
-        "cppUnitTests": [],
+        "cppUnitTests": [
+          "test/unit/src/nodes/accessors/Object3DNode.tests.cpp"
+        ],
         "reviewedImplementation": [],
         "differentialResults": [],
         "renderingResults": [],
@@ -8405,11 +8413,11 @@
       "scope": "src",
       "kind": "core",
       "upstreamSha256": "cc6bd2fe3639d551bbb2fcf1eb7627c6705d0e1a223fcf0889e873749c66715b",
-      "header": null,
-      "implementation": null,
+      "header": "src/nodes/accessors/UniformArrayNode.h",
+      "implementation": "src/nodes/accessors/UniformArrayNode.cpp",
       "expectedHeader": "src/nodes/accessors/UniformArrayNode.h",
       "expectedImplementation": "src/nodes/accessors/UniformArrayNode.cpp",
-      "status": "missing",
+      "status": "partial-unverified",
       "verifiedComplete": false,
       "apiExtraction": "static-only",
       "verification": {
@@ -10095,11 +10103,11 @@
       "scope": "src",
       "kind": "core",
       "upstreamSha256": "47dd21e2c6a2258494dde3f785c48875e1f2bbe4eab2b40ec705ac37cbef7a61",
-      "header": null,
-      "implementation": null,
+      "header": "src/nodes/display/ScreenNode.h",
+      "implementation": "src/nodes/display/ScreenNode.cpp",
       "expectedHeader": "src/nodes/display/ScreenNode.h",
       "expectedImplementation": "src/nodes/display/ScreenNode.cpp",
-      "status": "missing",
+      "status": "partial-unverified",
       "verifiedComplete": false,
       "apiExtraction": "partial-static",
       "verification": {
@@ -10108,7 +10116,9 @@
           "pointer": "/modules/312"
         },
         "upstreamUnitTests": [],
-        "cppUnitTests": [],
+        "cppUnitTests": [
+          "test/unit/src/nodes/display/ScreenNode.tests.cpp"
+        ],
         "reviewedImplementation": [],
         "differentialResults": [],
         "renderingResults": [],

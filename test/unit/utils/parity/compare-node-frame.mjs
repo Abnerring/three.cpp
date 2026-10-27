@@ -265,6 +265,32 @@ function runMetadata() {
         }), mapsDistinct: frame.updateMap !== frame.updateBeforeMap && frame.updateMap !== frame.updateAfterMap && frame.updateBeforeMap !== frame.updateAfterMap,
         mapBrands: [frame.updateMap, frame.updateBeforeMap, frame.updateAfterMap].map(value => value instanceof WeakMap)};
 }
+function mutableValue(spec,state){return spec?.tag==='match'?state.type:decode(spec,state,'enum');}
+function mutablePoint(state,point){
+    state.events.push(['point',point,state.depth]);const request=state.request;
+    if(request.throwAt===point)throw new TypeError(point);
+    if(request.mutateAt===point){for(const [key,value]of Object.entries(request.changes))state.enumValues[key]=mutableValue(value,state);state.events.push(['mutated',point]);}
+    if(request.reenterAt===point&&!state.reentered){state.reentered=true;state.depth=1;const result=invoke(state.frame,method(request.phase),[state.node]);state.depth=0;state.events.push(['nested',point,result]);}
+}
+function runMutable(request){
+    const frame=new NodeFrame(),state=newState(request,frame),node=state.node={};state.depth=0;state.type=decode(request.type,state,'type');state.enumValues={};state.enumReads={};
+    state['field:frameId']=Object.hasOwn(request,'frameId')?decode(request.frameId):1;state['field:renderId']=Object.hasOwn(request,'renderId')?decode(request.renderId):2;
+    const saved=['FRAME','RENDER','OBJECT'].map(key=>Object.getOwnPropertyDescriptor(NodeUpdateType,key));
+    // The C++ module exposes a mutable facade; its private import still refers to this object.
+    const constantsFacade={NodeUpdateType};
+    for(const key of ['FRAME','RENDER','OBJECT']){
+        state.enumReads[key]=0;state.enumValues[key]=Object.hasOwn(request.enums,key)?mutableValue(request.enums[key],state):key.toLowerCase();
+        Object.defineProperty(NodeUpdateType,key,{enumerable:true,configurable:true,get(){const count=++state.enumReads[key];state.events.push(['enumGet',key,count,state.depth,this===NodeUpdateType]);mutablePoint(state,'enum:'+key);const sequence=request.sequences?.[key];return Array.isArray(sequence)&&sequence.length?mutableValue(sequence[Math.min(count-1,sequence.length-1)],state):state.enumValues[key];}});
+    }
+    if(request.replaceFacade)constantsFacade.NodeUpdateType={};
+    for(const key of ['frameId','renderId'])Object.defineProperty(frame,key,{enumerable:true,configurable:true,get(){mutablePoint(state,'frameGet:'+key);return state['field:'+key];},set(value){mutablePoint(state,'frameSet:'+key);state['field:'+key]=value;}});
+    const originalMaps=frame._getMaps,stage=request.phase,originalMap=frame[mapName(stage)];
+    Object.defineProperty(frame,mapName(stage),{enumerable:true,configurable:true,get(){mutablePoint(state,'mapArgument');return originalMap;}});
+    Object.defineProperty(frame,'_getMaps',{enumerable:true,configurable:true,get(){mutablePoint(state,'maps.get');return function(...a){mutablePoint(state,'maps.call');state.events.push(['mapsArguments',this===frame,a[0]===originalMap,a[1]===state.ref]);const maps=originalMaps.apply(this,a);if(state.record!==maps){state.record=maps;for(const key of ['frameId','renderId']){state['stored:'+key]=maps[key];Object.defineProperty(maps,key,{enumerable:true,configurable:true,get(){mutablePoint(state,'markGet:'+key);return state['stored:'+key];},set(value){mutablePoint(state,'markSet:'+key);state.events.push(['markValue',key,encode(value)]);state['stored:'+key]=value;}});}}return maps;};}});
+    for(const name of [typeMethod(stage),'updateReference',callback(stage)]){const role=name===typeMethod(stage)?'type':name==='updateReference'?'reference':'callback';Object.defineProperty(node,name,{enumerable:true,configurable:true,get(){mutablePoint(state,role+'.get');return function(...a){mutablePoint(state,role+'.call');state.events.push(['receiver',role,this===node,a[0]===frame]);if(role==='type')return state.type;if(role==='reference')return state.ref;const count=++state.calls;return decode(request.returns[count-1],state);};}});}
+    try{const steps=[];for(const operation of request.steps){for(const key of ['frameId','renderId'])if(Object.hasOwn(operation,key))frame[key]=decode(operation[key]);if(Object.hasOwn(operation,'type'))state.type=decode(operation.type,state,'stepType');if(operation.enums)for(const [key,value]of Object.entries(operation.enums))state.enumValues[key]=mutableValue(value,state);steps.push({result:invoke(frame,method(stage),[node]),calls:state.calls,ids:[encode(state['field:frameId']),encode(state['field:renderId'])],marks:state.record===undefined?'#undefined':[encode(state['stored:frameId']),encode(state['stored:renderId'])]});}return {steps,events:state.events,reads:state.enumReads};}
+    finally{for(let i=0;i<saved.length;++i)Object.defineProperty(NodeUpdateType,['FRAME','RENDER','OBJECT'][i],saved[i]);}
+}
 function run(request) {
     if (request.kind === 'metadata') return runMetadata();
     if (request.kind === 'basic') return runBasic(request);
@@ -272,6 +298,7 @@ function run(request) {
     if (request.kind === 'maps') return runMaps(request);
     if (request.kind === 'mapPrototype') return runMapPrototype(request);
     if (request.kind === 'clock') return runClock(request);
+    if (request.kind === 'mutable') return runMutable(request);
     throw new TypeError('unknown oracle kind');
 }
 
@@ -328,6 +355,22 @@ for (const pollution of ['setter', 'readonly', 'getter-only'])
     for (const targets of [['renderId'], ['frameId'], ['renderId', 'frameId']])
         for (const hit of [false, true]) cases.push({kind: 'mapPrototype', pollution, targets, hit});
 
+// Preserve the original 800 inputs and expected results as an unchanged prefix.
+assert.equal(cases.length,800);
+const match={tag:'match'},undefinedValue={tag:'undefined'};
+for(const phase of stages){
+    const base={kind:'mutable',phase,type:'custom',enums:{},sequences:{},steps:[{},{},{}],returns:[true,false,true]};
+    for(const branch of ['FRAME','RENDER','OBJECT'])for(const type of ['custom',0,false,null,undefinedValue,{tag:'nan'},{tag:'negative-zero'},{tag:'object'},{tag:'symbol'},{tag:'coerce',throw:true}])for(const result of [false,true,0,null,undefinedValue])
+        cases.push({...base,type,enums:{[branch]:match},returns:[result,result,result],replaceFacade:true});
+    for(const type of ['frame','render','object','unknown',1,'1',{},undefinedValue])cases.push({...base,type});
+    for(const enums of [{FRAME:match,RENDER:match,OBJECT:match},{FRAME:0,RENDER:match},{FRAME:false,RENDER:0,OBJECT:match}])cases.push({...base,enums});
+    for(const [branch,sequences]of [['FRAME',{FRAME:[match,'miss',match]}],['RENDER',{FRAME:['miss'],RENDER:[match,'miss',match]}],['OBJECT',{FRAME:['miss'],RENDER:['miss'],OBJECT:[match,'miss',match]}]])for(const result of [false,true,0])cases.push({...base,enums:{[branch]:match},sequences,returns:[result,result,result]});
+    for(const branch of ['FRAME','RENDER','OBJECT'])for(const id of [0,1,'1',null,undefinedValue,{tag:'nan'}])cases.push({...base,enums:{[branch]:match},frameId:id,renderId:id});
+    for(const branch of ['FRAME','RENDER','OBJECT'])for(const reenterAt of ['type.call','reference.call','enum:FRAME','enum:RENDER','enum:OBJECT','callback.get','callback.call'])for(const result of [false,true])cases.push({...base,enums:{[branch]:match},reenterAt,returns:[result,true,true],gc:true});
+    for(const [mutateAt,changes]of [['type.call',{FRAME:match}],['reference.call',{RENDER:match}],['enum:FRAME',{RENDER:match}],['enum:RENDER',{OBJECT:match}],['callback.call',{FRAME:'miss',OBJECT:match}],['maps.call',{FRAME:'miss',RENDER:match}]])cases.push({...base,enums:{FRAME:mutateAt==='callback.call'||mutateAt==='maps.call'?match:'miss',RENDER:'miss',OBJECT:'miss'},mutateAt,changes});
+    for(const branch of ['FRAME','RENDER','OBJECT'])for(const throwAt of ['type.get','type.call','reference.get','reference.call','enum:FRAME','enum:RENDER','enum:OBJECT','maps.get','mapArgument','maps.call','markGet:frameId','frameGet:frameId','markGet:renderId','frameGet:renderId','markSet:frameId','markSet:renderId','callback.get','callback.call'])cases.push({...base,enums:{[branch]:match},throwAt});
+    cases.push({...base,enums:{FRAME:match},steps:[{},{enums:{FRAME:'miss',RENDER:match}},{enums:{RENDER:'miss',OBJECT:match}},{frameId:3,renderId:4,enums:{FRAME:match}}]});
+}
 const expected = cases.map(run);
 if (outputDirectory) {
     fs.mkdirSync(outputDirectory, {recursive: true});

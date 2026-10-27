@@ -2,19 +2,17 @@
 
 2026-10-28 当前阶段：固定上游 `11738a9d55e502fb484cefffcea3a66dc44e9fe9`。完整原生 C++ 复现 src 与 examples/jsm、Vulkan 后端的目标尚未完成。禁止 CEF、浏览器和 JS 执行桥；Node 仅作开发 oracle。以下当前说明优先于历史记录。
 
-本轮新增真实 TSLBase（25源模块/217导出）、BufferAttribute、Compute/Index、ReferenceBase/Element/RendererReference、InspectorBase/Node、ToneMapping/RenderOutput 与完整 ToneMappingFunctions 图。ReferenceElement 移到 accessors；旧 helper 保留兼容。补 UniformGroup default/首导入/preset/可变枚举读取；TSLCore 普通 function 构造语义、Interleaved 稳定构造器与退休 heap、Index/Compute wrapper 复制 owner 已修。
+本轮新增真实 Attribute/Buffer/UniformArray/Builtin、Camera/Screen、Object3D/Model 与所需管理数学运算；旧 helper 移入上游目录。默认绝对差分 Attribute199、资源481、数学706、Node枚举226+2通过；Screen324和Model310仅在明确relative Builder范围通过。NodeFrame从原800扩至1673+8GC，原输入/oracle前缀不变。修复NodeBuilder误执行注释warn、Model弱缓存undefined及Node/NodeFrame可变枚举读取。
 
-最终 build-06 成功（48 CPU targets），55/55 所选 CPU CTest，85.97秒；CPU2528 cases/217372 assertions，String/RegExp12/158。真实默认差分：Compute/Index323、Inspector616+2fresh、ToneMappingFunctions54、UniformGroup14、TSLCore999（保留旧953前缀）。显式relative：Buffer402、Reference461+4fresh、TSLBase484、RenderOutput187；另Buffer3/Inspector2/TSLBase3 fresh heap及Compute/Index8 copy生命周期检查通过。TSLBase全部217导出元数据、3419原型描述符、28工厂图已绝对通过。
+CPU实际统一构建54目标117步，所选65/65 CTest通过（88.39秒），全量数值/协议单测2523 cases/217356 assertions。Vulkan在此前独立干净目录上按本轮源码增量138步，5/5测试通过（31.19秒），validation=0；不代表新节点已全部接GPU。若测试fixture性能单目标重链，原始日志保留。
 
-完整绝对编号仍未对齐：当前Buffer12项/12字段、Reference3项/6字段、TSLBase4项/5字段均差356；RenderOutput155项/1820字段（1749处差356、71处差33），四套均无非id差异。input/expected/actual/differences与absolute-import-graph-pending.json全保留；禁止补造分配次数。旧完整Math/NativeFunction导入图等仍待验收。RenderOutput8个Builder组合仅1个生成，其余7个真实JS抽象Builder也TypeError；54个曲线图不等于6种曲线GPU像素验收。
+默认绝对缺口：Screen10case/28id差311，Model28case/28id差280；634场景合计56字段，非id差异零。完整原始证据、逐字段身份/路径/SHA及历史302场景审计保留；禁止补造节点分配。Model relative采用单一Builder会话基线，覆盖真实缓存复用，模块预定义节点仍绝对检查。Screen5坐标分支用抽象getFragCoord fallback，不是具体后端/GPU证明。管理Sphere只新增构造/copy/applyMatrix4，完整管理数学原型仍有缺口。
 
-独立干净 Vulkan 构建646步通过，同步最新源码增量链接后5/5 CTest，39.44秒。RTX3070 Laptop主用例1400断言、cube60；glslang3cases/27、buffer12/103、binding46。validation=0，无validation layer。本轮未改GPU算法；新节点不代表现代Vulkan dispatch/storage/sync、完整材质/光照/阴影/后处理已经完成。
+全部当前证据在 `D:/Temp/surui/threecpp-node-material-inputs-20261028`；最终提交后 freeze-final.json 记录源码、固定上游、54 CPU+4 Vulkan真实二进制与原始证据SHA。上一阶段提交48b4b75的冻结目录为threecpp-tsl-output-20261028；本轮脚本误覆盖其一份JUnit XML且未找回，旧清单4294件中其余4293件SHA/字节全同。当前XML已复制到正确目录并修复脚本路径，旧清单未掩盖修改；见historical-junit-overwrite.json。旧TSLBase/RenderOutput/NativeFunction等绝对导入图边界仍保留，见VALIDATION历史。
 
-审计1251模块：partial378、missing563、Vulkan待实现290、依赖待验20，0解析错误；对应文件src463/755、addons84/496，共547，704无对应文件。审计5测试、生成器与--check通过；仍无模块登记完整验收。计数不是功能完成率。
+审计1251：partial385、missing556、VulkanPending290、dependency20，0解析错误；src470/755、addons84/496，共554有文件，697无文件。审计5/5、--check和生成器通过；无模块登记完整验收，计数不是完成率。
 
-下一步继续真实 NodeMaterial 依赖/初始化与完整绝对导入图，现代节点材质及Vulkan计算/存储/编译链，传统完整材质/灯光/阴影/后处理、剩余addons。完整ESM loader/TDZ、Error宿主栈、旧NativeObject/Vulkan桥接及跨平台仍未完成。阶段提交不表示全目标完成。
-
-本轮证据 D:/Temp/surui/threecpp-tsl-output-20261028，详见VALIDATION.md。阶段提交后freeze-final.json冻结实际源码/固定上游/48 CPU与4 Vulkan二进制/证据SHA；历史后缀按字节保全。
+下一步补真实Material/NodeMaterial与依赖及完整NodeBuilder初始化；节点材质、现代Vulkan计算/存储/GLSL-WGSL编译链，传统完整材质/光照/阴影/后处理、其余addons、宿主和跨平台仍未完成。完整ESM loader/TDZ、Error宿主栈、旧NativeObject/Vulkan桥接等边界继续保留。阶段提交不表示全目标完成。
 
 ## 一、项目约定（必须遵守）
 

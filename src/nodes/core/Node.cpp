@@ -1,5 +1,6 @@
 #include "nodes/core/Node.h"
 #include "nodes/core/NodeUtils.h"
+#include "nodes/core/constants.h"
 #include "nodes/core/StackTrace.h"
 #include "core/EventDispatcher.h"
 #include "core/JSIterator.h"
@@ -300,8 +301,12 @@ JSValue method(const JSValue& receiver, const Args& args, const Args& captures) 
         self.set("updateType", arg(args, 1));
         const auto callback = arg(args, 0); const auto bound = invoke(callback, "bind")({self}); self.set("update", bound); return self;
     }
-    if (name == "onFrameUpdate" || name == "onRenderUpdate" || name == "onObjectUpdate")
-        return invoke(self, "onUpdate")({arg(args, 0), name == "onFrameUpdate" ? "frame" : name == "onRenderUpdate" ? "render" : "object"});
+    if (name == "onFrameUpdate" || name == "onRenderUpdate" || name == "onObjectUpdate") {
+        const auto update = invoke(self, "onUpdate");
+        const auto type = nativeNodeConstantsBinding("NodeUpdateType").get(
+            name == "onFrameUpdate" ? "FRAME" : name == "onRenderUpdate" ? "RENDER" : "OBJECT");
+        return update({arg(args, 0), type});
+    }
     if (name == "onReference") { const auto bound = invoke(arg(args, 0), "bind")({self}); self.set("updateReference", bound); return self; }
     if (name == "updateReference" || name == "getScope") return self;
     if (name == "isGlobal") return self.get("global");
@@ -474,17 +479,20 @@ JSValue nativeNodeConstructor() {
     static thread_local JSWeakValue weak;
     if (const auto found = weak.lock(); found && found->isConstructible()) return *found;
     static thread_local bool initializing = false; JSModuleInitializationScope scope(initializing, "Node");
+    const auto updateTypes = nativeNodeConstantsBinding("NodeUpdateType");
     auto state = JSValue::object(nullptr); own(state, "id", 0);
     auto constructor = JSValue::constructor([](const JSValue& receiver, const Args& args, const Args& captures) -> JSValue {
         auto self = receiver, state = captures[0];
         self.set("nodeType", defaulted(args, 0, nullptr));
-        self.set("updateType", "none"); self.set("updateBeforeType", "none"); self.set("updateAfterType", "none");
+        self.set("updateType", captures[1].get("NONE"));
+        self.set("updateBeforeType", captures[1].get("NONE"));
+        self.set("updateAfterType", captures[1].get("NONE"));
         self.set("version", 0); self.set("name", ""); self.set("global", false); self.set("parents", false); self.set("isNode", true);
         self.set("_beforeNodes", nullptr); self.set("_cacheKey", nullptr); self.set("_uuid", nullptr); self.set("_cacheKeyVersion", 0);
         const auto id = state.get("id").toNumber(); state.set("id", id + 1); self.set("id", id); self.set("stackTrace", nullptr);
         if (nativeNodeConstructor().get("captureStackTrace").strictEquals(true)) self.set("stackTrace", nativeStackTraceConstructor().construct());
         return {};
-    }, {state}, "Node", 0);
+    }, {state, updateTypes}, "Node", 0);
     auto prototype = constructor.get("prototype"); prototype.setPrototype(EventDispatcher::runtimePrototype());
     constructor.setPrototype(EventDispatcher::runtimePrototype().get("constructor"));
     JSPropertyDescriptor type; type.getter = JSValue::function([](const JSValue&, const Args&, const Args&) -> JSValue { return "Node"; }, {}, "get type", 0); type.configurable = true;

@@ -2,6 +2,7 @@
 #include "core/JSValue.h"
 #include "math/Vector3.h"
 #include <vector>
+JSValue nativeSphereConstructor();
 class Box3;
 class Matrix4;
 class Plane;

@@ -422,7 +422,6 @@ JSValue dispatch(const JSValue& receiver, const Args& args, const Args& captures
     }
     if (name == "getUniformBufferLimit") return invoke(self.get("renderer").get("backend").get("capabilities"), "getUniformBufferLimit")();
     if (name == "addChain") {
-        if (!invoke(self.get("chaining"), "indexOf")({a}).strictEquals(-1)) ThreeUtils::warn({"Recursive node: ", a});
         invoke(self.get("chaining"), "push")({a}); return {};
     }
     if (name == "removeChain") {

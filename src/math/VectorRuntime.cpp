@@ -1,6 +1,7 @@
 #include "math/Vector2.h"
 #include "math/Vector3.h"
 #include "core/JSModuleObject.h"
+#include <cmath>
 
 namespace {
 using Args = std::vector<JSValue>;
@@ -22,6 +23,36 @@ JSValue method(const JSValue& receiver, const Args& args, const Args& captures) 
         return name == "toArray" ? array : self;
     }
     if (name == "equals") { for (unsigned i = 0; i < count; ++i) { const std::string key(1, "xyz"[i]); const auto left = source.get(key); if (!left.strictEquals(self.get(key))) return false; } return true; }
+    if(name=="multiplyScalar"){
+        for(unsigned i=0;i<count;++i){const std::string key(1,"xyz"[i]);self.set(key,product(self.get(key),source));}return self;
+    }
+    if(name=="length"){
+        double result=0;
+        for(unsigned i=0;i<count;++i){const std::string key(1,"xyz"[i]);const auto left=self.get(key),right=self.get(key);const auto squared=product(left,right);result=i?result+squared:squared;}
+        return std::sqrt(result);
+    }
+    if(name=="setFromMatrixColumn"){
+        const auto fn=self.get("fromArray"),elements=source.get("elements");const auto offset=arg(args,1).toNumber()*4;
+        return fn.call(self,{elements,offset});
+    }
+    if(name=="setFromMatrixPosition"){
+        const auto elements=source.get("elements");for(unsigned i=0;i<3;++i)self.set(std::string(1,"xyz"[i]),elements.get(std::to_string(12+i)));return self;
+    }
+    if(name=="setFromMatrixScale"){
+        JSValue scales[3];
+        for(unsigned i=0;i<3;++i){const auto column=self.get("setFromMatrixColumn").call(self,{source,i});scales[i]=column.get("length").call(column);}
+        for(unsigned i=0;i<3;++i)self.set(std::string(1,"xyz"[i]),scales[i]);return self;
+    }
+    if(name=="applyMatrix4"){
+        const auto x=self.get("x"),y=self.get("y"),z=self.get("z"),e=source.get("elements");
+        const auto a=product(e.get("3"),x),b=product(e.get("7"),y);const auto ab=a+b;const auto c=product(e.get("11"),z);const auto abc=ab+c;
+        const auto denominator=add(abc,e.get("15")).toNumber();const auto w=1/denominator;
+        for(unsigned i=0;i<3;++i){
+            const auto a=product(e.get(std::to_string(i)),x),b=product(e.get(std::to_string(i+4)),y);const auto ab=a+b;
+            const auto c=product(e.get(std::to_string(i+8)),z);const auto abc=ab+c;const auto sum=add(abc,e.get(std::to_string(i+12)));
+            self.set(std::string(1,"xyz"[i]),product(sum,w));
+        }return self;
+    }
     if (name == "applyMatrix3") {
         const auto x = self.get("x"), y = self.get("y"); const auto z = count == 3 ? self.get("z") : JSValue{}; const auto elements = source.get("elements");
         for (unsigned i = 0; i < count; ++i) {
@@ -41,7 +72,11 @@ JSValue constructor(unsigned count) {
     auto ctor = JSValue::constructor([](const JSValue& receiver, const Args& args, const Args& captures) -> JSValue { auto self = receiver; const auto count = static_cast<unsigned>(captures[0].number()); for (unsigned i = 0; i < count; ++i) { const auto value = arg(args, i); self.set(std::string(1, "xyz"[i]), value.isUndefined() ? JSValue(0) : value); } return {}; }, {count}, name, 0);
     auto prototype = ctor.get("prototype");
     if (count == 2) for (const auto* key : {"width", "height"}) { JSPropertyDescriptor d; d.configurable = true; d.getter = JSValue::function(method, {std::string("get ") + key, count}, std::string("get ") + key, 0); d.setter = JSValue::function(method, {std::string("set ") + key, count}, std::string("set ") + key, 1); prototype.defineProperty(key, d); }
-    for (const auto& [methodName, arity] : std::initializer_list<std::pair<const char*, unsigned>>{{"set", count}, {"setScalar", 1}, {"clone", 0}, {"copy", 1}, {"applyMatrix3", 1}, {"equals", 1}, {"fromArray", 1}, {"toArray", 0}}) { JSPropertyDescriptor d; d.value = JSValue::function(method, {methodName, count}, methodName, arity); d.writable = d.configurable = true; prototype.defineProperty(methodName, d); }
+    std::vector<std::pair<const char*,unsigned>> methods{{"set",count},{"setScalar",1},{"clone",0},{"copy",1},{"multiplyScalar",1},{"applyMatrix3",1}};
+    if(count==3)methods.emplace_back("applyMatrix4",1);
+    methods.emplace_back("length",0);methods.emplace_back("equals",1);methods.emplace_back("fromArray",1);methods.emplace_back("toArray",0);
+    if(count==3)for(const auto& entry:std::initializer_list<std::pair<const char*,unsigned>>{{"setFromMatrixPosition",1},{"setFromMatrixScale",1},{"setFromMatrixColumn",2}})methods.insert(methods.end()-3,entry);
+    for (const auto& [methodName, arity] : methods) { JSPropertyDescriptor d; d.value = JSValue::function(method, {methodName, count}, methodName, arity); d.writable = d.configurable = true; prototype.defineProperty(methodName, d); }
     prototype.set(std::string("is") + name, true); ctor.retainForHeapLifetime(); weak[index] = JSWeakValue(ctor); return ctor;
 }
 }

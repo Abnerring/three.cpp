@@ -1,4 +1,4 @@
-#include "nodes/core/CameraNames.h"
+#include "nodes/accessors/Camera.h"
 
 #include "catch.hpp"
 

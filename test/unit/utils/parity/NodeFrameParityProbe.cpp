@@ -1,6 +1,8 @@
 #include "animation/AnimationUtils.h"
 #include "core/JSWeakMap.h"
 #include "nodes/core/NodeFrame.h"
+#include "nodes/core/constants.h"
+#include <algorithm>
 #include <cmath>
 #include <iostream>
 #include <limits>
@@ -533,6 +535,78 @@ JSValue runGC() {
     call(out, "push", {array({"keyDropped", !weakFrame.expired(), !weakKey.expired(), !weakRecord.expired()})});
     return out;
 }
+JSValue mutableValue(const JSValue& spec,const JSValue& state){
+    return spec.isObject()&&spec.get("tag").strictEquals("match")?state.get("type"):decode(spec,state,"enum");
+}
+void mutablePoint(JSValue state,const std::string& point){
+    event(state,{"point",point,state.get("depth")});const auto request=state.get("request");
+    if(request.get("throwAt").strictEquals(point))throw JSTypeError(point);
+    if(request.get("mutateAt").strictEquals(point)){
+        const auto changes=request.get("changes");for(const auto& key:changes.keys())state.get("enumValues").set(key,mutableValue(changes.get(key),state));
+        event(state,{"mutated",point});
+    }
+    if(request.get("gc").toBoolean()&&!state.get("gcScanned").toBoolean()){
+        state.set("gcScanned",true);state.collectGarbage();
+    }
+    if(request.get("reenterAt").strictEquals(point)&&!state.get("reentered").toBoolean()){
+        state.set("reentered",true);state.set("depth",1);
+        const auto result=invoke(state.get("frame"),method(phase(request)),{state.get("node")});state.set("depth",0);event(state,{"nested",point,result});
+    }
+}
+JSValue runMutable(const JSValue& request){
+    NodeFrame native;auto frame=native.object(),state=newState(request,frame),node=JSValue::object();state.set("node",node);state.set("depth",0);
+    state.set("type",decode(request.get("type"),state,"type"));state.set("enumValues",JSValue::object());state.set("enumReads",JSValue::object());
+    state.set("field:frameId",request.hasOwn("frameId")?decode(request.get("frameId")):JSValue(1));state.set("field:renderId",request.hasOwn("renderId")?decode(request.get("renderId")):JSValue(2));
+    const auto updateTypes=nativeNodeConstantsBinding("NodeUpdateType");const auto constants=nativeNodeConstants();const auto oldFacade=constants.getOwnPropertyDescriptor("NodeUpdateType");
+    std::vector<JSPropertyDescriptor> saved;for(const auto* key:{"FRAME","RENDER","OBJECT"}){
+        saved.push_back(updateTypes.getOwnPropertyDescriptor(key).value());state.get("enumReads").set(key,0);
+        state.get("enumValues").set(key,request.get("enums").hasOwn(key)?mutableValue(request.get("enums").get(key),state):JSValue(key==std::string("FRAME")?"frame":key==std::string("RENDER")?"render":"object"));
+        accessor(updateTypes,key,JSValue::function(+[](const JSValue& self,const Args&,const Args& c)->JSValue{
+            auto state=c[0],reads=state.get("enumReads");const auto key=c[1].string();const auto count=reads.get(key).toNumber()+1;reads.set(key,count);
+            event(state,{"enumGet",key,count,state.get("depth"),self.sameValue(c[2])});mutablePoint(state,"enum:"+key);
+            const auto sequences=state.get("request").get("sequences");const auto sequence=sequences.isObject()?sequences.get(key):JSValue{};
+            if(sequence.type()==JSValue::Type::Array&&sequence.length()>0){const auto index=std::min(count-1,static_cast<double>(sequence.length()-1));return mutableValue(sequence.get(JSValue(index)),state);}
+            return state.get("enumValues").get(key);
+        },{state,key,updateTypes}));
+    }
+    if(request.get("replaceFacade").toBoolean()){auto facade=constants;facade.set("NodeUpdateType",JSValue::object());}
+    for(const auto* key:{"frameId","renderId"})accessor(frame,key,JSValue::function(+[](const JSValue&,const Args&,const Args& c)->JSValue{mutablePoint(c[0],"frameGet:"+c[1].toString());return c[0].get("field:"+c[1].toString());},{state,key}),JSValue::function(+[](const JSValue&,const Args& a,const Args& c)->JSValue{mutablePoint(c[0],"frameSet:"+c[1].toString());auto state=c[0];state.set("field:"+c[1].toString(),a.at(0));return {};},{state,key}));
+    const auto originalMaps=frame.get("_getMaps");const auto stage=phase(request);state.set("originalMaps",originalMaps);
+    const auto originalMap=frame.get(mapName(stage));state.set("originalMap",originalMap);
+    accessor(frame,mapName(stage),JSValue::function(+[](const JSValue&,const Args&,const Args& c)->JSValue{mutablePoint(c[0],"mapArgument");return c[0].get("originalMap");},{state}));
+    accessor(frame,"_getMaps",JSValue::function(+[](const JSValue&,const Args&,const Args& c)->JSValue{
+        mutablePoint(c[0],"maps.get");return JSValue::function(+[](const JSValue& self,const Args& a,const Args& c)->JSValue{
+            auto state=c[0];mutablePoint(state,"maps.call");event(state,{"mapsArguments",self.sameValue(state.get("frame")),a.at(0).sameValue(state.get("originalMap")),a.at(1).sameValue(state.get("ref"))});
+            auto maps=state.get("originalMaps").call(self,a);
+            if(!state.get("record").sameValue(maps)){
+                state.set("record",maps);for(const auto* key:{"frameId","renderId"}){
+                    state.set(std::string("stored:")+key,maps.get(key));accessor(maps,key,JSValue::function(+[](const JSValue&,const Args&,const Args& c)->JSValue{mutablePoint(c[0],"markGet:"+c[1].toString());return c[0].get("stored:"+c[1].toString());},{state,key}),JSValue::function(+[](const JSValue&,const Args& a,const Args& c)->JSValue{mutablePoint(c[0],"markSet:"+c[1].toString());event(c[0],{"markValue",c[1],encode(a.at(0))});auto state=c[0];state.set("stored:"+c[1].toString(),a.at(0));return {};},{state,key}));
+                }
+            }return maps;
+        },c);
+    },{state}));
+    for(const auto& name:{typeMethod(stage),std::string("updateReference"),callback(stage)}){
+        const auto role=name==typeMethod(stage)?"type":name=="updateReference"?"reference":"callback";
+        accessor(node,name,JSValue::function(+[](const JSValue&,const Args&,const Args& c)->JSValue{
+            mutablePoint(c[0],c[1].toString()+".get");return JSValue::function(+[](const JSValue& self,const Args& a,const Args& c)->JSValue{
+                auto state=c[0];const auto role=c[1].string();mutablePoint(state,role+".call");event(state,{"receiver",role,self.sameValue(state.get("node")),a.at(0).sameValue(state.get("frame"))});
+                if(role=="type")return state.get("type");if(role=="reference")return state.get("ref");
+                const auto count=state.get("calls").toNumber()+1;state.set("calls",count);const auto returns=state.get("request").get("returns");return decode(returns.get(JSValue(count-1)),state);
+            },c);
+        },{state,role}));
+    }
+    auto restore=[&]{std::size_t i=0;for(const auto* key:{"FRAME","RENDER","OBJECT"}){auto target=updateTypes;target.defineProperty(key,saved[i++]);}if(oldFacade){auto facade=constants;facade.defineProperty("NodeUpdateType",*oldFacade);}};
+    try{
+        auto steps=JSValue::array();const auto operations=request.get("steps");for(unsigned i=0;i<operations.length();++i){const auto operation=operations.get(JSValue(i));
+            for(const auto* key:{"frameId","renderId"})if(operation.hasOwn(key))frame.set(key,decode(operation.get(key)));
+            if(operation.hasOwn("type"))state.set("type",decode(operation.get("type"),state,"stepType"));
+            if(operation.hasOwn("enums"))for(const auto& key:operation.get("enums").keys())state.get("enumValues").set(key,mutableValue(operation.get("enums").get(key),state));
+            auto row=JSValue::object();row.set("result",invoke(frame,method(stage),{node}));row.set("calls",state.get("calls"));row.set("ids",array({encode(state.get("field:frameId")),encode(state.get("field:renderId"))}));
+            row.set("marks",state.get("record").isUndefined()?JSValue("#undefined"):array({encode(state.get("stored:frameId")),encode(state.get("stored:renderId"))}));call(steps,"push",{row});
+        }
+        auto out=JSValue::object();out.set("steps",steps);out.set("events",state.get("events"));out.set("reads",state.get("enumReads"));restore();return out;
+    }catch(...){restore();throw;}
+}
 JSValue run(const JSValue& request) {
     const auto kind = request.get("kind").string();
     if (kind == "metadata") return runMetadata();
@@ -541,6 +615,7 @@ JSValue run(const JSValue& request) {
     if (kind == "maps") return runMaps(request);
     if (kind == "mapPrototype") return runMapPrototype(request);
     if (kind == "clock") return runClock(request);
+    if (kind == "mutable") return runMutable(request);
     throw JSTypeError("unknown probe kind");
 }
 } // namespace

@@ -1,4 +1,4 @@
-#include "nodes/core/BuiltinNode.h"
+#include "nodes/accessors/BuiltinNode.h"
 
 #include "catch.hpp"
 

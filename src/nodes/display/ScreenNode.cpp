@@ -1,4 +1,4 @@
-﻿#include "nodes/core/ScreenNode.h"
+#include "nodes/display/ScreenNode.h"
 
 const std::vector<std::string>& ScreenNode::scopes() {
     static const std::vector<std::string> names{"coordinate", "viewport", "size", "uv"};

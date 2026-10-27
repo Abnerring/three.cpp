@@ -1,4 +1,4 @@
-#include "nodes/core/ScreenNode.h"
+#include "nodes/display/ScreenNode.h"
 
 #include "catch.hpp"
 
