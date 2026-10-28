@@ -123,7 +123,14 @@ void installNativeGeometryRenderingBridge(JSValue object, const std::shared_ptr<
         });
     }
     object.defineProperty("drawRange", data(range));
-    object.setPrototype(eventPrototype(object.getPrototype(), "geometry")); installDisposeBridge(object, geometry);
+    auto prototype=eventPrototype(object.getPrototype(), "geometry");
+    prototype.defineProperty("getAttribute",data(JSValue::function(+[](const JSValue& self,const Args& args,const Args&)->JSValue{
+        return self.get("attributes").get(arg(args,0));
+    },{},"getAttribute",1),true,false,true));
+    prototype.defineProperty("hasAttribute",data(JSValue::function(+[](const JSValue& self,const Args& args,const Args&)->JSValue{
+        return !self.get("attributes").get(arg(args,0)).isUndefined();
+    },{},"hasAttribute",1),true,false,true));
+    object.setPrototype(prototype); installDisposeBridge(object, geometry);
 }
 void installNativeObjectRenderingBridge(JSValue object, const std::shared_ptr<Object3D>& owner) {
     if (!std::dynamic_pointer_cast<InstancedMesh>(owner)) return;
@@ -145,4 +152,7 @@ void installNativeSkeletonRenderingBridge(JSValue object, const std::shared_ptr<
     prototype.defineProperty("update", data(JSValue::function(+[](const JSValue& self, const Args&, const Args&)->JSValue {
         payload<Skeleton>(self, "three.Skeleton")->update(); return {};
     }, {}, "update", 0), true, false, true)); object.setPrototype(prototype);
+    prototype.defineProperty("computeBoneTexture",data(JSValue::function(+[](const JSValue& self,const Args&,const Args&)->JSValue{
+        payload<Skeleton>(self,"three.Skeleton")->computeBoneTexture();return self;
+    },{},"computeBoneTexture",0),true,false,true));
 }

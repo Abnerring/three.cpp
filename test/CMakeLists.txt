@@ -347,7 +347,7 @@ add_executable(THREECPPTests
         unit/src/nodes/utils/JoinNode.tests.cpp
         unit/src/nodes/utils/MemberNode.tests.cpp
         unit/src/nodes/utils/ArrayElementNode.tests.cpp
-        unit/src/nodes/core/StorageArrayElementNode.tests.cpp
+        unit/src/nodes/utils/StorageArrayElementNode.tests.cpp
         unit/src/nodes/core/SpriteUtils.tests.cpp
         unit/src/nodes/utils/SetNode.tests.cpp
         unit/src/nodes/core/TriplanarTextures.tests.cpp
@@ -2156,3 +2156,36 @@ if(THREECPP_NODE_EXECUTABLE AND THREEJS_SOURCE_DIR)
         COMMAND "${THREECPP_NODE_EXECUTABLE}" "${CMAKE_CURRENT_SOURCE_DIR}/unit/utils/parity/compare-tangent-normal-bump.mjs"
         "${THREEJS_SOURCE_DIR}" "$<TARGET_FILE:ThreeJsTangentNormalBumpParityProbe>" "${CMAKE_BINARY_DIR}/parity/tangent-normal-bump-relative" --relative-integration-node-ids --fixture-host-stack)
 endif()
+
+foreach(probe IN ITEMS InstancedBuffers Instance StorageNodes SkinningNode DataTextureMorph Batch MeshResourceDependencies)
+    add_executable(ThreeJs${probe}ParityProbe unit/utils/parity/${probe}ParityProbe.cpp)
+    target_link_libraries(ThreeJs${probe}ParityProbe PRIVATE threecpp::threecpp)
+endforeach()
+if(THREECPP_NODE_EXECUTABLE AND THREEJS_SOURCE_DIR)
+    add_test(NAME threecpp.threejs-mesh-resource-dependencies-parity COMMAND
+        "${THREECPP_NODE_EXECUTABLE}" "${CMAKE_CURRENT_SOURCE_DIR}/unit/utils/parity/compare-mesh-resource-dependencies.mjs"
+        "${THREEJS_SOURCE_DIR}" "$<TARGET_FILE:ThreeJsMeshResourceDependenciesParityProbe>" "${CMAKE_BINARY_DIR}/parity/mesh-resource-dependencies")
+    add_test(NAME threecpp.threejs-instanced-buffers-parity COMMAND
+        "${THREECPP_NODE_EXECUTABLE}" "${CMAKE_CURRENT_SOURCE_DIR}/unit/utils/parity/compare-instanced-buffers.mjs"
+        "${THREEJS_SOURCE_DIR}" "$<TARGET_FILE:ThreeJsInstancedBuffersParityProbe>" "${CMAKE_BINARY_DIR}/parity/instanced-buffers")
+    add_test(NAME threecpp.threejs-instance-relative-parity COMMAND
+        "${THREECPP_NODE_EXECUTABLE}" "${CMAKE_CURRENT_SOURCE_DIR}/unit/utils/parity/compare-instance.mjs"
+        "${THREEJS_SOURCE_DIR}" "$<TARGET_FILE:ThreeJsInstanceParityProbe>" "${CMAKE_BINARY_DIR}/parity/instance-relative" --relative-node-ids)
+    add_test(NAME threecpp.threejs-storage-nodes-relative-parity COMMAND
+        "${THREECPP_NODE_EXECUTABLE}" "${CMAKE_CURRENT_SOURCE_DIR}/unit/utils/parity/compare-storage-nodes.mjs"
+        "${THREEJS_SOURCE_DIR}" "$<TARGET_FILE:ThreeJsStorageNodesParityProbe>" "${CMAKE_BINARY_DIR}/parity/storage-nodes-relative" --relative-node-ids)
+    add_test(NAME threecpp.threejs-skinning-node-relative-parity COMMAND
+        "${THREECPP_NODE_EXECUTABLE}" "${CMAKE_CURRENT_SOURCE_DIR}/unit/utils/parity/compare-skinning-node.mjs"
+        "${THREEJS_SOURCE_DIR}" "$<TARGET_FILE:ThreeJsSkinningNodeParityProbe>" "${CMAKE_BINARY_DIR}/parity/skinning-node-relative" --relative-node-ids --fixture-resource-uuids)
+    add_test(NAME threecpp.threejs-data-texture-morph-relative-parity COMMAND
+        "${THREECPP_NODE_EXECUTABLE}" "${CMAKE_CURRENT_SOURCE_DIR}/unit/utils/parity/compare-data-texture-morph.mjs"
+        "${THREEJS_SOURCE_DIR}" "$<TARGET_FILE:ThreeJsDataTextureMorphParityProbe>" "${CMAKE_BINARY_DIR}/parity/data-texture-morph-relative" --relative-integration-node-ids --fixture-host-stack)
+    add_test(NAME threecpp.threejs-batch-relative-parity COMMAND
+        "${THREECPP_NODE_EXECUTABLE}" "${CMAKE_CURRENT_SOURCE_DIR}/unit/utils/parity/compare-batch.mjs"
+        "${THREEJS_SOURCE_DIR}" "$<TARGET_FILE:ThreeJsBatchParityProbe>" "${CMAKE_BINARY_DIR}/parity/batch-relative" --relative-integration-node-ids --fixture-host-stack)
+endif()
+add_test(NAME threecpp.instance-lifetime COMMAND ThreeJsInstanceParityProbe --lifetime)
+add_test(NAME threecpp.storage-nodes-lifetime COMMAND ThreeJsStorageNodesParityProbe --fresh-gc)
+add_test(NAME threecpp.skinning-node-lifetime COMMAND ThreeJsSkinningNodeParityProbe --fresh-gc)
+add_test(NAME threecpp.data-texture-morph-lifetime COMMAND ThreeJsDataTextureMorphParityProbe --lifetime)
+add_test(NAME threecpp.batch-lifetime COMMAND ThreeJsBatchParityProbe --lifetime)

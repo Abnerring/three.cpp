@@ -442,7 +442,7 @@ GeometryPtr mergeGeometries(const GeometryList& geometries, bool useGroups) {
 
             if (morphAttributes.find(name) == morphAttributes.end())
                 morphAttributes[name] = std::vector<std::vector<AttributePtr>>{};
-            morphAttributes[name].push_back(list);
+            morphAttributes[name].emplace_back(list.begin(),list.end());
 
             morphAttributesCount++;
         }
@@ -986,9 +986,9 @@ MorphedAttributes computeMorphedAttributes(const std::shared_ptr<Object3D>& obje
     const auto& morphAttributeMap = geometry->morphAttributes;
     const auto morphPositionEntry = morphAttributeMap.find("position");
     const auto morphNormalEntry = morphAttributeMap.find("normal");
-    const std::vector<AttributePtr>* morphPosition =
+    const SharedArray<AttributePtr>* morphPosition =
         morphPositionEntry == morphAttributeMap.end() ? nullptr : &morphPositionEntry->second;
-    const std::vector<AttributePtr>* morphNormal =
+    const SharedArray<AttributePtr>* morphNormal =
         morphNormalEntry == morphAttributeMap.end() ? nullptr : &morphNormalEntry->second;
     const bool morphTargetsRelative = geometry->morphTargetsRelative;
 
@@ -1001,7 +1001,7 @@ MorphedAttributes computeMorphedAttributes(const std::shared_ptr<Object3D>& obje
     Float32Array modifiedNormal(normalAttribute->getCount() * normalAttribute->getItemSize());
 
     const auto calculateMorphedAttributeData =
-        [&](const AttributePtr& attribute, const std::vector<AttributePtr>* morphAttribute, double a,
+        [&](const AttributePtr& attribute, const SharedArray<AttributePtr>* morphAttribute, double a,
             double b, double c, Float32Array& modifiedAttributeArray) {
             _vA.fromBufferAttribute(*attribute, a);
             _vB.fromBufferAttribute(*attribute, b);

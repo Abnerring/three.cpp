@@ -234,7 +234,11 @@ JSValue bufferConstructor() {
             const auto constructor=self.get("constructor");
             if(!constructor.isUndefined()&&!constructor.isObject()) throw JSTypeError("ArrayBuffer constructor must be an object");
             return nativeArrayBuffer(buffer.slice(begin,end));
-        },2);return result;
+        },2);
+        install(result,"isView",[](const JSValue&,const Args& args,const Args&)->JSValue {
+            // A Proxy of a view has no [[ViewedArrayBuffer]] internal slot.
+            return arg(args,0).isHostObject(typedTag);
+        },1);return result;
     }();
     constructor.retainForHeapLifetime();cached=JSWeakValue(constructor);return constructor;
 }

@@ -1,5 +1,8 @@
 #pragma once
 #include "textures/Texture.h"
+JSValue nativeDataTextureConstructor();
+JSValue nativeDataTextureModule();
+JSValue nativeDataTextureBinding(const std::string& name);
 class DataTexture : public Texture {
   public:
     explicit DataTexture(TextureImage::Data data = nullptr, double width = 1, double height = 1,

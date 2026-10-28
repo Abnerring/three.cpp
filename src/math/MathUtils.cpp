@@ -1,6 +1,8 @@
 ﻿#include "math/MathUtils.h"
 #include "math/JSNumberMath.h"
 #include <vector>
+#include "core/JSGlobal.h"
+#include "math/GenerateUUIDSource.inc"
 #include <cstdint>
 #include "math/Quaternion.h"
 #include "math/JSNumberMath.h"
@@ -257,4 +259,39 @@ namespace MathUtils
         else if (order == "YXY") { q.set( s2 * c3_1, c2 * s13, s2 * s3_1, c2 * c13 ); }
         else if (order == "ZYZ") { q.set( s2 * s3_1, s2 * c3_1, c2 * s13, c2 * c13 ); }
     }
+}
+
+JSValue nativeMathUtilsGenerateUUID()
+{
+    static thread_local JSWeakValue weak;
+    if (const auto value = weak.lock(); value && value->isCallable()) return *value;
+    auto function = JSValue::constructor(+[](const JSValue&, const std::vector<JSValue>&,
+                                            const std::vector<JSValue>&) -> JSValue {
+        const auto word = []() -> std::uint32_t {
+            const auto math = nativeGlobalBinding("Math");
+            const auto random = math.get("random");
+            const auto product = random.call(math).toNumber() * 0xffffffff;
+            if (!std::isfinite(product) || product == 0) return 0;
+            auto integer = std::fmod(std::trunc(product), 4294967296.0);
+            if (integer < 0) integer += 4294967296.0;
+            return static_cast<std::uint32_t>(integer);
+        };
+        const auto d0 = word();
+        const auto d1 = word();
+        const auto d2 = word();
+        const auto d3 = word();
+        const auto& lut = MathUtils::_lut;
+        const JSValue uuid = std::string(lut[d0 & 0xff]) + lut[d0 >> 8 & 0xff] +
+            lut[d0 >> 16 & 0xff] + lut[d0 >> 24 & 0xff] + '-' +
+            lut[d1 & 0xff] + lut[d1 >> 8 & 0xff] + '-' +
+            lut[d1 >> 16 & 0x0f | 0x40] + lut[d1 >> 24 & 0xff] + '-' +
+            lut[d2 & 0x3f | 0x80] + lut[d2 >> 8 & 0xff] + '-' +
+            lut[d2 >> 16 & 0xff] + lut[d2 >> 24 & 0xff] +
+            lut[d3 & 0xff] + lut[d3 >> 8 & 0xff] + lut[d3 >> 16 & 0xff] + lut[d3 >> 24 & 0xff];
+        return uuid.get("toLowerCase").call(uuid);
+    }, {}, "generateUUID", 0, JSValue::ConstructorKind::Callable);
+    function.setFunctionSourceText(MathUtilsUUIDSource::functionSource);
+    function.retainForHeapLifetime();
+    weak = JSWeakValue(function);
+    return function;
 }

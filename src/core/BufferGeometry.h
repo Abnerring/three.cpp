@@ -2,6 +2,8 @@
 #include "core/JsonValue.h"
 #include "core/OrderedMap.h"
 #include "core/SharedVector.h"
+#include "core/SharedArray.h"
+#include "core/SharedOrderedMap.h"
 #include "core/BufferAttribute.h"
 #include "math/Box3.h"
 #include "math/Quaternion.h"
@@ -26,7 +28,7 @@ class BufferGeometry : public EventDispatcher, public std::enable_shared_from_th
     std::string uuid, name, type = "BufferGeometry";
     std::shared_ptr<BufferAttribute> index;
     OrderedMap<std::shared_ptr<VertexAttribute>> attributes;
-    OrderedMap<std::vector<std::shared_ptr<VertexAttribute>>> morphAttributes;
+    SharedOrderedMap<SharedArray<std::shared_ptr<VertexAttribute>>> morphAttributes;
     bool morphTargetsRelative = false;
     SharedVector<Group> groups;
     std::optional<Box3> boundingBox;

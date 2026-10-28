@@ -2,18 +2,24 @@
 // 11738a9d55e502fb484cefffcea3a66dc44e9fe9. See repository LICENSE.
 #include "core/InterleavedBuffer.h"
 #include "math/MathUtils.h"
+#include "core/JSGlobal.h"
 #include "constants.h"
 
 namespace {
 using Args = std::vector<JSValue>;
 JSValue arg(const Args& args, std::size_t index) { return index<args.size()?args[index]:JSValue{}; }
+void own(JSValue receiver,const char* key,const JSValue& value) {
+    JSPropertyDescriptor descriptor; descriptor.value=value;
+    descriptor.writable=descriptor.enumerable=descriptor.configurable=true;
+    receiver.defineProperty(key,descriptor);
+}
 JSValue call(JSValue receiver, const char* name, const Args& args = {}) {
     const auto method=receiver.get(name); return method.call(receiver,args);
 }
-std::string key(const JSValue& value) { return value.toPrimitive(JSValue::PreferredType::String).toString(); }
+JSValue key(const JSValue& value) { return value.toPropertyKey(); }
 JSValue arrayKey(JSValue array) {
     if(array.get("buffer").get("_uuid").isUndefined()) {
-        auto buffer=array.get("buffer"); buffer.set("_uuid",MathUtils::generateUUID());
+        auto buffer=array.get("buffer"); buffer.set("_uuid",nativeMathUtilsGenerateUUID().call());
     }
     if(array.get("byteOffset").strictEquals(0)) {
         const auto length=array.get("byteLength");
@@ -34,7 +40,7 @@ JSValue method(const JSValue& receiver, const Args& args, const Args& captures) 
     if(name=="setUsage") { self.set("usage",arg(args,0)); return self; }
     if(name=="addUpdateRange") {
         const auto ranges=self.get("updateRanges"), push=ranges.get("push");
-        auto range=JSValue::object(); range.set("start",arg(args,0)); range.set("count",arg(args,1));
+        auto range=JSValue::object(); own(range,"start",arg(args,0)); own(range,"count",arg(args,1));
         push.call(ranges,{range}); return {};
     }
     if(name=="clearUpdateRanges") { auto ranges=self.get("updateRanges"); ranges.set("length",0); return {}; }
@@ -69,16 +75,17 @@ JSValue method(const JSValue& receiver, const Args& args, const Args& captures) 
         auto buffers=data.get("arrayBuffers");
         if(buffers.get(key(cacheKey)).isUndefined()) {
             buffers=data.get("arrayBuffers"); const auto propertyKey=key(cacheKey);
-            const auto array=self.get("array"), slicer=array.get("slice");
-            const auto buffer=slicer.call(array,{0}).get("buffer");
-            if(name=="clone") buffers.set(propertyKey,buffer);
+            if(name=="clone") {
+                const auto array=self.get("array"), slicer=array.get("slice");
+                buffers.set(propertyKey,slicer.call(array,{0}).get("buffer"));
+            }
             else {
-                const auto constructor=nativeArray(AnimationArray(Uint32Array())).get("constructor");
+                const auto arrayConstructor=nativeGlobalBinding("Array"), from=arrayConstructor.get("from");
+                const auto constructor=nativeGlobalBinding("Uint32Array");
+                const auto array=self.get("array"), slicer=array.get("slice");
+                const auto buffer=slicer.call(array,{0}).get("buffer");
                 const auto integers=constructor.construct({buffer});
-                auto values=JSValue::array();
-                const auto length=integers.get("length").toNumber();
-                for(double i=0;i<length;++i) values.set(JSValue(i).toString(),integers.get(JSValue(i).toString()));
-                buffers.set(propertyKey,values);
+                buffers.set(propertyKey,from.call(arrayConstructor,{integers}));
             }
         }
         if(name=="clone") {
@@ -90,9 +97,9 @@ JSValue method(const JSValue& receiver, const Args& args, const Args& captures) 
             const auto setUsage=result.get("setUsage"), usage=self.get("usage"); setUsage.call(result,{usage});
             return result;
         }
-        auto json=JSValue::object(); json.set("uuid",self.get("uuid")); json.set("buffer",cacheKey);
-        json.set("type",self.get("array").get("constructor").get("name"));
-        json.set("stride",self.get("stride")); json.set("usage",self.get("usage")); return json;
+        auto json=JSValue::object(); own(json,"uuid",self.get("uuid")); own(json,"buffer",cacheKey);
+        own(json,"type",self.get("array").get("constructor").get("name"));
+        own(json,"stride",self.get("stride")); json.set("usage",self.get("usage")); return json;
     }
     throw JSTypeError("Unknown InterleavedBuffer method");
 }
@@ -106,7 +113,7 @@ void InterleavedBuffer::initialize(JSValue self, JSValue array, JSValue stride) 
         count=numerator/divisor;
     }
     self.set("count",count); self.set("usage",StaticDrawUsage); self.set("updateRanges",JSValue::array());
-    self.set("version",0); self.set("uuid",MathUtils::generateUUID());
+    self.set("version",0); self.set("uuid",nativeMathUtilsGenerateUUID().call());
 }
 JSValue InterleavedBuffer::constructor() {
     static thread_local JSWeakValue weak;

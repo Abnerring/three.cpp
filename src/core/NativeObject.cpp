@@ -2,6 +2,7 @@
 #include "core/NativeRenderingObject.h"
 #include "core/NativeObjectExtension.h"
 #include "core/InterleavedBufferAttribute.h"
+#include "core/JSGlobal.h"
 #include "animation/AnimationRuntime.h"
 #include "core/Object3D.h"
 #include "core/SharedArray.h"
@@ -146,12 +147,14 @@ template <> const char* arrayTag<std::shared_ptr<Material>>() { return "three.Ma
 template <> const char* arrayTag<std::shared_ptr<Bone>>() { return "three.BoneArray"; }
 template <> const char* arrayTag<std::shared_ptr<Camera>>() { return "three.CameraArray"; }
 template <> const char* arrayTag<std::shared_ptr<Plane>>() { return "three.PlaneArray"; }
+template <> const char* arrayTag<std::shared_ptr<VertexAttribute>>() { return "three.VertexAttributeArray"; }
 JSValue wrapPlane(const std::shared_ptr<Plane>& plane);
 JSValue wrapBox(const std::shared_ptr<Box3>& box);
 template <class T> JSValue nativeElement(const T& value) {
     if constexpr (std::is_same_v<T, double>) return value;
     else if constexpr (std::is_same_v<T, std::shared_ptr<Object3D>> || std::is_same_v<T,std::shared_ptr<Bone>> || std::is_same_v<T,std::shared_ptr<Camera>>) return nativeObject(value);
     else if constexpr (std::is_same_v<T,std::shared_ptr<Plane>>) return wrapPlane(value);
+    else if constexpr (std::is_same_v<T,std::shared_ptr<VertexAttribute>>) return nativeAttribute(value);
     else return nativeMaterial(value);
 }
 template <class T> T nativeElement(const JSValue& value) {
@@ -172,16 +175,21 @@ template <class T> T nativeElement(const JSValue& value) {
             if(!camera)throw JSTypeError("ArrayCamera cameras require native Camera objects");return camera;
         }
         else if constexpr (std::is_same_v<T,std::shared_ptr<Plane>>) return payload<Plane>(value,"three.Plane");
+        else if constexpr (std::is_same_v<T,std::shared_ptr<VertexAttribute>>) return vertexAttribute(value);
         else return payload<Material>(value, materialTag);
     }
 }
 template <class T> using ArrayStorage = typename SharedArray<T>::Storage;
+using MorphAttributeStorage = OrderedMap<SharedArray<std::shared_ptr<VertexAttribute>>>;
+constexpr const char* morphAttributeTag = "three.MorphAttributes";
 void traceNativeObject(const JSValue&, const std::shared_ptr<Object3D>&, std::vector<JSValue>&, std::unordered_set<const Object3D*>&);
 void traceNativeMaterial(const JSValue&, const std::shared_ptr<Material>&, std::vector<JSValue>&);
 void traceNativeGeometry(const JSValue&, const std::shared_ptr<BufferGeometry>&, std::vector<JSValue>&);
+void traceNativeAttribute(const JSValue&, const std::shared_ptr<VertexAttribute>&, std::vector<JSValue>&);
 void traceNativeTexture(const JSValue&, const std::shared_ptr<Texture>&, std::vector<JSValue>&);
 void traceNativeSkeleton(const JSValue&, const std::shared_ptr<Skeleton>&, std::vector<JSValue>&, std::unordered_set<const Object3D*>&);
 std::vector<JSNativeOwnerNode> geometryOwners(const JSValue&);
+std::vector<JSNativeOwnerNode> morphAttributeOwners(const JSValue&);
 std::vector<JSNativeOwnerNode> materialOwners(const JSValue&);
 std::vector<JSNativeOwnerNode> textureOwners(const JSValue&);
 std::vector<JSNativeOwnerNode> attributeOwners(const JSValue&);
@@ -208,7 +216,8 @@ template <class T> std::vector<JSValue> arrayTrace(const JSValue& self) {
         if (a->holes.contains(i)) continue;
         if constexpr (std::is_same_v<T, std::shared_ptr<Object3D>> || std::is_same_v<T,std::shared_ptr<Bone>> || std::is_same_v<T,std::shared_ptr<Camera>>) traceNativeObject(self, a->values[i], result, visited);
         else if constexpr (std::is_same_v<T, std::shared_ptr<Material>>) traceNativeMaterial(self, a->values[i], result);
-        else if constexpr (std::is_same_v<T,std::shared_ptr<Plane>>) if(a->values[i]) {cachedEdge(self,result,a->values[i].get(),"three.Plane");cachedEdge(self,result,&a->values[i]->normal,"three.Vector3");}
+        else if constexpr (std::is_same_v<T,std::shared_ptr<Plane>>) {if(a->values[i]) {cachedEdge(self,result,a->values[i].get(),"three.Plane");cachedEdge(self,result,&a->values[i]->normal,"three.Vector3");}}
+        else if constexpr (std::is_same_v<T,std::shared_ptr<VertexAttribute>>) traceNativeAttribute(self,a->values[i],result);
     }
     return result;
 }
@@ -1028,6 +1037,43 @@ JSValue nativeDictionary(const std::shared_ptr<Dictionary>& dictionary) {
     }
     return result;
 }
+template<class T> SharedArray<T> readSharedArray(const JSValue& value);
+JSValue morphAttributeMap(const std::shared_ptr<BufferGeometry>& geometry){
+    const auto storage=geometry->morphAttributes.storage();
+    auto result=JSValue::hostObject(storage,storage.get(),morphAttributeTag);
+    if(initialize(result)){
+        result.setHostSlot("morphDescriptors",JSValue::object(nullptr));
+        static const auto hooks=[] {
+            auto h=std::make_shared<JSHostObjectHooks>();h->nativeOwnership=morphAttributeOwners;
+            h->trace=[](const JSValue& self){
+                std::vector<JSValue> edges;
+                const auto storage=payload<MorphAttributeStorage>(self,morphAttributeTag);
+                for(const auto& [name,list]:*storage){
+                    cachedEdge(self,edges,list.storage().get(),arrayTag<std::shared_ptr<VertexAttribute>>(),JSValue::Type::Array);
+                    for(const auto& attribute:list)traceNativeAttribute(self,attribute,edges);
+                }
+                return edges;
+            };
+            h->getOwnProperty=[](const JSValue& self,const std::string& key)->JSHostPropertyResult {
+                const auto storage=payload<MorphAttributeStorage>(self,morphAttributeTag);const auto found=storage->find(key);if(found==storage->end())return {};
+                auto d=dataDescriptor(nativeSharedArray(found->second),true,true,true);const auto flags=self.getHostSlot("morphDescriptors").get(key);
+                if(!flags.isUndefined()){d.writable=flags.get("writable").toBoolean();d.enumerable=flags.get("enumerable").toBoolean();d.configurable=flags.get("configurable").toBoolean();}return {true,d};
+            };
+            h->defineOwnProperty=[](const JSValue& self,const std::string& key,const JSPropertyDescriptor& d)->std::optional<bool>{
+                const auto storage=payload<MorphAttributeStorage>(self,morphAttributeTag);const auto found=storage->find(key);const bool present=found!=storage->end();
+                if(!present&&(self.hasOwn(key)||!d.value||!d.value->isHostObject(arrayTag<std::shared_ptr<VertexAttribute>>())||d.getter||d.setter))return {};
+                if(!present&&!self.isExtensible())return false;
+                if(d.getter||d.setter)throw JSTypeError("Native morph attribute maps require data properties");
+                const auto flags=self.getHostSlot("morphDescriptors").get(key);const bool writable=flags.isUndefined()?present:flags.get("writable").toBoolean(),enumerable=flags.isUndefined()?present:flags.get("enumerable").toBoolean(),configurable=flags.isUndefined()?present:flags.get("configurable").toBoolean();
+                if(present&&!configurable){if(d.configurable.value_or(false)||(d.enumerable&&*d.enumerable!=enumerable))return false;if(!writable&&(d.writable.value_or(false)||(d.value&&!d.value->sameValue(nativeSharedArray(found->second)))))return false;}
+                if(d.value)(*storage)[key]=readSharedArray<std::shared_ptr<VertexAttribute>>(*d.value);else if(!present)throw JSTypeError("Native morph attribute entries require arrays");
+                auto state=JSValue::object(nullptr);state.set("writable",d.writable.value_or(writable));state.set("enumerable",d.enumerable.value_or(enumerable));state.set("configurable",d.configurable.value_or(configurable));auto descriptors=self.getHostSlot("morphDescriptors");descriptors.set(key,state);return true;
+            };
+            h->erase=[](const JSValue& self,const std::string& key)->std::optional<bool>{const auto storage=payload<MorphAttributeStorage>(self,morphAttributeTag);if(storage->find(key)==storage->end())return {};const auto flags=self.getHostSlot("morphDescriptors").get(key);if(!flags.isUndefined()&&!flags.get("configurable").toBoolean())return false;storage->erase(key);auto descriptors=self.getHostSlot("morphDescriptors");descriptors.erase(key);return true;};
+            h->ownPropertyNames=[](const JSValue& self){std::vector<std::string> names;for(const auto& [name,_]:*payload<MorphAttributeStorage>(self,morphAttributeTag))names.push_back(name);return names;};return h;
+        }();result.setHostHooks(hooks);
+    }return result;
+}
 JSValue geometryRead(const JSValue& self, const Args&, const Args& capture) {
     auto geometry = payload<BufferGeometry>(self, "three.BufferGeometry");
     const auto& key = capture[0].string();
@@ -1035,23 +1081,11 @@ JSValue geometryRead(const JSValue& self, const Args&, const Args& capture) {
     if (key == "name") return geometry->name;
     if (key == "type") return geometry->type;
     if (key == "isBufferGeometry") return true;
+    if (key == "morphTargetsRelative") return geometry->morphTargetsRelative;
     if (key == "isInstancedBufferGeometry") return geometry->isInstancedBufferGeometry;
     if (key == "instanceCount") if(const auto instanced=std::dynamic_pointer_cast<InstancedBufferGeometry>(geometry))return instanced->instanceCount;
     if (key == "animations") return nativeAnimationClips(geometry->animations);
-    if (key == "morphAttributes") {
-        // The geometry's map stays live. Its value-vector arrays are snapshots;
-        // migrating BufferGeometry.morphAttributes storage is a separate boundary.
-        auto object = JSValue::object();
-        for (const auto& [name, attributes] : geometry->morphAttributes) {
-            auto array = JSValue::array();
-            for (std::size_t i = 0; i < attributes.size(); ++i) {
-                if (!attributes[i]) { array.set(std::to_string(i), nullptr); continue; }
-                array.set(std::to_string(i), nativeAttribute(attributes[i]));
-            }
-            object.set(name, array);
-        }
-        return object;
-    }
+    if (key == "morphAttributes") return morphAttributeMap(geometry);
     return {};
 }
 JSValue wrapGeometry(const std::shared_ptr<BufferGeometry>& geometry) {
@@ -1059,6 +1093,7 @@ JSValue wrapGeometry(const std::shared_ptr<BufferGeometry>& geometry) {
     auto result = JSValue::hostObject(geometry, geometry.get(), "three.BufferGeometry");
     if (initialize(result)) {
         for (const char* key : {"uuid", "name", "type", "isBufferGeometry", "morphAttributes", "animations"}) accessor(result, key, geometryRead);
+        accessor(result,"morphTargetsRelative",geometryRead,[](const JSValue& self,const Args& args,const Args&)->JSValue{payload<BufferGeometry>(self,"three.BufferGeometry")->morphTargetsRelative=argument(args,0).toBoolean();return {};});
         if(std::dynamic_pointer_cast<InstancedBufferGeometry>(geometry)) {
             accessor(result,"isInstancedBufferGeometry",geometryRead);
             accessor(result,"instanceCount",geometryRead,[](const JSValue& self,const Args& args,const Args&){std::dynamic_pointer_cast<InstancedBufferGeometry>(payload<BufferGeometry>(self,"three.BufferGeometry"))->instanceCount=argument(args,0);return JSValue();});
@@ -1772,7 +1807,8 @@ void traceNativeGeometry(const JSValue& self, const std::shared_ptr<BufferGeomet
     const auto attribute = [&](const std::shared_ptr<VertexAttribute>& a) { traceNativeAttribute(self,a,result); };
     attribute(geometry->index);
     for (const auto& [name, a] : geometry->attributes) attribute(a);
-    for (const auto& [name, list] : geometry->morphAttributes) for (const auto& a : list) attribute(a);
+    cachedEdge(self,result,geometry->morphAttributes.storage().get(),morphAttributeTag);
+    for (const auto& [name, list] : geometry->morphAttributes){cachedEdge(self,result,list.storage().get(),arrayTag<std::shared_ptr<VertexAttribute>>(),JSValue::Type::Array);for (const auto& a : list) attribute(a);}
 }
 void traceNativeSkeleton(const JSValue& self,const std::shared_ptr<Skeleton>& skeleton,
                          std::vector<JSValue>& result,std::unordered_set<const Object3D*>& visited) {
@@ -1974,10 +2010,19 @@ struct NativeOwners {
         if(const auto instanced=std::dynamic_pointer_cast<InstancedBufferGeometry>(value))node.roots.push_back(&instanced->instanceCount);
         edge(node,value->index); attribute(value->index);
         for (const auto& [name,a] : value->attributes) { edge(node,a); attribute(a); }
-        for (const auto& [name,list] : value->morphAttributes)
-            for (const auto& a : list) { edge(node,a); attribute(a); }
+        const auto morphs=value->morphAttributes.storage();
+        node.edges.push_back({&value->morphAttributes,morphs});morphAttributes(morphs);
         edge(node,value->animations);
         if (value->animations) clips(value->animations,*value->animations);
+        nodes.push_back(std::move(node));
+    }
+    void morphAttributes(const std::shared_ptr<MorphAttributeStorage>& value) {
+        if(!enter(value))return;
+        JSNativeOwnerNode node{value,{},{}};
+        for(const auto& [name,list]:*value){
+            const auto storage=list.storage();node.edges.push_back({&list,storage});
+            array<std::shared_ptr<VertexAttribute>>(storage);
+        }
         nodes.push_back(std::move(node));
     }
     template <class T> void array(const std::shared_ptr<ArrayStorage<T>>& value) {
@@ -1987,6 +2032,7 @@ struct NativeOwners {
             edge(node,entry);
             if constexpr (std::is_same_v<T,std::shared_ptr<Object3D>> || std::is_same_v<T,std::shared_ptr<Bone>> || std::is_same_v<T,std::shared_ptr<Camera>>) object(entry);
             else if constexpr (std::is_same_v<T,std::shared_ptr<Plane>>) {if(enter(entry))nodes.push_back({entry,{},{}});}
+            else if constexpr (std::is_same_v<T,std::shared_ptr<VertexAttribute>>) attribute(entry);
             else material(entry);
         }
         nodes.push_back(std::move(node));
@@ -2094,6 +2140,9 @@ std::vector<JSNativeOwnerNode> targetOwners(const JSValue& self) {NativeOwners g
 std::vector<JSNativeOwnerNode> geometryOwners(const JSValue& self) {
     NativeOwners graph; graph.geometry(payload<BufferGeometry>(self,"three.BufferGeometry")); return std::move(graph.nodes);
 }
+std::vector<JSNativeOwnerNode> morphAttributeOwners(const JSValue& self) {
+    NativeOwners graph;graph.morphAttributes(payload<MorphAttributeStorage>(self,morphAttributeTag));return std::move(graph.nodes);
+}
 std::vector<JSNativeOwnerNode> materialOwners(const JSValue& self) {
     NativeOwners graph; graph.material(payload<Material>(self,materialTag)); return std::move(graph.nodes);
 }
@@ -2150,60 +2199,7 @@ JSValue attributeWrite(const JSValue& self,const Args& args,const Args& capture)
     }
     return {};
 }
-JSValue attributeMethod(const JSValue& self,const Args& args,const Args& capture) {
-    const auto& name=capture[0].string();
-    if(name=="onUploadCallback") return {};
-    if(name=="needsUpdate") {
-        if(argument(args,0).strictEquals(true)) {const auto next=self.get("version").toNumber()+1;auto receiver=self;receiver.set("version",next);}return {};
-    }
-    if(name=="setUsage" || name=="onUpload") {auto receiver=self;receiver.set(name=="setUsage"?"usage":"onUploadCallback",argument(args,0));return self;}
-    if(name=="addUpdateRange") {
-        const auto ranges=self.get("updateRanges"),push=ranges.get("push");
-        auto range=JSValue::object();range.defineProperty("start",dataDescriptor(argument(args,0)));range.defineProperty("count",dataDescriptor(argument(args,1)));
-        push.call(ranges,{range});return {};
-    }
-    if(name=="clearUpdateRanges") {auto ranges=self.get("updateRanges");ranges.set("length",0);return {};}
-    const auto attribute=bufferAttributeRuntimeValue(self);
-    if(name=="toJSON") {auto result=JSValue::fromJSON(attribute->toJSON());result.set("itemSize",self.get("itemSize"));result.set("normalized",self.get("normalized"));return result;}
-    if(name=="clone") return nativeAttribute(attribute->clone());
-    const auto index=argument(args,0).toNumber();
-    if(name=="getX") return attribute->getX(index);
-    if(name=="getY") return attribute->getY(index);
-    if(name=="getZ") return attribute->getZ(index);
-    if(name=="getW") return attribute->getW(index);
-    if(name=="setX") attribute->setX(index,argument(args,1).toNumber());
-    else if(name=="setY") attribute->setY(index,argument(args,1).toNumber());
-    else if(name=="setZ") attribute->setZ(index,argument(args,1).toNumber());
-    else if(name=="setW") attribute->setW(index,argument(args,1).toNumber());
-    else if(name=="setXY") {const auto x=argument(args,1).toNumber(),y=argument(args,2).toNumber();attribute->setXY(index,x,y);}
-    else if(name=="setXYZ") {const auto x=argument(args,1).toNumber(),y=argument(args,2).toNumber(),z=argument(args,3).toNumber();attribute->setXYZ(index,x,y,z);}
-    else if(name=="setXYZW") {const auto x=argument(args,1).toNumber(),y=argument(args,2).toNumber(),z=argument(args,3).toNumber(),w=argument(args,4).toNumber();attribute->setXYZW(index,x,y,z,w);}
-    else throw JSTypeError("Unknown BufferAttribute method");
-    return self;
-}
-JSValue attributeModule() {
-    static thread_local JSWeakValue cachedModule;
-    return cachedModuleValue(cachedModule, [] {
-        auto constructor=JSValue::constructor([](const JSValue& receiver,const Args& args,const Args&)->JSValue {
-            const auto array=animationArray(argument(args,0));const auto itemSize=argument(args,1);const auto size=itemSize.toNumber();
-            const auto normalized=argument(args,2).isUndefined()?JSValue(false):argument(args,2);
-            const auto attribute=std::visit([&](const auto& input)->std::shared_ptr<BufferAttribute> {
-                if constexpr(std::is_same_v<std::decay_t<decltype(input)>,JSValue>) throw JSTypeError("Expected TypedArray");
-                else return std::make_shared<BufferAttribute>(input,size,normalized.toBoolean());
-            },array.storage());auto result=nativeAttribute(attribute);result.setPrototype(receiver.getPrototype());
-            result.setHostSlot("rawItemSize",itemSize);result.setHostSlot("rawItemSizePresent",true);
-            result.setHostSlot("rawNormalized",normalized);return result;
-        },{},"BufferAttribute",2);auto result=constructor.get("prototype");
-        for(const auto& [name,arity]:std::initializer_list<std::pair<const char*,unsigned>>{{"getX",1},{"getY",1},{"getZ",1},{"getW",1},
-            {"setX",2},{"setY",2},{"setZ",2},{"setW",2},{"setXY",3},{"setXYZ",4},{"setXYZW",5},{"clone",0},{"toJSON",0},
-            {"onUploadCallback",0},{"setUsage",1},{"addUpdateRange",2},{"clearUpdateRanges",0},{"onUpload",1}}) {
-            auto d=dataDescriptor(JSValue::function(attributeMethod,{name},name,arity),true,false,true);result.defineProperty(name,d);
-        }
-        JSPropertyDescriptor needsUpdate;needsUpdate.setter=JSValue::function(attributeMethod,{"needsUpdate"},"set needsUpdate",1);needsUpdate.configurable=true;
-        result.defineProperty("needsUpdate",needsUpdate);
-        auto module=JSValue::object();module.set("constructor",constructor);module.set("prototype",result);return module;
-    });
-}
+#include "core/BufferAttributeManaged.inc"
 JSValue attributePrototype() { return attributeModule().get("prototype"); }
 std::int32_t halfInt32(const JSValue& value) {
     const auto number=value.toNumber();auto wrapped=std::isfinite(number)?std::fmod(std::trunc(number),4294967296.):0.;
@@ -2363,17 +2359,35 @@ void initializeInstanceProtocol(JSValue object,const std::shared_ptr<BufferAttri
     object.setHostHooks(instanceHooks());
 }
 }
+namespace {
+constexpr const char* managedAttributeRuntimeSlot="three.BufferAttribute.managedRuntime";
+std::shared_ptr<BufferAttributeRuntime> attributeRuntimeState(const JSValue& object){
+    if(object.isHostObject("three.BufferAttribute"))return payload<BufferAttributeRuntime>(object,"three.BufferAttribute");
+    const auto holder=object.getInternalSlot(managedAttributeRuntimeSlot);
+    if(holder.isHostObject("three.BufferAttribute"))return payload<BufferAttributeRuntime>(holder,"three.BufferAttribute");
+    return {};
+}
+void synchronizeManagedAttribute(const JSValue& object,const std::shared_ptr<BufferAttributeRuntime>& state){
+    if(object.isHostObject("three.BufferAttribute"))return;
+    const auto values=animationArray(object.get("array"));state->storage->array=std::visit([](const auto& input)->BufferAttributeArray{if constexpr(std::is_same_v<std::decay_t<decltype(input)>,JSValue>)throw JSTypeError("Expected TypedArray backing for native BufferAttribute bridge");else return input;},values.storage());
+    state->storage->itemSize=object.get("itemSize").toNumber();state->storage->count=object.get("count").toNumber();state->storage->normalized=object.get("normalized").toBoolean();state->storage->name=object.get("name").toString();state->storage->meshPerAttribute=object.get("meshPerAttribute");
+}
+}
 void bindBufferAttributeRuntime(const JSValue& object,const std::shared_ptr<BufferAttribute>& attribute) {
-    static_cast<void>(JSWeakValue(object));
-    const auto state=payload<BufferAttributeRuntime>(object,"three.BufferAttribute");
-    if(state->storage!=attribute->runtimeStorage())throw JSTypeError("BufferAttribute runtime storage mismatch");
-    state->owner=attribute;
-    initializeInstanceProtocol(object,attribute);
+    static_cast<void>(JSWeakValue(object));const auto state=attributeRuntimeState(object);if(!state)throw JSTypeError("BufferAttribute runtime bridge is not initialized");
+    if(state->storage!=attribute->runtimeStorage())throw JSTypeError("BufferAttribute runtime storage mismatch");state->owner=attribute;
+    if(object.isHostObject("three.BufferAttribute"))initializeInstanceProtocol(object,attribute);
 }
 std::shared_ptr<BufferAttribute> bufferAttributeRuntimeValue(const JSValue& object) {
-    static_cast<void>(JSWeakValue(object));
-    const auto state=payload<BufferAttributeRuntime>(object,"three.BufferAttribute");
+    static_cast<void>(JSWeakValue(object));auto state=attributeRuntimeState(object);
+    if(!state){
+        if(!object.get("isBufferAttribute").strictEquals(true))throw JSTypeError("Expected a managed BufferAttribute");
+        const auto values=animationArray(object.get("array"));const auto storage=std::visit([&](const auto& input)->std::shared_ptr<BufferAttributeStorage>{if constexpr(std::is_same_v<std::decay_t<decltype(input)>,JSValue>)throw JSTypeError("Expected TypedArray backing for native BufferAttribute bridge");else return std::make_shared<BufferAttributeStorage>(BufferAttributeArray(input),object.get("itemSize").toNumber(),object.get("normalized").toBoolean());},values.storage());
+        state=std::make_shared<BufferAttributeRuntime>();state->storage=storage;auto holder=JSValue::hostObject(state,state.get(),"three.BufferAttribute");static auto hooks=[] {auto h=std::make_shared<JSHostObjectHooks>();h->nativeOwnership=attributeOwners;return h;}();holder.setHostHooks(hooks);auto managed=object;managed.setInternalSlot(managedAttributeRuntimeSlot,holder);
+    }
+    synchronizeManagedAttribute(object,state);
     if(const auto owner=state->owner.lock())return owner;
+    if(!object.isHostObject("three.BufferAttribute")&&nativeFloat16BufferAttributeConstructor().ordinaryHasInstance(object))return Float16BufferAttribute::restoreRuntime(state->storage,object);
     return BufferAttribute::restore(state->storage,object);
 }
 JSValue nativeAttribute(const std::shared_ptr<VertexAttribute>& attribute) {
@@ -2384,7 +2398,7 @@ JSValue nativeAttribute(const std::shared_ptr<VertexAttribute>& attribute) {
 }
 std::shared_ptr<VertexAttribute> vertexAttribute(const JSValue& value) {
     if(value.isNull()) return nullptr;
-    if(value.isHostObject("three.BufferAttribute")) return bufferAttributeRuntimeValue(value);
+    if(value.isHostObject("three.BufferAttribute")||value.get("isBufferAttribute").strictEquals(true)) return bufferAttributeRuntimeValue(value);
     if(value.get("isInterleavedBufferAttribute").toBoolean()) return std::make_shared<InterleavedBufferAttribute>(InterleavedBufferAttribute::fromObject(value));
     throw JSTypeError("Expected a vertex attribute");
 }

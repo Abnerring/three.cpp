@@ -1,0 +1,11 @@
+// Original fixed-upstream source metadata; see THREEJS-LICENSE.
+namespace InstancedBufferAttributeSource {
+inline constexpr const char* classSource="class InstancedBufferAttribute extends BufferAttribute {\r\n\r\n\t/**\r\n\t * Constructs a new instanced buffer attribute.\r\n\t *\r\n\t * @param {TypedArray} array - The array holding the attribute data.\r\n\t * @param {number} itemSize - The item size.\r\n\t * @param {boolean} [normalized=false] - Whether the data are normalized or not.\r\n\t * @param {number} [meshPerAttribute=1] - How often a value of this buffer attribute should be repeated.\r\n\t */\r\n\tconstructor( array, itemSize, normalized, meshPerAttribute = 1 ) {\r\n\r\n\t\tsuper( array, itemSize, normalized );\r\n\r\n\t\t/**\r\n\t\t * This flag can be used for type testing.\r\n\t\t *\r\n\t\t * @type {boolean}\r\n\t\t * @readonly\r\n\t\t * @default true\r\n\t\t */\r\n\t\tthis.isInstancedBufferAttribute = true;\r\n\r\n\t\t/**\r\n\t\t * Defines how often a value of this buffer attribute should be repeated. A\r\n\t\t * value of one means that each value of the instanced attribute is used for\r\n\t\t * a single instance. A value of two means that each value is used for two\r\n\t\t * consecutive instances (and so on).\r\n\t\t *\r\n\t\t * @type {number}\r\n\t\t * @default 1\r\n\t\t */\r\n\t\tthis.meshPerAttribute = meshPerAttribute;\r\n\r\n\t}\r\n\r\n\tcopy( source ) {\r\n\r\n\t\tsuper.copy( source );\r\n\r\n\t\tthis.meshPerAttribute = source.meshPerAttribute;\r\n\r\n\t\treturn this;\r\n\r\n\t}\r\n\r\n\ttoJSON() {\r\n\r\n\t\tconst data = super.toJSON();\r\n\r\n\t\tdata.meshPerAttribute = this.meshPerAttribute;\r\n\r\n\t\tdata.isInstancedBufferAttribute = true;\r\n\r\n\t\treturn data;\r\n\r\n\t}\r\n\r\n}";
+inline constexpr const char* copySource="copy( source ) {\r\n\r\n\t\tsuper.copy( source );\r\n\r\n\t\tthis.meshPerAttribute = source.meshPerAttribute;\r\n\r\n\t\treturn this;\r\n\r\n\t}";
+inline constexpr const char* toJSONSource="toJSON() {\r\n\r\n\t\tconst data = super.toJSON();\r\n\r\n\t\tdata.meshPerAttribute = this.meshPerAttribute;\r\n\r\n\t\tdata.isInstancedBufferAttribute = true;\r\n\r\n\t\treturn data;\r\n\r\n\t}";
+struct MethodSource { const char* name; unsigned arity; const char* source; bool setter; };
+inline constexpr MethodSource methods[]={
+{"copy",1,copySource,false},
+{"toJSON",0,toJSONSource,false},
+};
+}

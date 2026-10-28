@@ -1,4 +1,4 @@
-#include "nodes/core/StorageArrayElementNode.h"
+#include "nodes/utils/StorageArrayElementNode.h"
 
 #include "catch.hpp"
 

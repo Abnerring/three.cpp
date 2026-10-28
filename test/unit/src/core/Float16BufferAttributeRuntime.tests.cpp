@@ -79,3 +79,55 @@ TEST_CASE("Typed array construction consumes iterable before converting elements
         REQUIRE(events.get("2").strictEquals("next"));REQUIRE(events.get("3").strictEquals("convert"));
     }
 }
+TEST_CASE("Managed Float16 native bridge preserves source descriptors and managed identity", "[Float16Runtime][ManagedBridge]") {
+    const auto constructor=nativeFloat16BufferAttributeConstructor();auto value=constructor.construct({array({15360,16384}),1});
+    const auto arrayBefore=value.get("array");const auto names=value.ownPropertyNames();
+    REQUIRE(value.getOwnPropertyDescriptor("array")->value.has_value());
+    auto restored=std::dynamic_pointer_cast<Float16BufferAttribute>(bufferAttributeRuntimeValue(value));
+    REQUIRE(restored);REQUIRE(nativeAttribute(restored).sameValue(value));REQUIRE(value.ownPropertyNames()==names);
+    REQUIRE(value.getOwnPropertyDescriptor("array")->value->sameValue(arrayBefore));
+    REQUIRE(call(value,"setX",{1,.5}).sameValue(value));REQUIRE(restored->getX(1)==.5);
+    auto replacement=constructor.construct({array({16896}),1});call(value,"copy",{replacement});
+    REQUIRE(bufferAttributeRuntimeValue(value)==restored);REQUIRE(restored->count==1);REQUIRE(restored->getX(0)==3);
+}
+TEST_CASE("Managed Float16 bridge keeps external native owners and collects retired cycles", "[Float16Runtime][ManagedBridge][GC]") {
+    const auto constructor=nativeFloat16BufferAttributeConstructor();JSWeakValue weak;
+    {
+        auto value=constructor.construct({array({15360}),1});weak=JSWeakValue(value);
+        auto native=std::dynamic_pointer_cast<Float16BufferAttribute>(bufferAttributeRuntimeValue(value));
+        REQUIRE(native);value={};constructor.collectGarbage();REQUIRE_FALSE(weak.expired());
+        REQUIRE(native->getX(0)==1);REQUIRE(nativeAttribute(native).instanceOf(constructor));
+    }
+    constructor.collectGarbage();REQUIRE(weak.expired());
+}
+TEST_CASE("Managed internal slots preserve descriptors and collect ordinary object cycles", "[ManagedBridge][GC]") {
+    auto keeper=JSValue::object();JSWeakValue firstWeak,secondWeak;
+    {
+        auto first=JSValue::object(),second=JSValue::object();firstWeak=JSWeakValue(first);secondWeak=JSWeakValue(second);
+        JSPropertyDescriptor descriptor;descriptor.getter=JSValue::function(+[](const JSValue&,const Args&,const Args&)->JSValue{throw JSTypeError("private slots must not invoke property access");});descriptor.configurable=true;
+        first.defineProperty("private",descriptor);const auto names=first.ownPropertyNames();
+        first.preventExtensions();first.setInternalSlot("private",second);second.setInternalSlot("back",first);
+        REQUIRE(first.getInternalSlot("private").sameValue(second));REQUIRE(second.getInternalSlot("back").sameValue(first));
+        REQUIRE(first.ownPropertyNames()==names);REQUIRE(first.getOwnPropertyDescriptor("private")->getter->isCallable());
+        REQUIRE_THROWS_AS(first.getHostSlot("private"),JSTypeError);
+        REQUIRE_THROWS_AS(JSValue(0).getInternalSlot("private"),JSTypeError);
+    }
+    keeper.collectGarbage();REQUIRE(firstWeak.expired());REQUIRE(secondWeak.expired());
+}
+TEST_CASE("Managed native bridge ignores public Float16 hasInstance hooks", "[Float16Runtime][ManagedBridge]") {
+    auto constructor=nativeFloat16BufferAttributeConstructor();const auto symbol=JSValue::wellKnownSymbol("hasInstance");
+    const auto prototype=constructor.getOwnPropertyDescriptor("prototype").value();
+    REQUIRE_FALSE(prototype.writable.value_or(true));REQUIRE_FALSE(prototype.configurable.value_or(true));
+    for(int mode=0;mode<3;++mode){
+        auto value=(mode==1?nativeBufferAttributeConstructor():constructor).construct({mode==1?NativeArray_detail::constructor(3).construct({array({15360})}):array({15360}),1});
+        auto events=array({});const auto original=constructor.getOwnPropertyDescriptor(symbol);JSPropertyDescriptor d;d.configurable=true;
+        if(mode==2)d.getter=JSValue::function(+[](const JSValue&,const Args&,const Args& c)->JSValue{c[0].get("push").call(c[0],{"get"});throw JSTypeError("native bridge must not read public hasInstance");},{events},"get hasInstance",0);
+        else d.value=JSValue::function(+[](const JSValue&,const Args&,const Args& c)->JSValue{c[0].get("push").call(c[0],{"call"});return c[1];},{events,mode==1},"hasInstance",1);
+        constructor.defineProperty(symbol,d);std::shared_ptr<BufferAttribute> native;
+        try{native=bufferAttributeRuntimeValue(value);}catch(...){if(original)constructor.defineProperty(symbol,*original);else constructor.erase(symbol);throw;}
+        if(original)constructor.defineProperty(symbol,*original);else constructor.erase(symbol);
+        REQUIRE(events.length()==0);REQUIRE(nativeAttribute(native).sameValue(value));
+        REQUIRE(bool(std::dynamic_pointer_cast<Float16BufferAttribute>(native))==(mode!=1));
+        REQUIRE(native->getX(0)==(mode==1?15360:1));
+    }
+}

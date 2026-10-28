@@ -24,6 +24,10 @@
  * @details 提供常用数学运算、随机数生成、插值等工具函数
  */
 class Quaternion;
+class JSValue;
+
+// Stable private managed import; numeric callers keep the existing typed path.
+JSValue nativeMathUtilsGenerateUUID();
 
 namespace MathUtils
 {

@@ -295,7 +295,14 @@ target_sources(threecpp PRIVATE
     src/nodes/utils/JoinNode.cpp
     src/nodes/utils/MemberNode.cpp
     src/nodes/utils/ArrayElementNode.cpp
-    src/nodes/core/StorageArrayElementNode.cpp
+    src/nodes/utils/StorageArrayElementNode.cpp
+    src/nodes/accessors/StorageBufferNode.cpp
+    src/nodes/accessors/Skinning.cpp
+    src/nodes/accessors/Morph.cpp
+    src/nodes/accessors/Batch.cpp
+    src/nodes/accessors/Instance.cpp
+    src/renderers/common/StorageBufferAttribute.cpp
+    src/renderers/common/StorageInstancedBufferAttribute.cpp
     src/nodes/core/SpriteUtils.cpp
     src/nodes/utils/SetNode.cpp
     src/nodes/core/TriplanarTextures.cpp

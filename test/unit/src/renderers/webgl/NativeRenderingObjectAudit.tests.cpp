@@ -64,6 +64,109 @@ TEST_CASE("Native draw ranges remain live through wrapper and native updates and
     weak.lock()->setDrawRange(8, 13); REQUIRE(range.get("count").strictEquals(13));
     range = {}; collect(witness); REQUIRE(weak.expired());
 }
+TEST_CASE("Native morph maps and arrays remain live and preserve detached array ownership", "[renderaudit][native][gc]") {
+    auto witness=JSValue::object();auto geometry=std::make_shared<BufferGeometry>();const auto first=position(),second=position();geometry->morphAttributes["position"]={first};
+    auto wrapper=nativeGeometry(geometry),map=wrapper.get("morphAttributes"),list=map.get("position");
+    REQUIRE(map.sameValue(wrapper.get("morphAttributes")));REQUIRE(list.sameValue(map.get("position")));
+    geometry->morphAttributes["position"].push_back(second);REQUIRE(list.get("length").strictEquals(2));REQUIRE(list.get("1").sameValue(nativeAttribute(second)));
+    call(list,"push",{nativeAttribute(first)});REQUIRE(geometry->morphAttributes["position"].size()==3);
+    auto alias=JSValue::object();alias.set("list",list);map.set("normal",list);REQUIRE(geometry->morphAttributes["normal"].sameIdentity(geometry->morphAttributes["position"]));
+    geometry->morphAttributes["position"]={second};REQUIRE_FALSE(list.sameValue(map.get("position")));REQUIRE(list.get("length").strictEquals(3));
+    REQUIRE(map.erase("normal"));REQUIRE(list.get("0").sameValue(nativeAttribute(first)));
+    map.preventExtensions();REQUIRE_THROWS_AS(map.set("normal",list),JSTypeError);REQUIRE_FALSE(map.hasOwn("normal"));
+    std::weak_ptr<BufferGeometry> weak=geometry;geometry.reset();wrapper={};collect(witness);REQUIRE(weak.expired());
+    REQUIRE(map.get("position").get("0").sameValue(nativeAttribute(second)));
+    map={};collect(witness);REQUIRE(list.get("length").strictEquals(3));
+}
+TEST_CASE("Native morph array and geometry extension cycles are reclaimed", "[renderaudit][native][gc]") {
+    auto witness=JSValue::object();std::weak_ptr<BufferGeometry> geometryWeak;std::weak_ptr<VertexAttribute> attributeWeak;JSWeakValue listWeak,mapWeak;
+    {auto geometry=std::make_shared<BufferGeometry>();auto attribute=position();geometryWeak=geometry;attributeWeak=attribute;geometry->morphAttributes["position"]={attribute};
+        auto wrapper=nativeGeometry(geometry),map=wrapper.get("morphAttributes"),list=map.get("position");list.set("geometry",wrapper);nativeAttribute(attribute).set("morphArray",list);listWeak=JSWeakValue(list);mapWeak=JSWeakValue(map);
+    }
+    collect(witness);REQUIRE(geometryWeak.expired());REQUIRE(attributeWeak.expired());const auto list=listWeak.lock(),map=mapWeak.lock();REQUIRE((!list||!list->isObject()));REQUIRE((!map||!map->isObject()));
+}
+TEST_CASE("Detached native morph arrays retain attribute wrappers and extension graphs", "[renderaudit][native][gc]") {
+    auto witness=JSValue::object();JSValue retained;JSWeakValue wrapperWeak,extraWeak;std::weak_ptr<BufferGeometry> geometryWeak;std::weak_ptr<VertexAttribute> attributeWeak;
+    {auto geometry=std::make_shared<BufferGeometry>();auto attribute=position();geometryWeak=geometry;attributeWeak=attribute;geometry->morphAttributes["position"]={attribute};
+        retained=nativeGeometry(geometry).get("morphAttributes").get("position");auto wrapper=nativeAttribute(attribute),extra=JSValue::object();extra.set("self",wrapper);wrapper.set("extra",extra);wrapperWeak=JSWeakValue(wrapper);extraWeak=JSWeakValue(extra);
+    }
+    collect(witness);REQUIRE(geometryWeak.expired());REQUIRE_FALSE(attributeWeak.expired());REQUIRE(wrapperWeak.lock()->isObject());REQUIRE(extraWeak.lock()->isObject());
+    REQUIRE(retained.get("0").get("extra").get("self").sameValue(retained.get("0")));retained={};collect(witness);REQUIRE(attributeWeak.expired());
+}
+TEST_CASE("A retained morph map owns its lists and attributes without retaining its geometry or unrelated attributes", "[renderaudit][native][gc]") {
+    auto witness=JSValue::object();JSValue retained;
+    std::weak_ptr<BufferGeometry> geometryWeak;
+    std::weak_ptr<VertexAttribute> morphWeak,unrelatedWeak;
+    JSWeakValue geometryWrapperWeak,ownerExtraWeak,morphWrapperWeak,unrelatedWrapperWeak,listWeak,listExtraWeak;
+    {
+        auto geometry=std::make_shared<BufferGeometry>();auto morph=position(),unrelated=position();
+        geometry->morphAttributes["position"]={morph};geometry->setAttribute("position",unrelated);
+        geometryWeak=geometry;morphWeak=morph;unrelatedWeak=unrelated;
+        auto wrapper=nativeGeometry(geometry);retained=wrapper.get("morphAttributes");auto list=retained.get("position");
+        auto morphWrapper=nativeAttribute(morph),unrelatedWrapper=nativeAttribute(unrelated),ownerExtra=JSValue::object(),listExtra=JSValue::object();
+        wrapper.set("ownerExtra",ownerExtra);list.set("extra",listExtra);listExtra.set("array",list);morphWrapper.set("marker","kept");
+        retained.set("marker","map");geometryWrapperWeak=JSWeakValue(wrapper);ownerExtraWeak=JSWeakValue(ownerExtra);
+        morphWrapperWeak=JSWeakValue(morphWrapper);unrelatedWrapperWeak=JSWeakValue(unrelatedWrapper);
+        listWeak=JSWeakValue(list);listExtraWeak=JSWeakValue(listExtra);
+    }
+    collect(witness);
+    REQUIRE(geometryWeak.expired());REQUIRE(geometryWrapperWeak.expired());REQUIRE(ownerExtraWeak.expired());
+    REQUIRE(unrelatedWeak.expired());REQUIRE(unrelatedWrapperWeak.expired());
+    REQUIRE_FALSE(morphWeak.expired());REQUIRE_FALSE(morphWrapperWeak.expired());REQUIRE_FALSE(listWeak.expired());REQUIRE_FALSE(listExtraWeak.expired());
+    REQUIRE(retained.get("marker").strictEquals("map"));
+    REQUIRE(retained.get("position").get("0").get("marker").strictEquals("kept"));
+    REQUIRE(retained.get("position").get("extra").get("array").sameValue(retained.get("position")));
+    retained={};collect(witness);
+    REQUIRE(morphWeak.expired());REQUIRE(morphWrapperWeak.expired());REQUIRE(listWeak.expired());REQUIRE(listExtraWeak.expired());
+}
+TEST_CASE("A native morph map handle retains map extensions independently of a geometry owner", "[renderaudit][native][gc]") {
+    auto witness=JSValue::object();SharedOrderedMap<SharedArray<std::shared_ptr<VertexAttribute>>> retained;
+    std::weak_ptr<BufferGeometry> geometryWeak;std::weak_ptr<VertexAttribute> attributeWeak;
+    JSWeakValue mapWeak,listWeak,extraWeak;
+    {
+        auto geometry=std::make_shared<BufferGeometry>();auto attribute=position();geometryWeak=geometry;attributeWeak=attribute;
+        geometry->morphAttributes["position"]={attribute};retained=geometry->morphAttributes;
+        auto map=nativeGeometry(geometry).get("morphAttributes"),list=map.get("position"),extra=JSValue::object();
+        extra.set("map",map);map.set("extra",extra);nativeAttribute(attribute).set("marker",17);
+        mapWeak=JSWeakValue(map);listWeak=JSWeakValue(list);extraWeak=JSWeakValue(extra);
+    }
+    collect(witness);REQUIRE(geometryWeak.expired());REQUIRE_FALSE(attributeWeak.expired());
+    REQUIRE_FALSE(mapWeak.expired());REQUIRE_FALSE(listWeak.expired());REQUIRE_FALSE(extraWeak.expired());
+    REQUIRE(mapWeak.lock()->get("extra").get("map").sameValue(*mapWeak.lock()));
+    REQUIRE(listWeak.lock()->get("0").get("marker").strictEquals(17));
+    retained={};collect(witness);REQUIRE(attributeWeak.expired());REQUIRE(mapWeak.expired());REQUIRE(listWeak.expired());REQUIRE(extraWeak.expired());
+}
+TEST_CASE("Geometry copy replaces the morph map and preserves detached maps and empty source arrays", "[renderaudit][native]") {
+    auto destination=std::make_shared<BufferGeometry>(),source=std::make_shared<BufferGeometry>();
+    const auto previous=position(),next=position();destination->morphAttributes["previous"]={previous};
+    source->morphAttributes["position"]={next};source->morphAttributes["empty"]={};
+    auto wrapper=nativeGeometry(destination),oldMap=wrapper.get("morphAttributes"),oldList=oldMap.get("previous");
+    destination->copy(*source);auto map=wrapper.get("morphAttributes");
+    REQUIRE_FALSE(map.sameValue(oldMap));REQUIRE(oldMap.get("previous").sameValue(oldList));
+    REQUIRE(oldList.get("0").sameValue(nativeAttribute(previous)));REQUIRE_FALSE(oldMap.hasOwn("position"));
+    REQUIRE(map.hasOwn("empty"));REQUIRE(map.get("empty").get("length").strictEquals(0));
+    REQUIRE_FALSE(map.get("position").sameValue(nativeGeometry(source).get("morphAttributes").get("position")));
+    REQUIRE_FALSE(map.get("position").get("0").sameValue(nativeAttribute(next)));
+    auto clone=source->clone();REQUIRE_FALSE(clone->morphAttributes.sameIdentity(source->morphAttributes));
+    REQUIRE(clone->morphAttributes.contains("empty"));REQUIRE(clone->morphAttributes.at("empty").empty());
+    REQUIRE_FALSE(clone->morphAttributes.at("position").sameIdentity(source->morphAttributes.at("position")));
+}
+TEST_CASE("Assigning native morph map handles shares map identity and replacement detaches the old object", "[renderaudit][native]") {
+    auto first=std::make_shared<BufferGeometry>(),second=std::make_shared<BufferGeometry>();const auto attribute=position();
+    first->morphAttributes["position"]={attribute};second->morphAttributes=first->morphAttributes;
+    auto firstWrapper=nativeGeometry(first),secondWrapper=nativeGeometry(second),map=firstWrapper.get("morphAttributes");
+    REQUIRE(map.sameValue(secondWrapper.get("morphAttributes")));map.set("normal",map.get("position"));
+    REQUIRE(first->morphAttributes.contains("normal"));REQUIRE(second->morphAttributes.contains("normal"));
+    first->morphAttributes={};REQUIRE_FALSE(firstWrapper.get("morphAttributes").sameValue(map));
+    REQUIRE(secondWrapper.get("morphAttributes").sameValue(map));REQUIRE(map.get("position").get("0").sameValue(nativeAttribute(attribute)));
+}
+TEST_CASE("Native skeleton texture creation updates the same typed skeleton", "[renderaudit][native]") {
+    auto skeleton=std::make_shared<Skeleton>(Skeleton::Bones{std::make_shared<Bone>()});skeleton->boneMatrices.setIndex(0,7);
+    auto mesh=std::make_shared<SkinnedMesh>();mesh->skeleton=skeleton;auto object=nativeObject(mesh).get("skeleton");
+    REQUIRE(call(object,"computeBoneTexture").sameValue(object));REQUIRE(skeleton->boneTexture);REQUIRE(skeleton->boneMatrices.length==64);
+    REQUIRE(skeleton->boneMatrices.get(0).strictEquals(7));REQUIRE(object.get("boneMatrices").get("0").strictEquals(7));
+    REQUIRE(skeleton->boneTexture->image->width==4);REQUIRE(skeleton->boneTexture->image->height==4);REQUIRE(skeleton->boneTexture->version==1);
+}
 TEST_CASE("Native Vector2 size aliases share fields and preserve dynamic borrowed accessors", "[renderaudit][native]") {
     auto vector = std::make_shared<Vector2>(512, 256); auto wrapper = nativeVector(vector);
     REQUIRE(wrapper.get("width").strictEquals(512)); REQUIRE(wrapper.get("height").strictEquals(256));

@@ -1,10 +1,16 @@
 #pragma once
 #include "core/BufferAttribute.h"
 
+JSValue nativeInstancedBufferAttributeConstructor();
+JSValue nativeInstancedBufferAttributeModule();
+JSValue nativeInstancedBufferAttributeBinding(const std::string& name);
+
 class InstancedBufferAttribute : public BufferAttribute {
     InstancedBufferAttribute(std::shared_ptr<BufferAttributeStorage> storage,JSValue object,RuntimeTag tag)
         :BufferAttribute(std::move(storage),std::move(object),tag),meshPerAttribute(runtimeStorage()->meshPerAttribute) {}
   public:
+    static JSValue constructor() { return nativeInstancedBufferAttributeConstructor(); }
+    static JSValue prototype() { return constructor().get("prototype"); }
     const bool isInstancedBufferAttribute = true;
     JSValue& meshPerAttribute;
     template <class T, bool Clamped>

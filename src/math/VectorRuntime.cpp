@@ -1,6 +1,7 @@
 #include "math/Vector2.h"
 #include "math/Vector3.h"
 #include "core/JSModuleObject.h"
+#include "core/JSGlobal.h"
 #include <cmath>
 
 namespace {
@@ -26,10 +27,29 @@ JSValue method(const JSValue& receiver, const Args& args, const Args& captures) 
     if(name=="multiplyScalar"){
         for(unsigned i=0;i<count;++i){const std::string key(1,"xyz"[i]);self.set(key,product(self.get(key),source));}return self;
     }
+    if(name=="divideScalar"){
+        const auto multiply=self.get("multiplyScalar");return multiply.call(self,{1/source.toNumber()});
+    }
+    if(name=="normalize"){
+        const auto divide=self.get("divideScalar");auto length=self.get("length").call(self);if(!length.toBoolean())length=1;return divide.call(self,{length});
+    }
+    if(name=="fromBufferAttribute"){
+        const auto index=arg(args,1);
+        for(unsigned i=0;i<count;++i){const std::string component(1,"xyz"[i]);const std::string method=std::string("get")+"XYZ"[i];const auto callback=source.get(method);self.set(component,callback.call(source,{index}));}return self;
+    }
+    if(name=="applyNormalMatrix"){
+        const auto result=self.get("applyMatrix3").call(self,{source});return result.get("normalize").call(result);
+    }
+    if(name=="transformDirection"){
+        const auto x=self.get("x"),y=self.get("y"),z=self.get("z"),e=source.get("elements");
+        for(unsigned i=0;i<3;++i){const auto a=product(e.get(std::to_string(i)),x),b=product(e.get(std::to_string(i+4)),y);const auto ab=a+b;const auto c=product(e.get(std::to_string(i+8)),z);self.set(std::string(1,"xyz"[i]),ab+c);}
+        return self.get("normalize").call(self);
+    }
     if(name=="length"){
+        const auto math=nativeGlobalBinding("Math"),sqrt=math.get("sqrt");
         double result=0;
         for(unsigned i=0;i<count;++i){const std::string key(1,"xyz"[i]);const auto left=self.get(key),right=self.get(key);const auto squared=product(left,right);result=i?result+squared:squared;}
-        return std::sqrt(result);
+        return sqrt.call(math,{result});
     }
     if(name=="setFromMatrixColumn"){
         const auto fn=self.get("fromArray"),elements=source.get("elements");const auto offset=arg(args,1).toNumber()*4;
@@ -72,8 +92,8 @@ JSValue constructor(unsigned count) {
     auto ctor = JSValue::constructor([](const JSValue& receiver, const Args& args, const Args& captures) -> JSValue { auto self = receiver; const auto count = static_cast<unsigned>(captures[0].number()); for (unsigned i = 0; i < count; ++i) { const auto value = arg(args, i); self.set(std::string(1, "xyz"[i]), value.isUndefined() ? JSValue(0) : value); } return {}; }, {count}, name, 0);
     auto prototype = ctor.get("prototype");
     if (count == 2) for (const auto* key : {"width", "height"}) { JSPropertyDescriptor d; d.configurable = true; d.getter = JSValue::function(method, {std::string("get ") + key, count}, std::string("get ") + key, 0); d.setter = JSValue::function(method, {std::string("set ") + key, count}, std::string("set ") + key, 1); prototype.defineProperty(key, d); }
-    std::vector<std::pair<const char*,unsigned>> methods{{"set",count},{"setScalar",1},{"clone",0},{"copy",1},{"multiplyScalar",1},{"applyMatrix3",1}};
-    if(count==3)methods.emplace_back("applyMatrix4",1);
+    std::vector<std::pair<const char*,unsigned>> methods{{"set",count},{"setScalar",1},{"clone",0},{"copy",1},{"multiplyScalar",1},{"applyMatrix3",1},{"fromBufferAttribute",2},{"divideScalar",1},{"normalize",0}};
+    if(count==3)for(const auto& entry:std::initializer_list<std::pair<const char*,unsigned>>{{"applyMatrix4",1},{"applyNormalMatrix",1},{"transformDirection",1}})methods.push_back(entry);
     methods.emplace_back("length",0);methods.emplace_back("equals",1);methods.emplace_back("fromArray",1);methods.emplace_back("toArray",0);
     if(count==3)for(const auto& entry:std::initializer_list<std::pair<const char*,unsigned>>{{"setFromMatrixPosition",1},{"setFromMatrixScale",1},{"setFromMatrixColumn",2}})methods.insert(methods.end()-3,entry);
     for (const auto& [methodName, arity] : methods) { JSPropertyDescriptor d; d.value = JSValue::function(method, {methodName, count}, methodName, arity); d.writable = d.configurable = true; prototype.defineProperty(methodName, d); }

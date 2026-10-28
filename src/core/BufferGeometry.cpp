@@ -278,15 +278,17 @@ std::shared_ptr<BufferGeometry> BufferGeometry::clone() const {
 BufferGeometry& BufferGeometry::copy(const BufferGeometry& source) {
     index.reset();
     attributes.clear();
-    morphAttributes.clear();
+    morphAttributes = SharedOrderedMap<SharedArray<std::shared_ptr<VertexAttribute>>>{};
     groups.clear();boundingBox.reset();boundingSphere.reset();
     auto metadata=JSValue::object();name=source.name;
     index=source.index?source.index->clone():nullptr;
     for (const auto& [name, a] : source.attributes)
         attributes[name] = a->cloneAttribute(metadata);
-    for (const auto& [name, as] : source.morphAttributes)
+    for (const auto& [name, as] : source.morphAttributes) {
+        auto& cloned = morphAttributes[name];
         for (const auto& a : as)
-            morphAttributes[name].push_back(a->cloneAttribute(metadata));
+            cloned.push_back(a->cloneAttribute(metadata));
+    }
     morphTargetsRelative = source.morphTargetsRelative;
     for (const auto& group : source.groups)
         addGroup(group.start, group.count, group.materialIndex);

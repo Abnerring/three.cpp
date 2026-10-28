@@ -201,8 +201,8 @@
     "note": "Accepted port scope is src and examples/jsm, including tracked third-party dependencies. Editor/manual web applications are excluded from native application rewrites. Native host behavior, packaging and all three platforms require separate implementation and verification evidence."
   },
   "counts": {
-    "partial-unverified": 418,
-    "missing": 523,
+    "partial-unverified": 424,
+    "missing": 517,
     "vulkan-port-pending": 290,
     "dependency-unverified": 20
   },
@@ -210,8 +210,8 @@
     "src": {
       "modules": 755,
       "counts": {
-        "partial-unverified": 334,
-        "missing": 131,
+        "partial-unverified": 340,
+        "missing": 125,
         "vulkan-port-pending": 290
       }
     },
@@ -796,7 +796,7 @@
       "path": "src/nodes/accessors",
       "upstreamFiles": 43,
       "moduleCount": 43,
-      "modulesWithCppFiles": 28,
+      "modulesWithCppFiles": 33,
       "verifiedComplete": 0
     },
     {
@@ -922,7 +922,7 @@
       "path": "src/nodes/utils",
       "upstreamFiles": 31,
       "moduleCount": 31,
-      "modulesWithCppFiles": 14,
+      "modulesWithCppFiles": 15,
       "verifiedComplete": 0
     },
     {
@@ -943,7 +943,7 @@
       "path": "src/renderers/common",
       "upstreamFiles": 58,
       "moduleCount": 58,
-      "modulesWithCppFiles": 10,
+      "modulesWithCppFiles": 12,
       "verifiedComplete": 0
     },
     {
@@ -7404,11 +7404,11 @@
       "scope": "src",
       "kind": "core",
       "upstreamSha256": "8c2ef313285cbef24f722c8e52b0c738247a1f5722e6aaa10ad481c62f803774",
-      "header": null,
-      "implementation": null,
+      "header": "src/nodes/accessors/Batch.h",
+      "implementation": "src/nodes/accessors/Batch.cpp",
       "expectedHeader": "src/nodes/accessors/Batch.h",
       "expectedImplementation": "src/nodes/accessors/Batch.cpp",
-      "status": "missing",
+      "status": "partial-unverified",
       "verifiedComplete": false,
       "apiExtraction": "partial-static",
       "verification": {
@@ -7624,11 +7624,11 @@
       "scope": "src",
       "kind": "core",
       "upstreamSha256": "272ee10ce82bd85ba3a9dfd303f617b1748f2d572a80f24e3275433ca0d5ca91",
-      "header": null,
-      "implementation": null,
+      "header": "src/nodes/accessors/Instance.h",
+      "implementation": "src/nodes/accessors/Instance.cpp",
       "expectedHeader": "src/nodes/accessors/Instance.h",
       "expectedImplementation": "src/nodes/accessors/Instance.cpp",
-      "status": "missing",
+      "status": "partial-unverified",
       "verifiedComplete": false,
       "apiExtraction": "partial-static",
       "verification": {
@@ -7815,11 +7815,11 @@
       "scope": "src",
       "kind": "core",
       "upstreamSha256": "47e52563cdf86940b5b81e356cbb44aec9f83261fed0d83aaca47d8fd0113e67",
-      "header": null,
-      "implementation": null,
+      "header": "src/nodes/accessors/Morph.h",
+      "implementation": "src/nodes/accessors/Morph.cpp",
       "expectedHeader": "src/nodes/accessors/Morph.h",
       "expectedImplementation": "src/nodes/accessors/Morph.cpp",
-      "status": "missing",
+      "status": "partial-unverified",
       "verifiedComplete": false,
       "apiExtraction": "partial-static",
       "verification": {
@@ -8118,11 +8118,11 @@
       "scope": "src",
       "kind": "core",
       "upstreamSha256": "21ed32750d4c464962f36e3a6af57a04d4d8f8334feff62bef7f16e80939c7fe",
-      "header": null,
-      "implementation": null,
+      "header": "src/nodes/accessors/Skinning.h",
+      "implementation": "src/nodes/accessors/Skinning.cpp",
       "expectedHeader": "src/nodes/accessors/Skinning.h",
       "expectedImplementation": "src/nodes/accessors/Skinning.cpp",
-      "status": "missing",
+      "status": "partial-unverified",
       "verifiedComplete": false,
       "apiExtraction": "partial-static",
       "verification": {
@@ -8145,11 +8145,11 @@
       "scope": "src",
       "kind": "core",
       "upstreamSha256": "fe960ea9da43796e7ce2d4ad1cd2a4c31d3abfd8b3a160a6db3625655fde9983",
-      "header": null,
-      "implementation": null,
+      "header": "src/nodes/accessors/StorageBufferNode.h",
+      "implementation": "src/nodes/accessors/StorageBufferNode.cpp",
       "expectedHeader": "src/nodes/accessors/StorageBufferNode.h",
       "expectedImplementation": "src/nodes/accessors/StorageBufferNode.cpp",
-      "status": "missing",
+      "status": "partial-unverified",
       "verifiedComplete": false,
       "apiExtraction": "static-only",
       "verification": {
@@ -13212,11 +13212,11 @@
       "scope": "src",
       "kind": "core",
       "upstreamSha256": "b0b4af3e4ec0de384fdeea39718e9fa67ea0448146f4643df4b24acede305682",
-      "header": null,
-      "implementation": null,
+      "header": "src/nodes/utils/StorageArrayElementNode.h",
+      "implementation": "src/nodes/utils/StorageArrayElementNode.cpp",
       "expectedHeader": "src/nodes/utils/StorageArrayElementNode.h",
       "expectedImplementation": "src/nodes/utils/StorageArrayElementNode.cpp",
-      "status": "missing",
+      "status": "partial-unverified",
       "verifiedComplete": false,
       "apiExtraction": "partial-static",
       "verification": {
@@ -13225,7 +13225,9 @@
           "pointer": "/modules/425"
         },
         "upstreamUnitTests": [],
-        "cppUnitTests": [],
+        "cppUnitTests": [
+          "test/unit/src/nodes/utils/StorageArrayElementNode.tests.cpp"
+        ],
         "reviewedImplementation": [],
         "differentialResults": [],
         "renderingResults": [],
@@ -15196,8 +15198,8 @@
       "scope": "src",
       "kind": "core",
       "upstreamSha256": "4f7a916e791755da7bac3ec5ecb194e7e0abf484a804abffccc74660f17a3799",
-      "header": null,
-      "implementation": null,
+      "header": "src/renderers/common/StorageBufferAttribute.h",
+      "implementation": "src/renderers/common/StorageBufferAttribute.cpp",
       "expectedHeader": "src/renderers/common/StorageBufferAttribute.h",
       "expectedImplementation": "src/renderers/common/StorageBufferAttribute.cpp",
       "status": "vulkan-port-pending",
@@ -15223,8 +15225,8 @@
       "scope": "src",
       "kind": "core",
       "upstreamSha256": "a4dc5cef6711411f1b569034f1d8021891e01e2659d66a1a92a076d5d154f52e",
-      "header": null,
-      "implementation": null,
+      "header": "src/renderers/common/StorageInstancedBufferAttribute.h",
+      "implementation": "src/renderers/common/StorageInstancedBufferAttribute.cpp",
       "expectedHeader": "src/renderers/common/StorageInstancedBufferAttribute.h",
       "expectedImplementation": "src/renderers/common/StorageInstancedBufferAttribute.cpp",
       "status": "vulkan-port-pending",

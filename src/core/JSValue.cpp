@@ -1907,11 +1907,19 @@ void JSValue::setHostHooks(std::shared_ptr<const JSHostObjectHooks> hooks) {
 }
 void JSValue::setHostSlot(const std::string& key, const JSValue& value) {
     if (!isObject() || (!heap_->record(*this).hostPayload && !heap_->record(*this).proxy)) throw JSTypeError("Expected native host");
+    setInternalSlot(key, value);
+}
+void JSValue::setInternalSlot(const std::string& key, const JSValue& value) {
+    if (!isObject()) throw JSTypeError("Internal slots require an object");
     heap_->validateEdge(value);
     heap_->record(*this).hostSlots[key] = value.graphEdge();
 }
 JSValue JSValue::getHostSlot(const std::string& key) const {
     if (!isObject() || (!heap_->record(*this).hostPayload && !heap_->record(*this).proxy)) throw JSTypeError("Expected native host");
+    return getInternalSlot(key);
+}
+JSValue JSValue::getInternalSlot(const std::string& key) const {
+    if (!isObject()) throw JSTypeError("Internal slots require an object");
     const auto& slots = heap_->record(*this).hostSlots;
     const auto found = slots.find(key);
     return found == slots.end() ? JSValue{} : found->second;

@@ -1,5 +1,17 @@
 # 续接说明（Handoff）
 
+## 当前阶段：网格变形与管理资源，2026-10-28
+
+- 基线0326cdf；13模块新增或升级真实管理入口，StorageArrayElementNode及测试由core迁utils。CPU04统一90目标/89步；119项第二轮118过/1未过，461.32秒；unit2527cases/217393assertions、geometry35/403全过。首轮117/119原JUnit保留；morph map普通扩展字段错误已修复后全套重跑。
+- 差分：Buffer/Instanced806、基础依赖313、Instance299、Storage432、Skinning177+5fresh、Batch93+6fresh在明示fixture范围过。Node.id使用per-case或实际Builder导入基线；Skinning另有资源UUID图位置fixture，Batch有非空宿主栈，不等于默认绝对或GPU一致。
+- 唯一失败DataTexture/Morph166中的17cases：529真实Node.id(source-native194)、17真实Texture.id差3，非ID差0；3fresh/3GC过。新增实际geometry/cache用例编号保持绝对，未扩大相对范围。完整NodeBuilder/NodeMaterial导入初始化待补。五组默认绝对审计与SHA见VALIDATION，真实失败全保留，不补编号、不删字段。
+- 真实修复动态Math/UUID/Interleaved序列化、own data/Symbol cache、Float16私有桥类型、InternalSlot惰性typed桥。morph map/array共享存储独立于geometry，copy替换map保留空列表，扩展图/循环GC实际通过。Skeleton.computeBoneTexture仍typed桥，完整managed Geometry/Skeleton/BatchedMesh未完成。无CEF/浏览器/JS执行桥。
+- 最后Vulkan02按最终源码6步，5/5过48.71秒；glslang27/buffer103/binding46/RTX3070 1400/cube60，validation=0且层未启用。仅现有路径，不代表完整现代节点/计算/存储GPU。
+- 审计1251：partial424/missing517/Vulkan290/dependency20；src511/755、addons84/496，595有文件/656无文件，0完整验收登记。NodeMaterial26/26直接imports已有实际入口，本体和递归资源/GPU未闭合。传统完整材质/灯光/阴影/后处理、addons、宿主及三平台仍待补。
+- 权威证据D:/Temp/surui/threecpp-mesh-deformation-20261028：validation-final-summary.json、119+119和5+5原始JUnit/full output、绝对/相对审计完整保存。13元数据--check、审计5/5和最终--check通过。commit后freeze-phase.py冻结90CPU+4GPU及全部跟踪源码/固定上游/证据；是否冻结以freeze-final.json为准。旧phase只读。
+- 下一阶段D:/Temp/surui/threecpp-batched-mesh-20261028/candidate有Math min/abs、TypedArray fill/copyWithin、完整Box3/Vector/Clamp候选和真实oracle；尚未应用/编译，不计本阶段完成。先核baseSHA/diff再应用验证；Boolean本体缺失不能装假ctor。真实BatchedMesh完整管理资源/剔除排序→NodeMaterial→现代Vulkan，目标范围保持。
+- 历史约定后缀798619字节，SHA f6b73f2e259a5a5518d1760ca0c6ac3d1ceed98ed915f0cec5a236a5107dcc4c保持；HANDOFF必须git -c core.autocrlf=false add。
+
 ## 当前阶段：材质访问器与着色前置，2026-10-28
 
 - 基线提交7729de6；本阶段已完成19模块真实实现及七组helper/测试目录迁移。统一CPU69targets/74steps，随后只重编Tangent宿主栈探针2steps。所选93项首轮92过/1失败（356秒）；修复测试keeper后该项1/1过26.88秒，其余68目标二进制SHA不变。原失败JUnit/完整输出保留，不写成单轮93/93。CPU2523cases/217356assertions。

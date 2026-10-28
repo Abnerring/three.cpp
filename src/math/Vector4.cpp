@@ -1,15 +1,10 @@
 ﻿#include "math/Vector4.h"
 #include "math/JSNumberMath.h"
 #include "core/VertexAttribute.h"
-#include "math/JSNumberMath.h"
 #include "math/Matrix4.h"
-#include "math/JSNumberMath.h"
 #include "math/Vector3.h"
-#include "math/JSNumberMath.h"
 #include "math/Quaternion.h"
-#include "math/JSNumberMath.h"
 #include "math/MathUtils.h"
-#include "math/JSNumberMath.h"
 #include <algorithm>
 #include <cmath>
 #include <stdexcept>
@@ -47,6 +42,11 @@ JSValue runtimeVector4Method(const JSValue& receiver, const RuntimeVectorArgs& a
     if(name=="multiplyScalar"){
         for(const auto* key:{"x","y","z","w"}){const auto left=self.get(key).toNumber();const auto right=value.toNumber();self.set(key,left*right);}return self;
     }
+    if(name=="fromBufferAttribute"){
+        const auto index=vector4Arg(args,1);
+        for(unsigned i=0;i<4;++i){const std::string component(1,"xyzw"[i]);const std::string method=std::string("get")+"XYZW"[i];const auto callback=value.get(method);self.set(component,callback.call(value,{index}));}
+        return self;
+    }
     if (name == "toArray" || name == "fromArray") {
         auto array = value; if (name == "toArray" && array.isUndefined()) array = JSValue::array();
         const auto raw = vector4Arg(args, 1), offset = raw.isUndefined() ? JSValue(0) : raw;
@@ -75,7 +75,7 @@ JSValue nativeVector4Constructor() {
         JSPropertyDescriptor d; d.getter = JSValue::function(runtimeVector4Method, {std::string("get ") + key}, std::string("get ") + key, 0);
         d.setter = JSValue::function(runtimeVector4Method, {std::string("set ") + key}, std::string("set ") + key, 1); d.configurable = true; prototype.defineProperty(key, d);
     }
-    for (const auto& [name, arity] : std::initializer_list<std::pair<const char*, unsigned>>{{"set", 4}, {"setScalar", 1}, {"clone", 0}, {"copy", 1}, {"multiplyScalar",1}, {"equals", 1}, {"fromArray", 1}, {"toArray", 0}}) {
+    for (const auto& [name, arity] : std::initializer_list<std::pair<const char*, unsigned>>{{"set", 4}, {"setScalar", 1}, {"clone", 0}, {"copy", 1}, {"multiplyScalar",1}, {"equals", 1}, {"fromArray", 1}, {"toArray", 0}, {"fromBufferAttribute",2}}) {
         JSPropertyDescriptor d; d.value = JSValue::function(runtimeVector4Method, {name}, name, arity); d.writable = d.configurable = true; prototype.defineProperty(name, d);
     }
     prototype.set("isVector4", true); ctor.retainForHeapLifetime(); weak = JSWeakValue(ctor); return ctor;

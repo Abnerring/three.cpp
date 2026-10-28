@@ -21,6 +21,8 @@
 
 ## C++ 适配
 
+2026-10-28 最新追加：网格变形与管理资源13个模块新增或升级真实入口，StorageArrayElementNode迁到源utils目录。CPU90目标最终统一重链，119项118过/1未过；unit2527/217393及geometry35/403全过，Vulkan5/5。DataTexture/Morph17个场景仍有真实Node.id/Texture.id导入初始化差异，未扩大归一化范围；完整导入图与现代GPU未闭合。NodeMaterial26/26直接依赖已有入口，本体及managed Geometry/Skeleton/BatchedMesh仍待实现。13元数据检查及审计通过；595有文件/656无文件仅是覆盖。精确范围与原始失败证据见VALIDATION。
+
 2026-10-28 最新追加：19 个材质引用/切线/法线/裁剪/循环/光照前置模块已实现并按源目录合并旧 helper；Reference402、Material477、MVP/Loop1019、Lighting513、Tangent750 在明确相对编号及后者非空宿主栈 fixture 范围通过。所选 CPU 首轮92/93、单项修复1/1，其他68二进制不变；最终 Vulkan5/5。默认绝对导入与宿主栈差异完整保留。NodeMaterial直接依赖现22/26有真实入口，剩4模块及资源/场景桥递归前置、现代GPU和全库一致性未闭合。精确范围见 VALIDATION。
 
 2026-10-28 最新追加：实际移植 Texture/Cube/Reflect/MaterialProperties 与 Viewport 三模块、管理 Depth/Framebuffer 纹理、六顺序 Euler 矩阵及反射/instanceof。所选 CPU83/83、Vulkan5/5；纹理依赖619默认绝对通过，节点586/620/772在明确相对编号范围通过，完整导入绝对编号缺口仍保留。完整 NodeMaterial、实际现代 GPU 链和全库一致性尚未完成；精确范围及原始失败见 VALIDATION。

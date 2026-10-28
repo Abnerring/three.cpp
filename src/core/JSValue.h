@@ -92,6 +92,9 @@ class JSValue {
     void setHostHooks(std::shared_ptr<const JSHostObjectHooks> hooks);
     void setHostSlot(const std::string& key, const JSValue& value);
     JSValue getHostSlot(const std::string& key) const;
+    // Runtime-private graph edges; absent from descriptors and proxy traps.
+    void setInternalSlot(const std::string& key, const JSValue& value);
+    JSValue getInternalSlot(const std::string& key) const;
     JSValue findHostObject(const void* identity, const std::string& tag,
                            Type type = Type::Object) const;
     static JSValue function(NativeFunction callback, const std::vector<JSValue>& captures = {},

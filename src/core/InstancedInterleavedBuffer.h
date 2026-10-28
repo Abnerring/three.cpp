@@ -1,6 +1,10 @@
 #pragma once
 #include "core/InterleavedBuffer.h"
 
+JSValue nativeInstancedInterleavedBufferConstructor();
+JSValue nativeInstancedInterleavedBufferModule();
+JSValue nativeInstancedInterleavedBufferBinding(const std::string& name);
+
 class InstancedInterleavedBuffer : public InterleavedBuffer {
   public:
     explicit InstancedInterleavedBuffer(JSValue array = {}, JSValue stride = {}, JSValue meshPerAttribute = 1);
@@ -13,6 +17,7 @@ class InstancedInterleavedBuffer : public InterleavedBuffer {
     InstancedInterleavedBuffer& operator=(InstancedInterleavedBuffer&& other) noexcept { InterleavedBuffer::operator=(std::move(other)); return *this; }
     static InstancedInterleavedBuffer fromObject(JSValue object) { return InstancedInterleavedBuffer(std::move(object),Existing{}); }
     static JSValue prototype();
+    static JSValue constructor() { return nativeInstancedInterleavedBufferConstructor(); }
     JSMember isInstancedInterleavedBuffer{&object_,"isInstancedInterleavedBuffer"};
     JSMember meshPerAttribute{&object_,"meshPerAttribute"};
   private:

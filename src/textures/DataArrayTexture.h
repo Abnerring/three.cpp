@@ -1,5 +1,8 @@
 #pragma once
 #include "textures/Texture.h"
+JSValue nativeDataArrayTextureConstructor();
+JSValue nativeDataArrayTextureModule();
+JSValue nativeDataArrayTextureBinding(const std::string& name);
 class DataArrayTexture : public Texture {
   public:
     double wrapR = ClampToEdgeWrapping;

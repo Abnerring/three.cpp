@@ -1,35 +1,19 @@
-// Direct port of three.js InstancedInterleavedBuffer.js at
-// 11738a9d55e502fb484cefffcea3a66dc44e9fe9. See repository LICENSE.
+// Direct source port; typed wrapper remains a view of the same managed object.
 #include "core/InstancedInterleavedBuffer.h"
+#include "nodes/utils/UtilityNodeRuntime.h"
 namespace {
-using Args=std::vector<JSValue>;
-JSValue arg(const Args& args,std::size_t index) { return index<args.size()?args[index]:JSValue{}; }
-JSValue method(const JSValue& receiver,const Args& args,const Args& captures) {
-    auto self=receiver; const auto& name=captures[0].string();
-    const auto base=InstancedInterleavedBuffer::prototype().getPrototype().get(name,self);
-    auto result=base.call(self,{arg(args,0)});
-    if(name=="copy") { self.set("meshPerAttribute",arg(args,0).get("meshPerAttribute")); return self; }
-    if(name=="clone") { result.set("meshPerAttribute",self.get("meshPerAttribute")); return result; }
-    result.set("isInstancedInterleavedBuffer",true); result.set("meshPerAttribute",self.get("meshPerAttribute")); return result;
+using namespace UtilityNodeRuntime;
+#include "core/InstancedInterleavedBufferSource.inc"
+JSWeakValue& lexical(){static thread_local JSWeakValue weak;return weak;}
 }
+JSValue nativeInstancedInterleavedBufferModule(){
+    using namespace UtilityNodeRuntime;static thread_local JSWeakValue weak;if(const auto m=weak.lock();m&&m->isObject())return *m;static thread_local bool initializing=false;JSModuleInitializationScope scope(initializing,"InstancedInterleavedBuffer module");
+    const auto base=InterleavedBuffer::constructor();auto holder=JSValue::object(nullptr);auto ctor=JSValue::builtinConstructor(+[](const JSValue& target,const Args& a,const Args& c)->JSValue{const auto divisor=arg(a,2,1);auto self=superConstruct(target,c,{arg(a,0),arg(a,1)});self.set("isInstancedInterleavedBuffer",true);self.set("meshPerAttribute",divisor);return self;},{holder},"InstancedInterleavedBuffer",2);holder.set("constructor",ctor);ctor.setPrototype(base);ctor.setFunctionSourceText(InstancedInterleavedBufferSource::classSource);auto p=ctor.get("prototype");p.setPrototype(base.get("prototype"));
+    for(const auto* key:{"copy","clone","toJSON"}){auto fn=JSValue::function(+[](const JSValue& receiver,const Args& a,const Args& c)->JSValue{auto self=receiver;const auto key=c[0];const auto super=c[1].getPrototype().get(key.toPropertyKey(),self);auto result=super.call(self,{arg(a,0)});if(key.strictEquals("copy")){self.set("meshPerAttribute",arg(a,0).get("meshPerAttribute"));return self;}if(key.strictEquals("clone")){result.set("meshPerAttribute",self.get("meshPerAttribute"));return result;}result.set("isInstancedInterleavedBuffer",true);result.set("meshPerAttribute",self.get("meshPerAttribute"));return result;},{key,p},key,1);fn.setFunctionSourceText(std::string(key)=="copy"?InstancedInterleavedBufferSource::copySource:std::string(key)=="clone"?InstancedInterleavedBufferSource::cloneSource:InstancedInterleavedBufferSource::toJSONSource);JSPropertyDescriptor d;d.value=fn;d.writable=d.configurable=true;p.defineProperty(key,d);}
+    auto bindings=JSValue::object(nullptr),module=JSValue::object();own(bindings,"InstancedInterleavedBuffer",ctor);own(module,"InstancedInterleavedBuffer",ctor);bindings.retainForHeapLifetime();lexical()=JSWeakValue(bindings);module.retainForHeapLifetime();weak=JSWeakValue(module);return module;
 }
-void InstancedInterleavedBuffer::initializeInstance(JSValue self,JSValue array,JSValue stride,JSValue meshPerAttribute) {
-    if(meshPerAttribute.isUndefined()) meshPerAttribute=1;
-    initialize(self,array,stride); self.set("isInstancedInterleavedBuffer",true); self.set("meshPerAttribute",meshPerAttribute);
-}
-JSValue InstancedInterleavedBuffer::prototype() {
-    static thread_local auto value=[] {
-        auto constructor=JSValue::constructor([](const JSValue& self,const Args& args,const Args&)->JSValue {
-            initializeInstance(self,arg(args,0),arg(args,1),arg(args,2)); return {};
-        },{},"InstancedInterleavedBuffer",2);
-        auto result=constructor.get("prototype"); result.setPrototype(InterleavedBuffer::prototype());
-        constructor.setPrototype(InterleavedBuffer::prototype().get("constructor"));
-        JSPropertyDescriptor descriptor; descriptor.writable=descriptor.configurable=true;
-        for(const char* name:{"copy","clone","toJSON"}) {
-            descriptor.value=JSValue::function(method,{name},name,1); result.defineProperty(name,descriptor);
-        }
-        return result;
-    }(); return value;
-}
-InstancedInterleavedBuffer::InstancedInterleavedBuffer(JSValue array,JSValue stride,JSValue meshPerAttribute)
-    :InterleavedBuffer(JSValue::object(prototype()),Existing{}) { initializeInstance(object_,array,stride,meshPerAttribute); }
+JSValue nativeInstancedInterleavedBufferBinding(const std::string& name){const auto keeper=nativeInstancedInterleavedBufferModule();return lexical().lock()->get(name);}
+JSValue nativeInstancedInterleavedBufferConstructor(){return nativeInstancedInterleavedBufferBinding("InstancedInterleavedBuffer");}
+JSValue InstancedInterleavedBuffer::prototype(){return constructor().get("prototype");}
+void InstancedInterleavedBuffer::initializeInstance(JSValue self,JSValue array,JSValue stride,JSValue meshPerAttribute){initialize(self,array,stride);self.set("isInstancedInterleavedBuffer",true);self.set("meshPerAttribute",meshPerAttribute.isUndefined()?JSValue(1):meshPerAttribute);}
+InstancedInterleavedBuffer::InstancedInterleavedBuffer(JSValue array,JSValue stride,JSValue meshPerAttribute):InterleavedBuffer(constructor().construct({array,stride,meshPerAttribute}),Existing{}){}
