@@ -1,5 +1,17 @@
 # 续接说明（Handoff）
 
+## 当前阶段：管理数学边界类、内建与数值存储回收，2026-10-31
+
+- 基线2afb061，上游11738a9d55e502fb484cefffcea3a66dc44e9fe9。Box3/Plane/Sphere/Frustum/FrustumArray共96管理入口；19 Vector依赖方法、clamp、Matrix4动态Math，Boolean真实品牌/装箱/反射/JSON，Math.min/abs与9 Number TypedArray fill/copyWithin。无CEF/浏览器/生产JS桥；完整依赖模块仍缺。
+- 八组本轮差分12842全过（含旧typed Frustum14），六lifetime各3轮。原typed Frustum源exact HEAD保留；Plane旧690输入/预期前缀保持。Sphere动态Math、Boolean固定V8接收者、Plane私有binding GC真实错误均修，失败原件留。Typed48与Boolean10依赖边界仅Node oracle。
+- CPU01在132结束=131过/1已知失败时因实测GC复杂度停止自有ctest树，Typed7412未完成不算过；旧98+4二进制/相关源/raw LastTest.tmp完整保留。GC仅所有不可达组全部alias可信passive才batch，其余逐owner顺序重扫；私有storage/view provenance防custom deleter升级，退休前分配准备、精确identity/id清缓存、最终声明复核。新增8回归、原13源前缀不变，专项23/3276过；256诊断由1021次/7.6867s到3次/0.1510s，不外推总加速。
+- CPU清1691旧obj后98目标完整1445步。最终CPU02 selected133/registered313=132过/1失败，625.65s；unit2535/220595、geometry35/403全过，98bin前后SHA一致。唯一DataMorph166中17例失败：529Node.id差194、17Texture.id差3，非ID/类型/键/长度差0；原断言保留、不补分配/扩大relative，完整导入及此前绝对编号缺口仍pending。
+- Vulkan01内存95%中断无测试；02/03各5/5。GC ABI变化后04清旧obj完整重编，最终5/5过35.80s，glslang27/buffer103/binding46/RTX1400/cube60，validation=0。仅既有五项，不代表完整现代或传统材质光影后处理。
+- 证据D:/Temp/surui/threecpp-batched-mesh-20261028，validation-final-summary.json、CPU02/GPU04 JUnit/full output、GC诊断/分配审计/全部初始失败保留。源码八组检查通过，文档后diff另检。阶段commit后freeze-phase.py冻结98CPU+4GPU最终bin/源码/上游/证据，freeze-final.json才是已冻标志。旧phase只读。
+- 清单1251=partial424/missing517/Vulkan290/dependency20，595有文件/656无不能当完成率；renderers统一Vulkan标签不表示全无实现。完整Object3D/Mesh/BufferGeometry/Skeleton/BatchedMesh、NodeMaterial递归/GPU、addons/宿主/三平台待补。
+- 下一阶段D:/Temp/surui/threecpp-object-model-20261030：Generator8/Quaternion/Euler/MathInverse/FunctionApply+Bootstrap/number-globals各独立冻结候选仍未native验收；Object3D/Geometry/JSON候选也未完成。JSValue候选base e1bbfc与当前GC c9ef243不同，必须patch/三方合并，禁止整文件覆盖GC。JSFunction需ROOT language-mode override aea006b0，global Function同私有intrinsic、early bootstrap需保留。合并JSON/number全局augmentation也要核基线，不覆写冻结候选。
+- 历史约定后缀798619字节/SHA f6b73f2e259a5a5518d1760ca0c6ac3d1ceed98ed915f0cec5a236a5107dcc4c保持；HANDOFF用git -c core.autocrlf=false add。
+
 ## 当前阶段：网格变形与管理资源，2026-10-28
 
 - 基线0326cdf；13模块新增或升级真实管理入口，StorageArrayElementNode及测试由core迁utils。CPU04统一90目标/89步；119项第二轮118过/1未过，461.32秒；unit2527cases/217393assertions、geometry35/403全过。首轮117/119原JUnit保留；morph map普通扩展字段错误已修复后全套重跑。

@@ -2,6 +2,8 @@
 #include "core/JsonValue.h"
 #include "math/Vector3.h"
 JSValue nativePlaneConstructor();
+JSValue nativePlaneModule();
+JSValue nativePlaneBinding(const std::string& name);
 class Line3;
 class Box3;
 class Sphere;

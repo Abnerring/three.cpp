@@ -305,4 +305,172 @@ Box3& Box3::fromJSON(const JSValue& json) {
     read("min", min);
     read("max", max);
     return *this;
+}// Complete managed Box3 source implementation; see THREEJS-LICENSE.
+#include "core/JSModuleObject.h"
+#include "core/JSGlobal.h"
+#include "core/JSStringEncoding.h"
+#include "math/Box3Source.inc"
+#include <string_view>
+
+namespace Box3Managed {
+using Args=std::vector<JSValue>;
+JSValue arg(const Args& a,unsigned i,const JSValue& fallback={}){return i<a.size()&&!a[i].isUndefined()?a[i]:fallback;}
+void own(JSValue o,const char* k,const JSValue& v){JSPropertyDescriptor d;d.value=v;d.writable=d.enumerable=d.configurable=true;o.defineProperty(k,d);}
+struct Call{JSValue receiver,callee;JSValue operator()(const Args& a={})const{return callee.call(receiver,a);}};
+Call invoke(const JSValue& o,const char* k){return {o,o.get(k)};}
+JSValue math(){return nativeGlobalBinding("Math");}
+template<class L,class R>double numberOp(char op,L left,R right){const auto a=left(),b=right();const auto x=a.toNumber(),y=b.toNumber();return op=='-'?x-y:op=='*'?x*y:x/y;}
+template<class L,class R>bool relation(char op,L left,R right){const auto leftValue=left(),rightValue=right();const auto a=leftValue.toPrimitive(JSValue::PreferredType::Number),b=rightValue.toPrimitive(JSValue::PreferredType::Number);if(a.type()==JSValue::Type::String&&b.type()==JSValue::Type::String){const auto x=jsUTF16(a.string()),y=jsUTF16(b.string());return op=='<'?x<y:op=='>'?x>y:op=='L'?x<=y:x>=y;}const auto x=a.toNumber(),y=b.toNumber();return op=='<'?x<y:op=='>'?x>y:op=='L'?x<=y:x>=y;}
+#define B3SUB(a,b) numberOp('-',[&]()->JSValue{return a;},[&]()->JSValue{return b;})
+#define B3MUL(a,b) numberOp('*',[&]()->JSValue{return a;},[&]()->JSValue{return b;})
+#define B3DIV(a,b) numberOp('/',[&]()->JSValue{return a;},[&]()->JSValue{return b;})
+#define B3LT(a,b) relation('<',[&]()->JSValue{return a;},[&]()->JSValue{return b;})
+#define B3GT(a,b) relation('>',[&]()->JSValue{return a;},[&]()->JSValue{return b;})
+#define B3LE(a,b) relation('L',[&]()->JSValue{return a;},[&]()->JSValue{return b;})
+#define B3GE(a,b) relation('G',[&]()->JSValue{return a;},[&]()->JSValue{return b;})
+JSValue literal(const Args& values){auto a=JSValue::array();for(unsigned i=0;i<values.size();++i){JSPropertyDescriptor d;d.value=values[i];d.writable=d.enumerable=d.configurable=true;a.defineProperty(std::to_string(i),d);}return a;}
+JSWeakValue& lexical(){static thread_local JSWeakValue value;return value;}
+JSValue sat(const JSValue&,const Args& a,const Args& captures){
+ const auto axes=arg(a,0),v0=arg(a,1),v1=arg(a,2),v2=arg(a,3),extents=arg(a,4),test=captures[0].get("_testAxis");
+ const auto j=B3SUB(axes.get("length"),3);
+ for(double i=0;i<=j;i+=3){
+  invoke(test,"fromArray")({axes,i});
+  const auto x=B3MUL(extents.get("x"),invoke(math(),"abs")({test.get("x")}));
+  const auto y=B3MUL(extents.get("y"),invoke(math(),"abs")({test.get("y")}));
+  const auto xy=x+y;
+  const auto z=B3MUL(extents.get("z"),invoke(math(),"abs")({test.get("z")}));const auto r=xy+z;
+  const auto p0=invoke(v0,"dot")({test}),p1=invoke(v1,"dot")({test}),p2=invoke(v2,"dot")({test});
+  const auto outer=invoke(math(),"max");const auto neg=-invoke(math(),"max")({p0,p1,p2}).toNumber();const auto minimum=invoke(math(),"min")({p0,p1,p2});
+  if(B3GT(outer({neg,minimum}),r))return false;
+ }
+ return true;
 }
+JSValue method(const JSValue& receiver,const Args& args,const Args& captures){
+ auto self=receiver;const auto name=captures[0].string();const auto state=captures[1];const auto value=arg(args,0);
+ if(name=="set"||name=="copy"||name=="fromJSON"){
+  const char* method=name=="fromJSON"?"fromArray":"copy";
+  invoke(self.get("min"),method)({name=="set"?value:value.get("min")});
+  invoke(self.get("max"),method)({name=="set"?arg(args,1):value.get("max")});return self;
+ }
+ if(name=="clone"){const auto result=self.get("constructor").construct();return invoke(result,"copy")({self});}
+ if(name=="makeEmpty"){
+  for(const auto* side:{"min","max"}){const auto x=self.get(side),y=self.get(side),z=self.get(side);const auto infinity=side[1]=='i'?INFINITY:-INFINITY;auto mz=z; mz.set("z",infinity);auto my=y;my.set("y",infinity);auto mx=x;mx.set("x",infinity);}return self;
+ }
+ if(name=="isEmpty")return B3LT(self.get("max").get("x"),self.get("min").get("x"))||B3LT(self.get("max").get("y"),self.get("min").get("y"))||B3LT(self.get("max").get("z"),self.get("min").get("z"));
+ if(name=="setFromArray"||name=="setFromBufferAttribute"||name=="setFromPoints"){
+  invoke(self,"makeEmpty")();const auto length=value.get(name=="setFromBufferAttribute"?"count":"length");
+  for(double i=0;B3LT(i,length);i+=name=="setFromArray"?3:1){const auto expand=invoke(self,"expandByPoint");expand({name=="setFromPoints"?value.get(JSValue(i)):invoke(state.get("_vector"),name=="setFromArray"?"fromArray":"fromBufferAttribute")({value,i})});}return self;
+ }
+ if(name=="setFromCenterAndSize"){
+  const auto half=invoke(invoke(state.get("_vector"),"copy")({arg(args,1)}),"multiplyScalar")({0.5});
+  invoke(invoke(self.get("min"),"copy")({value}),"sub")({half});invoke(invoke(self.get("max"),"copy")({value}),"add")({half});return self;
+ }
+ if(name=="setFromObject"){invoke(self,"makeEmpty")();return invoke(self,"expandByObject")({value,arg(args,1,false)});}
+ if(name=="getCenter"||name=="getSize"){
+  if(invoke(self,"isEmpty")().toBoolean())return invoke(value,"set")({0,0,0});
+  if(name=="getSize")return invoke(value,"subVectors")({self.get("max"),self.get("min")});
+  return invoke(invoke(value,"addVectors")({self.get("min"),self.get("max")}),"multiplyScalar")({0.5});
+ }
+ if(name=="expandByPoint"||name=="expandByVector"||name=="translate"){
+  invoke(self.get("min"),name=="expandByPoint"?"min":name=="expandByVector"?"sub":"add")({value});
+  invoke(self.get("max"),name=="expandByPoint"?"max":"add")({value});return self;
+ }
+ if(name=="expandByScalar"){invoke(self.get("min"),"addScalar")({-value.toNumber()});invoke(self.get("max"),"addScalar")({value});return self;}
+ if(name=="expandByObject"){
+  const auto precise=arg(args,1,false);invoke(value,"updateWorldMatrix")({false,false});const auto geometry=value.get("geometry");
+  if(!geometry.isUndefined()){
+   const auto position=invoke(geometry,"getAttribute")({"position"});
+   if(precise.strictEquals(true)&&!position.isUndefined()&&!value.get("isInstancedMesh").strictEquals(true)&&!value.get("isBatchedMesh").strictEquals(true)){
+    const auto length=position.get("count");for(double i=0;B3LT(i,length);++i){
+     if(value.get("isMesh").strictEquals(true))invoke(value,"getVertexPosition")({i,state.get("_vector")});else invoke(state.get("_vector"),"fromBufferAttribute")({position,i});
+     invoke(state.get("_vector"),"applyMatrix4")({value.get("matrixWorld")});invoke(self,"expandByPoint")({state.get("_vector")});
+    }
+   }else{
+    if(!value.get("boundingBox").isUndefined()){if(value.get("boundingBox").isNull())invoke(value,"computeBoundingBox")();invoke(state.get("_box"),"copy")({value.get("boundingBox")});}
+    else{if(geometry.get("boundingBox").isNull())invoke(geometry,"computeBoundingBox")();invoke(state.get("_box"),"copy")({geometry.get("boundingBox")});}
+    invoke(state.get("_box"),"applyMatrix4")({value.get("matrixWorld")});invoke(self,"union")({state.get("_box")});
+   }
+  }
+  const auto children=value.get("children"),length=children.get("length");for(double i=0;B3LT(i,length);++i)invoke(self,"expandByObject")({children.get(JSValue(i)),precise});return self;
+ }
+ if(name=="containsPoint"){
+  for(const auto* k:{"x","y","z"})if(!B3GE(value.get(k),self.get("min").get(k))||!B3LE(value.get(k),self.get("max").get(k)))return false;return true;
+ }
+ if(name=="containsBox"){
+  for(const auto* k:{"x","y","z"})if(!B3LE(self.get("min").get(k),value.get("min").get(k))||!B3LE(value.get("max").get(k),self.get("max").get(k)))return false;return true;
+ }
+ if(name=="intersectsBox"){
+  for(const auto* k:{"x","y","z"})if(!B3GE(value.get("max").get(k),self.get("min").get(k))||!B3LE(value.get("min").get(k),self.get("max").get(k)))return false;return true;
+ }
+ if(name=="getParameter"){
+  const auto target=arg(args,1);const auto set=invoke(target,"set");Args values;
+  for(const auto* k:{"x","y","z"}){const auto numerator=B3SUB(value.get(k),self.get("min").get(k));const auto denominator=B3SUB(self.get("max").get(k),self.get("min").get(k));values.push_back(numerator/denominator);}return set(values);
+ }
+ if(name=="intersectsSphere"){
+  invoke(self,"clampPoint")({value.get("center"),state.get("_vector")});const auto distance=invoke(state.get("_vector"),"distanceToSquared")({value.get("center")});return B3LE(distance,B3MUL(value.get("radius"),value.get("radius")));
+ }
+ if(name=="intersectsPlane"){
+  double minimum=0,maximum=0;bool first=true;
+  for(const auto* k:{"x","y","z"}){
+   const bool positive=B3GT(value.get("normal").get(k),0);
+   const auto lower=B3MUL(value.get("normal").get(k),self.get(positive?"min":"max").get(k));minimum=first?lower:minimum+lower;
+   const auto upper=B3MUL(value.get("normal").get(k),self.get(positive?"max":"min").get(k));maximum=first?upper:maximum+upper;first=false;
+  }
+  return B3LE(minimum,-value.get("constant").toNumber())&&B3GE(maximum,-value.get("constant").toNumber());
+ }
+ if(name=="intersectsTriangle"){
+  if(invoke(self,"isEmpty")().toBoolean())return false;
+  const auto center=state.get("_center"),extents=state.get("_extents"),v0=state.get("_v0"),v1=state.get("_v1"),v2=state.get("_v2"),f0=state.get("_f0"),f1=state.get("_f1"),f2=state.get("_f2"),normal=state.get("_triangleNormal");
+  invoke(self,"getCenter")({center});invoke(extents,"subVectors")({self.get("max"),center});
+  invoke(v0,"subVectors")({value.get("a"),center});invoke(v1,"subVectors")({value.get("b"),center});invoke(v2,"subVectors")({value.get("c"),center});
+  invoke(f0,"subVectors")({v1,v0});invoke(f1,"subVectors")({v2,v1});invoke(f2,"subVectors")({v0,v2});
+  auto axes=literal({0,-f0.get("z").toNumber(),f0.get("y"),0,-f1.get("z").toNumber(),f1.get("y"),0,-f2.get("z").toNumber(),f2.get("y"),f0.get("z"),0,-f0.get("x").toNumber(),f1.get("z"),0,-f1.get("x").toNumber(),f2.get("z"),0,-f2.get("x").toNumber(),-f0.get("y").toNumber(),f0.get("x"),0,-f1.get("y").toNumber(),f1.get("x"),0,-f2.get("y").toNumber(),f2.get("x"),0});
+  const auto test=state.get("satForAxes");if(!test.call({}, {axes,v0,v1,v2,extents}).toBoolean())return false;
+  axes=literal({1,0,0,0,1,0,0,0,1});if(!test.call({}, {axes,v0,v1,v2,extents}).toBoolean())return false;
+  invoke(normal,"crossVectors")({f0,f1});axes=literal({normal.get("x"),normal.get("y"),normal.get("z")});return test.call({}, {axes,v0,v1,v2,extents});
+ }
+ if(name=="clampPoint")return invoke(invoke(arg(args,1),"copy")({value}),"clamp")({self.get("min"),self.get("max")});
+ if(name=="distanceToPoint")return invoke(invoke(self,"clampPoint")({value,state.get("_vector")}),"distanceTo")({value});
+ if(name=="getBoundingSphere"){
+  if(invoke(self,"isEmpty")().toBoolean())invoke(value,"makeEmpty")();
+  else{invoke(self,"getCenter")({value.get("center")});const auto size=invoke(self,"getSize")({state.get("_vector")});auto target=value;target.set("radius",B3MUL(invoke(size,"length")(),0.5));}return value;
+ }
+ if(name=="intersect"||name=="union"){
+  invoke(self.get("min"),name=="intersect"?"max":"min")({value.get("min")});invoke(self.get("max"),name=="intersect"?"min":"max")({value.get("max")});if(name=="intersect"&&invoke(self,"isEmpty")().toBoolean())invoke(self,"makeEmpty")();return self;
+ }
+ if(name=="applyMatrix4"){
+  if(invoke(self,"isEmpty")().toBoolean())return self;const auto points=state.get("_points");
+  for(unsigned i=0;i<8;++i)invoke(invoke(points.get(JSValue(i)),"set")({self.get(i&4?"max":"min").get("x"),self.get(i&2?"max":"min").get("y"),self.get(i&1?"max":"min").get("z")}),"applyMatrix4")({value});
+  invoke(self,"setFromPoints")({points});return self;
+ }
+ if(name=="equals"){const auto first=invoke(value.get("min"),"equals")({self.get("min")});if(!first.toBoolean())return first;return invoke(value.get("max"),"equals")({self.get("max")});}
+ if(name=="toJSON"){auto json=JSValue::object();own(json,"min",invoke(self.get("min"),"toArray")());own(json,"max",invoke(self.get("max"),"toArray")());return json;}
+ throw std::logic_error("Unknown managed Box3 method: "+name);
+}
+#undef B3SUB
+#undef B3MUL
+#undef B3DIV
+#undef B3LT
+#undef B3GT
+#undef B3LE
+#undef B3GE
+}
+JSValue nativeBox3Module(){
+ using namespace Box3Managed;static thread_local JSWeakValue weak;if(const auto module=weak.lock();module&&module->isObject())return *module;
+ static thread_local bool initializing=false;JSModuleInitializationScope scope(initializing,"Box3 module");
+ const auto vector=nativeVector3Constructor();auto state=JSValue::object(nullptr);own(state,"Vector3",vector);
+ auto ctor=JSValue::constructor(+[](const JSValue& receiver,const Args& a,const Args& c)->JSValue{
+  const auto lower=arg(a,0).isUndefined()?c[0].construct({INFINITY,INFINITY,INFINITY}):arg(a,0);
+  const auto upper=arg(a,1).isUndefined()?c[0].construct({-INFINITY,-INFINITY,-INFINITY}):arg(a,1);
+  auto self=receiver;self.set("isBox3",true);self.set("min",lower);self.set("max",upper);return {};
+ },{vector},"Box3",0);ctor.setFunctionSourceText(Box3Source::classSource);own(state,"Box3",ctor);
+ for(const auto& spec:Box3Source::methods){if(std::string_view(spec.name)=="constructor")continue;auto function=JSValue::function(method,{spec.name,state},spec.name,spec.arity);function.setFunctionSourceText(spec.source);JSPropertyDescriptor d;d.value=function;d.writable=d.configurable=true;ctor.get("prototype").defineProperty(spec.name,d);}
+ auto points=JSValue::array();for(unsigned i=0;i<8;++i){JSPropertyDescriptor d;d.value=vector.construct();d.writable=d.enumerable=d.configurable=true;points.defineProperty(std::to_string(i),d);}own(state,"_points",points);
+ own(state,"_vector",vector.construct());own(state,"_box",ctor.construct());
+ for(const auto* key:{"_v0","_v1","_v2","_f0","_f1","_f2","_center","_extents","_triangleNormal","_testAxis"})own(state,key,vector.construct());
+ auto satFunction=JSValue::constructor(sat,{state},"satForAxes",5,JSValue::ConstructorKind::Callable);satFunction.setFunctionSourceText(Box3Source::satSource);own(state,"satForAxes",satFunction);
+ auto bindings=JSValue::object(nullptr);own(bindings,"Box3",ctor);bindings.retainForHeapLifetime();lexical()=JSWeakValue(bindings);
+ auto module=JSValue::object();own(module,"Box3",ctor);module.retainForHeapLifetime();weak=JSWeakValue(module);return module;
+}
+JSValue nativeBox3Binding(const std::string& name){const auto keeper=nativeBox3Module();return Box3Managed::lexical().lock()->get(name);}
+JSValue nativeBox3Constructor(){return nativeBox3Binding("Box3");}

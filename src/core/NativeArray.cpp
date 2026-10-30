@@ -2,12 +2,17 @@
 #include "core/JSIterator.h"
 #include <array>
 #include <cmath>
+#include <cstring>
 #include <limits>
 
 struct NativeArrayAccess {
     static std::shared_ptr<void> storage(const ArrayBuffer& value) { return value.bytes_; }
-    static ArrayBuffer buffer(const std::shared_ptr<void>& payload) {
-        return ArrayBuffer(std::static_pointer_cast<std::vector<std::byte>>(payload));
+    static bool passive(const ArrayBuffer& value) { return value.passiveStorage_; }
+    template<class T> static bool passive(const T& value) {
+        return value.passiveView_ && value.buffer_.passiveStorage_ && value.view_->buffer.passiveStorage_;
+    }
+    static ArrayBuffer buffer(const std::shared_ptr<void>& payload, bool passive = false) {
+        return ArrayBuffer(std::static_pointer_cast<std::vector<std::byte>>(payload), passive);
     }
     template<class T> static std::shared_ptr<void> storage(const T& value) { return value.view_; }
     template<class T> static T view(const std::shared_ptr<void>& payload) {
@@ -16,6 +21,17 @@ struct NativeArrayAccess {
     template<class T> static JSNativeOwnerNode owner(const std::shared_ptr<void>& payload) {
         const auto view=std::static_pointer_cast<typename T::View>(payload);
         return {payload,{},{{&view->buffer.bytes_,view->buffer.bytes_}}};
+    }
+    // TypedArray copyWithin copies encodings, not converted Number elements.
+    // A view's offset is relative to the shared ArrayBuffer, including aliases.
+    template<class T> static void copyWithin(T& value, std::size_t target,
+                                             std::size_t start, std::size_t count) {
+        if (count == 0) return;
+        const auto& view = *value.view_;
+        auto* bytes = view.buffer.bytes_->data() + view.offset;
+        std::memmove(bytes + target * T::BYTES_PER_ELEMENT,
+                     bytes + start * T::BYTES_PER_ELEMENT,
+                     count * T::BYTES_PER_ELEMENT);
     }
     template<class T> static NativeArrayOwnership ownership(const T& value) {
         return {{{&value.view_,value.view_},{&value.buffer_.bytes_,value.buffer_.bytes_}},
@@ -38,6 +54,13 @@ constexpr std::array<const char*,9> names{"Int8Array","Uint8Array","Int16Array",
     "Int32Array","Uint32Array","Float32Array","Float64Array","Uint8ClampedArray"};
 JSValue arg(const Args& args,std::size_t i) { return i<args.size()?args[i]:JSValue{}; }
 double integer(JSValue value) { const auto n=value.toNumber(); return std::isnan(n)?0:std::trunc(n); }
+// ECMA-262 ToClampedIndex: ToIntegerOrInfinity followed by relative clamping.
+// The supported ArrayBuffer model has fixed, non-detachable storage.
+std::size_t clampedIndex(const JSValue& value, std::size_t length) {
+    const auto relative = integer(value);
+    if (relative < 0) return std::size_t(std::max(double(length) + relative, 0.0));
+    return std::size_t(std::min(relative, double(length)));
+}
 double lengthOf(JSValue value) { return std::min(std::max(integer(value),0.0),9007199254740991.0); }
 template<std::size_t I=0,class F> decltype(auto) select(std::size_t kind,F&& callback) {
     if constexpr(I<8) {
@@ -153,6 +176,27 @@ JSValue typedMethod(const JSValue& self,const Args& args,const Args& captures) {
     const auto kind=kindOf(self);const auto& name=captures[0].string();
     return select(kind,[&]<class T>()->JSValue {
         auto array=NativeArrayAccess::view<T>(self.hostPayload(typedTag));
+        if(name=="fill") {
+            // ValidateTypedArray and the initial length precede all coercions.
+            // ToNumber(value) is observable even for an empty destination range.
+            const auto length = array.size();
+            const auto value = arg(args,0).toNumber();
+            const auto start = clampedIndex(arg(args,1),length);
+            const auto end = arg(args,2).isUndefined() ? length : clampedIndex(arg(args,2),length);
+            // No further user callbacks occur while writing fixed, attached bytes.
+            // TypedArray::setIndex retains each kind's numeric/clamping conversion.
+            for (auto index=start; index<end; ++index) array.setIndex(double(index),value);
+            return self;
+        }
+        if(name=="copyWithin") {
+            const auto length = array.size();
+            const auto target = clampedIndex(arg(args,0),length);
+            const auto start = clampedIndex(arg(args,1),length);
+            const auto end = arg(args,2).isUndefined() ? length : clampedIndex(arg(args,2),length);
+            const auto count = end > start ? std::min(end-start,length-target) : 0;
+            NativeArrayAccess::copyWithin(array,target,start,count);
+            return self;
+        }
         if(name=="set") {
             const auto offset=integer(arg(args,1));
             if(offset<0) throw JSRangeError("TypedArray.set offset is out of bounds");
@@ -189,7 +233,7 @@ JSValue typedBase() {
             JSPropertyDescriptor d;d.getter=JSValue::function(metadata,{name},std::string("get ")+name,0);
             d.configurable=true;value.defineProperty(name,d);
         }
-        for(const auto& [name,arity]:std::initializer_list<std::pair<const char*,unsigned>>{{"set",1},{"slice",2},{"subarray",2}})
+        for(const auto& [name,arity]:std::initializer_list<std::pair<const char*,unsigned>>{{"set",1},{"slice",2},{"subarray",2},{"fill",1},{"copyWithin",2}})
             install(value,name,typedMethod,arity,{name});
         for(unsigned i=0;i<3;++i){
             const char* iteratorNames[]={"keys","values","entries"};
@@ -248,13 +292,22 @@ JSValue nativeArrayBuffer(const ArrayBuffer& buffer) {
     auto result=JSValue::hostObject(NativeArrayAccess::storage(buffer),buffer.identity(),bufferTag);
     if(result.getHostSlot("initialized").isUndefined()) {
         result.setHostSlot("initialized",true);result.setPrototype(bufferConstructor().get("prototype"));
-        static auto hooks=[] { auto h=std::make_shared<JSHostObjectHooks>();
-            h->nativeOwnership=[](const JSValue& self) { return std::vector<JSNativeOwnerNode>{{self.hostPayload(bufferTag),{},{}}}; };return h;
-        }();result.setHostHooks(hooks);
+        static const auto hooks=[] {
+            std::array<std::shared_ptr<const JSHostObjectHooks>,2> variants;
+            for (unsigned i=0;i<variants.size();++i) {
+                auto h=std::make_shared<JSHostObjectHooks>();
+                h->nativeOwnership=[](const JSValue& self) { return std::vector<JSNativeOwnerNode>{{self.hostPayload(bufferTag),{},{}}}; };
+                h->passiveFinalizer=i!=0;variants[i]=std::move(h);
+            }
+            return variants;
+        }();result.setHostHooks(hooks[NativeArrayAccess::passive(buffer)?1:0]);
     }
     return result;
 }
-ArrayBuffer arrayBuffer(const JSValue& value) { return NativeArrayAccess::buffer(value.hostPayload(bufferTag)); }
+ArrayBuffer arrayBuffer(const JSValue& value) {
+    const auto payload=value.hostPayload(bufferTag);
+    return NativeArrayAccess::buffer(payload,value.hasPassiveNativeFinalizer());
+}
 JSValue NativeArray_detail::wrap(const InterpolantArray& array) {
     if(const auto ordinary=std::get_if<JSValue>(&array.storage())) return *ordinary;
     const auto kind=array.storage().index();
@@ -266,12 +319,17 @@ JSValue NativeArray_detail::wrap(const InterpolantArray& array) {
             if(result.getHostSlot("initialized").isUndefined()) {
                 result.setHostSlot("initialized",true);result.setHostSlot("kind",double(kind));
                 result.setHostSlot("buffer",nativeArrayBuffer(value.buffer));result.setPrototype(typedConstructor(kind).get("prototype"));
-                static auto hooks=[] {
-                    auto h=std::make_shared<JSHostObjectHooks>(JSHostObjectHooks{own,define,erase,ownNames,set});
-                    h->nativeOwnership=[](const JSValue& self) {
-                        return std::vector<JSNativeOwnerNode>{NativeArrayAccess::owner<T>(self.hostPayload(typedTag))};
-                    };return h;
-                }();result.setHostHooks(hooks);
+                static const auto hooks=[] {
+                    std::array<std::shared_ptr<const JSHostObjectHooks>,2> variants;
+                    for (unsigned i=0;i<variants.size();++i) {
+                        auto h=std::make_shared<JSHostObjectHooks>(JSHostObjectHooks{own,define,erase,ownNames,set});
+                        h->nativeOwnership=[](const JSValue& self) {
+                            return std::vector<JSNativeOwnerNode>{NativeArrayAccess::owner<T>(self.hostPayload(typedTag))};
+                        };
+                        h->passiveFinalizer=i!=0;variants[i]=std::move(h);
+                    }
+                    return variants;
+                }();result.setHostHooks(hooks[NativeArrayAccess::passive(value)?1:0]);
             }
             return result;
         }

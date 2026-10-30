@@ -3,6 +3,8 @@
 #include "math/Vector3.h"
 #include <vector>
 JSValue nativeSphereConstructor();
+JSValue nativeSphereModule();
+JSValue nativeSphereBinding(const std::string& name);
 class Box3;
 class Matrix4;
 class Plane;

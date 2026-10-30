@@ -1,5 +1,6 @@
 #include "core/JSValue.h"
 #include "core/JSNumber.h"
+#include "core/JSBoolean.h"
 #include "core/JSProxy.h"
 #include "core/JSRegExp.h"
 #include "core/JSJobs.h"
@@ -242,21 +243,25 @@ JSPropertyDescriptor dataDescriptor(const JSValue& value, bool writable = true,
 }
 JSValue objectValueOf(const JSValue& receiver, const std::vector<JSValue>&, const std::vector<JSValue>&) {
     if (receiver.isNull() || receiver.isUndefined()) throw JSTypeError("Cannot convert null/undefined to object");
-    if (!receiver.isObject()) throw JSTypeError("Primitive object wrappers are not implemented");
+    if (!receiver.isObject()) return receiver.toObject();
     return receiver;
 }
 JSValue objectToString(const JSValue& receiver, const std::vector<JSValue>&, const std::vector<JSValue>&) {
     if(receiver.isUndefined())return "[object Undefined]";
     if(receiver.isNull())return "[object Null]";
-    const auto array=isNativeArray(receiver);
-    const auto custom=receiver.get(JSValue::wellKnownSymbol("toStringTag"));
+    const bool primitiveWrapper=receiver.type()==JSValue::Type::Boolean||receiver.type()==JSValue::Type::Number||receiver.type()==JSValue::Type::String;
+    const auto object=primitiveWrapper?receiver.toObject():receiver;
+    const auto array=isNativeArray(object);
+    // Node 26 / V8 preserves primitive receivers for this observable getter.
+    const auto custom=object.get(JSValue::wellKnownSymbol("toStringTag"),receiver);
     if(custom.type()==JSValue::Type::String)return "[object "+custom.string()+"]";
     if(array)return "[object Array]";
-    if(isNativeStringObject(receiver))return "[object String]";
-    if(isNativeNumberObject(receiver))return "[object Number]";
-    if(isNativeRegExpObject(receiver))return "[object RegExp]";
-    if(receiver.isHostObject("runtime.Error"))return "[object Error]";
-    switch(receiver.type()){
+    if(isNativeStringObject(object))return "[object String]";
+    if(isNativeNumberObject(object))return "[object Number]";
+    if(isNativeBooleanObject(object))return "[object Boolean]";
+    if(isNativeRegExpObject(object))return "[object RegExp]";
+    if(object.isHostObject("runtime.Error"))return "[object Error]";
+    switch(object.type()){
     case JSValue::Type::Array:return "[object Array]";
     case JSValue::Type::Function:return "[object Function]";
     case JSValue::Type::String:return "[object String]";
@@ -305,6 +310,7 @@ std::uint64_t arrayLikeLength(JSValue object) {
     return static_cast<std::uint64_t>(std::clamp(n, 0.0, 9007199254740991.0));
 }
 JSValue arrayObject(JSValue object) {
+    if (object.type()==JSValue::Type::Boolean) return object.toObject();
     if (!object.isObject()) throw JSTypeError("Array operation requires an object receiver");
     return object;
 }
@@ -315,14 +321,14 @@ std::uint64_t relativeIndex(JSValue index, std::uint64_t length) {
     const auto n = integerOrInfinity(index);
     return static_cast<std::uint64_t>(n < 0 ? std::max(double(length) + n, 0.0) : std::min(n, double(length)));
 }
-// String and Number use their real boxed prototypes. Boolean boxing still uses
-// the existing primitive conversion adapter until its wrapper intrinsic lands.
+// Primitive ToObject uses the real String, Number and Boolean wrapper intrinsics.
 JSValue arrayMethodObject(const JSValue& receiver) {
     if (receiver.isNull() || receiver.isUndefined())
         throw JSTypeError("Array operation requires a non-null receiver");
     if (receiver.isObject()) return receiver;
     if (receiver.type() == JSValue::Type::String) return createNativeStringObject(receiver);
     if (receiver.type() == JSValue::Type::Number) return createNativeNumberObject(receiver);
+    if (receiver.type() == JSValue::Type::Boolean) return createNativeBooleanObject(receiver);
     auto object = JSValue::object();
     object.setPrimitiveConverter(JSValue::function([](const JSValue&, const Args&, const Args& captures) { return captures[0]; }, {receiver}));
     return object;
@@ -599,7 +605,9 @@ JSValue objectHasOwn(const JSValue& receiver, const Args& args, const Args&) {
     const auto key = argument(args, 0).toPropertyKey(); return receiver.hasOwn(key);
 }
 JSValue objectEnumerable(const JSValue& receiver, const Args& args, const Args&) {
-    const auto key = argument(args, 0).toPropertyKey(); const auto descriptor = receiver.getOwnPropertyDescriptor(key);
+    const auto key = argument(args, 0).toPropertyKey();
+    const auto object = receiver.toObject();
+    const auto descriptor = object.getOwnPropertyDescriptor(key);
     return descriptor && descriptor->enumerable.value_or(false);
 }
 JSValue objectPrototypeOf(const JSValue& receiver, const Args& args, const Args&) {
@@ -608,7 +616,7 @@ JSValue objectPrototypeOf(const JSValue& receiver, const Args& args, const Args&
     while (!(candidate = candidate.getPrototype()).isNull()) if (candidate.strictEquals(receiver)) return true;
     return false;
 }
-JSValue objectGetProto(const JSValue& receiver, const Args&, const Args&) { return receiver.getPrototype(); }
+JSValue objectGetProto(const JSValue& receiver, const Args&, const Args&) { return receiver.toObject().getPrototype(); }
 JSValue objectSetProto(const JSValue& receiver, const Args& args, const Args&) {
     if (receiver.isNull() || receiver.isUndefined()) throw JSTypeError("Cannot convert null/undefined to object");
     const auto prototype = argument(args, 0);
@@ -619,7 +627,7 @@ JSValue objectSetProto(const JSValue& receiver, const Args& args, const Args&) {
 JSValue objectConstructor(const JSValue&, const Args& args, const Args&) {
     auto value = argument(args, 0);
     if (value.isObject()) return value;
-    if (!value.isNull() && !value.isUndefined()) throw JSTypeError("Primitive object wrappers are not implemented");
+    if (!value.isNull() && !value.isUndefined()) return value.toObject();
     return JSValue::object();
 }
 JSValue arrayConstructor(const JSValue&, const Args& args, const Args&) {
@@ -769,6 +777,7 @@ class JSHeap : public std::enable_shared_from_this<JSHeap> {
         std::shared_ptr<const JSHostObjectHooks> hostHooks;
         bool proxy = false, proxyConstructor = false;
         std::string hostTag;
+        const void* hostIdentity = nullptr;
         JSValue::Type hostType = JSValue::Type::Object;
         JSValue prototype = nullptr, primitiveConverter;
         std::vector<JSValue> captures;
@@ -1206,11 +1215,23 @@ class JSHeap : public std::enable_shared_from_this<JSHeap> {
             return true;
         };
         NativeAudit beforeNative;
+        std::map<Owner, std::vector<std::uint64_t>, std::owner_less<Owner>> payloadGroups;
+        auto allUnreachablePassiveGroups = [&](const auto& marked) {
+            for (const auto& [owner, hosts] : payloadGroups) {
+                (void) owner;
+                if (std::any_of(hosts.begin(), hosts.end(), [&](auto id) { return marked.contains(id); })) continue;
+                for (const auto id : hosts) {
+                    const auto& record = *records.at(id);
+                    if (!record.hostHooks || !record.hostHooks->passiveFinalizer) return false;
+                }
+            }
+            return true;
+        };
         auto mark = [&] {
         finalizePayloads.clear();
         auto native = readNativeGraph();
         beforeNative = auditGraph(native);
-        std::map<Owner, std::vector<std::uint64_t>, std::owner_less<Owner>> payloadGroups;
+        payloadGroups.clear();
         for (const auto& [id, value] : records)
             if (value->hostPayload) payloadGroups[Owner(value->hostPayload)].push_back(id);
         std::unordered_set<const JSValue*> countedRoots;
@@ -1329,15 +1350,22 @@ class JSHeap : public std::enable_shared_from_this<JSHeap> {
                 (void) key; edge(value.value); edge(value.getter); edge(value.setter);
             }
         }
-        // Release one unreachable control block at a time, including all alias
-        // payloads. Parents precede their native children: this keeps ownership
-        // descriptions available until each described native field is destroyed.
+        // Batch only an entirely passive unreachable frontier. An active child
+        // can become eligible after removing its passive parent: any active or
+        // untrusted unreachable group, including currently ineligible groups,
+        // therefore preserves the original one-owner order and re-marking.
+        const bool allUnreachablePassive = allUnreachablePassiveGroups(marked);
+        // Keep the existing eligibility rule and complete alias boundaries.
+        // Parents still precede children so described field slots stay valid.
         for (const auto& [owner, hosts] : payloadGroups) {
             if (std::any_of(hosts.begin(), hosts.end(), [&](auto id) { return marked.contains(id); })) continue;
             const auto found = native.find(owner);
             if (found == native.end() || found->second.internalOwners == hosts.size()) {
-                finalizePayloads = hosts;
-                break;
+                if (allUnreachablePassive) finalizePayloads.insert(finalizePayloads.end(), hosts.begin(), hosts.end());
+                else {
+                    finalizePayloads = hosts;
+                    break;
+                }
             }
         }
         return marked;
@@ -1366,7 +1394,20 @@ class JSHeap : public std::enable_shared_from_this<JSHeap> {
                         if (const auto found = beforeRoots.find(id); found == beforeRoots.end() || found->second != value->roots) {
                             changed = true; break;
                         }
-                if (!changed) return result;
+                if (!changed) {
+                    // The final ownership audit may replace hooks without
+                    // changing roots/owners. Recheck the actual declarations
+                    // after all callbacks and fall back to the first owner.
+                    if (!finalizePayloads.empty() && !allUnreachablePassiveGroups(result)) {
+                        const Owner first(records.at(finalizePayloads.front())->hostPayload);
+                        const std::owner_less<Owner> less;
+                        std::erase_if(finalizePayloads, [&](auto id) {
+                            const Owner owner(records.at(id)->hostPayload);
+                            return less(first,owner) || less(owner,first);
+                        });
+                    }
+                    return result;
+                }
             }
         };
         auto marked = stableMark();
@@ -1383,15 +1424,25 @@ class JSHeap : public std::enable_shared_from_this<JSHeap> {
                 }
                 if (finalizePayloads.empty()) break;
             }
+            // Prepare all potentially allocating storage before retiring any
+            // payload. Hooks can reenter/mutate hosts, so lookups still happen
+            // only after each reset; cached iterators would be invalid there.
+            std::vector<HostKey> identities;
+            identities.reserve(finalizePayloads.size());
+            for (const auto id : finalizePayloads) {
+                const auto& record = *records.at(id);
+                identities.push_back(HostKey{record.hostIdentity, record.hostTag, record.hostType});
+            }
             std::vector<std::shared_ptr<void>> payloads;
+            payloads.reserve(finalizePayloads.size());
+            std::size_t identityIndex = 0;
             for (const auto id : finalizePayloads) {
                 auto& record = *records.at(id);
                 payloads.push_back(std::move(record.hostPayload));
                 if (record.hostHooks && record.hostHooks->nativeOwnership) --nativeOwnershipRecords;
                 record.hostHooks.reset();
-                for (auto entry = hosts.begin(); entry != hosts.end();) {
-                    if (entry->second == id) entry = hosts.erase(entry); else ++entry;
-                }
+                const auto identity = hosts.find(identities[identityIndex++]);
+                if (identity != hosts.end() && identity->second == id) hosts.erase(identity);
             }
             // All alias identity entries are gone before the final shared_ptr
             // is released. An allocation in a destructor cannot reuse a retired
@@ -1885,7 +1936,7 @@ JSValue JSValue::hostObject(std::shared_ptr<void> payload, const void* identity,
     auto value = heap->allocate(type);
     auto& record = heap->record(value);
     record.prototype = (type == Type::Array ? heap->arrayPrototype : heap->objectPrototype).graphEdge();
-    record.hostPayload = std::move(payload); record.hostTag = tag; record.hostType = type;
+    record.hostPayload = std::move(payload); record.hostTag = tag; record.hostType = type; record.hostIdentity = identity;
     heap->hosts.emplace(std::move(key), std::get<Reference>(value.value_).id);
     return value;
 }
@@ -1904,6 +1955,11 @@ void JSValue::setHostHooks(std::shared_ptr<const JSHostObjectHooks> hooks) {
     if (!hadOwnership && hasOwnership) ++heap_->nativeOwnershipRecords;
     if (hadOwnership && !hasOwnership) --heap_->nativeOwnershipRecords;
     record.hostHooks = std::move(hooks);
+}
+bool JSValue::hasPassiveNativeFinalizer() const {
+    if (!isObject()) return false;
+    const auto& record = heap_->record(*this);
+    return bool(record.hostPayload) && record.hostHooks && record.hostHooks->passiveFinalizer;
 }
 void JSValue::setHostSlot(const std::string& key, const JSValue& value) {
     if (!isObject() || (!heap_->record(*this).hostPayload && !heap_->record(*this).proxy)) throw JSTypeError("Expected native host");
@@ -2002,6 +2058,36 @@ bool JSValue::toBoolean() const {
     case Type::String: return !string().empty();
     default: return true;
     }
+}
+JSValue JSValue::toObject() const {
+    static_cast<void>(JSWeakValue(*this));
+    if(isObject())return *this;
+    if(isNull()||isUndefined())throw JSTypeError("Cannot convert null/undefined to object");
+    if(type()==Type::Boolean)return createNativeBooleanObject(*this);
+    if(type()==Type::Number)return createNativeNumberObject(*this);
+    if(type()==Type::String)return createNativeStringObject(*this);
+    throw std::logic_error("Symbol wrapper intrinsic is not implemented");
+}
+JSValue JSValue::getPrototypeFromConstructor(const JSValue& defaultIntrinsic) const {
+    static_cast<void>(JSWeakValue(*this));
+    if(!isConstructible())throw JSTypeError("GetPrototypeFromConstructor requires a constructor");
+    if(!defaultIntrinsic.isObject())throw JSTypeError("Default intrinsic prototype must be an object");
+    heap_->validateEdge(defaultIntrinsic);
+    const auto prototype=get("prototype");
+    if(prototype.isObject())return prototype;
+    // GetFunctionRealm reads only internal slots. This runtime has one realm per
+    // active heap; cross-thread/foreign-heap handles are rejected, not remapped.
+    JSValue current=*this;
+    while(true){
+        if(current.isProxy()){
+            if(current.getHostSlot("Proxy.handler").isNull())throw JSTypeError("Cannot get realm of a revoked Proxy");
+            current=current.getHostSlot("Proxy.target");continue;
+        }
+        const auto& record=current.heap_->record(current);
+        if(record.boundFunction){current=record.captures[0];continue;}
+        break;
+    }
+    return defaultIntrinsic;
 }
 JSValue JSValue::toPrimitive(PreferredType hint) const {
     static_cast<void>(JSWeakValue(*this));
@@ -2211,6 +2297,7 @@ JSValue JSValue::get(const std::string& rawKey, const JSValue& receiver) const {
         return nativeStringPrototype().get(key,rootedReceiver);
     }
     if (self.type() == Type::Number) return nativeNumberPrototype().get(key, rootedReceiver);
+    if (self.type() == Type::Boolean) return nativeBooleanPrototype().get(key, rootedReceiver);
     if (!self.isObject()) return {};
     if (self.isProxy()) return JSProxyDetail::get(self, key, rootedReceiver);
     const auto descriptor = self.getOwnPropertyDescriptor(key);
@@ -2269,6 +2356,7 @@ bool JSValue::reflectSet(const std::string& rawKey, const JSValue& value, const 
     descriptor->setter->call(rootedReceiver, {rootedValue}); return true;
 }
 void JSValue::set(const std::string& key, const JSValue& value) {
+    if(type()==Type::Boolean){auto wrapper=toObject();if(!wrapper.reflectSet(key,value,*this))throw JSTypeError("Cannot assign property to Boolean primitive");return;}
     if (!reflectSet(key, value, *this)) throw JSTypeError("Cannot assign property '" + key + "'");
 }
 bool JSValue::defineOwnProperty(const std::string& rawKey, const PropertyDescriptor& input) {
@@ -2447,6 +2535,7 @@ JSValue JSValue::get(const JSValue& input,const JSValue& receiver) const {
     if(self.isNull()||self.isUndefined())throw JSTypeError("Property access on null/undefined");
     if(self.type()==Type::String)return nativeStringPrototype().get(key,rootedReceiver);
     if(self.type()==Type::Number)return nativeNumberPrototype().get(key,rootedReceiver);
+    if(self.type()==Type::Boolean)return nativeBooleanPrototype().get(key,rootedReceiver);
     if(!self.isObject())return {};
     if(self.isProxy())return JSProxyDetail::get(self,key,rootedReceiver);
     const auto d=self.getOwnPropertyDescriptor(key);
@@ -2492,6 +2581,8 @@ bool JSValue::reflectSet(const JSValue& input,const JSValue& value,const JSValue
     d->setter->call(rootedReceiver,{rootedValue});return true;
 }
 void JSValue::set(const JSValue& key,const JSValue& value) {
+    if(type()==Type::Boolean){auto wrapper=toObject();if(!wrapper.reflectSet(key,value,*this))throw JSTypeError("Cannot assign property to Boolean primitive");return;}
+
     if(!reflectSet(key,value,*this))throw JSTypeError("Cannot assign property");
 }
 bool JSValue::defineOwnProperty(const JSValue& input,const PropertyDescriptor& descriptor) {
@@ -2604,6 +2695,7 @@ std::optional<JsonValue> JSValue::toJSON() const {
     std::unordered_set<std::uint64_t> active;
     std::function<std::optional<JsonValue>(JSValue, const std::string&)> encode = [&](JSValue value, const std::string& key) -> std::optional<JsonValue> {
         if (value.isObject()) { const auto method = value.get("toJSON"); if (method.isCallable()) value = method.call(value, {key}); }
+        if(isNativeBooleanObject(value))value=nativeBooleanValue(value);
         switch (value.type()) {
         case Type::Undefined: case Type::Function: case Type::Symbol: return std::nullopt;
         case Type::Null: return JsonValue(nullptr);

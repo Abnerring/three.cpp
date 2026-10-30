@@ -61,3 +61,8 @@ class Frustum {
   private:
     static Sphere& sharedSphere();
 };
+
+// Managed source module, independent of the typed compatibility class.
+JSValue nativeFrustumConstructor();
+JSValue nativeFrustumModule();
+JSValue nativeFrustumBinding(const std::string& name);

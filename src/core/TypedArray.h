@@ -43,7 +43,7 @@ class ArrayBuffer {
   public:
     ReadOnlySize byteLength;
     explicit ArrayBuffer(std::size_t length = 0)
-        : byteLength(length), bytes_(std::make_shared<std::vector<std::byte>>(length)) {}
+        : byteLength(length), bytes_(std::make_shared<std::vector<std::byte>>(length)), passiveStorage_(true) {}
     template <class N, std::enable_if_t<std::is_arithmetic_v<N> && !std::is_same_v<N, std::size_t>, int> = 0>
     explicit ArrayBuffer(N length) : ArrayBuffer(TypedArray_detail::toIndex(double(length))) {}
     ArrayBuffer(const ArrayBuffer&) = default;
@@ -60,8 +60,11 @@ class ArrayBuffer {
     }
   private:
     std::shared_ptr<std::vector<std::byte>> bytes_;
-    explicit ArrayBuffer(std::shared_ptr<std::vector<std::byte>> bytes)
-        : byteLength(bytes->size()), bytes_(std::move(bytes)) {}
+    // Arbitrary shared_ptr reconstruction is untrusted unless an actual host
+    // hook capability is explicitly propagated by NativeArrayAccess.
+    bool passiveStorage_ = false;
+    explicit ArrayBuffer(std::shared_ptr<std::vector<std::byte>> bytes, bool passive = false)
+        : byteLength(bytes->size()), bytes_(std::move(bytes)), passiveStorage_(passive) {}
     friend struct NativeArrayAccess;
     static std::size_t relativeIndex(double value, const ArrayBuffer& buffer) {
         return relativeIndex(value, std::size_t(buffer.byteLength));
@@ -123,16 +126,18 @@ template <class T, bool Clamped> class TypedArray {
         length = ReadOnlySize(size);
         byteLength = ReadOnlySize(checkedBytes(size));
         view_ = std::make_shared<View>(buffer, offset, size);
+        passiveView_ = true;
     }
     TypedArray(const TypedArray& other)
         : buffer_(other.buffer_), buffer(buffer_), byteOffset(other.byteOffset),
-          byteLength(other.byteLength), length(other.length), view_(other.view_) {}
+          byteLength(other.byteLength), length(other.length), view_(other.view_), passiveView_(other.passiveView_) {}
     TypedArray& operator=(const TypedArray& other) {
         buffer_ = other.buffer_;
         byteOffset = other.byteOffset;
         byteLength = other.byteLength;
         length = other.length;
         view_ = other.view_;
+        passiveView_ = other.passiveView_;
         return *this;
     }
     bool sameIdentity(const TypedArray& other) const { return view_ == other.view_; }
@@ -247,6 +252,8 @@ template <class T, bool Clamped> class TypedArray {
     Iterator<true> end() const { return {view_, std::ptrdiff_t(size())}; }
   private:
     std::shared_ptr<View> view_;
+    // Private host-payload reconstruction cannot prove its control-block deleter.
+    bool passiveView_ = false;
     explicit TypedArray(std::shared_ptr<View> view)
         : buffer_(view->buffer), buffer(buffer_), byteOffset(view->offset),
           byteLength(view->count * sizeof(T)), length(view->count), view_(std::move(view)) {}

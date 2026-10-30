@@ -1,6 +1,7 @@
 #include "core/JSObject.h"
 #include "core/JSString.h"
 #include "core/JSNumber.h"
+#include "core/JSBoolean.h"
 namespace {
 JSPropertyDescriptor toPropertyDescriptor(const JSValue& object) {
     if(!object.isObject())throw JSTypeError("Property description must be an object");
@@ -31,8 +32,8 @@ JSValue assign(const JSValue&,const Args& args,const Args&) {
     auto target=args.empty()?JSValue():args[0];
     if(target.isUndefined()||target.isNull())throw JSTypeError("Cannot convert undefined or null to object");
     if(!target.isObject()) {
-        if(target.type()==JSValue::Type::String)target=createNativeStringObject(target);
-        else throw JSTypeError("Number, Boolean and Symbol target boxing is not implemented");
+        if(target.type()==JSValue::Type::String||target.type()==JSValue::Type::Number||target.type()==JSValue::Type::Boolean)target=target.toObject();
+        else throw JSTypeError("Symbol target boxing is not implemented");
     }
     for(std::size_t i=1;i<args.size();++i) {
         auto source=args[i];
@@ -95,7 +96,8 @@ JSValue getPrototypeOf(const JSValue&,const Args& args,const Args&) {
     if(!value.isObject()) {
         if(value.type()==JSValue::Type::String)value=createNativeStringObject(value);
         else if(value.type()==JSValue::Type::Number)value=createNativeNumberObject(value);
-        else throw std::logic_error("Object.getPrototypeOf Boolean and Symbol boxing is not implemented");
+        else if(value.type()==JSValue::Type::Boolean)value=createNativeBooleanObject(value);
+        else throw std::logic_error("Object.getPrototypeOf Symbol boxing is not implemented");
     }
     return value.getPrototype();
 }
@@ -104,7 +106,8 @@ JSValue reflectionObject(JSValue value){
     if(value.isObject())return value;
     if(value.type()==JSValue::Type::String)return createNativeStringObject(value);
     if(value.type()==JSValue::Type::Number)return createNativeNumberObject(value);
-    // Boolean/Symbol wrapper identity is not exposed by these static methods;
+    if(value.type()==JSValue::Type::Boolean)return createNativeBooleanObject(value);
+    // Symbol wrapper identity is not exposed by these static methods;
     // their own-key/own-descriptor sets are empty.
     return JSValue::object();
 }

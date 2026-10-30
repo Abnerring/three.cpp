@@ -174,3 +174,186 @@ TEST_CASE("Native strong owner cycles retain aliases and graph exits without fal
     witness.collectGarbage();auto first=firstWeak.lock();REQUIRE(first);REQUIRE(first->child->other->field.get("value").number()==31);
     first->child->child.reset();first.reset();witness.collectGarbage();REQUIRE(firstWeak.expired());REQUIRE(secondWeak.expired());REQUIRE(exitWeak.expired());REQUIRE(witness.heapObjectCount()==before);
 }
+// GC passive-batch regressions. The pre-existing test prefix above is unchanged.
+#include "core/NativeArray.h"
+#include <algorithm>
+#include <array>
+#include <optional>
+
+TEST_CASE("Passive numeric payload batches collect aliases and retain external typed handles", "[runtime-native][passive-gc]") {
+    auto witness=JSValue::object();
+    std::vector<JSWeakValue> bases,views,buffers;
+    std::optional<Float32Array> external;
+    for(unsigned i=0;i<512;++i){
+        Float32Array values({1,2,3,4,5,6,7,8});auto view=values.subarray(2,6);
+        auto base=NativeArray_detail::wrap(InterpolantArray(values));
+        auto host=NativeArray_detail::wrap(InterpolantArray(view));auto buffer=host.get("buffer");
+        REQUIRE(base.hasPassiveNativeFinalizer());REQUIRE(host.hasPassiveNativeFinalizer());REQUIRE(buffer.hasPassiveNativeFinalizer());
+        host.set("extra",i);bases.emplace_back(base);views.emplace_back(host);buffers.emplace_back(buffer);
+        if(i==0)external=view;
+    }
+    witness.collectGarbage();
+    for(unsigned i=0;i<bases.size();++i){
+        REQUIRE(bases[i].expired());
+        REQUIRE(views[i].expired()==(i!=0));REQUIRE(buffers[i].expired()==(i!=0));
+    }
+    {
+        auto live=views[0].lock();REQUIRE(live);REQUIRE(live->get("extra").number()==0);
+        REQUIRE(live->get("0").number()==3);external->setIndex(0,99);REQUIRE(live->get("0").number()==99);
+        REQUIRE(NativeArray_detail::wrap(InterpolantArray(*external)).sameValue(*live));
+        REQUIRE(nativeArrayBuffer(external->buffer).sameValue(*buffers[0].lock()));
+    }
+    external.reset();witness.collectGarbage();REQUIRE(views[0].expired());REQUIRE(buffers[0].expired());
+}
+
+TEST_CASE("Passive capabilities follow genuine ArrayBuffer copies and keep an existing typed cache", "[runtime-native][passive-gc]") {
+    ArrayBuffer bytes(32);auto host=nativeArrayBuffer(bytes);REQUIRE(host.hasPassiveNativeFinalizer());
+    auto reconstructed=arrayBuffer(host);auto copy=reconstructed;Float32Array values(copy);auto assigned=Float32Array(0);assigned=values;
+    auto typed=NativeArray_detail::wrap(InterpolantArray(assigned));REQUIRE(typed.hasPassiveNativeFinalizer());
+    REQUIRE(typed.get("buffer").sameValue(host));
+    const auto unwrapped=NativeArray_detail::unwrap(typed);
+    REQUIRE(NativeArray_detail::wrap(unwrapped).sameValue(typed));REQUIRE(typed.hasPassiveNativeFinalizer());
+    auto proxy=JSValue::proxy(host,JSValue::object());REQUIRE_FALSE(proxy.hasPassiveNativeFinalizer());
+    REQUIRE_FALSE(JSValue(1).hasPassiveNativeFinalizer());
+}
+
+TEST_CASE("Custom ArrayBuffer control blocks stay untrusted through reconstruction and views", "[runtime-native][passive-gc]") {
+    auto witness=JSValue::object();int deleted=0;std::size_t nested=99;JSWeakValue weak;
+    {
+        auto bytes=std::shared_ptr<std::vector<std::byte>>(new std::vector<std::byte>(32),[&](auto* value){++deleted;nested=witness.collectGarbage();delete value;});
+        auto forged=JSValue::hostObject(bytes,bytes.get(),"three.ArrayBuffer");REQUIRE_FALSE(forged.hasPassiveNativeFinalizer());
+        auto reconstructed=arrayBuffer(forged),copy=reconstructed;
+        REQUIRE(nativeArrayBuffer(copy).sameValue(forged));REQUIRE_FALSE(forged.hasPassiveNativeFinalizer());
+        Float32Array values(copy);auto host=NativeArray_detail::wrap(InterpolantArray(values));weak=JSWeakValue(host);
+        REQUIRE_FALSE(host.hasPassiveNativeFinalizer());REQUIRE_FALSE(host.get("buffer").hasPassiveNativeFinalizer());
+        host.set("0",17);REQUIRE(host.get("0").number()==17);
+        const auto unwrapped=NativeArray_detail::unwrap(host);REQUIRE_FALSE(NativeArray_detail::wrap(unwrapped).hasPassiveNativeFinalizer());
+    }
+    witness.collectGarbage();REQUIRE(deleted==1);REQUIRE(nested==0);REQUIRE(weak.expired());
+}
+
+TEST_CASE("A custom typed view control block cannot acquire passive provenance on unwrap and wrap", "[runtime-native][passive-gc]") {
+    auto witness=JSValue::object();int deleted=0;std::size_t nested=99;JSWeakValue weak;
+    {
+        Float32Array values({1,2,3});auto original=nativeArrayOwnership(values).nodes.front().owner.lock();
+        auto payload=std::shared_ptr<void>(original.get(),[original,&deleted,&nested,&witness](void*)mutable{++deleted;nested=witness.collectGarbage();original.reset();});
+        auto forged=JSValue::hostObject(payload,values.identity(),"three.AnimationArray");forged.setHostSlot("kind",6);
+        REQUIRE_FALSE(forged.hasPassiveNativeFinalizer());auto unwrapped=NativeArray_detail::unwrap(forged);
+        auto host=NativeArray_detail::wrap(unwrapped);weak=JSWeakValue(host);REQUIRE(host.sameValue(forged));
+        REQUIRE_FALSE(host.hasPassiveNativeFinalizer());REQUIRE(host.get("0").number()==1);
+    }
+    witness.collectGarbage();REQUIRE(deleted==1);REQUIRE(nested==0);REQUIRE(weak.expired());
+}
+
+namespace PassiveNativeRegression {
+struct BoundaryState {
+    JSValue* saved=nullptr;const JSValue* witness=nullptr;JSWeakValue victim;
+    std::array<char,3> order{};unsigned count=0;std::size_t nested=99;
+};
+struct BoundaryNode {
+    char role='?';BoundaryState* state=nullptr;std::shared_ptr<BoundaryNode> child;
+    ~BoundaryNode(){
+        state->order[state->count++]=role;
+        if(role=='C'){
+            if(const auto value=state->victim.lock())*state->saved=*value;
+            state->nested=state->witness->collectGarbage();
+        }
+    }
+};
+JSValue boundaryWrap(const std::shared_ptr<BoundaryNode>& owner,bool passive){
+    auto result=JSValue::hostObject(owner,owner.get(),"test.PassiveBoundary");
+    static const auto variants=[] {
+        std::array<std::shared_ptr<const JSHostObjectHooks>,2> result;
+        for(unsigned i=0;i<2;++i){auto h=std::make_shared<JSHostObjectHooks>();h->passiveFinalizer=i!=0;
+            h->nativeOwnership=[](const JSValue& self){auto p=std::static_pointer_cast<BoundaryNode>(self.hostPayload("test.PassiveBoundary"));std::vector<JSNativeOwnerNode> nodes;
+                for(;p;p=p->child){JSNativeOwnerNode node{p,{},{}};if(p->child)node.edges.push_back({&p->child,p->child});nodes.push_back(node);}return nodes;
+            };result[i]=std::move(h);
+        }return result;
+    }();result.setHostHooks(variants[passive?1:0]);return result;
+}
+struct AuditState {
+    unsigned reads=0;bool changed=false;JSValue* saved=nullptr;const JSValue* witness=nullptr;
+    JSWeakValue victim;unsigned activeHookDeaths=0;std::size_t nested=99;
+};
+struct AuditPayload { AuditState* state=nullptr; };
+std::vector<JSNativeOwnerNode> auditOwnership(const JSValue& self){
+    auto p=std::static_pointer_cast<AuditPayload>(self.hostPayload("test.PassiveAuditGate"));auto& state=*p->state;
+    if(++state.reads==2&&!state.changed){
+        state.changed=true;auto h=std::shared_ptr<JSHostObjectHooks>(new JSHostObjectHooks,[s=&state](auto* value){
+            ++s->activeHookDeaths;if(const auto victim=s->victim.lock())*s->saved=*victim;
+            s->nested=s->witness->collectGarbage();delete value;
+        });h->nativeOwnership=auditOwnership;auto target=self;target.setHostHooks(std::move(h));
+    }
+    return{{p,{},{}}};
+}
+}
+
+TEST_CASE("An ineligible active child remains a barrier before passive victims are retired", "[runtime-native][passive-gc]") {
+    using namespace PassiveNativeRegression;
+    auto witness=JSValue::object();JSValue saved;BoundaryState state;state.saved=&saved;state.witness=&witness;
+    std::weak_ptr<BoundaryNode> parentWeak,childWeak,victimWeak;
+    {
+        std::array<std::shared_ptr<BoundaryNode>,3> owners{std::make_shared<BoundaryNode>(),std::make_shared<BoundaryNode>(),std::make_shared<BoundaryNode>()};
+        std::sort(owners.begin(),owners.end(),std::owner_less<std::shared_ptr<BoundaryNode>>{});
+        auto parent=owners[0],child=owners[1],victim=owners[2];parentWeak=parent;childWeak=child;victimWeak=victim;
+        parent->role='P';child->role='C';victim->role='V';for(auto& owner:owners)owner->state=&state;
+        parent->child=child;auto a=boundaryWrap(parent,true),b=boundaryWrap(child,false),c=boundaryWrap(victim,true);
+        state.victim=JSWeakValue(c);
+    }
+    witness.collectGarbage();REQUIRE(parentWeak.expired());REQUIRE(childWeak.expired());REQUIRE_FALSE(victimWeak.expired());
+    REQUIRE(state.count==2);REQUIRE(state.order[0]=='P');REQUIRE(state.order[1]=='C');REQUIRE(state.nested==0);
+    REQUIRE(saved.isHostObject("test.PassiveBoundary"));saved={};witness.collectGarbage();
+    REQUIRE(victimWeak.expired());REQUIRE(state.count==3);REQUIRE(state.order[2]=='V');
+}
+
+TEST_CASE("Final ownership audit hook changes revoke batch permission before an active hook rescues its victim", "[runtime-native][passive-gc]") {
+    using namespace PassiveNativeRegression;
+    auto witness=JSValue::object();JSValue saved;AuditState state;state.saved=&saved;state.witness=&witness;JSWeakValue weakVictim;
+    {
+        auto first=std::make_shared<AuditPayload>(),second=std::make_shared<AuditPayload>();
+        if(std::owner_less<std::shared_ptr<AuditPayload>>{}(second,first))std::swap(first,second);
+        first->state=&state;auto gate=JSValue::hostObject(first,first.get(),"test.PassiveAuditGate");
+        auto gateHooks=std::make_shared<JSHostObjectHooks>();gateHooks->nativeOwnership=auditOwnership;gateHooks->passiveFinalizer=true;gate.setHostHooks(gateHooks);
+        auto victim=JSValue::hostObject(second,second.get(),"test.PassiveAuditVictim");auto victimHooks=std::make_shared<JSHostObjectHooks>();victimHooks->passiveFinalizer=true;
+        victimHooks->nativeOwnership=[](const JSValue& self){return std::vector<JSNativeOwnerNode>{{self.hostPayload("test.PassiveAuditVictim"),{},{}}};};victim.setHostHooks(victimHooks);
+        state.victim=weakVictim=JSWeakValue(victim);state.reads=0;
+    }
+    witness.collectGarbage();REQUIRE(state.changed);REQUIRE(state.activeHookDeaths==1);REQUIRE(state.nested==0);
+    REQUIRE_FALSE(weakVictim.expired());REQUIRE(saved.isHostObject("test.PassiveAuditVictim"));
+    saved={};witness.collectGarbage();REQUIRE(weakVictim.expired());
+}
+
+TEST_CASE("An active native owner can rescue its child while passive numeric garbage is present", "[runtime-native][passive-gc]") {
+    auto witness=JSValue::object();JSValue saved;int parentDestroyed=0,childDestroyed=0;std::size_t nested=99;
+    std::weak_ptr<NativeOwner> childWeak;std::vector<JSWeakValue> numeric;
+    {
+        auto parent=std::make_shared<NativeOwner>(),child=std::make_shared<NativeOwner>();parent->child=child;childWeak=child;
+        parent->destroyed=&parentDestroyed;child->destroyed=&childDestroyed;parent->saveDuringDestruction=&saved;
+        parent->collectDuringDestruction=&witness;parent->nestedCollected=&nested;
+        auto a=wrap(parent),b=wrap(child);b.set("answer",71);parent->field=JSValue::object();parent->field.set("child",b);
+        for(unsigned i=0;i<64;++i)numeric.emplace_back(NativeArray_detail::wrap(InterpolantArray(Float32Array({1,2,3,4}))));
+    }
+    witness.collectGarbage();REQUIRE(parentDestroyed==1);REQUIRE(childDestroyed==0);REQUIRE(nested==0);
+    REQUIRE(saved.get("child").isHostObject("test.NativeOwner"));REQUIRE(saved.get("child").get("answer").number()==71);
+    for(const auto& weak:numeric)REQUIRE(weak.expired());saved={};witness.collectGarbage();REQUIRE(childWeak.expired());REQUIRE(childDestroyed==1);
+}
+TEST_CASE("Every same-owner alias must be passive before its group can share a batch with victims", "[runtime-native][passive-gc]") {
+    for(const bool activeOnFirst:{false,true}){
+        auto witness=JSValue::object();JSValue saved;JSWeakValue victimWeak;unsigned callbacks=0;std::size_t nested=99;
+        {
+            auto group=std::make_shared<std::array<int,2>>(),victimOwner=std::make_shared<std::array<int,2>>();
+            if(std::owner_less<std::shared_ptr<std::array<int,2>>>{}(victimOwner,group))std::swap(group,victimOwner);
+            auto first=JSValue::hostObject(group,group.get(),"test.PassiveAliasA");
+            std::shared_ptr<void> alias(group,&(*group)[1]);auto second=JSValue::hostObject(alias,alias.get(),"test.PassiveAliasB");
+            auto victim=JSValue::hostObject(victimOwner,victimOwner.get(),"test.PassiveAliasVictim");victimWeak=JSWeakValue(victim);
+            auto passive=std::make_shared<JSHostObjectHooks>();passive->passiveFinalizer=true;
+            passive->nativeOwnership=activeOnFirst?+[](const JSValue& self){return std::vector<JSNativeOwnerNode>{{self.hostPayload("test.PassiveAliasB"),{},{}}};}:+[](const JSValue& self){return std::vector<JSNativeOwnerNode>{{self.hostPayload("test.PassiveAliasA"),{},{}}};};
+            auto active=std::shared_ptr<JSHostObjectHooks>(new JSHostObjectHooks,[&](auto* h){++callbacks;if(const auto target=victimWeak.lock())saved=*target;nested=witness.collectGarbage();delete h;});
+            active->nativeOwnership=activeOnFirst?+[](const JSValue& self){return std::vector<JSNativeOwnerNode>{{self.hostPayload("test.PassiveAliasA"),{},{}}};}:+[](const JSValue& self){return std::vector<JSNativeOwnerNode>{{self.hostPayload("test.PassiveAliasB"),{},{}}};};
+            first.setHostHooks(activeOnFirst?active:passive);second.setHostHooks(activeOnFirst?passive:active);
+            auto vh=std::make_shared<JSHostObjectHooks>();vh->passiveFinalizer=true;vh->nativeOwnership=[](const JSValue& self){return std::vector<JSNativeOwnerNode>{{self.hostPayload("test.PassiveAliasVictim"),{},{}}};};victim.setHostHooks(vh);
+        }
+        witness.collectGarbage();REQUIRE(callbacks==1);REQUIRE(nested==0);REQUIRE_FALSE(victimWeak.expired());
+        REQUIRE(saved.isHostObject("test.PassiveAliasVictim"));saved={};witness.collectGarbage();REQUIRE(victimWeak.expired());
+    }
+}

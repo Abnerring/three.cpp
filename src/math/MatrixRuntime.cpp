@@ -1,6 +1,8 @@
 #include "math/Matrix3.h"
 #include "math/Matrix4.h"
 #include "core/JSModuleObject.h"
+#include "core/JSGlobal.h"
+#include "math/Matrix4MaxScaleSource.inc"
 #include "math/JSNumberMath.h"
 #include <algorithm>
 #include <cmath>
@@ -166,8 +168,9 @@ JSValue method(const JSValue& receiver, const Args& args, const Args& captures) 
     if(width==4&&name=="getMaxScaleOnAxis"){
         const auto elements=self.get("elements");double scales[3];
         for(unsigned col=0;col<3;++col){double sum=0;for(unsigned row=0;row<3;++row){const auto key=std::to_string(col*4+row);const auto left=elements.get(key),right=elements.get(key);const auto square=product(left,right);sum=row?sum+square:square;}scales[col]=sum;}
-        if(std::isnan(scales[0])||std::isnan(scales[1])||std::isnan(scales[2]))return std::numeric_limits<double>::quiet_NaN();
-        return std::sqrt(std::max({scales[0],scales[1],scales[2]}));
+        const auto outerMath=nativeGlobalBinding("Math"),sqrt=outerMath.get("sqrt");
+        const auto innerMath=nativeGlobalBinding("Math"),max=innerMath.get("max");
+        return sqrt.call(outerMath,{max.call(innerMath,{scales[0],scales[1],scales[2]})});
     }
     const auto rawOffset = arg(args, 1), offset = rawOffset.isUndefined() ? JSValue(0) : rawOffset;
     auto array = arg(args, 0);
@@ -220,6 +223,7 @@ JSValue constructor(unsigned width) {
     for (const auto& [key, arity] : methods) {
         JSPropertyDescriptor d; d.value = JSValue::function(method, {key,width}, key, arity);
         if(width==4&&std::string(key)=="makeRotationFromEuler")d.value->setFunctionSourceText(matrix4RotationSource);
+        if(width==4&&std::string(key)=="getMaxScaleOnAxis")d.value->setFunctionSourceText(Matrix4MaxScaleSource::methodSource);
         d.writable = d.configurable = true; prototype.defineProperty(key, d);
     }
     prototype.set(std::string("is") + name, true);

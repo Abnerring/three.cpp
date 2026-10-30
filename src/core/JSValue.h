@@ -90,6 +90,9 @@ class JSValue {
     bool isHostObject(const std::string& tag) const;
     std::shared_ptr<void> hostPayload(const std::string& expectedTag) const;
     void setHostHooks(std::shared_ptr<const JSHostObjectHooks> hooks);
+    // Trusted C++ capability of this actual live record, without public
+    // property/tag/proxy lookup or callbacks.
+    bool hasPassiveNativeFinalizer() const;
     void setHostSlot(const std::string& key, const JSValue& value);
     JSValue getHostSlot(const std::string& key) const;
     // Runtime-private graph edges; absent from descriptors and proxy traps.
@@ -126,6 +129,10 @@ class JSValue {
     bool strictEquals(const JSValue& other) const;
     bool sameValue(const JSValue& other) const;
     bool toBoolean() const;
+    // ToObject for the supported primitive wrapper intrinsics.
+    JSValue toObject() const;
+    // Same-runtime GetPrototypeFromConstructor, including GetFunctionRealm checks.
+    JSValue getPrototypeFromConstructor(const JSValue& defaultIntrinsic) const;
     JSValue toPrimitive(PreferredType hint = PreferredType::Default) const;
     double toNumber() const;
     std::string toString() const;
@@ -328,4 +335,9 @@ struct JSHostObjectHooks {
     // JS fields. Their finalized payload cannot be resurrected: retired wrappers
     // retain ordinary JS properties but lose host hooks and native identity.
     std::vector<JSNativeOwnerNode> (*nativeOwnership)(const JSValue&) = nullptr;
+    // Trusted promise: releasing payload, hooks and any native children they
+    // release cannot invoke JS/user callbacks or publish/mutate reachability.
+    // This includes custom control-block deleters. Every alias must promise
+    // this independently; public tags/properties do not prove the capability.
+    bool passiveFinalizer = false;
 };

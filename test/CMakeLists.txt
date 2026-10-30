@@ -1361,8 +1361,8 @@ if(THREECPP_NODE_EXECUTABLE)
                 COMMAND "${THREECPP_NODE_EXECUTABLE}" "${CMAKE_CURRENT_SOURCE_DIR}/unit/utils/parity/compare-color.mjs"
                 "${THREEJS_SOURCE_DIR}" "$<TARGET_FILE:ThreeJsColorParityProbe>")
             add_test(NAME threecpp.threejs-frustum-parity
-                COMMAND "${THREECPP_NODE_EXECUTABLE}" "${CMAKE_CURRENT_SOURCE_DIR}/unit/utils/parity/compare-frustum.mjs"
-                "${THREEJS_SOURCE_DIR}" "$<TARGET_FILE:ThreeJsFrustumParityProbe>")
+                COMMAND "${THREECPP_NODE_EXECUTABLE}" --expose-gc "${CMAKE_CURRENT_SOURCE_DIR}/unit/utils/parity/compare-frustum.mjs"
+                "${THREEJS_SOURCE_DIR}" "$<TARGET_FILE:ThreeJsFrustumParityProbe>" "${CMAKE_BINARY_DIR}/parity/frustum")
             add_test(NAME threecpp.threejs-vector24-parity
                 COMMAND "${THREECPP_NODE_EXECUTABLE}" "${CMAKE_CURRENT_SOURCE_DIR}/unit/utils/parity/compare-vector24.mjs"
                 "${THREEJS_SOURCE_DIR}" "$<TARGET_FILE:ThreeJsVector24ParityProbe>")
@@ -2189,3 +2189,56 @@ add_test(NAME threecpp.storage-nodes-lifetime COMMAND ThreeJsStorageNodesParityP
 add_test(NAME threecpp.skinning-node-lifetime COMMAND ThreeJsSkinningNodeParityProbe --fresh-gc)
 add_test(NAME threecpp.data-texture-morph-lifetime COMMAND ThreeJsDataTextureMorphParityProbe --lifetime)
 add_test(NAME threecpp.batch-lifetime COMMAND ThreeJsBatchParityProbe --lifetime)
+
+foreach(probe IN ITEMS MathMinAbs TypedArrayFillCopyWithin Box3Runtime)
+    add_executable(ThreeJs${probe}ParityProbe unit/utils/parity/${probe}ParityProbe.cpp)
+    target_link_libraries(ThreeJs${probe}ParityProbe PRIVATE threecpp::threecpp)
+endforeach()
+add_test(NAME threecpp.typed-array-fill-copy-within-lifetime COMMAND ThreeJsTypedArrayFillCopyWithinParityProbe --lifetime)
+add_test(NAME threecpp.box3-runtime-lifetime COMMAND ThreeJsBox3RuntimeParityProbe --lifetime)
+if(THREECPP_NODE_EXECUTABLE AND THREEJS_SOURCE_DIR)
+    add_test(NAME threecpp.native-math-min-abs-parity COMMAND
+        "${THREECPP_NODE_EXECUTABLE}" --expose-gc "${CMAKE_CURRENT_SOURCE_DIR}/unit/utils/parity/compare-math-min-abs.mjs"
+        "$<TARGET_FILE:ThreeJsMathMinAbsParityProbe>" "${CMAKE_BINARY_DIR}/parity/math-min-abs")
+    add_test(NAME threecpp.native-typed-array-fill-copy-within-parity COMMAND
+        "${THREECPP_NODE_EXECUTABLE}" --expose-gc "${CMAKE_CURRENT_SOURCE_DIR}/unit/utils/parity/compare-typed-array-fill-copy-within.mjs"
+        "$<TARGET_FILE:ThreeJsTypedArrayFillCopyWithinParityProbe>" "${CMAKE_BINARY_DIR}/parity/typed-array-fill-copy-within")
+    add_test(NAME threecpp.threejs-box3-runtime-parity COMMAND
+        "${THREECPP_NODE_EXECUTABLE}" "${CMAKE_CURRENT_SOURCE_DIR}/unit/utils/parity/compare-box3-runtime.mjs"
+        "${THREEJS_SOURCE_DIR}" "$<TARGET_FILE:ThreeJsBox3RuntimeParityProbe>" "${CMAKE_BINARY_DIR}/parity/box3-runtime")
+endif()
+
+foreach(probe IN ITEMS Boolean SphereRuntime)
+    add_executable(ThreeJs${probe}ParityProbe unit/utils/parity/${probe}ParityProbe.cpp)
+    target_link_libraries(ThreeJs${probe}ParityProbe PRIVATE threecpp::threecpp)
+endforeach()
+add_test(NAME threecpp.boolean-lifetime COMMAND ThreeJsBooleanParityProbe --lifetime)
+add_test(NAME threecpp.sphere-runtime-lifetime COMMAND ThreeJsSphereRuntimeParityProbe --lifetime)
+if(THREECPP_NODE_EXECUTABLE)
+    add_test(NAME threecpp.native-boolean-parity COMMAND
+        "${THREECPP_NODE_EXECUTABLE}" --expose-gc "${CMAKE_CURRENT_SOURCE_DIR}/unit/utils/parity/compare-boolean.mjs"
+        --probe "$<TARGET_FILE:ThreeJsBooleanParityProbe>" --output "${CMAKE_BINARY_DIR}/parity/boolean")
+endif()
+if(THREECPP_NODE_EXECUTABLE AND THREEJS_SOURCE_DIR)
+    add_test(NAME threecpp.threejs-sphere-runtime-parity COMMAND
+        "${THREECPP_NODE_EXECUTABLE}" "${CMAKE_CURRENT_SOURCE_DIR}/unit/utils/parity/compare-sphere-runtime.mjs"
+        "${THREEJS_SOURCE_DIR}" "$<TARGET_FILE:ThreeJsSphereRuntimeParityProbe>" "${CMAKE_BINARY_DIR}/parity/sphere-runtime")
+endif()
+
+add_executable(ThreeJsPlaneRuntimeParityProbe unit/utils/parity/PlaneRuntimeParityProbe.cpp)
+target_link_libraries(ThreeJsPlaneRuntimeParityProbe PRIVATE threecpp::threecpp)
+add_test(NAME threecpp.plane-runtime-lifetime COMMAND ThreeJsPlaneRuntimeParityProbe --lifetime)
+if(THREECPP_NODE_EXECUTABLE AND THREEJS_SOURCE_DIR)
+    add_test(NAME threecpp.threejs-plane-runtime-parity COMMAND
+        "${THREECPP_NODE_EXECUTABLE}" "${CMAKE_CURRENT_SOURCE_DIR}/unit/utils/parity/compare-plane-runtime.mjs"
+        "${THREEJS_SOURCE_DIR}" "$<TARGET_FILE:ThreeJsPlaneRuntimeParityProbe>" "${CMAKE_BINARY_DIR}/parity/plane-runtime")
+endif()
+
+add_test(NAME threecpp.frustum-lifetime COMMAND ThreeJsFrustumParityProbe --fresh-gc)
+add_executable(ThreeJsFrustumTypedParityProbe unit/utils/parity/FrustumTypedParityProbe.cpp)
+target_link_libraries(ThreeJsFrustumTypedParityProbe PRIVATE threecpp::threecpp)
+if(THREECPP_NODE_EXECUTABLE AND THREEJS_SOURCE_DIR)
+    add_test(NAME threecpp.threejs-frustum-typed-parity COMMAND
+        "${THREECPP_NODE_EXECUTABLE}" "${CMAKE_CURRENT_SOURCE_DIR}/unit/utils/parity/compare-frustum-typed.mjs"
+        "${THREEJS_SOURCE_DIR}" "$<TARGET_FILE:ThreeJsFrustumTypedParityProbe>")
+endif()

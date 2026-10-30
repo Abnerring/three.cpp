@@ -3,14 +3,63 @@
 #include "core/JSModuleObject.h"
 #include "core/JSGlobal.h"
 #include <cmath>
+#include "math/MathUtils.h"
+#include "math/Box3VectorSource.inc"
+#include "math/SphereVectorSource.inc"
 
 namespace {
 using Args = std::vector<JSValue>;
 JSValue arg(const Args& args, std::size_t i) { return i < args.size() ? args[i] : JSValue{}; }
 JSValue add(JSValue a, JSValue b) { const auto x = a.toPrimitive(), y = b.toPrimitive(); if (x.type() == JSValue::Type::String || y.type() == JSValue::Type::String) return x.toString() + y.toString(); return x.toNumber() + y.toNumber(); }
 double product(const JSValue& a, const JSValue& b) { const auto left = a.toNumber(); const auto right = b.toNumber(); return left * right; }
+
+// Complete source methods required by Box3; all operands retain dynamic values.
+JSValue box3VectorMethod(const JSValue& receiver,const Args& args,const Args& captures){
+ auto self=receiver;const auto name=captures[0].string();const auto first=arg(args,0),second=arg(args,1);
+ if(name=="add"||name=="addScalar"||name=="addVectors"||name=="sub"||name=="subVectors"){
+  for(const auto* key:{"x","y","z"}){
+   const auto left=(name=="addVectors"||name=="subVectors")?first.get(key):self.get(key);
+   const auto right=name=="addScalar"?first:(name=="addVectors"||name=="subVectors")?second.get(key):first.get(key);
+   if(name=="sub"||name=="subVectors"){const auto x=left.toNumber(),y=right.toNumber();self.set(key,x-y);}else self.set(key,add(left,right));
+  }return self;
+ }
+ if(name=="min"||name=="max"){
+  for(const auto* key:{"x","y","z"}){const auto math=nativeGlobalBinding("Math"),fn=math.get(name);const auto left=self.get(key),right=first.get(key);self.set(key,fn.call(math,{left,right}));}return self;
+ }
+ if(name=="clamp"){
+  const auto fn=captures[2];for(const auto* key:{"x","y","z"}){const auto value=self.get(key),minimum=first.get(key),maximum=second.get(key);self.set(key,fn.call({}, {value,minimum,maximum}));}return self;
+ }
+ if(name=="distanceTo"){
+  const auto math=nativeGlobalBinding("Math"),sqrt=math.get("sqrt"),fn=self.get("distanceToSquared");return sqrt.call(math,{fn.call(self,{first})});
+ }
+ if(name=="distanceToSquared"){
+  double delta[3];unsigned i=0;for(const auto* key:{"x","y","z"}){const auto left=self.get(key),right=first.get(key);const auto x=left.toNumber(),y=right.toNumber();delta[i++]=x-y;}return (delta[0]*delta[0]+delta[1]*delta[1])+delta[2]*delta[2];
+ }
+ if(name=="dot"){
+  double result=0;unsigned i=0;for(const auto* key:{"x","y","z"}){const auto left=self.get(key),right=first.get(key);const auto value=product(left,right);result=i++?result+value:value;}return result;
+ }
+ if(name=="crossVectors"){
+  const auto ax=first.get("x"),ay=first.get("y"),az=first.get("z"),bx=second.get("x"),by=second.get("y"),bz=second.get("z");
+  auto a=product(ay,bz);auto b=product(az,by);self.set("x",a-b);a=product(az,bx);b=product(ax,bz);self.set("y",a-b);a=product(ax,by);b=product(ay,bx);self.set("z",a-b);return self;
+ }
+ throw std::logic_error("Unknown Box3 Vector3 dependency");
+}
+// Complete source methods needed by Sphere, Plane and Frustum.
+JSValue sphereVectorMethod(const JSValue& receiver,const Args& args,const Args& captures){
+ auto self=receiver;const auto name=captures[0].string();const auto count=static_cast<unsigned>(captures[1].number());const auto first=arg(args,0);
+ if(name=="distanceTo"){const auto math=nativeGlobalBinding("Math"),sqrt=math.get("sqrt"),fn=self.get("distanceToSquared");return sqrt.call(math,{fn.call(self,{first})});}
+ if(name=="distanceToSquared"){const auto ax=self.get("x"),bx=first.get("x");const auto x=ax.toNumber(),vx=bx.toNumber();const auto dx=x-vx;const auto ay=self.get("y"),by=first.get("y");const auto y=ay.toNumber(),vy=by.toNumber();const auto dy=y-vy;return dx*dx+dy*dy;}
+ if(name=="lengthSq"){double result=0;for(unsigned i=0;i<count;++i){const std::string key(1,"xyz"[i]);const auto a=self.get(key),b=self.get(key);const auto squared=product(a,b);result=i?result+squared:squared;}return result;}
+ if(name=="addScaledVector"){const auto scale=arg(args,1);for(unsigned i=0;i<count;++i){const std::string key(1,"xyz"[i]);const auto left=self.get(key),component=first.get(key);const auto scaled=product(component,scale);self.set(key,add(left,scaled));}return self;}
+ if(name=="setLength"){const auto normalize=self.get("normalize"),result=normalize.call(self);return result.get("multiplyScalar").call(result,{first});}
+ if(name=="cross"){const auto cross=self.get("crossVectors");return cross.call(self,{self,first});}
+ if(name=="negate"){for(unsigned i=0;i<count;++i){const std::string key(1,"xyz"[i]);self.set(key,-self.get(key).toNumber());}return self;}
+ throw std::logic_error("Unknown Sphere Vector dependency");
+}
 JSValue method(const JSValue& receiver, const Args& args, const Args& captures) {
     auto self = receiver; const auto name = captures[0].string(); const auto count = static_cast<unsigned>(captures[1].number()); const auto source = arg(args, 0);
+    for(const auto& spec:SphereVectorSource::methods)if(count==spec.dimensions&&name==spec.name)return sphereVectorMethod(self,args,captures);
+    if(count==3)for(const auto& spec:Box3VectorSource::methods)if(name==spec.name)return box3VectorMethod(self,args,captures);
     if (name == "get width" || name == "get height") return self.get(name == "get width" ? "x" : "y");
     if (name == "set width" || name == "set height") { self.set(name == "set width" ? "x" : "y", source); return {}; }
     if (name == "clone") { const auto ctor = self.get("constructor"); Args values; for (unsigned i = 0; i < count; ++i) values.push_back(self.get(std::string(1, "xyz"[i]))); return ctor.construct(values); }
@@ -97,6 +146,8 @@ JSValue constructor(unsigned count) {
     methods.emplace_back("length",0);methods.emplace_back("equals",1);methods.emplace_back("fromArray",1);methods.emplace_back("toArray",0);
     if(count==3)for(const auto& entry:std::initializer_list<std::pair<const char*,unsigned>>{{"setFromMatrixPosition",1},{"setFromMatrixScale",1},{"setFromMatrixColumn",2}})methods.insert(methods.end()-3,entry);
     for (const auto& [methodName, arity] : methods) { JSPropertyDescriptor d; d.value = JSValue::function(method, {methodName, count}, methodName, arity); d.writable = d.configurable = true; prototype.defineProperty(methodName, d); }
+    if(count==3){const auto clamp=nativeMathUtilsClamp();for(const auto& spec:Box3VectorSource::methods){auto fn=JSValue::function(method,{spec.name,count,clamp},spec.name,spec.arity);fn.setFunctionSourceText(spec.source);JSPropertyDescriptor d;d.value=fn;d.writable=d.configurable=true;prototype.defineProperty(spec.name,d);}}
+    for(const auto& spec:SphereVectorSource::methods)if(count==spec.dimensions){auto fn=JSValue::function(method,{spec.name,count},spec.name,spec.arity);fn.setFunctionSourceText(spec.source);JSPropertyDescriptor d;d.value=fn;d.writable=d.configurable=true;prototype.defineProperty(spec.name,d);}
     prototype.set(std::string("is") + name, true); ctor.retainForHeapLifetime(); weak[index] = JSWeakValue(ctor); return ctor;
 }
 }

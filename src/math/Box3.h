@@ -3,6 +3,10 @@
 #include "math/Vector3.h"
 #include <limits>
 #include <vector>
+// Complete managed source module; existing typed Box3 API remains separate.
+JSValue nativeBox3Constructor();
+JSValue nativeBox3Module();
+JSValue nativeBox3Binding(const std::string& name);
 class Matrix4;
 class VertexAttribute;
 class Sphere;

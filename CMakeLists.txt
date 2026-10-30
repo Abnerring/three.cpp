@@ -28,9 +28,9 @@ add_library(threecpp
     src/constants.cpp
     src/math/MathUtils.cpp src/math/Vector2.cpp src/math/Vector3.cpp src/math/Vector4.cpp
     src/math/Matrix3.cpp src/math/Matrix4.cpp src/math/Quaternion.cpp src/math/Euler.cpp
-    src/math/Color.cpp src/math/ColorManagement.cpp src/math/Box3.cpp src/math/Sphere.cpp src/math/SphereRuntime.cpp
+    src/math/Color.cpp src/math/ColorManagement.cpp src/math/Box3.cpp src/math/Sphere.cpp
     src/math/Box2.cpp src/math/Cylindrical.cpp src/math/Spherical.cpp src/math/Matrix2.cpp
-    src/math/Plane.cpp src/math/PlaneRuntime.cpp src/math/Line3.cpp src/math/Triangle.cpp src/math/Ray.cpp src/math/Frustum.cpp
+    src/math/Plane.cpp src/math/Line3.cpp src/math/Triangle.cpp src/math/Ray.cpp src/math/Frustum.cpp
     src/math/Interpolant.cpp src/math/JSNumberMath.cpp
     src/math/interpolants/DiscreteInterpolant.cpp src/math/interpolants/LinearInterpolant.cpp
     src/math/interpolants/CubicInterpolant.cpp src/math/interpolants/QuaternionLinearInterpolant.cpp
@@ -42,7 +42,7 @@ add_library(threecpp
     src/audio/AudioListener.cpp
     src/audio/Audio.cpp
     src/core/NativeRenderingObject.cpp src/core/Layers.cpp src/core/JSObject.cpp src/core/JSNumber.cpp
-    src/core/JSWeakRef.cpp src/core/JSFinalizationRegistry.cpp src/core/JSGlobal.cpp
+    src/core/JSWeakRef.cpp src/core/JSFinalizationRegistry.cpp src/core/JSGlobal.cpp src/core/JSBoolean.cpp
     src/core/BufferAttribute.cpp src/core/BufferGeometry.cpp src/core/JSDataSnapshot.cpp
     src/core/Raycaster.cpp
     src/cameras/Camera.cpp src/cameras/PerspectiveCamera.cpp src/cameras/OrthographicCamera.cpp

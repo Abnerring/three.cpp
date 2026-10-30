@@ -1,0 +1,7 @@
+// Source metadata only; production does not execute JavaScript.
+import fs from 'node:fs';import path from 'node:path';import{createRequire}from'node:module';import{fileURLToPath}from'node:url';import{execFileSync}from'node:child_process';
+const args=process.argv.slice(2),check=args.includes('--check'),upstream=path.resolve(args.find(a=>a!=='--check')??'D:/project/DX/GitHub/three.js');
+if(execFileSync('git',['-C',upstream,'rev-parse','HEAD'],{encoding:'utf8'}).trim()!=='11738a9d55e502fb484cefffcea3a66dc44e9fe9')throw Error('Unexpected upstream checkout');
+const require=createRequire(path.join(upstream,'package.json')),{parse}=require('acorn'),source=fs.readFileSync(path.join(upstream,'src/math/Matrix4.js'),'utf8'),tree=parse(source,{ecmaVersion:'latest',sourceType:'module'}),cls=tree.body.find(n=>n.type==='ClassDeclaration'&&n.id.name==='Matrix4'),method=cls.body.body.find(n=>n.key?.name==='getMaxScaleOnAxis');if(!method)throw Error('Missing source method');
+const root=fileURLToPath(new URL('../',import.meta.url)),file=path.join(root,'src/math/Matrix4MaxScaleSource.inc'),text=['// Exact pinned Matrix4 source metadata; see THREEJS-LICENSE.','namespace Matrix4MaxScaleSource {',`constexpr const char* methodSource=${JSON.stringify(source.slice(method.start,method.end))};`,'}',''].join('\n');
+if(check){if(fs.readFileSync(file,'utf8').replaceAll('\r\n','\n')!==text)throw Error('Stale '+file);}else fs.writeFileSync(file,text);console.log(`${check?'checked':'generated'} src/math/Matrix4MaxScaleSource.inc`);

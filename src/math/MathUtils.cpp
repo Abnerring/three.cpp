@@ -1,4 +1,4 @@
-﻿#include "math/MathUtils.h"
+#include "math/MathUtils.h"
 #include "math/JSNumberMath.h"
 #include <vector>
 #include "core/JSGlobal.h"
@@ -294,4 +294,18 @@ JSValue nativeMathUtilsGenerateUUID()
     function.retainForHeapLifetime();
     weak = JSWeakValue(function);
     return function;
+}
+
+// Real private MathUtils.clamp import. Full MathUtils module exports are separate.
+#include "math/ClampSource.inc"
+JSValue nativeMathUtilsClamp(){
+    static thread_local JSWeakValue weak;
+    if(const auto value=weak.lock();value&&value->isCallable())return *value;
+    auto function=JSValue::constructor(+[](const JSValue&,const std::vector<JSValue>& args,const std::vector<JSValue>&)->JSValue{
+        const auto value=args.empty()?JSValue{}:args[0],minimum=args.size()>1?args[1]:JSValue{},maximum=args.size()>2?args[2]:JSValue{};
+        const auto outerMath=nativeGlobalBinding("Math"),outer=outerMath.get("max");
+        const auto innerMath=nativeGlobalBinding("Math"),inner=innerMath.get("min");
+        return outer.call(outerMath,{minimum,inner.call(innerMath,{maximum,value})});
+    },{},"clamp",3,JSValue::ConstructorKind::Callable);
+    function.setFunctionSourceText(MathUtilsClampSource::functionSource);function.retainForHeapLifetime();weak=JSWeakValue(function);return function;
 }

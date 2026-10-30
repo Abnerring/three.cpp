@@ -28,6 +28,7 @@ class JSValue;
 
 // Stable private managed import; numeric callers keep the existing typed path.
 JSValue nativeMathUtilsGenerateUUID();
+JSValue nativeMathUtilsClamp();
 
 namespace MathUtils
 {

@@ -6,6 +6,8 @@
 #include "core/JSMap.h"
 #include "core/JSWeakMap.h"
 #include "core/JSSet.h"
+#include "core/JSBoolean.h"
+#include "core/JSError.h"
 #include "core/NativeArray.h"
 #include <cmath>
 #include <limits>
@@ -31,12 +33,13 @@ JSValue initialStringConstructor(){
 }
 JSValue initialMathObject(){
     auto math=JSValue::object();
-    for(const auto* name:{"sin","cos","ceil","sqrt","round"}){
+    for(const auto* name:{"sin","cos","ceil","sqrt","round","abs"}){
         auto function=JSValue::function(+[](const JSValue&,const std::vector<JSValue>& args,const std::vector<JSValue>& captures)->JSValue{
             const auto input=(args.empty()?JSValue{}:args[0]).toNumber();
             if(captures[0].strictEquals("sin"))return JSNumberMath::sin(input);
             if(captures[0].strictEquals("cos"))return JSNumberMath::cos(input);
             if(captures[0].strictEquals("sqrt"))return std::sqrt(input);
+            if(captures[0].strictEquals("abs"))return std::fabs(input);
             if(captures[0].strictEquals("round")){
                 if(!std::isfinite(input)||input==0)return input;
                 const auto floor=std::floor(input);const auto result=input-floor>=0.5?floor+1:floor;
@@ -54,6 +57,14 @@ JSValue initialMathObject(){
         return result;
     },{},"max",2);
     JSPropertyDescriptor maximumProperty;maximumProperty.value=maximum;maximumProperty.writable=maximumProperty.configurable=true;math.defineProperty("max",maximumProperty);
+    auto minimum=JSValue::function(+[](const JSValue&,const std::vector<JSValue>& args,const std::vector<JSValue>&)->JSValue{
+        // ToNumber runs left to right for every argument before NaN is examined.
+        std::vector<double> numbers;numbers.reserve(args.size());for(const auto& value:args)numbers.push_back(value.toNumber());
+        double result=std::numeric_limits<double>::infinity();
+        for(const auto number:numbers){if(std::isnan(number))return number;if(number<result||(number==0&&result==0&&std::signbit(number)))result=number;}
+        return result;
+    },{},"min",2);
+    JSPropertyDescriptor minimumProperty;minimumProperty.value=minimum;minimumProperty.writable=minimumProperty.configurable=true;math.defineProperty("min",minimumProperty);
     auto random=JSValue::function(+[](const JSValue&,const std::vector<JSValue>&,const std::vector<JSValue>&)->JSValue{
         static thread_local std::mt19937_64 engine(std::random_device{}());return std::generate_canonical<double,53>(engine);
     },{},"random",0);
@@ -69,7 +80,7 @@ JSValue nativeGlobalObject(){
     JSPropertyDescriptor string;string.value=initialStringConstructor();string.writable=string.configurable=true;object.defineProperty("String",string);
     JSPropertyDescriptor array;array.value=JSValue::intrinsicArrayConstructor();array.writable=array.configurable=true;object.defineProperty("Array",array);
     JSPropertyDescriptor map;map.value=nativeMapConstructor();map.writable=map.configurable=true;object.defineProperty("Map",map);
-    for(const auto& entry:std::initializer_list<std::pair<const char*,JSValue>>{{"Object",JSValue::intrinsicObjectConstructor()},{"WeakMap",nativeWeakMapConstructor()},{"Set",nativeSetConstructor()},{"ArrayBuffer",nativeArrayBufferConstructor()}}){
+    for(const auto& entry:std::initializer_list<std::pair<const char*,JSValue>>{{"Boolean",nativeBooleanConstructor()},{"Error",nativeErrorConstructor()},{"Object",JSValue::intrinsicObjectConstructor()},{"WeakMap",nativeWeakMapConstructor()},{"Set",nativeSetConstructor()},{"ArrayBuffer",nativeArrayBufferConstructor()}}){
         JSPropertyDescriptor property;property.value=entry.second;property.writable=property.configurable=true;object.defineProperty(entry.first,property);
     }
     constexpr const char* typedNames[]={"Int8Array","Uint8Array","Int16Array","Uint16Array","Int32Array","Uint32Array","Float32Array","Float64Array","Uint8ClampedArray"};

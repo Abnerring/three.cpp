@@ -1,5 +1,19 @@
 # 验证记录
 
+## 当前追加验证：管理数学边界类、内建与数值存储回收，2026-10-31
+
+- 固定上游 `11738a9d55e502fb484cefffcea3a66dc44e9fe9`，基线 `2afb061`。Box3、Plane、Sphere、Frustum、FrustumArray 接入对应完整管理构造器/方法，共 **96 项类入口**；另补 19 个 Vector 依赖方法、clamp 与 Matrix4.getMaxScaleOnAxis 的真实动态 Math。旧 PlaneRuntime/SphereRuntime 合并回上游同名文件。完整 Vector/Matrix 和对象/几何体体系仍待补。
+- 原生 Boolean 使用真实内部品牌、装箱、构造/newTarget、反射与 JSON 协议；安装真实 Boolean/Error。补 Math.min/abs，以及九种 Number TypedArray 的原始字节 fill/copyWithin。TypedArray 的 detached/resizable/length-tracking/shared/BigInt/Float16 **48 例**、Boolean 跨 realm/BigInt/Symbol 包装依赖 **10 例**仅有 Node oracle，未计原生通过。无 CEF、浏览器或生产 JS 执行桥。
+- 本轮八组差分 **12842 场景全部通过**：Box3 1140、Plane 782、Sphere/Vector 1068、Frustum/FrustumArray 1190、保留的原 typed Frustum 14、Math 541、TypedArray 7412、Boolean 695；六项独立 lifetime 各三轮通过。数字描述本轮覆盖，含旧用例，不能换算整体完成率。原 typed Frustum 两文件保留 HEAD 原字节并单独注册；Plane 旧 690 输入/期望前缀保持。
+- Sphere 首轮 5 项动态 Math 差异、Boolean 首轮 10 字段装箱/固定 V8 标签接收者差异、Plane façade 替换后私有构造器被 GC 的真实错误均已修复，原失败保留。Boolean 对齐固定 Node26.5 可观察行为，不宣称完整 ECMAScript 验收。
+- 首轮完整 CTest01 在 132 项结束（131 过/1 编号失败）后主动停止自有进程树：TypedArray 在第7188个首 GC 前积累大量数值包装，整图按原生 owner 逐个重扫。旧 run 明确未完成；98 CPU+4 GPU 旧二进制和相关源快照、原始 LastTest.tmp 全保存。独立原样预期的 32/64/128/256 前缀诊断分别重扫125/253/509/1021次，不能把未完成原运行写成成功。
+- GC 仅对**所有不可达 control block 的全部 aliases 都可信被动析构**时批量释放；任何活动或不可信组仍按原顺序逐 owner 重扫，保留原有 eligibility/外部 owner/子孙规则。正常 make_shared 数值存储和 View 使用私有来源标志；外部 shared_ptr/custom deleter 往返不自动升级。退休前准备 HostKey/容量，按精确原身份和 id 清缓存；最终审计后复核声明，批次后立即重扫。新增 **8 项**回归覆盖512组 aliases、外部保活、custom deleter、活动子孙复活、hooks改写、重入和同 owner 混合 aliases；原13项源字节前缀保持。专项 **23 cases / 3276 assertions** 通过。相同256前缀诊断由 **1021次/7.6867秒**变为 **3次/0.1510秒**；这是该诊断的实测，不外推完整程序加速比例。[诊断](D:/Temp/surui/threecpp-batched-mesh-20261028/typed-gc-scaling02/summary.json)。
+- 私有存储布局变化后清除1691个旧 CPU .obj，**98 目标完整1445步**重新构建；最终所选 **133项：132过/1失败，625.65秒**，注册总数313。unit **2535 cases/220595 assertions**、geometry **35/403**全过；测试前后98实际二进制 SHA一致。[最终 JUnit](D:/Temp/surui/threecpp-batched-mesh-20261028/ctest-final-02.xml)、[完整输出](D:/Temp/surui/threecpp-batched-mesh-20261028/ctest-final-02-last-test.log)、[范围与二进制](D:/Temp/surui/threecpp-batched-mesh-20261028/validation-final-summary.json)。
+- 唯一失败仍为 DataTexture/Morph：166例中的**17例失败**，共529个真实Node.id差194、17个Texture.id差3；非ID/类型/键/长度差零。未补分配、未扩大relative范围、未移除字段或标expected-failure；此前其他默认绝对分配缺口仍见历史阶段。[本轮逐字段审计](D:/Temp/surui/threecpp-batched-mesh-20261028/data-morph-final02-allocation-audit.json)。
+- Vulkan01因实测95%内存中断自有构建，无测试结果；恢复02和最终Plane修复后的03分别5/5通过。GC布局变化后04同样清旧对象并完整重编，最终 **5/5通过，35.80秒**；glslang27/buffer103/binding46、RTX3070 1400/cube60。validation=0、验证层未启用，仅证明现有五项覆盖，现代 GPU 全链仍待补。[最终 GPU JUnit](D:/Temp/surui/threecpp-batched-mesh-20261028/vulkan-validation-04/junit.xml)、[完整输出](D:/Temp/surui/threecpp-batched-mesh-20261028/vulkan-validation-04/last-test.log)。
+- 五新源码元数据生成器、审计单测5/5、port-audit --check与diff共八组检查通过；文档更新后另作最终diff检查。清单1251=partial424/missing517/Vulkan290/dependency20，595有文件不等于完整实现，renderers统一Vulkan标签不表示每个都无代码。后续完整Object3D/Mesh/BufferGeometry/Skeleton/BatchedMesh、NodeMaterial及现代Vulkan、传统完整材质光影后处理、addons/宿主/三平台仍未完成。
+- 下一阶段 `D:/Temp/surui/threecpp-object-model-20261030` 的 Generator/Function、Quaternion、Euler、Math与全局数字候选尚未原生验收；Object3D/Geometry/JSON候选也不计本阶段完成。Function启动私有intrinsic、apply与固定V8 legacy访问器需显式合并当前GC改动，不能整文件覆盖。阶段提交后 freeze-phase.py 冻结源码、固定上游、98 CPU+4 GPU最终二进制及全部证据；旧快照只读。
+
 ## 当前追加验证：网格变形与管理资源，2026-10-28
 
 - 固定上游仍为 `11738a9d55e502fb484cefffcea3a66dc44e9fe9`。13 个模块新增或升级真实管理入口：BufferAttribute、InstancedBufferAttribute、InstancedInterleavedBuffer、DataTexture、DataArrayTexture、StorageBufferAttribute、StorageInstancedBufferAttribute、StorageArrayElementNode、StorageBufferNode、Instance、Skinning、Morph、Batch。StorageArrayElementNode 及测试由旧 core 迁到源 utils 路径；保留 C++ typed 入口，并明确其桥接边界。没有 CEF、浏览器或 JS 执行桥。

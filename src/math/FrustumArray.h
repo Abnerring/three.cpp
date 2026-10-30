@@ -19,3 +19,8 @@ class FrustumArray {
     FrustumArray& copy(const FrustumArray& source);
     FrustumArray clone() const;
 };
+
+// Managed source module, independent of the typed compatibility class.
+JSValue nativeFrustumArrayConstructor();
+JSValue nativeFrustumArrayModule();
+JSValue nativeFrustumArrayBinding(const std::string& name);
