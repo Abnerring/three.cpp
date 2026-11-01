@@ -2604,3 +2604,44 @@ if(THREECPP_NODE_EXECUTABLE AND THREEJS_SOURCE_DIR)
     set_tests_properties(threecpp.blend-modes-parity PROPERTIES TIMEOUT 600 LABELS "native;nodes;parity"
         ENVIRONMENT "TEMP=D:/Temp/surui;TMP=D:/Temp/surui;THREEJS_SOURCE_DIR=${THREEJS_SOURCE_DIR}")
 endif()
+
+if(TARGET threecpp_vulkan)
+    add_executable(VulkanDoubleSideCallbacksProbe unit/utils/parity/VulkanDoubleSideCallbacksProbe.cpp)
+    target_link_libraries(VulkanDoubleSideCallbacksProbe PRIVATE threecpp::vulkan)
+    if(MSVC)
+        target_compile_options(VulkanDoubleSideCallbacksProbe PRIVATE /fp:strict)
+    endif()
+    if(THREECPP_NODE_EXECUTABLE AND THREEJS_SOURCE_DIR)
+        add_test(NAME threecpp.vulkan-double-side-callbacks
+            COMMAND "${CMAKE_COMMAND}" "-DNODE=${THREECPP_NODE_EXECUTABLE}"
+                "-DPROBE=$<TARGET_FILE:VulkanDoubleSideCallbacksProbe>"
+                "-DPARITY_DIR=${CMAKE_CURRENT_SOURCE_DIR}/unit/utils/parity"
+                "-DUPSTREAM=${THREEJS_SOURCE_DIR}"
+                "-DOUTPUT_ROOT=${CMAKE_BINARY_DIR}/parity/vulkan-double-side"
+                -P "${CMAKE_CURRENT_SOURCE_DIR}/cmake/RunVulkanDoubleSideParity.cmake")
+        set_tests_properties(threecpp.vulkan-double-side-callbacks PROPERTIES TIMEOUT 420 LABELS "GPU;Vulkan;parity;callbacks"
+            ENVIRONMENT "TEMP=D:/Temp/surui;TMP=D:/Temp/surui;THREEJS_SOURCE_DIR=${THREEJS_SOURCE_DIR}")
+        add_test(NAME threecpp.vulkan-double-side-second-pass-callbacks
+            COMMAND "${CMAKE_COMMAND}" "-DNODE=${THREECPP_NODE_EXECUTABLE}"
+                "-DPROBE=$<TARGET_FILE:VulkanDoubleSideCallbacksProbe>"
+                "-DPARITY_DIR=${CMAKE_CURRENT_SOURCE_DIR}/unit/utils/parity"
+                "-DUPSTREAM=${THREEJS_SOURCE_DIR}"
+                "-DOUTPUT_ROOT=${CMAKE_BINARY_DIR}/parity/vulkan-double-side-additional"
+                "-DINPUT=${CMAKE_CURRENT_SOURCE_DIR}/unit/utils/parity/vulkan-double-side-additional-fixtures.json"
+                -P "${CMAKE_CURRENT_SOURCE_DIR}/cmake/RunVulkanDoubleSideParity.cmake")
+        set_tests_properties(threecpp.vulkan-double-side-second-pass-callbacks PROPERTIES TIMEOUT 420 LABELS "GPU;Vulkan;parity;callbacks"
+            ENVIRONMENT "TEMP=D:/Temp/surui;TMP=D:/Temp/surui;THREEJS_SOURCE_DIR=${THREEJS_SOURCE_DIR}")
+    endif()
+endif()
+
+if(THREECPP_NODE_EXECUTABLE AND THREEJS_SOURCE_DIR)
+    add_test(NAME threecpp.vulkan-double-side-source-binding-trace
+        COMMAND "${CMAKE_COMMAND}" "-DNODE=${THREECPP_NODE_EXECUTABLE}"
+            "-DPARITY_DIR=${CMAKE_CURRENT_SOURCE_DIR}/unit/utils/parity"
+            "-DUPSTREAM=${THREEJS_SOURCE_DIR}"
+            "-DOUTPUT_ROOT=${CMAKE_BINARY_DIR}/parity/vulkan-double-side-source-binding"
+            -P "${CMAKE_CURRENT_SOURCE_DIR}/cmake/RunVulkanDoubleSideBindingTrace.cmake")
+    set_tests_properties(threecpp.vulkan-double-side-source-binding-trace PROPERTIES
+        TIMEOUT 420 LABELS "Vulkan;parity;source;callbacks"
+        ENVIRONMENT "TEMP=D:/Temp/surui;TMP=D:/Temp/surui;THREEJS_SOURCE_DIR=${THREEJS_SOURCE_DIR}")
+endif()

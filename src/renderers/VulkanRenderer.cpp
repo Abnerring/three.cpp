@@ -91,6 +91,7 @@
 #include <fstream>
 #include <limits>
 #include <mutex>
+#include <exception>
 #include <stdexcept>
 #include <type_traits>
 #include <unordered_map>
@@ -4075,17 +4076,23 @@ void VulkanRenderer::render(Scene& scene, Camera& camera) {
                 if (material->onBeforeRender)
                     material->onBeforeRender(*this, scene, camera, item.geometry.get(),
                                              item.object.get(), group);
-                impl->colorWrite = material->colorWrite;
-                const auto drawStart = prepared.size();
+                const auto prepareAndRecord = [&](int side) {
+                    impl->colorWrite = material->colorWrite;
+                    const auto drawStart = prepared.size();
+                    prepare(item, material, side);
+                    for (std::size_t i = drawStart; i < prepared.size(); ++i)
+                        recordDraw(prepared[i]);
+                };
                 if (material->transparent && material->side == 2 && !material->forceSinglePass) {
+                    material->side = BackSide;
                     material->needsUpdate = true;
-                    prepare(item, material, 1);
+                    prepareAndRecord(BackSide);
+                    material->side = FrontSide;
                     material->needsUpdate = true;
-                    prepare(item, material, 0);
+                    prepareAndRecord(FrontSide);
+                    material->side = DoubleSide;
                 } else
-                    prepare(item, material, material->side);
-                for (std::size_t i = drawStart; i < prepared.size(); ++i)
-                    recordDraw(prepared[i]);
+                    prepareAndRecord(material->side);
                 if (item.object->onAfterRender)
                     item.object->onAfterRender(*this, scene, camera, item.geometry.get(),
                                              material.get(), group);
@@ -4102,8 +4109,20 @@ void VulkanRenderer::render(Scene& scene, Camera& camera) {
         impl->currentCameraId = 0;
         impl->currentCameraOwner = {};
     } catch (...) {
-        impl->abortFrame();
+        const auto renderFailure = std::current_exception();
+        // WebGL commands already issued before a JavaScript exception remain
+        // visible. Prepared owns every referenced buffer/image until the fence.
+        // A callback readback may already have finished the preceding recording.
+        if (impl->recording) {
+            try {
+                impl->endFrame();
+            } catch (...) {
+                impl->abortFrame();
+            }
+        } else {
+            impl->abortFrame();
+        }
         cleanup();
-        throw;
+        std::rethrow_exception(renderFailure);
     }
 }

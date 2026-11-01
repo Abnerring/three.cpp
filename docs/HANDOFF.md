@@ -1,3 +1,23 @@
+# 当前接续：Vulkan 双面 pass / 上传回调已统一验收，2026-11-02
+
+总目标保持 active：固定 three.js 11738a9d 的全部 src + examples/jsm 原生 C++ 逻辑，Vulkan 后端；禁止 CEF/生产 JS 引擎。阶段本地 Git 提交，不推送。本阶段父 c42d13e89172d47198edb8e4dc6c603e32d63df9（上阶段 canonical BlendModes + FunctionOverloading source traces 已提交）。
+
+当前3123源码：VulkanRenderer 依源码先实际 material.side=BackSide / needsUpdate / prepare→draw，再 FrontSide / needsUpdate / prepare→draw，成功才恢复DoubleSide。每pass重新读index/输入。异常时 Prepared 强资源仍保活，提交/等待已记录命令；GPU失败才abort，原exception_ptr/reason身份优先。不无条件恢复side或回滚首pass输出。头文件/ABI/rootCMake/原renderer tests/旧19测试完全保留。
+
+实际16 GPU targets/19步/23.48257s重建；当前全部22相关检查22/22，56.92s、0skip，3123source/1580deps前后不变，含三项source-only，不能说22硬件测试或验证层成功。新原8+新4场景在RTX3070 Laptop实际GPU共100断言全过；4场景真实source BindingStates两fresh对照原bytes。CPU8选定targets no-op/0.655s，CPU独立source-only1/1/1.03s，1471deps不变；未重跑全CPU套。
+
+旧02/03失败保留：throwSecond后一帧原probe蓝预期不成立。真实WebGLPrograms/Objects/Geometries/Attributes/BindingStates/IndexedBufferRenderer及精确renderObject/renderBufferDirect证明saveCache先于upload，异常后Front VAO position未配置；下帧cached setup跳过，constant position退化三角形，精确黑色才符合该源路径。portable source trace/expected/SHA/独立CTest已进repo；原输入/source expected/比较器未变；不声称源WebGL GPU执行。
+
+权威 D:/Temp/surui/threecpp-node-trace-blends-20261102/vulkan04-final-proof01/proof.json。CPU库812380b5c747da0d85e8d430c6a3281142837d68482819e0c9a255150f0e5b5c；GPU core cd8f2401e9f83339a4ce17e91038a326bd30f9a81de96ca41f0f562c4b93a559；新Vulkan lib a8f34fd50b7c65dcc31fea330d2f7d3480f0faa721fca667183f0293addc609a。旧19 JUnit未覆写，新vulkan-regression02/gpu22-junit.xml；完整comparison/LastTest/JUnit与库/exe已单独保存。
+
+Noise完整原gate S/noise-private-native01 已真实终态39项全部尝试，37pass/2原180s inline timeout，115原sourcebyte/全部guards保持；444GC/三heap均pass。timing native01亦真实两组timeout，已完成inline00 GC160.602s/run6.929s；inline01 GC33.142s/run5.343s且停在case17 GC enter，未完成段不能估算。Noise74导出/121函数/1801调用和4runtime helper尚未shared；integration-plan01明确not-native-approved，不得37/39就合。
+
+ROOT现live GC frontier诊断 S/noise-gc-frontier-private-native01，session46151；仅1TU诊断JSValue替换，复用原Noise/Trace/timing probeobj，原两32输入/180s/GC边界保持；全过程source3123/lib/Ninja/旧证据guard，未终态前不要修改src/test/utils/CMake/原exes。当前已观测active/untrusted RegExp、runtime.Error、runtime.CallSite；少量active使大量passive仍按owner逐轮mark。phase_audit准备两个纯根计数记账优化（beforeRoots复用POD vector、internalRoots读取find避免插0），renderer_candidate独立审；没有生产优化已通过声明。mixed passive前缀批处理因trace计数可被active析构观察的反例已拒绝，不能默认扩大passive。
+
+下一完整13 BSDF由 /root/phase_audit/async_catch_review 准备，N/bsdf-functions-candidate01；DFGLUT保留真实512 Uint16 DATA、lazy缓存/半初始化异常顺序与真实DataTexture/TextureNode providers。审计 N/nodes-tsl-owner-audit-current01 已用真实279模块/1421edges/ResolveExport，不用882/512差值填Node/随机数；候选不等于native通过。
+
+覆盖仍668/1251/缺583，仅路径统计；完整Nodes/TSL初始化、NodeManager、传统/现代全部渲染、addons/原生宿主与Linux/macOS尚未完成。root唯一shared写/native构建，agents仅新D候选。TEMP/TMP=D:/Temp/surui。原历史后缀798619bytes SHA f6b73f2e259a5a5518d1760ca0c6ac3d1ceed98ed915f0cec5a236a5107dcc4c逐字节保留；HANDOFF单独 git -c core.autocrlf=false add。
+
 # 当前接续：完整 BlendModes 与 FunctionOverloading 源位置，2026-11-02
 
 目标仍 active：固定 three.js 11738a9d55e502fb484cefffcea3a66dc44e9fe9 全部 src + examples/jsm 原生 C++ 逻辑，Vulkan 后端；禁止 CEF/生产 JS 引擎或桥接。阶段本地 Git 提交，不推送。父提交 4580e9fff79f716b301f5831cdb57496c2b136a8。

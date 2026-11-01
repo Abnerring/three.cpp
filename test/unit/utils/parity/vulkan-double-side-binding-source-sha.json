@@ -1,0 +1,88 @@
+{
+  "fixedUpstreamCommit": "11738a9d55e502fb484cefffcea3a66dc44e9fe9",
+  "sources": [
+    {
+      "path": "src/renderers/WebGLRenderer.js",
+      "sha256": "c9fe4d697f48687acc219079073cdfb38f6a0e2705e608d78d0dee8313a55ff3"
+    },
+    {
+      "path": "src/renderers/webgl/WebGLBindingStates.js",
+      "sha256": "0e3fbc9e49237fcda4d4a7161f55c7915dcf658a4f5fcfbe75c740499211687f"
+    },
+    {
+      "path": "src/renderers/webgl/WebGLAttributes.js",
+      "sha256": "6fde22c74bedc210b131301949dd53882dd2402fedf7f9b9a6664d2fa5c05c4a"
+    },
+    {
+      "path": "src/renderers/webgl/WebGLObjects.js",
+      "sha256": "dae305a82762c63f0dac6d0a67ea0617f7c4ba87f46e32a50f80ecd5bf820e1a"
+    },
+    {
+      "path": "src/renderers/webgl/WebGLGeometries.js",
+      "sha256": "d8b475165167bb8fa45b309b879ddc3117d0d814d69a41650dfd07c019627710"
+    },
+    {
+      "path": "src/renderers/webgl/WebGLIndexedBufferRenderer.js",
+      "sha256": "6e27ed7727e8fc7365c00eb687fab2cb12fff9ec442ee5741bd94ca08e53e807"
+    },
+    {
+      "path": "src/renderers/webgl/WebGLPrograms.js",
+      "sha256": "d56ef1a5d5be56c3a419dce2c6eb03254f34cae1114baab96d354d04a7dcc61c"
+    },
+    {
+      "path": "src/renderers/webgl/WebGLLights.js",
+      "sha256": "94d8c64a6af7d09f557f9f260bcf715236891cbc6ef841613e960cb9a0032347"
+    },
+    {
+      "path": "src/renderers/shaders/ShaderChunk/begin_vertex.glsl.js",
+      "sha256": "713a7c646346255ebb4a2058bc69c907e0b8ff957c54d6b7c6c6145f86e4e799"
+    },
+    {
+      "path": "src/renderers/shaders/ShaderChunk/project_vertex.glsl.js",
+      "sha256": "852b197ab9360ade563b4bc8e302a56b547cd3fa0140d5ae71e3d22dd17f4597"
+    },
+    {
+      "path": "node_modules/acorn/dist/acorn.mjs",
+      "sha256": "5fb5f5d2613ed04b33892f2beba7400e4d6ba624512bc0e8dfb572243b2882f3"
+    }
+  ],
+  "localFiles": [
+    {
+      "path": "vulkan-double-side-additional-fixtures.json",
+      "sha256": "8b2b2e1cd21c13d5a7c16d62dd3b732acc926c94e19aa766cf267d65d97555d8"
+    },
+    {
+      "path": "vulkan-double-side-binding-trace.mjs",
+      "sha256": "4d55d33ef45c397e81032b602ce7b86206c745205784f0a1842afdfd5d1fd07a"
+    },
+    {
+      "path": "vulkan-double-side-binding-expected.json",
+      "sha256": "4da15a02c093c4d5c5e479c6dceae14e3e0d5246d4076aa5a017c3cdea657d7d"
+    }
+  ],
+  "sourceScope": "Exact fixed renderObject/renderBufferDirect with real WebGLObjects/Geometries/Attributes/BindingStates/IndexedBufferRenderer/Programs/Lights; explicit recording GL and shader linker boundary. No source GPU.",
+  "preservedSourceOutputsByteIdentical": true,
+  "sourceOracleAlgorithmChanged": false,
+  "physicalPixelPremise": {
+    "onlyWhen": {
+      "throwSecond": true,
+      "frame": 1
+    },
+    "expectedRGBA": [
+      0,
+      0,
+      0,
+      255
+    ],
+    "reason": "WebGLBindingStates saves the new FrontSide VAO geometry/index cache before attributes.update(index). onUpload throws before setupVertexAttributes, so the position array remains disabled. The next frame reuses the same real program key and saved inputs, needsUpdate is false, and no reset/forceUpdate occurs. Every vertex receives the same generic constant position: triangles are degenerate and the black clear color remains.",
+    "sourceLocations": {
+      "saveCacheBeforeUploadAndVertexSetup": "src/renderers/webgl/WebGLBindingStates.js:26-40",
+      "normalRenderTailDefaultOnly": "src/renderers/WebGLRenderer.js:1833",
+      "explicitResetNotCalledByScenario": "src/renderers/WebGLRenderer.js:3668-3675",
+      "sideProgramParameters": "src/renderers/webgl/WebGLPrograms.js:382-383",
+      "sideProgramCacheBits": "src/renderers/webgl/WebGLPrograms.js:590-593"
+    },
+    "sourceGPUExecuted": false,
+    "claim": "Observed source command state plus geometric inference; actual pixels verified only by the native Vulkan probe."
+  }
+}

@@ -1,0 +1,6 @@
+[
+  {"id":"swap-index-second-readback","transparent":true,"side":2,"forceSinglePass":false,"throwFirst":false,"reenter":false,"swapIndex":true,"backFacing":true,"secondReadback":true,"throwSecond":false},
+  {"id":"swap-index-second-throw","transparent":true,"side":2,"forceSinglePass":false,"throwFirst":false,"reenter":false,"swapIndex":true,"backFacing":true,"secondReadback":false,"throwSecond":true},
+  {"id":"swap-index-readback-second-throw","transparent":true,"side":2,"forceSinglePass":false,"throwFirst":false,"reenter":false,"swapIndex":true,"backFacing":true,"secondReadback":true,"throwSecond":true},
+  {"id":"swap-index-both-passes","transparent":true,"side":2,"forceSinglePass":false,"throwFirst":false,"reenter":false,"swapIndex":true,"backFacing":true,"secondReadback":false,"throwSecond":false}
+]

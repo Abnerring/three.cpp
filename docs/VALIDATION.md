@@ -1,3 +1,19 @@
+# 2026-11-02: current Vulkan DoubleSide pass/callback validation
+
+Parent commit c42d13e89172d47198edb8e4dc6c603e32d63df9; pinned upstream 11738a9d55e502fb484cefffcea3a66dc44e9fe9. Current source snapshot: 3123 files. Apply changes only VulkanRenderer.cpp and the test CMake prefix extension, with 11 new test/support files. Renderer header, root CMake, the complete old VulkanRenderer.tests.cpp and all old 19 test definitions remain unchanged.
+
+Actual GPU build: 16 targets / 19 steps / 23.48257 seconds. Selected current checks passed 22/22 in 56.92 seconds, no skips; all 3123 source hashes and 1580 dependency hashes remained unchanged. The original 19 tests retain their names and order. The 22 include three source-only checks and compiler/unit checks; they are not 22 hardware-rendering tests. Khronos validation-layer success is not claimed.
+
+Current unified-library callback comparisons passed the original eight cases / 59 assertions and four additional cases / 41 assertions on NVIDIA GeForce RTX 3070 Laptop GPU. They exercise two frames each, actual pixels, first-pass visibility in the second upload callback, index replacement, partial side/version state, original exception identity and subsequent-frame behavior. Inputs and source outputs remain byte-identical to the private successful 04 run. All four physical checks remain strict.
+
+The independent binding-state source test imports actual pinned WebGL source modules and executes extracted renderObject/renderBufferDirect with command-recording GL/shader-link boundaries. Two fresh processes produce exactly the original expected bytes. It proves disabled position state after the second upload throws; it does not execute source WebGL GPU. Failed 02/03 blue-pixel assertions remain retained, and only the unsupported next-frame-blue premise is corrected to exact black. No production fix or comparator is weakened to match that false premise.
+
+CPU selected targets rebuild as a no-op (0.65535 seconds), and the new source-only test passes 1/1 in 1.03 seconds without Vulkan. Its 3123 source hashes and 1471 dependency hashes remain unchanged. CPU library SHA256 remains 812380b5c747da0d85e8d430c6a3281142837d68482819e0c9a255150f0e5b5c. GPU core remains cd8f2401e9f83339a4ce17e91038a326bd30f9a81de96ca41f0f562c4b93a559; the changed Vulkan library is a8f34fd50b7c65dcc31fea330d2f7d3480f0faa721fca667183f0293addc609a. Audit check and all five audit tests pass. Old gpu19 JUnit is guarded unchanged; the new result uses a fresh gpu22 JUnit path.
+
+Proof, complete current comparisons, JUnit/LastTest, library and executable copies: D:/Temp/surui/threecpp-node-trace-blends-20261102/vulkan04-final-proof01. Coverage remains 668 present / 583 absent / 1251 total; no all-module completion is inferred.
+
+Separate pending work: the complete private MaterialXNoise run attempted all 39 checks, with 37 passing and two original inline batches timing out at their unchanged 180-second limits. The 444 lifetime observations, three heap rounds and original 115 source-byte guards passed. A separate timing probe confirms explicit per-case GC dominates the failing batches; production Noise/runtime changes are not integrated or approved by these passing Vulkan tests. All historical records below remain intact.
+
 # 2026-11-02: current-library BlendModes / FunctionOverloading trace validation
 
 Parent commit: 4580e9fff79f716b301f5831cdb57496c2b136a8. Fixed upstream: 11738a9d55e502fb484cefffcea3a66dc44e9fe9. Source snapshot: 3112 files, unchanged throughout both builds, selected regressions and audit commands.

@@ -1,0 +1,10 @@
+[
+  {"id":"transparent-double","transparent":true,"side":2,"forceSinglePass":false,"throwFirst":false,"reenter":false},
+  {"id":"forced-single","transparent":true,"side":2,"forceSinglePass":true,"throwFirst":false,"reenter":false},
+  {"id":"opaque-double","transparent":false,"side":2,"forceSinglePass":false,"throwFirst":false,"reenter":false},
+  {"id":"transparent-front","transparent":true,"side":0,"forceSinglePass":false,"throwFirst":false,"reenter":false},
+  {"id":"transparent-back","transparent":true,"side":1,"forceSinglePass":false,"throwFirst":false,"reenter":false},
+  {"id":"throw-first-double","transparent":true,"side":2,"forceSinglePass":false,"throwFirst":true,"reenter":false},
+  {"id":"reenter-readback","transparent":true,"side":2,"forceSinglePass":false,"throwFirst":false,"reenter":true},
+  {"id":"readback-then-throw","transparent":true,"side":2,"forceSinglePass":false,"throwFirst":true,"reenter":true}
+]
