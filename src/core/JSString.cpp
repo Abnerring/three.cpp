@@ -198,6 +198,12 @@ JSValue allocate(const JSValue& text){
     if(text.type()!=JSValue::Type::String)throw JSTypeError("StringData requires a primitive string");
     auto payload=std::make_shared<StringData>();payload->value=text.string();
     auto result=JSValue::hostObject(payload,payload.get(),"three.String");
+    static const auto passiveHooks = [] {
+        auto hooks = std::make_shared<JSHostObjectHooks>();
+        hooks->passiveFinalizer = true;
+        return hooks;
+    }();
+    result.setHostHooks(passiveHooks);
     const auto length=static_cast<std::uint32_t>(text.get("length").number());
     for(std::uint32_t i=0;i<length;++i)result.defineProperty(std::to_string(i),data(text.get(std::to_string(i)),false,true));
     result.defineProperty("length",data(length));return result;

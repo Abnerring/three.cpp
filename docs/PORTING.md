@@ -1,3 +1,11 @@
+# 2026-11-02 当前追加：Hash 与节点数学
+
+已将 Hash、节点 MathUtils 的原 5 个函数接入 C++ Fn/TSL/NodeBuilder 调用链，并补齐源码表达式对应的 TypeError 与 IteratorClose 的 Symbol 错误文本。String/Boolean/Number 的纯原生内部 payload 声明被动析构；RegExp 未作该声明，收集器算法未修改。
+
+实际当前库完成 CPU25 目标/33 步、GPU15 目标/22 步构建；本轮受影响的 CPU35 项及 Vulkan 相关19项全部通过，均无跳过。新注册检查执行原 134 场景、30 GC 观测和三 heap；134 输入、真实 Node 预期及 30 GC 源输出与原件逐字节相同，身份编号、键顺序和错误文本严格对照。另独立执行 native lifetime/heap 并严格对照，均通过。上述为本轮选定范围，未重跑全部399个CPU注册检查。
+
+当前路径覆盖为 661/1251，590 尚无对应文件；新增文件不等于完整功能验收。NodeManager 候选尚未合入，完整 Nodes/TSL 初始化及传统/现代 Vulkan 渲染、原生交互与三平台仍未完成。权威证据：`D:/Temp/surui/threecpp-shader-math-20261102/final-phase-proof01/proof.json`。下方为此前阶段原始记录。
+
 # three.js → three.cpp 移植约束
 
 目标是完整复现 three.js 逻辑，渲染后端替换为 Vulkan。首个能运行的示例不代表目标完成。

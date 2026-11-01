@@ -21,7 +21,7 @@ void returnIterator(JSIteratorRecord& record) {
     const auto method=getMethod(record.iterator,"return");
     if(method.isUndefined()) return;
     const auto result=method.call(record.iterator);
-    if(!result.isObject()) throw JSTypeError("Iterator return result is not an object");
+    if(!result.isObject()) throw JSTypeError("Iterator result " + (result.isSymbol() ? "Symbol(" + result.symbolDescription().value_or("") + ")" : result.toString()) + " is not an object");
 }
 JSValue next(const JSValue& self,const Args&,const Args& captures) {
     return JSIterator::next(self,static_cast<JSIterator::Brand>(static_cast<unsigned>(captures[0].number())));

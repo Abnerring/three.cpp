@@ -1,3 +1,13 @@
+# 当前接续：Hash/节点数学已按当前库验收，2026-11-02
+
+目标继续：完整复现固定three.js的C++逻辑，Vulkan后端，不引入CEF/生产JS桥；分阶段本地Git提交，不推送。
+
+本轮相对d0976bf9合入15文件。真实CPU25/GPU15构建、CPU35/35与GPU相关19/19均通过；原134严格对照及独立30GC/三heap通过，原输入与Node预期逐字节一致。3049源码及CPU1341/GPU1331依赖守卫不变。证据：D:/Temp/surui/threecpp-shader-math-20261102/final-phase-proof01/proof.json。当前CPU库SHA 1d0691f90972513096b9538ff028d974952f38faef86c9be9a1cd870a8fc4c5e；实际库/probe已单独保存，后续构建不得覆盖该D盘快照。
+
+下一步是NodeManager02：冻结主包在D:/Temp/surui/threecpp-native-alignment-20261102/node-manager-current-merge-candidate02，driver在node-manager-private-validation02，原native01编译失败保留。必须先完成真实8生产TU/18总TU、8exe、19检查私有gate（最后一项为6个fallback求值顺序场景），再按当前Hash版本窄合入；禁止覆盖旧整份CMake或把候选当当前库通过。完整Nodes/TSL图仍未闭合。RenderList/RenderLists可在D盘并行准备，不写共享。
+
+当前路径661/1251、无路径590，仅统计存在。完整渲染、addons、原生宿主、三平台验收均未完成，不得结束总目标。所有临时文件在D盘；已有运行中任务不得删除。下方旧记录逐字节保留。
+
 ## 2026-11-02 阶段验收：168 CPU 与 19 GPU 检查全过
 
 本阶段父基线 bf7e49e3；固定上游 11738a9d55e502fb484cefffcea3a66dc44e9fe9。证据根 D:/Temp/surui/threecpp-native-alignment-20261102。完整移植目标保持 active，659/1251 只是对应路径覆盖，592 无对应路径，不是完成率。

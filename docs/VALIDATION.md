@@ -1,3 +1,12 @@
+# 当前验收：Hash/节点数学与内部 payload，2026-11-02
+
+- 基线 d0976bf9410ab3583e69307c0c11cb2ddecc3857，固定上游 11738a9d55e502fb484cefffcea3a66dc44e9fe9。冻结包15文件（9生产、4测试、2CMake）在56项 before/after 守卫通过后应用，实际CMake当前库构建，未使用私有override对象代替当前库。
+- CPU25目标33步/53.58秒，GPU15目标22步/26.20秒均exit0。受影响CPU35/35通过（CTest 200.89秒），Vulkan相关19/19通过（58.61秒），无跳过。CPU注册总数399；未据本轮选择推断其他364项均已重跑。核心Catch实际1402 cases/213461 assertions；原生字符串/正则、heap退出、回调互操作及Node/Builder/TSL等受影响检查通过。
+- 新注册的shader-math-functions检查实际69.204秒，原134场景严格绝对身份对照无差异，并执行source/native30GC和三heap。134输入、Node场景预期、Node30GC三原件SHA逐字节一致，无身份或错误消息归一化。独立native lifetime PID6464、heap PID50668各exit0，两个严格比较exit0，未重复134主场景。
+- CPU3049源码+1341二进制/配置/固定源/候选依赖、GPU3049源码+1331依赖前后SHA不变；独立GC守卫3049源码+1342依赖不变。GPU19含两项Node源trace；其余范围限既有实际Vulkan路径，没有新增Khronos validation层通过证明。
+- 源码审计写入及--check通过，审计单测5/5；固定1251模块中661有路径、590无路径，均不据文件存在标记完整。API清单保持原SHA。完整传统材质/光影/后处理、现代Nodes/TSL/节点材质/计算存储、宿主与三平台仍待实现及验收；NodeManager不计入本提交。
+- 权威证据：`D:/Temp/surui/threecpp-shader-math-20261102/final-phase-proof01/proof.json`；两个JUnit在同phase的`current-regression-native01`；实际Hash当前库及probe快照在`final-phase-proof01/current-hash-native`。原134超时、14错误文本差异和旧阶段证据全部保留。下方记录不覆盖。
+
 ## 当前阶段验收与后续范围，2026-11-02
 
 - 固定上游 `11738a9d55e502fb484cefffcea3a66dc44e9fe9`；旧阶段基线提交 `bf7e49e3ba0e7166453c70b882fcd22545d9f90f`。新证据根目录 `D:/Temp/surui/threecpp-native-alignment-20261102`。下文历史记录只说明各自当时的执行快照。

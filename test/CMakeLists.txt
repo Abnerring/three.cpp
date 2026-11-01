@@ -2476,3 +2476,11 @@ if(THREECPP_BUILD_VULKAN)
     # --validation is intentionally not registered unconditionally: an installed
     # Khronos validation layer is required, and absence must not count as pass.
 endif()
+
+# Complete Hash/MathUtils source bodies, original absolute-identity oracle and GC.
+add_executable(ShaderMathFunctionsParityProbe unit/utils/parity/ShaderMathFunctionsParityProbe.cpp)
+target_link_libraries(ShaderMathFunctionsParityProbe PRIVATE threecpp::threecpp)
+if(THREECPP_NODE_EXECUTABLE AND THREEJS_SOURCE_DIR)
+    threecpp_add_alignment_parity(object-model.shader-math-functions-parity NAMED_UPSTREAM compare-shader-math-functions.mjs ShaderMathFunctionsParityProbe)
+    set_tests_properties(threecpp.object-model.shader-math-functions-parity PROPERTIES LABELS "object-model;native;alignment;gc")
+endif()

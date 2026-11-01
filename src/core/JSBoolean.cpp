@@ -6,7 +6,14 @@ JSPropertyDescriptor data(const JSValue& value){JSPropertyDescriptor d;d.value=v
 JSValue allocate(const JSValue& primitive){
     if(primitive.type()!=JSValue::Type::Boolean)throw JSTypeError("BooleanData requires a primitive Boolean");
     auto payload=std::make_shared<BooleanData>(BooleanData{primitive.toBoolean()});
-    return JSValue::hostObject(payload,payload.get(),"three.Boolean");
+    auto result=JSValue::hostObject(payload,payload.get(),"three.Boolean");
+    static const auto passiveHooks = [] {
+        auto hooks = std::make_shared<JSHostObjectHooks>();
+        hooks->passiveFinalizer = true;
+        return hooks;
+    }();
+    result.setHostHooks(passiveHooks);
+    return result;
 }
 JSValue valueOf(const JSValue& self,const Args&,const Args&){return nativeBooleanValue(self);}
 JSValue toString(const JSValue& self,const Args&,const Args&){return nativeBooleanValue(self).toBoolean()?"true":"false";}

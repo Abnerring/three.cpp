@@ -175,7 +175,14 @@ JSValue allocate(const JSValue& number) {
     if (number.type() != JSValue::Type::Number)
         throw JSTypeError("NumberData requires a primitive number");
     auto payload = std::make_shared<NumberData>(NumberData{number.number()});
-    return JSValue::hostObject(payload, payload.get(), "three.Number");
+    auto result = JSValue::hostObject(payload, payload.get(), "three.Number");
+    static const auto passiveHooks = [] {
+        auto hooks = std::make_shared<JSHostObjectHooks>();
+        hooks->passiveFinalizer = true;
+        return hooks;
+    }();
+    result.setHostHooks(passiveHooks);
+    return result;
 }
 } // namespace
 bool isNativeNumberObject(const JSValue& value) {
