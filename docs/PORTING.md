@@ -1,3 +1,11 @@
+# 2026-11-02: native MaterialXCore
+
+- Add the complete pinned MaterialXCore source algorithms at `src/nodes/materialx/MaterialXCore.cpp/h`: mx_rotate2d and mx_rotate3d, using the nine actual TSLBase bindings, existing node operators and live Math access. Keep lazy module initialization; add no fake imports, Node allocations or random calls.
+- Current unified-library validation passed the original 81 strict cases (including two metadata rows), 12 lifetime observations and three independent native heap checks. CPU selected checks passed 8/8; Vulkan-related checks passed 19/19, including two source traces. Native C++ implementation, no production JavaScript engine or CEF.
+- Preserve the original Core01 failure: its 44 differences were absent probe host source frames. Core02 adds scopes at actual run, Reflect.apply and input.map(run) locations derived from the unchanged oracle AST; production code, original cases, oracle and comparison policy remain byte-identical. Current source outputs and input bytes match the private successful run.
+- Coverage is 667/1251 corresponding file paths with 584 absent; no functional completion percentage is inferred. Full Nodes/TSL import initialization, traditional/modern Vulkan rendering, native hosts/addons and all-platform verification remain open.
+- Proof: `D:/Temp/surui/threecpp-materialx-20261102/core-final-proof01/proof.json`. FunctionOverloading source-position/newTarget/whole-heap and full BlendModes candidates passed separate native gates but are not included here. Their canonical integration is next; MaterialXNoise source tests and actual V8 debug-name mapping remain in progress.
+
 # 2026-11-02: canonical FunctionOverloadingNode and ColorAdjustment
 
 - Port the pinned `11738a9d55e502fb484cefffcea3a66dc44e9fe9` source algorithms to native C++ at `src/nodes/utils/FunctionOverloadingNode` and `src/nodes/display/ColorAdjustment`. FunctionOverloadingNode uses the actual Node constructor, cached selection, iterator protocol and two factory exports. ColorAdjustment implements all seven exports, including six Fn callbacks and three nested CDL callbacks, through the existing TSL/NodeBuilder implementation.

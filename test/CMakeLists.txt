@@ -2546,3 +2546,24 @@ if(THREECPP_NODE_EXECUTABLE AND THREEJS_SOURCE_DIR)
     threecpp_add_alignment_parity(object-model.color-adjustment-parity NAMED_UPSTREAM compare-color-adjustment.mjs ColorAdjustmentParityProbe)
     set_tests_properties(threecpp.object-model.color-adjustment-parity PROPERTIES LABELS "object-model;native;alignment;gc")
 endif()
+add_executable(ThreeJsMaterialXCoreParityProbe unit/utils/parity/MaterialXCoreParityProbe.cpp)
+target_link_libraries(ThreeJsMaterialXCoreParityProbe PRIVATE threecpp::threecpp)
+if(MSVC)
+    target_compile_options(ThreeJsMaterialXCoreParityProbe PRIVATE /fp:strict)
+endif()
+add_test(NAME threecpp.materialx-core-lifetime COMMAND ThreeJsMaterialXCoreParityProbe --lifetime)
+add_test(NAME threecpp.materialx-core-heap-lifetime COMMAND ThreeJsMaterialXCoreParityProbe --heap-lifetime)
+set_tests_properties(threecpp.materialx-core-lifetime threecpp.materialx-core-heap-lifetime
+    PROPERTIES LABELS "native;nodes;gc"
+    ENVIRONMENT "TEMP=D:/Temp/surui;TMP=D:/Temp/surui;THREEJS_SOURCE_DIR=${THREEJS_SOURCE_DIR}")
+if(THREECPP_NODE_EXECUTABLE AND THREEJS_SOURCE_DIR)
+    add_test(NAME threecpp.materialx-core-parity
+        COMMAND "${CMAKE_COMMAND}" "-DNODE=${THREECPP_NODE_EXECUTABLE}"
+            "-DPROBE=$<TARGET_FILE:ThreeJsMaterialXCoreParityProbe>"
+            "-DPARITY_DIR=${CMAKE_CURRENT_SOURCE_DIR}/unit/utils/parity"
+            "-DUPSTREAM=${THREEJS_SOURCE_DIR}"
+            "-DOUTPUT_ROOT=${CMAKE_BINARY_DIR}/parity/materialx-core"
+            -P "${CMAKE_CURRENT_SOURCE_DIR}/cmake/RunMaterialXCoreParity.cmake")
+    set_tests_properties(threecpp.materialx-core-parity PROPERTIES TIMEOUT 600 LABELS "native;nodes;parity"
+        ENVIRONMENT "TEMP=D:/Temp/surui;TMP=D:/Temp/surui;THREEJS_SOURCE_DIR=${THREEJS_SOURCE_DIR}")
+endif()

@@ -1,3 +1,11 @@
+# 2026-11-02: MaterialXCore handoff
+
+- Current source adds canonical nodes/materialx/MaterialXCore, both real arrow exports and nine source imports. Existing source/headers/barrels are not overwritten. Source table is3098 files, SHA d3f0f3ac33f6d4a242b342eef78cf931c9384d84b9303d98b7e8a293bcfde851. Earlier entries below remain immutable history.
+- Current CPU receipt: `D:/Temp/surui/threecpp-materialx-20261102/core-build-cpu01/result.json`; library SHA ad5e642ff1ccb38ca21c49f7c3c3677e97e85ed2bc56ec6fd1b18c9b9d92ca33. GPU library SHA ca51d7584b6f802bb7355d21205c23c19b8becce8a13ea13ac171482aeb0105a. Selected CPU8/GPU19 passed; two GPU-list items are source traces. Full proof: `D:/Temp/surui/threecpp-materialx-20261102/core-final-proof01/proof.json`.
+- Core81/metadata2 included, lifetime12 and heap3 passed; raw original inputs/source outputs match the successful frozen private run. Core01 failure remains preserved. Coverage is667/1251 present,584 absent; no module-wide completion claim.
+- Next integrate frozen Function trace candidate33372646 and BlendModes9960209c. Both ROOT private native gates passed using this exact library: Function original170/8/15 plus new30 positions/11newTarget/3heap, Blend178/120GC/3heap/source-init10. Plans must be applied as narrow current-file edits, retaining old typed APIs/tests and removing only audited obsolete core paths. Revalidate against the resulting current library.
+- Full MaterialXNoise candidate is source-tested, native still pending. Its actual V8 inferred debug names/receiver frames require a real metadata fix; do not fill expected snapshots or alter function.name. Continue genuine Nodes/TSL evaluation and complete Vulkan/native-platform behavior. No CEF, fake imports, ID/random padding, production AST or JS runtime bridge. Full goal remains active; commits stay local. Preserve all old HANDOFF bytes, including the historical798619-byte suffix.
+
 # 2026-11-02: canonical node functions handoff
 
 - Current source: native FunctionOverloadingNode in nodes/utils and ColorAdjustment in nodes/display, merged with the original typed API. Six obsolete core paths removed; original ten tests retained. Source table: 3090 files, SHA 40f192d29594c2cf4369ef2be80eee3beb9d15610594bc03f4a5bab5c6b1b78e. Earlier entries below are immutable historical snapshots.

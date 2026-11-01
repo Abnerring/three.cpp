@@ -201,8 +201,8 @@
     "note": "Accepted port scope is src and examples/jsm, including tracked third-party dependencies. Editor/manual web applications are excluded from native application rewrites. Native host behavior, packaging and all three platforms require separate implementation and verification evidence."
   },
   "counts": {
-    "partial-unverified": 486,
-    "missing": 455,
+    "partial-unverified": 487,
+    "missing": 454,
     "vulkan-port-pending": 290,
     "dependency-unverified": 20
   },
@@ -210,8 +210,8 @@
     "src": {
       "modules": 755,
       "counts": {
-        "partial-unverified": 350,
-        "missing": 115,
+        "partial-unverified": 351,
+        "missing": 114,
         "vulkan-port-pending": 290
       }
     },
@@ -873,7 +873,7 @@
       "path": "src/nodes/materialx",
       "upstreamFiles": 6,
       "moduleCount": 5,
-      "modulesWithCppFiles": 0,
+      "modulesWithCppFiles": 1,
       "verifiedComplete": 0
     },
     {
@@ -11888,11 +11888,11 @@
       "scope": "src",
       "kind": "core",
       "upstreamSha256": "c6ad013787b0e6411861e2ce6d41a53a4e0b42e4eeefd0daed0bf52d76d3b07a",
-      "header": null,
-      "implementation": null,
+      "header": "src/nodes/materialx/MaterialXCore.h",
+      "implementation": "src/nodes/materialx/MaterialXCore.cpp",
       "expectedHeader": "src/nodes/materialx/MaterialXCore.h",
       "expectedImplementation": "src/nodes/materialx/MaterialXCore.cpp",
-      "status": "missing",
+      "status": "partial-unverified",
       "verifiedComplete": false,
       "apiExtraction": "static-only",
       "verification": {

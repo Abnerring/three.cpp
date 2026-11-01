@@ -1,0 +1,1390 @@
+[
+  {
+    "mode": "metadata"
+  },
+  {
+    "mode": "bindings"
+  },
+  {
+    "mode": "call",
+    "fn": "mx_rotate2d",
+    "args": []
+  },
+  {
+    "mode": "call",
+    "fn": "mx_rotate2d",
+    "args": [
+      {
+        "$undefined": true
+      }
+    ]
+  },
+  {
+    "mode": "call",
+    "fn": "mx_rotate2d",
+    "args": [
+      null
+    ]
+  },
+  {
+    "mode": "call",
+    "fn": "mx_rotate2d",
+    "args": [
+      0
+    ]
+  },
+  {
+    "mode": "call",
+    "fn": "mx_rotate2d",
+    "args": [
+      1
+    ]
+  },
+  {
+    "mode": "call",
+    "fn": "mx_rotate2d",
+    "args": [
+      {
+        "node": "vec2",
+        "args": [
+          0.371,
+          0.241
+        ]
+      }
+    ]
+  },
+  {
+    "mode": "call",
+    "fn": "mx_rotate2d",
+    "args": [
+      {
+        "node": "vec2",
+        "args": [
+          0.371,
+          0.241
+        ]
+      },
+      {
+        "$undefined": true
+      }
+    ]
+  },
+  {
+    "mode": "call",
+    "fn": "mx_rotate2d",
+    "args": [
+      {
+        "node": "vec2",
+        "args": [
+          0.371,
+          0.241
+        ]
+      },
+      null
+    ]
+  },
+  {
+    "mode": "call",
+    "fn": "mx_rotate2d",
+    "args": [
+      {
+        "node": "vec2",
+        "args": [
+          0.371,
+          0.241
+        ]
+      },
+      0
+    ]
+  },
+  {
+    "mode": "call",
+    "fn": "mx_rotate2d",
+    "args": [
+      {
+        "node": "vec2",
+        "args": [
+          0.371,
+          0.241
+        ]
+      },
+      90
+    ]
+  },
+  {
+    "mode": "call",
+    "fn": "mx_rotate2d",
+    "args": [
+      {
+        "node": "vec2",
+        "args": [
+          0.371,
+          0.241
+        ]
+      },
+      -90
+    ]
+  },
+  {
+    "mode": "call",
+    "fn": "mx_rotate2d",
+    "args": [
+      {
+        "node": "vec2",
+        "args": [
+          0.371,
+          0.241
+        ]
+      },
+      360
+    ]
+  },
+  {
+    "mode": "call",
+    "fn": "mx_rotate2d",
+    "args": [
+      {
+        "node": "vec2",
+        "args": [
+          0.371,
+          0.241
+        ]
+      },
+      "90"
+    ]
+  },
+  {
+    "mode": "call",
+    "fn": "mx_rotate2d",
+    "args": [
+      {
+        "node": "vec2",
+        "args": [
+          0.371,
+          0.241
+        ]
+      },
+      {
+        "node": "float",
+        "args": [
+          0.73
+        ]
+      }
+    ]
+  },
+  {
+    "mode": "call",
+    "fn": "mx_rotate2d",
+    "args": [
+      {
+        "node": "vec4",
+        "args": [
+          0.371,
+          0.241,
+          0.173,
+          0.85
+        ]
+      },
+      45
+    ]
+  },
+  {
+    "mode": "call",
+    "fn": "mx_rotate2d",
+    "args": [
+      [
+        1,
+        2,
+        3
+      ],
+      30
+    ]
+  },
+  {
+    "mode": "call",
+    "fn": "mx_rotate2d",
+    "args": [
+      {
+        "node": "vec2",
+        "args": [
+          0.371,
+          0.241
+        ]
+      },
+      {
+        "$number": "NaN"
+      }
+    ]
+  },
+  {
+    "mode": "call",
+    "fn": "mx_rotate2d",
+    "args": [
+      {
+        "node": "vec2",
+        "args": [
+          0.371,
+          0.241
+        ]
+      },
+      {
+        "$number": "Infinity"
+      }
+    ]
+  },
+  {
+    "mode": "call",
+    "fn": "mx_rotate2d",
+    "args": [
+      {
+        "node": "vec2",
+        "args": [
+          0.371,
+          0.241
+        ]
+      },
+      {
+        "$number": "-Infinity"
+      }
+    ]
+  },
+  {
+    "mode": "call",
+    "fn": "mx_rotate2d",
+    "args": [
+      {
+        "node": "vec2",
+        "args": [
+          0.371,
+          0.241
+        ]
+      },
+      {
+        "$number": "-0"
+      }
+    ]
+  },
+  {
+    "mode": "call",
+    "fn": "mx_rotate2d",
+    "args": [
+      {
+        "node": "vec2",
+        "args": [
+          0.371,
+          0.241
+        ]
+      },
+      {
+        "node": "float",
+        "args": [
+          0
+        ]
+      }
+    ],
+    "build": true
+  },
+  {
+    "mode": "call",
+    "fn": "mx_rotate2d",
+    "args": [
+      {
+        "node": "vec2",
+        "args": [
+          0.371,
+          0.241
+        ]
+      },
+      {
+        "node": "float",
+        "args": [
+          45
+        ]
+      }
+    ],
+    "build": true
+  },
+  {
+    "mode": "call",
+    "fn": "mx_rotate2d",
+    "args": [
+      {
+        "node": "vec2",
+        "args": [
+          0.371,
+          0.241
+        ]
+      },
+      {
+        "node": "float",
+        "args": [
+          -90
+        ]
+      }
+    ],
+    "build": true
+  },
+  {
+    "mode": "call",
+    "fn": "mx_rotate2d",
+    "args": [
+      {
+        "node": "vec2",
+        "args": [
+          0.371,
+          0.241
+        ]
+      },
+      {
+        "node": "float",
+        "args": [
+          0.7
+        ]
+      }
+    ],
+    "instrument": {
+      "key": "x",
+      "argument": 0,
+      "mode": "collect"
+    }
+  },
+  {
+    "mode": "call",
+    "fn": "mx_rotate2d",
+    "args": [
+      {
+        "node": "vec2",
+        "args": [
+          0.371,
+          0.241
+        ]
+      },
+      {
+        "node": "float",
+        "args": [
+          0.7
+        ]
+      }
+    ],
+    "instrument": {
+      "key": "x",
+      "argument": 0,
+      "mode": "getThrow"
+    }
+  },
+  {
+    "mode": "call",
+    "fn": "mx_rotate2d",
+    "args": [
+      {
+        "node": "vec2",
+        "args": [
+          0.371,
+          0.241
+        ]
+      },
+      {
+        "node": "float",
+        "args": [
+          0.7
+        ]
+      }
+    ],
+    "instrument": {
+      "key": "x",
+      "argument": 0,
+      "mode": "reenter"
+    }
+  },
+  {
+    "mode": "call",
+    "fn": "mx_rotate2d",
+    "args": [
+      {
+        "node": "vec2",
+        "args": [
+          0.371,
+          0.241
+        ]
+      },
+      {
+        "node": "float",
+        "args": [
+          0.7
+        ]
+      }
+    ],
+    "instrument": {
+      "key": "y",
+      "argument": 0,
+      "mode": "collect"
+    }
+  },
+  {
+    "mode": "call",
+    "fn": "mx_rotate2d",
+    "args": [
+      {
+        "node": "vec2",
+        "args": [
+          0.371,
+          0.241
+        ]
+      },
+      {
+        "node": "float",
+        "args": [
+          0.7
+        ]
+      }
+    ],
+    "instrument": {
+      "key": "y",
+      "argument": 0,
+      "mode": "getThrow"
+    }
+  },
+  {
+    "mode": "call",
+    "fn": "mx_rotate2d",
+    "args": [
+      {
+        "node": "vec2",
+        "args": [
+          0.371,
+          0.241
+        ]
+      },
+      {
+        "node": "float",
+        "args": [
+          0.7
+        ]
+      }
+    ],
+    "instrument": {
+      "key": "y",
+      "argument": 0,
+      "mode": "reenter"
+    }
+  },
+  {
+    "mode": "call",
+    "fn": "mx_rotate3d",
+    "args": []
+  },
+  {
+    "mode": "call",
+    "fn": "mx_rotate3d",
+    "args": [
+      {
+        "$undefined": true
+      }
+    ]
+  },
+  {
+    "mode": "call",
+    "fn": "mx_rotate3d",
+    "args": [
+      null
+    ]
+  },
+  {
+    "mode": "call",
+    "fn": "mx_rotate3d",
+    "args": [
+      0
+    ]
+  },
+  {
+    "mode": "call",
+    "fn": "mx_rotate3d",
+    "args": [
+      1
+    ]
+  },
+  {
+    "mode": "call",
+    "fn": "mx_rotate3d",
+    "args": [
+      {
+        "node": "vec3",
+        "args": [
+          0.371,
+          0.241,
+          0.173
+        ]
+      }
+    ]
+  },
+  {
+    "mode": "call",
+    "fn": "mx_rotate3d",
+    "args": [
+      {
+        "node": "vec3",
+        "args": [
+          0.371,
+          0.241,
+          0.173
+        ]
+      },
+      {
+        "$undefined": true
+      }
+    ]
+  },
+  {
+    "mode": "call",
+    "fn": "mx_rotate3d",
+    "args": [
+      {
+        "node": "vec3",
+        "args": [
+          0.371,
+          0.241,
+          0.173
+        ]
+      },
+      null
+    ]
+  },
+  {
+    "mode": "call",
+    "fn": "mx_rotate3d",
+    "args": [
+      {
+        "node": "vec3",
+        "args": [
+          0.371,
+          0.241,
+          0.173
+        ]
+      },
+      0
+    ]
+  },
+  {
+    "mode": "call",
+    "fn": "mx_rotate3d",
+    "args": [
+      {
+        "node": "vec3",
+        "args": [
+          0.371,
+          0.241,
+          0.173
+        ]
+      },
+      90
+    ]
+  },
+  {
+    "mode": "call",
+    "fn": "mx_rotate3d",
+    "args": [
+      {
+        "node": "vec3",
+        "args": [
+          0.371,
+          0.241,
+          0.173
+        ]
+      },
+      -90
+    ]
+  },
+  {
+    "mode": "call",
+    "fn": "mx_rotate3d",
+    "args": [
+      {
+        "node": "vec3",
+        "args": [
+          0.371,
+          0.241,
+          0.173
+        ]
+      },
+      360
+    ]
+  },
+  {
+    "mode": "call",
+    "fn": "mx_rotate3d",
+    "args": [
+      {
+        "node": "vec3",
+        "args": [
+          0.371,
+          0.241,
+          0.173
+        ]
+      },
+      "90"
+    ]
+  },
+  {
+    "mode": "call",
+    "fn": "mx_rotate3d",
+    "args": [
+      {
+        "node": "vec3",
+        "args": [
+          0.371,
+          0.241,
+          0.173
+        ]
+      },
+      {
+        "node": "float",
+        "args": [
+          0.73
+        ]
+      }
+    ]
+  },
+  {
+    "mode": "call",
+    "fn": "mx_rotate3d",
+    "args": [
+      {
+        "node": "vec4",
+        "args": [
+          0.371,
+          0.241,
+          0.173,
+          0.85
+        ]
+      },
+      45
+    ]
+  },
+  {
+    "mode": "call",
+    "fn": "mx_rotate3d",
+    "args": [
+      [
+        1,
+        2,
+        3
+      ],
+      30
+    ]
+  },
+  {
+    "mode": "call",
+    "fn": "mx_rotate3d",
+    "args": [
+      {
+        "node": "vec3",
+        "args": [
+          0.371,
+          0.241,
+          0.173
+        ]
+      },
+      {
+        "$number": "NaN"
+      }
+    ]
+  },
+  {
+    "mode": "call",
+    "fn": "mx_rotate3d",
+    "args": [
+      {
+        "node": "vec3",
+        "args": [
+          0.371,
+          0.241,
+          0.173
+        ]
+      },
+      {
+        "$number": "Infinity"
+      }
+    ]
+  },
+  {
+    "mode": "call",
+    "fn": "mx_rotate3d",
+    "args": [
+      {
+        "node": "vec3",
+        "args": [
+          0.371,
+          0.241,
+          0.173
+        ]
+      },
+      {
+        "$number": "-Infinity"
+      }
+    ]
+  },
+  {
+    "mode": "call",
+    "fn": "mx_rotate3d",
+    "args": [
+      {
+        "node": "vec3",
+        "args": [
+          0.371,
+          0.241,
+          0.173
+        ]
+      },
+      {
+        "$number": "-0"
+      }
+    ]
+  },
+  {
+    "mode": "call",
+    "fn": "mx_rotate3d",
+    "args": [
+      {
+        "node": "vec3",
+        "args": [
+          0.371,
+          0.241,
+          0.173
+        ]
+      },
+      {
+        "node": "float",
+        "args": [
+          0
+        ]
+      }
+    ],
+    "build": true
+  },
+  {
+    "mode": "call",
+    "fn": "mx_rotate3d",
+    "args": [
+      {
+        "node": "vec3",
+        "args": [
+          0.371,
+          0.241,
+          0.173
+        ]
+      },
+      {
+        "node": "float",
+        "args": [
+          45
+        ]
+      }
+    ],
+    "build": true
+  },
+  {
+    "mode": "call",
+    "fn": "mx_rotate3d",
+    "args": [
+      {
+        "node": "vec3",
+        "args": [
+          0.371,
+          0.241,
+          0.173
+        ]
+      },
+      {
+        "node": "float",
+        "args": [
+          -90
+        ]
+      }
+    ],
+    "build": true
+  },
+  {
+    "mode": "call",
+    "fn": "mx_rotate3d",
+    "args": [
+      {
+        "node": "vec3",
+        "args": [
+          0.371,
+          0.241,
+          0.173
+        ]
+      },
+      {
+        "node": "float",
+        "args": [
+          0.7
+        ]
+      }
+    ],
+    "instrument": {
+      "key": "mul",
+      "argument": 0,
+      "mode": "collect"
+    }
+  },
+  {
+    "mode": "call",
+    "fn": "mx_rotate3d",
+    "args": [
+      {
+        "node": "vec3",
+        "args": [
+          0.371,
+          0.241,
+          0.173
+        ]
+      },
+      {
+        "node": "float",
+        "args": [
+          0.7
+        ]
+      }
+    ],
+    "instrument": {
+      "key": "mul",
+      "argument": 0,
+      "mode": "getThrow"
+    }
+  },
+  {
+    "mode": "call",
+    "fn": "mx_rotate3d",
+    "args": [
+      {
+        "node": "vec3",
+        "args": [
+          0.371,
+          0.241,
+          0.173
+        ]
+      },
+      {
+        "node": "float",
+        "args": [
+          0.7
+        ]
+      }
+    ],
+    "instrument": {
+      "key": "mul",
+      "argument": 0,
+      "mode": "reenter"
+    }
+  },
+  {
+    "mode": "call",
+    "fn": "mx_rotate3d",
+    "args": [
+      {
+        "node": "vec3",
+        "args": [
+          0.371,
+          0.241,
+          0.173
+        ]
+      },
+      {
+        "node": "float",
+        "args": [
+          0.7
+        ]
+      }
+    ],
+    "instrument": {
+      "key": "cross",
+      "argument": 0,
+      "mode": "collect"
+    }
+  },
+  {
+    "mode": "call",
+    "fn": "mx_rotate3d",
+    "args": [
+      {
+        "node": "vec3",
+        "args": [
+          0.371,
+          0.241,
+          0.173
+        ]
+      },
+      {
+        "node": "float",
+        "args": [
+          0.7
+        ]
+      }
+    ],
+    "instrument": {
+      "key": "cross",
+      "argument": 0,
+      "mode": "getThrow"
+    }
+  },
+  {
+    "mode": "call",
+    "fn": "mx_rotate3d",
+    "args": [
+      {
+        "node": "vec3",
+        "args": [
+          0.371,
+          0.241,
+          0.173
+        ]
+      },
+      {
+        "node": "float",
+        "args": [
+          0.7
+        ]
+      }
+    ],
+    "instrument": {
+      "key": "cross",
+      "argument": 0,
+      "mode": "reenter"
+    }
+  },
+  {
+    "mode": "call",
+    "fn": "mx_rotate3d",
+    "args": [
+      {
+        "node": "vec3",
+        "args": [
+          0.371,
+          0.241,
+          0.173
+        ]
+      },
+      {
+        "node": "float",
+        "args": [
+          30
+        ]
+      },
+      {
+        "$undefined": true
+      }
+    ]
+  },
+  {
+    "mode": "call",
+    "fn": "mx_rotate3d",
+    "args": [
+      {
+        "node": "vec3",
+        "args": [
+          0.371,
+          0.241,
+          0.173
+        ]
+      },
+      {
+        "node": "float",
+        "args": [
+          30
+        ]
+      },
+      null
+    ]
+  },
+  {
+    "mode": "call",
+    "fn": "mx_rotate3d",
+    "args": [
+      {
+        "node": "vec3",
+        "args": [
+          0.371,
+          0.241,
+          0.173
+        ]
+      },
+      {
+        "node": "float",
+        "args": [
+          30
+        ]
+      },
+      0
+    ]
+  },
+  {
+    "mode": "call",
+    "fn": "mx_rotate3d",
+    "args": [
+      {
+        "node": "vec3",
+        "args": [
+          0.371,
+          0.241,
+          0.173
+        ]
+      },
+      {
+        "node": "float",
+        "args": [
+          30
+        ]
+      },
+      {
+        "node": "vec3",
+        "args": [
+          0,
+          0,
+          0
+        ]
+      }
+    ]
+  },
+  {
+    "mode": "call",
+    "fn": "mx_rotate3d",
+    "args": [
+      {
+        "node": "vec3",
+        "args": [
+          0.371,
+          0.241,
+          0.173
+        ]
+      },
+      {
+        "node": "float",
+        "args": [
+          30
+        ]
+      },
+      {
+        "node": "vec3",
+        "args": [
+          1,
+          0,
+          0
+        ]
+      }
+    ]
+  },
+  {
+    "mode": "call",
+    "fn": "mx_rotate3d",
+    "args": [
+      {
+        "node": "vec3",
+        "args": [
+          0.371,
+          0.241,
+          0.173
+        ]
+      },
+      {
+        "node": "float",
+        "args": [
+          30
+        ]
+      },
+      {
+        "node": "vec3",
+        "args": [
+          0.31,
+          0.72,
+          -0.14
+        ]
+      }
+    ]
+  },
+  {
+    "mode": "call",
+    "fn": "mx_rotate3d",
+    "args": [
+      {
+        "node": "vec3",
+        "args": [
+          0.371,
+          0.241,
+          0.173
+        ]
+      },
+      {
+        "node": "float",
+        "args": [
+          30
+        ]
+      },
+      {
+        "node": "vec3",
+        "args": [
+          0.31,
+          0.72,
+          -0.14
+        ]
+      }
+    ],
+    "build": true
+  },
+  {
+    "mode": "call",
+    "fn": "mx_rotate2d",
+    "args": [
+      {
+        "node": "vec2",
+        "args": [
+          0.371,
+          0.241
+        ]
+      },
+      {
+        "node": "float",
+        "args": [
+          0.7
+        ]
+      }
+    ],
+    "mathPI": "collect"
+  },
+  {
+    "mode": "call",
+    "fn": "mx_rotate2d",
+    "args": [
+      {
+        "node": "vec2",
+        "args": [
+          0.371,
+          0.241
+        ]
+      },
+      {
+        "node": "float",
+        "args": [
+          0.7
+        ]
+      }
+    ],
+    "mathPI": "getThrow"
+  },
+  {
+    "mode": "call",
+    "fn": "mx_rotate2d",
+    "args": [
+      {
+        "node": "vec2",
+        "args": [
+          0.371,
+          0.241
+        ]
+      },
+      {
+        "node": "float",
+        "args": [
+          0.7
+        ]
+      }
+    ],
+    "mathPI": "coerce"
+  },
+  {
+    "mode": "call",
+    "fn": "mx_rotate2d",
+    "args": [
+      {
+        "node": "vec2",
+        "args": [
+          0.371,
+          0.241
+        ]
+      },
+      {
+        "node": "float",
+        "args": [
+          0.7
+        ]
+      }
+    ],
+    "mathPI": "coerceThrow"
+  },
+  {
+    "mode": "call",
+    "fn": "mx_rotate2d",
+    "args": [
+      {
+        "node": "vec2",
+        "args": [
+          0.371,
+          0.241
+        ]
+      },
+      {
+        "node": "float",
+        "args": [
+          0.7
+        ]
+      }
+    ],
+    "mathPI": "reenter"
+  },
+  {
+    "mode": "call",
+    "fn": "mx_rotate3d",
+    "args": [
+      {
+        "node": "vec3",
+        "args": [
+          0.371,
+          0.241,
+          0.173
+        ]
+      },
+      {
+        "node": "float",
+        "args": [
+          0.7
+        ]
+      }
+    ],
+    "mathPI": "collect"
+  },
+  {
+    "mode": "call",
+    "fn": "mx_rotate3d",
+    "args": [
+      {
+        "node": "vec3",
+        "args": [
+          0.371,
+          0.241,
+          0.173
+        ]
+      },
+      {
+        "node": "float",
+        "args": [
+          0.7
+        ]
+      }
+    ],
+    "mathPI": "getThrow"
+  },
+  {
+    "mode": "call",
+    "fn": "mx_rotate3d",
+    "args": [
+      {
+        "node": "vec3",
+        "args": [
+          0.371,
+          0.241,
+          0.173
+        ]
+      },
+      {
+        "node": "float",
+        "args": [
+          0.7
+        ]
+      }
+    ],
+    "mathPI": "coerce"
+  },
+  {
+    "mode": "call",
+    "fn": "mx_rotate3d",
+    "args": [
+      {
+        "node": "vec3",
+        "args": [
+          0.371,
+          0.241,
+          0.173
+        ]
+      },
+      {
+        "node": "float",
+        "args": [
+          0.7
+        ]
+      }
+    ],
+    "mathPI": "coerceThrow"
+  },
+  {
+    "mode": "call",
+    "fn": "mx_rotate3d",
+    "args": [
+      {
+        "node": "vec3",
+        "args": [
+          0.371,
+          0.241,
+          0.173
+        ]
+      },
+      {
+        "node": "float",
+        "args": [
+          0.7
+        ]
+      }
+    ],
+    "mathPI": "reenter"
+  },
+  {
+    "mode": "call",
+    "fn": "mx_rotate2d",
+    "args": [
+      {
+        "$symbol": "input"
+      }
+    ]
+  },
+  {
+    "mode": "call",
+    "fn": "mx_rotate2d",
+    "args": [
+      {
+        "node": "vec2",
+        "args": [
+          0.371,
+          0.241
+        ]
+      },
+      {
+        "$symbol": "amount"
+      }
+    ]
+  },
+  {
+    "mode": "call",
+    "fn": "mx_rotate3d",
+    "args": [
+      {
+        "$symbol": "input"
+      }
+    ]
+  },
+  {
+    "mode": "call",
+    "fn": "mx_rotate3d",
+    "args": [
+      {
+        "node": "vec3",
+        "args": [
+          0.371,
+          0.241,
+          0.173
+        ]
+      },
+      {
+        "$symbol": "amount"
+      }
+    ]
+  }
+]

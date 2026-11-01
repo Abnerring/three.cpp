@@ -1,3 +1,11 @@
+# 2026-11-02: MaterialXCore current build validation
+
+- Current CPU/GPU configure and builds passed with 3098 guarded source/test/build files. CPU: five targets, eight build steps, 15.53 seconds. GPU: 15 targets, 17 steps, 15.91 seconds. Actual receipts and library SHAs are in `D:/Temp/surui/threecpp-materialx-20261102/current-build-receipt01.json`.
+- Selected CPU CTest checks passed 8/8 in 41.02 seconds: the three Core registrations, existing NodeBuilder/TSLBase parity and lifetime, callback interop and heap retirement. 410 tests are registered; no full-suite rerun is claimed. Core original81 strict cases, 12 source/native lifetime observations and three native-only heap checks passed. Absolute IDs, UUID/random consumption, original inputs/source outputs and original timeout policies are unchanged.
+- Vulkan-related checks passed 19/19 in 56.80 seconds. Two are Node-source traces; this is not 19 hardware tests. Khronos validation-layer and Linux/macOS success remain unproven. Source3098 and CPU1321/GPU1331 dependency guards stayed unchanged during all execution.
+- Audit regeneration, check and five audit tests passed. File-path coverage is 667 present /584 absent among 1251 modules; zero modules are globally marked verifiedComplete. API inventory bytes are unchanged. Proof, fresh comparisons and raw LastTest logs: `D:/Temp/surui/threecpp-materialx-20261102/core-final-proof01/proof.json`.
+- Core01 actual44-difference failure is retained; Core02 private and current-library gates passed after adding actual oracle host scopes only. Separate FunctionOverloading trace candidate passed original170/metadata8/lifetime15 plus new30 position cases, 11 newTarget cases and three heap checks; full receiver/method-name protocol is not claimed. Separate BlendModes candidate passed main178/lifetime120/heap3 and actual source module initialization10. Both are private candidates, not changes to current production in this entry.
+
 # 2026-11-02: current canonical node functions validation
 
 - Actual CPU/GPU configure and builds passed with the same 3090 guarded source/test/build files. CPU: eight targets, 15 build steps, 37.98 seconds. GPU: 15 targets, 18 steps, 17.90 seconds. Current library SHAs and receipts are recorded in `D:/Temp/surui/threecpp-node-functions-20261102/functions-current-build-receipt01.json`.
