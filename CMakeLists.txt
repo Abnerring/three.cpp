@@ -97,6 +97,14 @@ add_library(threecpp
     src/extras/curves/SplineCurve.cpp src/extras/curves/CatmullRomCurve3.cpp
 )
 target_sources(threecpp PRIVATE
+    # Full native object-model source authorities and real prerequisite increments.
+    src/core/JSFunction.cpp
+    src/core/JSGenerator.cpp
+    src/core/JSJSON.cpp
+    src/math/EulerRuntime.cpp
+    src/math/BufferGeometryMathDependencies.cpp
+    src/materials/MeshBasicMaterialRuntime.cpp
+    src/math/MeshMathDependencies.cpp
     src/core/JSProxy.cpp
     src/core/JSError.cpp
     src/math/MatrixRuntime.cpp

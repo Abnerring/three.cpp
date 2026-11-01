@@ -1,0 +1,201 @@
+[
+  {
+    "name": "generator",
+    "target": "ThreeJsGeneratorParityProbe",
+    "comparator": "compare-generator.mjs",
+    "cli": "named",
+    "upstream": true,
+    "lifetimeFlag": false,
+    "comparatorRunsLifetime": false,
+    "replay": "input",
+    "guard": {
+      "file": "summary.json",
+      "key": "binaryExecuted"
+    },
+    "scope": "Native generator state machine/Function empty-body protocol; dynamic string compiler excluded"
+  },
+  {
+    "name": "function-apply",
+    "target": "ThreeJsFunctionApplyParityProbe",
+    "comparator": "compare-function-apply.mjs",
+    "cli": "named",
+    "upstream": false,
+    "lifetimeFlag": false,
+    "comparatorRunsLifetime": true,
+    "replay": null,
+    "guard": {
+      "file": "summary.json",
+      "key": "binaryExecuted"
+    },
+    "scope": "True apply order and strict/native restricted accessors; general sloppy stack introspection excluded"
+  },
+  {
+    "name": "function-bootstrap",
+    "target": "ThreeJsFunctionBootstrapParityProbe",
+    "comparator": "compare-function-bootstrap.mjs",
+    "cli": "named",
+    "upstream": false,
+    "lifetimeFlag": false,
+    "comparatorRunsLifetime": true,
+    "replay": null,
+    "guard": {
+      "file": "summary.json",
+      "key": "binaryExecuted"
+    },
+    "scope": "Actual Function intrinsic bootstrap and generator import identity; dynamic compiler excluded"
+  },
+  {
+    "name": "quaternion-runtime",
+    "target": "ThreeJsQuaternionRuntimeParityProbe",
+    "comparator": "compare-quaternion-runtime-strict.mjs",
+    "cli": "named",
+    "upstream": true,
+    "lifetimeFlag": false,
+    "comparatorRunsLifetime": true,
+    "replay": "input",
+    "guard": {
+      "file": "summary.json",
+      "key": "nativeExecuted"
+    },
+    "scope": "Full Quaternion original149 source scenarios and metadata; strict Object.is primitives, NaN/infinity/-0 tags; no epsilon or normalization"
+  },
+  {
+    "name": "euler-runtime",
+    "target": "ThreeJsEulerRuntimeParityProbe",
+    "comparator": "compare-euler-runtime.mjs",
+    "cli": "named",
+    "upstream": true,
+    "lifetimeFlag": true,
+    "comparatorRunsLifetime": true,
+    "replay": "replay",
+    "guard": {
+      "file": "summary.json",
+      "key": "nativeExecuted"
+    },
+    "scope": "Full Euler source module and real Matrix4 prerequisite methods; absolute comparisons"
+  },
+  {
+    "name": "math-inverse-trig",
+    "target": "ThreeJsMathInverseTrigParityProbe",
+    "comparator": "compare-math-inverse-trig.mjs",
+    "cli": "named",
+    "upstream": true,
+    "lifetimeFlag": false,
+    "comparatorRunsLifetime": false,
+    "replay": "input",
+    "guard": {
+      "file": "summary.json",
+      "key": "nativeExecuted"
+    },
+    "scope": "acos/asin/atan2/PI only; exact finite Number comparison; full Math excluded"
+  },
+  {
+    "name": "global-number-predicates",
+    "target": "ThreeJsGlobalNumberPredicatesParityProbe",
+    "comparator": "compare-global-number-predicates.mjs",
+    "cli": "named",
+    "upstream": false,
+    "lifetimeFlag": false,
+    "comparatorRunsLifetime": false,
+    "replay": "input",
+    "guard": {
+      "file": "summary.json",
+      "key": "binaryExecuted"
+    },
+    "scope": "isNaN/isFinite and Infinity/NaN/undefined bindings only; BigInt/cross-realm excluded",
+    "replayFormat": "JSONL"
+  },
+  {
+    "name": "math-floor",
+    "target": "ThreeJsMathFloorParityProbe",
+    "comparator": "compare-math-floor.mjs",
+    "cli": "named",
+    "upstream": false,
+    "lifetimeFlag": false,
+    "comparatorRunsLifetime": false,
+    "replay": "input",
+    "guard": {
+      "file": "summary.json",
+      "key": "binaryExecuted"
+    },
+    "scope": "Actual Math.floor ToNumber, signed zero and global lookup; BigInt/cross-realm excluded",
+    "replayFormat": "JSONL"
+  },
+  {
+    "name": "json-runtime",
+    "target": "ThreeJsJSONRuntimeParityProbe",
+    "comparator": "compare-json-runtime.mjs",
+    "cli": "named",
+    "upstream": true,
+    "lifetimeFlag": false,
+    "comparatorRunsLifetime": false,
+    "replay": "input",
+    "guard": {
+      "file": "summary.json",
+      "key": "nativeExecuted"
+    },
+    "scope": "Real JSON parse/stringify/rawJSON/isRawJSON; SyntaxError class, not engine wording; no BigInt/cross-realm claim"
+  },
+  {
+    "name": "object3d-runtime",
+    "target": "ThreeJsObject3DRuntimeParityProbe",
+    "comparator": "compare-object3d-runtime.mjs",
+    "cli": "named",
+    "upstream": true,
+    "lifetimeFlag": false,
+    "comparatorRunsLifetime": true,
+    "replay": null,
+    "guard": {
+      "file": "summary.json",
+      "key": "nativeExecuted"
+    },
+    "scope": "Full source Object3D, ROOT independent shared strict comparator; old epsilon script excluded; explicit pinned upstream checkout",
+    "requiresRootStrictComparator": true
+  },
+  {
+    "name": "buffer-geometry-runtime",
+    "target": "ThreeJsBufferGeometryRuntimeParityProbe",
+    "comparator": "compare-buffer-geometry-runtime.mjs",
+    "cli": "named",
+    "upstream": true,
+    "lifetimeFlag": true,
+    "comparatorRunsLifetime": true,
+    "replay": "replay",
+    "guard": {
+      "file": "summary.json",
+      "key": "nativeExecuted"
+    },
+    "scope": "Full source BufferGeometry algorithms and actual resource graph; strict absolute IDs/UUIDs"
+  },
+  {
+    "name": "material-classes",
+    "target": "ThreeJsMaterialClassesParityProbe",
+    "comparator": "compare-material-classes.mjs",
+    "cli": "named",
+    "upstream": true,
+    "lifetimeFlag": false,
+    "comparatorRunsLifetime": true,
+    "replay": "input",
+    "guard": {
+      "file": "scope.json",
+      "key": "nativeExecuted"
+    },
+    "scope": "Material+MeshBasicMaterial only; real resources, 11 fresh intrinsic modes, GC; 16 further material candidates excluded",
+    "lifetimeOutput": "3 MeshBasicMaterial realm lifetimes passed"
+  },
+  {
+    "name": "mesh-runtime",
+    "target": "ThreeJsMeshRuntimeParityProbe",
+    "comparator": "compare-mesh-runtime.mjs",
+    "cli": "named",
+    "upstream": true,
+    "lifetimeFlag": true,
+    "comparatorRunsLifetime": true,
+    "replay": "replay",
+    "guard": {
+      "file": "summary.json",
+      "key": "nativeExecuted"
+    },
+    "scope": "Full Mesh/Ray/Triangle plus Vector4.addScaledVector increment; strict absolute IDs/UUIDs"
+  }
+]

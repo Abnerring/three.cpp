@@ -1,3 +1,16 @@
+# 本轮验收：原生对象模型与 JavaScript 协议，2026-11-01
+
+- 基线提交 `1e52494f`，固定 three.js `11738a9d55e502fb484cefffcea3a66dc44e9fe9`。Object3D/EventDispatcher/Layers、BufferGeometry 与三种派生 attribute、Quaternion/Euler、Mesh/Ray/Triangle、Material/MeshBasicMaterial 的管理对象逻辑已接入本轮 C++ 入口；另补 Function/apply、Generator、JSON、数值全局和所需 Math 运算。部分依赖仍是已明示的增量，不能将本轮通过外推为全模块、全运行时或全渲染一致。
+- 最终 CPU 构建 111 个目标。所选回归 **159 项中 158 过、1 项失败**；本轮新增 13 组对照和 13 组生命周期检查全部通过。13 组当前语料共 **11955 cases**，包含保留的旧案例；严格比较特殊数值、类型、键、顺序及身份，未用 epsilon 放宽 Quaternion/Object3D。测试注册总数 339，本轮未执行其余 180 项。
+- 唯一失败仍是 DataTexture/Morph：166 cases 中 17 例、546 个字段不同；529 个 Node.id 差 194，17 个 Texture.id 差 3，其他值/类型/键/长度差异零。完整导入初始化未闭合；保留原断言，不补编号、不扩大相对化范围。逐字段审计见 `data-morph-final03-allocation-audit.json`。
+- 原生执行揭示并修复 Generator 抛值经 Promise 被误包 Error、Mesh/Triangle 所需真实 Vector2.addScaledVector 缺失、JSON callable revoked replacer 的 Node 26 行为，以及 JSONSyntaxError 未接入公共 SyntaxError 基类。Generator 原 389 例保留，新增 120 个 Promise 互操作例有修复前 120 失败/修复后通过的真实原生证据。JSON revoked replacer 明确是固定 Node/V8 兼容行为，不冒称规范算法顺序。
+- Euler 首轮失败来自探针调用/快照/传输错误，修复测试后保留原 616 输入并增加 5 例；Object3D 的 -0 在 JSON 传输中丢失，双方真实计算结果均加特殊数值标签后严格对照。原失败、旧脚本及更正审计保留，未将这些改动冒充生产算法修复。11955 不等于新增测试数或完整覆盖证明。
+- 最终 Vulkan **5/5 通过**：glslang 27、buffer 103、binding 46、RTX 3070 Laptop 1400、cube 60 检查。实际 validation=0，未启用验证层。这五项仅证明已有路径；完整传统材质/光照/阴影/后处理，以及现代 NodeMaterial/Nodes/TSL/计算/存储 GPU 路径仍待完成。
+- 恢复时，用户 three.js 主目录已更新到 `fa01dd6ad164c48554f1bb9456f6500db052ec4f`。本轮不重置该目录，改用真实独立 worktree `D:/Temp/surui/threejs-pinned-11738a9-20261101`。Object3D 比较器新增显式 `--upstream` 并核验固定提交，输入/预期与二进制未改。测试前后 111 CPU + 4 Vulkan 二进制 SHA 一致；2892 个源码/测试/配置文件中仅这次参照路径修复涉及的 2 个测试文件改变，生产文件均与构建快照一致。
+- 首轮 CPU 157/159（JSON 语法异常分类和既有编号差异），第二轮因暂停中断且有子进程异常，原件均保留；最终第三轮使用新输出目录，不覆盖历史。审计测试 5/5、port-audit --check、Euler/Material/MeshBasicMaterial 三项生成器 --check 和 diff --check 通过。文件覆盖仍为 595/1251，656 尚无对应文件；有文件不能当完成。
+- 权威工作证据：[validation-final-summary.json](D:/Temp/surui/threecpp-object-model-20261030/validation-final-summary.json)、[CPU JUnit](D:/Temp/surui/threecpp-object-model-20261030/cpu-ctest03/junit.xml)、[Vulkan JUnit](D:/Temp/surui/threecpp-object-model-20261030/vulkan-validation02/junit.xml)、[源码与二进制复核](D:/Temp/surui/threecpp-object-model-20261030/resume-20261101/post-run-proof.json)。阶段提交后归档到 `D:/Temp/surui/threecpp-object-model-final-20261101`；仅 `freeze-final.json` 存在且 hashesVerified=true 才表示归档完成。
+- 边界：无 CEF、浏览器或生产 JS 解释桥。动态字符串编译、BigInt、跨 realm、V8 深层递归资源限制与精确 GC 时机未完成；原 typed 接口及 Vulkan 桥继续保留。MathUtils/完整 Vectors/Matrices、相机、完整传统材质、Skeleton、变形网格、NodeMaterial 与 renderer lifecycle 后续候选尚未共同编译及原生验收，不计入本轮完成。全目标与三平台验收均未完成。
+
 # 验证记录
 
 ## 当前追加验证：管理数学边界类、内建与数值存储回收，2026-10-31

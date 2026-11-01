@@ -1,5 +1,8 @@
+#include "math/BufferGeometryMathDependencies.h"
 #include "math/Matrix3.h"
 #include "math/Matrix4.h"
+#include "math/Vector3.h"
+#include "math/Matrix4QuaternionSource.inc"
 #include "core/JSModuleObject.h"
 #include "core/JSGlobal.h"
 #include "math/Matrix4MaxScaleSource.inc"
@@ -7,6 +10,13 @@
 #include <algorithm>
 #include <cmath>
 #include <limits>
+
+#include "core/JSIterator.h"
+#include "math/JSNumberMath.h"
+#include "core/JSStringEncoding.h"
+#include <string_view>
+#include <unordered_set>
+#include "math/Object3DMatrixDependency.inc"
 
 namespace {
 #include "math/Matrix4RotationSource.inc"
@@ -69,10 +79,39 @@ JSValue rotationFromEuler(const JSValue& self,const Args& args,const Args&) {
     te.set("15",1);
     return self;
 }
+void initializeMatrix4Scratch(JSValue constructor) {
+    // Source module scratch allocations, in their actual top-level order.
+    const auto vector=nativeVector3Constructor();auto state=JSValue::object(nullptr);
+    state.setInternalSlot("_v1",vector.construct());
+    state.setInternalSlot("_m1",constructor.construct());
+    state.setInternalSlot("_zero",vector.construct({0,0,0}));
+    state.setInternalSlot("_one",vector.construct({1,1,1}));
+    state.setInternalSlot("_x",vector.construct());state.setInternalSlot("_y",vector.construct());state.setInternalSlot("_z",vector.construct());
+    constructor.setInternalSlot("Matrix4.scratch",state);
+}
+JSValue compose(const JSValue& self,const Args& args) {
+    auto te=self.get("elements");const auto position=arg(args,0),quaternion=arg(args,1),scale=arg(args,2);
+    const auto x=quaternion.get("_x"),y=quaternion.get("_y"),z=quaternion.get("_z"),w=quaternion.get("_w");
+    const auto x2=add(x,x),y2=add(y,y),z2=add(z,z);
+    const auto xx=product(x,x2),xy=product(x,y2),xz=product(x,z2);
+    const auto yy=product(y,y2),yz=product(y,z2),zz=product(z,z2);
+    const auto wx=product(w,x2),wy=product(w,y2),wz=product(w,z2);
+    const auto sx=scale.get("x"),sy=scale.get("y"),sz=scale.get("z");
+    const auto store=[&](const char* key,auto evaluate){const auto value=evaluate();te.set(key,value);};
+    store("0",[&]{return product(1-(yy+zz),sx);});store("1",[&]{return product(xy+wz,sx);});store("2",[&]{return product(xz-wy,sx);});store("3",[]{return JSValue(0);});
+    store("4",[&]{return product(xy-wz,sy);});store("5",[&]{return product(1-(xx+zz),sy);});store("6",[&]{return product(yz+wx,sy);});store("7",[]{return JSValue(0);});
+    store("8",[&]{return product(xz+wy,sz);});store("9",[&]{return product(yz-wx,sz);});store("10",[&]{return product(1-(xx+yy),sz);});store("11",[]{return JSValue(0);});
+    store("12",[&]{return position.get("x");});store("13",[&]{return position.get("y");});store("14",[&]{return position.get("z");});store("15",[]{return JSValue(1);});return self;
+}
 JSValue method(const JSValue& receiver, const Args& args, const Args& captures) {
     auto self = receiver; const auto name = captures[0].string();
     const auto width = static_cast<unsigned>(captures[1].number()), count = width * width;
     if (width == 4 && name == "makeRotationFromEuler") return rotationFromEuler(self, args, {});
+    if (width == 4 && name == "compose") return compose(self,args);
+    if (width == 4 && name == "makeRotationFromQuaternion") {
+        const auto function=self.get("compose");const auto state=nativeMatrix4Constructor().getInternalSlot("Matrix4.scratch");
+        return function.call(self,{state.getInternalSlot("_zero"),arg(args,0),state.getInternalSlot("_one")});
+    }
     if (name == "identity") {
         const auto fn = self.get("set"); fn.call(self, identity(width)); return self;
     }
@@ -219,15 +258,21 @@ JSValue constructor(unsigned width) {
     // Preserve source order among the implemented class methods.
     const auto methods = width == 3
         ? std::vector<std::pair<const char*, unsigned>>{{"set",9},{"identity",0},{"copy",1},{"setFromMatrix4",1},{"multiply",1},{"premultiply",1},{"multiplyMatrices",2},{"invert",0},{"transpose",0},{"getNormalMatrix",1},{"equals",1},{"fromArray",1},{"toArray",0},{"clone",0}}
-        : std::vector<std::pair<const char*, unsigned>>{{"set",16},{"identity",0},{"clone",0},{"copy",1},{"makeRotationFromEuler",1},{"multiply",1},{"premultiply",1},{"multiplyMatrices",2},{"transpose",0},{"invert",0},{"getMaxScaleOnAxis",0},{"equals",1},{"fromArray",1},{"toArray",0}};
+        : std::vector<std::pair<const char*, unsigned>>{{"set",16},{"identity",0},{"clone",0},{"copy",1},{"makeRotationFromEuler",1},{"makeRotationFromQuaternion",1},{"multiply",1},{"premultiply",1},{"multiplyMatrices",2},{"transpose",0},{"invert",0},{"getMaxScaleOnAxis",0},{"compose",3},{"equals",1},{"fromArray",1},{"toArray",0}};
     for (const auto& [key, arity] : methods) {
         JSPropertyDescriptor d; d.value = JSValue::function(method, {key,width}, key, arity);
         if(width==4&&std::string(key)=="makeRotationFromEuler")d.value->setFunctionSourceText(matrix4RotationSource);
+        if(width==4&&std::string(key)=="makeRotationFromQuaternion")d.value->setFunctionSourceText(Matrix4QuaternionSource::makeRotationFromQuaternion);
+        if(width==4&&std::string(key)=="compose")d.value->setFunctionSourceText(Matrix4QuaternionSource::compose);
         if(width==4&&std::string(key)=="getMaxScaleOnAxis")d.value->setFunctionSourceText(Matrix4MaxScaleSource::methodSource);
         d.writable = d.configurable = true; prototype.defineProperty(key, d);
     }
+    if(width==4)installBufferGeometryMatrix4Methods(prototype);
+    if(width==4)Object3DMatrixDependency::install(ctor);
     prototype.set(std::string("is") + name, true);
-    ctor.retainForHeapLifetime(); weak[index] = JSWeakValue(ctor); return ctor;
+    ctor.retainForHeapLifetime(); weak[index] = JSWeakValue(ctor);
+    if(width==4)initializeMatrix4Scratch(ctor);
+    return ctor;
 }
 }
 JSValue nativeMatrix3Constructor() { return constructor(3); }

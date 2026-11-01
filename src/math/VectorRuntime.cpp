@@ -1,3 +1,5 @@
+#include "math/MeshMathDependencies.h"
+#include "math/BufferGeometryMathDependencies.h"
 #include "math/Vector2.h"
 #include "math/Vector3.h"
 #include "core/JSModuleObject.h"
@@ -6,6 +8,13 @@
 #include "math/MathUtils.h"
 #include "math/Box3VectorSource.inc"
 #include "math/SphereVectorSource.inc"
+
+#include "core/JSIterator.h"
+#include "math/JSNumberMath.h"
+#include "core/JSStringEncoding.h"
+#include <string_view>
+#include <unordered_set>
+#include "math/Object3DVectorDependency.inc"
 
 namespace {
 using Args = std::vector<JSValue>;
@@ -148,6 +157,9 @@ JSValue constructor(unsigned count) {
     for (const auto& [methodName, arity] : methods) { JSPropertyDescriptor d; d.value = JSValue::function(method, {methodName, count}, methodName, arity); d.writable = d.configurable = true; prototype.defineProperty(methodName, d); }
     if(count==3){const auto clamp=nativeMathUtilsClamp();for(const auto& spec:Box3VectorSource::methods){auto fn=JSValue::function(method,{spec.name,count,clamp},spec.name,spec.arity);fn.setFunctionSourceText(spec.source);JSPropertyDescriptor d;d.value=fn;d.writable=d.configurable=true;prototype.defineProperty(spec.name,d);}}
     for(const auto& spec:SphereVectorSource::methods)if(count==spec.dimensions){auto fn=JSValue::function(method,{spec.name,count},spec.name,spec.arity);fn.setFunctionSourceText(spec.source);JSPropertyDescriptor d;d.value=fn;d.writable=d.configurable=true;prototype.defineProperty(spec.name,d);}
+    if(count==2)installBufferGeometryVector2Methods(prototype);
+    if(count==2)installMeshVector2Methods(prototype);
+    if(count==3)Object3DVectorDependency::install(ctor);
     prototype.set(std::string("is") + name, true); ctor.retainForHeapLifetime(); weak[index] = JSWeakValue(ctor); return ctor;
 }
 }

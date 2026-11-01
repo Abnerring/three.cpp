@@ -28,6 +28,30 @@ JSValue defineProperty(const JSValue&,const Args& args,const Args&) {
     if(!target.defineOwnProperty(key,descriptor))throw JSTypeError("Cannot define property");
     return target;
 }
+
+JSValue defineProperties(const JSValue&,const Args& args,const Args&){
+    auto target=args.empty()?JSValue{}:args[0];
+    if(!target.isObject())throw JSTypeError("Object.defineProperties requires an object");
+    auto properties=args.size()>1?args[1]:JSValue{};
+    if(properties.isNull()||properties.isUndefined())throw JSTypeError("Cannot convert undefined or null to object");
+    // Symbol wrappers have no own properties; boxing does not invoke user code.
+    if(properties.isSymbol())return target;
+    properties=properties.toObject();
+    std::vector<std::pair<JSValue,JSPropertyDescriptor>> descriptors;
+    const auto keys=properties.ownPropertyKeys();
+    for(const auto& key:keys){
+        const auto own=properties.getOwnPropertyDescriptor(key);
+        if(own&&own->enumerable.value_or(false)){
+            const auto value=properties.get(key);
+            descriptors.emplace_back(key,toPropertyDescriptor(value));
+        }
+    }
+    // Every descriptor must be converted before the first definition.
+    for(const auto& [key,descriptor]:descriptors)
+        if(!target.defineOwnProperty(key,descriptor))throw JSTypeError("Cannot define property");
+    return target;
+}
+
 JSValue assign(const JSValue&,const Args& args,const Args&) {
     auto target=args.empty()?JSValue():args[0];
     if(target.isUndefined()||target.isNull())throw JSTypeError("Cannot convert undefined or null to object");
@@ -146,6 +170,7 @@ void initializeNativeObjectMethods(const JSValue& constructor) {
     d.value=JSValue::function(keys,{},"keys",1);object.defineProperty("keys",d);
     d.value=JSValue::function(getPrototypeOf,{},"getPrototypeOf",1);object.defineProperty("getPrototypeOf",d);
     d.value=JSValue::function(defineProperty,{},"defineProperty",3);object.defineProperty("defineProperty",d);
+    d.value=JSValue::function(defineProperties,{},"defineProperties",2);object.defineProperty("defineProperties",d);
     d.value=JSValue::function(getOwnPropertyNames,{},"getOwnPropertyNames",1);object.defineProperty("getOwnPropertyNames",d);
     d.value=JSValue::function(getOwnPropertyDescriptor,{},"getOwnPropertyDescriptor",2);object.defineProperty("getOwnPropertyDescriptor",d);
     d.value=JSValue::function(getOwnPropertyDescriptors,{},"getOwnPropertyDescriptors",1);object.defineProperty("getOwnPropertyDescriptors",d);

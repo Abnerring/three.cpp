@@ -1,4 +1,6 @@
 #include "core/JSGlobal.h"
+#include "core/JSFunction.h"
+#include "core/JSJSON.h"
 #include "math/JSNumberMath.h"
 #include "core/JSString.h"
 #include "core/JSStringEncoding.h"
@@ -33,13 +35,16 @@ JSValue initialStringConstructor(){
 }
 JSValue initialMathObject(){
     auto math=JSValue::object();
-    for(const auto* name:{"sin","cos","ceil","sqrt","round","abs"}){
+    for(const auto* name:{"sin","cos","ceil","sqrt","round","abs","acos","asin","floor"}){
         auto function=JSValue::function(+[](const JSValue&,const std::vector<JSValue>& args,const std::vector<JSValue>& captures)->JSValue{
             const auto input=(args.empty()?JSValue{}:args[0]).toNumber();
             if(captures[0].strictEquals("sin"))return JSNumberMath::sin(input);
             if(captures[0].strictEquals("cos"))return JSNumberMath::cos(input);
+            if(captures[0].strictEquals("acos"))return JSNumberMath::acos(input);
+            if(captures[0].strictEquals("asin"))return JSNumberMath::asin(input);
             if(captures[0].strictEquals("sqrt"))return std::sqrt(input);
             if(captures[0].strictEquals("abs"))return std::fabs(input);
+            if(captures[0].strictEquals("floor"))return std::floor(input);
             if(captures[0].strictEquals("round")){
                 if(!std::isfinite(input)||input==0)return input;
                 const auto floor=std::floor(input);const auto result=input-floor>=0.5?floor+1:floor;
@@ -49,6 +54,15 @@ JSValue initialMathObject(){
         },{name},name,1);
         JSPropertyDescriptor d;d.value=function;d.writable=d.configurable=true;math.defineProperty(name,d);
     }
+    auto atan2=JSValue::function(+[](const JSValue&,const std::vector<JSValue>& args,const std::vector<JSValue>&)->JSValue{
+        // Both conversions are observable, in y/x order, even when y is NaN.
+        const auto y=(args.empty()?JSValue{}:args[0]).toNumber();
+        const auto x=(args.size()<2?JSValue{}:args[1]).toNumber();
+        return JSNumberMath::atan2(y,x);
+    },{},"atan2",2);
+    JSPropertyDescriptor atan2Property;atan2Property.value=atan2;atan2Property.writable=atan2Property.configurable=true;math.defineProperty("atan2",atan2Property);
+    // Exact binary64 Math.PI; the omitted descriptor attributes default to false.
+    JSPropertyDescriptor pi;pi.value=0x1.921fb54442d18p+1;math.defineProperty("PI",pi);
     auto maximum=JSValue::function(+[](const JSValue&,const std::vector<JSValue>& args,const std::vector<JSValue>&)->JSValue{
         // Conversion of later arguments is observable even after an earlier NaN.
         std::vector<double> numbers;numbers.reserve(args.size());for(const auto& value:args)numbers.push_back(value.toNumber());
@@ -80,8 +94,18 @@ JSValue nativeGlobalObject(){
     JSPropertyDescriptor string;string.value=initialStringConstructor();string.writable=string.configurable=true;object.defineProperty("String",string);
     JSPropertyDescriptor array;array.value=JSValue::intrinsicArrayConstructor();array.writable=array.configurable=true;object.defineProperty("Array",array);
     JSPropertyDescriptor map;map.value=nativeMapConstructor();map.writable=map.configurable=true;object.defineProperty("Map",map);
-    for(const auto& entry:std::initializer_list<std::pair<const char*,JSValue>>{{"Boolean",nativeBooleanConstructor()},{"Error",nativeErrorConstructor()},{"Object",JSValue::intrinsicObjectConstructor()},{"WeakMap",nativeWeakMapConstructor()},{"Set",nativeSetConstructor()},{"ArrayBuffer",nativeArrayBufferConstructor()}}){
+    for(const auto& entry:std::initializer_list<std::pair<const char*,JSValue>>{{"JSON",nativeJSONObject()},{"Function",nativeFunctionConstructor()},{"Boolean",nativeBooleanConstructor()},{"Error",nativeErrorConstructor()},{"Object",JSValue::intrinsicObjectConstructor()},{"WeakMap",nativeWeakMapConstructor()},{"Set",nativeSetConstructor()},{"ArrayBuffer",nativeArrayBufferConstructor()}}){
         JSPropertyDescriptor property;property.value=entry.second;property.writable=property.configurable=true;object.defineProperty(entry.first,property);
+    }
+    for(const auto* name:{"isNaN","isFinite"}){
+        auto function=JSValue::function(+[](const JSValue&,const std::vector<JSValue>& args,const std::vector<JSValue>& captures)->JSValue{
+            const auto value=(args.empty()?JSValue{}:args[0]).toNumber();
+            return captures[0].strictEquals("isNaN")?std::isnan(value):std::isfinite(value);
+        },{name},name,1);
+        JSPropertyDescriptor property;property.value=function;property.writable=property.configurable=true;object.defineProperty(name,property);
+    }
+    for(const auto& entry:std::initializer_list<std::pair<const char*,JSValue>>{{"Infinity",std::numeric_limits<double>::infinity()},{"NaN",std::numeric_limits<double>::quiet_NaN()},{"undefined",JSValue{}}}){
+        JSPropertyDescriptor property;property.value=entry.second;object.defineProperty(entry.first,property);
     }
     constexpr const char* typedNames[]={"Int8Array","Uint8Array","Int16Array","Uint16Array","Int32Array","Uint32Array","Float32Array","Float64Array","Uint8ClampedArray"};
     for(std::size_t i=0;i<9;++i){JSPropertyDescriptor property;property.value=NativeArray_detail::constructor(i);property.writable=property.configurable=true;object.defineProperty(typedNames[i],property);}

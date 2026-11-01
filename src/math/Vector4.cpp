@@ -1,4 +1,5 @@
-﻿#include "math/Vector4.h"
+﻿#include "math/MeshMathDependencies.h"
+#include "math/Vector4.h"
 #include "math/JSNumberMath.h"
 #include "core/VertexAttribute.h"
 #include "math/Matrix4.h"
@@ -78,6 +79,7 @@ JSValue nativeVector4Constructor() {
     for (const auto& [name, arity] : std::initializer_list<std::pair<const char*, unsigned>>{{"set", 4}, {"setScalar", 1}, {"clone", 0}, {"copy", 1}, {"multiplyScalar",1}, {"equals", 1}, {"fromArray", 1}, {"toArray", 0}, {"fromBufferAttribute",2}}) {
         JSPropertyDescriptor d; d.value = JSValue::function(runtimeVector4Method, {name}, name, arity); d.writable = d.configurable = true; prototype.defineProperty(name, d);
     }
+    installMeshVector4Methods(prototype);
     prototype.set("isVector4", true); ctor.retainForHeapLifetime(); weak = JSWeakValue(ctor); return ctor;
 }
 

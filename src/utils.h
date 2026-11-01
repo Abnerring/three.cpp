@@ -18,3 +18,10 @@ void log(const std::vector<JSValue>& params);
 void warnOnce(const std::vector<JSValue>& params);
 void error(const std::vector<JSValue>& params);
 }
+
+namespace ThreeUtils {
+JSValue nativeErrorFunction();
+JSValue nativeWarnFunction();
+}
+
+namespace ThreeUtils { JSValue nativeArrayNeedsUint32(); }

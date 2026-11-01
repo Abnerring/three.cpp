@@ -1,4 +1,5 @@
 #include "core/JSValue.h"
+#include "core/JSFunction.h"
 #include "core/JSNumber.h"
 #include "core/JSBoolean.h"
 #include "core/JSProxy.h"
@@ -601,6 +602,33 @@ JSValue arraySplice(const JSValue& receiver, const Args& args, const Args&) {
 JSValue functionCall(const JSValue& receiver, const Args& args, const Args&) {
     return receiver.call(argument(args, 0), Args(args.begin() + std::min<std::size_t>(1, args.size()), args.end()));
 }
+JSValue functionApply(const JSValue& receiver, const Args& args, const Args&) {
+    // IsCallable precedes every observable operation on the argument list.
+    if (!receiver.isCallable()) throw JSTypeError("Function.prototype.apply requires a callable receiver");
+    const auto thisArgument = argument(args, 0);
+    const auto arrayLike = argument(args, 1);
+    if (arrayLike.isNull() || arrayLike.isUndefined()) return receiver.call(thisArgument);
+    if (!arrayLike.isObject()) throw JSTypeError("Function.prototype.apply requires an array-like object");
+    const auto length = arrayLikeLength(arrayLike);
+    // Node v26.5.0 / V8 FixedArray::kMaxLength (normal, non-lower-limits build).
+    // CreateListFromArrayLike rejects this before its first indexed Get.
+    constexpr std::uint64_t maxApplyListLength = 128ull * 1024 * 1024;
+    if (length > maxApplyListLength) throw JSRangeError("Invalid array length");
+    Args arguments;
+    // Do not preallocate from an untrusted length: each Get can throw or reenter.
+    // Owning JSValue handles keep the accumulated values alive across those Gets.
+    for (std::uint64_t i = 0; i < length; ++i) arguments.push_back(arrayLike.get(std::to_string(i)));
+    return receiver.call(thisArgument, arguments);
+}
+JSValue restrictedFunctionAccess(const JSValue& receiver, const Args&, const Args& captures) {
+    // Only the actual zero-argument Function constructor installs this private
+    // marker. Its empty body cannot expose an active JavaScript invocation.
+    // Proxies never forward the receiver brand or consult user properties.
+    if (receiver.isCallable() && !receiver.isProxy() &&
+        receiver.getInternalSlot("Function.languageMode").strictEquals("sloppy-empty"))
+        return captures[0].toBoolean() ? JSValue{} : JSValue(nullptr);
+    throw JSTypeError("'caller', 'callee', and 'arguments' properties may not be accessed on strict mode functions or the arguments objects for calls to them");
+}
 JSValue objectHasOwn(const JSValue& receiver, const Args& args, const Args&) {
     const auto key = argument(args, 0).toPropertyKey(); return receiver.hasOwn(key);
 }
@@ -1055,6 +1083,18 @@ class JSHeap : public std::enable_shared_from_this<JSHeap> {
         proto.enumerable = false; proto.configurable = true; object.defineProperty("__proto__", proto);
         install(function, "toString", nativeToString, 0);
         install(function, "call", functionCall, 1);
+        install(function, "apply", functionApply, 2);
+        // Pinned Node 26/V8 exposes four separate legacy accessor functions,
+        // rather than the specification's shared %ThrowTypeError% accessors.
+        for (const auto* name : {"caller", "arguments"}) {
+            auto getter = createFunction(restrictedFunctionAccess, {false}, std::string("get ") + name, 0);
+            auto setter = createFunction(restrictedFunctionAccess, {true}, std::string("set ") + name, 1);
+            record(getter).intrinsic = record(setter).intrinsic = true;
+            JSPropertyDescriptor restricted;
+            restricted.getter = getter; restricted.setter = setter;
+            restricted.enumerable = false; restricted.configurable = true;
+            function.defineProperty(name, restricted);
+        }
         auto hasInstance=createFunction([](const JSValue& receiver,const Args& args,const Args&)->JSValue {
             return receiver.ordinaryHasInstance(argument(args,0));
         },{},"[Symbol.hasInstance]",1);
@@ -1096,6 +1136,8 @@ class JSHeap : public std::enable_shared_from_this<JSHeap> {
             "hasInstance","match","matchAll","replace","search","split","unscopables","dispose","asyncDispose"})
             static_cast<void>(JSValue::wellKnownSymbol(name));
         initializeNativeIteration(array);
+        // Install the intrinsic before any prototype can reach mutable user code.
+        static_cast<void>(nativeFunctionConstructor());
     }
     std::size_t collect(bool retireRealm = false) {
         // Native destructors may read JS fields, retain them externally, or ask

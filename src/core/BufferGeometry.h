@@ -95,3 +95,8 @@ class BufferGeometry : public EventDispatcher, public std::enable_shared_from_th
   private:
     inline static std::atomic<std::uint64_t> nextId{0};
 };
+
+// Full managed source module; typed implementation above remains separate.
+JSValue nativeBufferGeometryConstructor();
+JSValue nativeBufferGeometryModule();
+JSValue nativeBufferGeometryBinding(const std::string& name);

@@ -217,3 +217,8 @@ class Float16BufferAttribute : public BufferAttribute {
     double getHalf(double offset) const;
     Float16BufferAttribute& setHalf(double offset, double value);
 };
+
+// Real derived managed classes sharing nativeBufferAttributeConstructor().
+JSValue nativeFloat32BufferAttributeConstructor();
+JSValue nativeUint16BufferAttributeConstructor();
+JSValue nativeUint32BufferAttributeConstructor();

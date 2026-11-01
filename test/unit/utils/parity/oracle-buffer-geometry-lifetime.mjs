@@ -1,0 +1,13 @@
+import assert from 'node:assert/strict';
+import fs from 'node:fs';
+import path from 'node:path';
+import {pathToFileURL} from 'node:url';
+import {execFileSync} from 'node:child_process';
+if(typeof global.gc!=='function')throw Error('Run Node with --expose-gc.');
+const upstream=process.argv[2]??'D:/project/DX/GitHub/three.js',output=process.argv[3]??'D:/Temp/surui/threecpp-object-model-20261030/geometry-candidate/lifetime-oracle01.json';
+assert.equal(execFileSync('git',['-C',upstream,'rev-parse','HEAD'],{encoding:'utf8'}).trim(),'11738a9d55e502fb484cefffcea3a66dc44e9fe9');
+const {BufferGeometry}=await import(pathToFileURL(path.join(upstream,'src/core/BufferGeometry.js')).href),{Float32BufferAttribute}=await import(pathToFileURL(path.join(upstream,'src/core/BufferAttribute.js')).href),{InterleavedBuffer}=await import(pathToFileURL(path.join(upstream,'src/core/InterleavedBuffer.js')).href),{InterleavedBufferAttribute}=await import(pathToFileURL(path.join(upstream,'src/core/InterleavedBufferAttribute.js')).href);
+const collect=async()=>{for(let i=0;i<8;++i){await new Promise(setImmediate);global.gc();await new Promise(setImmediate);}};
+const results=[];
+for(let round=0;round<3;++round){let external;const held=(()=>{const value=new BufferGeometry(),attribute=new Float32BufferAttribute([0,0,0,1,0,0,0,1,0],3);value.setAttribute('position',attribute);external=()=>value;value.addEventListener('dispose',external);return[new WeakRef(value),new WeakRef(attribute)];})();await collect();assert(held.every(w=>w.deref()!==undefined));external=undefined;await collect();assert(held.every(w=>w.deref()===undefined));const cycle=(()=>{const value=new BufferGeometry(),data=new InterleavedBuffer(new Float32Array([0,1,2,3,4,5]),3),attribute=new InterleavedBufferAttribute(data,3,0);value.setAttribute('position',attribute);value.userData.self=value;value.addEventListener('dispose',()=>value);return[new WeakRef(value),new WeakRef(data),new WeakRef(attribute),new WeakRef(data.array.buffer)];})();await collect();assert(cycle.every(w=>w.deref()===undefined));results.push({round,heldCallbackRetainsGeometryAndAttribute:true,droppedCallbackCollectsGraph:true,geometryUserDataEventInterleavedCycleCollected:true});}
+const report={upstreamCommit:'11738a9d55e502fb484cefffcea3a66dc44e9fe9',node:process.version,v8:process.versions.v8,results,status:'passed',scope:'Actual upstream geometry, attributes, shared native ArrayBuffer resources and callback cycles. Native fresh-heap checks are a separate capability test, not claimed as a second JS realm.'};fs.mkdirSync(path.dirname(output),{recursive:true});fs.writeFileSync(output,JSON.stringify(report,null,2)+'\n');console.log(JSON.stringify(report));

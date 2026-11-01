@@ -1,5 +1,17 @@
 # 续接说明（Handoff）
 
+## 当前阶段：原生对象模型与协议，2026-11-01
+
+- 基线1e52494f；固定上游11738a9d55e502fb484cefffcea3a66dc44e9fe9。新增7个库cpp、13个probe/26个native测试，管理Object3D/Geometry/Quaternion/Euler/Mesh/Ray/Triangle/Material/basic以及Function/Generator/JSON/Math增量已合并。真实GC passiveFinalizer/退休逻辑保留，JSValue只叠加Function相关改动。
+- 最终111 CPU目标；第三轮selected159/registered339=158过/1已知失败，13差分+13生命周期全过，当前11955 cases含保留旧例。DataMorph166中17例：529 Node.id差194、17 Texture.id差3、其余差0；不补编号、不扩大relative。CPU01两失败（JSON SyntaxError分类+编号），CPU02暂停中断，原件保留。
+- 真生产修复：GeneratorThrown继承JSThrownValue保留Promise任意reason身份，389原例+120新互操作例有前后实测；Mesh真实Vector2.addScaledVector；JSON revoked replacer按固定Node26/V8行为；JSJSONSyntaxError继承JSSyntaxError使旧Material/Promise捕获正确。Euler修probe事件/结果/快照/特殊值，Object3D修wire -0；旧预期/失败原件未抹除，不混称算法修复。
+- Vulkan02续建101步，4bin/5test全过；glslang27/buffer103/binding46/RTX1400/cube60，validation=0。仅已有GPU路径，完整传统/现代GPU仍pending。
+- 主three.js已被外部更新fa01dd6a，禁止重置。此阶段改用D:/Temp/surui/threejs-pinned-11738a9-20261101真实worktree；node_modules junction复用主目录开发依赖。Object3D comparator支持显式--upstream并核固定commit，suite路由一起修。111 CPU与4GPU SHA前后一致；2892快照中仅2测试路径配置改变，生产均相同。之后文档另记SHA，不冒充全部2892未改。
+- 证据D:/Temp/surui/threecpp-object-model-20261030，validation-final-summary.json、CPU03/GPU02 JUnit/full output/post-run-proof/data-morph-final03-allocation-audit。审计5/5、生成器Euler/Material/basic --check、port-audit及diff通过。阶段commit后freeze-object-model.py归档至threecpp-object-model-final-20261101，freeze-final.json/hash verified才算已冻结；独立下一阶段候选全部排除。
+- 下一阶段先MathUtils/Error-family/full-vectors，再补完Matrices、相机、完整传统材质/Skeleton、deformable及NodeMaterial，再cache/lifecycle与NodeManager依赖图。未来候选均在工作证据root，各自manifest冻结状态必须逐一检查，不能当native已验收。full-matrices/renderer-lifecycle/deformable在暂停时仅草稿，本次子任务继续补测试。禁止覆盖共享global/JSValue，按baseSHA窄补丁合并。
+- registeredFullyVerified仍0；1251模块中595有文件/656无，不能当完成率。无CEF/浏览器/JS解释桥；动态字符串编译、BigInt/跨realm/精确GC与递归限制、完整渲染、addons、原生宿主、Linux/macOS未闭合。目标保持全src+examples/jsm。
+- 历史约定后缀798619字节/SHA f6b73f2e259a5a5518d1760ca0c6ac3d1ceed98ed915f0cec5a236a5107dcc4c保持。HANDOFF用git -c core.autocrlf=false add；旧phase与已冻结候选只读。
+
 ## 当前阶段：管理数学边界类、内建与数值存储回收，2026-10-31
 
 - 基线2afb061，上游11738a9d55e502fb484cefffcea3a66dc44e9fe9。Box3/Plane/Sphere/Frustum/FrustumArray共96管理入口；19 Vector依赖方法、clamp、Matrix4动态Math，Boolean真实品牌/装箱/反射/JSON，Math.min/abs与9 Number TypedArray fill/copyWithin。无CEF/浏览器/生产JS桥；完整依赖模块仍缺。

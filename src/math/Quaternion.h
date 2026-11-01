@@ -340,3 +340,14 @@ public:
 };
 
 #endif
+
+#ifndef THREECPP_MANAGED_QUATERNION_MODULE_H
+#define THREECPP_MANAGED_QUATERNION_MODULE_H
+// Complete managed Quaternion module. Typed implementation above remains independent.
+#include "core/JSModuleObject.h"
+JSValue nativeQuaternionModule();
+JSValue nativeQuaternionBinding(const std::string& name);
+JSValue nativeQuaternionConstructor();
+inline constexpr JSModuleObject QuaternionModule{nativeQuaternionModule};
+
+#endif // THREECPP_MANAGED_QUATERNION_MODULE_H

@@ -209,3 +209,9 @@ public:
 };
 
 #endif
+
+// Stable private managed class; the typed Euler API above remains independent.
+class JSValue;
+JSValue nativeEulerConstructor();
+JSValue nativeEulerModule();
+JSValue nativeEulerBinding(const std::string& name);

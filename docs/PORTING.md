@@ -6,6 +6,10 @@
 
 范围包含全部 `src` 与 `examples/jsm`，扩展携带的第三方库单独跟踪依赖和许可。editor、manual 网页应用不作为原生应用重写。要求 Windows、Linux、macOS 分别验收。禁止引入 CEF、嵌入式浏览器和 JS 运行时桥接；Node 仅用于开发阶段的上游差分与审计。浏览器专属接口由 C++ 原生适配逐项实现，未实现的能力保持待办。
 
+## 2026-11-01 已验收范围
+
+本轮管理对象模型与Function/Generator/JSON等前置已接入：111个CPU目标，159项所选回归158过/1既有编号失败，13组当前差分11955 cases及13生命周期全过，Vulkan已有五项全过。完整模块、动态运行时与完整渲染仍有缺口；后续相机/数学/材质/Skeleton/NodeMaterial候选未共同native验收。最新精确证据和边界见VALIDATION最前节，下方日期记录为历史，不代表当前模块完成度。固定上游保持11738a9d；本地three.js主目录更新后使用独立固定worktree验收。
+
 ## 一致性要求
 
 - 文件路径按 upstream 分类；同一模块的 `.h` 与 `.cpp` 同放 `src` 对应目录，不另设 `include` 树。

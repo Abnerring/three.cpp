@@ -2242,3 +2242,46 @@ if(THREECPP_NODE_EXECUTABLE AND THREEJS_SOURCE_DIR)
         "${THREECPP_NODE_EXECUTABLE}" "${CMAKE_CURRENT_SOURCE_DIR}/unit/utils/parity/compare-frustum-typed.mjs"
         "${THREEJS_SOURCE_DIR}" "$<TARGET_FILE:ThreeJsFrustumTypedParityProbe>")
 endif()
+
+# Full native object-model integration. Each execution keeps a fresh evidence directory.
+# Runtime source must be merged before configuring these targets; no oracle-only CTests.
+foreach(probe IN ITEMS
+    Generator FunctionApply FunctionBootstrap QuaternionRuntime EulerRuntime MathInverseTrig
+    GlobalNumberPredicates MathFloor JSONRuntime Object3DRuntime BufferGeometryRuntime
+    MaterialClasses MeshRuntime)
+    add_executable(ThreeJs${probe}ParityProbe unit/utils/parity/${probe}ParityProbe.cpp)
+    target_link_libraries(ThreeJs${probe}ParityProbe PRIVATE threecpp::threecpp)
+endforeach()
+if(THREECPP_NODE_EXECUTABLE AND THREEJS_SOURCE_DIR)
+    function(threecpp_add_object_model_native_tests suite target)
+        add_test(NAME threecpp.object-model.${suite}-parity
+            COMMAND "${THREECPP_NODE_EXECUTABLE}" --expose-gc
+            "${CMAKE_CURRENT_SOURCE_DIR}/unit/utils/parity/run-object-model-native.mjs"
+            --suite "${suite}" --probe "$<TARGET_FILE:${target}>"
+            --upstream "${THREEJS_SOURCE_DIR}"
+            --output-root "${CMAKE_BINARY_DIR}/parity/object-model")
+        add_test(NAME threecpp.object-model.${suite}-lifetime
+            COMMAND "${THREECPP_NODE_EXECUTABLE}" --expose-gc
+            "${CMAKE_CURRENT_SOURCE_DIR}/unit/utils/parity/run-object-model-native.mjs"
+            --suite "${suite}" --probe "$<TARGET_FILE:${target}>"
+            --upstream "${THREEJS_SOURCE_DIR}"
+            --output-root "${CMAKE_BINARY_DIR}/parity/object-model" --lifetime-only)
+        set_tests_properties(
+            threecpp.object-model.${suite}-parity threecpp.object-model.${suite}-lifetime
+            PROPERTIES LABELS "object-model;native"
+            ENVIRONMENT "TEMP=D:/Temp/surui;TMP=D:/Temp/surui")
+    endfunction()
+    threecpp_add_object_model_native_tests(generator ThreeJsGeneratorParityProbe)
+    threecpp_add_object_model_native_tests(function-apply ThreeJsFunctionApplyParityProbe)
+    threecpp_add_object_model_native_tests(function-bootstrap ThreeJsFunctionBootstrapParityProbe)
+    threecpp_add_object_model_native_tests(quaternion-runtime ThreeJsQuaternionRuntimeParityProbe)
+    threecpp_add_object_model_native_tests(euler-runtime ThreeJsEulerRuntimeParityProbe)
+    threecpp_add_object_model_native_tests(math-inverse-trig ThreeJsMathInverseTrigParityProbe)
+    threecpp_add_object_model_native_tests(global-number-predicates ThreeJsGlobalNumberPredicatesParityProbe)
+    threecpp_add_object_model_native_tests(math-floor ThreeJsMathFloorParityProbe)
+    threecpp_add_object_model_native_tests(json-runtime ThreeJsJSONRuntimeParityProbe)
+    threecpp_add_object_model_native_tests(object3d-runtime ThreeJsObject3DRuntimeParityProbe)
+    threecpp_add_object_model_native_tests(buffer-geometry-runtime ThreeJsBufferGeometryRuntimeParityProbe)
+    threecpp_add_object_model_native_tests(material-classes ThreeJsMaterialClassesParityProbe)
+    threecpp_add_object_model_native_tests(mesh-runtime ThreeJsMeshRuntimeParityProbe)
+endif()

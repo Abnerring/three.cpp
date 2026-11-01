@@ -34,3 +34,8 @@ class Ray {
     bool equals(const Ray& ray) const;
     Ray clone() const;
 };
+
+// Real source-managed class authority; typed class above remains separate.
+JSValue nativeRayConstructor();
+JSValue nativeRayModule();
+JSValue nativeRayBinding(const std::string& name);

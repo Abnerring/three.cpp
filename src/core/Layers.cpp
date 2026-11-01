@@ -78,6 +78,7 @@ JSValue nativeLayersConstructor() {
     if (const auto value = cached.lock(); value && value->isConstructible())
         return *value;
     auto constructor = JSValue::constructor(initialize, {}, "Layers", 0);
+    constructor.setFunctionSourceText("class Layers {\r\n\r\n\t/**\r\n\t * Constructs a new layers instance, with membership\r\n\t * initially set to layer `0`.\r\n\t */\r\n\tconstructor() {\r\n\r\n\t\t/**\r\n\t\t * A bit mask storing which of the 32 layers this layers object is currently\r\n\t\t * a member of.\r\n\t\t *\r\n\t\t * @type {number}\r\n\t\t */\r\n\t\tthis.mask = 1 | 0;\r\n\r\n\t}\r\n\r\n\t/**\r\n\t * Sets membership to the given layer, and remove membership all other layers.\r\n\t *\r\n\t * @param {number} layer - The layer to set.\r\n\t */\r\n\tset( layer ) {\r\n\r\n\t\tthis.mask = ( 1 << layer | 0 ) >>> 0;\r\n\r\n\t}\r\n\r\n\t/**\r\n\t * Adds membership of the given layer.\r\n\t *\r\n\t * @param {number} layer - The layer to enable.\r\n\t */\r\n\tenable( layer ) {\r\n\r\n\t\tthis.mask |= 1 << layer | 0;\r\n\r\n\t}\r\n\r\n\t/**\r\n\t * Adds membership to all layers.\r\n\t */\r\n\tenableAll() {\r\n\r\n\t\tthis.mask = 0xffffffff | 0;\r\n\r\n\t}\r\n\r\n\t/**\r\n\t * Toggles the membership of the given layer.\r\n\t *\r\n\t * @param {number} layer - The layer to toggle.\r\n\t */\r\n\ttoggle( layer ) {\r\n\r\n\t\tthis.mask ^= 1 << layer | 0;\r\n\r\n\t}\r\n\r\n\t/**\r\n\t * Removes membership of the given layer.\r\n\t *\r\n\t * @param {number} layer - The layer to enable.\r\n\t */\r\n\tdisable( layer ) {\r\n\r\n\t\tthis.mask &= ~ ( 1 << layer | 0 );\r\n\r\n\t}\r\n\r\n\t/**\r\n\t * Removes the membership from all layers.\r\n\t */\r\n\tdisableAll() {\r\n\r\n\t\tthis.mask = 0;\r\n\r\n\t}\r\n\r\n\t/**\r\n\t * Returns `true` if this and the given layers object have at least one\r\n\t * layer in common.\r\n\t *\r\n\t * @param {Layers} layers - The layers to test.\r\n\t * @return {boolean } Whether this and the given layers object have at least one layer in common or not.\r\n\t */\r\n\ttest( layers ) {\r\n\r\n\t\treturn ( this.mask & layers.mask ) !== 0;\r\n\r\n\t}\r\n\r\n\t/**\r\n\t * Returns `true` if the given layer is enabled.\r\n\t *\r\n\t * @param {number} layer - The layer to test.\r\n\t * @return {boolean } Whether the given layer is enabled or not.\r\n\t */\r\n\tisEnabled( layer ) {\r\n\r\n\t\treturn ( this.mask & ( 1 << layer | 0 ) ) !== 0;\r\n\r\n\t}\r\n\r\n}");
     auto prototype = constructor.get("prototype");
     for (const auto& [name, arity] :
          std::initializer_list<std::pair<const char*, unsigned>>{{"set", 1},
@@ -90,6 +91,14 @@ JSValue nativeLayersConstructor() {
                                                                  {"isEnabled", 1}}) {
         JSPropertyDescriptor descriptor;
         descriptor.value = JSValue::function(method, {name}, name, arity);
+        if(std::string(name)=="set")descriptor.value->setFunctionSourceText("set( layer ) {\r\n\r\n\t\tthis.mask = ( 1 << layer | 0 ) >>> 0;\r\n\r\n\t}");
+        if(std::string(name)=="enable")descriptor.value->setFunctionSourceText("enable( layer ) {\r\n\r\n\t\tthis.mask |= 1 << layer | 0;\r\n\r\n\t}");
+        if(std::string(name)=="enableAll")descriptor.value->setFunctionSourceText("enableAll() {\r\n\r\n\t\tthis.mask = 0xffffffff | 0;\r\n\r\n\t}");
+        if(std::string(name)=="toggle")descriptor.value->setFunctionSourceText("toggle( layer ) {\r\n\r\n\t\tthis.mask ^= 1 << layer | 0;\r\n\r\n\t}");
+        if(std::string(name)=="disable")descriptor.value->setFunctionSourceText("disable( layer ) {\r\n\r\n\t\tthis.mask &= ~ ( 1 << layer | 0 );\r\n\r\n\t}");
+        if(std::string(name)=="disableAll")descriptor.value->setFunctionSourceText("disableAll() {\r\n\r\n\t\tthis.mask = 0;\r\n\r\n\t}");
+        if(std::string(name)=="test")descriptor.value->setFunctionSourceText("test( layers ) {\r\n\r\n\t\treturn ( this.mask & layers.mask ) !== 0;\r\n\r\n\t}");
+        if(std::string(name)=="isEnabled")descriptor.value->setFunctionSourceText("isEnabled( layer ) {\r\n\r\n\t\treturn ( this.mask & ( 1 << layer | 0 ) ) !== 0;\r\n\r\n\t}");
         descriptor.writable = descriptor.configurable = true;
         prototype.defineProperty(name, descriptor);
     }

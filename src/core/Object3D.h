@@ -159,3 +159,10 @@ class Object3D : public EventDispatcher, public std::enable_shared_from_this<Obj
   private:
     void checkChild(const std::shared_ptr<Object3D>& object) const;
 };
+
+// Managed Object3D module, independent of the typed implementation above.
+#include "core/JSModuleObject.h"
+JSValue nativeObject3DModule();
+JSValue nativeObject3DBinding(const std::string& name);
+JSValue nativeObject3DConstructor();
+inline constexpr JSModuleObject Object3DModule{nativeObject3DModule};

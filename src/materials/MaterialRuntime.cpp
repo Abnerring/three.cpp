@@ -5,7 +5,8 @@
 #include "core/JSModuleObject.h"
 #include "core/JSString.h"
 #include "core/JSNumber.h"
-#include "animation/AnimationUtils.h"
+#include "core/JSGlobal.h"
+#include "core/JSBoolean.h"
 #include "utils.h"
 #include <unordered_set>
 #include <tuple>
@@ -25,7 +26,8 @@ template<class F>void forIn(const JSValue& object,F body){
     if(!receiver.isObject()){
         if(receiver.type()==JSValue::Type::String)receiver=createNativeStringObject(receiver);
         else if(receiver.type()==JSValue::Type::Number)receiver=createNativeNumberObject(receiver);
-        else return; // Boolean/Symbol wrapper intrinsics remain outside this runtime.
+        else if(receiver.type()==JSValue::Type::Boolean)receiver=createNativeBooleanObject(receiver);
+        else return; // The runtime does not yet expose a Symbol wrapper intrinsic.
     }
     // V8 snapshots candidates across the chain. Proxy descriptor checks belong
     // to the per-key filter, after collection and the preceding loop body.
@@ -60,7 +62,8 @@ template<class F>void forIn(const JSValue& object,F body){
     }
 }
 JSValue defineMaterialId(JSValue self,JSValue state,const JSValue& imports){
-    const auto define=invoke(imports.get("Object"),"defineProperty");
+    static_cast<void>(imports);
+    const auto define=invoke(nativeGlobalBinding("Object"),"defineProperty");
     const auto id=state.get("id").toNumber();state.set("id",id+1);
     auto descriptor=JSValue::object();own(descriptor,"value",id);
     return define({self,"id",descriptor});
@@ -76,19 +79,23 @@ JSValue extractFromCache(const JSValue& cache){
 #include "MaterialRuntimeStatements.inc"
 #include "MaterialSource.inc"
 JSValue copy(JSValue self,const JSValue& source,const JSValue& imports){
+    static_cast<void>(imports);
     const auto fields=[&](std::initializer_list<const char*> names){for(const auto* key:names)self.set(key,source.get(key));};
     fields({"name","blending","side","vertexColors","opacity","transparent","blendSrc","blendDst","blendEquation","blendSrcAlpha","blendDstAlpha","blendEquationAlpha"});
     invoke(self.get("blendColor"),"copy")({source.get("blendColor")});
     fields({"blendAlpha","depthFunc","depthTest","depthWrite","stencilWriteMask","stencilFunc","stencilRef","stencilFuncMask","stencilFail","stencilZFail","stencilZPass","stencilWrite"});
     const auto src=source.get("clippingPlanes");JSValue dst=nullptr;
     if(!src.isNull()){
-        const auto n=src.get("length");dst=imports.get("Array").construct({n});
+        const auto n=src.get("length");dst=nativeGlobalBinding("Array").construct({n});
         for(double i=0;!JSValue(i).strictEquals(n);++i)dst.set(JSValue(i),invoke(src.get(JSValue(i)),"clone")());
     }
     self.set("clippingPlanes",dst);
     fields({"clipIntersection","clipShadows","shadowSide","colorWrite","precision","polygonOffset","polygonOffsetFactor","polygonOffsetUnits","dithering","alphaTest","alphaHash","alphaToCoverage","premultipliedAlpha","forceSinglePass","allowOverride","visible","toneMapped"});
-    const auto json=Animation_detail::stringifyJSON(source.get("userData"));
-    self.set("userData",Animation_detail::parseJSON(json.value_or("undefined")));return self;
+    const auto parse=invoke(nativeGlobalBinding("JSON"),"parse");
+    const auto stringify=invoke(nativeGlobalBinding("JSON"),"stringify");
+    const auto data=source.get("userData");
+    const auto serialized=stringify({data});
+    self.set("userData",parse({serialized}));return self;
 }
 JSValue method(const JSValue& receiver,const Args& args,const Args& captures){
     auto self=receiver;const auto name=captures[0].string();const auto imports=captures[1];
@@ -105,9 +112,9 @@ JSValue method(const JSValue& receiver,const Args& args,const Args& captures){
         const auto values=arg(args,0);if(values.isUndefined())return {};
         forIn(values,[&](const std::string& key){
             const auto value=values.get(key);
-            if(value.isUndefined()){ThreeUtils::warn({"Material: parameter '"+key+"' has value of undefined."});return;}
+            if(value.isUndefined()){const auto warn=imports.get("warn");warn.call({}, {"Material: parameter '"+key+"' has value of undefined."});return;}
             const auto current=self.get(key);
-            if(current.isUndefined()){ThreeUtils::warn({"Material: '"+key+"' is not a property of THREE."+self.get("type").toString()+"."});return;}
+            if(current.isUndefined()){const auto warn=imports.get("warn");const auto message="Material: '"+key+"' is not a property of THREE."+self.get("type").toString()+".";warn.call({}, {message});return;}
             if(current.toBoolean()&&current.get("isColor").toBoolean())invoke(current,"set")({value});
             else{
                 const auto matches=[&](const char* flag){return current.toBoolean()&&current.get(flag).toBoolean()&&value.toBoolean()&&value.get(flag).toBoolean();};
@@ -128,7 +135,7 @@ JSValue nativeMaterialConstructor(){
     static thread_local JSWeakValue weak;if(const auto value=weak.lock();value&&value->isConstructible())return *value;
     static thread_local bool initializing=false;JSModuleInitializationScope scope(initializing,"Material");
     auto imports=JSValue::object(nullptr);own(imports,"Color",nativeColorConstructor());own(imports,"Vector2",nativeVector2Constructor());own(imports,"Plane",nativePlaneConstructor());
-    own(imports,"Array",JSValue::intrinsicArrayConstructor());own(imports,"Object",JSValue::intrinsicObjectConstructor());
+    own(imports,"generateUUID",nativeMathUtilsGenerateUUID());own(imports,"warn",ThreeUtils::nativeWarnFunction());
     const auto base=EventDispatcher::runtimeConstructor();auto holder=JSValue::object(nullptr),state=JSValue::object(nullptr);own(state,"id",0);own(holder,"imports",imports);own(holder,"state",state);
     auto ctor=JSValue::builtinConstructor(+[](const JSValue& target,const Args&,const Args& captures)->JSValue{
         const auto holder=captures[0];auto self=holder.get("constructor").getPrototype().construct({},target);

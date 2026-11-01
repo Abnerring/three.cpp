@@ -27,3 +27,8 @@ class MeshBasicMaterial : public Material {
     Material& copy(const Material& source) override;
     std::shared_ptr<Material> clone() const override;
 };
+
+// Managed source-class authority; independent of the numeric Vulkan adapter.
+JSValue nativeMeshBasicMaterialConstructor();
+JSValue nativeMeshBasicMaterialModule();
+JSValue nativeMeshBasicMaterialBinding(const std::string& name);

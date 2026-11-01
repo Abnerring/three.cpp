@@ -18,7 +18,8 @@ function expr(n){
  if(n.type==='ThisExpression')return 'self';
  if(n.type==='Identifier'){
   if(n.name==='undefined')return 'JSValue{}';
-  if(['Color','Vector2','Plane','Array','Object'].includes(n.name))return `imports.get(${q(n.name)})`;
+  if(['Color','Vector2','Plane'].includes(n.name))return `imports.get(${q(n.name)})`;
+  if(['Array','Object','JSON','Math'].includes(n.name))return `nativeGlobalBinding(${q(n.name)})`;
   return n.name;
  }
  if(n.type==='MemberExpression'){
@@ -63,7 +64,7 @@ function expr(n){
  }
  if(n.type==='CallExpression'){
   if(n.callee.type==='Super')return 'JSValue{}';
-  if(n.callee.type==='Identifier'&&n.callee.name==='generateUUID')return 'JSValue(MathUtils::generateUUID())';
+  if(n.callee.type==='Identifier'&&n.callee.name==='generateUUID')return iife('const auto generate=imports.get("generateUUID");','generate.call(JSValue{}, {})');
   if(n.callee.type==='Identifier'&&n.callee.name==='extractFromCache')return `extractFromCache(${expr(n.arguments[0])})`;
   if(n.callee.type!=='MemberExpression')return fail(n);
   if(n.callee.object.type==='Identifier'&&n.callee.object.name==='Object'&&n.callee.property.name==='defineProperty')return 'defineMaterialId(self,state,imports)';

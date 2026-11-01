@@ -64,3 +64,8 @@ class Triangle {
     Vector3& closestPointToPoint(const Vector3& p, Vector3& target) const;
     bool equals(const Triangle& triangle) const;
 };
+
+// Real source-managed class authority; typed class above remains separate.
+JSValue nativeTriangleConstructor();
+JSValue nativeTriangleModule();
+JSValue nativeTriangleBinding(const std::string& name);

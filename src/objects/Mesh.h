@@ -44,3 +44,8 @@ class Mesh : public Object3D {
     virtual void serializeBeforeMaterial(Object3DJSONContext&, JsonValue&) const {}
     std::optional<JsonValue> propertyValue(const std::string& property) const override;
 };
+
+// Real source-managed class authority; typed class above remains separate.
+JSValue nativeMeshConstructor();
+JSValue nativeMeshModule();
+JSValue nativeMeshBinding(const std::string& name);
