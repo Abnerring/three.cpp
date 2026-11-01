@@ -13,3 +13,10 @@ class BoxGeometry : public BufferGeometry {
     JsonValue toJSON() const override;
     static std::shared_ptr<BoxGeometry> fromJSON(const JsonValue& json);
 };
+
+// Native managed module, preserving the complete typed prefix above.
+#include "core/JSModuleObject.h"
+JSValue nativeBoxGeometryModule();
+JSValue nativeBoxGeometryBinding(const std::string& name);
+JSValue nativeBoxGeometryConstructor();
+inline constexpr JSModuleObject BoxGeometryModule{nativeBoxGeometryModule};

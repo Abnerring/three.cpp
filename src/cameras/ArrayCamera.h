@@ -11,3 +11,10 @@ class ArrayCamera : public PerspectiveCamera {
   protected:
     std::optional<JsonValue> propertyValue(const std::string& property) const override;
 };
+
+// Native managed module, separate from the typed renderer adapter above.
+#include "core/JSModuleObject.h"
+JSValue nativeArrayCameraModule();
+JSValue nativeArrayCameraBinding(const std::string& name);
+JSValue nativeArrayCameraConstructor();
+inline constexpr JSModuleObject ArrayCameraModule{nativeArrayCameraModule};

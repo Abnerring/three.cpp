@@ -12,3 +12,7 @@ class LineDashedMaterial : public LineBasicMaterial {
     Material& copy(const Material& source) override;
     std::shared_ptr<Material> clone() const override;
 };
+
+JSValue nativeLineDashedMaterialConstructor();
+JSValue nativeLineDashedMaterialModule();
+JSValue nativeLineDashedMaterialBinding(const std::string& name);

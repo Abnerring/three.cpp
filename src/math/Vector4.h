@@ -132,3 +132,11 @@ public:
 };
 
 #endif
+
+#ifndef THREECPP_MANAGED_VECTOR4_MODULE
+#define THREECPP_MANAGED_VECTOR4_MODULE
+#include "core/JSModuleObject.h"
+JSValue nativeVector4Module();
+JSValue nativeVector4Binding(const std::string& name);
+inline constexpr JSModuleObject Vector4Module{nativeVector4Module};
+#endif

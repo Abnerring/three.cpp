@@ -82,3 +82,31 @@ std::shared_ptr<Material> MeshStandardMaterial::clone() const {
     result->copy(*this);
     return result;
 }
+
+// Managed source-class authority. Original typed implementation above remains byte-exact.
+#include "core/JSModuleObject.h"
+#include "materials/MaterialClassRuntime.h"
+#include "constants.h"
+#include "materials/Material.h"
+#include "math/Vector2.h"
+#include "math/Color.h"
+#include "math/Euler.h"
+namespace MeshStandardMaterialManaged {
+using namespace MaterialClassRuntime;
+#include "MeshStandardMaterialManagedSource.inc"
+#include "MeshStandardMaterialManagedStatements.inc"
+JSWeakValue& lexical(){static thread_local JSWeakValue value;return value;}
+}
+JSValue nativeMeshStandardMaterialConstructor(){
+using namespace MeshStandardMaterialManaged;static thread_local JSWeakValue weak;if(const auto cached=weak.lock();cached&&cached->isConstructible())return *cached;static thread_local bool active=false;JSModuleInitializationScope scope(active,"MeshStandardMaterial");
+auto imports=JSValue::object(nullptr);own(imports,"TangentSpaceNormalMap",JSValue(TangentSpaceNormalMap));
+own(imports,"Material",nativeMaterialConstructor());
+own(imports,"Vector2",nativeVector2Constructor());
+own(imports,"Color",nativeColorConstructor());
+own(imports,"Euler",nativeEulerConstructor());
+const auto base=imports.get("Material");auto holder=JSValue::object(nullptr);own(holder,"imports",imports);
+auto ctor=JSValue::builtinConstructor(+[](const JSValue& target,const Args& args,const Args& captures)->JSValue{const auto holder=captures[0];const auto parent=holder.get("constructor").getPrototype();auto self=parent.construct({},target);return MeshStandardMaterialManaged::constructor(self,args,holder.get("imports"),JSValue{});},{holder},"MeshStandardMaterial",1);own(holder,"constructor",ctor);ctor.setPrototype(base);auto prototype=ctor.get("prototype");prototype.setPrototype(base.get("prototype"));ctor.setFunctionSourceText(MeshStandardMaterialSource::Class);
+{auto method=JSValue::function(+[](const JSValue& self,const Args& args,const Args& captures)->JSValue{return MeshStandardMaterialManaged::copy(self,args,captures[0],captures[1]);},{imports,prototype},"copy",1);method.setFunctionSourceText(MeshStandardMaterialSource::copy);auto descriptor=prototype.getOwnPropertyDescriptor("copy").value_or(JSPropertyDescriptor{});descriptor.configurable=true;descriptor.value=method;descriptor.writable=true;prototype.defineProperty("copy",descriptor);}
+ctor.retainForHeapLifetime();weak=JSWeakValue(ctor);return ctor;}
+JSValue nativeMeshStandardMaterialModule(){using namespace MeshStandardMaterialManaged;static thread_local JSWeakValue weak;if(const auto cached=weak.lock();cached&&cached->isObject())return *cached;auto bindings=JSValue::object(nullptr);own(bindings,"MeshStandardMaterial",nativeMeshStandardMaterialConstructor());auto facade=JSValue::object();own(facade,"MeshStandardMaterial",bindings.get("MeshStandardMaterial"));bindings.retainForHeapLifetime();lexical()=JSWeakValue(bindings);facade.retainForHeapLifetime();weak=JSWeakValue(facade);return facade;}
+JSValue nativeMeshStandardMaterialBinding(const std::string& name){const auto keeper=nativeMeshStandardMaterialModule();return MeshStandardMaterialManaged::lexical().lock()->get(name);}

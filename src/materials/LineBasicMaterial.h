@@ -15,3 +15,7 @@ class LineBasicMaterial : public Material {
     Material& copy(const Material& source) override;
     std::shared_ptr<Material> clone() const override;
 };
+
+JSValue nativeLineBasicMaterialConstructor();
+JSValue nativeLineBasicMaterialModule();
+JSValue nativeLineBasicMaterialBinding(const std::string& name);

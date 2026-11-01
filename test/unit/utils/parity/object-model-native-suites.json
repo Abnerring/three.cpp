@@ -197,5 +197,378 @@
       "key": "nativeExecuted"
     },
     "scope": "Full Mesh/Ray/Triangle plus Vector4.addScaledVector increment; strict absolute IDs/UUIDs"
+  },
+  {
+    "name": "mathutils-runtime",
+    "target": "ThreeJsMathUtilsRuntimeParityProbe",
+    "comparator": "compare-mathutils-runtime.mjs",
+    "cli": "named",
+    "upstream": false,
+    "lifetimeFlag": false,
+    "comparatorRunsLifetime": true,
+    "replay": "input",
+    "guard": {
+      "file": "audit.json",
+      "key": "nativeExecuted"
+    },
+    "scope": "All 22 fixed MathUtils functions and required Number increment; strict comparison; full Number library pending"
+  },
+  {
+    "name": "mathutils-initialization",
+    "target": "ThreeJsMathUtilsInitializationParityProbe",
+    "comparator": "compare-mathutils-initialization.mjs",
+    "cli": "named",
+    "upstream": false,
+    "lifetimeFlag": false,
+    "comparatorRunsLifetime": false,
+    "replay": null,
+    "guard": {
+      "file": "audit.json",
+      "key": "nativeExecuted"
+    },
+    "scope": "Nine fresh-process real module initialization modes; no lifetime-only mode"
+  },
+  {
+    "name": "error-family",
+    "target": "ThreeJsErrorFamilyParityProbe",
+    "comparator": "compare-error-family.mjs",
+    "cli": "named",
+    "upstream": false,
+    "lifetimeFlag": false,
+    "comparatorRunsLifetime": true,
+    "replay": "input",
+    "guard": {
+      "file": "summary.json",
+      "key": "nativeExecuted"
+    },
+    "scope": "Six real Error intrinsic families, Promise/MathUtils error completion; broader error stack behavior pending"
+  },
+  {
+    "name": "vector-runtime",
+    "target": "ThreeJsVectorRuntimeParityProbe",
+    "comparator": "compare-vector-runtime.mjs",
+    "cli": "named",
+    "upstream": false,
+    "lifetimeFlag": false,
+    "comparatorRunsLifetime": true,
+    "replay": "input",
+    "guard": {
+      "file": "summary.json",
+      "key": "nativeExecuted"
+    },
+    "scope": "All 185 Vector2/3/4 entries; strict values and reflection; observed closed iterator GC timing difference retained"
+  },
+  {
+    "name": "matrix-runtime",
+    "target": "ThreeJsMatrixRuntimeParityProbe",
+    "comparator": "compare-matrix-runtime.mjs",
+    "cli": "named",
+    "upstream": false,
+    "lifetimeFlag": false,
+    "comparatorRunsLifetime": true,
+    "replay": "input",
+    "guard": {
+      "file": "summary.json",
+      "key": "nativeExecuted"
+    },
+    "scope": "All 68 Matrix2/3/4 entries; strict values and reflection"
+  },
+  {
+    "name": "camera-runtime",
+    "target": "ThreeJsCameraRuntimeParityProbe",
+    "comparator": "compare-camera-runtime.mjs",
+    "cli": "named",
+    "upstream": false,
+    "lifetimeFlag": false,
+    "comparatorRunsLifetime": true,
+    "replay": "input",
+    "guard": {
+      "file": "audit.json",
+      "key": "nativeExecuted"
+    },
+    "scope": "Six camera classes / 32 source entries; strict comparisons; renderer calls exercised through source protocols"
+  },
+  {
+    "name": "symbol-runtime",
+    "target": "ThreeJsSymbolRuntimeParityProbe",
+    "comparator": "compare-symbol-runtime.mjs",
+    "cli": "named",
+    "upstream": false,
+    "lifetimeFlag": false,
+    "comparatorRunsLifetime": true,
+    "replay": "input",
+    "guard": {
+      "file": "audit.json",
+      "key": "nativeExecuted"
+    },
+    "scope": "Real Symbol intrinsic/boxing, private registry, weak eligibility, strict writes and GC; broader runtime and cross-realm pending"
+  },
+  {
+    "name": "traditional-materials",
+    "target": "ThreeJsTraditionalMaterialsParityProbe",
+    "comparator": "compare-traditional-materials.mjs",
+    "cli": "named",
+    "upstream": true,
+    "lifetimeFlag": false,
+    "comparatorRunsLifetime": true,
+    "replay": "input",
+    "guard": {
+      "file": "scope.json",
+      "key": "nativeExecuted"
+    },
+    "scope": "4373 exact original scenarios including frozen1759;16 traditional classes, actual11 fresh intrinsic processes and GC/lifetime",
+    "lifetimeOutput": "3 MeshBasicMaterial realm lifetimes passed"
+  },
+  {
+    "name": "skeleton-runtime",
+    "target": "ThreeJsSkeletonRuntimeParityProbe",
+    "comparator": "compare-skeleton-runtime.mjs",
+    "cli": "named",
+    "upstream": true,
+    "lifetimeFlag": false,
+    "comparatorRunsLifetime": true,
+    "replay": "input",
+    "guard": {
+      "file": "summary.json",
+      "key": "nativeExecuted"
+    },
+    "scope": "596 real Bone/Skeleton source cases; exact absolute resource identity and number tags;4 GC phases",
+    "lifetimeOutput": "3 Skeleton realms passed"
+  },
+  {
+    "name": "deformable-mesh-runtime",
+    "target": "ThreeJsDeformableMeshRuntimeParityProbe",
+    "comparator": "compare-deformable-mesh-runtime.mjs",
+    "cli": "named",
+    "upstream": true,
+    "lifetimeFlag": false,
+    "comparatorRunsLifetime": true,
+    "replay": "input",
+    "guard": {
+      "file": "summary.json",
+      "key": "nativeExecuted"
+    },
+    "scope": "511 real Instanced/Skinned/Batched source cases; texture dimensions encode8 NaN occurrences;48 GC observations",
+    "lifetimeOutput": "3 DeformableMesh realms passed"
+  },
+  {
+    "name": "node-material-runtime",
+    "target": "ThreeJsNodeMaterialRuntimeParityProbe",
+    "comparator": "compare-node-material-runtime.mjs",
+    "cli": "named",
+    "upstream": true,
+    "lifetimeFlag": true,
+    "comparatorRunsLifetime": true,
+    "replay": "input",
+    "guard": {
+      "file": "summary.json",
+      "key": "nativeExecuted"
+    },
+    "scope": "331 real NodeMaterial cases and32 class entries; actual NodeBuilder/TSL dependencies; no GPU claim",
+    "lifetimeOutput": "3 passed"
+  },
+  {
+    "name": "renderer-lifecycle",
+    "target": "ThreeJsRendererLifecycleParityProbe",
+    "comparator": "compare-renderer-lifecycle.mjs",
+    "cli": "named",
+    "upstream": true,
+    "lifetimeFlag": false,
+    "comparatorRunsLifetime": false,
+    "replay": "input",
+    "guard": {
+      "file": "summary.json",
+      "key": "nativeExecuted"
+    },
+    "scope": "128 exact CPU renderer lifecycle/cache/state/callback cases plus metadata; lifetime is a separate native CTest",
+    "lifetimeOutput": "3 passed"
+  },
+  {
+    "name": "scene-box-runtime",
+    "target": "ThreeJsSceneBoxRuntimeParityProbe",
+    "comparator": "compare-scene-box-runtime.mjs",
+    "cli": "named",
+    "upstream": true,
+    "lifetimeFlag": false,
+    "comparatorRunsLifetime": true,
+    "replay": "input",
+    "guard": {
+      "file": "audit.json",
+      "key": "nativeExecuted"
+    },
+    "scope": "136 real Scene/BoxGeometry cases including real shared buildPlane closure and6 class entries",
+    "lifetimeOutput": "SceneBoxRuntime lifetime: 3 heaps passed"
+  },
+  {
+    "name": "node-manager-dependencies",
+    "target": "ThreeJsNodeManagerDependenciesParityProbe",
+    "comparator": "compare-node-manager-dependencies.mjs",
+    "cli": "named",
+    "upstream": true,
+    "lifetimeFlag": false,
+    "comparatorRunsLifetime": true,
+    "replay": "input",
+    "guard": {
+      "file": "summary.json",
+      "key": "nativeExecuted"
+    },
+    "scope": "78 real Fog/Equirect module protocol cases plus exact metadata and source/native JSON lifetime observations",
+    "lifetimeJSONRounds": 3
+  },
+  {
+    "name": "cube-map-render-target",
+    "target": "ThreeJsCubeMapRenderTargetParityProbe",
+    "comparator": "compare-cube-map-render-target.mjs",
+    "cli": "named",
+    "upstream": true,
+    "lifetimeFlag": false,
+    "comparatorRunsLifetime": true,
+    "replay": "input",
+    "guard": {
+      "file": "summary.json",
+      "key": "nativeExecuted"
+    },
+    "scope": "50 real CubeMapNode/CubeRenderTarget cases with actual Scene/Box/NodeMaterial/CubeCamera; structural renderer protocol, no GPU claim",
+    "lifetimeJSONRounds": 3
+  },
+  {
+    "name": "uniforms-symbol",
+    "target": "ThreeJsUniformsSymbolParityProbe",
+    "comparator": "compare-uniforms-symbol.mjs",
+    "cli": "named",
+    "upstream": false,
+    "lifetimeFlag": false,
+    "comparatorRunsLifetime": true,
+    "replay": "input",
+    "guard": {
+      "file": "audit.json",
+      "key": "nativeExecuted"
+    },
+    "scope": "12 actual cloneUniforms Symbol primitive/boxed enumeration, receivers, aliases, throw and reentry scenarios"
+  },
+  {
+    "name": "async-function",
+    "target": "ThreeJsAsyncFunctionParityProbe",
+    "comparator": "compare-async-function.mjs",
+    "cli": "named",
+    "upstream": true,
+    "lifetimeFlag": false,
+    "comparatorRunsLifetime": true,
+    "replay": "input",
+    "guard": {
+      "file": "summary.json",
+      "key": "nativeExecuted"
+    },
+    "lifetimeJSONRounds": 3,
+    "scope": "Real native AsyncFunction intrinsic/method factories and traced Await/Return/Throw frames; exact252 Node cases plus24 GC observations; dynamic string source compiler excluded"
+  },
+  {
+    "name": "pmrem-utils",
+    "target": "ThreeJsPMREMUtilsParityProbe",
+    "comparator": "compare-pmrem-utils.mjs",
+    "cli": "named",
+    "upstream": true,
+    "lifetimeFlag": false,
+    "comparatorRunsLifetime": true,
+    "replay": "input",
+    "guard": {
+      "file": "summary.json",
+      "key": "nativeExecuted"
+    },
+    "lifetimeJSONRounds": 3,
+    "scope": "71 exact source cases, real NodeBuilder graph expansion and source/native lifetime; GPU pending"
+  },
+  {
+    "name": "pmrem",
+    "target": "ThreeJsPMREMParityProbe",
+    "comparator": "compare-pmrem.mjs",
+    "cli": "named",
+    "upstream": true,
+    "lifetimeFlag": false,
+    "comparatorRunsLifetime": true,
+    "replay": "input",
+    "guard": {
+      "file": "summary.json",
+      "key": "nativeExecuted"
+    },
+    "lifetimeJSONRounds": 3,
+    "scope": "102 modern PMREMGenerator/PMREMNode and compressed texture source cases, actual async Promise jobs and source/native lifetime; GPU pending"
+  },
+  {
+    "name": "promise-realm",
+    "target": "PromiseRealmLifetimeProbe",
+    "comparator": "compare-promise-realm.mjs",
+    "cli": "named",
+    "upstream": false,
+    "lifetimeFlag": false,
+    "comparatorRunsLifetime": true,
+    "replay": "none",
+    "guard": {
+      "file": "summary.json",
+      "key": "nativeExecuted"
+    },
+    "lifetimeJSONRounds": 3,
+    "scope": "Actual intrinsic authority, queued jobs, reentry and 27 native realm retirements against 9 source VM realm retirements; distinct native/source realm APIs"
+  },
+  {
+    "name": "stacktrace-source",
+    "target": "threecpp_stacktrace_source_parity_probe",
+    "comparator": "compare-stacktrace-source.mjs",
+    "cli": "named",
+    "upstream": false,
+    "lifetimeFlag": false,
+    "comparatorRunsLifetime": true,
+    "replay": "input",
+    "guard": {
+      "file": "audit.json",
+      "key": "nativeExecuted"
+    },
+    "scope": "570 actual Node source trace/StackTrace/parseInt computations plus three native heap retirements; mapped synchronous frames only"
+  },
+  {
+    "name": "node-uuid",
+    "target": "ThreeJsNodeUuidParityProbe",
+    "comparator": "compare-node-uuid.mjs",
+    "cli": "named",
+    "upstream": true,
+    "lifetimeFlag": false,
+    "comparatorRunsLifetime": false,
+    "replay": "none",
+    "guard": {
+      "file": "summary.json",
+      "key": "nativeExecuted"
+    },
+    "scope": "24 actual Node UUID getter cases; dynamic Math.random, private lexical UUID binding, thrown primitives, reentry and exact identities; no normalization"
+  },
+  {
+    "name": "array-some",
+    "target": "ThreeJsArraySomeParityProbe",
+    "comparator": "compare-array-some.mjs",
+    "cli": "named",
+    "upstream": true,
+    "lifetimeFlag": false,
+    "comparatorRunsLifetime": false,
+    "replay": "none",
+    "guard": {
+      "file": "result.json",
+      "key": "nativeExecuted"
+    },
+    "lifetimeJSONRounds": 3,
+    "scope": "916 exact generic Array.some source cases including real StackTrace, proxies, sparse/inherited properties, conversion and reentry; independent source/native GC parity separately registered"
+  },
+  {
+    "name": "node-children-protocol",
+    "target": "ThreeJsNodeChildrenProtocolParityProbe",
+    "comparator": "compare-node-children-protocol.mjs",
+    "cli": "named",
+    "upstream": true,
+    "lifetimeFlag": false,
+    "comparatorRunsLifetime": false,
+    "replay": "none",
+    "guard": {
+      "file": "result.json",
+      "key": "nativeExecuted"
+    },
+    "scope": "17 exact Node._getChildren protocol scenarios; live Object/Array/String calls, primitive prototypes, iterator closing, throw, reentry and in-execution GC; no standalone lifetime mode"
   }
 ]

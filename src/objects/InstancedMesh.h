@@ -37,3 +37,10 @@ class InstancedMesh : public Mesh {
   private:
     void initializeInstances(const JSValue& count);
 };
+
+// Stable managed source authority, separate from the typed renderer adapter.
+#include "core/JSModuleObject.h"
+JSValue nativeInstancedMeshConstructor();
+JSValue nativeInstancedMeshModule();
+JSValue nativeInstancedMeshBinding(const std::string& name);
+inline constexpr JSModuleObject InstancedMeshModule{nativeInstancedMeshModule};

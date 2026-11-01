@@ -201,8 +201,8 @@
     "note": "Accepted port scope is src and examples/jsm, including tracked third-party dependencies. Editor/manual web applications are excluded from native application rewrites. Native host behavior, packaging and all three platforms require separate implementation and verification evidence."
   },
   "counts": {
-    "partial-unverified": 424,
-    "missing": 517,
+    "partial-unverified": 430,
+    "missing": 511,
     "vulkan-port-pending": 290,
     "dependency-unverified": 20
   },
@@ -210,8 +210,8 @@
     "src": {
       "modules": 755,
       "counts": {
-        "partial-unverified": 340,
-        "missing": 125,
+        "partial-unverified": 346,
+        "missing": 119,
         "vulkan-port-pending": 290
       }
     },
@@ -761,7 +761,7 @@
       "path": "src/materials/nodes",
       "upstreamFiles": 19,
       "moduleCount": 19,
-      "modulesWithCppFiles": 0,
+      "modulesWithCppFiles": 1,
       "verifiedComplete": 0
     },
     {
@@ -824,7 +824,7 @@
       "path": "src/nodes/fog",
       "upstreamFiles": 1,
       "moduleCount": 1,
-      "modulesWithCppFiles": 0,
+      "modulesWithCppFiles": 1,
       "verifiedComplete": 0
     },
     {
@@ -894,7 +894,7 @@
       "path": "src/nodes/pmrem",
       "upstreamFiles": 2,
       "moduleCount": 2,
-      "modulesWithCppFiles": 0,
+      "modulesWithCppFiles": 2,
       "verifiedComplete": 0
     },
     {
@@ -922,7 +922,7 @@
       "path": "src/nodes/utils",
       "upstreamFiles": 31,
       "moduleCount": 31,
-      "modulesWithCppFiles": 15,
+      "modulesWithCppFiles": 17,
       "verifiedComplete": 0
     },
     {
@@ -943,21 +943,21 @@
       "path": "src/renderers/common",
       "upstreamFiles": 58,
       "moduleCount": 58,
-      "modulesWithCppFiles": 12,
+      "modulesWithCppFiles": 16,
       "verifiedComplete": 0
     },
     {
       "path": "src/renderers/common/extras",
       "upstreamFiles": 1,
       "moduleCount": 1,
-      "modulesWithCppFiles": 0,
+      "modulesWithCppFiles": 1,
       "verifiedComplete": 0
     },
     {
       "path": "src/renderers/common/nodes",
       "upstreamFiles": 9,
       "moduleCount": 9,
-      "modulesWithCppFiles": 2,
+      "modulesWithCppFiles": 3,
       "verifiedComplete": 0
     },
     {
@@ -5434,7 +5434,7 @@
       "kind": "core",
       "upstreamSha256": "30d31bc6c4c264676bc8348e2622d44d968ed62af27a8605d2778f939ea103c9",
       "header": "src/materials/Materials.h",
-      "implementation": null,
+      "implementation": "src/materials/Materials.cpp",
       "expectedHeader": "src/materials/Materials.h",
       "expectedImplementation": "src/materials/Materials.cpp",
       "status": "partial-unverified",
@@ -6221,11 +6221,11 @@
       "scope": "src",
       "kind": "core",
       "upstreamSha256": "90b0f0d91f3f6edb83b77098851600ff9c960f208c53a9473b7d8fed34609203",
-      "header": null,
-      "implementation": null,
+      "header": "src/materials/nodes/NodeMaterial.h",
+      "implementation": "src/materials/nodes/NodeMaterial.cpp",
       "expectedHeader": "src/materials/nodes/NodeMaterial.h",
       "expectedImplementation": "src/materials/nodes/NodeMaterial.cpp",
-      "status": "missing",
+      "status": "partial-unverified",
       "verifiedComplete": false,
       "apiExtraction": "partial-static",
       "verification": {
@@ -10347,11 +10347,11 @@
       "scope": "src",
       "kind": "core",
       "upstreamSha256": "1ec22c65c32f10f3c79ae13d7e7411a970f3189d366dbec44d4c3b24bb614f03",
-      "header": null,
-      "implementation": null,
+      "header": "src/nodes/fog/Fog.h",
+      "implementation": "src/nodes/fog/Fog.cpp",
       "expectedHeader": "src/nodes/fog/Fog.h",
       "expectedImplementation": "src/nodes/fog/Fog.cpp",
-      "status": "missing",
+      "status": "partial-unverified",
       "verifiedComplete": false,
       "apiExtraction": "partial-static",
       "verification": {
@@ -12318,11 +12318,11 @@
       "scope": "src",
       "kind": "core",
       "upstreamSha256": "833db5a0ae3a830999fb0a5f67752dd9d3deefa44e4bfaa063805c20919826f3",
-      "header": null,
-      "implementation": null,
+      "header": "src/nodes/pmrem/PMREMNode.h",
+      "implementation": "src/nodes/pmrem/PMREMNode.cpp",
       "expectedHeader": "src/nodes/pmrem/PMREMNode.h",
       "expectedImplementation": "src/nodes/pmrem/PMREMNode.cpp",
-      "status": "missing",
+      "status": "partial-unverified",
       "verifiedComplete": false,
       "apiExtraction": "partial-static",
       "verification": {
@@ -12345,11 +12345,11 @@
       "scope": "src",
       "kind": "core",
       "upstreamSha256": "9117eef66cbf5fbee9ddae0d2075cd33708d17b681d140f12a017bf402a77e4c",
-      "header": null,
-      "implementation": null,
+      "header": "src/nodes/pmrem/PMREMUtils.h",
+      "implementation": "src/nodes/pmrem/PMREMUtils.cpp",
       "expectedHeader": "src/nodes/pmrem/PMREMUtils.h",
       "expectedImplementation": "src/nodes/pmrem/PMREMUtils.cpp",
-      "status": "missing",
+      "status": "partial-unverified",
       "verifiedComplete": false,
       "apiExtraction": "partial-static",
       "verification": {
@@ -12540,11 +12540,11 @@
       "scope": "src",
       "kind": "core",
       "upstreamSha256": "2be8a3e8c2aafffa504957f139bfcd843aff52296b55cebf20933cb5be17479f",
-      "header": null,
-      "implementation": null,
+      "header": "src/nodes/utils/CubeMapNode.h",
+      "implementation": "src/nodes/utils/CubeMapNode.cpp",
       "expectedHeader": "src/nodes/utils/CubeMapNode.h",
       "expectedImplementation": "src/nodes/utils/CubeMapNode.cpp",
-      "status": "missing",
+      "status": "partial-unverified",
       "verifiedComplete": false,
       "apiExtraction": "partial-static",
       "verification": {
@@ -12553,7 +12553,9 @@
           "pointer": "/modules/401"
         },
         "upstreamUnitTests": [],
-        "cppUnitTests": [],
+        "cppUnitTests": [
+          "test/unit/src/nodes/utils/CubeMapNode.tests.cpp"
+        ],
         "reviewedImplementation": [],
         "differentialResults": [],
         "renderingResults": [],
@@ -12625,11 +12627,11 @@
       "scope": "src",
       "kind": "core",
       "upstreamSha256": "d76b79666af4deeb63637f7e4020384b8cec23845f48132e41cb52c0e269a81e",
-      "header": null,
-      "implementation": null,
+      "header": "src/nodes/utils/EquirectUV.h",
+      "implementation": "src/nodes/utils/EquirectUV.cpp",
       "expectedHeader": "src/nodes/utils/EquirectUV.h",
       "expectedImplementation": "src/nodes/utils/EquirectUV.cpp",
-      "status": "missing",
+      "status": "partial-unverified",
       "verifiedComplete": false,
       "apiExtraction": "partial-static",
       "verification": {
@@ -12638,7 +12640,9 @@
           "pointer": "/modules/404"
         },
         "upstreamUnitTests": [],
-        "cppUnitTests": [],
+        "cppUnitTests": [
+          "test/unit/src/nodes/utils/EquirectUV.tests.cpp"
+        ],
         "reviewedImplementation": [],
         "differentialResults": [],
         "renderingResults": [],
@@ -14226,8 +14230,8 @@
       "scope": "src",
       "kind": "core",
       "upstreamSha256": "6c9649cd797d29d6bb0d462abbc7e14d32b2475830ed9352de960f941107cf5f",
-      "header": null,
-      "implementation": null,
+      "header": "src/renderers/common/ChainMap.h",
+      "implementation": "src/renderers/common/ChainMap.cpp",
       "expectedHeader": "src/renderers/common/ChainMap.h",
       "expectedImplementation": "src/renderers/common/ChainMap.cpp",
       "status": "vulkan-port-pending",
@@ -14388,8 +14392,8 @@
       "scope": "src",
       "kind": "core",
       "upstreamSha256": "f56d9323d6f818c94cc7c21432e891f7f8c79e1b4147a5555da14ad4a5e7abb1",
-      "header": null,
-      "implementation": null,
+      "header": "src/renderers/common/DataMap.h",
+      "implementation": "src/renderers/common/DataMap.cpp",
       "expectedHeader": "src/renderers/common/DataMap.h",
       "expectedImplementation": "src/renderers/common/DataMap.cpp",
       "status": "vulkan-port-pending",
@@ -14901,8 +14905,8 @@
       "scope": "src",
       "kind": "core",
       "upstreamSha256": "c9579523feb070ca4fd9682d5336b56186f1d1195e21c7f525b3aa186cbe3828",
-      "header": null,
-      "implementation": null,
+      "header": "src/renderers/common/RenderObject.h",
+      "implementation": "src/renderers/common/RenderObject.cpp",
       "expectedHeader": "src/renderers/common/RenderObject.h",
       "expectedImplementation": "src/renderers/common/RenderObject.cpp",
       "status": "vulkan-port-pending",
@@ -14955,8 +14959,8 @@
       "scope": "src",
       "kind": "core",
       "upstreamSha256": "fa3207b1b6d4a124dc8acb742db8de3294f6452194d560a1fced7dd137c48126",
-      "header": null,
-      "implementation": null,
+      "header": "src/renderers/common/RenderObjects.h",
+      "implementation": "src/renderers/common/RenderObjects.cpp",
       "expectedHeader": "src/renderers/common/RenderObjects.h",
       "expectedImplementation": "src/renderers/common/RenderObjects.cpp",
       "status": "vulkan-port-pending",
@@ -15468,8 +15472,8 @@
       "scope": "src",
       "kind": "core",
       "upstreamSha256": "fed0cfd8fa294d782972f9ea4fbb36e0a35e31801112a3f78096f79e79e2b6bc",
-      "header": null,
-      "implementation": null,
+      "header": "src/renderers/common/extras/PMREMGenerator.h",
+      "implementation": "src/renderers/common/extras/PMREMGenerator.cpp",
       "expectedHeader": "src/renderers/common/extras/PMREMGenerator.h",
       "expectedImplementation": "src/renderers/common/extras/PMREMGenerator.cpp",
       "status": "vulkan-port-pending",
@@ -15495,8 +15499,8 @@
       "scope": "src",
       "kind": "core",
       "upstreamSha256": "ef1576a402c35378927052a10c8b473a0dd3e06da40c4dd64138a62f35489670",
-      "header": null,
-      "implementation": null,
+      "header": "src/renderers/common/nodes/NodeBuilderState.h",
+      "implementation": "src/renderers/common/nodes/NodeBuilderState.cpp",
       "expectedHeader": "src/renderers/common/nodes/NodeBuilderState.h",
       "expectedImplementation": "src/renderers/common/nodes/NodeBuilderState.cpp",
       "status": "vulkan-port-pending",

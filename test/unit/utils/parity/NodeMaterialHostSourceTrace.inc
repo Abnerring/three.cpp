@@ -1,0 +1,6 @@
+// Generated from the actual parity host AST; no fixture/expected input.
+namespace NodeMaterialHostSourceTrace {
+inline JSSourceTrace::Location applyLocation(){return {"file:///D:/project/DX/GitHub/three.cpp/test/unit/utils/parity/compare-node-material-runtime.mjs",15,1468,12358,"7a68d11b74ebf1f50f84c2935cc6f8d622541ea79134fc482133ded06efd8c93"};}
+inline JSSourceTrace::Frame runFrame(){return {"run",{"file:///D:/project/DX/GitHub/three.cpp/test/unit/utils/parity/compare-node-material-runtime.mjs",15,1,10891,"7a68d11b74ebf1f50f84c2935cc6f8d622541ea79134fc482133ded06efd8c93"},"","",false,false,false,{"file:///D:/project/DX/GitHub/three.cpp/test/unit/utils/parity/compare-node-material-runtime.mjs",15,1,10891,"7a68d11b74ebf1f50f84c2935cc6f8d622541ea79134fc482133ded06efd8c93"}};}
+inline JSSourceTrace::Frame moduleFrame(){return {"",{"file:///D:/project/DX/GitHub/three.cpp/test/unit/utils/parity/compare-node-material-runtime.mjs",16,167,13393,"7a68d11b74ebf1f50f84c2935cc6f8d622541ea79134fc482133ded06efd8c93"},"","",false,false,false,{"file:///D:/project/DX/GitHub/three.cpp/test/unit/utils/parity/compare-node-material-runtime.mjs",1,1,0,"7a68d11b74ebf1f50f84c2935cc6f8d622541ea79134fc482133ded06efd8c93"}};}
+}

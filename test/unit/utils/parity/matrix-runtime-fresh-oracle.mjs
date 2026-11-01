@@ -1,0 +1,9 @@
+import {upstreamModuleURL} from './threejs-source.mjs';
+import assert from 'node:assert/strict';import {pathToFileURL} from 'node:url';
+assert.equal(process.version,'v26.5.0');assert.equal(process.argv.length,4);const name=process.argv[2],mode=process.argv[3];assert(['Matrix2','Matrix3','Matrix4'].includes(name));assert(['plain','staticThrow','elementsThrow','piSymbol','xThrow'].includes(mode));assert(!['piSymbol','xThrow'].includes(mode)||name==='Matrix4');
+const events=[],payload={payload:true},originalMath=Math;globalThis.Math=new Proxy(originalMath,{get(target,key,receiver){if(key==='PI'){events.push('Math.PI');if(mode==='piSymbol')return Symbol('PI');}return Reflect.get(target,key,receiver);}});
+for(const key of ['elements','x'])Object.defineProperty(Object.prototype,key,{configurable:true,set(value){events.push('set.'+key+':'+(Array.isArray(value)?value.length:String(value)));if(mode===(key==='elements'?'elementsThrow':'xThrow'))throw payload;Object.defineProperty(this,key,{value,writable:true,enumerable:true,configurable:true});}});
+if(mode==='staticThrow')Object.defineProperty(Object.prototype,'is'+name,{configurable:true,set(){events.push('static.flag');throw payload;}});
+const url=upstreamModuleURL('src/math/'+name+'.js'),out={name,mode};
+try{const module=await import(url),ctor=module[name];events.push('imported');const value=new ctor();Object.preventExtensions(ctor.prototype);const again=await import(url);out.constructorIdentity=again[name]===ctor;out.prototypeExtensible=Object.isExtensible(ctor.prototype);out.keys=Object.keys(value);out.flag=value['is'+name];}catch(e){out.error=e===payload?'#payload':e.name;out.brand=Error.isError(e);try{await import(url);}catch(second){out.sameError=second===e;}}
+for(const key of ['elements','x','is'+name])delete Object.prototype[key];globalThis.Math=originalMath;out.events=events;console.log(JSON.stringify(out));

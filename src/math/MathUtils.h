@@ -306,3 +306,11 @@ namespace MathUtils
 }
 
 #endif
+
+#ifndef THREECPP_MANAGED_MATHUTILS_MODULE
+#define THREECPP_MANAGED_MATHUTILS_MODULE
+#include "core/JSModuleObject.h"
+JSValue nativeMathUtilsModule();
+JSValue nativeMathUtilsBinding(const std::string& name);
+inline constexpr JSModuleObject MathUtilsModule{nativeMathUtilsModule};
+#endif

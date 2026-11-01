@@ -34,3 +34,7 @@ class MeshToonMaterial : public Material {
     Material& copy(const Material& source) override;
     std::shared_ptr<Material> clone() const override;
 };
+
+JSValue nativeMeshToonMaterialConstructor();
+JSValue nativeMeshToonMaterialModule();
+JSValue nativeMeshToonMaterialBinding(const std::string& name);

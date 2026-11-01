@@ -1,4 +1,6 @@
 #include "nodes/core/NodeBuilder.h"
+#include "materials/nodes/NodeMaterial.h"
+#include "nodes/core/StackNode.h"
 #include "nodes/core/VarNode.h"
 #include "nodes/tsl/TSLBase.h"
 #include "nodes/functions/material/getAlphaHashThreshold.h"
@@ -863,10 +865,10 @@ JSValue dispatch(const JSValue& receiver, const Args& args, const Args& captures
             } else ThreeUtils::error({"NodeBuilder: \"material.contextNode\" must be an instance of `context()`."});
         }
         if (!material.isNull()) {
-            const auto nodeMaterial = invoke(renderer.get("library"), "fromMaterial")({material});
+            auto nodeMaterial = invoke(renderer.get("library"), "fromMaterial")({material});
             if (nodeMaterial.isNull()) {
                 ThreeUtils::error({"NodeBuilder: Material \"" + material.get("type").toString() + "\" is not compatible."});
-                throw std::logic_error("NodeBuilder fallback requires the pending NodeMaterial implementation");
+                nodeMaterial = nativeNodeMaterialConstructor().construct();
             }
             invoke(nodeMaterial, "build")({self});
         } else invoke(self, "addFlow")({"compute", self.get("compute")});
@@ -934,9 +936,33 @@ JSValue nativeNodeBuilderConstructor() {
     if (auto value = weak.lock(); value && value->isConstructible()) return *value;
     static thread_local bool initializing = false;
     JSModuleInitializationScope scope(initializing, "NodeBuilder constructor");
-    // NodeMaterial imports TSLBase and alpha hashing. Evaluate their actual
-    // modules; the remaining NodeMaterial dependencies are still incomplete.
-    const auto tslBase=nativeTSLBase(),alphaHash=nativeAlphaHashThreshold();
+    // Evaluate the actual imported modules in the pinned source import order.
+    // These are genuine module/constructor bindings; no instances or counters
+    // are manufactured to compensate for missing initialization side effects.
+    const auto nodeUniform=nativeNodeUniformConstructor();
+    const auto nodeAttribute=nativeNodeAttributeConstructor();
+    const auto nodeVarying=nativeNodeVaryingConstructor();
+    const auto nodeVar=nativeNodeVarConstructor();
+    const auto nodeCode=nativeNodeCodeConstructor();
+    const auto nodeCache=nativeNodeCacheConstructor();
+    const auto parameter=nativeParameterNodeConstructor();
+    const auto structType=nativeStructTypeConstructor();
+    const auto functionNode=nativeFunctionNodeConstructor();
+    const auto nodeMaterial=nativeNodeMaterialConstructor();
+    const auto utils=nativeNodeUtils();
+    const auto constants=nativeNodeConstantsBinding("NodeUpdateType");
+    const auto uniforms=nativeNodeUniforms();
+    const auto stack=nativeStackNodeConstructor();
+    const auto tslBase=nativeTSLBase();
+    const auto cubeTarget=nativeCubeRenderTargetConstructor();
+    const auto bindGroup=nativeBindGroupConstructor();
+    const auto globalConstants=nativeConstantsModule();
+    const auto renderTarget=nativeRenderTargetConstructor();
+    const auto color=nativeColorConstructor();
+    const auto vector2=nativeVector2Constructor();
+    const auto vector3=nativeVector3Constructor();
+    const auto vector4=nativeVector4Constructor();
+    const auto float16Attribute=nativeFloat16BufferAttributeConstructor();
     auto state = JSValue::object(nullptr); state.set("id", 0);
     state.set("functionNodeCache", createNativeWeakMap());
     auto arrayConstructors = JSValue::array();

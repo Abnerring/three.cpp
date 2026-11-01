@@ -14,3 +14,5 @@ std::shared_ptr<Texture> CompressedCubeTexture::clone() const {
     // Upstream new this.constructor() has no images argument and throws before copy.
     auto result = std::make_shared<CompressedCubeTexture>(); result->copy(*this); return result;
 }
+
+#include "textures/CompressedCubeTextureRuntimeSource.inc"

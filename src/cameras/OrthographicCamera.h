@@ -21,3 +21,10 @@ class OrthographicCamera : public Camera {
   protected:
     std::optional<JsonValue> propertyValue(const std::string& property) const override;
 };
+
+// Native managed module, separate from the typed renderer adapter above.
+#include "core/JSModuleObject.h"
+JSValue nativeOrthographicCameraModule();
+JSValue nativeOrthographicCameraBinding(const std::string& name);
+JSValue nativeOrthographicCameraConstructor();
+inline constexpr JSModuleObject OrthographicCameraModule{nativeOrthographicCameraModule};

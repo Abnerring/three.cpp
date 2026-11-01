@@ -220,3 +220,11 @@ private:
 };
 
 #endif
+
+#ifndef THREECPP_MANAGED_MATRIX3_MODULE
+#define THREECPP_MANAGED_MATRIX3_MODULE
+#include "core/JSModuleObject.h"
+JSValue nativeMatrix3Module();
+JSValue nativeMatrix3Binding(const std::string& name);
+inline constexpr JSModuleObject Matrix3Module{nativeMatrix3Module};
+#endif

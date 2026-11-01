@@ -1,0 +1,13 @@
+import assert from'node:assert/strict';import path from'node:path';import{pathToFileURL}from'node:url';
+const upstream=process.argv[2];assert.equal(typeof global.gc,'function');let randomCalls=0;Math.random=()=>((++randomCalls)%257)/257;
+const load=async name=>import(pathToFileURL(path.join(upstream,'src',name+'.js'))),{default:PMREMNode}=await load('nodes/pmrem/PMREMNode'),{default:PMREMGenerator}=await load('renderers/common/extras/PMREMGenerator'),{Texture}=await load('textures/Texture');
+const tick=()=>new Promise(resolve=>setImmediate(resolve));async function gone(refs){for(let i=0;i<80;i++){await tick();global.gc();await tick();if(refs.every(ref=>ref.deref()===undefined))return true;}return false;}
+function makeRenderer(){const state={target:null,observed:null,renders:0};const renderer={coordinateSystem:2001,xr:{enabled:false},reversedDepthBuffer:false,hasInitialized(){return true;},getRenderTarget(){return state.target;},getActiveCubeFace(){return 0;},getActiveMipmapLevel(){return 0;},setRenderTarget(target){state.target=target;},render(){state.observed=state.target;state.renders++;}};return {renderer,state};}
+const observations=[];
+for(let round=0;round<3;round++){
+ let pair=makeRenderer(),renderer=pair.renderer,deferred=Promise.withResolvers();renderer.init=()=>deferred.promise;let generator=new PMREMGenerator(renderer),texture=new Texture({width:1024,height:512},303),promise=generator.fromEquirectangularAsync(texture);promise.catch(()=>{});
+ const pendingRefs=[generator,generator._boxMesh,generator._boxMesh.geometry,texture].map(value=>new WeakRef(value));generator=texture=null;global.gc();assert.ok(pendingRefs.every(ref=>ref.deref()!==undefined));observations.push({round,phase:'async-await-held',alive:true});deferred.reject('stop');await tick();assert.equal(await gone(pendingRefs),true);observations.push({round,phase:'async-rejection-released',gone:true});promise=deferred=renderer=pair=null;
+ pair=makeRenderer();renderer=pair.renderer;texture=new Texture({width:1024,height:512},303);let map=new PMREMNode(texture);map.updateBefore({renderer});assert.equal(pair.state.renders,42);
+ const refs=[texture,map._pmrem,pair.state.observed].map(value=>new WeakRef(value)),rendererRef=new WeakRef(renderer);let held=texture._listeners.dispose[0];assert.equal(held.name,'onDispose');map=texture=renderer=pair=null;assert.equal(await gone([rendererRef]),true);global.gc();assert.ok(refs.every(ref=>ref.deref()!==undefined));observations.push({round,phase:'actual-dispose-callback-held',alive:true,rendererGone:true,renders:42});held=null;assert.equal(await gone(refs),true);observations.push({round,phase:'actual-dispose-callback-dropped',gone:true});
+}
+process.stdout.write(JSON.stringify({rounds:3,observations}));

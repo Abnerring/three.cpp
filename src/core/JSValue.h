@@ -1,6 +1,7 @@
 #pragma once
 
 #include "core/JsonValue.h"
+#include "core/JSSourceTrace.h"
 #include <cstdint>
 #include <memory>
 #include <optional>
@@ -141,6 +142,8 @@ class JSValue {
     JSValue bind(const JSValue& receiver, const std::vector<JSValue>& args = {}) const;
     JSValue construct(const std::vector<JSValue>& args = {}) const;
     JSValue construct(const std::vector<JSValue>& args, const JSValue& newTarget) const;
+    // Runtime-private function identity; never reads observable properties.
+    JSSourceTrace::FunctionIdentity sourceFunctionIdentity() const;
     std::string nativeFunctionSource() const;
     // Exact known source text for transplanted source functions, stored in the
     // function record; Function.prototype.toString stays a live prototype method.

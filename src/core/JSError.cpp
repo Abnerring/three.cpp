@@ -1,6 +1,10 @@
 #include "core/JSError.h"
 #include "core/JSModuleObject.h"
 #include "core/JSWeakMap.h"
+#include "core/JSSourceTrace.h"
+#include "core/JSNodeErrorSourceLocations.inc"
+#include <cmath>
+#include <limits>
 
 namespace {
 using Args = std::vector<JSValue>;
@@ -28,12 +32,17 @@ JSValue stackGet(const JSValue& self, const Args&, const Args& captures) {
     }
     module.set("formatting", true);
     try {
-        const auto error = captures[0].get("constructor"); const auto formatter = error.get("prepareStackTrace");
+        // This is the executing Node host adapter, entered only while a lazy
+        // stack is formatted. Metadata comes from the actual host source AST.
+        JSSourceTrace::FrameScope source(JSNodeErrorSourceLocations::prepareFrame());
+        const auto error = captures[0].get("constructor");
+        const auto formatter = [&] { JSSourceTrace::PositionScope position(JSNodeErrorSourceLocations::realmRead()); return error.get("prepareStackTrace"); }();
         JSValue value;
-        if (formatter.isCallable()) value = error.get("prepareStackTrace").call(error, {self, data.get("frames")});
+        if (formatter.isCallable()) { JSSourceTrace::PositionScope position(JSNodeErrorSourceLocations::realmPrepare()); value = error.get("prepareStackTrace").call(error, {self, data.get("frames")}); }
         else {
-            const auto mainFormatter = error.get("prepareStackTrace");
-            value = mainFormatter.isCallable() ? error.get("prepareStackTrace").call(error, {self, data.get("frames")}) : captures[0].get("defaultPrepare").call(error, {self, data.get("frames")});
+            const auto mainFormatter = [&] { JSSourceTrace::PositionScope position(JSNodeErrorSourceLocations::mainRead()); return error.get("prepareStackTrace"); }();
+            if (mainFormatter.isCallable()) { JSSourceTrace::PositionScope position(JSNodeErrorSourceLocations::mainPrepare()); value = error.get("prepareStackTrace").call(error, {self, data.get("frames")}); }
+            else value = captures[0].get("defaultPrepare").call(error, {self, data.get("frames")});
         }
         data.set("value", value); data.set("ready", true); module.set("formatting", false); return value;
     } catch (...) { module.set("formatting", false); throw; }
@@ -43,12 +52,24 @@ JSValue stackSet(const JSValue& self, const Args& args, const Args& captures) {
     auto data = JSWeakMap(captures[0].get("records")).get(self); if (data.isUndefined()) return {};
     data.set("value", arg(args, 0)); data.set("ready", true); return {};
 }
-void capture(const JSValue& object, const JSValue& constructorOption, const JSValue& module) {
+void capture(const JSValue& object, const JSValue& constructorOption, const JSValue& module, bool filterConstructor = false) {
     if (!object.isObject()) throw JSTypeError("Error.captureStackTrace requires an object");
     if (object.isProxy()) throw JSTypeError("invalid_argument");
-    auto data = JSValue::object(nullptr); data.set("ready", false); data.set("formatting", false); data.set("value", {});
-    auto frames = JSValue::array(); const auto provider = module.get("capture");
+    const auto provider = module.get("capture");
+    auto frames = JSValue::array();
     if (provider.isCallable()) { const auto value = provider.call({}, {object, constructorOption}); if (!value.isUndefined()) frames = value; }
+    else {
+        // V8 reads the own numeric data property without invoking an accessor.
+        // A missing/non-number stackTraceLimit disables default capture.
+        const auto descriptor = module.get("constructor").getOwnPropertyDescriptor("stackTraceLimit");
+        if (!descriptor || !descriptor->value || descriptor->value->type() != JSValue::Type::Number) return;
+        const auto rawLimit = descriptor->value->number();
+        const auto limit = std::isnan(rawLimit) || rawLimit <= 0 ? std::size_t(0) :
+            !std::isfinite(rawLimit) || rawLimit >= double(std::numeric_limits<std::size_t>::max()) ? std::numeric_limits<std::size_t>::max() : std::size_t(rawLimit);
+        const auto filter = filterConstructor && constructorOption.isCallable() ? constructorOption.sourceFunctionIdentity() : JSSourceTrace::FunctionIdentity{};
+        frames = JSSourceTrace::callSites(JSSourceTrace::capture(limit, filter));
+    }
+    auto data = JSValue::object(nullptr); data.set("ready", false); data.set("formatting", false); data.set("value", {});
     data.set("frames", frames);
     JSPropertyDescriptor descriptor; descriptor.getter = module.get("get"); descriptor.setter = module.get("set"); descriptor.configurable = true;
     auto target = object; target.defineProperty("stack", descriptor); JSWeakMap(module.get("records")).set(target, data);
@@ -74,7 +95,7 @@ JSValue nativeErrorConstructor() {
     module.set("constructor", ctor); module.set("get", JSValue::function(stackGet, {module}, "", 0)); module.set("set", JSValue::function(stackSet, {module}, "", 1));
     auto prototype = ctor.get("prototype"); prototype.defineProperty("name", field("Error")); prototype.defineProperty("message", field(""));
     prototype.defineProperty("toString", field(JSValue::function(errorString, {}, "toString", 0)));
-    ctor.defineProperty("captureStackTrace", field(JSValue::function([](const JSValue&, const Args& args, const Args& captures) -> JSValue { capture(arg(args, 0), arg(args, 1), captures[0]); return {}; }, {module}, "captureStackTrace", 2)));
+    ctor.defineProperty("captureStackTrace", field(JSValue::function([](const JSValue&, const Args& args, const Args& captures) -> JSValue { capture(arg(args, 0), arg(args, 1), captures[0], true); return {}; }, {module}, "captureStackTrace", 2)));
     const auto join = JSValue::intrinsicArrayConstructor().get("prototype").get("join");
     const auto prepare = JSValue::constructor([](const JSValue&, const Args& args, const Args& captures) -> JSValue {
         const auto header = errorString(arg(args, 0), {}, {}).toString(); const auto frames = arg(args, 1);
@@ -87,3 +108,45 @@ JSValue nativeErrorConstructor() {
     ctor.defineProperty("stackTraceLimit", field(10, true));
     ctor.retainForHeapLifetime(); weak = JSWeakValue(ctor); return ctor;
 }
+
+namespace {
+JSValue nativeErrorFamilyConstructor(const char* name) {
+    // Error owns the shared stack accessors, weak stack records and formatter.
+    // Every subtype keeps the same native Error brand and Error.prepareStackTrace.
+    const auto base = nativeErrorConstructor();
+    auto module = state();
+    const auto key = std::string("NativeError.") + name;
+    if (const auto cached = module.get(key); cached.isConstructible()) return cached;
+
+    auto prototype = JSValue::object(base.get("prototype"));
+    auto binding = JSValue::object(nullptr);
+    auto ctor = JSValue::callableBuiltinConstructor(
+        +[](const JSValue&, const JSValue& target, const Args& args, const Args& captures) -> JSValue {
+            const auto newTarget = target.isUndefined() ? captures[1].get("constructor") : target;
+            auto instancePrototype = newTarget.get("prototype");
+            if (!instancePrototype.isObject()) instancePrototype = captures[2];
+            auto owner = std::make_shared<ErrorData>();
+            auto self = JSValue::hostObject(owner, owner.get(), "runtime.Error");
+            self.setPrototype(instancePrototype);
+            capture(self, newTarget, captures[0]);
+            const auto message = arg(args, 0);
+            if (!message.isUndefined()) self.defineProperty("message", field(message.toString()));
+            const auto options = arg(args, 1);
+            if (options.isObject() && options.has("cause"))
+                self.defineProperty("cause", field(options.get("cause")));
+            return self;
+        }, {module, binding, prototype}, name, 1, prototype);
+    binding.set("constructor", ctor);
+    ctor.setPrototype(base);
+    prototype.defineProperty("name", field(name));
+    prototype.defineProperty("message", field(""));
+    module.set(key, ctor);
+    return ctor;
+}
+}
+JSValue nativeEvalErrorConstructor() { return nativeErrorFamilyConstructor("EvalError"); }
+JSValue nativeRangeErrorConstructor() { return nativeErrorFamilyConstructor("RangeError"); }
+JSValue nativeReferenceErrorConstructor() { return nativeErrorFamilyConstructor("ReferenceError"); }
+JSValue nativeSyntaxErrorConstructor() { return nativeErrorFamilyConstructor("SyntaxError"); }
+JSValue nativeTypeErrorConstructor() { return nativeErrorFamilyConstructor("TypeError"); }
+JSValue nativeURIErrorConstructor() { return nativeErrorFamilyConstructor("URIError"); }

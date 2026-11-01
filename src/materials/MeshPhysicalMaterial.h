@@ -45,3 +45,7 @@ class MeshPhysicalMaterial : public MeshStandardMaterial {
     Material& copy(const Material& source) override;
     std::shared_ptr<Material> clone() const override;
 };
+
+JSValue nativeMeshPhysicalMaterialConstructor();
+JSValue nativeMeshPhysicalMaterialModule();
+JSValue nativeMeshPhysicalMaterialBinding(const std::string& name);

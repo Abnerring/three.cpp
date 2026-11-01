@@ -42,3 +42,7 @@ class MeshPhongMaterial : public Material {
     Material& copy(const Material& source) override;
     std::shared_ptr<Material> clone() const override;
 };
+
+JSValue nativeMeshPhongMaterialConstructor();
+JSValue nativeMeshPhongMaterialModule();
+JSValue nativeMeshPhongMaterialBinding(const std::string& name);

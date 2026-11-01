@@ -98,3 +98,9 @@ class BatchedMesh : public Mesh {
     std::vector<Matrix4> _instanceMatrices;
     std::vector<Color> _instanceColors;
 };
+// Stable managed source authority, separate from the typed renderer adapter.
+#include "core/JSModuleObject.h"
+JSValue nativeBatchedMeshConstructor();
+JSValue nativeBatchedMeshModule();
+JSValue nativeBatchedMeshBinding(const std::string& name);
+inline constexpr JSModuleObject BatchedMeshModule{nativeBatchedMeshModule};

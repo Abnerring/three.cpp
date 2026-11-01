@@ -146,3 +146,7 @@ return JSValue{};
 namespace ThreeUtils {
 JSValue nativeArrayNeedsUint32(){static thread_local JSWeakValue weak;if(const auto cached=weak.lock();cached&&cached->isCallable())return *cached;auto function=JSValue::constructor(GeometryArrayUtils::arrayNeedsUint32Body,{JSValue{}},"arrayNeedsUint32",1,JSValue::ConstructorKind::Callable);function.setFunctionSourceText("function arrayNeedsUint32( array ) {\r\n\r\n\t// assumes larger values usually on last\r\n\r\n\tfor ( let i = array.length - 1; i >= 0; -- i ) {\r\n\r\n\t\tif ( array[ i ] >= 65535 ) return true; // account for PRIMITIVE_RESTART_FIXED_INDEX, #24565\r\n\r\n\t}\r\n\r\n\treturn false;\r\n\r\n}");function.retainForHeapLifetime();weak=JSWeakValue(function);return function;}
 }
+
+namespace ThreeUtils {
+JSValue nativeWarnOnceFunction(){static thread_local JSWeakValue weak;if(const auto existing=weak.lock();existing&&existing->isCallable())return *existing;const auto cache=warningCache();auto function=JSValue::constructor(+[](const JSValue&,const std::vector<JSValue>& args,const std::vector<JSValue>&)->JSValue{warnOnce(args);return {};},{cache},"warnOnce",0,JSValue::ConstructorKind::Callable);function.setFunctionSourceText("function warnOnce( ...params ) {\r\n\r\n\tconst message = params.join( ' ' );\r\n\r\n\tif ( message in _cache ) return;\r\n\r\n\t_cache[ message ] = true;\r\n\r\n\twarn( ...params );\r\n\r\n}");function.retainForHeapLifetime();weak=JSWeakValue(function);return function;}
+}

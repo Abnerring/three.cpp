@@ -39,7 +39,7 @@ const script=path.join(directory,suite.comparator);
 if(!lifetime)assert(fs.statSync(script).isFile(),'Apply the comparator from its frozen candidate first');
 if(options.has('--input'))assert(fs.statSync(options.get('--input')).isFile(),'Replay input must exist');
 if(options.has('--replay'))assert(fs.statSync(path.join(options.get('--replay'),'input.json')).isFile(),'Replay directory must contain original input');
-process.env.TEMP='D:/Temp/surui';process.env.TMP='D:/Temp/surui';
+process.env.TEMP='D:/Temp/surui';process.env.TMP='D:/Temp/surui';process.env.THREEJS_SOURCE_DIR=upstream;
 fs.mkdirSync(outputRoot,{recursive:true});
 const stamp=new Date().toISOString().replaceAll(/[-:.]/g,'');
 const output=fs.mkdtempSync(path.join(outputRoot,`${suite.name}-${lifetime?'lifetime':'parity'}-${stamp}-`));
@@ -57,7 +57,7 @@ else{
  for(const flag of ['--input','--replay'])if(options.has(flag))childArgs.push(flag,path.resolve(options.get(flag)));
  summary.comparatorBeforeSHA256=digest(script);
 }
-write('request.json',{command,args:childArgs,env:{TEMP:process.env.TEMP,TMP:process.env.TMP},suite,summary});
+write('request.json',{command,args:childArgs,env:{TEMP:process.env.TEMP,TMP:process.env.TMP,THREEJS_SOURCE_DIR:upstream},suite,summary});
 let failed=true;
 try{
  const result=spawnSync(command,childArgs,{encoding:'utf8',maxBuffer:512*1024*1024,env:{...process.env,TEMP:'D:/Temp/surui',TMP:'D:/Temp/surui'}});
@@ -78,7 +78,12 @@ try{
  }
  assert.equal(result.status,0,result.stderr||String(result.error));
  if(lifetime){
-  assert.match(result.stdout,suite.lifetimeOutput?new RegExp(suite.lifetimeOutput):/3.*passed/,'Expected genuine native lifetime marker');
+  if (suite.lifetimeJSONRounds !== undefined) {
+   const observed=JSON.parse(result.stdout);
+   assert.equal(observed.rounds,suite.lifetimeJSONRounds,'Expected genuine native lifetime rounds');
+  } else {
+   assert.match(result.stdout,suite.lifetimeOutput?new RegExp(suite.lifetimeOutput):/3.*passed/,'Expected genuine native lifetime marker');
+  }
   summary.nativeExecuted=result.pid!==undefined;
  }else{
   const guard=JSON.parse(fs.readFileSync(path.join(comparatorOutput,suite.guard.file),'utf8'));

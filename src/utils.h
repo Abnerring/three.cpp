@@ -25,3 +25,5 @@ JSValue nativeWarnFunction();
 }
 
 namespace ThreeUtils { JSValue nativeArrayNeedsUint32(); }
+
+namespace ThreeUtils { JSValue nativeWarnOnceFunction(); }

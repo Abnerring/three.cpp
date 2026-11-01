@@ -26,3 +26,7 @@ class MeshMatcapMaterial : public Material {
     Material& copy(const Material& source) override;
     std::shared_ptr<Material> clone() const override;
 };
+
+JSValue nativeMeshMatcapMaterialConstructor();
+JSValue nativeMeshMatcapMaterialModule();
+JSValue nativeMeshMatcapMaterialBinding(const std::string& name);

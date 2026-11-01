@@ -36,3 +36,10 @@ class SkinnedMesh : public Mesh {
   protected:
     void serializeBeforeMaterial(Object3DJSONContext& meta, JsonValue& object) const override;
 };
+
+// Stable managed source authority, separate from the typed renderer adapter.
+#include "core/JSModuleObject.h"
+JSValue nativeSkinnedMeshConstructor();
+JSValue nativeSkinnedMeshModule();
+JSValue nativeSkinnedMeshBinding(const std::string& name);
+inline constexpr JSModuleObject SkinnedMeshModule{nativeSkinnedMeshModule};

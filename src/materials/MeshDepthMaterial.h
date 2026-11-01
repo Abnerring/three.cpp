@@ -17,3 +17,7 @@ class MeshDepthMaterial : public Material {
     Material& copy(const Material& source) override;
     std::shared_ptr<Material> clone() const override;
 };
+
+JSValue nativeMeshDepthMaterialConstructor();
+JSValue nativeMeshDepthMaterialModule();
+JSValue nativeMeshDepthMaterialBinding(const std::string& name);

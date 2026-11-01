@@ -67,3 +67,29 @@ std::shared_ptr<Material> MeshToonMaterial::clone() const {
     result->copy(*this);
     return result;
 }
+
+// Managed source-class authority. Original typed implementation above remains byte-exact.
+#include "core/JSModuleObject.h"
+#include "materials/MaterialClassRuntime.h"
+#include "constants.h"
+#include "materials/Material.h"
+#include "math/Vector2.h"
+#include "math/Color.h"
+namespace MeshToonMaterialManaged {
+using namespace MaterialClassRuntime;
+#include "MeshToonMaterialManagedSource.inc"
+#include "MeshToonMaterialManagedStatements.inc"
+JSWeakValue& lexical(){static thread_local JSWeakValue value;return value;}
+}
+JSValue nativeMeshToonMaterialConstructor(){
+using namespace MeshToonMaterialManaged;static thread_local JSWeakValue weak;if(const auto cached=weak.lock();cached&&cached->isConstructible())return *cached;static thread_local bool active=false;JSModuleInitializationScope scope(active,"MeshToonMaterial");
+auto imports=JSValue::object(nullptr);own(imports,"TangentSpaceNormalMap",JSValue(TangentSpaceNormalMap));
+own(imports,"Material",nativeMaterialConstructor());
+own(imports,"Vector2",nativeVector2Constructor());
+own(imports,"Color",nativeColorConstructor());
+const auto base=imports.get("Material");auto holder=JSValue::object(nullptr);own(holder,"imports",imports);
+auto ctor=JSValue::builtinConstructor(+[](const JSValue& target,const Args& args,const Args& captures)->JSValue{const auto holder=captures[0];const auto parent=holder.get("constructor").getPrototype();auto self=parent.construct({},target);return MeshToonMaterialManaged::constructor(self,args,holder.get("imports"),JSValue{});},{holder},"MeshToonMaterial",1);own(holder,"constructor",ctor);ctor.setPrototype(base);auto prototype=ctor.get("prototype");prototype.setPrototype(base.get("prototype"));ctor.setFunctionSourceText(MeshToonMaterialSource::Class);
+{auto method=JSValue::function(+[](const JSValue& self,const Args& args,const Args& captures)->JSValue{return MeshToonMaterialManaged::copy(self,args,captures[0],captures[1]);},{imports,prototype},"copy",1);method.setFunctionSourceText(MeshToonMaterialSource::copy);auto descriptor=prototype.getOwnPropertyDescriptor("copy").value_or(JSPropertyDescriptor{});descriptor.configurable=true;descriptor.value=method;descriptor.writable=true;prototype.defineProperty("copy",descriptor);}
+ctor.retainForHeapLifetime();weak=JSWeakValue(ctor);return ctor;}
+JSValue nativeMeshToonMaterialModule(){using namespace MeshToonMaterialManaged;static thread_local JSWeakValue weak;if(const auto cached=weak.lock();cached&&cached->isObject())return *cached;auto bindings=JSValue::object(nullptr);own(bindings,"MeshToonMaterial",nativeMeshToonMaterialConstructor());auto facade=JSValue::object();own(facade,"MeshToonMaterial",bindings.get("MeshToonMaterial"));bindings.retainForHeapLifetime();lexical()=JSWeakValue(bindings);facade.retainForHeapLifetime();weak=JSWeakValue(facade);return facade;}
+JSValue nativeMeshToonMaterialBinding(const std::string& name){const auto keeper=nativeMeshToonMaterialModule();return MeshToonMaterialManaged::lexical().lock()->get(name);}

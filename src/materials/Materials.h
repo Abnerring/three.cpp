@@ -17,3 +17,6 @@
 #include "materials/ShaderMaterial.h"
 #include "materials/ShadowMaterial.h"
 #include "materials/SpriteMaterial.h"
+
+JSValue nativeMaterialsModule();
+JSValue nativeMaterialsBinding(const std::string& name);

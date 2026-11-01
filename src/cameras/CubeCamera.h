@@ -25,3 +25,9 @@ class CubeCamera : public Object3D {
     std::shared_ptr<RenderTarget> target;
     double activeMipmapLevel = 0;
 };
+// Native managed module, separate from the typed renderer adapter above.
+#include "core/JSModuleObject.h"
+JSValue nativeCubeCameraModule();
+JSValue nativeCubeCameraBinding(const std::string& name);
+JSValue nativeCubeCameraConstructor();
+inline constexpr JSModuleObject CubeCameraModule{nativeCubeCameraModule};

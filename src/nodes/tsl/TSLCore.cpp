@@ -1,3 +1,4 @@
+#include "core/JSSourceTrace.h"
 #include "nodes/tsl/TSLCore.h"
 #include "nodes/tsl/TSLCoreRuntime.h"
 #include "nodes/core/ConstNode.h"
@@ -51,13 +52,13 @@ JSValue nativeTSLCore() {
     const auto cache = nativeMapConstructor().construct({boolsCache});
     forKeys(floatsCache, [&](const JSValue& value) { invoke(cache, "set")({value, constNode(value, {}, cache, constructor)}); });
     const auto install = [&](const char* name, const JSValue& function) { JSPropertyDescriptor d; d.value = function; d.writable = d.enumerable = d.configurable = true; module.defineProperty(name, d); };
-    install("getConstNodeType", JSValue::function([](const JSValue&, const Args& args, const Args&) -> JSValue {
+    install("getConstNodeType", JSValue::function([](const JSValue&, const Args& args, const Args&) -> JSValue {JSSourceTrace::FrameScope sourceTraceTSL_0({"getConstNodeType",{"file:///D:/Temp/surui/threejs-pinned-11738a9-20261101/src/nodes/tsl/TSLCore.js",982,33,19490,"272524b87c2ded3333c693631d8aac2000a4af14adfbdfaf975027f5036808fd"},std::string{},"",false,false,false,{"file:///D:/Temp/surui/threejs-pinned-11738a9-20261101/src/nodes/tsl/TSLCore.js",982,33,19490,"272524b87c2ded3333c693631d8aac2000a4af14adfbdfaf975027f5036808fd"}});
         const auto value = arg(args, 0); if (value.isUndefined() || value.isNull()) return nullptr;
         const auto nodeType = value.get("nodeType"); if (nodeType.toBoolean()) return nodeType;
         const auto convertTo = value.get("convertTo"); if (convertTo.toBoolean()) return convertTo;
         return value.type() == JSValue::Type::String ? value : JSValue(nullptr);
     }, {}, "getConstNodeType", 1));
-    install("nodeObject", JSValue::function([](const JSValue&, const Args& args, const Args& captures) -> JSValue {
+    install("nodeObject", JSValue::function([](const JSValue&, const Args& args, const Args& captures) -> JSValue {JSSourceTrace::FrameScope sourceTraceTSL_1({"nodeObject",{"file:///D:/Temp/surui/threejs-pinned-11738a9-20261101/src/nodes/tsl/TSLCore.js",992,27,19805,"272524b87c2ded3333c693631d8aac2000a4af14adfbdfaf975027f5036808fd"},std::string{},"",false,false,false,{"file:///D:/Temp/surui/threejs-pinned-11738a9-20261101/src/nodes/tsl/TSLCore.js",992,27,19805,"272524b87c2ded3333c693631d8aac2000a4af14adfbdfaf975027f5036808fd"}});
         const auto value = arg(args, 0), altType = arg(args, 1, nullptr), type = captures[2].call({}, {value});
         if (type.strictEquals("node")) return value;
         if ((altType.isNull() && (type.strictEquals("float") || type.strictEquals("boolean"))) ||
@@ -69,7 +70,7 @@ JSValue nativeTSLCore() {
         }
         return value;
     }, {cache, constructor, nativeNodeUtilsBinding("getValueType"), cacheMaps, module}, "nodeObject", 1));
-    const auto getConstNode = JSValue::function([](const JSValue&,const Args& args,const Args& captures)->JSValue {
+    const auto getConstNode = JSValue::function([](const JSValue&,const Args& args,const Args& captures)->JSValue {JSSourceTrace::FrameScope sourceTraceTSL_2({"getConstNode",{"file:///D:/Temp/surui/threejs-pinned-11738a9-20261101/src/nodes/tsl/TSLCore.js",884,22,17587,"272524b87c2ded3333c693631d8aac2000a4af14adfbdfaf975027f5036808fd"},std::string{},"",false,false,false,{"file:///D:/Temp/surui/threejs-pinned-11738a9-20261101/src/nodes/tsl/TSLCore.js",884,22,17587,"272524b87c2ded3333c693631d8aac2000a4af14adfbdfaf975027f5036808fd"}});
         return constNode(arg(args,0),arg(args,1),captures[0],captures[1]);
     },{cache,constructor},"getConstNode",2);
     installNativeTSLCoreExtensions(module,getConstNode,cacheMaps);

@@ -3,6 +3,7 @@
 #include "core/JSPromise.h"
 #include "core/AbortController.h"
 #include "core/JSRegExp.h"
+#include "core/JSError.h"
 #include <exception>
 
 namespace {
@@ -22,12 +23,12 @@ void createDataProperty(JSValue object, const char* name, JSValue value) {
     object.defineProperty(name,d);
 }
 JSValue errorValue(const char* name, const std::string& message) {
-    auto error = JSValue::object();
-    for (const auto& entry : {std::pair<std::string,JSValue>{"name", name}, {"message", message}}) {
-        JSPropertyDescriptor d; d.value=entry.second; d.writable=d.configurable=true; d.enumerable=false;
-        error.defineProperty(entry.first,d);
-    }
-    return error;
+    const std::string type(name);
+    const auto constructor = type == "TypeError" ? nativeTypeErrorConstructor() :
+        type == "RangeError" ? nativeRangeErrorConstructor() :
+        type == "SyntaxError" ? nativeSyntaxErrorConstructor() :
+        type == "ReferenceError" ? nativeReferenceErrorConstructor() : nativeErrorConstructor();
+    return constructor.construct({message});
 }
 JSValue caughtValue() {
     try { throw; }
@@ -37,6 +38,7 @@ JSValue caughtValue() {
     catch (const JSTypeError& error) { return errorValue("TypeError",error.what()); }
     catch (const JSRangeError& error) { return errorValue("RangeError",error.what()); }
     catch (const JSSyntaxError& error) { return errorValue("SyntaxError",error.what()); }
+    catch (const JSReferenceError& error) { return errorValue("ReferenceError",error.what()); }
     catch (const std::exception& error) { return errorValue("Error",error.what()); }
 }
 void install(JSValue object, const char* name, JSValue::NativeFunction callback, std::uint32_t length) {
@@ -73,7 +75,7 @@ void settle(JSValue promise, JSValue value, bool rejected) {
 }
 void resolvePromise(JSValue promise, JSValue resolution) {
     if (resolution.sameValue(promise)) {
-        settle(promise,errorValue("TypeError","Chaining cycle detected for promise"),true); return;
+        settle(promise,errorValue("TypeError","Chaining cycle detected for promise #<Promise>"),true); return;
     }
     if (!resolution.isObject()) { settle(promise,resolution,false); return; }
     JSValue then;
@@ -188,7 +190,9 @@ bool isNativePromise(const JSValue& value) {
     return value.isHostObject(promiseTag);
 }
 JSValue nativePromiseConstructor() {
-    static thread_local JSValue constructor=[] {
+    static thread_local JSWeakValue weak;
+    if (const auto existing=weak.lock(); existing && existing->isConstructible()) return *existing;
+    auto constructor=[] {
         auto result=JSValue::builtinConstructor(initializePromise,{},"Promise",1);
         JSPropertyDescriptor species;
         species.getter=JSValue::function(+[](const JSValue& self,const Args&,const Args&)->JSValue { return self; },{},"get [Symbol.species]",0);
@@ -219,6 +223,8 @@ JSValue nativePromiseConstructor() {
         },1);
         return result;
     }();
+    constructor.retainForHeapLifetime();
+    weak=JSWeakValue(constructor);
     return constructor;
 }
 JSValue createNativePromise(JSValue executor) { return nativePromiseConstructor().construct({executor}); }

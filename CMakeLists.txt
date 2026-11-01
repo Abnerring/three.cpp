@@ -42,7 +42,7 @@ add_library(threecpp
     src/audio/AudioListener.cpp
     src/audio/Audio.cpp
     src/core/NativeRenderingObject.cpp src/core/Layers.cpp src/core/JSObject.cpp src/core/JSNumber.cpp
-    src/core/JSWeakRef.cpp src/core/JSFinalizationRegistry.cpp src/core/JSGlobal.cpp src/core/JSBoolean.cpp
+    src/core/JSWeakRef.cpp src/core/JSFinalizationRegistry.cpp src/core/JSGlobal.cpp src/core/JSBoolean.cpp src/core/JSSymbol.cpp
     src/core/BufferAttribute.cpp src/core/BufferGeometry.cpp src/core/JSDataSnapshot.cpp
     src/core/Raycaster.cpp
     src/cameras/Camera.cpp src/cameras/PerspectiveCamera.cpp src/cameras/OrthographicCamera.cpp
@@ -270,7 +270,7 @@ target_sources(threecpp PRIVATE
     src/nodes/display/PremultiplyAlphaFunctions.cpp
     src/nodes/utils/Packing.cpp
     src/nodes/core/MatcapUV.cpp
-    src/nodes/core/EquirectUV.cpp
+    src/nodes/utils/EquirectUV.cpp
     src/nodes/core/SpriteSheetUV.cpp
     src/nodes/core/Oscillators.cpp
     src/nodes/core/ViewportUtils.cpp
@@ -315,7 +315,7 @@ target_sources(threecpp PRIVATE
     src/nodes/utils/SetNode.cpp
     src/nodes/core/TriplanarTextures.cpp
     src/nodes/core/FunctionOverloadingNode.cpp
-    src/nodes/core/CubeMapNode.cpp
+    src/nodes/utils/CubeMapNode.cpp
     src/nodes/utils/EventNode.cpp
     src/nodes/core/PostProcessingUtils.cpp
     src/nodes/core/NodeParser.cpp
@@ -467,6 +467,27 @@ target_sources(threecpp PRIVATE
     src/materials/ShadowMaterial.cpp
     src/materials/SpriteMaterial.cpp
 )
+target_sources(threecpp PRIVATE
+    src/materials/Materials.cpp
+    src/materials/nodes/NodeMaterial.cpp
+    src/renderers/common/DataMap.cpp
+    src/renderers/common/ChainMap.cpp
+    src/renderers/common/nodes/NodeBuilderState.cpp
+    src/renderers/common/RenderObject.cpp
+    src/renderers/common/RenderObjects.cpp
+    src/nodes/fog/Fog.cpp
+)
+
+target_sources(threecpp PRIVATE
+    src/core/JSHostPerformance.cpp
+    src/core/JSAsyncFunction.cpp
+    src/nodes/pmrem/PMREMUtils.cpp
+    src/nodes/pmrem/PMREMNode.cpp
+    src/renderers/common/extras/PMREMGenerator.cpp
+)
+
+target_sources(threecpp PRIVATE src/core/JSSourceTrace.cpp src/core/JSParseInt.cpp)
+
 add_library(threecpp::threecpp ALIAS threecpp)
 target_include_directories(threecpp PUBLIC "$<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/src>")
 target_compile_features(threecpp PUBLIC cxx_std_20)

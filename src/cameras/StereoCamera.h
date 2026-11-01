@@ -13,3 +13,10 @@ class StereoCamera {
     StereoCamera();
     void update(const PerspectiveCamera& camera);
 };
+
+// Native managed module, separate from the typed renderer adapter above.
+#include "core/JSModuleObject.h"
+JSValue nativeStereoCameraModule();
+JSValue nativeStereoCameraBinding(const std::string& name);
+JSValue nativeStereoCameraConstructor();
+inline constexpr JSModuleObject StereoCameraModule{nativeStereoCameraModule};

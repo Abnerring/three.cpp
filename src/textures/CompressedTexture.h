@@ -10,3 +10,10 @@ class CompressedTexture : public Texture {
                                double anisotropy = DEFAULT_ANISOTROPY, std::string colorSpace = NoColorSpace);
     std::shared_ptr<Texture> clone() const override;
 };
+
+#pragma once
+#include "core/JSValue.h"
+#include <string>
+JSValue nativeCompressedTextureConstructor();
+JSValue nativeCompressedTextureModule();
+JSValue nativeCompressedTextureBinding(const std::string& name);

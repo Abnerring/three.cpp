@@ -1,3 +1,16 @@
+# 当前续接：数学/材质/相机与现代渲染前置，2026-11-02
+
+- 固定three.js仍11738a9d55e502fb484cefffcea3a66dc44e9fe9，用户主three.js为fa01dd6a，禁止重置；源worktree D:/Temp/surui/threejs-pinned-11738a9-20261101。
+- 当前代码由53db96fb基线接入MathUtils/Vector/Matrix/sixCameras、16传统材质、Skeleton/deformable、NodeMaterial、Scene/Box、Renderer common资源、PMREM与原生Symbol/Async/SourceTrace等前置。无CEF/生产JS解释桥。源码快照2831文件，全CPU307目标971步构建exit0。已有分组原生验收见VALIDATION，不当全库完整。
+- CPU整套414（387注册+27原默认绝对）仍在唯一gate session25323/WindowsPID10804中运行，实际CTestPID30404/helper48472。UTC 2026-11-01T19:06:52.532731+00:00 已完成356/414、5项失败；不得启动重复整套，不得修改src/test/utils/CMake或重链live原exe。读native-ctest11-full-cpu/stdout.log；post-build-cpu01/result.json才是最终gate结果。gate会自动afterguards307exes/2831源码/JUnit。静态计划final-regression-plan03 SHA7147a8d9cd951e51efb1c6021756354852e149a4489640ba62f029b6025c5aea。
+- 当前GPU12目标489步成功，native-vulkan-ctest01与post-build-vulkan01最终13/13通过44.31秒，2831源码/12exe/config未变，validation=0缺层。旧13只覆盖当前共享基线。
+- 本阶段提交上述冻结源码；未来独立候选不在源码内。真实私有primitive7/165+Symbol1070/10077+new42、Symbol getProto1019已过且原input/expected不变；Interleaved46/7075过（保留旧1e-11）、Lights98/47607严格过及32bare120s实测。候选必须按manifest baseSHA顺序合入，不覆盖当前并行414源。
+- 新GPU Life/Half组合已实际通过：vulkan-half-lifecycle-private-native01/final.json，Half9/701、Life9/106，RTX3070 Laptop，guards未变、validation=false。新Info布局加2字段，旧13全部test TU需用新头私有重编，不得仅重链旧obj；candidate_audit准备driver。Fly/typed候选原native01编译配置缺shared/src/core同目录inc fallback，agent准备plan02；native尚未运行。ShaderMath native01在180s超时，完整63输出仅1项generic chaining Function source差异；phase_audit准备host-job overlay，renderer_candidate补完整JSObject ToObject后补该通用metadata。原失败全部保留。
+- 下一步：等待唯一414真实终态，核全fail尤其27绝对图；合入验证过修复、复验当前源码；然后原生宿主/完整Vulkan与NodeManager链继续，不把当前部分当全功能。模块607/1251是路径覆盖；50addon loader在src/loaders错位，loaders-layout-candidate352moves待真正构建。目标仍全src+examples/jsm及三平台，goal必须保持active。
+- 所有过程证据 D:/Temp/surui/threecpp-foundations-20261101，progress.json有实时句柄/路径。TEMP/TMP始终D:/Temp/surui；只ROOT共享写/原生构建，agent只新D候选。历史后缀798619bytes/SHA f6b73f2e259a5a5518d1760ca0c6ac3d1ceed98ed915f0cec5a236a5107dcc4c保持。HANDOFF单独git -c core.autocrlf=false add。
+
+---
+
 # 续接说明（Handoff）
 
 ## 当前阶段：原生对象模型与协议，2026-11-01

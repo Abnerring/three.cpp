@@ -319,7 +319,7 @@ add_executable(THREECPPTests
         unit/src/nodes/display/PremultiplyAlphaFunctions.tests.cpp
         unit/src/nodes/utils/Packing.tests.cpp
         unit/src/nodes/core/MatcapUV.tests.cpp
-        unit/src/nodes/core/EquirectUV.tests.cpp
+        unit/src/nodes/utils/EquirectUV.tests.cpp
         unit/src/nodes/core/SpriteSheetUV.tests.cpp
         unit/src/nodes/core/Oscillators.tests.cpp
         unit/src/nodes/core/ViewportUtils.tests.cpp
@@ -352,7 +352,7 @@ add_executable(THREECPPTests
         unit/src/nodes/utils/SetNode.tests.cpp
         unit/src/nodes/core/TriplanarTextures.tests.cpp
         unit/src/nodes/core/FunctionOverloadingNode.tests.cpp
-        unit/src/nodes/core/CubeMapNode.tests.cpp
+        unit/src/nodes/utils/CubeMapNode.tests.cpp
         unit/src/nodes/utils/EventNode.tests.cpp
         unit/src/nodes/core/PostProcessingUtils.tests.cpp
         unit/src/nodes/core/NodeParserAndAttribute.tests.cpp
@@ -2284,4 +2284,121 @@ if(THREECPP_NODE_EXECUTABLE AND THREEJS_SOURCE_DIR)
     threecpp_add_object_model_native_tests(buffer-geometry-runtime ThreeJsBufferGeometryRuntimeParityProbe)
     threecpp_add_object_model_native_tests(material-classes ThreeJsMaterialClassesParityProbe)
     threecpp_add_object_model_native_tests(mesh-runtime ThreeJsMeshRuntimeParityProbe)
+endif()
+
+# Complete math and camera source authorities; real native execution only.
+foreach(probe IN ITEMS MathUtilsRuntime MathUtilsInitialization ErrorFamily VectorRuntime MatrixRuntime CameraRuntime)
+    add_executable(ThreeJs${probe}ParityProbe unit/utils/parity/${probe}ParityProbe.cpp)
+    target_link_libraries(ThreeJs${probe}ParityProbe PRIVATE threecpp::threecpp)
+endforeach()
+if(THREECPP_NODE_EXECUTABLE AND THREEJS_SOURCE_DIR)
+    threecpp_add_object_model_native_tests(mathutils-runtime ThreeJsMathUtilsRuntimeParityProbe)
+    threecpp_add_object_model_native_tests(error-family ThreeJsErrorFamilyParityProbe)
+    threecpp_add_object_model_native_tests(vector-runtime ThreeJsVectorRuntimeParityProbe)
+    threecpp_add_object_model_native_tests(matrix-runtime ThreeJsMatrixRuntimeParityProbe)
+    threecpp_add_object_model_native_tests(camera-runtime ThreeJsCameraRuntimeParityProbe)
+    add_test(NAME threecpp.object-model.mathutils-initialization-parity
+        COMMAND "${THREECPP_NODE_EXECUTABLE}" --expose-gc
+        "${CMAKE_CURRENT_SOURCE_DIR}/unit/utils/parity/run-object-model-native.mjs"
+        --suite mathutils-initialization --probe "$<TARGET_FILE:ThreeJsMathUtilsInitializationParityProbe>"
+        --upstream "${THREEJS_SOURCE_DIR}"
+        --output-root "${CMAKE_BINARY_DIR}/parity/object-model")
+    set_tests_properties(threecpp.object-model.mathutils-initialization-parity PROPERTIES
+        LABELS "object-model;native" ENVIRONMENT "TEMP=D:/Temp/surui;TMP=D:/Temp/surui")
+endif()
+
+# Full source modules and render-resource lifecycle; protocol probes.
+foreach(probe IN ITEMS TraditionalMaterials SkeletonRuntime DeformableMeshRuntime NodeMaterialRuntime RendererLifecycle SceneBoxRuntime NodeManagerDependencies CubeMapRenderTarget)
+    add_executable(ThreeJs${probe}ParityProbe unit/utils/parity/${probe}ParityProbe.cpp)
+    target_link_libraries(ThreeJs${probe}ParityProbe PRIVATE threecpp::threecpp)
+endforeach()
+
+add_executable(ThreeJsSymbolRuntimeParityProbe unit/utils/parity/SymbolRuntimeParityProbe.cpp)
+target_link_libraries(ThreeJsSymbolRuntimeParityProbe PRIVATE threecpp::threecpp)
+if(THREECPP_NODE_EXECUTABLE AND THREEJS_SOURCE_DIR)
+    threecpp_add_object_model_native_tests(symbol-runtime ThreeJsSymbolRuntimeParityProbe)
+endif()
+
+if(THREECPP_NODE_EXECUTABLE AND THREEJS_SOURCE_DIR)
+    threecpp_add_object_model_native_tests(traditional-materials ThreeJsTraditionalMaterialsParityProbe)
+    threecpp_add_object_model_native_tests(skeleton-runtime ThreeJsSkeletonRuntimeParityProbe)
+    threecpp_add_object_model_native_tests(deformable-mesh-runtime ThreeJsDeformableMeshRuntimeParityProbe)
+    threecpp_add_object_model_native_tests(node-material-runtime ThreeJsNodeMaterialRuntimeParityProbe)
+    threecpp_add_object_model_native_tests(renderer-lifecycle ThreeJsRendererLifecycleParityProbe)
+    threecpp_add_object_model_native_tests(scene-box-runtime ThreeJsSceneBoxRuntimeParityProbe)
+    threecpp_add_object_model_native_tests(node-manager-dependencies ThreeJsNodeManagerDependenciesParityProbe)
+    threecpp_add_object_model_native_tests(cube-map-render-target ThreeJsCubeMapRenderTargetParityProbe)
+endif()
+
+add_executable(ThreeJsUniformsSymbolParityProbe unit/utils/parity/UniformsSymbolParityProbe.cpp)
+target_link_libraries(ThreeJsUniformsSymbolParityProbe PRIVATE threecpp::threecpp)
+if(THREECPP_NODE_EXECUTABLE AND THREEJS_SOURCE_DIR)
+    threecpp_add_object_model_native_tests(uniforms-symbol ThreeJsUniformsSymbolParityProbe)
+endif()
+
+add_executable(NodeMaterialTextureBridgeProbe unit/utils/parity/NodeMaterialTextureBridgeProbe.cpp)
+target_link_libraries(NodeMaterialTextureBridgeProbe PRIVATE threecpp::threecpp)
+add_test(NAME threecpp.node-material-texture-bridge COMMAND NodeMaterialTextureBridgeProbe)
+set_tests_properties(threecpp.node-material-texture-bridge PROPERTIES LABELS "native;texture;bridge" ENVIRONMENT "TEMP=D:/Temp/surui;TMP=D:/Temp/surui")
+
+# Native async, intrinsic retirement and modern PMREM source ports.
+add_executable(ThreeJsAsyncFunctionParityProbe unit/utils/parity/AsyncFunctionParityProbe.cpp)
+target_link_libraries(ThreeJsAsyncFunctionParityProbe PRIVATE threecpp::threecpp)
+add_executable(ThreeJsPMREMUtilsParityProbe unit/utils/parity/PMREMUtilsParityProbe.cpp)
+target_link_libraries(ThreeJsPMREMUtilsParityProbe PRIVATE threecpp::threecpp)
+add_executable(ThreeJsPMREMParityProbe unit/utils/parity/PMREMParityProbe.cpp)
+target_link_libraries(ThreeJsPMREMParityProbe PRIVATE threecpp::threecpp)
+add_executable(PromiseRealmLifetimeProbe unit/utils/parity/PromiseRealmLifetimeProbe.cpp)
+target_link_libraries(PromiseRealmLifetimeProbe PRIVATE threecpp::threecpp)
+if(THREECPP_NODE_EXECUTABLE AND THREEJS_SOURCE_DIR)
+    threecpp_add_object_model_native_tests(async-function ThreeJsAsyncFunctionParityProbe)
+    threecpp_add_object_model_native_tests(pmrem-utils ThreeJsPMREMUtilsParityProbe)
+    threecpp_add_object_model_native_tests(pmrem ThreeJsPMREMParityProbe)
+    threecpp_add_object_model_native_tests(promise-realm PromiseRealmLifetimeProbe)
+endif()
+
+add_executable(threecpp_stacktrace_source_parity_probe unit/utils/parity/StackTraceSourceParityProbe.cpp)
+target_link_libraries(threecpp_stacktrace_source_parity_probe PRIVATE threecpp::threecpp)
+if(THREECPP_NODE_EXECUTABLE AND THREEJS_SOURCE_DIR)
+    threecpp_add_object_model_native_tests(stacktrace-source threecpp_stacktrace_source_parity_probe)
+endif()
+
+# Node UUID source randomness and actual import prefix diagnostics.
+add_executable(ThreeJsNodeUuidParityProbe unit/utils/parity/NodeUuidParityProbe.cpp)
+target_link_libraries(ThreeJsNodeUuidParityProbe PRIVATE threecpp::threecpp)
+add_executable(ThreeJsNodeImportPrefixProbe unit/utils/parity/NodeImportPrefixProbe.cpp)
+target_link_libraries(ThreeJsNodeImportPrefixProbe PRIVATE threecpp::threecpp)
+if(THREECPP_NODE_EXECUTABLE AND THREEJS_SOURCE_DIR)
+    add_test(NAME threecpp.object-model.node-uuid-parity
+        COMMAND "${THREECPP_NODE_EXECUTABLE}" --expose-gc "${CMAKE_CURRENT_SOURCE_DIR}/unit/utils/parity/run-object-model-native.mjs"
+        --suite node-uuid --probe "$<TARGET_FILE:ThreeJsNodeUuidParityProbe>" --upstream "${THREEJS_SOURCE_DIR}" --output-root "${CMAKE_BINARY_DIR}/parity/object-model")
+    file(MAKE_DIRECTORY "${CMAKE_BINARY_DIR}/parity")
+    add_test(NAME threecpp.threejs-node-import-prefix-parity
+        COMMAND "${THREECPP_NODE_EXECUTABLE}" "${CMAKE_CURRENT_SOURCE_DIR}/unit/utils/parity/node-import-prefix-oracle.mjs"
+        "${CMAKE_BINARY_DIR}/parity/node-import-prefix.json" "$<TARGET_FILE:ThreeJsNodeImportPrefixProbe>")
+    set_tests_properties(threecpp.object-model.node-uuid-parity threecpp.threejs-node-import-prefix-parity PROPERTIES
+        LABELS "object-model;native" ENVIRONMENT "TEMP=D:/Temp/surui;TMP=D:/Temp/surui;THREEJS_SOURCE_DIR=${THREEJS_SOURCE_DIR}")
+endif()
+
+add_executable(ThreeJsArraySomeParityProbe unit/utils/parity/ArraySomeParityProbe.cpp)
+target_link_libraries(ThreeJsArraySomeParityProbe PRIVATE threecpp::threecpp)
+if(THREECPP_NODE_EXECUTABLE AND THREEJS_SOURCE_DIR)
+    threecpp_add_object_model_native_tests(array-some ThreeJsArraySomeParityProbe)
+    add_test(NAME threecpp.object-model.array-some-gc-parity
+        COMMAND "${THREECPP_NODE_EXECUTABLE}" --expose-gc "${CMAKE_CURRENT_SOURCE_DIR}/unit/utils/parity/compare-array-some.mjs"
+        --probe "$<TARGET_FILE:ThreeJsArraySomeParityProbe>" --upstream "${THREEJS_SOURCE_DIR}" --output "${CMAKE_BINARY_DIR}/parity/array-some-gc" --lifetime)
+    set_tests_properties(threecpp.object-model.array-some-gc-parity PROPERTIES
+        LABELS "object-model;native;gc" ENVIRONMENT "TEMP=D:/Temp/surui;TMP=D:/Temp/surui;THREEJS_SOURCE_DIR=${THREEJS_SOURCE_DIR}")
+endif()
+
+# Live Node child traversal protocols, including collection during traversal.
+add_executable(ThreeJsNodeChildrenProtocolParityProbe unit/utils/parity/NodeChildrenProtocolParityProbe.cpp)
+target_link_libraries(ThreeJsNodeChildrenProtocolParityProbe PRIVATE threecpp::threecpp)
+if(THREECPP_NODE_EXECUTABLE AND THREEJS_SOURCE_DIR)
+    add_test(NAME threecpp.object-model.node-children-protocol-parity
+        COMMAND "${THREECPP_NODE_EXECUTABLE}" --expose-gc "${CMAKE_CURRENT_SOURCE_DIR}/unit/utils/parity/run-object-model-native.mjs"
+        --suite node-children-protocol --probe "$<TARGET_FILE:ThreeJsNodeChildrenProtocolParityProbe>"
+        --upstream "${THREEJS_SOURCE_DIR}" --output-root "${CMAKE_BINARY_DIR}/parity/object-model")
+    set_tests_properties(threecpp.object-model.node-children-protocol-parity PROPERTIES
+        LABELS "object-model;native;gc" ENVIRONMENT "TEMP=D:/Temp/surui;TMP=D:/Temp/surui;THREEJS_SOURCE_DIR=${THREEJS_SOURCE_DIR}")
 endif()

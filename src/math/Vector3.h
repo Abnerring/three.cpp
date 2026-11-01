@@ -507,3 +507,11 @@ class Vector3 {
 };
 
 #endif
+
+#ifndef THREECPP_MANAGED_VECTOR3_MODULE
+#define THREECPP_MANAGED_VECTOR3_MODULE
+#include "core/JSModuleObject.h"
+JSValue nativeVector3Module();
+JSValue nativeVector3Binding(const std::string& name);
+inline constexpr JSModuleObject Vector3Module{nativeVector3Module};
+#endif

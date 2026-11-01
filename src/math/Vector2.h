@@ -409,3 +409,11 @@ public:
 };
 
 #endif
+
+#ifndef THREECPP_MANAGED_VECTOR2_MODULE
+#define THREECPP_MANAGED_VECTOR2_MODULE
+#include "core/JSModuleObject.h"
+JSValue nativeVector2Module();
+JSValue nativeVector2Binding(const std::string& name);
+inline constexpr JSModuleObject Vector2Module{nativeVector2Module};
+#endif

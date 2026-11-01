@@ -1,0 +1,1154 @@
+{
+  "LineBasicMaterial": {
+    "base": "Material",
+    "entries": [
+      {
+        "name": "constructor",
+        "kind": "constructor",
+        "key": "constructor",
+        "length": 1,
+        "sourceSHA256": "b51de4d700237b6008d2c843a29c0e67c5b704cbf2747c9b6d5d38012161ccad"
+      },
+      {
+        "name": "copy",
+        "kind": "method",
+        "key": "copy",
+        "length": 1,
+        "sourceSHA256": "ac37fccb4691dd6407f3b640c9ba1a8b2080a647eae6e818d32be7e879c5e867"
+      }
+    ],
+    "imports": [
+      "Material",
+      "Color"
+    ],
+    "sourceSHA256": "c0c2764d66a4dd880a37f604c2c98cd19ea028b45a57cf39818ba4f876f298ca",
+    "typedCppPrefixSHA256": "4e1324bce88049df581b8762804b1d0643a12b91bac673be95008e4f2139e3ac",
+    "typedHeaderPrefixSHA256": "dab934025dd106744d46af7e912c0cbe1a8efdd3e8ff86434b0607cd2bb86fbd",
+    "constructorFields": [
+      "isLineBasicMaterial",
+      "type",
+      "color",
+      "map",
+      "linewidth",
+      "linecap",
+      "linejoin",
+      "fog"
+    ],
+    "copyFields": [
+      "color",
+      "map",
+      "linewidth",
+      "linecap",
+      "linejoin",
+      "fog"
+    ],
+    "accessors": []
+  },
+  "LineDashedMaterial": {
+    "base": "LineBasicMaterial",
+    "entries": [
+      {
+        "name": "constructor",
+        "kind": "constructor",
+        "key": "constructor",
+        "length": 1,
+        "sourceSHA256": "38015d5f45a628898ccd0cf0c8a14ee8de55fec0f973b7492312f1f4c026a3e9"
+      },
+      {
+        "name": "copy",
+        "kind": "method",
+        "key": "copy",
+        "length": 1,
+        "sourceSHA256": "3c307289e5701d324c831475ec5ee6c6f3cf8539a90b2c7dfc41809f6ba9818e"
+      }
+    ],
+    "imports": [
+      "LineBasicMaterial"
+    ],
+    "sourceSHA256": "6771d9b2d760ccf7b9b4b0a57875d49a87a5125205f002d8d0a96853bfdd85c2",
+    "typedCppPrefixSHA256": "9961ecd083ba14893a7ef62412968969e7eff8b6d006e57e3bf720454370a60c",
+    "typedHeaderPrefixSHA256": "92dbc574be7342586844fdfb5c2471d7bdd29206cbe6eb3d1d86180f0fec68d1",
+    "constructorFields": [
+      "isLineDashedMaterial",
+      "type",
+      "scale",
+      "dashSize",
+      "gapSize"
+    ],
+    "copyFields": [
+      "scale",
+      "dashSize",
+      "gapSize"
+    ],
+    "accessors": []
+  },
+  "MeshDepthMaterial": {
+    "base": "Material",
+    "entries": [
+      {
+        "name": "constructor",
+        "kind": "constructor",
+        "key": "constructor",
+        "length": 1,
+        "sourceSHA256": "451681b81e0f3798900b9115dbec32b98a09cfe642eb5d7f35ba4c5085a165dc"
+      },
+      {
+        "name": "copy",
+        "kind": "method",
+        "key": "copy",
+        "length": 1,
+        "sourceSHA256": "23084348bc6d2b7b68f3a704cf6876405793923242b7963c8b80bd3926d4e014"
+      }
+    ],
+    "imports": [
+      "Material",
+      "BasicDepthPacking"
+    ],
+    "sourceSHA256": "83ad510c8e3fea385246f14fc6589fd2b24f5d6479bf77ab5b8e78d0dd83d627",
+    "typedCppPrefixSHA256": "e912e25ccd0daf5d14d0b2869cc99991baabd2982431763df4143232f2d9fa1a",
+    "typedHeaderPrefixSHA256": "9ae015b3742675b27ea1476139410c21ef6cd8e14d9679618a43368e6225f6e3",
+    "constructorFields": [
+      "isMeshDepthMaterial",
+      "type",
+      "depthPacking",
+      "map",
+      "alphaMap",
+      "displacementMap",
+      "displacementScale",
+      "displacementBias",
+      "wireframe",
+      "wireframeLinewidth"
+    ],
+    "copyFields": [
+      "depthPacking",
+      "map",
+      "alphaMap",
+      "displacementMap",
+      "displacementScale",
+      "displacementBias",
+      "wireframe",
+      "wireframeLinewidth"
+    ],
+    "accessors": []
+  },
+  "MeshDistanceMaterial": {
+    "base": "Material",
+    "entries": [
+      {
+        "name": "constructor",
+        "kind": "constructor",
+        "key": "constructor",
+        "length": 1,
+        "sourceSHA256": "1f72788975c930536d1b9f9a9426fe61358a271dcbecd179d9def223c0f6c655"
+      },
+      {
+        "name": "copy",
+        "kind": "method",
+        "key": "copy",
+        "length": 1,
+        "sourceSHA256": "1e21b3ecef930b372d6f9be31fe033402371227b910df3d4665e0f5dac8e2cb8"
+      }
+    ],
+    "imports": [
+      "Material"
+    ],
+    "sourceSHA256": "945728e5503683bbf73c21fb8aef57bc36aac1360ceb33699526092e160db0dc",
+    "typedCppPrefixSHA256": "7192dfe060213ed54c4f3acde56c5817478dc0f9d7c1acadc498705a45636bf7",
+    "typedHeaderPrefixSHA256": "8d0ebd39c06c69a079feba60872964d1ffecb8b0bbd5665906bc368053442aea",
+    "constructorFields": [
+      "isMeshDistanceMaterial",
+      "type",
+      "map",
+      "alphaMap",
+      "displacementMap",
+      "displacementScale",
+      "displacementBias"
+    ],
+    "copyFields": [
+      "map",
+      "alphaMap",
+      "displacementMap",
+      "displacementScale",
+      "displacementBias"
+    ],
+    "accessors": []
+  },
+  "MeshLambertMaterial": {
+    "base": "Material",
+    "entries": [
+      {
+        "name": "constructor",
+        "kind": "constructor",
+        "key": "constructor",
+        "length": 1,
+        "sourceSHA256": "c29e32a8870532cc06976a9f5f94a30174ddea0cb0d168459d71d4d22ca80385"
+      },
+      {
+        "name": "copy",
+        "kind": "method",
+        "key": "copy",
+        "length": 1,
+        "sourceSHA256": "5e247729354b166317c8e779950ab5572a89530730f2f1712a0f0a27afab57a1"
+      }
+    ],
+    "imports": [
+      "MultiplyOperation",
+      "TangentSpaceNormalMap",
+      "Material",
+      "Vector2",
+      "Color",
+      "Euler"
+    ],
+    "sourceSHA256": "81e053cc47f53014e2156e5287914d7df9872b5e71676fd69775cc2fd111d95e",
+    "typedCppPrefixSHA256": "cce30166d6a9f68074b9c213e595e45245bdb023bfae82e317d8790b33f5398f",
+    "typedHeaderPrefixSHA256": "0be53b2f42ff6777bbb42aa386065b7ad197e6ee085e8fb76468473835eb87e8",
+    "constructorFields": [
+      "isMeshLambertMaterial",
+      "type",
+      "color",
+      "map",
+      "lightMap",
+      "lightMapIntensity",
+      "aoMap",
+      "aoMapIntensity",
+      "emissive",
+      "emissiveIntensity",
+      "emissiveMap",
+      "bumpMap",
+      "bumpScale",
+      "normalMap",
+      "normalMapType",
+      "normalScale",
+      "displacementMap",
+      "displacementScale",
+      "displacementBias",
+      "specularMap",
+      "alphaMap",
+      "envMap",
+      "envMapRotation",
+      "combine",
+      "reflectivity",
+      "envMapIntensity",
+      "refractionRatio",
+      "wireframe",
+      "wireframeLinewidth",
+      "wireframeLinecap",
+      "wireframeLinejoin",
+      "flatShading",
+      "fog"
+    ],
+    "copyFields": [
+      "color",
+      "map",
+      "lightMap",
+      "lightMapIntensity",
+      "aoMap",
+      "aoMapIntensity",
+      "emissive",
+      "emissiveMap",
+      "emissiveIntensity",
+      "bumpMap",
+      "bumpScale",
+      "normalMap",
+      "normalMapType",
+      "normalScale",
+      "displacementMap",
+      "displacementScale",
+      "displacementBias",
+      "specularMap",
+      "alphaMap",
+      "envMap",
+      "envMapRotation",
+      "combine",
+      "reflectivity",
+      "envMapIntensity",
+      "refractionRatio",
+      "wireframe",
+      "wireframeLinewidth",
+      "wireframeLinecap",
+      "wireframeLinejoin",
+      "flatShading",
+      "fog"
+    ],
+    "accessors": []
+  },
+  "MeshMatcapMaterial": {
+    "base": "Material",
+    "entries": [
+      {
+        "name": "constructor",
+        "kind": "constructor",
+        "key": "constructor",
+        "length": 1,
+        "sourceSHA256": "78259a7d358d7d86fd8f4b1b4500c52b27d3e57e3b4fbfed1060c045f10624c6"
+      },
+      {
+        "name": "copy",
+        "kind": "method",
+        "key": "copy",
+        "length": 1,
+        "sourceSHA256": "35f6260c019ef7a66616bd3b6618dea317dd6cfbe3ab455102b4ddf2cf5b3b6b"
+      }
+    ],
+    "imports": [
+      "TangentSpaceNormalMap",
+      "Material",
+      "Vector2",
+      "Color"
+    ],
+    "sourceSHA256": "2a6102973ef8b04e656f7504e8e0b755718b5c16a87fab30d24e62e8a46a4fff",
+    "typedCppPrefixSHA256": "9b1e0c5831fa97f03464d18a8df3e87367d6f830682a126eadfb024c8f11b4cd",
+    "typedHeaderPrefixSHA256": "a12f25dc8ecfa01e8ab9982811430f217cbcbbd8b3734127e2d07df450424f35",
+    "constructorFields": [
+      "isMeshMatcapMaterial",
+      "defines",
+      "type",
+      "color",
+      "matcap",
+      "map",
+      "bumpMap",
+      "bumpScale",
+      "normalMap",
+      "normalMapType",
+      "normalScale",
+      "displacementMap",
+      "displacementScale",
+      "displacementBias",
+      "alphaMap",
+      "wireframe",
+      "wireframeLinewidth",
+      "flatShading",
+      "fog"
+    ],
+    "copyFields": [
+      "defines",
+      "color",
+      "matcap",
+      "map",
+      "bumpMap",
+      "bumpScale",
+      "normalMap",
+      "normalMapType",
+      "normalScale",
+      "displacementMap",
+      "displacementScale",
+      "displacementBias",
+      "alphaMap",
+      "wireframe",
+      "wireframeLinewidth",
+      "flatShading",
+      "fog"
+    ],
+    "accessors": []
+  },
+  "MeshNormalMaterial": {
+    "base": "Material",
+    "entries": [
+      {
+        "name": "constructor",
+        "kind": "constructor",
+        "key": "constructor",
+        "length": 1,
+        "sourceSHA256": "89ea0aeac5f9c1b45b723bbbff1cf140b9276871f2e92738a6fe71fa1fcde3e2"
+      },
+      {
+        "name": "copy",
+        "kind": "method",
+        "key": "copy",
+        "length": 1,
+        "sourceSHA256": "8bae94cf76b9c104847c8f0bb46f4d76c8f7d428da619daa032d85654988358d"
+      }
+    ],
+    "imports": [
+      "TangentSpaceNormalMap",
+      "Material",
+      "Vector2"
+    ],
+    "sourceSHA256": "8f85107771c13120bab934f3f7c32ec4748a7cbe76763aebb91789e71e0fc0f4",
+    "typedCppPrefixSHA256": "742f5bb9b2d5b515aaf25aab5197407ac15d1e81868e7366c9dfc7ca2599f1fc",
+    "typedHeaderPrefixSHA256": "b127220f46276eb1699d42f5a18e9bd5e233cac99a5703ebc29a94c1c2727748",
+    "constructorFields": [
+      "isMeshNormalMaterial",
+      "type",
+      "bumpMap",
+      "bumpScale",
+      "normalMap",
+      "normalMapType",
+      "normalScale",
+      "displacementMap",
+      "displacementScale",
+      "displacementBias",
+      "wireframe",
+      "wireframeLinewidth",
+      "flatShading"
+    ],
+    "copyFields": [
+      "bumpMap",
+      "bumpScale",
+      "normalMap",
+      "normalMapType",
+      "normalScale",
+      "displacementMap",
+      "displacementScale",
+      "displacementBias",
+      "wireframe",
+      "wireframeLinewidth",
+      "flatShading"
+    ],
+    "accessors": []
+  },
+  "MeshPhongMaterial": {
+    "base": "Material",
+    "entries": [
+      {
+        "name": "constructor",
+        "kind": "constructor",
+        "key": "constructor",
+        "length": 1,
+        "sourceSHA256": "6e1da54913b93a63aaa59cc03c7758fa4d3b9e21f8903c866e31a1d81d72178d"
+      },
+      {
+        "name": "copy",
+        "kind": "method",
+        "key": "copy",
+        "length": 1,
+        "sourceSHA256": "3894fadd8591814610a84da4e82dc73016748ebb32e442f46f3b000a620761af"
+      }
+    ],
+    "imports": [
+      "MultiplyOperation",
+      "TangentSpaceNormalMap",
+      "Material",
+      "Vector2",
+      "Color",
+      "Euler"
+    ],
+    "sourceSHA256": "411f0f77876c3c34970aceeba546b0c2e365b6185da30e9cedc212a6a9a6f23b",
+    "typedCppPrefixSHA256": "9f7872d03553647f25da9082d0cde05a489cc81828977c29efa889d1472c6490",
+    "typedHeaderPrefixSHA256": "b2ddb29399737ca5451b859b7a5e8f61949e662c438daf513d883de799c7d8da",
+    "constructorFields": [
+      "isMeshPhongMaterial",
+      "type",
+      "color",
+      "specular",
+      "shininess",
+      "map",
+      "lightMap",
+      "lightMapIntensity",
+      "aoMap",
+      "aoMapIntensity",
+      "emissive",
+      "emissiveIntensity",
+      "emissiveMap",
+      "bumpMap",
+      "bumpScale",
+      "normalMap",
+      "normalMapType",
+      "normalScale",
+      "displacementMap",
+      "displacementScale",
+      "displacementBias",
+      "specularMap",
+      "alphaMap",
+      "envMap",
+      "envMapRotation",
+      "combine",
+      "reflectivity",
+      "envMapIntensity",
+      "refractionRatio",
+      "wireframe",
+      "wireframeLinewidth",
+      "wireframeLinecap",
+      "wireframeLinejoin",
+      "flatShading",
+      "fog"
+    ],
+    "copyFields": [
+      "color",
+      "specular",
+      "shininess",
+      "map",
+      "lightMap",
+      "lightMapIntensity",
+      "aoMap",
+      "aoMapIntensity",
+      "emissive",
+      "emissiveMap",
+      "emissiveIntensity",
+      "bumpMap",
+      "bumpScale",
+      "normalMap",
+      "normalMapType",
+      "normalScale",
+      "displacementMap",
+      "displacementScale",
+      "displacementBias",
+      "specularMap",
+      "alphaMap",
+      "envMap",
+      "envMapRotation",
+      "combine",
+      "reflectivity",
+      "envMapIntensity",
+      "refractionRatio",
+      "wireframe",
+      "wireframeLinewidth",
+      "wireframeLinecap",
+      "wireframeLinejoin",
+      "flatShading",
+      "fog"
+    ],
+    "accessors": []
+  },
+  "MeshPhysicalMaterial": {
+    "base": "MeshStandardMaterial",
+    "entries": [
+      {
+        "name": "constructor",
+        "kind": "constructor",
+        "key": "constructor",
+        "length": 1,
+        "sourceSHA256": "f3520e00fd0edfe0d36a41352d8b9d348d9b1a3b732f018941c43f445dcf7d4d"
+      },
+      {
+        "name": "anisotropy",
+        "kind": "get",
+        "key": "get_anisotropy",
+        "length": 0,
+        "sourceSHA256": "1ed7ca9b84c68a8e16fa1ad141df4a4bac7111beb09ff536a30fd5ec18ff7253"
+      },
+      {
+        "name": "anisotropy",
+        "kind": "set",
+        "key": "set_anisotropy",
+        "length": 1,
+        "sourceSHA256": "ce4a5dc0b876d37f9cd845998d4148e97c09b5382adacb555af20ec08443efd9"
+      },
+      {
+        "name": "clearcoat",
+        "kind": "get",
+        "key": "get_clearcoat",
+        "length": 0,
+        "sourceSHA256": "bae897c24851d862e5e968cf71642070259f2f309932911042e87d0314fe1c9f"
+      },
+      {
+        "name": "clearcoat",
+        "kind": "set",
+        "key": "set_clearcoat",
+        "length": 1,
+        "sourceSHA256": "f867bac64975c744ec5a2f38cb8afdd341f4c3b0ac0bd797ac0ad671596a3675"
+      },
+      {
+        "name": "diffuseRoughness",
+        "kind": "get",
+        "key": "get_diffuseRoughness",
+        "length": 0,
+        "sourceSHA256": "29f80aceff429fa5be2cbf51691ad217e67627661aff48e282400ee54c3b393b"
+      },
+      {
+        "name": "diffuseRoughness",
+        "kind": "set",
+        "key": "set_diffuseRoughness",
+        "length": 1,
+        "sourceSHA256": "53105acb9711f19b1853617e5550c5de7e69621e6da9170dd48703fb7f4e2a35"
+      },
+      {
+        "name": "iridescence",
+        "kind": "get",
+        "key": "get_iridescence",
+        "length": 0,
+        "sourceSHA256": "d981027918b594f78fe3dc90bffaeb6c1d4839856569b635431cd85d040257f1"
+      },
+      {
+        "name": "iridescence",
+        "kind": "set",
+        "key": "set_iridescence",
+        "length": 1,
+        "sourceSHA256": "69c9c778419f10d70bdd78d71a420de3ca177ec9575251782665929c1e7afae5"
+      },
+      {
+        "name": "dispersion",
+        "kind": "get",
+        "key": "get_dispersion",
+        "length": 0,
+        "sourceSHA256": "4d4728a98a99cf6cf23ac992261aec7c5a00d941268006a1b1d661b559761440"
+      },
+      {
+        "name": "dispersion",
+        "kind": "set",
+        "key": "set_dispersion",
+        "length": 1,
+        "sourceSHA256": "44face6ce62e4bc97704b21bd66d2e0d6ed37f9338c57cea519e2195e2912fb0"
+      },
+      {
+        "name": "retroreflectivity",
+        "kind": "get",
+        "key": "get_retroreflectivity",
+        "length": 0,
+        "sourceSHA256": "e87a1c475e91b56b8a7acdce96893f2aef3ce353542b7e2b84d18caf0f3bbfc5"
+      },
+      {
+        "name": "retroreflectivity",
+        "kind": "set",
+        "key": "set_retroreflectivity",
+        "length": 1,
+        "sourceSHA256": "7e04c23ea47bcabeef1884144dff75cc630c20b93e12ea1ce395e35e8ea2efe7"
+      },
+      {
+        "name": "sheen",
+        "kind": "get",
+        "key": "get_sheen",
+        "length": 0,
+        "sourceSHA256": "8b7d4eede3aeff2058eba9d51ed017c7af986005b3e131a3650e07e0af252cdf"
+      },
+      {
+        "name": "sheen",
+        "kind": "set",
+        "key": "set_sheen",
+        "length": 1,
+        "sourceSHA256": "94cb41cfbd7e4f9d1ca369c1cb45e1bf4b349342fdd9f468fa4d352576399fb4"
+      },
+      {
+        "name": "transmission",
+        "kind": "get",
+        "key": "get_transmission",
+        "length": 0,
+        "sourceSHA256": "1a58c05c626bdba7ae5fbf29725f316e7a95a9aecd8d86bf1caaaf54f5c694b2"
+      },
+      {
+        "name": "transmission",
+        "kind": "set",
+        "key": "set_transmission",
+        "length": 1,
+        "sourceSHA256": "e477773168eec219f143ca72bfaa18544e495c3fc22512a6d9fa192c94141daa"
+      },
+      {
+        "name": "copy",
+        "kind": "method",
+        "key": "copy",
+        "length": 1,
+        "sourceSHA256": "1783a414b5e9ddee6601331cb24936aa00ff07a99ba877f6bed465efd3c58f84"
+      }
+    ],
+    "imports": [
+      "Vector2",
+      "MeshStandardMaterial",
+      "Color",
+      "clamp"
+    ],
+    "sourceSHA256": "baeaaca0987887e0f017067e512b275323d24df7b2f5d7bc1ba80ab916221046",
+    "typedCppPrefixSHA256": "f16ccc21e06473f102159ee8f2040321a193c447951de81fc6b32d6995a19fb0",
+    "typedHeaderPrefixSHA256": "b42daeba57c0ba7f828734cafcbb5da61eb827aef4cc925f5116b0208f27a5d6",
+    "constructorFields": [
+      "isMeshPhysicalMaterial",
+      "defines",
+      "type",
+      "anisotropyRotation",
+      "anisotropyMap",
+      "clearcoatMap",
+      "clearcoatRoughness",
+      "clearcoatRoughnessMap",
+      "clearcoatNormalScale",
+      "clearcoatNormalMap",
+      "diffuseRoughnessMap",
+      "ior",
+      "iridescenceMap",
+      "iridescenceIOR",
+      "iridescenceThicknessRange",
+      "iridescenceThicknessMap",
+      "sheenColor",
+      "sheenColorMap",
+      "sheenRoughness",
+      "sheenRoughnessMap",
+      "transmissionMap",
+      "thickness",
+      "thicknessMap",
+      "attenuationDistance",
+      "attenuationColor",
+      "specularIntensity",
+      "specularIntensityMap",
+      "specularColor",
+      "specularColorMap",
+      "_anisotropy",
+      "_clearcoat",
+      "_diffuseRoughness",
+      "_dispersion",
+      "_iridescence",
+      "_retroreflectivity",
+      "_sheen",
+      "_transmission"
+    ],
+    "copyFields": [
+      "defines",
+      "anisotropy",
+      "anisotropyRotation",
+      "anisotropyMap",
+      "clearcoat",
+      "clearcoatMap",
+      "clearcoatRoughness",
+      "clearcoatRoughnessMap",
+      "clearcoatNormalMap",
+      "clearcoatNormalScale",
+      "diffuseRoughness",
+      "diffuseRoughnessMap",
+      "dispersion",
+      "ior",
+      "iridescence",
+      "iridescenceMap",
+      "iridescenceIOR",
+      "iridescenceThicknessRange",
+      "iridescenceThicknessMap",
+      "retroreflectivity",
+      "sheen",
+      "sheenColor",
+      "sheenColorMap",
+      "sheenRoughness",
+      "sheenRoughnessMap",
+      "transmission",
+      "transmissionMap",
+      "thickness",
+      "thicknessMap",
+      "attenuationDistance",
+      "attenuationColor",
+      "specularIntensity",
+      "specularIntensityMap",
+      "specularColor",
+      "specularColorMap"
+    ],
+    "accessors": [
+      "anisotropy",
+      "clearcoat",
+      "diffuseRoughness",
+      "iridescence",
+      "dispersion",
+      "retroreflectivity",
+      "sheen",
+      "transmission"
+    ]
+  },
+  "MeshStandardMaterial": {
+    "base": "Material",
+    "entries": [
+      {
+        "name": "constructor",
+        "kind": "constructor",
+        "key": "constructor",
+        "length": 1,
+        "sourceSHA256": "0587318ccf7d06efd62df90f660eefbac8d6feae9ba5fd70f4fc0bfecef84d22"
+      },
+      {
+        "name": "copy",
+        "kind": "method",
+        "key": "copy",
+        "length": 1,
+        "sourceSHA256": "b9a182755f01ba71269a3112adce6201d2b23335829e40c9ab089526c6634191"
+      }
+    ],
+    "imports": [
+      "TangentSpaceNormalMap",
+      "Material",
+      "Vector2",
+      "Color",
+      "Euler"
+    ],
+    "sourceSHA256": "4ffa4a683eaa8dd938050d39daf38ef99feb03777200e37d1dc0cfa902986320",
+    "typedCppPrefixSHA256": "a74264c05e274af31be869016f48b009710b44eb681b27ad6ceae2d990c00bfb",
+    "typedHeaderPrefixSHA256": "5e30fc300918d70b6e1c1ef03b2d6ac8eb7a2492138c99a8676b2b2dfdc18c8a",
+    "constructorFields": [
+      "isMeshStandardMaterial",
+      "type",
+      "defines",
+      "color",
+      "roughness",
+      "metalness",
+      "map",
+      "lightMap",
+      "lightMapIntensity",
+      "aoMap",
+      "aoMapIntensity",
+      "emissive",
+      "emissiveIntensity",
+      "emissiveMap",
+      "bumpMap",
+      "bumpScale",
+      "normalMap",
+      "normalMapType",
+      "normalScale",
+      "displacementMap",
+      "displacementScale",
+      "displacementBias",
+      "roughnessMap",
+      "metalnessMap",
+      "alphaMap",
+      "envMap",
+      "envMapRotation",
+      "envMapIntensity",
+      "wireframe",
+      "wireframeLinewidth",
+      "wireframeLinecap",
+      "wireframeLinejoin",
+      "flatShading",
+      "fog"
+    ],
+    "copyFields": [
+      "defines",
+      "color",
+      "roughness",
+      "metalness",
+      "map",
+      "lightMap",
+      "lightMapIntensity",
+      "aoMap",
+      "aoMapIntensity",
+      "emissive",
+      "emissiveMap",
+      "emissiveIntensity",
+      "bumpMap",
+      "bumpScale",
+      "normalMap",
+      "normalMapType",
+      "normalScale",
+      "displacementMap",
+      "displacementScale",
+      "displacementBias",
+      "roughnessMap",
+      "metalnessMap",
+      "alphaMap",
+      "envMap",
+      "envMapRotation",
+      "envMapIntensity",
+      "wireframe",
+      "wireframeLinewidth",
+      "wireframeLinecap",
+      "wireframeLinejoin",
+      "flatShading",
+      "fog"
+    ],
+    "accessors": []
+  },
+  "MeshToonMaterial": {
+    "base": "Material",
+    "entries": [
+      {
+        "name": "constructor",
+        "kind": "constructor",
+        "key": "constructor",
+        "length": 1,
+        "sourceSHA256": "06e328be2b0bc71c9e2c594f74532374e898d60e3b2cd80bf146d7d154987350"
+      },
+      {
+        "name": "copy",
+        "kind": "method",
+        "key": "copy",
+        "length": 1,
+        "sourceSHA256": "21c395aec4bea0533e0bf56f3c77f622ca6e1bb037f8919a15169fb8258a249e"
+      }
+    ],
+    "imports": [
+      "TangentSpaceNormalMap",
+      "Material",
+      "Vector2",
+      "Color"
+    ],
+    "sourceSHA256": "9124966fc5e27f71d10366c193395795f552468d01f62bd7bfe1bccac6da4c12",
+    "typedCppPrefixSHA256": "4a88c170e4537c6e5d811d3094d02bf89965a52f85d45dc2c44ef97748bef292",
+    "typedHeaderPrefixSHA256": "dd91851ce7c5063be736d8c6493df2f88844445fb45b7aa0a48a7471fd992324",
+    "constructorFields": [
+      "isMeshToonMaterial",
+      "defines",
+      "type",
+      "color",
+      "map",
+      "gradientMap",
+      "lightMap",
+      "lightMapIntensity",
+      "aoMap",
+      "aoMapIntensity",
+      "emissive",
+      "emissiveIntensity",
+      "emissiveMap",
+      "bumpMap",
+      "bumpScale",
+      "normalMap",
+      "normalMapType",
+      "normalScale",
+      "displacementMap",
+      "displacementScale",
+      "displacementBias",
+      "alphaMap",
+      "wireframe",
+      "wireframeLinewidth",
+      "wireframeLinecap",
+      "wireframeLinejoin",
+      "fog"
+    ],
+    "copyFields": [
+      "color",
+      "map",
+      "gradientMap",
+      "lightMap",
+      "lightMapIntensity",
+      "aoMap",
+      "aoMapIntensity",
+      "emissive",
+      "emissiveMap",
+      "emissiveIntensity",
+      "bumpMap",
+      "bumpScale",
+      "normalMap",
+      "normalMapType",
+      "normalScale",
+      "displacementMap",
+      "displacementScale",
+      "displacementBias",
+      "alphaMap",
+      "wireframe",
+      "wireframeLinewidth",
+      "wireframeLinecap",
+      "wireframeLinejoin",
+      "fog"
+    ],
+    "accessors": []
+  },
+  "PointsMaterial": {
+    "base": "Material",
+    "entries": [
+      {
+        "name": "constructor",
+        "kind": "constructor",
+        "key": "constructor",
+        "length": 1,
+        "sourceSHA256": "9081c4b8b241a3f370669debaa2362013fb90c7ab59c53b8eb8c13bcc7ebc830"
+      },
+      {
+        "name": "copy",
+        "kind": "method",
+        "key": "copy",
+        "length": 1,
+        "sourceSHA256": "dc6c1c0da7fbb386c3361ef002e3d303c7bad291ada8950fd683690f4a5ee34e"
+      }
+    ],
+    "imports": [
+      "Material",
+      "Color"
+    ],
+    "sourceSHA256": "031ec51a3b975ef29cd1b2a89917de3089cc54e9610fbba2b2552c42a5d8baea",
+    "typedCppPrefixSHA256": "9b9c954ab06f08141fe66d155d0de0af6833caae3694cc28befa7f8703208199",
+    "typedHeaderPrefixSHA256": "c33cfa18a0d1ffc5916b0ca1d4b1bf9af784dfa965b2a9da86d3b0a862461df2",
+    "constructorFields": [
+      "isPointsMaterial",
+      "type",
+      "color",
+      "map",
+      "alphaMap",
+      "size",
+      "sizeAttenuation",
+      "fog"
+    ],
+    "copyFields": [
+      "color",
+      "map",
+      "alphaMap",
+      "size",
+      "sizeAttenuation",
+      "fog"
+    ],
+    "accessors": []
+  },
+  "RawShaderMaterial": {
+    "base": "ShaderMaterial",
+    "entries": [
+      {
+        "name": "constructor",
+        "kind": "constructor",
+        "key": "constructor",
+        "length": 1,
+        "sourceSHA256": "cad76b0f997b328444c99572f125056d787da23a3d7bdc85f950190f311faab1"
+      }
+    ],
+    "imports": [
+      "ShaderMaterial"
+    ],
+    "sourceSHA256": "f026eec0919b4017f21a16d9a67946fdc07bef3c418c5c8fabdcc808674a8023",
+    "typedCppPrefixSHA256": "2e7dc5a0f709e27889ce64fb7b29170bf0205205f3f610b1dbc37b61ce6e4dcb",
+    "typedHeaderPrefixSHA256": "51c734e86dca5343cf6f93ec2e628a0c436be1cd5d12135cbe5aea48212b1bdd",
+    "constructorFields": [
+      "isRawShaderMaterial",
+      "type"
+    ],
+    "copyFields": [],
+    "accessors": []
+  },
+  "ShaderMaterial": {
+    "base": "Material",
+    "entries": [
+      {
+        "name": "constructor",
+        "kind": "constructor",
+        "key": "constructor",
+        "length": 1,
+        "sourceSHA256": "0ed6879ac14c37a35f5317776981a02aca99870e91f494377004d2354ac8b209"
+      },
+      {
+        "name": "copy",
+        "kind": "method",
+        "key": "copy",
+        "length": 1,
+        "sourceSHA256": "b3e7c1d122306311c2ca64056ca1a10b61715adb7f506705def2899e6d0aef1e"
+      },
+      {
+        "name": "toJSON",
+        "kind": "method",
+        "key": "toJSON",
+        "length": 1,
+        "sourceSHA256": "da09e6fa994b2403985f534054ad620c88b38fd591adcb90aae6dbd573ad02a3"
+      },
+      {
+        "name": "fromJSON",
+        "kind": "method",
+        "key": "fromJSON",
+        "length": 2,
+        "sourceSHA256": "2dde981fc9dc6e65c94fcb4d4e226ba84c35fa5fc1801eb58ff1f0664ffa8617"
+      }
+    ],
+    "imports": [
+      "Material",
+      "cloneUniforms",
+      "cloneUniformsGroups",
+      "Color",
+      "Vector2",
+      "Vector3",
+      "Vector4",
+      "Matrix3",
+      "Matrix4",
+      "default_vertex",
+      "default_fragment"
+    ],
+    "sourceSHA256": "58d29c38c4c7df75558fad0a2a75988bcec36465a458ea56db556b6b06ef060f",
+    "typedCppPrefixSHA256": "aaef3844a27dd66ceafe10378e2e4fb69b1dda652f7b0a8ac444e900189c901a",
+    "typedHeaderPrefixSHA256": "f164f8ddb139b62e5d55faa0b0b854d785219db726aa7d74893ac691c26fa8ea",
+    "constructorFields": [
+      "isShaderMaterial",
+      "type",
+      "defines",
+      "uniforms",
+      "uniformsGroups",
+      "vertexShader",
+      "fragmentShader",
+      "linewidth",
+      "wireframe",
+      "wireframeLinewidth",
+      "fog",
+      "lights",
+      "clipping",
+      "forceSinglePass",
+      "extensions",
+      "defaultAttributeValues",
+      "index0AttributeName",
+      "uniformsNeedUpdate",
+      "glslVersion"
+    ],
+    "copyFields": [
+      "fragmentShader",
+      "vertexShader",
+      "uniforms",
+      "uniformsGroups",
+      "defines",
+      "wireframe",
+      "wireframeLinewidth",
+      "fog",
+      "lights",
+      "clipping",
+      "extensions",
+      "glslVersion",
+      "defaultAttributeValues",
+      "index0AttributeName",
+      "uniformsNeedUpdate"
+    ],
+    "accessors": []
+  },
+  "ShadowMaterial": {
+    "base": "Material",
+    "entries": [
+      {
+        "name": "constructor",
+        "kind": "constructor",
+        "key": "constructor",
+        "length": 1,
+        "sourceSHA256": "7db16e51b9265b06179fcbfd145ce1b6bf8b806eff7b98375129cbdd26ac8973"
+      },
+      {
+        "name": "copy",
+        "kind": "method",
+        "key": "copy",
+        "length": 1,
+        "sourceSHA256": "21c8b8fa21564cf92d6f8b892bda7116aafd5e259808dbd2d87ca8d3a89d5e64"
+      }
+    ],
+    "imports": [
+      "Material",
+      "Color"
+    ],
+    "sourceSHA256": "728877095fd31a37efeb058e7656469e53f8f4ef9329e1d2784d91b2d80a286a",
+    "typedCppPrefixSHA256": "586c45a0ae5d7a94f42b231448e5330435ceba71bce939ae75a1419f484d4f75",
+    "typedHeaderPrefixSHA256": "9a1b1fc0c7309106efcc08da9f23de01062551439005dab4c69ae86f1c5d1ed0",
+    "constructorFields": [
+      "isShadowMaterial",
+      "type",
+      "color",
+      "transparent",
+      "fog"
+    ],
+    "copyFields": [
+      "color",
+      "fog"
+    ],
+    "accessors": []
+  },
+  "SpriteMaterial": {
+    "base": "Material",
+    "entries": [
+      {
+        "name": "constructor",
+        "kind": "constructor",
+        "key": "constructor",
+        "length": 1,
+        "sourceSHA256": "fb8c80f844178abd0aa8ca3d1205b0645a9678f7eaa7d8a6bd933acd7b4cc37c"
+      },
+      {
+        "name": "copy",
+        "kind": "method",
+        "key": "copy",
+        "length": 1,
+        "sourceSHA256": "dc50afebeb14918bc730980ffb57090c6e4a66ed526be1c57b3e933ee57c987b"
+      }
+    ],
+    "imports": [
+      "Material",
+      "Color"
+    ],
+    "sourceSHA256": "41acc8db71e30450b28cd21ac753af0042f471a0e7774ce9c22a2d62f1139baa",
+    "typedCppPrefixSHA256": "50ee59ca52e76ff851ec2b85b40c6f02166e2b53df6ee60299b29bb1274a84cc",
+    "typedHeaderPrefixSHA256": "3c137dc92811261cf30e8251bffbfa195783386e32c5c8293e2c81122812f3eb",
+    "constructorFields": [
+      "isSpriteMaterial",
+      "type",
+      "color",
+      "map",
+      "alphaMap",
+      "rotation",
+      "sizeAttenuation",
+      "transparent",
+      "fog"
+    ],
+    "copyFields": [
+      "color",
+      "map",
+      "alphaMap",
+      "rotation",
+      "sizeAttenuation",
+      "fog"
+    ],
+    "accessors": []
+  }
+}

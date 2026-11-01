@@ -8,3 +8,7 @@ class RawShaderMaterial : public ShaderMaterial {
     void visitProperties(const PropertyVisitor& visitor) override;
     std::shared_ptr<Material> clone() const override;
 };
+
+JSValue nativeRawShaderMaterialConstructor();
+JSValue nativeRawShaderMaterialModule();
+JSValue nativeRawShaderMaterialBinding(const std::string& name);

@@ -1,0 +1,7 @@
+import {upstreamModule} from './threejs-source.mjs';
+import fs from 'node:fs';import assert from 'node:assert/strict';import {setImmediate as turn} from 'node:timers/promises';import {pathToFileURL} from 'node:url';
+assert.equal(process.version,'v26.5.0');assert.equal(typeof global.gc,'function');assert.equal(process.argv.length,3);assert(!fs.existsSync(process.argv[2]));
+function setup(ctor,mode){const value=new ctor();if(mode==='abrupt')Object.defineProperty(value,'x',{get(){throw 17;}});return{weak:new WeakRef(value),iterator:value[Symbol.iterator]()};}
+async function collect(){for(let i=0;i<8;i++){await turn();global.gc();await turn();}}
+const observations=[];for(const name of ['Vector2','Vector3','Vector4']){const ctor=(await upstreamModule('src/math/'+name+'.js'))[name];for(const mode of ['return','natural','abrupt']){const item=setup(ctor,mode);if(mode==='return'){item.iterator.next();item.iterator.return(17);}else if(mode==='natural'){for(let i=0;i<=Number(name.at(-1));i++)item.iterator.next();}else assert.throws(()=>item.iterator.next(),e=>e===17);await collect();const whileIteratorAlive=item.weak.deref()!==undefined;item.iterator=null;await collect();const afterIteratorDropped=item.weak.deref()!==undefined;assert.equal(afterIteratorDropped,false);observations.push({name,mode,whileIteratorAlive,afterIteratorDropped});}}
+fs.writeFileSync(process.argv[2],JSON.stringify({node:process.version,observations},null,2)+'\n');console.log(JSON.stringify(observations));

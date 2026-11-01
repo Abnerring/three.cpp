@@ -6,6 +6,7 @@
 #include "nodes/tsl/TSLCore.h"
 #include "nodes/utils/UtilityNodeRuntime.h"
 #include "utils.h"
+#include "nodes/accessors/PositionRuntimeSource.inc"
 #include <algorithm>
 
 namespace {
@@ -43,7 +44,8 @@ JSValue body(const JSValue&,const Args& args,const Args& captures){
     throw std::logic_error("Unknown Position callback");
 }
 JSValue once(const char* name,const JSValue& imports,const JSValue& bindings,const Args& scopes={},bool typed=true,unsigned arity=1){
-    const auto callback=JSValue::function(body,{name,imports,bindings},"",arity);
+    auto callback=JSValue::function(body,{name,imports,bindings},"",arity);
+    callback.setFunctionSourceText(std::string(PositionSourceMetadata::source(name)));
     const auto fn=typed?imports.get("Fn").call({}, {callback,"vec3"}):imports.get("Fn").call({}, {callback});
     const auto callOnce=invoke(fn,"once");return (scopes.empty()?callOnce():callOnce({scopeArray(scopes)})).call();
 }

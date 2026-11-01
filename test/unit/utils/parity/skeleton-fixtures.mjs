@@ -1,0 +1,30 @@
+const t=($,extra={})=>({$,...extra}),U=t('undefined'),N=t('NaN'),Z=t('-0'),H=t('hole');
+const arr=items=>t('array',{items}),obj=props=>t('object',{props:props.map(([key,value,options={}])=>({key,value,...options}))}),mat=()=>t('matrix'),bone=(id='x')=>t('bone',{id,name:id});
+const identity=[1,0,0,0,0,1,0,0,0,0,1,0,0,0,0,1];
+const json=()=>obj([['uuid','saved-skeleton'],['bones',arr(['a','missing'])],['boneInverses',arr([arr(identity),arr(identity)])]]);
+const methodArgs=name=>name==='getBoneByName'?['b1']:name==='fromJSON'?[json(),obj([['a',t('ref',{id:'b0'})]])]:[];
+export function fixtures(){const cases=[];const add=q=>cases.push({...q,name:'case-'+cases.length});
+ for(const C of ['Bone','Skeleton']){add({kind:'metadata',class:C});for(const extra of [{},{newTarget:true},{withoutNew:true},...(C==='Bone'?[{badBase:true}]:[])])for(const args of [[],[U],[null],[false],[3]])add({kind:'construct',class:C,args,...extra});for(const setter of C==='Bone'?['uuid','isBone','type']:['uuid','bones','boneInverses','boneMatrices','boneTexture'])for(const throwSetter of [false,true])add({kind:'construct',class:C,setter,throwSetter});}
+ const bones=[U,null,false,0,'abc',arr([]),arr([bone()]),arr([bone(),null]),arr([H,bone()]),obj([['slice',t('function',{name:'slice',result:arr([bone()])})]]),obj([['slice',t('function',{name:'slice',throw:true}),{getter:true}]]),t('proxy',{value:arr([bone()])}),t('proxy',{value:arr([bone()]),revoked:true})];
+ for(const b of bones)for(const inverses of [U,null,arr([]),arr([mat()]),arr([mat(),mat()])])add({kind:'construct',args:[b,inverses]});
+ for(const method of ['init','calculateInverses','pose','update','clone','computeBoneTexture','getBoneByName','dispose','fromJSON','toJSON'])for(const count of [0,1,3,5,17])for(const texture of [false,true])for(const observed of [false,true])add({kind:'method',method,count,texture,observed,args:methodArgs(method)});
+ for(const method of ['init','calculateInverses','pose','update','getBoneByName','toJSON'])for(const hole of [0,1,2])add({kind:'method',method,hole,args:methodArgs(method)});
+ for(const method of ['init','calculateInverses','pose','update','clone','computeBoneTexture','dispose','fromJSON','toJSON'])for(const throwAt of [1,2,3,4,5,6,8,10,12])add({kind:'method',method,observed:true,texture:true,throwAt,args:methodArgs(method)});
+ for(const method of ['init','pose','update','computeBoneTexture','fromJSON'])for(const gcAt of [1,3,6])add({kind:'method',method,observed:true,texture:true,gcAt,args:methodArgs(method)});
+ for(const reenterAt of [2,4,6,7,8,9])add({kind:'method',method:'update',observed:true,reenterAt});
+ for(const global of ['Math','Float32Array'])for(const globalThrow of [false,true,'sqrt','ceil','max'])add({kind:'method',method:'computeBoneTexture',global,globalThrow,observed:true});
+ for(const method of ['init','calculateInverses','pose','update','computeBoneTexture','toJSON'])for(const key of ['bones','boneInverses','boneMatrices'])for(const value of [U,null,arr([])])add({kind:'method',method,fields:[{key,value}],observed:true});
+ for(const method of ['init','calculateInverses','computeBoneTexture','dispose','fromJSON'])for(const key of ['uuid','boneInverses','boneMatrices','boneTexture'])add({kind:'method',method,texture:true,fields:[{key,value:key==='uuid'?'kept':key==='boneTexture'?t('texture'):key==='boneMatrices'?t('float32',{items:[1,2,3]}):arr([mat(),mat(),mat()]),writable:false}],args:methodArgs(method)});
+ for(const n of [0,1,16,64,65,100])add({kind:'method',method:'computeBoneTexture',count:1,fields:[{key:'boneMatrices',value:t('float32',{items:Array.from({length:n},(_,i)=>i===0?Z:i+.25)})}]});
+ for(const value of [U,null,false,0,'b1',t('symbol'),t('convert',{value:'b1',throw:true})])add({kind:'method',method:'getBoneByName',args:[value]});
+ for(const throws of [false,true])for(const replace of [false,true])add({kind:'method',method:'dispose',observed:true,fields:[{key:'boneTexture',value:obj([['dispose',t('function',{name:'dispose',throw:throws,gc:true,mutations:replace?[{op:'set',ref:'sk',key:'boneTexture',value:t('texture')}]:[]})]])}]});
+ for(const data of [U,null,obj([['uuid','partial']]),obj([['uuid','partial'],['bones',arr(['a'])],['boneInverses',arr([])]]),json()])for(const lookup of [U,null,obj([]),obj([['a',null]]),obj([['a',bone()]])])add({kind:'method',method:'fromJSON',args:[data,lookup],observed:true});
+ for(const method of ['init','calculateInverses','pose','update','computeBoneTexture','dispose','getBoneByName','fromJSON','toJSON','clone'])add({kind:'method',method,borrow:true,receiver:obj([['uuid','borrowed'],['bones',arr([])],['boneInverses',arr([mat()])],['boneMatrices',t('float32',{items:[]})],['boneTexture',null],['calculateInverses',t('function',{name:'calculate',result:U})],['init',t('function',{name:'init',result:U})]]),args:methodArgs(method),observed:true});
+ add({kind:'method',steps:[{method:'computeBoneTexture'},{method:'update'},{method:'clone'},{method:'dispose'},{method:'dispose'},{method:'computeBoneTexture'},{method:'toJSON'}]});
+ for(const C of ['Bone','Skeleton'])add({kind:'metadata',class:C});
+ for(const value of [U,null,t('function',{throw:true})])add({kind:'method',method:'clone',fields:[{key:'constructor',value}]});
+ for(const field of ['needsUpdate','dispose'])for(const thrown of [false,true])add({kind:'method',method:field==='dispose'?'dispose':'update',fields:[{key:'boneTexture',value:obj([[field,t('function',{name:'texture-'+field,throw:thrown,gc:true}),{getter:true,throw:thrown}]])}],observed:true});
+ for(const inverse of [Array(16).fill(0),identity.map((x,i)=>i===0?-2:x),identity.map((x,i)=>i===5?3:x)])for(const method of ['pose','update'])add({kind:'method',method,count:1,inverses:arr([t('matrix',{elements:inverse})]),observed:true});
+ for(const C of ['Bone','Skeleton'])add({kind:'metadata',class:C});
+ for(const reenterAt of [7,10])add({kind:'method',method:'update',count:1,observed:true,reenterAt,fields:[{key:'boneMatrices',value:t('proxy',{value:arr(Array(16).fill(0))})}]});
+ for(const C of ['Bone','Skeleton'])add({kind:'metadata',class:C});return cases;}

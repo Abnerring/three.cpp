@@ -1,6 +1,8 @@
 ﻿#include "nodes/core/StackTrace.h"
 
 #include "core/JSModuleObject.h"
+#include "core/JSGlobal.h"
+#include "nodes/core/StackTraceSourceLocations.inc"
 #include "core/JSRegExp.h"
 #include <cstdlib>
 #include <regex>
@@ -46,6 +48,13 @@ std::vector<NodeStackFrame> getFilteredStack(const std::string& stack) {
 
 StackTrace::StackTrace(const std::string& stackMessage) {
     if (!stackMessage.empty()) _stack = getFilteredStack(stackMessage);
+    else {
+        const auto frames = nativeStackTraceConstructor().construct().get("stack");
+        for (unsigned i = 0; i < frames.length(); ++i) {
+            const auto frame = frames.get(std::to_string(i));
+            _stack.push_back({frame.get("fn").toString(), frame.get("file").toString(), int(frame.get("line").toNumber()), int(frame.get("column").toNumber())});
+        }
+    }
 }
 
 std::string StackTrace::getLocation() const {
@@ -75,26 +84,35 @@ JSPropertyDescriptor field(JSValue value,bool enumerable=true){JSPropertyDescrip
 JSValue invoke(const JSValue& receiver,const char* name,const Args& args={}){return receiver.get(name).call(receiver,args);}
 JSValue captureState(){
     static thread_local JSWeakValue weak;if(const auto state=weak.lock();state&&state->isObject())return *state;
-    auto state=JSValue::object(nullptr);state.defineProperty("capture",field({}));state.retainForHeapLifetime();weak=JSWeakValue(state);return state;
+    auto state=JSValue::object(nullptr);state.defineProperty("capture",field({}));
+    auto ignoredFiles=JSValue::array();for(const auto* pattern:{"^StackTrace\\.js$","^TSLCore\\.js$","^.*Node\\.js$","^three\\.webgpu.*\\.js$"})ignoredFiles.set(std::to_string(ignoredFiles.length()),createNativeRegExp(pattern));
+    state.defineProperty("ignoredFiles",field(ignoredFiles));state.retainForHeapLifetime();weak=JSWeakValue(state);return state;
+}
+JSValue mapFrame(const JSValue&,const Args& args,const Args& captures){
+    const auto line=argument(args,0);const auto match=invoke(line,"match",{captures[0]});
+    if(!match.toBoolean())return nullptr;
+    const auto first=match.get("1");JSValue fn=first;if(!first.toBoolean()){const auto second=match.get("2");fn=second.toBoolean()?second:JSValue("");}
+    const auto file=invoke(match.get("3"),"split",{"?"}).get("0");
+    const auto lineNum=nativeGlobalBinding("parseInt").call({}, {match.get("4"),10});
+    const auto column=nativeGlobalBinding("parseInt").call({}, {match.get("5"),10});
+    const auto fileName=invoke(invoke(file,"split",{"/"}),"pop");
+    auto frame=JSValue::object();frame.defineProperty("fn",field(fn));frame.defineProperty("file",field(fileName));frame.defineProperty("line",field(lineNum));frame.defineProperty("column",field(column));return frame;
+}
+JSValue testIgnored(const JSValue&,const Args& args,const Args& captures){return invoke(argument(args,0),"test",{captures[0].get("file")});}
+JSValue filterFrame(const JSValue&,const Args& args,const Args& captures){
+    const auto frame=argument(args,0);if(!frame.toBoolean())return frame;
+    return !invoke(captures[0],"some",{JSValue::function(testIgnored,{frame},"",1)}).toBoolean();
 }
 JSValue parseFrames(const JSValue& input){
-    // Native string parsing is the explicit host boundary. A custom JS
-    // split/match pipeline requires the absent String.match intrinsic.
-    if(input.type()!=JSValue::Type::String)throw StackTraceUnsupported("StackTrace: dynamic split/match input requires String.match support");
     const auto pattern=createNativeRegExp(R"((?:at\s+(.+?)\s+\()?(?:(.+?)@)?([^@\s()]+):(\d+):(\d+))");
-    auto frames=JSValue::array();std::istringstream lines(input.string());std::string text;unsigned index=0;
-    while(std::getline(lines,text)){
-        const auto match=jsRegExpExec(pattern,text);if(match.isNull())continue;
-        auto file=match.get("3").toString();if(const auto query=file.find('?');query!=std::string::npos)file.resize(query);file=stripPath(file);
-        bool skip=false;for(const auto& regexp:ignored)if(std::regex_match(file,regexp)){skip=true;break;}if(skip)continue;
-        const auto first=match.get("1"),second=match.get("2");auto frame=JSValue::object();frame.defineProperty("fn",field(first.toBoolean()?first:second.toBoolean()?second:JSValue("")));
-        frame.defineProperty("file",field(file));frame.defineProperty("line",field(std::strtod(match.get("4").toString().c_str(),nullptr)));frame.defineProperty("column",field(std::strtod(match.get("5").toString().c_str(),nullptr)));
-        frames.defineProperty(std::to_string(index++),field(frame));
-    }return frames;
+    const auto lines=invoke(input,"split",{"\n"});
+    const auto mapped=invoke(lines,"map",{JSValue::function(mapFrame,{pattern},"",1)});
+    return invoke(mapped,"filter",{JSValue::function(filterFrame,{captureState().get("ignoredFiles")},"",1)});
 }
 JSValue initializeStack(const JSValue& self,const Args& args,const Args& captures){
+    JSSourceTrace::FrameScope sourceFrame(StackTraceSourceLocations::frame("constructor"));
     auto receiver=self;receiver.set("isStackTrace",true);auto input=argument(args,0);
-    if(!input.toBoolean()){const auto capture=captures[0].get("capture");input=capture.isUndefined()?JSValue(""):capture.call();}
+    if(!input.toBoolean()){const auto capture=captures[0].get("capture");if(capture.isUndefined()){const auto error=nativeGlobalBinding("Error");JSSourceTrace::PositionScope sourcePosition(StackTraceSourceLocations::position("newError"));input=error.construct().get("stack");}else input=capture.call();}
     receiver.set("stack",parseFrames(input));return {};
 }
 JSValue location(const JSValue& self,const Args&,const Args&){

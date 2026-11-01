@@ -7,6 +7,7 @@
 #include "core/JSPromise.h"
 #include "core/JSModuleObject.h"
 #include "core/JSSet.h"
+#include "core/JSGlobal.h"
 #include "math/MathUtils.h"
 #include "utils.h"
 #include <cmath>
@@ -87,11 +88,12 @@ JSValue hashCall(const char* name, const Args& args) {
 JSValue children(JSValue self, JSValue ignores) {
     auto result = JSValue::array();
     invoke(ignores, "add")({self});
-    for (const auto& property : self.ownPropertyNames()) {
+    const auto properties = invoke(nativeGlobalBinding("Object"), "getOwnPropertyNames")({self});
+    each(properties, [&](const JSValue& property) {
         const auto object = self.get(property);
         // This read precedes the private-name check in the source.
-        if (property.starts_with('_') || invoke(ignores, "has")({object}).toBoolean()) continue;
-        if (object.type() == JSValue::Type::Array) {
+        if (invoke(property, "startsWith")({"_"}).strictEquals(true) || invoke(ignores, "has")({object}).toBoolean()) return;
+        if (invoke(nativeGlobalBinding("Array"), "isArray")({object}).strictEquals(true)) {
             for (double i = 0; i < object.get("length").toNumber(); ++i) {
                 const auto child = object.get(JSValue(i));
                 if (child.toBoolean() && child.get("isNode").strictEquals(true))
@@ -99,15 +101,15 @@ JSValue children(JSValue self, JSValue ignores) {
             }
         } else if (object.toBoolean() && object.get("isNode").strictEquals(true)) {
             push(result, literal({{"property", property}, {"childNode", object}}));
-        } else if (object.isObject() && object.getPrototype().strictEquals(JSValue::intrinsicObjectConstructor().get("prototype"))) {
+        } else if (object.toBoolean() && invoke(nativeGlobalBinding("Object"), "getPrototypeOf")({object}).strictEquals(nativeGlobalBinding("Object").get("prototype"))) {
             forIn(object, [&](const JSValue& key) {
-                if (key.string().starts_with('_')) return;
+                if (invoke(key, "startsWith")({"_"}).strictEquals(true)) return;
                 const auto child = object.get(key);
                 if (child.toBoolean() && child.get("isNode").strictEquals(true))
                     push(result, literal({{"property", property}, {"index", key}, {"childNode", child}}));
             });
         }
-    }
+    });
     return result;
 }
 constexpr const char* childGeneratorBrand = "Node.getChildren Generator";
@@ -295,7 +297,7 @@ JSValue method(const JSValue& receiver, const Args& args, const Args& captures) 
     auto self = receiver; const auto& name = captures[0].string();
     if (name == "isCacheable") return true;
     if (name == "needsUpdate") { if (arg(args, 0).strictEquals(true)) self.set("version", self.get("version").toNumber() + 1); return {}; }
-    if (name == "uuid") { if (self.get("_uuid").isNull()) self.set("_uuid", MathUtils::generateUUID()); return self.get("_uuid"); }
+    if (name == "uuid") { if (self.get("_uuid").isNull()) self.set("_uuid", captures[1].call()); return self.get("_uuid"); }
     if (name == "type") return self.get("constructor").get("type");
     if (name == "onUpdate") {
         self.set("updateType", arg(args, 1));
@@ -480,6 +482,7 @@ JSValue nativeNodeConstructor() {
     if (const auto found = weak.lock(); found && found->isConstructible()) return *found;
     static thread_local bool initializing = false; JSModuleInitializationScope scope(initializing, "Node");
     const auto updateTypes = nativeNodeConstantsBinding("NodeUpdateType");
+    const auto generateUUID = nativeMathUtilsGenerateUUID();
     auto state = JSValue::object(nullptr); own(state, "id", 0);
     auto constructor = JSValue::constructor([](const JSValue& receiver, const Args& args, const Args& captures) -> JSValue {
         auto self = receiver, state = captures[0];
@@ -517,7 +520,7 @@ JSValue nativeNodeConstructor() {
         descriptor.writable = descriptor.configurable = true; prototype.defineProperty(name, descriptor);
         if (std::string(name) == "isCacheable") {
     for (const auto* name : {"needsUpdate", "uuid", "type"}) {
-        JSPropertyDescriptor descriptor; const auto callback = JSValue::function(method, {name}, (std::string(name) == "needsUpdate" ? "set " : "get ") + std::string(name), std::string(name) == "needsUpdate" ? 1 : 0);
+        JSPropertyDescriptor descriptor; const auto callback = JSValue::function(method, std::string(name) == "uuid" ? Args{name, generateUUID} : Args{name}, (std::string(name) == "needsUpdate" ? "set " : "get ") + std::string(name), std::string(name) == "needsUpdate" ? 1 : 0);
         if (std::string(name) == "needsUpdate") descriptor.setter = callback; else descriptor.getter = callback;
         descriptor.configurable = true; prototype.defineProperty(name, descriptor);
     }

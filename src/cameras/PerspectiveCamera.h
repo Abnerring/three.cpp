@@ -28,3 +28,10 @@ class PerspectiveCamera : public Camera {
   protected:
     std::optional<JsonValue> propertyValue(const std::string& property) const override;
 };
+
+// Native managed module, separate from the typed renderer adapter above.
+#include "core/JSModuleObject.h"
+JSValue nativePerspectiveCameraModule();
+JSValue nativePerspectiveCameraBinding(const std::string& name);
+JSValue nativePerspectiveCameraConstructor();
+inline constexpr JSModuleObject PerspectiveCameraModule{nativePerspectiveCameraModule};

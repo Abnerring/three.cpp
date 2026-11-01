@@ -1,4 +1,5 @@
 #include "core/JSNumber.h"
+#include "core/JSParseInt.h"
 #include <bit>
 #include <cmath>
 #include <cstdint>
@@ -194,6 +195,10 @@ JSValue nativeNumberPrototype() {
     if (const auto value = cached.lock(); value && value->isObject())
         return *value;
     auto prototype = allocate(0);
+    // Publish the intrinsic prototype before creating its one constructor.
+    // A constructor-first call rechecks its weak cache after this initialization.
+    cached = JSWeakValue(prototype);
+    static_cast<void>(nativeNumberConstructor());
     const auto install = [&](const char* name, JSValue::NativeFunction callback, unsigned arity) {
         auto method = JSValue::function(callback, {}, name, arity);
         // Intrinsic methods survive deletion of their public prototype field,
@@ -213,4 +218,26 @@ JSValue createNativeNumberObject(const JSValue& primitiveNumber) {
     auto result = allocate(primitiveNumber);
     result.setPrototype(nativeNumberPrototype());
     return result;
+}
+
+JSValue nativeNumberConstructor(){
+    static thread_local JSWeakValue cached;
+    if(const auto value=cached.lock();value&&value->isConstructible())return *value;
+    const auto prototype=nativeNumberPrototype();
+    if(const auto value=cached.lock();value&&value->isConstructible())return *value;
+    auto constructor=JSValue::callableBuiltinConstructor(+[](const JSValue&,const JSValue& target,const std::vector<JSValue>& args,const std::vector<JSValue>&)->JSValue{
+        const JSValue number=args.empty()?JSValue(0):JSValue(args[0].toNumber());
+        if(target.isUndefined())return number;
+        // GetPrototypeFromConstructor follows argument conversion.
+        auto prototype=target.get("prototype");
+        if(!prototype.isObject())prototype=nativeNumberPrototype();
+        auto result=createNativeNumberObject(number);result.setPrototype(prototype);return result;
+    },{},"Number",1,prototype);
+    auto isInteger=JSValue::function(+[](const JSValue&,const std::vector<JSValue>& args,const std::vector<JSValue>&)->JSValue{
+        if(args.empty()||args[0].type()!=JSValue::Type::Number)return false;
+        const auto value=args[0].number();return std::isfinite(value)&&std::trunc(value)==value;
+    },{},"isInteger",1);
+    JSPropertyDescriptor property;property.value=isInteger;property.writable=property.configurable=true;constructor.defineProperty("isInteger",property);
+    property.value=nativeParseIntFunction();constructor.defineProperty("parseInt",property);
+    constructor.retainForHeapLifetime();cached=JSWeakValue(constructor);return constructor;
 }

@@ -22,3 +22,11 @@ class Matrix2 {
   private:
     std::array<double, 4> elements_{1, 0, 0, 1};
 };
+
+#ifndef THREECPP_MANAGED_MATRIX2_MODULE
+#define THREECPP_MANAGED_MATRIX2_MODULE
+#include "core/JSModuleObject.h"
+JSValue nativeMatrix2Module();
+JSValue nativeMatrix2Binding(const std::string& name);
+inline constexpr JSModuleObject Matrix2Module{nativeMatrix2Module};
+#endif

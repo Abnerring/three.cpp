@@ -1,4 +1,5 @@
 #include "core/JSWeakRef.h"
+#include "core/JSSymbol.h"
 namespace {
 using Args = std::vector<JSValue>;
 const JSValue& argument(const Args& args, std::size_t index) {
@@ -6,7 +7,7 @@ const JSValue& argument(const Args& args, std::size_t index) {
 }
 JSValue initialize(const JSValue& newTarget, const Args& args, const Args&) {
     const auto& target = argument(args, 0);
-    if (!target.isObject()) throw JSTypeError("WeakRef target must be held weakly");
+    if (!nativeCanBeHeldWeakly(target)) throw JSTypeError("WeakRef target must be held weakly");
     static_cast<void>(JSWeakValue(target));
     const auto candidate = newTarget.get("prototype");
     return JSWeakRef::create(candidate.isObject() ? candidate : nativeWeakRefConstructor().get("prototype"), target);
@@ -34,7 +35,7 @@ JSValue nativeWeakRefConstructor() {
     constructor.retainForHeapLifetime(); cached = JSWeakValue(constructor); return constructor;
 }
 JSValue createNativeWeakRef(const JSValue& target) {
-    if (!target.isObject()) throw JSTypeError("WeakRef target must be held weakly");
+    if (!nativeCanBeHeldWeakly(target)) throw JSTypeError("WeakRef target must be held weakly");
     static_cast<void>(JSWeakValue(target));
     return nativeWeakRefConstructor().construct({target});
 }

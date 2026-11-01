@@ -10,3 +10,5 @@ CompressedTexture::CompressedTexture(Mipmaps levels, double width, double height
 std::shared_ptr<Texture> CompressedTexture::clone() const {
     auto result = std::make_shared<CompressedTexture>(); result->copy(*this); return result;
 }
+
+#include "textures/CompressedTextureRuntimeSource.inc"

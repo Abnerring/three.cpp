@@ -2,6 +2,7 @@
 #include "core/JSFunction.h"
 #include "core/JSNumber.h"
 #include "core/JSBoolean.h"
+#include "core/JSSymbol.h"
 #include "core/JSProxy.h"
 #include "core/JSRegExp.h"
 #include "core/JSJobs.h"
@@ -250,7 +251,7 @@ JSValue objectValueOf(const JSValue& receiver, const std::vector<JSValue>&, cons
 JSValue objectToString(const JSValue& receiver, const std::vector<JSValue>&, const std::vector<JSValue>&) {
     if(receiver.isUndefined())return "[object Undefined]";
     if(receiver.isNull())return "[object Null]";
-    const bool primitiveWrapper=receiver.type()==JSValue::Type::Boolean||receiver.type()==JSValue::Type::Number||receiver.type()==JSValue::Type::String;
+    const bool primitiveWrapper=receiver.type()==JSValue::Type::Boolean||receiver.type()==JSValue::Type::Number||receiver.type()==JSValue::Type::String||receiver.type()==JSValue::Type::Symbol;
     const auto object=primitiveWrapper?receiver.toObject():receiver;
     const auto array=isNativeArray(object);
     // Node 26 / V8 preserves primitive receivers for this observable getter.
@@ -311,7 +312,7 @@ std::uint64_t arrayLikeLength(JSValue object) {
     return static_cast<std::uint64_t>(std::clamp(n, 0.0, 9007199254740991.0));
 }
 JSValue arrayObject(JSValue object) {
-    if (object.type()==JSValue::Type::Boolean) return object.toObject();
+    if (object.type()==JSValue::Type::Boolean || object.type()==JSValue::Type::Symbol) return object.toObject();
     if (!object.isObject()) throw JSTypeError("Array operation requires an object receiver");
     return object;
 }
@@ -532,6 +533,20 @@ JSValue arrayEvery(const JSValue& receiver, const Args& args, const Args&) {
     const auto callback=argument(args,0),thisArg=argument(args,1);if(!callback.isCallable())throw JSTypeError("Array.every callback is not callable");
     for(std::uint64_t index=0;index<length;++index){const auto key=std::to_string(index);if(object.has(key)){const auto value=object.get(key);if(!callback.call(thisArg,{value,index,object}).toBoolean())return false;}}
     return true;
+}
+JSValue arraySome(const JSValue& receiver, const Args& args, const Args&) {
+    const auto object = receiver.toObject();
+    const auto length = arrayLikeLength(object);
+    const auto callback = argument(args, 0), thisArg = argument(args, 1);
+    if (!callback.isCallable()) throw JSTypeError("Array.prototype.some callback is not callable");
+    for (std::uint64_t index = 0; index < length; ++index) {
+        const auto key = std::to_string(index);
+        if (object.has(key)) {
+            const auto value = object.get(key);
+            if (callback.call(thisArg, {value, JSValue(index), object}).toBoolean()) return true;
+        }
+    }
+    return false;
 }
 JSValue arrayFill(const JSValue& receiver, const Args& args, const Args&) {
     auto object=arrayMethodObject(receiver);const auto length=arrayLikeLength(object);
@@ -1114,6 +1129,7 @@ class JSHeap : public std::enable_shared_from_this<JSHeap> {
         install(array, "filter", arrayFilter, 1);
         install(array, "reduce", arrayReduce, 1);
         install(array, "every", arrayEvery, 1);
+        install(array, "some", arraySome, 1);
         install(array, "fill", arrayFill, 1);
         auto arrayCtor = createFunction(arrayConstructor, {}, "Array", 1);
         record(arrayCtor).intrinsic = true;
@@ -1703,7 +1719,7 @@ bool JSValue::hasWeakMapData() const {
 }
 JSValue JSValue::weakMapGet(const JSValue& key) const {
     if (!hasWeakMapData()) throw JSTypeError("WeakMap.get receiver lacks WeakMap data");
-    if (!key.isObject() && !key.isSymbol()) return {};
+    if (!nativeCanBeHeldWeakly(key)) return {};
     static_cast<void>(JSWeakValue(key)); heap_->validateEdge(key);
     const auto& entries = heap_->record(*this).weakEntries;
     if (!entries) return {};
@@ -1712,23 +1728,22 @@ JSValue JSValue::weakMapGet(const JSValue& key) const {
 }
 bool JSValue::weakMapHas(const JSValue& key) const {
     if (!hasWeakMapData()) throw JSTypeError("WeakMap.has receiver lacks WeakMap data");
-    if (!key.isObject() && !key.isSymbol()) return false;
+    if (!nativeCanBeHeldWeakly(key)) return false;
     static_cast<void>(JSWeakValue(key)); heap_->validateEdge(key);
     const auto& entries = heap_->record(*this).weakEntries;
     return entries && entries->contains(std::get<Reference>(key.value_).id);
 }
 bool JSValue::weakMapErase(const JSValue& key) {
     if (!hasWeakMapData()) throw JSTypeError("WeakMap.delete receiver lacks WeakMap data");
-    if (!key.isObject() && !key.isSymbol()) return false;
+    if (!nativeCanBeHeldWeakly(key)) return false;
     static_cast<void>(JSWeakValue(key)); heap_->validateEdge(key);
     const auto& entries = heap_->record(*this).weakEntries;
     return entries && entries->erase(std::get<Reference>(key.value_).id) != 0;
 }
 void JSValue::weakMapSet(const JSValue& key, const JSValue& value) {
     if (!hasWeakMapData()) throw JSTypeError("WeakMap.set receiver lacks WeakMap data");
-    // Runtime Symbol factories currently create unregistered symbols only.
-    // They have heap identities and use the same conditional edges as objects.
-    if (!key.isObject() && !key.isSymbol()) throw JSTypeError("Invalid value used as weak map key");
+    // Registered symbols are registry roots and cannot be weak collection keys.
+    if (!nativeCanBeHeldWeakly(key)) throw JSTypeError("Invalid value used as weak map key");
     static_cast<void>(JSWeakValue(key)); static_cast<void>(JSWeakValue(value));
     heap_->validateEdge(key); heap_->validateEdge(value);
     auto& entries = heap_->record(*this).weakEntries;
@@ -1737,7 +1752,7 @@ void JSValue::weakMapSet(const JSValue& key, const JSValue& value) {
 }
 
 JSValue JSValue::createWeakRefData(const JSValue& prototype, const JSValue& target) {
-    if (!target.isObject()) throw JSTypeError("WeakRef target must be held weakly");
+    if (!nativeCanBeHeldWeakly(target)) throw JSTypeError("WeakRef target must be held weakly");
     static_cast<void>(JSWeakValue(target)); static_cast<void>(JSWeakValue(prototype));
     const auto heap = JSHeap::current(); heap->validateEdge(target); heap->validateEdge(prototype);
     if (!prototype.isObject() && !prototype.isNull()) throw JSTypeError("WeakRef prototype must be object or null");
@@ -1780,18 +1795,18 @@ bool JSValue::hasFinalizationRegistryData() const {
 void JSValue::finalizationRegistryRegister(const JSValue& target, const JSValue& heldValue,
                                          const JSValue& token) {
     if (!hasFinalizationRegistryData()) throw JSTypeError("FinalizationRegistry.register receiver lacks registry data");
-    if (!target.isObject()) throw JSTypeError("FinalizationRegistry target must be held weakly");
+    if (!nativeCanBeHeldWeakly(target)) throw JSTypeError("FinalizationRegistry target must be held weakly");
     if (target.sameValue(heldValue)) throw JSTypeError("FinalizationRegistry target and held value must differ");
-    if (!token.isUndefined() && !token.isObject()) throw JSTypeError("FinalizationRegistry token must be held weakly");
+    if (!token.isUndefined() && !nativeCanBeHeldWeakly(token)) throw JSTypeError("FinalizationRegistry token must be held weakly");
     for (const auto* value : {&target, &heldValue, &token}) {
         static_cast<void>(JSWeakValue(*value)); heap_->validateEdge(*value);
     }
-    const auto tokenId = token.isObject() ? std::optional<std::uint64_t>(std::get<Reference>(token.value_).id) : std::nullopt;
+    const auto tokenId = !token.isUndefined() ? std::optional<std::uint64_t>(std::get<Reference>(token.value_).id) : std::nullopt;
     heap_->record(*this).finalization->cells.push_back({std::get<Reference>(target.value_).id, tokenId, heldValue.graphEdge()});
 }
 bool JSValue::finalizationRegistryUnregister(const JSValue& token) {
     if (!hasFinalizationRegistryData()) throw JSTypeError("FinalizationRegistry.unregister receiver lacks registry data");
-    if (!token.isObject()) throw JSTypeError("FinalizationRegistry token must be held weakly");
+    if (!nativeCanBeHeldWeakly(token)) throw JSTypeError("FinalizationRegistry token must be held weakly");
     static_cast<void>(JSWeakValue(token)); heap_->validateEdge(token);
     const auto id = std::get<Reference>(token.value_).id;
     auto& cells = heap_->record(*this).finalization->cells;
@@ -2108,7 +2123,7 @@ JSValue JSValue::toObject() const {
     if(type()==Type::Boolean)return createNativeBooleanObject(*this);
     if(type()==Type::Number)return createNativeNumberObject(*this);
     if(type()==Type::String)return createNativeStringObject(*this);
-    throw std::logic_error("Symbol wrapper intrinsic is not implemented");
+    return createNativeSymbolObject(*this);
 }
 JSValue JSValue::getPrototypeFromConstructor(const JSValue& defaultIntrinsic) const {
     static_cast<void>(JSWeakValue(*this));
@@ -2190,6 +2205,7 @@ JSValue JSValue::call(const JSValue& receiver, const std::vector<JSValue>& args)
         throw JSTypeError("Class constructor cannot be invoked without new");
     const std::vector<JSValue> captures = record.captures;
     const auto callback = record.callback;
+    JSSourceTrace::NativeCallScope sourceCall(function.sourceFunctionIdentity());
     if (record.constructMode == JSHeap::Record::ConstructMode::CallableBuiltin)
         return record.builtinCallback(rootedReceiver, JSValue{}, rootedArgs, captures);
     return callback(rootedReceiver, rootedArgs, captures);
@@ -2264,6 +2280,7 @@ JSValue JSValue::construct(const std::vector<JSValue>& args, const JSValue& newT
     const auto mode = record.constructMode;
     const auto callback = record.callback;
     const std::vector<JSValue> captures = record.captures;
+    JSSourceTrace::NativeCallScope sourceCall(function.sourceFunctionIdentity());
     if (mode == JSHeap::Record::ConstructMode::Bound) {
         Args combined(captures.begin() + 2, captures.end());
         combined.insert(combined.end(), rootedArgs.begin(), rootedArgs.end());
@@ -2289,6 +2306,11 @@ JSValue JSValue::construct(const std::vector<JSValue>& args, const JSValue& newT
     auto result = callback(receiver, rootedArgs, captures);
     if (mode == JSHeap::Record::ConstructMode::Array) result.setPrototype(prototype);
     return result.isObject() ? result : receiver;
+}
+JSSourceTrace::FunctionIdentity JSValue::sourceFunctionIdentity() const {
+    static_cast<void>(JSWeakValue(*this));
+    if (!isCallable()) return {};
+    return {reinterpret_cast<std::uintptr_t>(heap_), std::get<Reference>(value_).id};
 }
 std::string JSValue::nativeFunctionSource() const {
     static_cast<void>(JSWeakValue(*this));
@@ -2340,6 +2362,7 @@ JSValue JSValue::get(const std::string& rawKey, const JSValue& receiver) const {
     }
     if (self.type() == Type::Number) return nativeNumberPrototype().get(key, rootedReceiver);
     if (self.type() == Type::Boolean) return nativeBooleanPrototype().get(key, rootedReceiver);
+    if (self.type() == Type::Symbol) return nativeSymbolPrototype().get(key, rootedReceiver);
     if (!self.isObject()) return {};
     if (self.isProxy()) return JSProxyDetail::get(self, key, rootedReceiver);
     const auto descriptor = self.getOwnPropertyDescriptor(key);
@@ -2399,6 +2422,7 @@ bool JSValue::reflectSet(const std::string& rawKey, const JSValue& value, const 
 }
 void JSValue::set(const std::string& key, const JSValue& value) {
     if(type()==Type::Boolean){auto wrapper=toObject();if(!wrapper.reflectSet(key,value,*this))throw JSTypeError("Cannot assign property to Boolean primitive");return;}
+    if(type()==Type::Symbol){auto wrapper=toObject();if(!wrapper.reflectSet(key,value,*this))throw JSTypeError("Cannot assign property to Symbol primitive");return;}
     if (!reflectSet(key, value, *this)) throw JSTypeError("Cannot assign property '" + key + "'");
 }
 bool JSValue::defineOwnProperty(const std::string& rawKey, const PropertyDescriptor& input) {
@@ -2578,6 +2602,7 @@ JSValue JSValue::get(const JSValue& input,const JSValue& receiver) const {
     if(self.type()==Type::String)return nativeStringPrototype().get(key,rootedReceiver);
     if(self.type()==Type::Number)return nativeNumberPrototype().get(key,rootedReceiver);
     if(self.type()==Type::Boolean)return nativeBooleanPrototype().get(key,rootedReceiver);
+    if(self.type()==Type::Symbol)return nativeSymbolPrototype().get(key,rootedReceiver);
     if(!self.isObject())return {};
     if(self.isProxy())return JSProxyDetail::get(self,key,rootedReceiver);
     const auto d=self.getOwnPropertyDescriptor(key);
@@ -2624,6 +2649,7 @@ bool JSValue::reflectSet(const JSValue& input,const JSValue& value,const JSValue
 }
 void JSValue::set(const JSValue& key,const JSValue& value) {
     if(type()==Type::Boolean){auto wrapper=toObject();if(!wrapper.reflectSet(key,value,*this))throw JSTypeError("Cannot assign property to Boolean primitive");return;}
+    if(type()==Type::Symbol){auto wrapper=toObject();if(!wrapper.reflectSet(key,value,*this))throw JSTypeError("Cannot assign property to Symbol primitive");return;}
 
     if(!reflectSet(key,value,*this))throw JSTypeError("Cannot assign property");
 }

@@ -25,3 +25,7 @@ class ShaderMaterial : public Material {
     Material& fromJSON(const JsonValue& json,
         const OrderedMap<std::shared_ptr<Texture>>& textures = {}) override;
 };
+
+JSValue nativeShaderMaterialConstructor();
+JSValue nativeShaderMaterialModule();
+JSValue nativeShaderMaterialBinding(const std::string& name);

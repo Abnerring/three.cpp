@@ -6,6 +6,20 @@
 
 范围包含全部 `src` 与 `examples/jsm`，扩展携带的第三方库单独跟踪依赖和许可。editor、manual 网页应用不作为原生应用重写。要求 Windows、Linux、macOS 分别验收。禁止引入 CEF、嵌入式浏览器和 JS 运行时桥接；Node 仅用于开发阶段的上游差分与审计。浏览器专属接口由 C++ 原生适配逐项实现，未实现的能力保持待办。
 
+## 2026-11-02 阶段代码，完整统一回归进行中
+
+固定上游为 `11738a9d55e502fb484cefffcea3a66dc44e9fe9`。按对应路径审计，当前607/1251模块已有C++文件（src523/755，examples/jsm84/496），644个尚无对应路径；这是路径覆盖，不是功能完成率。另有50个addon加载器在src/loaders中已有部分实现，待迁到上游examples/jsm/loaders位置，不能当完全未实现。所有模块的全量verifiedComplete仍为false。
+
+本批接入数学/相机、传统材质、Skeleton与变形网格、NodeMaterial、现代PMREM及原生运行时前置。数学/错误族/向量/矩阵/相机/Symbol、传统材质4373、Skeleton596、变形网格511、CubeMap/RenderTarget50均已有实际原生差分；AsyncFunction252及24项GC观察、Promise27次实际原生域退休另有证据。native-ctest10五项全过：NodeMaterial331及三heap、Node.children17个动态协议案例（含执行中GC）、StackTrace/parseInt570及三heap。各组证据对应其执行时快照。
+
+全部307个CPU测试目标已统一构建成功（971步，1203.02秒）。整套387项注册检查及27项原默认绝对对照，共414项，正在同一冻结源码/二进制快照上运行；记录时356/414结束，5项未通过（记录时间UTC 2026-11-01T19:06:52.532731+00:00）。尚未取得完整整套结果，不把已完成部分当作整套通过。原relative/fixture检查与默认绝对对照均保留。
+
+当前GPU全部12目标统一构建成功，13/13既有注册检查通过，44.31秒；2831源码/测试/工具/配置文件及12个实际二进制/构建定义运行前后未变。实际未启用validation，机器未提供Khronos验证层。这13项仅覆盖已有路径，完整传统/现代Vulkan、扩展、原生宿主和三平台仍未完成。
+
+后续私有候选中的基本类型赋值、Symbol原型、Interleaved clone和Lights宿主job已有独立原生证据；HalfFloat/生命周期两组各9个实际GPU场景也已通过，但这些候选尚未合入此阶段代码。完整Hash/节点数学候选首次原生运行180秒超时，且已完成前缀发现通用TSL链函数源码元数据缺口；FlyControls仅完成源对照/语法，typed桥首次私有编译暴露同目录inc查找配置问题。均保留原失败，不能计作当前集成通过。
+
+阶段代码提交保留上述验证边界。证据根目录为 `D:/Temp/surui/threecpp-foundations-20261101`；完整统一回归与最终只读归档仍在进行，精确证据见VALIDATION当前节。无CEF、嵌入浏览器或生产JS运行时。
+
 ## 2026-11-01 已验收范围
 
 本轮管理对象模型与Function/Generator/JSON等前置已接入：111个CPU目标，159项所选回归158过/1既有编号失败，13组当前差分11955 cases及13生命周期全过，Vulkan已有五项全过。完整模块、动态运行时与完整渲染仍有缺口；后续相机/数学/材质/Skeleton/NodeMaterial候选未共同native验收。最新精确证据和边界见VALIDATION最前节，下方日期记录为历史，不代表当前模块完成度。固定上游保持11738a9d；本地three.js主目录更新后使用独立固定worktree验收。

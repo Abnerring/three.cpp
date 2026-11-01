@@ -26,3 +26,10 @@ class Skeleton : public std::enable_shared_from_this<Skeleton> {
                        const std::map<std::string, std::shared_ptr<Bone>>& bones);
     JsonValue toJSON() const;
 };
+
+// Complete managed class; typed renderer bridge remains separate.
+#include "core/JSModuleObject.h"
+JSValue nativeSkeletonConstructor();
+JSValue nativeSkeletonModule();
+JSValue nativeSkeletonBinding(const std::string& name);
+inline constexpr JSModuleObject SkeletonModule{nativeSkeletonModule};

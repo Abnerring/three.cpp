@@ -1,4 +1,11 @@
+#include "core/JSNumber.h"
+#include "core/JSParseInt.h"
+#include "core/JSSymbol.h"
+#include <bit>
+#include <cstdint>
 #include "core/JSGlobal.h"
+#include "core/JSPromise.h"
+#include "core/JSHostPerformance.h"
 #include "core/JSFunction.h"
 #include "core/JSJSON.h"
 #include "math/JSNumberMath.h"
@@ -35,16 +42,22 @@ JSValue initialStringConstructor(){
 }
 JSValue initialMathObject(){
     auto math=JSValue::object();
-    for(const auto* name:{"sin","cos","ceil","sqrt","round","abs","acos","asin","floor"}){
+    for(const auto* name:{"sin","cos","ceil","sqrt","round","abs","acos","asin","floor","tan","atan","exp","log","log2","trunc"}){
         auto function=JSValue::function(+[](const JSValue&,const std::vector<JSValue>& args,const std::vector<JSValue>& captures)->JSValue{
             const auto input=(args.empty()?JSValue{}:args[0]).toNumber();
             if(captures[0].strictEquals("sin"))return JSNumberMath::sin(input);
             if(captures[0].strictEquals("cos"))return JSNumberMath::cos(input);
             if(captures[0].strictEquals("acos"))return JSNumberMath::acos(input);
             if(captures[0].strictEquals("asin"))return JSNumberMath::asin(input);
+            if(captures[0].strictEquals("tan"))return JSNumberMath::tan(input);
+            if(captures[0].strictEquals("atan"))return JSNumberMath::atan(input);
+            if(captures[0].strictEquals("exp"))return JSNumberMath::exp(input);
+            if(captures[0].strictEquals("log"))return JSNumberMath::log(input);
+            if(captures[0].strictEquals("log2"))return JSNumberMath::log2(input);
             if(captures[0].strictEquals("sqrt"))return std::sqrt(input);
             if(captures[0].strictEquals("abs"))return std::fabs(input);
             if(captures[0].strictEquals("floor"))return std::floor(input);
+            if(captures[0].strictEquals("trunc"))return std::trunc(input);
             if(captures[0].strictEquals("round")){
                 if(!std::isfinite(input)||input==0)return input;
                 const auto floor=std::floor(input);const auto result=input-floor>=0.5?floor+1:floor;
@@ -54,6 +67,22 @@ JSValue initialMathObject(){
         },{name},name,1);
         JSPropertyDescriptor d;d.value=function;d.writable=d.configurable=true;math.defineProperty(name,d);
     }
+
+    auto power=JSValue::function(+[](const JSValue&,const std::vector<JSValue>& args,const std::vector<JSValue>&)->JSValue{
+        const auto x=(args.empty()?JSValue{}:args[0]).toNumber();
+        const auto y=(args.size()<2?JSValue{}:args[1]).toNumber();
+        return JSNumberMath::pow(x,y);
+    },{},"pow",2);
+    JSPropertyDescriptor powerProperty;powerProperty.value=power;powerProperty.writable=powerProperty.configurable=true;math.defineProperty("pow",powerProperty);
+    auto multiply=JSValue::function(+[](const JSValue&,const std::vector<JSValue>& args,const std::vector<JSValue>&)->JSValue{
+        const auto uint32=[](double value)->std::uint32_t{if(!std::isfinite(value)||value==0)return 0;auto n=std::fmod(std::trunc(value),4294967296.0);if(n<0)n+=4294967296.0;return static_cast<std::uint32_t>(n);};
+        const auto left=uint32((args.empty()?JSValue{}:args[0]).toNumber());
+        const auto right=uint32((args.size()<2?JSValue{}:args[1]).toNumber());
+        return std::bit_cast<std::int32_t>(left*right);
+    },{},"imul",2);
+    JSPropertyDescriptor multiplyProperty;multiplyProperty.value=multiply;multiplyProperty.writable=multiplyProperty.configurable=true;math.defineProperty("imul",multiplyProperty);
+    JSPropertyDescriptor ln2;ln2.value=0x1.62e42fefa39efp-1;math.defineProperty("LN2",ln2);
+
     auto atan2=JSValue::function(+[](const JSValue&,const std::vector<JSValue>& args,const std::vector<JSValue>&)->JSValue{
         // Both conversions are observable, in y/x order, even when y is NaN.
         const auto y=(args.empty()?JSValue{}:args[0]).toNumber();
@@ -94,9 +123,10 @@ JSValue nativeGlobalObject(){
     JSPropertyDescriptor string;string.value=initialStringConstructor();string.writable=string.configurable=true;object.defineProperty("String",string);
     JSPropertyDescriptor array;array.value=JSValue::intrinsicArrayConstructor();array.writable=array.configurable=true;object.defineProperty("Array",array);
     JSPropertyDescriptor map;map.value=nativeMapConstructor();map.writable=map.configurable=true;object.defineProperty("Map",map);
-    for(const auto& entry:std::initializer_list<std::pair<const char*,JSValue>>{{"JSON",nativeJSONObject()},{"Function",nativeFunctionConstructor()},{"Boolean",nativeBooleanConstructor()},{"Error",nativeErrorConstructor()},{"Object",JSValue::intrinsicObjectConstructor()},{"WeakMap",nativeWeakMapConstructor()},{"Set",nativeSetConstructor()},{"ArrayBuffer",nativeArrayBufferConstructor()}}){
+    for(const auto& entry:std::initializer_list<std::pair<const char*,JSValue>>{{"Promise",nativePromiseConstructor()},{"performance",nativeHostPerformanceObject()},{"Number",nativeNumberConstructor()},{"Symbol",nativeSymbolConstructor()},{"JSON",nativeJSONObject()},{"Function",nativeFunctionConstructor()},{"Boolean",nativeBooleanConstructor()},{"Error",nativeErrorConstructor()},{"EvalError",nativeEvalErrorConstructor()},{"RangeError",nativeRangeErrorConstructor()},{"ReferenceError",nativeReferenceErrorConstructor()},{"SyntaxError",nativeSyntaxErrorConstructor()},{"TypeError",nativeTypeErrorConstructor()},{"URIError",nativeURIErrorConstructor()},{"Object",JSValue::intrinsicObjectConstructor()},{"WeakMap",nativeWeakMapConstructor()},{"Set",nativeSetConstructor()},{"ArrayBuffer",nativeArrayBufferConstructor()}}){
         JSPropertyDescriptor property;property.value=entry.second;property.writable=property.configurable=true;object.defineProperty(entry.first,property);
     }
+    JSPropertyDescriptor parseInt;parseInt.value=nativeParseIntFunction();parseInt.writable=parseInt.configurable=true;object.defineProperty("parseInt",parseInt);
     for(const auto* name:{"isNaN","isFinite"}){
         auto function=JSValue::function(+[](const JSValue&,const std::vector<JSValue>& args,const std::vector<JSValue>& captures)->JSValue{
             const auto value=(args.empty()?JSValue{}:args[0]).toNumber();

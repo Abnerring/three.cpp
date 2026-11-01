@@ -29,3 +29,10 @@ class Camera : public Object3D {
   private:
     void updateViewMatrix();
 };
+
+// Native managed module, separate from the typed renderer adapter above.
+#include "core/JSModuleObject.h"
+JSValue nativeCameraClassModule();
+JSValue nativeCameraClassBinding(const std::string& name);
+JSValue nativeCameraConstructor();
+inline constexpr JSModuleObject CameraModule{nativeCameraClassModule};

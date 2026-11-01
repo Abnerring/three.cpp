@@ -28,3 +28,10 @@ class Scene : public Object3D {
     void serializeObjectResources(Object3DJSONContext& meta, JsonValue& object) const override;
     std::optional<JsonValue> propertyValue(const std::string& property) const override;
 };
+
+// Native managed module, preserving the complete typed prefix above.
+#include "core/JSModuleObject.h"
+JSValue nativeSceneModule();
+JSValue nativeSceneBinding(const std::string& name);
+JSValue nativeSceneConstructor();
+inline constexpr JSModuleObject SceneModule{nativeSceneModule};

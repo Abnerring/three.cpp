@@ -277,3 +277,11 @@ private:
 };
 
 #endif
+
+#ifndef THREECPP_MANAGED_MATRIX4_MODULE
+#define THREECPP_MANAGED_MATRIX4_MODULE
+#include "core/JSModuleObject.h"
+JSValue nativeMatrix4Module();
+JSValue nativeMatrix4Binding(const std::string& name);
+inline constexpr JSModuleObject Matrix4Module{nativeMatrix4Module};
+#endif

@@ -166,11 +166,11 @@ JSValue textureMethod(const JSValue& receiver, const Args& args, const Args& cap
 JSValue nativeTextureSourceConstructor() {
     static thread_local JSWeakValue weak; static thread_local bool initializing = false;
     if (const auto ctor = weak.lock(); ctor && ctor->isConstructible()) return *ctor;
-    JSModuleInitializationScope scope(initializing, "TextureSource"); auto state = JSValue::object(nullptr); state.set("id", 0);
+    JSModuleInitializationScope scope(initializing, "TextureSource"); auto state = JSValue::object(nullptr); state.set("id", 0); state.set("generateUUID", nativeMathUtilsGenerateUUID());
     auto ctor = JSValue::constructor([](const JSValue& receiver, const Args& args, const Args& captures) -> JSValue {
         auto self = receiver, state = captures[0]; self.set("isTextureSource", true);
         const auto id = state.get("id").toNumber(); state.set("id", id + 1); JSPropertyDescriptor d; d.value = id; self.defineProperty("id", d);
-        self.set("uuid", MathUtils::generateUUID()); self.set("data", fallback(args, 0, nullptr)); self.set("dataReady", true); self.set("version", 0); return {};
+        self.set("uuid", state.get("generateUUID").call()); self.set("data", fallback(args, 0, nullptr)); self.set("dataReady", true); self.set("version", 0); return {};
     }, {state}, "TextureSource", 0);
     const auto prototype = ctor.get("prototype"); method(prototype, "getSize", 1, sourceMethod); accessor(prototype, "needsUpdate", sourceMethod, false, true); method(prototype, "toJSON", 1, sourceMethod);
     ctor.retainForHeapLifetime(); weak = JSWeakValue(ctor); return ctor;
@@ -179,7 +179,7 @@ JSValue nativeTextureSourceConstructor() {
 JSValue nativeTextureConstructor() {
     static thread_local JSWeakValue weak; static thread_local bool initializing = false;
     if (const auto ctor = weak.lock(); ctor && ctor->isConstructible()) return *ctor;
-    JSModuleInitializationScope scope(initializing, "Texture"); auto state = JSValue::object(nullptr); state.set("id", 0);
+    JSModuleInitializationScope scope(initializing, "Texture"); auto state = JSValue::object(nullptr); state.set("id", 0); state.set("generateUUID", nativeMathUtilsGenerateUUID());
     const auto base = EventDispatcher::runtimePrototype().get("constructor");
     auto ctor = JSValue::builtinConstructor([](const JSValue& newTarget, const Args& args, const Args& captures) -> JSValue {
         auto state = captures[0]; const auto constructor = state.get("constructor");
@@ -193,10 +193,10 @@ JSValue nativeTextureConstructor() {
         const auto space = fallback(args, 9, NoColorSpace);
         auto self = constructor.getPrototype().construct({}, newTarget); self.set("isTexture", true);
         const auto id = state.get("id").toNumber(); state.set("id", id + 1); JSPropertyDescriptor d; d.value = id; self.defineProperty("id", d);
-        self.set("uuid", MathUtils::generateUUID()); self.set("name", ""); self.set("source", nativeTextureSourceConstructor().construct({image})); self.set("mipmaps", JSValue::array());
+        self.set("uuid", state.get("generateUUID").call()); self.set("name", ""); self.set("source", nativeTextureSourceConstructor().construct({image})); self.set("mipmaps", JSValue::array());
         for (const auto& [key, value] : std::initializer_list<std::pair<const char*, JSValue>>{{"mapping", mapping}, {"channel", 0}, {"wrapS", wrapS}, {"wrapT", wrapT}, {"magFilter", mag}, {"minFilter", min}, {"anisotropy", anisotropy}, {"format", format}, {"internalFormat", nullptr}, {"type", type}}) self.set(key, value);
         self.set("offset", nativeVector2Constructor().construct({0, 0})); self.set("repeat", nativeVector2Constructor().construct({1, 1})); self.set("center", nativeVector2Constructor().construct({0, 0}));
-        self.set("rotation", 0); self.set("matrixAutoUpdate", true); self.set("matrix", nativeMatrix(std::make_shared<Matrix3>()));
+        self.set("rotation", 0); self.set("matrixAutoUpdate", true); self.set("matrix", nativeMatrix3Constructor().construct());
         for (const auto& [key, value] : std::initializer_list<std::pair<const char*, JSValue>>{{"generateMipmaps", true}, {"mipmapsAutoUpdate", true}, {"premultiplyAlpha", false}, {"flipY", true}, {"unpackAlignment", 4}, {"colorSpace", space}}) self.set(key, value);
         self.set("userData", JSValue::object()); self.set("updateRanges", JSValue::array()); self.set("version", 0); self.set("onUpdate", nullptr); self.set("renderTarget", nullptr); self.set("isRenderTargetTexture", false);
         self.set("isArrayTexture", image.toBoolean() && image.get("depth").toBoolean() && JSOperators::greater(image.get("depth"), 1));

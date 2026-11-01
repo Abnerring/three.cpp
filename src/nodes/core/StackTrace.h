@@ -5,10 +5,8 @@
 
 // Port of src/nodes/core/StackTrace.js at the pinned revision.
 //
-// The parsed representation and both formatting methods are portable; what is not is the
-// default capture, because that reads a JavaScript engine stack string. The constructor
-// therefore takes an explicit stack string, and the no-argument form yields an empty stack
-// rather than inventing one.
+// Default capture reads the current global Error constructor and its stack.
+// Translated native execution supplies real source frames through JSSourceTrace.
 struct NodeStackFrame {
     std::string fn;
     std::string file;
@@ -21,8 +19,8 @@ struct NodeStackFrame {
 std::vector<NodeStackFrame> getFilteredStack(const std::string& stack);
 
 JSValue nativeStackTraceConstructor();
-// Native hosts supply Error.stack-shaped strings; without a provider capture
-// is empty. This port does not invent JavaScript call frames.
+// Hosts may override capture explicitly; undefined restores the upstream
+// new Error().stack path. Source frames are recorded at actual execution sites.
 void setNodeStackCaptureFunction(const JSValue& callback);
 class StackTraceUnsupported : public std::logic_error {
   public:

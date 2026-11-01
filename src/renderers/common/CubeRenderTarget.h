@@ -1,6 +1,6 @@
 #pragma once
 #include "core/JSValue.h"
-
-// Modern CubeRenderTarget, with the same managed RenderTarget/texture objects.
-// Equirectangular conversion requires the remaining NodeMaterial render path.
+#include <string>
 JSValue nativeCubeRenderTargetConstructor();
+JSValue nativeCubeRenderTargetModule();
+JSValue nativeCubeRenderTargetBinding(const std::string& name);
