@@ -1,7 +1,4 @@
 #include "core/JSObject.h"
-#include "core/JSString.h"
-#include "core/JSNumber.h"
-#include "core/JSBoolean.h"
 namespace {
 JSPropertyDescriptor toPropertyDescriptor(const JSValue& object) {
     if(!object.isObject())throw JSTypeError("Property description must be an object");
@@ -34,8 +31,6 @@ JSValue defineProperties(const JSValue&,const Args& args,const Args&){
     if(!target.isObject())throw JSTypeError("Object.defineProperties requires an object");
     auto properties=args.size()>1?args[1]:JSValue{};
     if(properties.isNull()||properties.isUndefined())throw JSTypeError("Cannot convert undefined or null to object");
-    // Symbol wrappers have no own properties; boxing does not invoke user code.
-    if(properties.isSymbol())return target;
     properties=properties.toObject();
     std::vector<std::pair<JSValue,JSPropertyDescriptor>> descriptors;
     const auto keys=properties.ownPropertyKeys();
@@ -55,17 +50,11 @@ JSValue defineProperties(const JSValue&,const Args& args,const Args&){
 JSValue assign(const JSValue&,const Args& args,const Args&) {
     auto target=args.empty()?JSValue():args[0];
     if(target.isUndefined()||target.isNull())throw JSTypeError("Cannot convert undefined or null to object");
-    if(!target.isObject()) {
-        if(target.type()==JSValue::Type::String||target.type()==JSValue::Type::Number||target.type()==JSValue::Type::Boolean)target=target.toObject();
-        else throw JSTypeError("Symbol target boxing is not implemented");
-    }
+    target=target.toObject();
     for(std::size_t i=1;i<args.size();++i) {
         auto source=args[i];
         if(source.isUndefined()||source.isNull())continue;
-        if(!source.isObject()) {
-            if(source.type()==JSValue::Type::String)source=createNativeStringObject(source);
-            else continue; // These primitive wrappers have no own enumerable keys.
-        }
+        source=source.toObject();
         const auto keys=source.ownPropertyKeys();
         for(const auto& key:keys) {
             const auto descriptor=source.getOwnPropertyDescriptor(key);
@@ -79,61 +68,46 @@ JSValue assign(const JSValue&,const Args& args,const Args&) {
 JSValue values(const JSValue&,const Args& args,const Args&) {
     auto source=args.empty()?JSValue{}:args[0];
     if(source.isNull()||source.isUndefined())throw JSTypeError("Cannot convert undefined or null to object");
-    auto result=JSValue::array();
-    if(!source.isObject()) {
-        if(source.type()==JSValue::Type::String)source=createNativeStringObject(source);
-        else return result; // Other primitive wrappers have no own string keys.
-    }
-    const auto keys=source.ownPropertyKeys();std::uint32_t index=0;
+    source=source.toObject();
+    Args values;
+    const auto keys=source.ownPropertyKeys();
     for(const auto& key:keys) {
         if(key.isSymbol())continue;
         const auto descriptor=source.getOwnPropertyDescriptor(key);
         if(descriptor&&descriptor->enumerable.value_or(false)) {
-            JSPropertyDescriptor d;d.value=source.get(key);d.writable=d.enumerable=d.configurable=true;
-            result.defineProperty(std::to_string(index++),d);
+            values.push_back(source.get(key));
         }
     }
+    auto result=JSValue::array();std::uint32_t index=0;
+    for(const auto& value:values){JSPropertyDescriptor d;d.value=value;d.writable=d.enumerable=d.configurable=true;result.defineProperty(std::to_string(index++),d);}
     return result;
 }
 JSValue keys(const JSValue&,const Args& args,const Args&) {
     auto source=args.empty()?JSValue{}:args[0];
     if(source.isNull()||source.isUndefined())throw JSTypeError("Cannot convert undefined or null to object");
-    auto result=JSValue::array();
-    if(!source.isObject()) {
-        if(source.type()==JSValue::Type::String)source=createNativeStringObject(source);
-        else return result;
-    }
-    const auto candidates=source.ownPropertyKeys();std::uint32_t index=0;
+    source=source.toObject();
+    Args keys;
+    const auto candidates=source.ownPropertyKeys();
     for(const auto& key:candidates) {
         if(key.isSymbol())continue;
         const auto descriptor=source.getOwnPropertyDescriptor(key);
         if(descriptor&&descriptor->enumerable.value_or(false)) {
-            JSPropertyDescriptor d;d.value=key;d.writable=d.enumerable=d.configurable=true;
-            result.defineProperty(std::to_string(index++),d);
+            keys.push_back(key);
         }
     }
+    auto result=JSValue::array();std::uint32_t index=0;
+    for(const auto& key:keys){JSPropertyDescriptor d;d.value=key;d.writable=d.enumerable=d.configurable=true;result.defineProperty(std::to_string(index++),d);}
     return result;
 }
 JSValue getPrototypeOf(const JSValue&,const Args& args,const Args&) {
     auto value=args.empty()?JSValue{}:args[0];
     if(value.isNull()||value.isUndefined())throw JSTypeError("Cannot convert undefined or null to object");
-    if(!value.isObject()) {
-        if(value.type()==JSValue::Type::String)value=createNativeStringObject(value);
-        else if(value.type()==JSValue::Type::Number)value=createNativeNumberObject(value);
-        else if(value.type()==JSValue::Type::Boolean)value=createNativeBooleanObject(value);
-        else throw std::logic_error("Object.getPrototypeOf Symbol boxing is not implemented");
-    }
+    value=value.toObject();
     return value.getPrototype();
 }
 JSValue reflectionObject(JSValue value){
     if(value.isNull()||value.isUndefined())throw JSTypeError("Cannot convert undefined or null to object");
-    if(value.isObject())return value;
-    if(value.type()==JSValue::Type::String)return createNativeStringObject(value);
-    if(value.type()==JSValue::Type::Number)return createNativeNumberObject(value);
-    if(value.type()==JSValue::Type::Boolean)return createNativeBooleanObject(value);
-    // Symbol wrapper identity is not exposed by these static methods;
-    // their own-key/own-descriptor sets are empty.
-    return JSValue::object();
+    return value.toObject();
 }
 void own(JSValue object,const JSValue& key,const JSValue& value){
     JSPropertyDescriptor d;d.value=value;d.writable=d.enumerable=d.configurable=true;object.defineProperty(key,d);
@@ -146,8 +120,9 @@ JSValue descriptorObject(const std::optional<JSPropertyDescriptor>& descriptor){
     own(object,"enumerable",d.enumerable.value_or(false));own(object,"configurable",d.configurable.value_or(false));return object;
 }
 JSValue getOwnPropertyNames(const JSValue&,const Args& args,const Args&){
-    const auto object=reflectionObject(args.empty()?JSValue{}:args[0]);auto result=JSValue::array();unsigned index=0;
-    for(const auto& key:object.ownPropertyKeys())if(!key.isSymbol())own(result,std::to_string(index++),key);
+    const auto object=reflectionObject(args.empty()?JSValue{}:args[0]);
+    const auto keys=object.ownPropertyKeys();auto result=JSValue::array();unsigned index=0;
+    for(const auto& key:keys)if(!key.isSymbol())own(result,std::to_string(index++),key);
     return result;
 }
 JSValue getOwnPropertyDescriptor(const JSValue&,const Args& args,const Args&){
@@ -156,8 +131,8 @@ JSValue getOwnPropertyDescriptor(const JSValue&,const Args& args,const Args&){
     return descriptorObject(object.getOwnPropertyDescriptor(key));
 }
 JSValue getOwnPropertyDescriptors(const JSValue&,const Args& args,const Args&){
-    const auto object=reflectionObject(args.empty()?JSValue{}:args[0]);auto result=JSValue::object();
-    const auto keys=object.ownPropertyKeys();
+    const auto object=reflectionObject(args.empty()?JSValue{}:args[0]);
+    const auto keys=object.ownPropertyKeys();auto result=JSValue::object();
     for(const auto& key:keys){const auto descriptor=object.getOwnPropertyDescriptor(key);if(descriptor)own(result,key,descriptorObject(descriptor));}
     return result;
 }

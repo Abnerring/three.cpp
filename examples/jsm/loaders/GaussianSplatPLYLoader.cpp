@@ -1,6 +1,6 @@
 #include "loaders/GaussianSplatPLYLoader.h"
 
-#include "loaders/GaussianSplatUtils.h"
+#include "utils/GaussianSplatUtils.h"
 #include <cmath>
 #include <cctype>
 #include <sstream>

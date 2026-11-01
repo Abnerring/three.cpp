@@ -189,6 +189,12 @@ JSValue childIterator(const JSValue& self, const JSValue& function) {
     auto state = literal({{"self", self}, {"started", false}, {"done", false}, {"executing", false}});
     auto token = std::make_shared<unsigned>(0);
     auto iterator = JSValue::hostObject(token, token.get(), childGeneratorBrand);
+    static const auto passiveHooks = [] {
+        auto hooks = std::make_shared<JSHostObjectHooks>();
+        hooks->passiveFinalizer = true;
+        return hooks;
+    }();
+    iterator.setHostHooks(passiveHooks);
     const auto prototype = function.get("prototype");
     iterator.setPrototype(prototype.isObject() ? prototype : childGeneratorPrototype());
     iterator.setHostSlot("state", state); return iterator;

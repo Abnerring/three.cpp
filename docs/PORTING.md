@@ -6,19 +6,21 @@
 
 范围包含全部 `src` 与 `examples/jsm`，扩展携带的第三方库单独跟踪依赖和许可。editor、manual 网页应用不作为原生应用重写。要求 Windows、Linux、macOS 分别验收。禁止引入 CEF、嵌入式浏览器和 JS 运行时桥接；Node 仅用于开发阶段的上游差分与审计。浏览器专属接口由 C++ 原生适配逐项实现，未实现的能力保持待办。
 
-## 2026-11-02 阶段代码，完整统一回归进行中
+## 2026-11-02 目录、原生输入及 Vulkan 资源验收
 
-固定上游为 `11738a9d55e502fb484cefffcea3a66dc44e9fe9`。按对应路径审计，当前607/1251模块已有C++文件（src523/755，examples/jsm84/496），644个尚无对应路径；这是路径覆盖，不是功能完成率。另有50个addon加载器在src/loaders中已有部分实现，待迁到上游examples/jsm/loaders位置，不能当完全未实现。所有模块的全量verifiedComplete仍为false。
+以 `bf7e49e3ba0e7166453c70b882fcd22545d9f90f` 为旧阶段基线，19 个包已按 SHA 守卫应用，共 770 个操作、758 个最终路径。范围包括 loader 目录迁移、基本类型赋值及 Object 装箱、Interleaved/Lights、FlyControls 与原生输入所有权、Vulkan RenderTarget 生命周期及 HalfFloat、TSL 通用函数源码元数据、默认绝对对照修正及两个私有 unsigned token 的 passive 声明。已应用不等于统一回归通过；合入证据为 `D:/Temp/surui/threecpp-native-alignment-20261102/integration01/proof.json`。
 
-本批接入数学/相机、传统材质、Skeleton与变形网格、NodeMaterial、现代PMREM及原生运行时前置。数学/错误族/向量/矩阵/相机/Symbol、传统材质4373、Skeleton596、变形网格511、CubeMap/RenderTarget50均已有实际原生差分；AsyncFunction252及24项GC观察、Promise27次实际原生域退休另有证据。native-ctest10五项全过：NodeMaterial331及三heap、Node.children17个动态协议案例（含执行中GC）、StackTrace/parseInt570及三heap。各组证据对应其执行时快照。
+当前 659/1251 个模块有对应 C++ 文件（src 523/755、examples/jsm 136/496），592 个尚无对应路径。这只是路径覆盖，不能换算为功能完成率；loader 移到源目录对应位置也不等于新增完整功能。所有模块的全量一致性仍须逐项验收。
 
-全部307个CPU测试目标已统一构建成功（971步，1203.02秒）。整套387项注册检查及27项原默认绝对对照，共414项，正在同一冻结源码/二进制快照上运行；记录时356/414结束，5项未通过（记录时间UTC 2026-11-01T19:06:52.532731+00:00）。尚未取得完整整套结果，不把已完成部分当作整套通过。原relative/fixture检查与默认绝对对照均保留。
+旧基线的完整所选 CPU 检查最终为 405/414 通过、9 项失败，GPU 13/13 通过；这些结果仅属于旧的 2831 文件及对应二进制快照。原失败、fixture、actual/expected 和 GC 证据均保存在 `D:/Temp/surui/threecpp-foundations-final-20261102/archive02`，归档已完成且逐文件 SHA 验证，不能用后续私有结果覆盖旧失败。
 
-当前GPU全部12目标统一构建成功，13/13既有注册检查通过，44.31秒；2831源码/测试/工具/配置文件及12个实际二进制/构建定义运行前后未变。实际未启用validation，机器未提供Khronos验证层。这13项仅覆盖已有路径，完整传统/现代Vulkan、扩展、原生宿主和三平台仍未完成。
+当前合入源码已完成 94 个 CPU 目标构建（420 步，694.09 秒）和 15 个 GPU 目标构建。GPU 全部 19 项当前注册检查通过（56.52 秒，0 跳过），其中两项是 Node 源 trace；生命周期与 HalfFloat 各 9 组、106/701 断言在 RTX 3070 Laptop GPU 实际执行。27 项原默认绝对对照已全部通过（1162.09 秒、0 跳过），3041 源码及 1353 个二进制/配置/上游依赖前后未变；141 项注册回归也已全部通过（1515.86 秒、0 跳过）；本轮共 168 项 CPU 检查通过。加载器迁移的 1133 个 Catch case 名称已逐项验证从 core 移入 addons，合并 multiset 不变。上述范围不代表全库功能或新的完整 414 项检查全部通过。
 
-后续私有候选中的基本类型赋值、Symbol原型、Interleaved clone和Lights宿主job已有独立原生证据；HalfFloat/生命周期两组各9个实际GPU场景也已通过，但这些候选尚未合入此阶段代码。完整Hash/节点数学候选首次原生运行180秒超时，且已完成前缀发现通用TSL链函数源码元数据缺口；FlyControls仅完成源对照/语法，typed桥首次私有编译暴露同目录inc查找配置问题。均保留原失败，不能计作当前集成通过。
+完整 Hash/节点数学候选尚未合入。原 134 例超时及后续 14 处错误消息差异均保留；最新独立归档库构建已在原 180 秒限制内通过 134 项严格对照及独立 30 GC/三 heap 检查，仍需合入当前库后验收。两个 unsigned token 的 passive 声明不构成已解决超时的证据。NodeManager 候选的完整 Nodes.js/TSL.js 导入初始化图仍未闭合，不能据叶模块或独立探针声称现代渲染完成。完整传统/现代 Vulkan、剩余 nodes/TSL、addons、实体窗口输入与交互渲染联测仍待完成。
 
-阶段代码提交保留上述验证边界。证据根目录为 `D:/Temp/surui/threecpp-foundations-20261101`；完整统一回归与最终只读归档仍在进行，精确证据见VALIDATION当前节。无CEF、嵌入浏览器或生产JS运行时。
+固定上游保持 `11738a9d55e502fb484cefffcea3a66dc44e9fe9`。现有原生证据来自 Windows，Linux/macOS 须分别验收。禁止 CEF、嵌入浏览器及生产 JS 执行桥；Node 仅用于开发差分和审计。
+
+统一回归终态后仅移除一个无引用、字节相同的 HalfFloat fixture 副本，保留 CMake 实际引用的 `expected-half-float-target.json`；见 `cleanup-overlay01/proof.json`。清理后 94 目标再次构建为 no-op、exit 0，源码守卫变为 3040 项；原 1353 个二进制/配置/上游依赖 SHA 再核对全部不变。未改生产或测试逻辑，不把上述 168 项所选 CPU 回归称为新的完整 414 项验收。
 
 ## 2026-11-01 已验收范围
 

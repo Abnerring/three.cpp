@@ -1,5 +1,5 @@
 #pragma once
 #include "core/JSValue.h"
 // Installs Object.assign/values/keys/getPrototypeOf/defineProperty on the realm intrinsic.
-// String/Number/Boolean boxing uses real wrapper intrinsics; Symbol boxing remains unsupported.
+// Primitive targets use the real String/Number/Boolean/Symbol wrapper intrinsics.
 void initializeNativeObjectMethods(const JSValue& constructor);

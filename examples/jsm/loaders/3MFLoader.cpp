@@ -1,4 +1,4 @@
-#include "loaders/ThreeMFLoader.h"
+#include "loaders/3MFLoader.h"
 
 #include <limits>
 

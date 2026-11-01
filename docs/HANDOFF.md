@@ -1,3 +1,21 @@
+## 2026-11-02 阶段验收：168 CPU 与 19 GPU 检查全过
+
+本阶段父基线 bf7e49e3；固定上游 11738a9d55e502fb484cefffcea3a66dc44e9fe9。证据根 D:/Temp/surui/threecpp-native-alignment-20261102。完整移植目标保持 active，659/1251 只是对应路径覆盖，592 无对应路径，不是完成率。
+
+本阶段19包按SHA应用：770操作/758最终状态，原integration01/proof.json及独立current-integration-review01/receipt.json保留。352文件迁移含52生产TU及248测试TU；1133个Catch名字的Counter逐项验证从core移到addons，2535/155→1402/1288，总量不变。实现包含Object装箱与严格赋值、Interleaved/Lights修复、FlyControls/typed桥/原生input owner、Vulkan目标生命周期/HalfFloat、TSL普通闭包源码元数据与真实Tangent调用栈，以及Skinning固定随机输入。没有CEF、浏览器或生产JS执行桥。
+
+统一CPU94目标构建420步/694.09秒通过；GPU15目标构建通过。CPU141注册检查141/141、0skip、1515.86秒；27原默认绝对对照27/27、0skip、1162.09秒，共168项所选检查通过，不能声称新完整414项通过。每组3041源码/1353二进制配置及固定上游依赖前后不变。GPU全部19当前注册项19/19、0skip、56.52秒，其中两项仅Node源trace；生命周期9组106断言、HalfFloat9组701断言实际RTX3070。未证明Khronos验证层或完整渲染。真终态及JUnit见test-cpu-selected02、test-default-absolute02、test-gpu1901和current-regression-native01。
+
+所有检查终态后仅删除无引用、字节同canonical的fixtures/vulkan-half-float-clear.json；保留实际expected-half-float-target.json，原SHA acbf641e21b12876da739306e961b369c7c375f9371aff6f8298efce3a07a61f。cleanup-overlay01另记且备份。清理后build-cpu-cleanup02/result.json为CPU94 no-op exit0、源码3040前后不变；原1353二进制/配置/上游依赖再次SHA全同。无生产或测试逻辑变化。
+
+旧405/414 CPU及13项所选GPU、9原失败完整保存在 D:/Temp/surui/threecpp-foundations-final-20261102/archive02；manifest ab5c7056b8ff302ad77c762857fc87cf35e74999e25a7e81284332972c5f31fb，不得改写旧失败或转移旧验证。
+
+后续候选未合入：shader-source-errors-private-native01实际原134严格通过/96.17秒、绝对身份不归一化、原180秒不变，独立30GC/三heap均严格0；1701守卫/私有exe不变。但它是归档库+明确覆盖对象，不是当前统一库结果。旧timeout及14错误消息差异均保留。完整15文件合入包shader-math-integration-candidate01已冻结，manifest426baa70da1c0e7047c026aa37ba37b2ad26b1dc2f130d16f41b9d01b668ddc8；原Node/TSL/JSValue等仅作依赖守卫，不允许退旧文件。RegExp保持active；三个纯box可passive，不改collector。
+
+NodeManager候选仍281模块/95文件对缺失，完整Nodes/TSL barrel未闭合。private01首TU编译发现const set及catch e自由变量错误，未native；原证据保留，renderer_candidate正在新02包修复，phase_audit独立审查。下一ROOT private driver读新build-cpu-cleanup02 receipt及当前库941fd0ec52c9cddc1904292b18aab6efbb0ac6a376c1d49fbd8b6562db257ec8；不能把旧3041包含已删fixture的source表当永远不变的基线。
+
+接续：先保留本阶段本地提交，随后合入完整Hash/Math包并实际重建/受影响回归；NodeManager02在明确当前依赖上完整17TU/7exe/18checks验证后再集成。凡依赖源码/CMake变化须明确rebase，不盲盖旧快照。完整传统/现代Vulkan、其余nodes/addons/原生宿主与Linux/macOS仍待实现验收。HANDOFF原798619字节后缀SHA保持f6b73f2e259a5a5518d1760ca0c6ac3d1ceed98ed915f0cec5a236a5107dcc4c；仅新LF前缀，stage用git -c core.autocrlf=false add -- docs/HANDOFF.md。
+
 # 当前续接：数学/材质/相机与现代渲染前置，2026-11-02
 
 - 固定three.js仍11738a9d55e502fb484cefffcea3a66dc44e9fe9，用户主three.js为fa01dd6a，禁止重置；源worktree D:/Temp/surui/threejs-pinned-11738a9-20261101。

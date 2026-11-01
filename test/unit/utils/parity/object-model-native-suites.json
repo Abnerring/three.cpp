@@ -433,6 +433,7 @@
   },
   {
     "name": "uniforms-symbol",
+    "lifetimeInput": { "module": "uniforms-symbol-fixtures.mjs", "export": "fixtures" },
     "target": "ThreeJsUniformsSymbolParityProbe",
     "comparator": "compare-uniforms-symbol.mjs",
     "cli": "named",

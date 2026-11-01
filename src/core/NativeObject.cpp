@@ -525,6 +525,24 @@ JSValue matrixEquals(const JSValue& self,const Args& args,const Args& captures) 
     }
     return true;
 }
+// Reuse the complete private source factories for the minimal controls bridge.
+// Function identity, source metadata and dynamic property calls remain those of
+// the original methods; native component accessors keep the typed live backing.
+void sourceProtocols(JSValue target,const JSValue& source,std::initializer_list<const char*> names) {
+    for(const auto* name:names) {
+        const auto descriptor=source.getOwnPropertyDescriptor(name);
+        if(!descriptor||!descriptor->value||!descriptor->value->isCallable())throw JSTypeError("Missing source controls bridge method");
+        target.defineProperty(name,*descriptor);
+    }
+}
+JSValue objectControlsPrototype() {
+    static thread_local JSWeakValue weak;
+    return cachedModuleValue(weak,[] {
+        auto prototype=JSValue::object();
+        sourceProtocols(prototype,nativeObject3DConstructor().get("prototype"),{"translateOnAxis","translateX","translateY","translateZ"});
+        return prototype;
+    });
+}
 JSValue mathPrototype(const char* tag,const char* components,const char* flag,bool privateComponents) {
     static thread_local std::map<std::string, JSWeakValue> prototypes;
     return cachedModuleValue(prototypes[tag], [&] {
@@ -630,6 +648,8 @@ JSValue mathPrototype(const char* tag,const char* components,const char* flag,bo
                     }
                 }
             }
+            if(std::string(tag)=="three.Vector3")sourceProtocols(p,nativeVector3Constructor().get("prototype"),{"add"});
+            if(std::string(tag)=="three.Quaternion")sourceProtocols(p,nativeQuaternionConstructor().get("prototype"),{"multiply","multiplyQuaternions"});
             return p;
         });
 }
@@ -2406,6 +2426,7 @@ JSValue nativeObject(const std::shared_ptr<Object3D>& object) {
     if (!object) return nullptr;
     auto result = JSValue::hostObject(object, object.get(), objectTag);
     if (initialize(result)) {
+        result.setPrototype(objectControlsPrototype());
         static auto hooks = [] { auto h = std::make_shared<JSHostObjectHooks>(); h->trace = [](const JSValue& self) {
             std::vector<JSValue> result; std::unordered_set<const Object3D*> visited;
             traceNativeObject(self, payload<Object3D>(self, objectTag), result, visited); return result;

@@ -1,7 +1,7 @@
 // Integration-only native test launcher. No oracle-only fallback is accepted.
 import fs from 'node:fs';
 import path from 'node:path';
-import {fileURLToPath} from 'node:url';
+import {fileURLToPath,pathToFileURL} from 'node:url';
 import {spawnSync,execFileSync} from 'node:child_process';
 import {createHash} from 'node:crypto';
 import assert from 'node:assert/strict';
@@ -47,7 +47,7 @@ const write=(name,value)=>fs.writeFileSync(path.join(output,name),JSON.stringify
 const digest=file=>createHash('sha256').update(fs.readFileSync(file)).digest('hex');
 const summary={status:'native-requested',suite:suite.name,mode:lifetime?'native-lifetime':'native-differential',nativeExecuted:false,binary,node:process.version,upstream,output,binaryBeforeSHA256:digest(binary),scope:suite.scope};
 const comparatorOutput=path.join(output,'comparison');
-let command,childArgs;
+let command,childArgs,stdin,lifetimeInputModule;
 if(lifetime){command=binary;childArgs=['--lifetime'];}
 else{
  command=process.execPath;
@@ -57,10 +57,21 @@ else{
  for(const flag of ['--input','--replay'])if(options.has(flag))childArgs.push(flag,path.resolve(options.get(flag)));
  summary.comparatorBeforeSHA256=digest(script);
 }
+if(lifetime&&suite.lifetimeInput){
+ const configuration=suite.lifetimeInput;
+ assert.equal(typeof configuration.module,'string');assert.equal(typeof configuration.export,'string');
+ lifetimeInputModule=path.resolve(directory,configuration.module);
+ assert.equal(path.dirname(lifetimeInputModule),directory,'Lifetime fixture module must be within the suite directory');
+ const fixtureModule=await import(pathToFileURL(lifetimeInputModule).href);
+ assert(Object.hasOwn(fixtureModule,configuration.export),'Configured lifetime fixtures export is required');
+ const fixtures=fixtureModule[configuration.export];assert(Array.isArray(fixtures)&&fixtures.length>0,'Lifetime fixtures must be a nonempty array');
+ stdin=JSON.stringify(fixtures);fs.writeFileSync(path.join(output,'lifetime-input.json'),stdin);
+ summary.lifetimeInput={module:lifetimeInputModule,export:configuration.export,cases:fixtures.length,moduleBeforeSHA256:digest(lifetimeInputModule),wireBytes:Buffer.byteLength(stdin,'utf8'),wireSHA256:createHash('sha256').update(stdin).digest('hex')};
+}
 write('request.json',{command,args:childArgs,env:{TEMP:process.env.TEMP,TMP:process.env.TMP,THREEJS_SOURCE_DIR:upstream},suite,summary});
 let failed=true;
 try{
- const result=spawnSync(command,childArgs,{encoding:'utf8',maxBuffer:512*1024*1024,env:{...process.env,TEMP:'D:/Temp/surui',TMP:'D:/Temp/surui'}});
+ const result=spawnSync(command,childArgs,{...(stdin===undefined?{}:{input:stdin}),encoding:'utf8',maxBuffer:512*1024*1024,env:{...process.env,TEMP:'D:/Temp/surui',TMP:'D:/Temp/surui'}});
  fs.writeFileSync(path.join(output,'process.stdout.log'),result.stdout??'');
  fs.writeFileSync(path.join(output,'process.stderr.log'),result.stderr??'');
  summary.exitCode=result.status;summary.signal=result.signal;summary.processError=result.error?.message??null;
@@ -97,6 +108,7 @@ finally{
  summary.binaryAfterSHA256=digest(binary);
  if(summary.binaryBeforeSHA256!==summary.binaryAfterSHA256){failed=true;summary.binaryChanged=true;}
  if(!lifetime){summary.comparatorAfterSHA256=digest(script);if(summary.comparatorAfterSHA256!==summary.comparatorBeforeSHA256){failed=true;summary.comparatorChanged=true;}}
+ if(lifetimeInputModule){summary.lifetimeInput.moduleAfterSHA256=digest(lifetimeInputModule);if(summary.lifetimeInput.moduleBeforeSHA256!==summary.lifetimeInput.moduleAfterSHA256){failed=true;summary.lifetimeInput.moduleChanged=true;}}
  summary.status=failed?'native-failed':'native-passed';write('integration-summary.json',summary);console.log(JSON.stringify(summary));
 }
 if(failed)process.exitCode=1;

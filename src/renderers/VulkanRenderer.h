@@ -4,6 +4,7 @@
 #include "../constants.h"
 #include "math/Color.h"
 #include "core/JSValue.h"
+#include "core/TypedArray.h"
 #include <cstdint>
 #include <memory>
 #include <string>
@@ -29,6 +30,8 @@ struct VulkanRendererInfo {
     std::uint64_t attributeBuffers = 0;
     std::uint64_t attributeUploadBuffers = 0;
     std::uint64_t textureImages = 0, textureUploads = 0;
+    // Actual live target allocations (including the screen and internal spare), not cache keys.
+    std::uint64_t renderTargets = 0, renderTargetImages = 0;
     bool validationEnabled = false;
 };
 
@@ -86,7 +89,14 @@ class VulkanRenderer {
     std::vector<std::uint8_t> readRenderTargetPixels(RenderTarget& target, std::uint32_t x,
                                                   std::uint32_t y, std::uint32_t width,
                                                   std::uint32_t height);
+    // HalfFloat values are raw IEEE-754 binary16 component bits, never normalized bytes.
+    std::vector<std::uint16_t> readRenderTargetHalfFloatPixels(RenderTarget& target, std::uint32_t x,
+                                                            std::uint32_t y, std::uint32_t width,
+                                                            std::uint32_t height);
+    void readRenderTargetPixels(RenderTarget& target, std::uint32_t x, std::uint32_t y,
+                                std::uint32_t width, std::uint32_t height, Uint16Array& buffer);
     std::vector<std::uint8_t> readPixels() const;
+    std::vector<std::uint16_t> readPixelsHalfFloat() const;
     const VulkanRendererInfo& getInfo() const;
     std::vector<std::string> getValidationMessages() const;
 

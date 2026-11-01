@@ -42,7 +42,7 @@ for(let operation=0;operation<10;operation++)for(let receiver=0;receiver<9;recei
    case 4:outcome=Reflect.set(target,key,9,target);break;
    case 5:outcome=Reflect.defineProperty(target,key,{value:9});break;
    case 6:outcome=Reflect.deleteProperty(target,key);break;
-   case 7:Reflect.set(target,key,9,target);outcome='ok';break;
+   case 7:target[key]=9;outcome='ok';break; // ESM strict assignment, matching native target.set().
    case 8:outcome=Object.prototype.hasOwnProperty.call(target,key);break;
    case 9:outcome=Object.prototype.propertyIsEnumerable.call(target,key);break;
   }

@@ -35,155 +35,7 @@ add_executable(THREECPPTests
         unit/src/math/RayFrustum.tests.cpp
         unit/src/math/LineBox2Cyl.tests.cpp
         unit/src/math/Matrix2EulerQuat.tests.cpp
-        unit/src/loaders/LUTCubeLoader.tests.cpp
-        unit/src/loaders/LUT3dlLoader.tests.cpp
-        unit/src/loaders/MDDLoader.tests.cpp
-        unit/src/loaders/SPLATLoader.tests.cpp
-        unit/src/loaders/PDBLoader.tests.cpp
-        unit/src/loaders/GCodeLoader.tests.cpp
-        unit/src/loaders/GCodeObjects.tests.cpp
-        unit/src/loaders/PDBElement.tests.cpp
-        unit/src/loaders/PDBBond.tests.cpp
-        unit/src/loaders/PDBGeometry.tests.cpp
-        unit/src/loaders/HDRLoader.tests.cpp
-        unit/src/loaders/RGBELoader.tests.cpp
-        unit/src/loaders/MTLLoader.tests.cpp
-        unit/src/loaders/MTLConvert.tests.cpp
-        unit/src/loaders/MTLTextureParams.tests.cpp
-        unit/src/loaders/MTLMaterialParams.tests.cpp
-        unit/src/loaders/MTLCreate.tests.cpp
-        unit/src/loaders/OBJLoader.tests.cpp
-        unit/src/loaders/OBJFaceNormal.tests.cpp
-        unit/src/loaders/OBJMaterialGroups.tests.cpp
-        unit/src/loaders/OBJObjects.tests.cpp
-        unit/src/loaders/OBJBuild.tests.cpp
-        unit/src/loaders/PLYHeader.tests.cpp
-        unit/src/loaders/PLYTypes.tests.cpp
-        unit/src/loaders/PLYAscii.tests.cpp
-        unit/src/loaders/PLYBinary.tests.cpp
-        unit/src/loaders/PLYHandle.tests.cpp
-        unit/src/loaders/PLYBuild.tests.cpp
-        unit/src/loaders/FontLoader.tests.cpp
-        unit/src/loaders/FontPath.tests.cpp
-        unit/src/loaders/FontShapes.tests.cpp
-        unit/src/loaders/HDRCube.tests.cpp
-        unit/src/loaders/MD2Loader.tests.cpp
-        unit/src/loaders/MD2Triangles.tests.cpp
-        unit/src/loaders/MD2Vertices.tests.cpp
-        unit/src/loaders/MD2Morph.tests.cpp
-        unit/src/loaders/MD2Animations.tests.cpp
-        unit/src/loaders/BVHLoader.tests.cpp
-        unit/src/loaders/BVHMotion.tests.cpp
-        unit/src/loaders/BVHChannels.tests.cpp
-        unit/src/loaders/BVHSkeleton.tests.cpp
-        unit/src/loaders/BVHTracks.tests.cpp
-        unit/src/loaders/PCDLoader.tests.cpp
-        unit/src/loaders/PCDOffsets.tests.cpp
-        unit/src/loaders/PCDPoints.tests.cpp
-        unit/src/loaders/PCDBinary.tests.cpp
-        unit/src/loaders/PCDBuild.tests.cpp
-        unit/src/loaders/TGALoader.tests.cpp
-        unit/src/loaders/TGAHeader.tests.cpp
-        unit/src/loaders/TGARle.tests.cpp
-        unit/src/loaders/TGAPixels.tests.cpp
-        unit/src/loaders/TGAVariants.tests.cpp
-        unit/src/loaders/TGAIndexed.tests.cpp
-        unit/src/loaders/NRRDLoader.tests.cpp
-        unit/src/loaders/NRRDDirections.tests.cpp
-        unit/src/loaders/NRRDText.tests.cpp
-        unit/src/loaders/NRRDBinary.tests.cpp
-        unit/src/loaders/NRRDVolume.tests.cpp
-        unit/src/loaders/AMFLoader.tests.cpp
         unit/src/loaders/XmlDocument.tests.cpp
-        unit/src/loaders/AMFMesh.tests.cpp
-        unit/src/loaders/AMFAssemble.tests.cpp
-        unit/src/loaders/VOXLoader.tests.cpp
-        unit/src/loaders/VOXChunks.tests.cpp
-        unit/src/loaders/VOXContent.tests.cpp
-        unit/src/loaders/VOXOccupancy.tests.cpp
-        unit/src/loaders/VOXColorVolume.tests.cpp
-        unit/src/loaders/VOXMask.tests.cpp
-        unit/src/loaders/VOXMerge.tests.cpp
-        unit/src/loaders/VOXQuad.tests.cpp
-        unit/src/loaders/VOXMesh.tests.cpp
-        unit/src/loaders/VOXDict.tests.cpp
-        unit/src/loaders/VOXTransform.tests.cpp
-        unit/src/loaders/VOXScene.tests.cpp
-        unit/src/loaders/SPZLoader.tests.cpp
-        unit/src/loaders/SPZQuaternion.tests.cpp
-        unit/src/loaders/SPZCenters.tests.cpp
-        unit/src/loaders/SPZHarmonics.tests.cpp
-        unit/src/loaders/IESLoader.tests.cpp
-        unit/src/loaders/IESLamp.tests.cpp
-        unit/src/loaders/IESParse.tests.cpp
-        unit/src/loaders/IESSample.tests.cpp
-        unit/src/loaders/TIFFLoader.tests.cpp
-        unit/src/loaders/GaussianSplatPLY.tests.cpp
-        unit/src/loaders/GaussianSplatPLYMapping.tests.cpp
-        unit/src/loaders/GaussianSplatPLYConvert.tests.cpp
-        unit/src/loaders/KSPLATLoader.tests.cpp
-        unit/src/loaders/KSPLATHeader.tests.cpp
-        unit/src/loaders/KSPLATSection.tests.cpp
-        unit/src/loaders/KSPLATDecode.tests.cpp
-        unit/src/loaders/KSPLATBand.tests.cpp
-        unit/src/loaders/KSPLATValidate.tests.cpp
-        unit/src/loaders/KSPLATRow.tests.cpp
-        unit/src/loaders/KSPLATSectionRows.tests.cpp
-        unit/src/loaders/KSPLATParse.tests.cpp
-        unit/src/loaders/UltraHDRLoader.tests.cpp
-        unit/src/loaders/UltraHDRXmp.tests.cpp
-        unit/src/loaders/PVRLoader.tests.cpp
-        unit/src/loaders/PVRHeader.tests.cpp
-        unit/src/loaders/PVRVersion2.tests.cpp
-        unit/src/loaders/DDSLoader.tests.cpp
-        unit/src/loaders/DDSMipmap.tests.cpp
-        unit/src/loaders/DDSFormat.tests.cpp
-        unit/src/loaders/KTXLoader.tests.cpp
-        unit/src/loaders/KTXImages.tests.cpp
-        unit/src/loaders/LUTImageLoader.tests.cpp
-        unit/src/loaders/GLTFGaussianSplat.tests.cpp
-        unit/src/loaders/VTKLoader.tests.cpp
-        unit/src/loaders/VTKPolygon.tests.cpp
-        unit/src/loaders/VTKSections.tests.cpp
-        unit/src/loaders/VTKAscii.tests.cpp
-        unit/src/loaders/VTKColor.tests.cpp
-        unit/src/loaders/VTKPointData.tests.cpp
-        unit/src/loaders/VTKStrip.tests.cpp
-        unit/src/loaders/LWOLoader.tests.cpp
-        unit/src/loaders/TDSLoader.tests.cpp
-        unit/src/loaders/TDSColor.tests.cpp
-        unit/src/loaders/TDSMatrix.tests.cpp
-        unit/src/loaders/TDSFaces.tests.cpp
-        unit/src/loaders/TDSMaterial.tests.cpp
-        unit/src/loaders/TDSGroup.tests.cpp
-        unit/src/loaders/TDSMain.tests.cpp
-        unit/src/loaders/TDSMeshData.tests.cpp
-        unit/src/loaders/LDrawLoader.tests.cpp
-        unit/src/loaders/LDrawReference.tests.cpp
-        unit/src/loaders/LDrawMeta.tests.cpp
-        unit/src/loaders/LDrawColour.tests.cpp
-        unit/src/loaders/LDrawGeometry.tests.cpp
-        unit/src/loaders/LDrawPart.tests.cpp
-        unit/src/loaders/LDrawRay.tests.cpp
-        unit/src/loaders/LDrawSmooth.tests.cpp
-        unit/src/loaders/LDrawCache.tests.cpp
-        unit/src/loaders/LDrawEmbedded.tests.cpp
-        unit/src/loaders/LDrawBfc.tests.cpp
-        unit/src/loaders/LDrawFinish.tests.cpp
-        unit/src/loaders/LDrawType.tests.cpp
-        unit/src/loaders/LDrawFlags.tests.cpp
-        unit/src/loaders/LDrawReference2.tests.cpp
-        unit/src/loaders/SVGLoader.tests.cpp
-        unit/src/loaders/SVGNumbers.tests.cpp
-        unit/src/loaders/SVGTransform.tests.cpp
-        unit/src/loaders/SVGPath.tests.cpp
-        unit/src/loaders/SVGCurve.tests.cpp
-        unit/src/loaders/SVGClose.tests.cpp
-        unit/src/loaders/SVGMatrix.tests.cpp
-        unit/src/loaders/SVGSkew.tests.cpp
-        unit/src/loaders/SVGArc.tests.cpp
-        unit/src/loaders/SVGCommand.tests.cpp
-        unit/src/loaders/GLTFLoader.tests.cpp
         unit/src/cameras/Camera.tests.cpp
         unit/src/core/JSCallableBuiltin.tests.cpp
         unit/src/core/JSRegExp.tests.cpp
@@ -212,87 +64,6 @@ add_executable(THREECPPTests
         unit/src/renderers/webgl/WebGLProgram.tests.cpp
         unit/src/renderers/webgl/WebGLPrograms.tests.cpp
         unit/src/scenes/Scene.tests.cpp
-        unit/src/loaders/GLTFBinary.tests.cpp
-        unit/src/loaders/GLTFTypes.tests.cpp
-        unit/src/loaders/GLTFBufferView.tests.cpp
-        unit/src/loaders/GLTFInterleaved.tests.cpp
-        unit/src/loaders/GLTFSparse.tests.cpp
-        unit/src/loaders/GLTFNode.tests.cpp
-        unit/src/loaders/GLTFAnimation.tests.cpp
-        unit/src/loaders/GLTFMaterial.tests.cpp
-        unit/src/loaders/GLTFSampler.tests.cpp
-        unit/src/loaders/GLTFPrimitiveKey.tests.cpp
-        unit/src/loaders/GLTFExtensions.tests.cpp
-        unit/src/loaders/GLTFLights.tests.cpp
-        unit/src/loaders/GLTFUnlit.tests.cpp
-        unit/src/loaders/GLTFClearcoat.tests.cpp
-        unit/src/loaders/GLTFSheen.tests.cpp
-        unit/src/loaders/GLTFVolume.tests.cpp
-        unit/src/loaders/GLTFIor.tests.cpp
-        unit/src/loaders/GLTFIridescence.tests.cpp
-        unit/src/loaders/GLTFAnisotropy.tests.cpp
-        unit/src/loaders/GLTFTextureTransform.tests.cpp
-        unit/src/loaders/GLTFInstancing.tests.cpp
-        unit/src/loaders/GLTFDiffuseRoughness.tests.cpp
-        unit/src/loaders/GLTFDefaultMaterial.tests.cpp
-        unit/src/loaders/GLTFExtras.tests.cpp
-        unit/src/loaders/GLTFMorphTargets.tests.cpp
-        unit/src/loaders/GLTFMorphFlags.tests.cpp
-        unit/src/loaders/GLTFBounds.tests.cpp
-        unit/src/loaders/GLTFAttributeAssembly.tests.cpp
-        unit/src/loaders/EXRLoader.tests.cpp
-        unit/src/loaders/EXRZigZag.tests.cpp
-        unit/src/loaders/EXRWavelet.tests.cpp
-        unit/src/loaders/EXRHalfFloat.tests.cpp
-        unit/src/loaders/EXRLut.tests.cpp
-        unit/src/loaders/EXRRle.tests.cpp
-        unit/src/loaders/EXRDct.tests.cpp
-        unit/src/loaders/EXRHuffmanTable.tests.cpp
-        unit/src/loaders/EXRAcRle.tests.cpp
-        unit/src/loaders/EXRHufDecTable.tests.cpp
-        unit/src/loaders/EXRBitStream.tests.cpp
-        unit/src/loaders/EXRDecodeIndex.tests.cpp
-        unit/src/loaders/EXRHufWrap.tests.cpp
-        unit/src/loaders/EXRZeroRun.tests.cpp
-        unit/src/loaders/EXRHeader.tests.cpp
-        unit/src/loaders/EXRAttribute.tests.cpp
-        unit/src/loaders/EXRAttributeKind.tests.cpp
-        unit/src/loaders/EXRRunEmit.tests.cpp
-        unit/src/loaders/EXRValueRead.tests.cpp
-        unit/src/loaders/EXRBlockCompression.tests.cpp
-        unit/src/loaders/EXRDecodeEntry.tests.cpp
-        unit/src/loaders/EXRPredictor.tests.cpp
-        unit/src/loaders/EXRZipBlock.tests.cpp
-        unit/src/loaders/EXRRleBlock.tests.cpp
-        unit/src/loaders/EXRCompressionNames.tests.cpp
-        unit/src/loaders/EXRDeepChunk.tests.cpp
-        unit/src/loaders/EXRPiz.tests.cpp
-        unit/src/loaders/EXRPizWavelet.tests.cpp
-        unit/src/loaders/EXRPizOrder.tests.cpp
-        unit/src/loaders/EXRPizWaveletStep.tests.cpp
-        unit/src/loaders/EXRWdec16.tests.cpp
-        unit/src/loaders/EXRWav2Decode.tests.cpp
-        unit/src/loaders/EXRCompressionCodes.tests.cpp
-        unit/src/loaders/EXRHufTable.tests.cpp
-        unit/src/loaders/EXRHufBuild.tests.cpp
-        unit/src/loaders/EXRHufDecodeHelpers.tests.cpp
-        unit/src/loaders/EXRHufRun.tests.cpp
-        unit/src/loaders/EXRHufDecode.tests.cpp
-        unit/src/loaders/EXRHufUncompress.tests.cpp
-        unit/src/loaders/EXRPizUncompress.tests.cpp
-        unit/src/loaders/EXRDecompressers.tests.cpp
-        unit/src/loaders/EXRPxr.tests.cpp
-        unit/src/loaders/EXRPxrUncompress.tests.cpp
-        unit/src/loaders/EXRB44.tests.cpp
-        unit/src/loaders/EXRB44Order.tests.cpp
-        unit/src/loaders/EXRBlockHeights.tests.cpp
-        unit/src/loaders/EXRScanlineLoop.tests.cpp
-        unit/src/loaders/EXRTiles.tests.cpp
-        unit/src/loaders/EXRChannelOffsets.tests.cpp
-        unit/src/loaders/EXRScanlineIndex.tests.cpp
-        unit/src/loaders/EXRParseScanline.tests.cpp
-        unit/src/loaders/EXRCompressedBlock.tests.cpp
-        unit/src/loaders/EXRRleCompressedBlock.tests.cpp
         unit/src/nodes/core/StructType.tests.cpp
         unit/src/nodes/core/NodeFrame.tests.cpp
         unit/src/nodes/core/ConstNode.tests.cpp
@@ -397,17 +168,6 @@ add_executable(THREECPPTests
         unit/src/nodes/core/ReflectorNode.tests.cpp
         unit/src/nodes/core/ViewportSharedAndDepth.tests.cpp
         unit/src/nodes/display/ViewportDepthNode.tests.cpp
-        unit/src/loaders/USDZAndTTF.tests.cpp
-        unit/src/loaders/ColladaLoader.tests.cpp
-        unit/src/loaders/USDLoader.tests.cpp
-        unit/src/loaders/MaterialXLoader.tests.cpp
-        unit/src/loaders/DRACOLoader.tests.cpp
-        unit/src/loaders/KTX2Loader.tests.cpp
-        unit/src/loaders/ThreeDMLoader.tests.cpp
-        unit/src/loaders/VRMLLoader.tests.cpp
-        unit/src/loaders/FBXLoader.tests.cpp
-        unit/src/loaders/EXRSamplesToBytes.tests.cpp
-        unit/src/loaders/EXRDecompressBlock.tests.cpp
         unit/src/loaders/Zlib.tests.cpp
         unit/src/loaders/ZlibBits.tests.cpp
         unit/src/loaders/ZlibFixed.tests.cpp
@@ -419,14 +179,6 @@ add_executable(THREECPPTests
         unit/src/loaders/ZlibUnzlib.tests.cpp
         unit/src/loaders/ZlibReal.tests.cpp
         unit/src/loaders/Zip.tests.cpp
-        unit/src/loaders/KMZLoader.tests.cpp
-        unit/src/loaders/ThreeMFLoader.tests.cpp
-        unit/src/loaders/ThreeMFMetadata.tests.cpp
-        unit/src/loaders/ThreeMFTransform.tests.cpp
-        unit/src/loaders/ThreeMFResources.tests.cpp
-        unit/src/loaders/EXRValues.tests.cpp
-        unit/src/loaders/EXRChlist.tests.cpp
-        unit/src/loaders/EXRTile.tests.cpp
         unit/src/cameras/StereoCamera.tests.cpp
         unit/src/audio/AudioContext.tests.cpp
         unit/src/audio/Audio.tests.cpp
@@ -703,6 +455,254 @@ add_test(NAME threecpp.native-event-loop-reentry COMMAND NativeEventLoopReentryT
 if(THREECPP_BUILD_ADDONS)
     add_executable(THREECPPAddonTests
         unit/three.source.unit.cpp
+        unit/addons/loaders/3DMLoader.tests.cpp
+        unit/addons/loaders/3MFLoader.tests.cpp
+        unit/addons/loaders/3MFMetadata.tests.cpp
+        unit/addons/loaders/3MFResources.tests.cpp
+        unit/addons/loaders/3MFTransform.tests.cpp
+        unit/addons/loaders/AMFAssemble.tests.cpp
+        unit/addons/loaders/AMFLoader.tests.cpp
+        unit/addons/loaders/AMFMesh.tests.cpp
+        unit/addons/loaders/BVHChannels.tests.cpp
+        unit/addons/loaders/BVHLoader.tests.cpp
+        unit/addons/loaders/BVHMotion.tests.cpp
+        unit/addons/loaders/BVHSkeleton.tests.cpp
+        unit/addons/loaders/BVHTracks.tests.cpp
+        unit/addons/loaders/ColladaLoader.tests.cpp
+        unit/addons/loaders/DDSFormat.tests.cpp
+        unit/addons/loaders/DDSLoader.tests.cpp
+        unit/addons/loaders/DDSMipmap.tests.cpp
+        unit/addons/loaders/DRACOLoader.tests.cpp
+        unit/addons/loaders/EXRAcRle.tests.cpp
+        unit/addons/loaders/EXRAttribute.tests.cpp
+        unit/addons/loaders/EXRAttributeKind.tests.cpp
+        unit/addons/loaders/EXRB44.tests.cpp
+        unit/addons/loaders/EXRB44Order.tests.cpp
+        unit/addons/loaders/EXRBitStream.tests.cpp
+        unit/addons/loaders/EXRBlockCompression.tests.cpp
+        unit/addons/loaders/EXRBlockHeights.tests.cpp
+        unit/addons/loaders/EXRChannelOffsets.tests.cpp
+        unit/addons/loaders/EXRChlist.tests.cpp
+        unit/addons/loaders/EXRCompressedBlock.tests.cpp
+        unit/addons/loaders/EXRCompressionCodes.tests.cpp
+        unit/addons/loaders/EXRCompressionNames.tests.cpp
+        unit/addons/loaders/EXRDct.tests.cpp
+        unit/addons/loaders/EXRDecodeEntry.tests.cpp
+        unit/addons/loaders/EXRDecodeIndex.tests.cpp
+        unit/addons/loaders/EXRDecompressBlock.tests.cpp
+        unit/addons/loaders/EXRDecompressers.tests.cpp
+        unit/addons/loaders/EXRDeepChunk.tests.cpp
+        unit/addons/loaders/EXRHalfFloat.tests.cpp
+        unit/addons/loaders/EXRHeader.tests.cpp
+        unit/addons/loaders/EXRHufBuild.tests.cpp
+        unit/addons/loaders/EXRHufDecTable.tests.cpp
+        unit/addons/loaders/EXRHufDecode.tests.cpp
+        unit/addons/loaders/EXRHufDecodeHelpers.tests.cpp
+        unit/addons/loaders/EXRHufRun.tests.cpp
+        unit/addons/loaders/EXRHufTable.tests.cpp
+        unit/addons/loaders/EXRHufUncompress.tests.cpp
+        unit/addons/loaders/EXRHufWrap.tests.cpp
+        unit/addons/loaders/EXRHuffmanTable.tests.cpp
+        unit/addons/loaders/EXRLoader.tests.cpp
+        unit/addons/loaders/EXRLut.tests.cpp
+        unit/addons/loaders/EXRParseScanline.tests.cpp
+        unit/addons/loaders/EXRPiz.tests.cpp
+        unit/addons/loaders/EXRPizOrder.tests.cpp
+        unit/addons/loaders/EXRPizUncompress.tests.cpp
+        unit/addons/loaders/EXRPizWavelet.tests.cpp
+        unit/addons/loaders/EXRPizWaveletStep.tests.cpp
+        unit/addons/loaders/EXRPredictor.tests.cpp
+        unit/addons/loaders/EXRPxr.tests.cpp
+        unit/addons/loaders/EXRPxrUncompress.tests.cpp
+        unit/addons/loaders/EXRRle.tests.cpp
+        unit/addons/loaders/EXRRleBlock.tests.cpp
+        unit/addons/loaders/EXRRleCompressedBlock.tests.cpp
+        unit/addons/loaders/EXRRunEmit.tests.cpp
+        unit/addons/loaders/EXRSamplesToBytes.tests.cpp
+        unit/addons/loaders/EXRScanlineIndex.tests.cpp
+        unit/addons/loaders/EXRScanlineLoop.tests.cpp
+        unit/addons/loaders/EXRTile.tests.cpp
+        unit/addons/loaders/EXRTiles.tests.cpp
+        unit/addons/loaders/EXRValueRead.tests.cpp
+        unit/addons/loaders/EXRValues.tests.cpp
+        unit/addons/loaders/EXRWav2Decode.tests.cpp
+        unit/addons/loaders/EXRWavelet.tests.cpp
+        unit/addons/loaders/EXRWdec16.tests.cpp
+        unit/addons/loaders/EXRZeroRun.tests.cpp
+        unit/addons/loaders/EXRZigZag.tests.cpp
+        unit/addons/loaders/EXRZipBlock.tests.cpp
+        unit/addons/loaders/FBXLoader.tests.cpp
+        unit/addons/loaders/FontLoader.tests.cpp
+        unit/addons/loaders/FontPath.tests.cpp
+        unit/addons/loaders/FontShapes.tests.cpp
+        unit/addons/loaders/GCodeLoader.tests.cpp
+        unit/addons/loaders/GCodeObjects.tests.cpp
+        unit/addons/loaders/GLTFAnimation.tests.cpp
+        unit/addons/loaders/GLTFAnisotropy.tests.cpp
+        unit/addons/loaders/GLTFAttributeAssembly.tests.cpp
+        unit/addons/loaders/GLTFBinary.tests.cpp
+        unit/addons/loaders/GLTFBounds.tests.cpp
+        unit/addons/loaders/GLTFBufferView.tests.cpp
+        unit/addons/loaders/GLTFClearcoat.tests.cpp
+        unit/addons/loaders/GLTFDefaultMaterial.tests.cpp
+        unit/addons/loaders/GLTFDiffuseRoughness.tests.cpp
+        unit/addons/loaders/GLTFExtensions.tests.cpp
+        unit/addons/loaders/GLTFExtras.tests.cpp
+        unit/addons/loaders/GLTFGaussianSplat.tests.cpp
+        unit/addons/loaders/GLTFInstancing.tests.cpp
+        unit/addons/loaders/GLTFInterleaved.tests.cpp
+        unit/addons/loaders/GLTFIor.tests.cpp
+        unit/addons/loaders/GLTFIridescence.tests.cpp
+        unit/addons/loaders/GLTFLights.tests.cpp
+        unit/addons/loaders/GLTFLoader.tests.cpp
+        unit/addons/loaders/GLTFMaterial.tests.cpp
+        unit/addons/loaders/GLTFMorphFlags.tests.cpp
+        unit/addons/loaders/GLTFMorphTargets.tests.cpp
+        unit/addons/loaders/GLTFNode.tests.cpp
+        unit/addons/loaders/GLTFPrimitiveKey.tests.cpp
+        unit/addons/loaders/GLTFSampler.tests.cpp
+        unit/addons/loaders/GLTFSheen.tests.cpp
+        unit/addons/loaders/GLTFSparse.tests.cpp
+        unit/addons/loaders/GLTFTextureTransform.tests.cpp
+        unit/addons/loaders/GLTFTypes.tests.cpp
+        unit/addons/loaders/GLTFUnlit.tests.cpp
+        unit/addons/loaders/GLTFVolume.tests.cpp
+        unit/addons/loaders/GaussianSplatPLY.tests.cpp
+        unit/addons/loaders/GaussianSplatPLYConvert.tests.cpp
+        unit/addons/loaders/GaussianSplatPLYMapping.tests.cpp
+        unit/addons/loaders/HDRCube.tests.cpp
+        unit/addons/loaders/HDRLoader.tests.cpp
+        unit/addons/loaders/IESLamp.tests.cpp
+        unit/addons/loaders/IESLoader.tests.cpp
+        unit/addons/loaders/IESParse.tests.cpp
+        unit/addons/loaders/IESSample.tests.cpp
+        unit/addons/loaders/KMZLoader.tests.cpp
+        unit/addons/loaders/KSPLATBand.tests.cpp
+        unit/addons/loaders/KSPLATDecode.tests.cpp
+        unit/addons/loaders/KSPLATHeader.tests.cpp
+        unit/addons/loaders/KSPLATLoader.tests.cpp
+        unit/addons/loaders/KSPLATParse.tests.cpp
+        unit/addons/loaders/KSPLATRow.tests.cpp
+        unit/addons/loaders/KSPLATSection.tests.cpp
+        unit/addons/loaders/KSPLATSectionRows.tests.cpp
+        unit/addons/loaders/KSPLATValidate.tests.cpp
+        unit/addons/loaders/KTX2Loader.tests.cpp
+        unit/addons/loaders/KTXImages.tests.cpp
+        unit/addons/loaders/KTXLoader.tests.cpp
+        unit/addons/loaders/LDrawBfc.tests.cpp
+        unit/addons/loaders/LDrawCache.tests.cpp
+        unit/addons/loaders/LDrawColour.tests.cpp
+        unit/addons/loaders/LDrawEmbedded.tests.cpp
+        unit/addons/loaders/LDrawFinish.tests.cpp
+        unit/addons/loaders/LDrawFlags.tests.cpp
+        unit/addons/loaders/LDrawGeometry.tests.cpp
+        unit/addons/loaders/LDrawLoader.tests.cpp
+        unit/addons/loaders/LDrawMeta.tests.cpp
+        unit/addons/loaders/LDrawPart.tests.cpp
+        unit/addons/loaders/LDrawRay.tests.cpp
+        unit/addons/loaders/LDrawReference.tests.cpp
+        unit/addons/loaders/LDrawReference2.tests.cpp
+        unit/addons/loaders/LDrawSmooth.tests.cpp
+        unit/addons/loaders/LDrawType.tests.cpp
+        unit/addons/loaders/LUT3dlLoader.tests.cpp
+        unit/addons/loaders/LUTCubeLoader.tests.cpp
+        unit/addons/loaders/LUTImageLoader.tests.cpp
+        unit/addons/loaders/LWOLoader.tests.cpp
+        unit/addons/loaders/MD2Animations.tests.cpp
+        unit/addons/loaders/MD2Loader.tests.cpp
+        unit/addons/loaders/MD2Morph.tests.cpp
+        unit/addons/loaders/MD2Triangles.tests.cpp
+        unit/addons/loaders/MD2Vertices.tests.cpp
+        unit/addons/loaders/MDDLoader.tests.cpp
+        unit/addons/loaders/MTLConvert.tests.cpp
+        unit/addons/loaders/MTLCreate.tests.cpp
+        unit/addons/loaders/MTLLoader.tests.cpp
+        unit/addons/loaders/MTLMaterialParams.tests.cpp
+        unit/addons/loaders/MTLTextureParams.tests.cpp
+        unit/addons/loaders/MaterialXLoader.tests.cpp
+        unit/addons/loaders/NRRDBinary.tests.cpp
+        unit/addons/loaders/NRRDDirections.tests.cpp
+        unit/addons/loaders/NRRDLoader.tests.cpp
+        unit/addons/loaders/NRRDText.tests.cpp
+        unit/addons/loaders/NRRDVolume.tests.cpp
+        unit/addons/loaders/OBJBuild.tests.cpp
+        unit/addons/loaders/OBJFaceNormal.tests.cpp
+        unit/addons/loaders/OBJLoader.tests.cpp
+        unit/addons/loaders/OBJMaterialGroups.tests.cpp
+        unit/addons/loaders/OBJObjects.tests.cpp
+        unit/addons/loaders/PCDBinary.tests.cpp
+        unit/addons/loaders/PCDBuild.tests.cpp
+        unit/addons/loaders/PCDLoader.tests.cpp
+        unit/addons/loaders/PCDOffsets.tests.cpp
+        unit/addons/loaders/PCDPoints.tests.cpp
+        unit/addons/loaders/PDBBond.tests.cpp
+        unit/addons/loaders/PDBElement.tests.cpp
+        unit/addons/loaders/PDBGeometry.tests.cpp
+        unit/addons/loaders/PDBLoader.tests.cpp
+        unit/addons/loaders/PLYAscii.tests.cpp
+        unit/addons/loaders/PLYBinary.tests.cpp
+        unit/addons/loaders/PLYBuild.tests.cpp
+        unit/addons/loaders/PLYHandle.tests.cpp
+        unit/addons/loaders/PLYHeader.tests.cpp
+        unit/addons/loaders/PLYTypes.tests.cpp
+        unit/addons/loaders/PVRHeader.tests.cpp
+        unit/addons/loaders/PVRLoader.tests.cpp
+        unit/addons/loaders/PVRVersion2.tests.cpp
+        unit/addons/loaders/RGBELoader.tests.cpp
+        unit/addons/loaders/SPLATLoader.tests.cpp
+        unit/addons/loaders/SPZCenters.tests.cpp
+        unit/addons/loaders/SPZHarmonics.tests.cpp
+        unit/addons/loaders/SPZLoader.tests.cpp
+        unit/addons/loaders/SPZQuaternion.tests.cpp
+        unit/addons/loaders/SVGArc.tests.cpp
+        unit/addons/loaders/SVGClose.tests.cpp
+        unit/addons/loaders/SVGCommand.tests.cpp
+        unit/addons/loaders/SVGCurve.tests.cpp
+        unit/addons/loaders/SVGLoader.tests.cpp
+        unit/addons/loaders/SVGMatrix.tests.cpp
+        unit/addons/loaders/SVGNumbers.tests.cpp
+        unit/addons/loaders/SVGPath.tests.cpp
+        unit/addons/loaders/SVGSkew.tests.cpp
+        unit/addons/loaders/SVGTransform.tests.cpp
+        unit/addons/loaders/TDSColor.tests.cpp
+        unit/addons/loaders/TDSFaces.tests.cpp
+        unit/addons/loaders/TDSGroup.tests.cpp
+        unit/addons/loaders/TDSLoader.tests.cpp
+        unit/addons/loaders/TDSMain.tests.cpp
+        unit/addons/loaders/TDSMaterial.tests.cpp
+        unit/addons/loaders/TDSMatrix.tests.cpp
+        unit/addons/loaders/TDSMeshData.tests.cpp
+        unit/addons/loaders/TGAHeader.tests.cpp
+        unit/addons/loaders/TGAIndexed.tests.cpp
+        unit/addons/loaders/TGALoader.tests.cpp
+        unit/addons/loaders/TGAPixels.tests.cpp
+        unit/addons/loaders/TGARle.tests.cpp
+        unit/addons/loaders/TGAVariants.tests.cpp
+        unit/addons/loaders/TIFFLoader.tests.cpp
+        unit/addons/loaders/USDLoader.tests.cpp
+        unit/addons/loaders/USDZAndTTF.tests.cpp
+        unit/addons/loaders/UltraHDRLoader.tests.cpp
+        unit/addons/loaders/UltraHDRXmp.tests.cpp
+        unit/addons/loaders/VOXChunks.tests.cpp
+        unit/addons/loaders/VOXColorVolume.tests.cpp
+        unit/addons/loaders/VOXContent.tests.cpp
+        unit/addons/loaders/VOXDict.tests.cpp
+        unit/addons/loaders/VOXLoader.tests.cpp
+        unit/addons/loaders/VOXMask.tests.cpp
+        unit/addons/loaders/VOXMerge.tests.cpp
+        unit/addons/loaders/VOXMesh.tests.cpp
+        unit/addons/loaders/VOXOccupancy.tests.cpp
+        unit/addons/loaders/VOXQuad.tests.cpp
+        unit/addons/loaders/VOXScene.tests.cpp
+        unit/addons/loaders/VOXTransform.tests.cpp
+        unit/addons/loaders/VRMLLoader.tests.cpp
+        unit/addons/loaders/VTKAscii.tests.cpp
+        unit/addons/loaders/VTKColor.tests.cpp
+        unit/addons/loaders/VTKLoader.tests.cpp
+        unit/addons/loaders/VTKPointData.tests.cpp
+        unit/addons/loaders/VTKPolygon.tests.cpp
+        unit/addons/loaders/VTKSections.tests.cpp
+        unit/addons/loaders/VTKStrip.tests.cpp
         unit/addons/helpers/VertexNormalsHelper.tests.cpp
         unit/addons/helpers/VertexTangentsHelper.tests.cpp
         unit/addons/helpers/NativeObjectExtension.tests.cpp
@@ -2401,4 +2401,78 @@ if(THREECPP_NODE_EXECUTABLE AND THREEJS_SOURCE_DIR)
         --upstream "${THREEJS_SOURCE_DIR}" --output-root "${CMAKE_BINARY_DIR}/parity/object-model")
     set_tests_properties(threecpp.object-model.node-children-protocol-parity PROPERTIES
         LABELS "object-model;native;gc" ENVIRONMENT "TEMP=D:/Temp/surui;TMP=D:/Temp/surui;THREEJS_SOURCE_DIR=${THREEJS_SOURCE_DIR}")
+endif()
+
+# Append to test/CMakeLists.txt after applying the reviewed source/test files.
+# This fragment contains no loader paths and remains valid after loader-layout.
+function(threecpp_add_alignment_parity name mode comparator target)
+    add_test(NAME "threecpp.${name}"
+        COMMAND "${CMAKE_COMMAND}"
+        "-DNODE=${THREECPP_NODE_EXECUTABLE}"
+        "-DPROBE=$<TARGET_FILE:${target}>"
+        "-DCOMPARATOR=${CMAKE_CURRENT_SOURCE_DIR}/unit/utils/parity/${comparator}"
+        "-DMODE=${mode}" "-DSUITE=${name}"
+        "-DUPSTREAM=${THREEJS_SOURCE_DIR}"
+        "-DOUTPUT_ROOT=${CMAKE_BINARY_DIR}/parity/native-alignment"
+        "-DEXPECTED=${CMAKE_CURRENT_SOURCE_DIR}/unit/utils/parity/expected-half-float-target.json"
+        -P "${CMAKE_CURRENT_SOURCE_DIR}/cmake/RunFreshNativeAlignment.cmake")
+    set_tests_properties("threecpp.${name}" PROPERTIES
+        LABELS "native;alignment"
+        ENVIRONMENT "TEMP=D:/Temp/surui;TMP=D:/Temp/surui;THREEJS_SOURCE_DIR=${THREEJS_SOURCE_DIR}")
+endfunction()
+
+foreach(probe IN ITEMS PrimitiveAssign ObjectToObject TSLChainingSource)
+    add_executable(ThreeJs${probe}ParityProbe unit/utils/parity/${probe}ParityProbe.cpp)
+    target_link_libraries(ThreeJs${probe}ParityProbe PRIVATE threecpp::threecpp)
+endforeach()
+add_test(NAME threecpp.object-toobject-lifetime COMMAND ThreeJsObjectToObjectParityProbe --lifetime)
+add_test(NAME threecpp.tsl-chaining-source-lifetime COMMAND ThreeJsTSLChainingSourceParityProbe --lifetime)
+set_tests_properties(threecpp.object-toobject-lifetime threecpp.tsl-chaining-source-lifetime PROPERTIES
+    LABELS "native;alignment;gc" ENVIRONMENT "TEMP=D:/Temp/surui;TMP=D:/Temp/surui")
+
+if(THREECPP_NODE_EXECUTABLE)
+    threecpp_add_alignment_parity(primitive-assign-parity POSITIONAL compare-primitive-assign.mjs ThreeJsPrimitiveAssignParityProbe)
+    threecpp_add_alignment_parity(object-toobject-parity POSITIONAL compare-object-toobject.mjs ThreeJsObjectToObjectParityProbe)
+endif()
+if(THREECPP_NODE_EXECUTABLE AND THREEJS_SOURCE_DIR)
+    threecpp_add_alignment_parity(tsl-chaining-source-parity TSL compare-tsl-chaining-source.mjs ThreeJsTSLChainingSourceParityProbe)
+endif()
+
+# Host implementation stays in core, but all three probes exercise real Fly.
+if(THREECPP_BUILD_ADDONS)
+    foreach(probe IN ITEMS FlyControls TypedControlsBridge NativeControlsHostOwner)
+        add_executable(ThreeJs${probe}ParityProbe unit/utils/parity/${probe}ParityProbe.cpp)
+        target_link_libraries(ThreeJs${probe}ParityProbe PRIVATE threecpp::addons)
+    endforeach()
+    add_test(NAME threecpp.fly-controls-lifetime COMMAND ThreeJsFlyControlsParityProbe --lifetime)
+    add_test(NAME threecpp.typed-controls-bridge-lifetime COMMAND ThreeJsTypedControlsBridgeParityProbe --lifetime)
+    add_test(NAME threecpp.native-controls-host-owner-lifetime COMMAND ThreeJsNativeControlsHostOwnerParityProbe --lifetime)
+    set_tests_properties(threecpp.fly-controls-lifetime threecpp.typed-controls-bridge-lifetime threecpp.native-controls-host-owner-lifetime PROPERTIES
+        LABELS "native;alignment;addons;gc" ENVIRONMENT "TEMP=D:/Temp/surui;TMP=D:/Temp/surui")
+    if(THREECPP_NODE_EXECUTABLE AND THREEJS_SOURCE_DIR)
+        threecpp_add_alignment_parity(fly-controls-parity NAMED_UPSTREAM compare-fly-controls.mjs ThreeJsFlyControlsParityProbe)
+        threecpp_add_alignment_parity(typed-controls-bridge-parity NAMED_UPSTREAM compare-typed-controls-bridge.mjs ThreeJsTypedControlsBridgeParityProbe)
+        threecpp_add_alignment_parity(native-controls-host-owner-parity NAMED_UPSTREAM compare-native-controls-host-owner.mjs ThreeJsNativeControlsHostOwnerParityProbe)
+        set_tests_properties(threecpp.fly-controls-parity threecpp.typed-controls-bridge-parity threecpp.native-controls-host-owner-parity PROPERTIES LABELS "native;alignment;addons")
+    endif()
+endif()
+
+if(THREECPP_BUILD_VULKAN)
+    add_executable(VulkanRenderTargetLifecycleProbe unit/utils/parity/VulkanRenderTargetLifecycleProbe.cpp)
+    add_executable(VulkanHalfFloatTargetProbe unit/utils/parity/VulkanHalfFloatTargetProbe.cpp)
+    target_link_libraries(VulkanRenderTargetLifecycleProbe PRIVATE threecpp::vulkan)
+    target_link_libraries(VulkanHalfFloatTargetProbe PRIVATE threecpp::vulkan)
+    if(THREECPP_NODE_EXECUTABLE)
+        threecpp_add_alignment_parity(vulkan-render-target-lifecycle VULKAN run-vulkan-render-target-lifecycle.mjs VulkanRenderTargetLifecycleProbe)
+        threecpp_add_alignment_parity(vulkan-half-float-target VULKAN_HALF run-vulkan-half-float-target.mjs VulkanHalfFloatTargetProbe)
+    else()
+        # Native GPU assertions remain available without the development oracle.
+        add_test(NAME threecpp.vulkan-render-target-lifecycle COMMAND VulkanRenderTargetLifecycleProbe)
+        add_test(NAME threecpp.vulkan-half-float-target COMMAND VulkanHalfFloatTargetProbe)
+    endif()
+    set_tests_properties(threecpp.vulkan-render-target-lifecycle threecpp.vulkan-half-float-target PROPERTIES
+        LABELS "GPU;Vulkan;alignment"
+        ENVIRONMENT "TEMP=D:/Temp/surui;TMP=D:/Temp/surui;THREEJS_SOURCE_DIR=${THREEJS_SOURCE_DIR}")
+    # --validation is intentionally not registered unconditionally: an installed
+    # Khronos validation layer is required, and absence must not count as pass.
 endif()

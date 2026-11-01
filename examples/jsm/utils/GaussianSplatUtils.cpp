@@ -1,4 +1,4 @@
-#include "loaders/GaussianSplatUtils.h"
+#include "utils/GaussianSplatUtils.h"
 
 #include "math/Matrix3.h"
 #include "math/Matrix4.h"

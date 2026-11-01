@@ -9,6 +9,7 @@
 #include "renderers/webgl/WebGLUtils.h"
 #include "constants.h"
 #include <thread>
+#include <array>
 namespace {
 using Args=std::vector<JSValue>;
 JSPropertyDescriptor data(JSValue value,bool writable=true,bool enumerable=true,bool configurable=true){JSPropertyDescriptor d;d.value=value;d.writable=writable;d.enumerable=enumerable;d.configurable=configurable;return d;}
@@ -73,7 +74,24 @@ TEST_CASE("Object.assign uses intrinsic binding and source ordered partial write
     REQUIRE(assign.call(object,{target,source}).sameValue(target));REQUIRE(target.get("first").sameValue(7));REQUIRE_FALSE(target.hasOwn("second"));REQUIRE_FALSE(target.hasOwn("new"));REQUIRE(target.get(symbol).sameValue(3));
     auto partial=JSValue::object(),input=JSValue::object();input.set("a",11);input.set("b",12);input.set("c",13);partial.defineProperty("b",data(0,false));
     REQUIRE_THROWS_AS(assign.call(object,{partial,input}),JSTypeError);REQUIRE(partial.get("a").sameValue(11));REQUIRE(partial.get("b").sameValue(0));REQUIRE_FALSE(partial.hasOwn("c"));
-    auto stringTarget=assign.call(object,{"abc",JSValue::object()});REQUIRE(stringTarget.get("length").sameValue(3));REQUIRE_THROWS_AS(assign.call(object,{3,input}),JSTypeError);
+    auto stringTarget=assign.call(object,{"abc",JSValue::object()});REQUIRE(stringTarget.get("length").sameValue(3));
+    // Object.assign applies ToObject to a numeric target and writes into that box.
+    auto boxedTarget=assign.call(object,{3,input});
+    REQUIRE(boxedTarget.isObject());REQUIRE_FALSE(boxedTarget.sameValue(3));
+    REQUIRE(call(boxedTarget,"valueOf").sameValue(3));
+    const auto numericPrototype=JSValue(3).toObject().getPrototype();
+    REQUIRE(boxedTarget.getPrototype().sameValue(numericPrototype));
+    const auto boxedKeys=boxedTarget.ownPropertyKeys();REQUIRE(boxedKeys.size()==3);
+    const std::array<const char*,3> numberKeys{"a","b","c"};
+    for(std::size_t i=0;i<numberKeys.size();++i){
+        REQUIRE(boxedKeys[i].sameValue(numberKeys[i]));REQUIRE(boxedTarget.get(numberKeys[i]).sameValue(11+double(i)));
+        const auto d=boxedTarget.getOwnPropertyDescriptor(numberKeys[i]);REQUIRE(d.has_value());
+        REQUIRE(d->value->sameValue(11+double(i)));REQUIRE(d->writable.value());REQUIRE(d->enumerable.value());REQUIRE(d->configurable.value());
+    }
+    REQUIRE(assign.call(object,{boxedTarget,JSValue::object(),nullptr,JSValue{}}).sameValue(boxedTarget));
+    const auto otherBox=assign.call(object,{3,input});REQUIRE_FALSE(otherBox.sameValue(boxedTarget));REQUIRE(call(otherBox,"valueOf").sameValue(3));
+    REQUIRE_THROWS_AS(assign.call(object,{nullptr,input}),JSTypeError);
+    REQUIRE_THROWS_AS(assign.call(object,{JSValue{},input}),JSTypeError);
     auto stringSource=assign.call(object,{JSValue::object(),"a\xf0\x9f\x98\x80"});REQUIRE(stringSource.keys().size()==3);
     auto prototype=JSValue::object().getPrototype();Restore restore(prototype,{"constructor"});prototype.set("constructor",17);REQUIRE(JSValue::intrinsicObjectConstructor().sameValue(object));
     auto cm=nativeColorManagement();Restore cmRestore(cm,{"spaces"});cm.set("spaces",JSValue::object());call(cm,"define",{input});REQUIRE(cm.get("spaces").get("c").sameValue(13));

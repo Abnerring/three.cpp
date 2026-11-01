@@ -1,18 +1,20 @@
-## 进行中：数学/相机/材质与现代渲染前置，2026-11-02
+## 当前阶段验收与后续范围，2026-11-02
 
-- 基线 `53db96fb267ec4b06f38320c1b6a5722b1b5654e`，固定上游 `11738a9d55e502fb484cefffcea3a66dc44e9fe9`。证据根目录 `D:/Temp/surui/threecpp-foundations-20261101`；当前正在进行最终统一构建和回归，此节不作为阶段最终验收。之后的 Nov 1 记录保留其历史范围。
-- 本批实际原生通过：MathUtils558、Error-family370、Vector1058、Matrix1319、Camera194、Symbol264，及相关 fresh/GC 检查（native-ctest03，13/13）；Skeleton596、4 个 GC 阶段与三 heap 检查（native-regression05）；传统材质4373、变形网格511、CubeMap/RenderTarget50与 metadata/GC/lifetime、Texture 矩阵双向桥（native-ctest05，8/9，彼时 NodeMaterial 仍失败）。这些为各自执行快照的证据，不能替代之后全部目标的最终重链。
-- AsyncFunction252与24项GC观察、Promise27次实际原生域回收通过；源侧9次VM realm回收作为不同宿主API单独记录。NativeAsyncFunction 使用实际可恢复 Await/Return/Throw 状态，不执行生产 JS 源码。动态字符串函数编译与完整运行时尚未实现。
-- 本轮生产修复包括：真实 NodeBuilder 模块初始化及 NodeMaterial fallback、Node.uuid 调用私有真实 MathUtils 绑定、通用 Array.prototype.some、Node._getChildren 的动态 Object/Array/String 调用及迭代器关闭、真实 Texture.matrix 管理对象和 Promise cache 域生命周期。Node UUID24例与15个真实独立导入前缀通过。原失败的输入、预期、断言及编号差保留，不通过补造分配或扩大归一化消除失败。
-- `native-ctest08`：Array.some916例、原生三轮生命周期与源/原生三轮GC严格通过；PMREMUtils71例、metadata及源/原生生命周期严格通过。Position 的5个Fn回调源码来自固定上游AST，C++字符串传输保留源CRLF；既有语料未改。PMREM原102例已严格匹配，剩余测试快照键顺序随后按真实源快照插入顺序修正。
-- `native-ctest09`：PMREM102例、metadata及源/原生生命周期通过。StackTrace的570例（source9、StackTrace14、parseInt547）actual/expected逐字节一致，但比较器向自带输入的lifetime进程继续写stdin，Windows返回EOF，原检查正确判为失败。修复仅按真实子进程输入契约停止该写入，保留全部进程error/status检查。
-- `native-build17` 后的 `native-ctest10` **5/5通过，50.53秒**：原NodeMaterial331例及三heap、Node.children17个真实协议案例（含执行中GC）、StackTrace/parseInt570例及三heap全部通过。3个实际exe另存，运行前后SHA一致；2831个源码/测试/工具/配置文件运行前后均未改变。源码栈仅保证已映射同步帧，普通未映射回调、跨await祖先链、eval与完整引擎行为仍缺；不从expected填帧。
-- `native-build18-full-cpu` 全部307个CPU测试目标统一构建成功，971步，1203.02秒。冻结 `final-regression-plan03` 的387注册+27原默认绝对对照共414项正在执行；记录时356项结束、5项未过（UTC 2026-11-01T19:06:52.532731+00:00），其余尚未完成。当前失败为ColorManagement旧Object.assign断言、原Symbol比较器strict-set契约及真实primitive差异、Lights120秒超时、Interleaved clone rawItemSize类型、Model/Vertex/Clipping/Loop的Symbol getPrototypeOf。均保留原输入/预期/失败；原broad threejs-parity的容差/键排序仅按原范围报告。
-- `native-vulkan-build01` 全部12目标489步构建成功，1249.04秒；`native-vulkan-ctest01` **13/13通过，44.31秒**。`post-build-vulkan01/result.json` 证实2831源码文件及12实际exe/构建定义前后未变；原13 flags/argv（含--cube）未改。实际validation=0，真实层枚举没有Khronos验证层，不宣称validation通过；完整渲染仍待实现。
-- 后续候选独立证据（尚未合入本阶段源码）：`primitive-private-native01-proof.json` 为Color7/165、原Symbol1070/10077及有序键0差、新primitive42严格0差；`get-prototype-private-native02` 的1019例全过，input/expected与原失败逐字节相同，actual现与expected逐字节相同。Interleaved原46/7075全过但原比较器自有1e-11容差未改。Lights原98/47607严格全过；相同profile二进制的1/4/8/16前缀双模式原字节相同，32 host-job0.354秒严格过、bare-host实际120.058秒超时，未执行64/98 profile；完整98 host-job另以原比较器通过。共享整套失败没有被这些私有结果覆盖。
-- `vulkan-half-lifecycle-private-native01` 的新HalfFloat9场景/701断言与原生命周期9场景/106断言在RTX3070 Laptop实际GPU全过；所有1595保护项和私有二进制未变，validation=false。这些新候选未合入当前集成，原13GPU基线尚需对候选头重新编译后复验，不能把旧13通过外推给新候选。
-- 新Hash/节点数学候选3TU语法及私有编译/链接通过，首次134例native进程55944实际180秒超时，未执行其native GC/heap模式；完整63个输出保留，严格源前缀仅见1项TSL链函数source文本差异。Fly原5TU补直接JSPromise头后语法过；typed桥私有构建在NativeMathEqualsSource.inc搜索路径失败，尚无native运行证据。原失败/候选/完整日志全保留，不改timeout、输入或断言。
-- 源清单607/1251为路径覆盖，644缺对应路径不等同未写代码（50个addon加载器已在错误目录）；功能完成度未证明。完整传统/现代Vulkan、剩余nodes/TSL、扩展、原生宿主、完整动态语义与三平台仍未完成。此阶段仅提交已统一编译的当前代码；完整统一回归及最终只读归档仍待结束。
+- 固定上游 `11738a9d55e502fb484cefffcea3a66dc44e9fe9`；旧阶段基线提交 `bf7e49e3ba0e7166453c70b882fcd22545d9f90f`。新证据根目录 `D:/Temp/surui/threecpp-native-alignment-20261102`。下文历史记录只说明各自当时的执行快照。
+- `integration01/proof.json` 证实 19 包已应用、770 个操作、758 个最终路径及全部最终 SHA 匹配。目录迁移、Object/基本类型、Interleaved/Lights、Fly/typed/host ownership、Vulkan 生命周期/HalfFloat、通用 TSL 元数据、默认对照修正和两个私有 unsigned token 声明已进入当前源码；完整 Hash/节点数学候选明确排除。包的私有验证不能自动充当当前统一链接后的结果。
+- 旧基线 `post-build-cpu01/result.json` 已终态：414 项、405 过、9 失败、0 跳过；307 个 CPU 目标已构建。`post-build-vulkan01/result.json` 为 13/13、12 个 GPU 目标。2831 文件、旧二进制及构建配置前后不变。GPU 未启用 Khronos validation，机器缺验证层；不能称验证层通过。
+- 旧阶段完整证据已归档到 `D:/Temp/surui/threecpp-foundations-final-20261102/archive02`，`COMPLETION.json` 的 archiveComplete/hashVerified 均为 true，FINAL-MANIFEST SHA 为 `ab5c7056b8ff302ad77c762857fc87cf35e74999e25a7e81284332972c5f31fb`。9 项原失败、全部原 fixture/expected/actual/GC、307+12 个旧 exe 均保留；失败的 archive01 也未覆盖。旧测试结果不能转移给当前新源码。
+- 当前 `current-regression-plan01` 选择 CPU 94 目标、141 项注册检查与原 27 项默认绝对对照，共 168 项；原 relative 检查保留。GPU 15 目标、19 项注册检查：旧 13、两项新检查及四项额外既有注册，其中 binding-delete/instanced-index-bounds 为 Node 源 trace。当前构建终态：CPU 94 目标、420 步、694.09 秒及 GPU 15 目标均 exit 0；各自守卫 3041 项源码前后不变。GPU 19/19、0 跳过、56.52 秒，JUnit 为 `current-regression-native01/gpu19-junit.xml`；生命周期与 HalfFloat 各 9 组、106/701 断言实际运行于 RTX 3070 Laptop GPU。27 项默认绝对对照已终态 27/27、0 跳过、1162.09 秒，3041 源码及 1353 个二进制/配置/上游依赖前后未变；141 项注册回归也已终态 141/141、0 跳过、1515.86 秒，两组共 168 项 CPU 检查通过；不称 19 项均为独立硬件测试。
+- 验证需保留 loader 迁移前后 core/addon 单测名称 multiset、所有原 argv/默认绝对模式、固定上游路径、source/binary/config 前后守卫，以及每项真实 PID、退出码、原始日志、JUnit 和 GC 输出。缺少 terminal/result 的命令只能记作待验。Interleaved 原比较器仍有原有 1e-11 容差，不能把该整组称为严格浮点一致。
+- 当前实际 Catch 注册名称核对：旧 core/addons 为 2535/155，新构建为 1402/1288；按 248 个迁移 TU 的 1133 个名称 Counter 验证 core 移出、addons 移入和合计守恒。Catch 列表模式返回匹配数量，不是功能测试退出码；见 `unit-case-inventory01/migration-groups-proof.json`。关闭 addons 的独立 CMake 配置与 Ninja 依赖图核对通过；未据此声称该配置已原生构建。固定源审计单测 5/5、`port-audit --check` 通过；前两次使用错误 Node CLI 的原日志保留在 `test-port-audit01/02`。
+- Hash 原两次 134 例在原 180000ms 限制下超时，原失败记录保持不变。`shader-tsl-private-native02` 与 `native-generator-passive-private-native01` 保留超时；独立 30 GC/三 heap、metadata48 及前缀严格通过各有独立范围。两个 unsigned token 声明没有解决主要 GC 耗时，不提高 timeout、不删输入、不以原理猜测代替实际性能证据。
+- 后续三类纯装箱载荷 passive 实验 `boxed-primitives-passive-private-native01` 使用归档库与明确对象覆盖，未改共享源码、collector、RegExp 或原 134 输入/180 秒限制。整项对照在 86.64 秒结束，但仍有 14 处 TypeError.message 严格差异，故全套未通过；独立 30 GC 观察与三 heap 的实际输出严格通过。此结果只支持继续修复真实调用/IteratorClose 错误文本，不能冒充当前统一库或完整 Hash 验收。
+- 后续 `shader-source-errors-private-native01` 已实际通过原 134 项完整严格对照（96.17 秒，绝对身份值、不归一化）及独立 30 GC/三 heap 严格检查；1701 守卫和私有二进制前后不变。修复为真实源 AST callee 诊断及通用 IteratorClose primitive 消息，未改 collector、RegExp、原输入或 180 秒上限。仍是归档库加明确覆盖对象的独立验证，尚未合入当前统一库。
+- NodeManager 完整包及 host-turn 修正仍是独立候选；当前审计明确完整 Nodes.js/TSL.js re-export 初始化图未闭合，不能据直接依赖、129+21 场景草稿或源码结果声称已集成原生通过。其候选未进入上述 19 包。
+- 659/1251（src 523/755、addons 136/496）是对应文件路径数，592 缺对应路径，不是实现完成率或完整模块验收数。传统完整纹理/材质/光照/阴影/后处理、现代计算/存储/编译链、剩余扩展和原生宿主仍待实现或验收。
+- 所列原生结果为 Windows 快照。Linux/macOS、实体窗口输入及交互 Vulkan 联动须另验；无 CEF、嵌入浏览器或生产 JS 运行时桥，Node 仅作开发对照。
+
+- 全部原生检查终态后，仅删除无引用、791 字节的重复 `fixtures/vulkan-half-float-clear.json`；被引用的 `expected-half-float-target.json` 保留且 SHA 不变。清理记录另存 `cleanup-overlay01`，不覆盖原 758 状态证明。清理后 CPU94 再构建为 no-op/exit 0，3040 源码前后不变；再核对原 1353 项二进制/配置/固定源依赖全部 SHA 不变。该删除不改执行逻辑，无需扩大或重复上述回归。
 
 # 本轮验收：原生对象模型与 JavaScript 协议，2026-11-01
 

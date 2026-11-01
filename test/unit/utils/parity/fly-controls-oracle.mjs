@@ -1,0 +1,4 @@
+import fs from 'node:fs';import {run,fixtures,lifecycle} from './fly-controls-fixtures.mjs';
+if(process.argv.length===3&&process.argv[2]==='--lifetime'){console.log(JSON.stringify(await lifecycle()));}
+else if(process.argv.length===2){const text=fs.readFileSync(0,'utf8');const input=text.trim()?JSON.parse(text):fixtures();console.log(JSON.stringify(input.map(q=>({name:q.name,value:run(q)}))));}
+else throw Error('Usage: oracle [--lifetime]');

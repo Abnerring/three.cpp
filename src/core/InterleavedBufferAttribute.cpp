@@ -135,7 +135,7 @@ JSValue method(const JSValue& receiver,const Args& args,const Args& captures) {
                 const auto result=std::visit([&](const auto& input)->std::shared_ptr<BufferAttribute> {
                     if constexpr(std::is_same_v<std::decay_t<decltype(input)>,JSValue>) throw JSTypeError("BufferAttribute array must be a TypedArray");
                     else return std::make_shared<BufferAttribute>(input,size.toNumber(),normalized.toBoolean());
-                },storage.storage());auto wrapper=nativeAttribute(result);wrapper.setHostSlot("rawItemSize",size);wrapper.set("normalized",normalized);return wrapper;
+                },storage.storage());auto wrapper=nativeAttribute(result);wrapper.setHostSlot("rawItemSize",size);wrapper.setHostSlot("rawItemSizePresent",true);wrapper.set("normalized",normalized);return wrapper;
             }
             auto result=JSValue::object();result.set("itemSize",self.get("itemSize"));result.set("type",self.get("array").get("constructor").get("name"));
             result.set("array",array);result.set("normalized",self.get("normalized"));return result;

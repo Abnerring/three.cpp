@@ -1,5 +1,6 @@
 #include "core/JSSourceTrace.h"
 #include "nodes/tsl/TSLCoreRuntime.h"
+#include "nodes/tsl/TSLMethodChainingSource.inc"
 #include "nodes/tsl/TSLShaderNodes.h"
 #include "nodes/core/Node.h"
 #include "nodes/core/ConstNode.h"
@@ -23,6 +24,7 @@
 
 namespace {
 using Args=std::vector<JSValue>;
+JSValue sourceFunction(JSValue value,const char* source) {value.setFunctionSourceText(source);return value;}
 JSValue arg(const Args& args,std::size_t i,const JSValue& fallback={}) { return i<args.size()&&!args[i].isUndefined()?args[i]:fallback; }
 struct Invocation {JSValue object,method;JSValue operator()(const Args& args={})const{return method.call(object,args);}};
 Invocation invoke(const JSValue& object,const char* key){return {object,object.get(key)};}
@@ -195,15 +197,15 @@ void installNativeTSLCoreExtensions(const JSValue& module,const JSValue& constNo
         if(!element.isCallable())throw std::runtime_error("THREE.TSL: Node element "+name.toString()+" is not a function");
         invoke(elements,"set")({name,element});if(name.strictEquals("assign"))return {};
         auto proto=nativeNodeConstructor().get("prototype");
-        proto.set(name,JSValue::constructor([](const JSValue& self,const Args& args,const Args& cap)->JSValue {JSSourceTrace::FrameScope sourceTraceTSL_24({"",{"file:///D:/Temp/surui/threejs-pinned-11738a9-20261101/src/nodes/tsl/TSLCore.js",39,28,1247,"272524b87c2ded3333c693631d8aac2000a4af14adfbdfaf975027f5036808fd"},JSSourceTrace::receiverTypeName(self),"",false,false,false,{"file:///D:/Temp/surui/threejs-pinned-11738a9-20261101/src/nodes/tsl/TSLCore.js",39,28,1247,"272524b87c2ded3333c693631d8aac2000a4af14adfbdfaf975027f5036808fd"}});
+        proto.set(name,sourceFunction(JSValue::constructor([](const JSValue& self,const Args& args,const Args& cap)->JSValue {JSSourceTrace::FrameScope sourceTraceTSL_24({"",{"file:///D:/Temp/surui/threejs-pinned-11738a9-20261101/src/nodes/tsl/TSLCore.js",39,28,1247,"272524b87c2ded3333c693631d8aac2000a4af14adfbdfaf975027f5036808fd"},JSSourceTrace::receiverTypeName(self),"",false,false,false,{"file:///D:/Temp/surui/threejs-pinned-11738a9-20261101/src/nodes/tsl/TSLCore.js",39,28,1247,"272524b87c2ded3333c693631d8aac2000a4af14adfbdfaf975027f5036808fd"}});
             if(self.get("isStackNode").toBoolean()){const auto add=invoke(self,"addToStack");return add({cap[0].call({},args)});}
             Args values{self};values.insert(values.end(),args.begin(),args.end());return cap[0].call({},values);
-        },{element},"",0,JSValue::ConstructorKind::Callable));
-        proto.set(plus(name,"Assign"),JSValue::constructor([](const JSValue& self,const Args& args,const Args& cap)->JSValue {JSSourceTrace::FrameScope sourceTraceTSL_25({"",{"file:///D:/Temp/surui/threejs-pinned-11738a9-20261101/src/nodes/tsl/TSLCore.js",49,39,1520,"272524b87c2ded3333c693631d8aac2000a4af14adfbdfaf975027f5036808fd"},JSSourceTrace::receiverTypeName(self),"",false,false,false,{"file:///D:/Temp/surui/threejs-pinned-11738a9-20261101/src/nodes/tsl/TSLCore.js",49,39,1520,"272524b87c2ded3333c693631d8aac2000a4af14adfbdfaf975027f5036808fd"}});
+        },{element},"",0,JSValue::ConstructorKind::Callable),kTSLMethodChainingSource));
+        proto.set(plus(name,"Assign"),sourceFunction(JSValue::constructor([](const JSValue& self,const Args& args,const Args& cap)->JSValue {JSSourceTrace::FrameScope sourceTraceTSL_25({"",{"file:///D:/Temp/surui/threejs-pinned-11738a9-20261101/src/nodes/tsl/TSLCore.js",49,39,1520,"272524b87c2ded3333c693631d8aac2000a4af14adfbdfaf975027f5036808fd"},JSSourceTrace::receiverTypeName(self),"",false,false,false,{"file:///D:/Temp/surui/threejs-pinned-11738a9-20261101/src/nodes/tsl/TSLCore.js",49,39,1520,"272524b87c2ded3333c693631d8aac2000a4af14adfbdfaf975027f5036808fd"}});
             const auto stack=self.get("isStackNode").toBoolean();const auto assign=invoke(self,"assign");
             if(stack)return assign({arg(args,0),cap[0].call({},args)});
             Args values{self};values.insert(values.end(),args.begin(),args.end());return assign({cap[0].call({},values)});
-        },{element},"",0,JSValue::ConstructorKind::Callable));return {};
+        },{element},"",0,JSValue::ConstructorKind::Callable),kTSLMethodChainingAssignSource));return {};
     },{elements},"addMethodChaining",2,JSValue::ConstructorKind::Callable));
     installPrototype(module,elements);
     own(module,"defined",JSValue::constructor([](const JSValue&,const Args& args,const Args&)->JSValue {JSSourceTrace::FrameScope sourceTraceTSL_26({"defined",{"file:///D:/Temp/surui/threejs-pinned-11738a9-20261101/src/nodes/tsl/TSLCore.js",960,8,19228,"272524b87c2ded3333c693631d8aac2000a4af14adfbdfaf975027f5036808fd"},std::string{},"",false,false,false,{"file:///D:/Temp/surui/threejs-pinned-11738a9-20261101/src/nodes/tsl/TSLCore.js",960,8,19228,"272524b87c2ded3333c693631d8aac2000a4af14adfbdfaf975027f5036808fd"}});

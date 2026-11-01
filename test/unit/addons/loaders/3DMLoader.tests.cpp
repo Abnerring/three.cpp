@@ -1,4 +1,4 @@
-#include "loaders/ThreeDMLoader.h"
+#include "loaders/3DMLoader.h"
 
 #include "catch.hpp"
 

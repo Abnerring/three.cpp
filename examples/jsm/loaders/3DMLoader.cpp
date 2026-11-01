@@ -1,4 +1,4 @@
-﻿#include "loaders/ThreeDMLoader.h"
+﻿#include "loaders/3DMLoader.h"
 
 bool ThreeDMLoader::libraryIsBundled() {
     // The example names a content delivery address, so the library is fetched when the page runs.

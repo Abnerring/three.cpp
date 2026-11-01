@@ -42,3 +42,9 @@ class Controls : public EventDispatcher {
     // Per simulation step hook.
     virtual void update(JSValue delta = {}) { (void)delta; }
 };
+
+#include "core/JSModuleObject.h"
+JSValue nativeControlsModule();
+JSValue nativeControlsBinding(const std::string& name);
+JSValue nativeControlsConstructor();
+inline constexpr JSModuleObject ControlsModule{nativeControlsModule};

@@ -1,4 +1,4 @@
-﻿#include "loaders/GaussianSplatUtils.h"
+﻿#include "utils/GaussianSplatUtils.h"
 #include "loaders/SPLATLoader.h"
 
 #include "catch.hpp"

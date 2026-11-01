@@ -2421,9 +2421,11 @@ bool JSValue::reflectSet(const std::string& rawKey, const JSValue& value, const 
     descriptor->setter->call(rootedReceiver, {rootedValue}); return true;
 }
 void JSValue::set(const std::string& key, const JSValue& value) {
-    if(type()==Type::Boolean){auto wrapper=toObject();if(!wrapper.reflectSet(key,value,*this))throw JSTypeError("Cannot assign property to Boolean primitive");return;}
-    if(type()==Type::Symbol){auto wrapper=toObject();if(!wrapper.reflectSet(key,value,*this))throw JSTypeError("Cannot assign property to Symbol primitive");return;}
-    if (!reflectSet(key, value, *this)) throw JSTypeError("Cannot assign property '" + key + "'");
+    // A property reference keeps the primitive receiver for an inherited setter.
+    const JSValue self = *this, rootedValue = value;
+    if (self.isNull() || self.isUndefined()) throw JSTypeError("Property assignment on null/undefined");
+    auto target = self.toObject();
+    if (!target.reflectSet(key, rootedValue, self)) throw JSTypeError("Cannot assign property '" + key + "'");
 }
 bool JSValue::defineOwnProperty(const std::string& rawKey, const PropertyDescriptor& input) {
     const auto key = normalizeString(rawKey);
@@ -2648,10 +2650,13 @@ bool JSValue::reflectSet(const JSValue& input,const JSValue& value,const JSValue
     d->setter->call(rootedReceiver,{rootedValue});return true;
 }
 void JSValue::set(const JSValue& key,const JSValue& value) {
-    if(type()==Type::Boolean){auto wrapper=toObject();if(!wrapper.reflectSet(key,value,*this))throw JSTypeError("Cannot assign property to Boolean primitive");return;}
-    if(type()==Type::Symbol){auto wrapper=toObject();if(!wrapper.reflectSet(key,value,*this))throw JSTypeError("Cannot assign property to Symbol primitive");return;}
-
-    if(!reflectSet(key,value,*this))throw JSTypeError("Cannot assign property");
+    // PutValue boxes the base before ToPropertyKey, then calls [[Set]] with
+    // the original receiver rather than the wrapper.
+    const JSValue self = *this, rootedInput = key, rootedValue = value;
+    if (self.isNull() || self.isUndefined()) throw JSTypeError("Property assignment on null/undefined");
+    auto target = self.toObject();
+    const auto propertyKey = rootedInput.toPropertyKey();
+    if (!target.reflectSet(propertyKey, rootedValue, self)) throw JSTypeError("Cannot assign property");
 }
 bool JSValue::defineOwnProperty(const JSValue& input,const PropertyDescriptor& descriptor) {
     static_cast<void>(JSWeakValue(*this));

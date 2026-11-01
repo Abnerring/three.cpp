@@ -133,51 +133,9 @@ target_sources(threecpp PRIVATE
     src/loaders/AudioLoader.cpp
     src/loaders/ImageBitmapLoader.cpp
     src/loaders/TextureLoader.cpp
-    src/loaders/LUTCubeLoader.cpp
-    src/loaders/LUT3dlLoader.cpp
-    src/loaders/MDDLoader.cpp
-    src/loaders/GaussianSplatUtils.cpp
-    src/loaders/SPLATLoader.cpp
-    src/loaders/PDBLoader.cpp
-    src/loaders/GCodeLoader.cpp
-    src/loaders/HDRLoader.cpp
-    src/loaders/RGBELoader.cpp
-    src/loaders/MTLLoader.cpp
-    src/loaders/OBJLoader.cpp
-    src/loaders/OBJMaterialGroups.cpp
-    src/loaders/PLYLoader.cpp
-    src/loaders/FontLoader.cpp
-    src/loaders/HDRCubeTextureLoader.cpp
-    src/loaders/MD2Loader.cpp
-    src/loaders/BVHLoader.cpp
-    src/loaders/PCDLoader.cpp
-    src/loaders/TGALoader.cpp
-    src/loaders/NRRDLoader.cpp
-    src/loaders/AMFLoader.cpp
     src/loaders/XmlDocument.cpp
-    src/loaders/VOXLoader.cpp
-    src/loaders/SPZLoader.cpp
-    src/loaders/IESLoader.cpp
-    src/loaders/TIFFLoader.cpp
-    src/loaders/GaussianSplatPLYLoader.cpp
-    src/loaders/KSPLATLoader.cpp
-    src/loaders/UltraHDRLoader.cpp
-    src/loaders/PVRLoader.cpp
-    src/loaders/DDSLoader.cpp
-    src/loaders/KTXLoader.cpp
-    src/loaders/LUTImageLoader.cpp
-    src/loaders/GLTFGaussianSplatLoaderExtension.cpp
-    src/loaders/VTKLoader.cpp
-    src/loaders/LWOLoader.cpp
-    src/loaders/TDSLoader.cpp
-    src/loaders/LDrawLoader.cpp
-    src/loaders/SVGLoader.cpp
-    src/loaders/GLTFLoader.cpp
-    src/loaders/EXRLoader.cpp
     src/loaders/Zlib.cpp
     src/loaders/Zip.cpp
-    src/loaders/KMZLoader.cpp
-    src/loaders/ThreeMFLoader.cpp
     src/loaders/CubeTextureLoader.cpp
     src/extras/ImageUtils.cpp
     src/extras/PMREMGenerator.cpp
@@ -373,16 +331,6 @@ target_sources(threecpp PRIVATE
     src/nodes/core/ReflectorNode.cpp
     src/nodes/core/ViewportSharedTextureNode.cpp
     src/nodes/display/ViewportDepthNode.cpp
-    src/loaders/USDZLoader.cpp
-    src/loaders/TTFLoader.cpp
-    src/loaders/ColladaLoader.cpp
-    src/loaders/USDLoader.cpp
-    src/loaders/MaterialXLoader.cpp
-    src/loaders/DRACOLoader.cpp
-    src/loaders/KTX2Loader.cpp
-    src/loaders/ThreeDMLoader.cpp
-    src/loaders/VRMLLoader.cpp
-    src/loaders/FBXLoader.cpp
     src/nodes/core/ParameterNode.cpp
     src/nodes/core/NodeConstants.cpp
     src/nodes/core/Node.cpp
@@ -500,6 +448,58 @@ else()
 endif()
 if(THREECPP_BUILD_ADDONS)
     add_library(threecpp_addons
+        examples/jsm/loaders/3DMLoader.cpp
+        examples/jsm/loaders/3MFLoader.cpp
+        examples/jsm/loaders/AMFLoader.cpp
+        examples/jsm/loaders/BVHLoader.cpp
+        examples/jsm/loaders/ColladaLoader.cpp
+        examples/jsm/loaders/DDSLoader.cpp
+        examples/jsm/loaders/DRACOLoader.cpp
+        examples/jsm/loaders/EXRLoader.cpp
+        examples/jsm/loaders/FBXLoader.cpp
+        examples/jsm/loaders/FontLoader.cpp
+        examples/jsm/loaders/GCodeLoader.cpp
+        examples/jsm/loaders/GLTFGaussianSplatLoaderExtension.cpp
+        examples/jsm/loaders/GLTFLoader.cpp
+        examples/jsm/loaders/GaussianSplatPLYLoader.cpp
+        examples/jsm/loaders/HDRCubeTextureLoader.cpp
+        examples/jsm/loaders/HDRLoader.cpp
+        examples/jsm/loaders/IESLoader.cpp
+        examples/jsm/loaders/KMZLoader.cpp
+        examples/jsm/loaders/KSPLATLoader.cpp
+        examples/jsm/loaders/KTX2Loader.cpp
+        examples/jsm/loaders/KTXLoader.cpp
+        examples/jsm/loaders/LDrawLoader.cpp
+        examples/jsm/loaders/LUT3dlLoader.cpp
+        examples/jsm/loaders/LUTCubeLoader.cpp
+        examples/jsm/loaders/LUTImageLoader.cpp
+        examples/jsm/loaders/LWOLoader.cpp
+        examples/jsm/loaders/MD2Loader.cpp
+        examples/jsm/loaders/MDDLoader.cpp
+        examples/jsm/loaders/MTLLoader.cpp
+        examples/jsm/loaders/MaterialXLoader.cpp
+        examples/jsm/loaders/NRRDLoader.cpp
+        examples/jsm/loaders/OBJLoader.cpp
+        examples/jsm/loaders/OBJMaterialGroups.cpp
+        examples/jsm/loaders/PCDLoader.cpp
+        examples/jsm/loaders/PDBLoader.cpp
+        examples/jsm/loaders/PLYLoader.cpp
+        examples/jsm/loaders/PVRLoader.cpp
+        examples/jsm/loaders/RGBELoader.cpp
+        examples/jsm/loaders/SPLATLoader.cpp
+        examples/jsm/loaders/SPZLoader.cpp
+        examples/jsm/loaders/SVGLoader.cpp
+        examples/jsm/loaders/TDSLoader.cpp
+        examples/jsm/loaders/TGALoader.cpp
+        examples/jsm/loaders/TIFFLoader.cpp
+        examples/jsm/loaders/TTFLoader.cpp
+        examples/jsm/loaders/USDLoader.cpp
+        examples/jsm/loaders/USDZLoader.cpp
+        examples/jsm/loaders/UltraHDRLoader.cpp
+        examples/jsm/loaders/VOXLoader.cpp
+        examples/jsm/loaders/VRMLLoader.cpp
+        examples/jsm/loaders/VTKLoader.cpp
+        examples/jsm/utils/GaussianSplatUtils.cpp
         examples/jsm/helpers/VertexNormalsHelper.cpp
         examples/jsm/helpers/VertexTangentsHelper.cpp
         examples/jsm/utils/SortUtils.cpp
@@ -661,6 +661,29 @@ if(THREECPP_BUILD_VULKAN)
     add_executable(vulkan_basic examples/vulkan_basic.cpp)
     target_link_libraries(vulkan_basic PRIVATE threecpp::vulkan)
 endif()
+# Append after the existing threecpp / threecpp_addons targets are declared.
+# Controls.cpp and NativeObject.cpp already belong to threecpp; replace their
+# reviewed source in place without registering either translation unit twice.
+target_sources(threecpp PRIVATE
+    src/extras/ControlsHost.cpp
+    src/extras/ControlsHostWin32.cpp)
+
+# ControlsHostWin32.cpp has _WIN32 implementation and a non-Windows error stub.
+# Compile it on every platform so the declared adapter always has a definition.
+if(WIN32)
+    target_link_libraries(threecpp PRIVATE user32)
+endif()
+
+if(THREECPP_BUILD_ADDONS)
+    target_sources(threecpp_addons PRIVATE
+        examples/jsm/controls/FlyControls.cpp)
+endif()
+
+# VulkanRenderer.cpp already belongs to threecpp_vulkan.
+# TSLCoreRuntime.cpp already belongs to threecpp.
+# Their new headers/source include are applied in place; no extra source entry,
+# private overlay directory, forced include, or Three.h replacement is needed.
+
 if(THREECPP_BUILD_TESTS)
     include(CTest)
     add_subdirectory(test)

@@ -148,6 +148,12 @@ JSValue makeGeneratorFunction(const JSValue& iterable, bool singleUndefined) {
         auto state = literal({{"iterable", captures[0]}, {"started", false}, {"done", false}, {"executing", false}, {"single", captures[1]}});
         const auto token = std::make_shared<unsigned>(0);
         auto iterator = JSValue::hostObject(token, token.get(), generatorBrand);
+        static const auto passiveHooks = [] {
+            auto hooks = std::make_shared<JSHostObjectHooks>();
+            hooks->passiveFinalizer = true;
+            return hooks;
+        }();
+        iterator.setHostHooks(passiveHooks);
         const auto prototype = captures[2].get("function").get("prototype");
         iterator.setPrototype(prototype.isObject() ? prototype : generatorPrototype()); iterator.setHostSlot("state", state); return iterator;
     }, {iterable, singleUndefined, holder}, "value", 0);

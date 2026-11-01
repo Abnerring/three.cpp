@@ -1,6 +1,6 @@
 ﻿#include "loaders/SPLATLoader.h"
 
-#include "loaders/GaussianSplatUtils.h"
+#include "utils/GaussianSplatUtils.h"
 
 #include <cstring>
 #include <stdexcept>
