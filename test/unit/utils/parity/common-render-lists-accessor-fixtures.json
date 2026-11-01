@@ -1,0 +1,34 @@
+[
+  {
+    "scenario": "material-chain",
+    "variant": 0
+  },
+  {
+    "scenario": "material-short",
+    "variant": 0
+  },
+  {
+    "scenario": "material-node",
+    "variant": 0
+  },
+  {
+    "scenario": "material-throw",
+    "variant": 0
+  },
+  {
+    "scenario": "next-reentry",
+    "variant": 0
+  },
+  {
+    "scenario": "reuse-setter",
+    "variant": 0
+  },
+  {
+    "scenario": "reuse-setter",
+    "variant": 1
+  },
+  {
+    "scenario": "reset-setter",
+    "variant": 0
+  }
+]

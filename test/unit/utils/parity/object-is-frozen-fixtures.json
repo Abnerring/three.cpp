@@ -1,0 +1,395 @@
+[
+  {
+    "kind": "metadata"
+  },
+  {
+    "kind": "primitive",
+    "label": "undefined"
+  },
+  {
+    "kind": "primitive",
+    "label": "null"
+  },
+  {
+    "kind": "primitive",
+    "label": "false"
+  },
+  {
+    "kind": "primitive",
+    "label": "true"
+  },
+  {
+    "kind": "primitive",
+    "label": "zero"
+  },
+  {
+    "kind": "primitive",
+    "label": "negative-zero"
+  },
+  {
+    "kind": "primitive",
+    "label": "number"
+  },
+  {
+    "kind": "primitive",
+    "label": "NaN"
+  },
+  {
+    "kind": "primitive",
+    "label": "Infinity"
+  },
+  {
+    "kind": "primitive",
+    "label": "negative-Infinity"
+  },
+  {
+    "kind": "primitive",
+    "label": "empty-string"
+  },
+  {
+    "kind": "primitive",
+    "label": "string"
+  },
+  {
+    "kind": "primitive",
+    "label": "astral-string"
+  },
+  {
+    "kind": "primitive",
+    "label": "symbol"
+  },
+  {
+    "kind": "basic",
+    "shape": "empty",
+    "state": "extensible"
+  },
+  {
+    "kind": "basic",
+    "shape": "empty",
+    "state": "nonextensible"
+  },
+  {
+    "kind": "basic",
+    "shape": "empty",
+    "state": "frozen"
+  },
+  {
+    "kind": "basic",
+    "shape": "empty",
+    "state": "sealed"
+  },
+  {
+    "kind": "basic",
+    "shape": "data",
+    "state": "extensible"
+  },
+  {
+    "kind": "basic",
+    "shape": "data",
+    "state": "nonextensible"
+  },
+  {
+    "kind": "basic",
+    "shape": "data",
+    "state": "frozen"
+  },
+  {
+    "kind": "basic",
+    "shape": "data",
+    "state": "sealed"
+  },
+  {
+    "kind": "basic",
+    "shape": "accessor",
+    "state": "extensible"
+  },
+  {
+    "kind": "basic",
+    "shape": "accessor",
+    "state": "nonextensible"
+  },
+  {
+    "kind": "basic",
+    "shape": "accessor",
+    "state": "frozen"
+  },
+  {
+    "kind": "basic",
+    "shape": "accessor",
+    "state": "sealed"
+  },
+  {
+    "kind": "basic",
+    "shape": "array",
+    "state": "extensible"
+  },
+  {
+    "kind": "basic",
+    "shape": "array",
+    "state": "nonextensible"
+  },
+  {
+    "kind": "basic",
+    "shape": "array",
+    "state": "frozen"
+  },
+  {
+    "kind": "basic",
+    "shape": "array",
+    "state": "sealed"
+  },
+  {
+    "kind": "basic",
+    "shape": "function",
+    "state": "extensible"
+  },
+  {
+    "kind": "basic",
+    "shape": "function",
+    "state": "nonextensible"
+  },
+  {
+    "kind": "basic",
+    "shape": "function",
+    "state": "frozen"
+  },
+  {
+    "kind": "basic",
+    "shape": "function",
+    "state": "sealed"
+  },
+  {
+    "kind": "basic",
+    "shape": "string-wrapper",
+    "state": "extensible"
+  },
+  {
+    "kind": "basic",
+    "shape": "string-wrapper",
+    "state": "nonextensible"
+  },
+  {
+    "kind": "basic",
+    "shape": "string-wrapper",
+    "state": "frozen"
+  },
+  {
+    "kind": "basic",
+    "shape": "string-wrapper",
+    "state": "sealed"
+  },
+  {
+    "kind": "basic",
+    "shape": "typed-empty",
+    "state": "extensible"
+  },
+  {
+    "kind": "basic",
+    "shape": "typed-empty",
+    "state": "nonextensible"
+  },
+  {
+    "kind": "basic",
+    "shape": "typed-empty",
+    "state": "frozen"
+  },
+  {
+    "kind": "basic",
+    "shape": "typed-empty",
+    "state": "sealed"
+  },
+  {
+    "kind": "basic",
+    "shape": "typed-full",
+    "state": "extensible"
+  },
+  {
+    "kind": "basic",
+    "shape": "typed-full",
+    "state": "nonextensible"
+  },
+  {
+    "kind": "basic",
+    "shape": "typed-full",
+    "state": "frozen"
+  },
+  {
+    "kind": "basic",
+    "shape": "typed-full",
+    "state": "sealed"
+  },
+  {
+    "kind": "proxy",
+    "state": "extensible",
+    "mode": "normal",
+    "array": false
+  },
+  {
+    "kind": "proxy",
+    "state": "extensible",
+    "mode": "ownkeys-throw",
+    "array": false
+  },
+  {
+    "kind": "proxy",
+    "state": "frozen",
+    "mode": "normal",
+    "array": false
+  },
+  {
+    "kind": "proxy",
+    "state": "nonextensible",
+    "mode": "normal",
+    "array": false
+  },
+  {
+    "kind": "proxy",
+    "state": "sealed",
+    "mode": "normal",
+    "array": false
+  },
+  {
+    "kind": "proxy",
+    "state": "frozen",
+    "mode": "isextensible-throw",
+    "array": false
+  },
+  {
+    "kind": "proxy",
+    "state": "frozen",
+    "mode": "isextensible-getter-throw",
+    "array": false
+  },
+  {
+    "kind": "proxy",
+    "state": "frozen",
+    "mode": "ownkeys-throw",
+    "array": false
+  },
+  {
+    "kind": "proxy",
+    "state": "frozen",
+    "mode": "descriptor-throw",
+    "array": false
+  },
+  {
+    "kind": "proxy",
+    "state": "frozen",
+    "mode": "reverse",
+    "array": false
+  },
+  {
+    "kind": "proxy",
+    "state": "nonextensible",
+    "mode": "delete-in-ownkeys",
+    "array": false
+  },
+  {
+    "kind": "proxy",
+    "state": "mixed",
+    "mode": "delete-later",
+    "array": false
+  },
+  {
+    "kind": "proxy",
+    "state": "frozen",
+    "mode": "reenter",
+    "array": false
+  },
+  {
+    "kind": "proxy",
+    "state": "frozen",
+    "mode": "replace-alias",
+    "array": false
+  },
+  {
+    "kind": "proxy",
+    "state": "frozen",
+    "mode": "nested",
+    "array": false
+  },
+  {
+    "kind": "proxy",
+    "state": "frozen",
+    "mode": "null-traps",
+    "array": false
+  },
+  {
+    "kind": "proxy",
+    "state": "frozen",
+    "mode": "revoked",
+    "array": false
+  },
+  {
+    "kind": "proxy",
+    "state": "frozen",
+    "mode": "descriptor-getters",
+    "array": false
+  },
+  {
+    "kind": "proxy",
+    "state": "frozen",
+    "mode": "hide-key",
+    "array": false
+  },
+  {
+    "kind": "proxy",
+    "state": "extensible",
+    "mode": "false-isextensible",
+    "array": false
+  },
+  {
+    "kind": "proxy",
+    "state": "frozen",
+    "mode": "true-isextensible",
+    "array": false
+  },
+  {
+    "kind": "proxy",
+    "state": "frozen",
+    "mode": "missing-descriptor",
+    "array": false
+  },
+  {
+    "kind": "proxy",
+    "state": "frozen",
+    "mode": "accessor",
+    "array": false
+  },
+  {
+    "kind": "proxy",
+    "state": "frozen",
+    "mode": "truthy-isextensible",
+    "array": false
+  },
+  {
+    "kind": "proxy",
+    "state": "frozen",
+    "mode": "descriptor-getter-throw",
+    "array": false
+  },
+  {
+    "kind": "proxy",
+    "state": "frozen",
+    "mode": "ownkeys-getter-throw",
+    "array": false
+  },
+  {
+    "kind": "proxy",
+    "state": "frozen",
+    "mode": "normal",
+    "array": true
+  },
+  {
+    "kind": "proxy",
+    "state": "frozen",
+    "mode": "reverse",
+    "array": true
+  },
+  {
+    "kind": "proxy",
+    "state": "frozen",
+    "mode": "descriptor-getters",
+    "array": true
+  }
+]

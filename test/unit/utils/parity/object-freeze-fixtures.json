@@ -1,0 +1,355 @@
+[
+  {
+    "kind": "metadata"
+  },
+  {
+    "kind": "primitive",
+    "label": "undefined"
+  },
+  {
+    "kind": "primitive",
+    "label": "null"
+  },
+  {
+    "kind": "primitive",
+    "label": "false"
+  },
+  {
+    "kind": "primitive",
+    "label": "true"
+  },
+  {
+    "kind": "primitive",
+    "label": "zero"
+  },
+  {
+    "kind": "primitive",
+    "label": "negative-zero"
+  },
+  {
+    "kind": "primitive",
+    "label": "number"
+  },
+  {
+    "kind": "primitive",
+    "label": "NaN"
+  },
+  {
+    "kind": "primitive",
+    "label": "Infinity"
+  },
+  {
+    "kind": "primitive",
+    "label": "negative-Infinity"
+  },
+  {
+    "kind": "primitive",
+    "label": "empty-string"
+  },
+  {
+    "kind": "primitive",
+    "label": "string"
+  },
+  {
+    "kind": "primitive",
+    "label": "astral-string"
+  },
+  {
+    "kind": "primitive",
+    "label": "symbol"
+  },
+  {
+    "kind": "basic",
+    "mode": "empty"
+  },
+  {
+    "kind": "basic",
+    "mode": "null-prototype"
+  },
+  {
+    "kind": "basic",
+    "mode": "properties"
+  },
+  {
+    "kind": "basic",
+    "mode": "accessor"
+  },
+  {
+    "kind": "basic",
+    "mode": "array-empty"
+  },
+  {
+    "kind": "basic",
+    "mode": "array-sparse"
+  },
+  {
+    "kind": "basic",
+    "mode": "function"
+  },
+  {
+    "kind": "basic",
+    "mode": "non-extensible"
+  },
+  {
+    "kind": "basic",
+    "mode": "repeat"
+  },
+  {
+    "kind": "basic",
+    "mode": "shallow"
+  },
+  {
+    "kind": "basic",
+    "mode": "string-wrapper"
+  },
+  {
+    "kind": "basic",
+    "mode": "number-wrapper"
+  },
+  {
+    "kind": "basic",
+    "mode": "boolean-wrapper"
+  },
+  {
+    "kind": "basic",
+    "mode": "symbol-wrapper"
+  },
+  {
+    "kind": "proxy",
+    "mode": "normal",
+    "array": false
+  },
+  {
+    "kind": "proxy",
+    "mode": "prevent-false",
+    "array": false
+  },
+  {
+    "kind": "proxy",
+    "mode": "prevent-throw",
+    "array": false
+  },
+  {
+    "kind": "proxy",
+    "mode": "ownkeys-throw",
+    "array": false
+  },
+  {
+    "kind": "proxy",
+    "mode": "descriptor-throw",
+    "array": false
+  },
+  {
+    "kind": "proxy",
+    "mode": "define-throw",
+    "array": false
+  },
+  {
+    "kind": "proxy",
+    "mode": "define-false",
+    "array": false
+  },
+  {
+    "kind": "proxy",
+    "mode": "ownkeys-delete",
+    "array": false
+  },
+  {
+    "kind": "proxy",
+    "mode": "descriptor-delete",
+    "array": false
+  },
+  {
+    "kind": "proxy",
+    "mode": "define-delete",
+    "array": false
+  },
+  {
+    "kind": "proxy",
+    "mode": "reverse",
+    "array": false
+  },
+  {
+    "kind": "proxy",
+    "mode": "reenter",
+    "array": false
+  },
+  {
+    "kind": "proxy",
+    "mode": "replace-alias",
+    "array": false
+  },
+  {
+    "kind": "proxy",
+    "mode": "truthy-prevent",
+    "array": false
+  },
+  {
+    "kind": "proxy",
+    "mode": "missing-descriptor",
+    "array": false
+  },
+  {
+    "kind": "proxy",
+    "mode": "revoked",
+    "array": false
+  },
+  {
+    "kind": "proxy",
+    "mode": "revoke-after-prevent",
+    "array": false
+  },
+  {
+    "kind": "proxy",
+    "mode": "null-traps",
+    "array": false
+  },
+  {
+    "kind": "proxy",
+    "mode": "trap-getter-throw",
+    "array": false
+  },
+  {
+    "kind": "proxy",
+    "mode": "nested",
+    "array": false
+  },
+  {
+    "kind": "proxy",
+    "mode": "normal",
+    "array": true
+  },
+  {
+    "kind": "proxy",
+    "mode": "prevent-false",
+    "array": true
+  },
+  {
+    "kind": "proxy",
+    "mode": "prevent-throw",
+    "array": true
+  },
+  {
+    "kind": "proxy",
+    "mode": "ownkeys-throw",
+    "array": true
+  },
+  {
+    "kind": "proxy",
+    "mode": "descriptor-throw",
+    "array": true
+  },
+  {
+    "kind": "proxy",
+    "mode": "define-throw",
+    "array": true
+  },
+  {
+    "kind": "proxy",
+    "mode": "define-false",
+    "array": true
+  },
+  {
+    "kind": "proxy",
+    "mode": "ownkeys-delete",
+    "array": true
+  },
+  {
+    "kind": "proxy",
+    "mode": "descriptor-delete",
+    "array": true
+  },
+  {
+    "kind": "proxy",
+    "mode": "define-delete",
+    "array": true
+  },
+  {
+    "kind": "proxy",
+    "mode": "reverse",
+    "array": true
+  },
+  {
+    "kind": "proxy",
+    "mode": "reenter",
+    "array": true
+  },
+  {
+    "kind": "proxy",
+    "mode": "replace-alias",
+    "array": true
+  },
+  {
+    "kind": "proxy",
+    "mode": "truthy-prevent",
+    "array": true
+  },
+  {
+    "kind": "proxy",
+    "mode": "missing-descriptor",
+    "array": true
+  },
+  {
+    "kind": "proxy",
+    "mode": "revoked",
+    "array": true
+  },
+  {
+    "kind": "proxy",
+    "mode": "revoke-after-prevent",
+    "array": true
+  },
+  {
+    "kind": "proxy",
+    "mode": "null-traps",
+    "array": true
+  },
+  {
+    "kind": "proxy",
+    "mode": "trap-getter-throw",
+    "array": true
+  },
+  {
+    "kind": "proxy",
+    "mode": "nested",
+    "array": true
+  },
+  {
+    "kind": "proxy",
+    "mode": "normal",
+    "array": false,
+    "accessor": true
+  },
+  {
+    "kind": "proxy",
+    "mode": "reverse",
+    "array": false,
+    "accessor": true
+  },
+  {
+    "kind": "proxy",
+    "mode": "reenter",
+    "array": false,
+    "accessor": true
+  },
+  {
+    "kind": "proxy",
+    "mode": "define-false",
+    "array": false,
+    "accessor": true
+  },
+  {
+    "kind": "proxy",
+    "mode": "define-throw",
+    "array": false,
+    "accessor": true
+  },
+  {
+    "kind": "typed",
+    "length": 0
+  },
+  {
+    "kind": "typed",
+    "length": 2
+  }
+]

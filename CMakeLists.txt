@@ -690,3 +690,11 @@ if(THREECPP_BUILD_TESTS)
     include(CTest)
     add_subdirectory(test)
 endif()
+
+target_sources(threecpp PRIVATE
+    src/renderers/common/RenderList.cpp
+    src/renderers/common/RenderLists.cpp
+)
+
+# Add only after this isolated source candidate passes ROOT native validation.
+target_sources(threecpp PRIVATE src/renderers/common/QuadMesh.cpp)

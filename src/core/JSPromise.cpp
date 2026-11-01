@@ -199,6 +199,9 @@ JSValue nativePromiseConstructor() {
         species.enumerable=false; species.configurable=true;
         result.defineProperty(JSValue::wellKnownSymbol("species"),species);
         auto prototype=result.get("prototype");
+        JSPropertyDescriptor tag; tag.value="Promise";
+        tag.writable=tag.enumerable=false; tag.configurable=true;
+        prototype.defineProperty(JSValue::wellKnownSymbol("toStringTag"),tag);
         install(prototype,"then",thenMethod,2);
         install(prototype,"catch",+[](const JSValue& self,const Args& args,const Args&)->JSValue {
             return self.get("then").call(self,{{},arg(args,0)});

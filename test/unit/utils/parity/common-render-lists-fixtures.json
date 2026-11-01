@@ -1,0 +1,146 @@
+[
+  {
+    "scenario": "metadata",
+    "variant": 0
+  },
+  {
+    "scenario": "defaults",
+    "variant": 0
+  },
+  {
+    "scenario": "reuse",
+    "variant": 0
+  },
+  {
+    "scenario": "occlusion",
+    "variant": 0
+  },
+  {
+    "scenario": "classify",
+    "variant": 0
+  },
+  {
+    "scenario": "classify",
+    "variant": 1
+  },
+  {
+    "scenario": "classify",
+    "variant": 2
+  },
+  {
+    "scenario": "classify",
+    "variant": 3
+  },
+  {
+    "scenario": "classify",
+    "variant": 4
+  },
+  {
+    "scenario": "classify",
+    "variant": 5
+  },
+  {
+    "scenario": "classify",
+    "variant": 6
+  },
+  {
+    "scenario": "classify",
+    "variant": 7
+  },
+  {
+    "scenario": "classify",
+    "variant": 8
+  },
+  {
+    "scenario": "classify",
+    "variant": 9
+  },
+  {
+    "scenario": "classify",
+    "variant": 10
+  },
+  {
+    "scenario": "classify",
+    "variant": 11
+  },
+  {
+    "scenario": "classify",
+    "variant": 12
+  },
+  {
+    "scenario": "classify",
+    "variant": 13
+  },
+  {
+    "scenario": "classify",
+    "variant": 14
+  },
+  {
+    "scenario": "classify",
+    "variant": 15
+  },
+  {
+    "scenario": "sort-default",
+    "variant": 0
+  },
+  {
+    "scenario": "sort-custom",
+    "variant": 0
+  },
+  {
+    "scenario": "sort-custom",
+    "variant": 1
+  },
+  {
+    "scenario": "sort-custom",
+    "variant": 2
+  },
+  {
+    "scenario": "sort-custom",
+    "variant": 3
+  },
+  {
+    "scenario": "sort-custom",
+    "variant": 4
+  },
+  {
+    "scenario": "lifecycle",
+    "variant": 0
+  },
+  {
+    "scenario": "lifecycle",
+    "variant": 1
+  },
+  {
+    "scenario": "lifecycle",
+    "variant": 2
+  },
+  {
+    "scenario": "lifecycle",
+    "variant": 3
+  },
+  {
+    "scenario": "clear-break",
+    "variant": 0
+  },
+  {
+    "scenario": "manager-identity",
+    "variant": 0
+  },
+  {
+    "scenario": "manager-iteration",
+    "variant": 0
+  },
+  {
+    "scenario": "manager-iteration",
+    "variant": 1
+  },
+  {
+    "scenario": "manager-iteration",
+    "variant": 2
+  },
+  {
+    "scenario": "manager-chain-reentry",
+    "variant": 0
+  }
+]

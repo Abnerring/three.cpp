@@ -1,3 +1,13 @@
+# 2026-11-02 当前验收追加：common 模块与对象完整性
+
+当前来源为 3080 个源码/测试/构建描述文件。CPU 构建回执 common-build-cpu02：22 目标、35 步、72.63 秒；Vulkan 构建回执 common-build-gpu02：15 目标、23 步、45.12 秒，均 exit 0，构建期间源码未变。前一轮两构建的真实头文件解析失败保留；上述成功步骤复用此前已成功且源码未变的对象，不是全库重新编译的数量。
+
+CPU 当前 28/28 通过，CTest 123.69 秒；包含原 core Catch 1402 cases / 213461 assertions、Object/primitive/Proxy/Symbol、Promise/Async/realm、NodeFrame/Array.sort/Light、PMREM 异步消费者以及四个新增对照组。源码 3080 项及 1357 项依赖前后 SHA 均一致。Vulkan 19/19 通过，CTest 60.69 秒，源码与 1331 项依赖前后 SHA 一致；其中两项只执行源端 trace，validation layer 未在本轮证明。
+
+当前库直接链接的新对照：freeze 76 + GC9 + heap3；isFrozen 76 + GC9 + heap3；RenderList/RenderLists 36 主场景 + 8 accessor/Proxy/重入场景 + GC9 + 导入失败缓存 + heap3；QuadMesh 25 + 元数据4入口 + GC15 + 导入失败缓存。原输入与真实源端输出全部逐字节不变，当前进程 PID、原始 stdout/stderr、严格比较结果和二进制 SHA 已保留。没有改编号、预消费随机数、归一化比较或延长原 180 秒子进程超时。Object 内建仅按测试协议核对错误构造器与任意抛值身份，未宣称 V8 引擎错误文案一致。
+
+全部证明与本轮当前比较原件：`D:/Temp/surui/threecpp-node-manager-20261102/common-final-proof01/proof.json`。本轮是所选范围验收，未将 404 项 CPU 注册组、全库模块或完整现代 GPU 标为完成。固定上游、无 CEF/生产 JS 引擎约束及下方全部历史原件保持。
+
 # 当前验收：Hash/节点数学与内部 payload，2026-11-02
 
 - 基线 d0976bf9410ab3583e69307c0c11cb2ddecc3857，固定上游 11738a9d55e502fb484cefffcea3a66dc44e9fe9。冻结包15文件（9生产、4测试、2CMake）在56项 before/after 守卫通过后应用，实际CMake当前库构建，未使用私有override对象代替当前库。

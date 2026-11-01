@@ -1,3 +1,15 @@
+# 2026-11-02 当前状态追加：common 渲染模块已合入并验收
+
+本阶段新增 common/RenderList、RenderLists、QuadMesh，补全 Object.freeze / Object.isFrozen 和 Promise.prototype 的标准 Symbol.toStringTag，追加真实 Light 源类。根/test CMake 仅追加已审片段。RenderList 的全局常量 include 已修复 Windows sibling Constants.h 碰撞；除该单行集成适配，其余代码与冻结候选 raw SHA 保持。
+
+权威当前证明：`D:/Temp/surui/threecpp-node-manager-20261102/common-final-proof01/proof.json`。CPU/GPU 成功构建回执分别为同目录父级 common-build-cpu02/result.json 与 common-build-gpu02/result.json，均对应当前 3080 个源码项；库 SHA、当前探针、28/28 CPU、19/19 Vulkan 相关检查、原 221 主场景与 42 GC / 9 heap 证据见该证明。下轮私有验证必须使用新成功回执，禁止将旧 Hash 的 3049 源码/1d0691 库与当前头文件混用。
+
+剩余：完整 Nodes/TSL barrel、NodeManager 导入初始化、传统/现代 Vulkan 渲染与原生平台等。NodeManager 实测 source 882 Nodes / 84 random，native 512 / 36；真实 POD 诊断的原 129 场景 stdout 未改变。空栈不推定 owner，不能用差值填编号或随机数。当前路径 664/1251，仅文件覆盖，不是功能完成率。
+
+下一批 D-only 冻结候选：function-overloading-node-candidate01（170 场景/8 元数据/15 GC）、color-adjustment-candidate01（132/42 GC/3 heap），尚未原生验收；先以新库验证，再按 canonical-node-helpers-migration-plan02 将旧 core 同名辅助及原 10 tests 迁入 utils/display，保留 typed API 和实际测试，避免重复编译。不得把这些待验候选写成已完成。
+
+本段仅前置追加，下方全部历史字节保持。
+
 # 当前接续：Hash/节点数学已按当前库验收，2026-11-02
 
 目标继续：完整复现固定three.js的C++逻辑，Vulkan后端，不引入CEF/生产JS桥；分阶段本地Git提交，不推送。

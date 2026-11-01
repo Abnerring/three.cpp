@@ -2484,3 +2484,41 @@ if(THREECPP_NODE_EXECUTABLE AND THREEJS_SOURCE_DIR)
     threecpp_add_alignment_parity(object-model.shader-math-functions-parity NAMED_UPSTREAM compare-shader-math-functions.mjs ShaderMathFunctionsParityProbe)
     set_tests_properties(threecpp.object-model.shader-math-functions-parity PROPERTIES LABELS "object-model;native;alignment;gc")
 endif()
+
+# Narrow append only; retain current Hash and all other targets/registrations.
+add_executable(ThreeJsObjectFreezeParityProbe unit/utils/parity/ObjectFreezeParityProbe.cpp)
+target_link_libraries(ThreeJsObjectFreezeParityProbe PRIVATE threecpp::threecpp)
+if(THREECPP_NODE_EXECUTABLE)
+    # Existing VULKAN launcher mode supplies only --probe/--output; this test is CPU-only.
+    threecpp_add_alignment_parity(object-model.object-freeze-parity VULKAN compare-object-freeze.mjs ThreeJsObjectFreezeParityProbe)
+endif()
+
+# Narrow append. CPU runtime test; existing VULKAN CLI mode only supplies --probe/--output.
+add_executable(ThreeJsObjectIsFrozenParityProbe unit/utils/parity/ObjectIsFrozenParityProbe.cpp)
+target_link_libraries(ThreeJsObjectIsFrozenParityProbe PRIVATE threecpp::threecpp)
+if(THREECPP_NODE_EXECUTABLE)
+    threecpp_add_alignment_parity(object-model.object-is-frozen-parity VULKAN compare-object-is-frozen.mjs ThreeJsObjectIsFrozenParityProbe)
+endif()
+
+add_executable(ThreeJsCommonRenderListsParityProbe unit/utils/parity/CommonRenderListsParityProbe.cpp)
+target_link_libraries(ThreeJsCommonRenderListsParityProbe PRIVATE threecpp::threecpp)
+if(THREECPP_NODE_EXECUTABLE AND THREEJS_SOURCE_DIR)
+    threecpp_add_alignment_parity(object-model.common-render-lists-parity NAMED_UPSTREAM compare-common-render-lists.mjs ThreeJsCommonRenderListsParityProbe)
+endif()
+
+add_executable(ThreeJsQuadMeshParityProbe unit/utils/parity/QuadMeshParityProbe.cpp)
+target_link_libraries(ThreeJsQuadMeshParityProbe PRIVATE threecpp::threecpp)
+add_test(NAME threecpp.quad-mesh-lifetime COMMAND ThreeJsQuadMeshParityProbe --lifetime)
+set_tests_properties(threecpp.quad-mesh-lifetime PROPERTIES LABELS "native;nodes;gc"
+    ENVIRONMENT "TEMP=D:/Temp/surui;TMP=D:/Temp/surui;THREEJS_SOURCE_DIR=${THREEJS_SOURCE_DIR}")
+if(THREECPP_NODE_EXECUTABLE AND THREEJS_SOURCE_DIR)
+    add_test(NAME threecpp.quad-mesh-parity
+        COMMAND "${CMAKE_COMMAND}" "-DNODE=${THREECPP_NODE_EXECUTABLE}"
+            "-DPROBE=$<TARGET_FILE:ThreeJsQuadMeshParityProbe>"
+            "-DPARITY_DIR=${CMAKE_CURRENT_SOURCE_DIR}/unit/utils/parity"
+            "-DUPSTREAM=${THREEJS_SOURCE_DIR}"
+            "-DOUTPUT_ROOT=${CMAKE_BINARY_DIR}/parity/quad-mesh"
+            -P "${CMAKE_CURRENT_SOURCE_DIR}/cmake/RunQuadMeshParity.cmake")
+    set_tests_properties(threecpp.quad-mesh-parity PROPERTIES TIMEOUT 800 LABELS "native;nodes;parity"
+        ENVIRONMENT "TEMP=D:/Temp/surui;TMP=D:/Temp/surui;THREEJS_SOURCE_DIR=${THREEJS_SOURCE_DIR}")
+endif()

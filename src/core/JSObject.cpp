@@ -26,6 +26,37 @@ JSValue defineProperty(const JSValue&,const Args& args,const Args&) {
     return target;
 }
 
+// Object.freeze / SetIntegrityLevel(frozen): primitives are returned without boxing.
+JSValue freeze(const JSValue&,const Args& args,const Args&) {
+    auto target=args.empty()?JSValue{}:args[0];
+    if(!target.isObject())return target;
+    target.preventExtensions();
+    const auto keys=target.ownPropertyKeys();
+    for(const auto& key:keys){
+        const auto current=target.getOwnPropertyDescriptor(key);
+        if(!current)continue;
+        JSPropertyDescriptor update;update.configurable=false;
+        if(current->value||current->writable)update.writable=false;
+        target.defineProperty(key,update);
+    }
+    return target;
+}
+
+// Object.isFrozen / TestIntegrityLevel(frozen): no coercion or mutation.
+JSValue isFrozen(const JSValue&,const Args& args,const Args&) {
+    const auto target=args.empty()?JSValue{}:args[0];
+    if(!target.isObject())return true;
+    if(target.isExtensible())return false;
+    const auto keys=target.ownPropertyKeys();
+    for(const auto& key:keys){
+        const auto current=target.getOwnPropertyDescriptor(key);
+        if(!current)continue;
+        if(current->configurable.value_or(false))return false;
+        if((current->value||current->writable)&&current->writable.value_or(false))return false;
+    }
+    return true;
+}
+
 JSValue defineProperties(const JSValue&,const Args& args,const Args&){
     auto target=args.empty()?JSValue{}:args[0];
     if(!target.isObject())throw JSTypeError("Object.defineProperties requires an object");
@@ -149,4 +180,6 @@ void initializeNativeObjectMethods(const JSValue& constructor) {
     d.value=JSValue::function(getOwnPropertyNames,{},"getOwnPropertyNames",1);object.defineProperty("getOwnPropertyNames",d);
     d.value=JSValue::function(getOwnPropertyDescriptor,{},"getOwnPropertyDescriptor",2);object.defineProperty("getOwnPropertyDescriptor",d);
     d.value=JSValue::function(getOwnPropertyDescriptors,{},"getOwnPropertyDescriptors",1);object.defineProperty("getOwnPropertyDescriptors",d);
+    d.value=JSValue::function(freeze,{},"freeze",1);object.defineProperty("freeze",d);
+    d.value=JSValue::function(isFrozen,{},"isFrozen",1);object.defineProperty("isFrozen",d);
 }

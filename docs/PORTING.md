@@ -1,3 +1,13 @@
+# 2026-11-02 当前追加：RenderList、RenderLists、QuadMesh
+
+按固定 three.js `11738a9d55e502fb484cefffcea3a66dc44e9fe9` 移植 common/RenderList、RenderLists 和 QuadMesh 的完整模块逻辑；Light 补入源类实现，原 typed 前缀保持。新增通用原生 Object.freeze / Object.isFrozen，保留 primitive、Proxy、描述符、异常、重入及 GC 顺序；Promise.prototype 补齐标准 Symbol.toStringTag。生产执行不引入 CEF、JS 引擎或 AST 解释器。
+
+实际当前 CPU 22 个目标、Vulkan 15 个目标重建通过。28 项受影响 CPU 回归和 19 项 Vulkan 相关检查全部通过；新模块与运行时原 221 个主场景、42 条 GC 观察、9 轮独立堆检查均在当前库复跑通过，输入与真实 Node 源输出保持原字节，编号、UUID、随机数调用、错误身份及元数据按原比较器严格对照。19 项包含两项仅执行 Node 的源 trace，不能等同 19 项硬件渲染测试。当前 CPU 注册总数为 404，未声称全量验收。
+
+集成构建发现 Windows 的 common/Constants.h 与根 constants.h 大小写碰撞，RenderList 仅将引用改为 <constants.h>，明确使用根头文件；逆补丁逐字节恢复原候选。首轮失败、诊断和所有旧证据均保留。
+
+当前路径覆盖 664/1251，587 个模块尚无对应文件；文件存在不代表功能完成。RenderList 的灯光测试使用明确的协议适配器，未声称完整 Lighting/LightsNode、现代渲染器或真实 QuadMesh GPU 输出完成。NodeManager 与完整 Nodes/TSL 初始化图仍未闭合，传统及现代 Vulkan 完整渲染链路、原生平台能力、剩余扩展及 Linux/macOS 验收继续推进。权威证据：`D:/Temp/surui/threecpp-node-manager-20261102/common-final-proof01/proof.json`。
+
 # 2026-11-02 当前追加：Hash 与节点数学
 
 已将 Hash、节点 MathUtils 的原 5 个函数接入 C++ Fn/TSL/NodeBuilder 调用链，并补齐源码表达式对应的 TypeError 与 IteratorClose 的 Symbol 错误文本。String/Boolean/Number 的纯原生内部 payload 声明被动析构；RegExp 未作该声明，收集器算法未修改。

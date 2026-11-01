@@ -31,3 +31,10 @@ class Light : public Object3D {
     static std::optional<JSValue> registeredNodeFor(const std::string& className);
     std::optional<JsonValue> propertyValue(const std::string& property) const override;
 };
+
+#pragma once
+#include "core/JSValue.h"
+#include <string>
+JSValue nativeLightConstructor();
+JSValue nativeLightModule();
+JSValue nativeLightBinding(const std::string& name);
