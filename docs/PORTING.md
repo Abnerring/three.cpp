@@ -1,3 +1,11 @@
+# 2026-11-02: canonical FunctionOverloadingNode and ColorAdjustment
+
+- Port the pinned `11738a9d55e502fb484cefffcea3a66dc44e9fe9` source algorithms to native C++ at `src/nodes/utils/FunctionOverloadingNode` and `src/nodes/display/ColorAdjustment`. FunctionOverloadingNode uses the actual Node constructor, cached selection, iterator protocol and two factory exports. ColorAdjustment implements all seven exports, including six Fn callbacks and three nested CDL callbacks, through the existing TSL/NodeBuilder implementation.
+- Merge the earlier typed helpers into the canonical files. Preserve their API/layout, full header bytes, all CPP bytes except the first include path, and all ten original test cases except their include paths. Remove only the six relocated core source/header/test files; replace four CMake paths and compile each canonical CPP once.
+- Selected current validation: CPU 10/10 and Vulkan-related 19/19. The latter includes two Node-source traces. No production JavaScript engine, browser bridge or CEF is introduced. Test oracles use Node only for comparison with the pinned source.
+- File-path coverage is 666/1251 with 585 absent paths; this is not functionality completion. Precise FunctionOverloadingNode expression/callback CallSite mapping, additional subclass/whole-heap coverage, full Nodes/TSL initialization, complete traditional/modern Vulkan rendering, remaining addons/native hosts and Linux/macOS validation remain open.
+- Evidence: `D:/Temp/surui/threecpp-node-functions-20261102/final-functions-proof01/proof.json`. The separate MaterialXCore private candidate failed 44 strict differences in its original 81-case group; its passing GC/heap groups do not make it ready to integrate.
+
 # 2026-11-02 当前追加：RenderList、RenderLists、QuadMesh
 
 按固定 three.js `11738a9d55e502fb484cefffcea3a66dc44e9fe9` 移植 common/RenderList、RenderLists 和 QuadMesh 的完整模块逻辑；Light 补入源类实现，原 typed 前缀保持。新增通用原生 Object.freeze / Object.isFrozen，保留 primitive、Proxy、描述符、异常、重入及 GC 顺序；Promise.prototype 补齐标准 Symbol.toStringTag。生产执行不引入 CEF、JS 引擎或 AST 解释器。

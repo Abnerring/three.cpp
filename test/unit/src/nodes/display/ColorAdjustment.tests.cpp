@@ -1,4 +1,4 @@
-#include "nodes/core/ColorAdjustment.h"
+#include "nodes/display/ColorAdjustment.h"
 
 #include "catch.hpp"
 

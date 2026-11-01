@@ -40,3 +40,10 @@ class FunctionOverloadingNode {
     // arguments would now choose differently.
     static bool remembersChoice();
 };
+
+#pragma once
+#include "core/JSValue.h"
+#include <string>
+JSValue nativeFunctionOverloadingNodeModule();
+JSValue nativeFunctionOverloadingNodeBinding(const std::string& name);
+JSValue nativeFunctionOverloadingNodeConstructor();

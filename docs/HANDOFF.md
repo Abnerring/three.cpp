@@ -1,3 +1,11 @@
+# 2026-11-02: canonical node functions handoff
+
+- Current source: native FunctionOverloadingNode in nodes/utils and ColorAdjustment in nodes/display, merged with the original typed API. Six obsolete core paths removed; original ten tests retained. Source table: 3090 files, SHA 40f192d29594c2cf4369ef2be80eee3beb9d15610594bc03f4a5bab5c6b1b78e. Earlier entries below are immutable historical snapshots.
+- Current CPU receipt: `D:/Temp/surui/threecpp-node-functions-20261102/functions-build-cpu01/result.json`; library SHA f7410ef5d42c08d45f08800e7cd05aa42133607b6ed546eb98a9804390d9e6cd. GPU library SHA ce518bd0e761627ab58f537d3ae041f4bc948ba2cd6bde718125be01b7b53002. CPU10/GPU19 selected checks passed, with two GPU-list items being source traces.
+- Proof: `D:/Temp/surui/threecpp-node-functions-20261102/final-functions-proof01/proof.json`. Original302 cases, eight Function metadata entries, 57 lifetime observations and Color three heap checks passed unchanged against the pinned source. Coverage is 666/1251 present, 585 absent, not a completion percentage.
+- Next: fix the actual MaterialXCore private81-case 44-difference failure, retaining its full inputs/expectations and independent12GC/three-heap checks. Continue full MaterialXNoise with the real JavaScript 32-bit left-shift behavior, then the genuine Nodes/TSL import graph. Function precise CallSite mapping, subclass newTarget and independent whole-heap coverage remain follow-ups. All are native C++; no fake imports, ID/random padding, runtime AST or CEF.
+- Active full goal is not complete. Keep stage commits local; do not push. Preserve failed evidence and all existing HANDOFF raw bytes, including the historical798619-byte suffix.
+
 # 2026-11-02 当前状态追加：common 渲染模块已合入并验收
 
 本阶段新增 common/RenderList、RenderLists、QuadMesh，补全 Object.freeze / Object.isFrozen 和 Promise.prototype 的标准 Symbol.toStringTag，追加真实 Light 源类。根/test CMake 仅追加已审片段。RenderList 的全局常量 include 已修复 Windows sibling Constants.h 碰撞；除该单行集成适配，其余代码与冻结候选 raw SHA 保持。

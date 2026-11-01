@@ -201,8 +201,8 @@
     "note": "Accepted port scope is src and examples/jsm, including tracked third-party dependencies. Editor/manual web applications are excluded from native application rewrites. Native host behavior, packaging and all three platforms require separate implementation and verification evidence."
   },
   "counts": {
-    "partial-unverified": 484,
-    "missing": 457,
+    "partial-unverified": 486,
+    "missing": 455,
     "vulkan-port-pending": 290,
     "dependency-unverified": 20
   },
@@ -210,8 +210,8 @@
     "src": {
       "modules": 755,
       "counts": {
-        "partial-unverified": 348,
-        "missing": 117,
+        "partial-unverified": 350,
+        "missing": 115,
         "vulkan-port-pending": 290
       }
     },
@@ -817,7 +817,7 @@
       "path": "src/nodes/display",
       "upstreamFiles": 18,
       "moduleCount": 18,
-      "modulesWithCppFiles": 13,
+      "modulesWithCppFiles": 14,
       "verifiedComplete": 0
     },
     {
@@ -922,7 +922,7 @@
       "path": "src/nodes/utils",
       "upstreamFiles": 31,
       "moduleCount": 31,
-      "modulesWithCppFiles": 17,
+      "modulesWithCppFiles": 18,
       "verifiedComplete": 0
     },
     {
@@ -9887,11 +9887,11 @@
       "scope": "src",
       "kind": "core",
       "upstreamSha256": "9920610b4c097b519eb6949da83fcb78cf3ee0b0c9caaa6eb244b460dc2f81be",
-      "header": null,
-      "implementation": null,
+      "header": "src/nodes/display/ColorAdjustment.h",
+      "implementation": "src/nodes/display/ColorAdjustment.cpp",
       "expectedHeader": "src/nodes/display/ColorAdjustment.h",
       "expectedImplementation": "src/nodes/display/ColorAdjustment.cpp",
-      "status": "missing",
+      "status": "partial-unverified",
       "verifiedComplete": false,
       "apiExtraction": "partial-static",
       "verification": {
@@ -9900,7 +9900,9 @@
           "pointer": "/modules/304"
         },
         "upstreamUnitTests": [],
-        "cppUnitTests": [],
+        "cppUnitTests": [
+          "test/unit/src/nodes/display/ColorAdjustment.tests.cpp"
+        ],
         "reviewedImplementation": [],
         "differentialResults": [],
         "renderingResults": [],
@@ -12714,11 +12716,11 @@
       "scope": "src",
       "kind": "core",
       "upstreamSha256": "8b125b3d9f68a1588cb25911912a05b9bef39c48af76b0a4b468689113d9a6f6",
-      "header": null,
-      "implementation": null,
+      "header": "src/nodes/utils/FunctionOverloadingNode.h",
+      "implementation": "src/nodes/utils/FunctionOverloadingNode.cpp",
       "expectedHeader": "src/nodes/utils/FunctionOverloadingNode.h",
       "expectedImplementation": "src/nodes/utils/FunctionOverloadingNode.cpp",
-      "status": "missing",
+      "status": "partial-unverified",
       "verifiedComplete": false,
       "apiExtraction": "static-only",
       "verification": {
@@ -12727,7 +12729,9 @@
           "pointer": "/modules/407"
         },
         "upstreamUnitTests": [],
-        "cppUnitTests": [],
+        "cppUnitTests": [
+          "test/unit/src/nodes/utils/FunctionOverloadingNode.tests.cpp"
+        ],
         "reviewedImplementation": [],
         "differentialResults": [],
         "renderingResults": [],

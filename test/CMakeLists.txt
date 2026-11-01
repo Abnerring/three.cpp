@@ -102,7 +102,7 @@ add_executable(THREECPPTests
         unit/src/nodes/display/ColorSpaceNode.tests.cpp
         unit/src/nodes/core/BlendModes.tests.cpp
         unit/src/nodes/display/ToneMappingFunctions.tests.cpp
-        unit/src/nodes/core/ColorAdjustment.tests.cpp
+        unit/src/nodes/display/ColorAdjustment.tests.cpp
         unit/src/nodes/display/ViewportTextureNode.tests.cpp
         unit/src/nodes/display/RenderOutputNode.tests.cpp
         unit/src/nodes/core/ToonOutlinePass.tests.cpp
@@ -122,7 +122,7 @@ add_executable(THREECPPTests
         unit/src/nodes/core/SpriteUtils.tests.cpp
         unit/src/nodes/utils/SetNode.tests.cpp
         unit/src/nodes/core/TriplanarTextures.tests.cpp
-        unit/src/nodes/core/FunctionOverloadingNode.tests.cpp
+        unit/src/nodes/utils/FunctionOverloadingNode.tests.cpp
         unit/src/nodes/utils/CubeMapNode.tests.cpp
         unit/src/nodes/utils/EventNode.tests.cpp
         unit/src/nodes/core/PostProcessingUtils.tests.cpp
@@ -2521,4 +2521,28 @@ if(THREECPP_NODE_EXECUTABLE AND THREEJS_SOURCE_DIR)
             -P "${CMAKE_CURRENT_SOURCE_DIR}/cmake/RunQuadMeshParity.cmake")
     set_tests_properties(threecpp.quad-mesh-parity PROPERTIES TIMEOUT 800 LABELS "native;nodes;parity"
         ENVIRONMENT "TEMP=D:/Temp/surui;TMP=D:/Temp/surui;THREEJS_SOURCE_DIR=${THREEJS_SOURCE_DIR}")
+endif()
+
+add_executable(ThreeJsFunctionOverloadingNodeParityProbe unit/utils/parity/FunctionOverloadingNodeParityProbe.cpp)
+target_link_libraries(ThreeJsFunctionOverloadingNodeParityProbe PRIVATE threecpp::threecpp)
+add_test(NAME threecpp.function-overloading-node-lifetime COMMAND ThreeJsFunctionOverloadingNodeParityProbe --lifetime)
+set_tests_properties(threecpp.function-overloading-node-lifetime PROPERTIES LABELS "native;nodes;gc"
+    ENVIRONMENT "TEMP=D:/Temp/surui;TMP=D:/Temp/surui;THREEJS_SOURCE_DIR=${THREEJS_SOURCE_DIR}")
+if(THREECPP_NODE_EXECUTABLE AND THREEJS_SOURCE_DIR)
+    add_test(NAME threecpp.function-overloading-node-parity
+        COMMAND "${CMAKE_COMMAND}" "-DNODE=${THREECPP_NODE_EXECUTABLE}"
+            "-DPROBE=$<TARGET_FILE:ThreeJsFunctionOverloadingNodeParityProbe>"
+            "-DPARITY_DIR=${CMAKE_CURRENT_SOURCE_DIR}/unit/utils/parity"
+            "-DUPSTREAM=${THREEJS_SOURCE_DIR}"
+            "-DOUTPUT_ROOT=${CMAKE_BINARY_DIR}/parity/function-overloading-node"
+            -P "${CMAKE_CURRENT_SOURCE_DIR}/cmake/RunFunctionOverloadingNodeParity.cmake")
+    set_tests_properties(threecpp.function-overloading-node-parity PROPERTIES TIMEOUT 600 LABELS "native;nodes;parity"
+        ENVIRONMENT "TEMP=D:/Temp/surui;TMP=D:/Temp/surui;THREEJS_SOURCE_DIR=${THREEJS_SOURCE_DIR}")
+endif()
+
+add_executable(ColorAdjustmentParityProbe unit/utils/parity/ColorAdjustmentParityProbe.cpp)
+target_link_libraries(ColorAdjustmentParityProbe PRIVATE threecpp::threecpp)
+if(THREECPP_NODE_EXECUTABLE AND THREEJS_SOURCE_DIR)
+    threecpp_add_alignment_parity(object-model.color-adjustment-parity NAMED_UPSTREAM compare-color-adjustment.mjs ColorAdjustmentParityProbe)
+    set_tests_properties(threecpp.object-model.color-adjustment-parity PROPERTIES LABELS "object-model;native;alignment;gc")
 endif()

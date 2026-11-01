@@ -1,3 +1,12 @@
+# 2026-11-02: current canonical node functions validation
+
+- Actual CPU/GPU configure and builds passed with the same 3090 guarded source/test/build files. CPU: eight targets, 15 build steps, 37.98 seconds. GPU: 15 targets, 18 steps, 17.90 seconds. Current library SHAs and receipts are recorded in `D:/Temp/surui/threecpp-node-functions-20261102/functions-current-build-receipt01.json`.
+- Selected CPU CTest checks passed 10/10 in 188.95 seconds; 407 tests are registered, not all rerun. The unit executable passed 1402 cases and 213461 assertions, including all ten relocated typed-helper cases. Existing NodeBuilder, TSLBase, callback/heap and strict Hash/Fn/TSL checks passed.
+- Current unified-library FunctionOverloadingNode passed the original 170 cases, eight metadata entries and 15 lifetime observations; ColorAdjustment passed the original 132 cases, 42 lifetime observations and three independent native heap checks. Original inputs and source output bytes match the successful frozen private runs. Absolute IDs, UUIDs, random consumption, source comparisons and original timeout policies were preserved.
+- Vulkan-related checks passed 19/19 in 58.13 seconds. Two are Node-source traces, not GPU execution. Khronos validation-layer success and Linux/macOS success are not established. All 3090 source guards, CPU 1393 dependency guards and GPU 1400 dependency guards stayed unchanged during execution.
+- Audit regeneration, `port-audit --check` and all five audit tests passed. Coverage: 666 file paths present / 585 absent among 1251 source modules; no module is globally marked verifiedComplete. The API inventory bytes are unchanged.
+- Authoritative proof: `D:/Temp/surui/threecpp-node-functions-20261102/final-functions-proof01/proof.json`; current JUnit and raw LastTest/comparison logs are retained in the same phase. Original Function private01 compile failure remains preserved. Separate MaterialXCore private01 compiled/executed but failed 44 differences in main81; lifetime12 and heap3 passed. It is not included in this change.
+
 # 2026-11-02 当前验收追加：common 模块与对象完整性
 
 当前来源为 3080 个源码/测试/构建描述文件。CPU 构建回执 common-build-cpu02：22 目标、35 步、72.63 秒；Vulkan 构建回执 common-build-gpu02：15 目标、23 步、45.12 秒，均 exit 0，构建期间源码未变。前一轮两构建的真实头文件解析失败保留；上述成功步骤复用此前已成功且源码未变的对象，不是全库重新编译的数量。

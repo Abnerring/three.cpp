@@ -1,0 +1,28 @@
+import fs from 'node:fs';
+import path from 'node:path';
+import assert from 'node:assert/strict';
+import {fileURLToPath} from 'node:url';
+import {spawnSync,execFileSync} from 'node:child_process';
+import {createHash} from 'node:crypto';
+import {strictDifferences,inspectNumberTransport} from './strict-parity.mjs';
+const here=path.dirname(fileURLToPath(import.meta.url)),opts={},args=process.argv.slice(2);let oracleOnly=false;
+for(let i=0;i<args.length;i++){if(args[i]==='--oracle-only'){assert(!oracleOnly);oracleOnly=true;continue;}assert(['--upstream','--output','--probe'].includes(args[i])&&args[i+1]);assert.equal(opts[args[i]],undefined);opts[args[i]]=args[++i];}
+assert.equal(process.version,'v26.5.0');assert(opts['--upstream']&&opts['--output']&&(oracleOnly||opts['--probe']));
+const upstream=path.resolve(opts['--upstream']),output=path.resolve(opts['--output']),probe=opts['--probe']?path.resolve(opts['--probe']):null;
+assert.match(output,/^D:[\\/]/i);assert(!fs.existsSync(output),'Fresh output required');assert(!output.toLowerCase().startsWith(here.toLowerCase()+path.sep));
+assert.equal(execFileSync('git',['-C',upstream,'rev-parse','HEAD'],{encoding:'utf8'}).trim(),'11738a9d55e502fb484cefffcea3a66dc44e9fe9');assert.equal(execFileSync('git',['-C',upstream,'status','--porcelain','--','src'],{encoding:'utf8'}).trim(),'');
+const hash=f=>createHash('sha256').update(fs.readFileSync(f)).digest('hex'),fixture=here+'/color-adjustment-fixtures.json',input=fs.readFileSync(fixture,'utf8'),count=JSON.parse(input).length;assert.equal(count,132);
+const files=['color-adjustment-fixtures.json','color-adjustment-oracle.mjs','compare-color-adjustment.mjs','strict-parity.mjs'].map(f=>here+'/'+f),before=Object.fromEntries(files.map(f=>[f,hash(f)])),binaryBefore=probe?hash(probe):null;
+fs.mkdirSync(output,{recursive:true});fs.writeFileSync(output+'/input.json',input);
+const processes=[],checks=[],failures=[],summary={status:'requested',nativeExecuted:false,caseCount:count,exports:7,nestedCallbacks:3,strict:true,absoluteIDs:true,identityNormalization:false,sourceCommit:'11738a9d55e502fb484cefffcea3a66dc44e9fe9',nativeCompiledByRunner:false,realGPUExecuted:false};
+const write=(f,v)=>fs.writeFileSync(output+'/'+f,JSON.stringify(v,null,2)+'\n');const update=()=>{summary.nativeExecuted=processes.some(p=>p.nativeExecuted);summary.checks=checks;write('processes.json',processes);write('summary.json',summary);};
+function run(label,binary,args,input){const started=performance.now(),child=spawnSync(binary,args,{input,encoding:'utf8',timeout:180000,maxBuffer:128*1024*1024,env:{...process.env,TEMP:'D:/Temp/surui',TMP:'D:/Temp/surui',THREEJS_SOURCE_DIR:upstream,NODE_COMPILE_CACHE:output+'/node-cache'}});const executed=Number.isInteger(child.pid)&&child.pid>0;processes.push({label,binary,args,pid:child.pid??null,executed,nativeExecuted:label.startsWith('native')&&executed,status:child.status,signal:child.signal,error:child.error?String(child.error):null,elapsedMS:performance.now()-started});fs.writeFileSync(output+'/'+label+'.stdout.json',child.stdout??'');fs.writeFileSync(output+'/'+label+'.stderr.log',child.stderr??'');update();assert(executed);assert.equal(child.error,undefined);assert.equal(child.status,0,label+': '+child.stderr);return JSON.parse(child.stdout);}
+function compare(label,expected,actual){const transport={expected:inspectNumberTransport(expected),actual:inspectNumberTransport(actual)};write(label+'-number-transport.json',transport);assert.equal(transport.expected.rawSpecialNumberCount+transport.actual.rawSpecialNumberCount,0);const differences=strictDifferences(expected,actual);write(label+'-differences.json',differences);assert.equal(differences.length,0,label+' strict differences');}
+function check(name,body){try{body();checks.push({name,status:'passed'});}catch(error){const failure={name,status:'failed',error:{name:error.name,message:error.message}};checks.push(failure);failures.push(failure);}update();}
+try{
+ check('main132',()=>{const expected=run('source',process.execPath,['--expose-gc',here+'/color-adjustment-oracle.mjs',upstream,'cases'],input);assert.equal(expected.length,count);write('expected.json',expected);if(!oracleOnly){const actual=run('native',probe,[],input);write('actual.json',actual);compare('main',expected,actual);}});
+ check('lifetime42',()=>{const expected=run('source-lifetime',process.execPath,['--expose-gc',here+'/color-adjustment-oracle.mjs',upstream,'lifetime']);assert.equal(expected.rounds,3);assert.equal(expected.observations.length,42);assert(expected.observations.every(r=>r.phase==='held'?r.alive===true:r.gone===true));if(!oracleOnly)compare('lifetime',expected,run('native-lifetime',probe,['--lifetime']));});
+ if(!oracleOnly)check('heap-lifetime3',()=>compare('heap-lifetime',{heaps:3,retired:3},run('native-heap-lifetime',probe,['--heap-lifetime'])));
+ summary.status=failures.length?'failed':oracleOnly?'oracle-only; native pending':'native-passed';summary.failures=failures;assert.equal(failures.length,0,'Actual failed checks preserved');console.log(JSON.stringify({output,status:summary.status,cases:count,lifetimeRows:42,nativeExecuted:summary.nativeExecuted}));
+}catch(error){summary.status='failed';summary.failure={name:error.name,message:error.message};throw error;}
+finally{const after=Object.fromEntries(files.map(f=>[f,hash(f)])),binaryAfter=probe?hash(probe):null;write('guards.json',{sourceBefore:before,sourceAfter:after,binaryBefore,binaryAfter});if(strictDifferences(before,after).length||binaryBefore!==binaryAfter)summary.status='failed';update();assert.equal(binaryBefore,binaryAfter);assert.equal(strictDifferences(before,after).length,0);}

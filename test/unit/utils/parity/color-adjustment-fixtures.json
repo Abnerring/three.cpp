@@ -1,0 +1,2368 @@
+[
+  {
+    "mode": "metadata"
+  },
+  {
+    "mode": "bindings"
+  },
+  {
+    "mode": "call",
+    "fn": "grayscale",
+    "args": [
+      {
+        "node": "vec4",
+        "args": [
+          0.37,
+          0.24,
+          0.16,
+          0.85
+        ]
+      }
+    ]
+  },
+  {
+    "mode": "call",
+    "fn": "grayscale",
+    "args": [
+      {
+        "node": "vec4",
+        "args": [
+          0.37,
+          0.24,
+          0.16,
+          0.85
+        ]
+      }
+    ],
+    "build": true
+  },
+  {
+    "mode": "body",
+    "fn": "grayscale",
+    "args": [
+      {
+        "node": "vec4",
+        "args": [
+          0.37,
+          0.24,
+          0.16,
+          0.85
+        ]
+      }
+    ]
+  },
+  {
+    "mode": "body",
+    "fn": "grayscale",
+    "args": [
+      {
+        "node": "vec4",
+        "args": [
+          0.37,
+          0.24,
+          0.16,
+          0.85
+        ]
+      }
+    ],
+    "iterator": "normal"
+  },
+  {
+    "mode": "body",
+    "fn": "grayscale",
+    "args": [
+      {
+        "node": "vec4",
+        "args": [
+          0.37,
+          0.24,
+          0.16,
+          0.85
+        ]
+      }
+    ],
+    "iterator": "empty"
+  },
+  {
+    "mode": "body",
+    "fn": "grayscale",
+    "args": [
+      {
+        "node": "vec4",
+        "args": [
+          0.37,
+          0.24,
+          0.16,
+          0.85
+        ]
+      }
+    ],
+    "iterator": "nextThrow"
+  },
+  {
+    "mode": "body",
+    "fn": "grayscale",
+    "args": [
+      {
+        "node": "vec4",
+        "args": [
+          0.37,
+          0.24,
+          0.16,
+          0.85
+        ]
+      }
+    ],
+    "iterator": "doneThrow"
+  },
+  {
+    "mode": "body",
+    "fn": "grayscale",
+    "args": [
+      {
+        "node": "vec4",
+        "args": [
+          0.37,
+          0.24,
+          0.16,
+          0.85
+        ]
+      }
+    ],
+    "iterator": "valueThrow"
+  },
+  {
+    "mode": "body",
+    "fn": "grayscale",
+    "args": [
+      {
+        "node": "vec4",
+        "args": [
+          0.37,
+          0.24,
+          0.16,
+          0.85
+        ]
+      }
+    ],
+    "iterator": "returnThrow"
+  },
+  {
+    "mode": "body",
+    "fn": "grayscale",
+    "args": [
+      {
+        "node": "vec4",
+        "args": [
+          0.37,
+          0.24,
+          0.16,
+          0.85
+        ]
+      }
+    ],
+    "iterator": "returnPrimitive"
+  },
+  {
+    "mode": "body",
+    "fn": "grayscale",
+    "args": [
+      {
+        "node": "vec4",
+        "args": [
+          0.37,
+          0.24,
+          0.16,
+          0.85
+        ]
+      }
+    ],
+    "iterator": "returnGetterThrow"
+  },
+  {
+    "mode": "body",
+    "fn": "grayscale",
+    "args": [
+      {
+        "node": "vec4",
+        "args": [
+          0.37,
+          0.24,
+          0.16,
+          0.85
+        ]
+      }
+    ],
+    "iterator": "iteratorThrow"
+  },
+  {
+    "mode": "body",
+    "fn": "grayscale",
+    "args": [
+      {
+        "node": "vec4",
+        "args": [
+          0.37,
+          0.24,
+          0.16,
+          0.85
+        ]
+      }
+    ],
+    "iterator": "primitiveIterator"
+  },
+  {
+    "mode": "call",
+    "fn": "saturation",
+    "args": [
+      {
+        "node": "vec4",
+        "args": [
+          0.37,
+          0.24,
+          0.16,
+          0.85
+        ]
+      }
+    ]
+  },
+  {
+    "mode": "call",
+    "fn": "saturation",
+    "args": [
+      {
+        "node": "vec4",
+        "args": [
+          0.37,
+          0.24,
+          0.16,
+          0.85
+        ]
+      }
+    ],
+    "build": true
+  },
+  {
+    "mode": "body",
+    "fn": "saturation",
+    "args": [
+      {
+        "node": "vec4",
+        "args": [
+          0.37,
+          0.24,
+          0.16,
+          0.85
+        ]
+      }
+    ]
+  },
+  {
+    "mode": "body",
+    "fn": "saturation",
+    "args": [
+      {
+        "node": "vec4",
+        "args": [
+          0.37,
+          0.24,
+          0.16,
+          0.85
+        ]
+      },
+      {
+        "$undefined": true
+      }
+    ]
+  },
+  {
+    "mode": "body",
+    "fn": "saturation",
+    "args": [
+      {
+        "node": "vec4",
+        "args": [
+          0.37,
+          0.24,
+          0.16,
+          0.85
+        ]
+      },
+      {
+        "node": "float",
+        "args": [
+          0.713
+        ]
+      }
+    ]
+  },
+  {
+    "mode": "body",
+    "fn": "saturation",
+    "args": [
+      {
+        "node": "vec4",
+        "args": [
+          0.37,
+          0.24,
+          0.16,
+          0.85
+        ]
+      }
+    ],
+    "iterator": "normal"
+  },
+  {
+    "mode": "body",
+    "fn": "saturation",
+    "args": [
+      {
+        "node": "vec4",
+        "args": [
+          0.37,
+          0.24,
+          0.16,
+          0.85
+        ]
+      }
+    ],
+    "iterator": "empty"
+  },
+  {
+    "mode": "body",
+    "fn": "saturation",
+    "args": [
+      {
+        "node": "vec4",
+        "args": [
+          0.37,
+          0.24,
+          0.16,
+          0.85
+        ]
+      }
+    ],
+    "iterator": "nextThrow"
+  },
+  {
+    "mode": "body",
+    "fn": "saturation",
+    "args": [
+      {
+        "node": "vec4",
+        "args": [
+          0.37,
+          0.24,
+          0.16,
+          0.85
+        ]
+      }
+    ],
+    "iterator": "doneThrow"
+  },
+  {
+    "mode": "body",
+    "fn": "saturation",
+    "args": [
+      {
+        "node": "vec4",
+        "args": [
+          0.37,
+          0.24,
+          0.16,
+          0.85
+        ]
+      }
+    ],
+    "iterator": "valueThrow"
+  },
+  {
+    "mode": "body",
+    "fn": "saturation",
+    "args": [
+      {
+        "node": "vec4",
+        "args": [
+          0.37,
+          0.24,
+          0.16,
+          0.85
+        ]
+      }
+    ],
+    "iterator": "returnThrow"
+  },
+  {
+    "mode": "body",
+    "fn": "saturation",
+    "args": [
+      {
+        "node": "vec4",
+        "args": [
+          0.37,
+          0.24,
+          0.16,
+          0.85
+        ]
+      }
+    ],
+    "iterator": "returnPrimitive"
+  },
+  {
+    "mode": "body",
+    "fn": "saturation",
+    "args": [
+      {
+        "node": "vec4",
+        "args": [
+          0.37,
+          0.24,
+          0.16,
+          0.85
+        ]
+      }
+    ],
+    "iterator": "returnGetterThrow"
+  },
+  {
+    "mode": "body",
+    "fn": "saturation",
+    "args": [
+      {
+        "node": "vec4",
+        "args": [
+          0.37,
+          0.24,
+          0.16,
+          0.85
+        ]
+      }
+    ],
+    "iterator": "iteratorThrow"
+  },
+  {
+    "mode": "body",
+    "fn": "saturation",
+    "args": [
+      {
+        "node": "vec4",
+        "args": [
+          0.37,
+          0.24,
+          0.16,
+          0.85
+        ]
+      }
+    ],
+    "iterator": "primitiveIterator"
+  },
+  {
+    "mode": "call",
+    "fn": "vibrance",
+    "args": [
+      {
+        "node": "vec4",
+        "args": [
+          0.37,
+          0.24,
+          0.16,
+          0.85
+        ]
+      }
+    ]
+  },
+  {
+    "mode": "call",
+    "fn": "vibrance",
+    "args": [
+      {
+        "node": "vec4",
+        "args": [
+          0.37,
+          0.24,
+          0.16,
+          0.85
+        ]
+      }
+    ],
+    "build": true
+  },
+  {
+    "mode": "body",
+    "fn": "vibrance",
+    "args": [
+      {
+        "node": "vec4",
+        "args": [
+          0.37,
+          0.24,
+          0.16,
+          0.85
+        ]
+      }
+    ]
+  },
+  {
+    "mode": "body",
+    "fn": "vibrance",
+    "args": [
+      {
+        "node": "vec4",
+        "args": [
+          0.37,
+          0.24,
+          0.16,
+          0.85
+        ]
+      },
+      {
+        "$undefined": true
+      }
+    ]
+  },
+  {
+    "mode": "body",
+    "fn": "vibrance",
+    "args": [
+      {
+        "node": "vec4",
+        "args": [
+          0.37,
+          0.24,
+          0.16,
+          0.85
+        ]
+      },
+      {
+        "node": "float",
+        "args": [
+          0.713
+        ]
+      }
+    ]
+  },
+  {
+    "mode": "body",
+    "fn": "vibrance",
+    "args": [
+      {
+        "node": "vec4",
+        "args": [
+          0.37,
+          0.24,
+          0.16,
+          0.85
+        ]
+      }
+    ],
+    "iterator": "normal"
+  },
+  {
+    "mode": "body",
+    "fn": "vibrance",
+    "args": [
+      {
+        "node": "vec4",
+        "args": [
+          0.37,
+          0.24,
+          0.16,
+          0.85
+        ]
+      }
+    ],
+    "iterator": "empty"
+  },
+  {
+    "mode": "body",
+    "fn": "vibrance",
+    "args": [
+      {
+        "node": "vec4",
+        "args": [
+          0.37,
+          0.24,
+          0.16,
+          0.85
+        ]
+      }
+    ],
+    "iterator": "nextThrow"
+  },
+  {
+    "mode": "body",
+    "fn": "vibrance",
+    "args": [
+      {
+        "node": "vec4",
+        "args": [
+          0.37,
+          0.24,
+          0.16,
+          0.85
+        ]
+      }
+    ],
+    "iterator": "doneThrow"
+  },
+  {
+    "mode": "body",
+    "fn": "vibrance",
+    "args": [
+      {
+        "node": "vec4",
+        "args": [
+          0.37,
+          0.24,
+          0.16,
+          0.85
+        ]
+      }
+    ],
+    "iterator": "valueThrow"
+  },
+  {
+    "mode": "body",
+    "fn": "vibrance",
+    "args": [
+      {
+        "node": "vec4",
+        "args": [
+          0.37,
+          0.24,
+          0.16,
+          0.85
+        ]
+      }
+    ],
+    "iterator": "returnThrow"
+  },
+  {
+    "mode": "body",
+    "fn": "vibrance",
+    "args": [
+      {
+        "node": "vec4",
+        "args": [
+          0.37,
+          0.24,
+          0.16,
+          0.85
+        ]
+      }
+    ],
+    "iterator": "returnPrimitive"
+  },
+  {
+    "mode": "body",
+    "fn": "vibrance",
+    "args": [
+      {
+        "node": "vec4",
+        "args": [
+          0.37,
+          0.24,
+          0.16,
+          0.85
+        ]
+      }
+    ],
+    "iterator": "returnGetterThrow"
+  },
+  {
+    "mode": "body",
+    "fn": "vibrance",
+    "args": [
+      {
+        "node": "vec4",
+        "args": [
+          0.37,
+          0.24,
+          0.16,
+          0.85
+        ]
+      }
+    ],
+    "iterator": "iteratorThrow"
+  },
+  {
+    "mode": "body",
+    "fn": "vibrance",
+    "args": [
+      {
+        "node": "vec4",
+        "args": [
+          0.37,
+          0.24,
+          0.16,
+          0.85
+        ]
+      }
+    ],
+    "iterator": "primitiveIterator"
+  },
+  {
+    "mode": "call",
+    "fn": "hue",
+    "args": [
+      {
+        "node": "vec4",
+        "args": [
+          0.37,
+          0.24,
+          0.16,
+          0.85
+        ]
+      }
+    ]
+  },
+  {
+    "mode": "call",
+    "fn": "hue",
+    "args": [
+      {
+        "node": "vec4",
+        "args": [
+          0.37,
+          0.24,
+          0.16,
+          0.85
+        ]
+      }
+    ],
+    "build": true
+  },
+  {
+    "mode": "body",
+    "fn": "hue",
+    "args": [
+      {
+        "node": "vec4",
+        "args": [
+          0.37,
+          0.24,
+          0.16,
+          0.85
+        ]
+      }
+    ]
+  },
+  {
+    "mode": "body",
+    "fn": "hue",
+    "args": [
+      {
+        "node": "vec4",
+        "args": [
+          0.37,
+          0.24,
+          0.16,
+          0.85
+        ]
+      },
+      {
+        "$undefined": true
+      }
+    ]
+  },
+  {
+    "mode": "body",
+    "fn": "hue",
+    "args": [
+      {
+        "node": "vec4",
+        "args": [
+          0.37,
+          0.24,
+          0.16,
+          0.85
+        ]
+      },
+      {
+        "node": "float",
+        "args": [
+          0.713
+        ]
+      }
+    ]
+  },
+  {
+    "mode": "body",
+    "fn": "hue",
+    "args": [
+      {
+        "node": "vec4",
+        "args": [
+          0.37,
+          0.24,
+          0.16,
+          0.85
+        ]
+      }
+    ],
+    "iterator": "normal"
+  },
+  {
+    "mode": "body",
+    "fn": "hue",
+    "args": [
+      {
+        "node": "vec4",
+        "args": [
+          0.37,
+          0.24,
+          0.16,
+          0.85
+        ]
+      }
+    ],
+    "iterator": "empty"
+  },
+  {
+    "mode": "body",
+    "fn": "hue",
+    "args": [
+      {
+        "node": "vec4",
+        "args": [
+          0.37,
+          0.24,
+          0.16,
+          0.85
+        ]
+      }
+    ],
+    "iterator": "nextThrow"
+  },
+  {
+    "mode": "body",
+    "fn": "hue",
+    "args": [
+      {
+        "node": "vec4",
+        "args": [
+          0.37,
+          0.24,
+          0.16,
+          0.85
+        ]
+      }
+    ],
+    "iterator": "doneThrow"
+  },
+  {
+    "mode": "body",
+    "fn": "hue",
+    "args": [
+      {
+        "node": "vec4",
+        "args": [
+          0.37,
+          0.24,
+          0.16,
+          0.85
+        ]
+      }
+    ],
+    "iterator": "valueThrow"
+  },
+  {
+    "mode": "body",
+    "fn": "hue",
+    "args": [
+      {
+        "node": "vec4",
+        "args": [
+          0.37,
+          0.24,
+          0.16,
+          0.85
+        ]
+      }
+    ],
+    "iterator": "returnThrow"
+  },
+  {
+    "mode": "body",
+    "fn": "hue",
+    "args": [
+      {
+        "node": "vec4",
+        "args": [
+          0.37,
+          0.24,
+          0.16,
+          0.85
+        ]
+      }
+    ],
+    "iterator": "returnPrimitive"
+  },
+  {
+    "mode": "body",
+    "fn": "hue",
+    "args": [
+      {
+        "node": "vec4",
+        "args": [
+          0.37,
+          0.24,
+          0.16,
+          0.85
+        ]
+      }
+    ],
+    "iterator": "returnGetterThrow"
+  },
+  {
+    "mode": "body",
+    "fn": "hue",
+    "args": [
+      {
+        "node": "vec4",
+        "args": [
+          0.37,
+          0.24,
+          0.16,
+          0.85
+        ]
+      }
+    ],
+    "iterator": "iteratorThrow"
+  },
+  {
+    "mode": "body",
+    "fn": "hue",
+    "args": [
+      {
+        "node": "vec4",
+        "args": [
+          0.37,
+          0.24,
+          0.16,
+          0.85
+        ]
+      }
+    ],
+    "iterator": "primitiveIterator"
+  },
+  {
+    "mode": "call",
+    "fn": "luminance",
+    "args": [
+      {
+        "node": "vec4",
+        "args": [
+          0.37,
+          0.24,
+          0.16,
+          0.85
+        ]
+      }
+    ]
+  },
+  {
+    "mode": "call",
+    "fn": "luminance",
+    "args": [
+      {
+        "node": "vec4",
+        "args": [
+          0.37,
+          0.24,
+          0.16,
+          0.85
+        ]
+      }
+    ],
+    "build": true
+  },
+  {
+    "mode": "body",
+    "fn": "luminance",
+    "args": [
+      {
+        "node": "vec4",
+        "args": [
+          0.37,
+          0.24,
+          0.16,
+          0.85
+        ]
+      }
+    ]
+  },
+  {
+    "mode": "body",
+    "fn": "luminance",
+    "args": [
+      {
+        "node": "vec4",
+        "args": [
+          0.37,
+          0.24,
+          0.16,
+          0.85
+        ]
+      },
+      {
+        "$undefined": true
+      }
+    ]
+  },
+  {
+    "mode": "body",
+    "fn": "luminance",
+    "args": [
+      {
+        "node": "vec4",
+        "args": [
+          0.37,
+          0.24,
+          0.16,
+          0.85
+        ]
+      },
+      {
+        "node": "vec3",
+        "args": [
+          0.2,
+          0.3,
+          0.5
+        ]
+      }
+    ]
+  },
+  {
+    "mode": "call",
+    "fn": "cdl",
+    "args": [
+      {
+        "node": "vec4",
+        "args": [
+          0.37,
+          0.24,
+          0.16,
+          0.85
+        ]
+      }
+    ]
+  },
+  {
+    "mode": "call",
+    "fn": "cdl",
+    "args": [
+      {
+        "node": "vec4",
+        "args": [
+          0.37,
+          0.24,
+          0.16,
+          0.85
+        ]
+      }
+    ],
+    "build": true
+  },
+  {
+    "mode": "body",
+    "fn": "cdl",
+    "args": [
+      {
+        "node": "vec4",
+        "args": [
+          0.37,
+          0.24,
+          0.16,
+          0.85
+        ]
+      }
+    ]
+  },
+  {
+    "mode": "body",
+    "fn": "cdl",
+    "args": [
+      {
+        "node": "vec4",
+        "args": [
+          0.37,
+          0.24,
+          0.16,
+          0.85
+        ]
+      },
+      {
+        "$undefined": true
+      }
+    ]
+  },
+  {
+    "mode": "body",
+    "fn": "cdl",
+    "args": [
+      {
+        "node": "vec4",
+        "args": [
+          0.37,
+          0.24,
+          0.16,
+          0.85
+        ]
+      },
+      {
+        "node": "float",
+        "args": [
+          0.713
+        ]
+      }
+    ]
+  },
+  {
+    "mode": "body",
+    "fn": "cdl",
+    "args": [
+      {
+        "node": "vec4",
+        "args": [
+          0.37,
+          0.24,
+          0.16,
+          0.85
+        ]
+      }
+    ],
+    "iterator": "normal"
+  },
+  {
+    "mode": "body",
+    "fn": "cdl",
+    "args": [
+      {
+        "node": "vec4",
+        "args": [
+          0.37,
+          0.24,
+          0.16,
+          0.85
+        ]
+      }
+    ],
+    "iterator": "empty"
+  },
+  {
+    "mode": "body",
+    "fn": "cdl",
+    "args": [
+      {
+        "node": "vec4",
+        "args": [
+          0.37,
+          0.24,
+          0.16,
+          0.85
+        ]
+      }
+    ],
+    "iterator": "nextThrow"
+  },
+  {
+    "mode": "body",
+    "fn": "cdl",
+    "args": [
+      {
+        "node": "vec4",
+        "args": [
+          0.37,
+          0.24,
+          0.16,
+          0.85
+        ]
+      }
+    ],
+    "iterator": "doneThrow"
+  },
+  {
+    "mode": "body",
+    "fn": "cdl",
+    "args": [
+      {
+        "node": "vec4",
+        "args": [
+          0.37,
+          0.24,
+          0.16,
+          0.85
+        ]
+      }
+    ],
+    "iterator": "valueThrow"
+  },
+  {
+    "mode": "body",
+    "fn": "cdl",
+    "args": [
+      {
+        "node": "vec4",
+        "args": [
+          0.37,
+          0.24,
+          0.16,
+          0.85
+        ]
+      }
+    ],
+    "iterator": "returnThrow"
+  },
+  {
+    "mode": "body",
+    "fn": "cdl",
+    "args": [
+      {
+        "node": "vec4",
+        "args": [
+          0.37,
+          0.24,
+          0.16,
+          0.85
+        ]
+      }
+    ],
+    "iterator": "returnPrimitive"
+  },
+  {
+    "mode": "body",
+    "fn": "cdl",
+    "args": [
+      {
+        "node": "vec4",
+        "args": [
+          0.37,
+          0.24,
+          0.16,
+          0.85
+        ]
+      }
+    ],
+    "iterator": "returnGetterThrow"
+  },
+  {
+    "mode": "body",
+    "fn": "cdl",
+    "args": [
+      {
+        "node": "vec4",
+        "args": [
+          0.37,
+          0.24,
+          0.16,
+          0.85
+        ]
+      }
+    ],
+    "iterator": "iteratorThrow"
+  },
+  {
+    "mode": "body",
+    "fn": "cdl",
+    "args": [
+      {
+        "node": "vec4",
+        "args": [
+          0.37,
+          0.24,
+          0.16,
+          0.85
+        ]
+      }
+    ],
+    "iterator": "primitiveIterator"
+  },
+  {
+    "mode": "call",
+    "fn": "posterize",
+    "args": [
+      {
+        "node": "vec4",
+        "args": [
+          0.37,
+          0.24,
+          0.16,
+          0.85
+        ]
+      },
+      {
+        "node": "float",
+        "args": [
+          5.25
+        ]
+      }
+    ]
+  },
+  {
+    "mode": "call",
+    "fn": "posterize",
+    "args": [
+      {
+        "node": "vec4",
+        "args": [
+          0.37,
+          0.24,
+          0.16,
+          0.85
+        ]
+      },
+      {
+        "node": "float",
+        "args": [
+          5.25
+        ]
+      }
+    ],
+    "build": true
+  },
+  {
+    "mode": "body",
+    "fn": "posterize",
+    "args": [
+      {
+        "node": "vec4",
+        "args": [
+          0.37,
+          0.24,
+          0.16,
+          0.85
+        ]
+      },
+      {
+        "node": "float",
+        "args": [
+          5.25
+        ]
+      }
+    ]
+  },
+  {
+    "mode": "body",
+    "fn": "posterize",
+    "args": [
+      {
+        "node": "vec4",
+        "args": [
+          0.37,
+          0.24,
+          0.16,
+          0.85
+        ]
+      },
+      {
+        "node": "float",
+        "args": [
+          5.25
+        ]
+      }
+    ],
+    "iterator": "normal"
+  },
+  {
+    "mode": "body",
+    "fn": "posterize",
+    "args": [
+      {
+        "node": "vec4",
+        "args": [
+          0.37,
+          0.24,
+          0.16,
+          0.85
+        ]
+      },
+      {
+        "node": "float",
+        "args": [
+          5.25
+        ]
+      }
+    ],
+    "iterator": "empty"
+  },
+  {
+    "mode": "body",
+    "fn": "posterize",
+    "args": [
+      {
+        "node": "vec4",
+        "args": [
+          0.37,
+          0.24,
+          0.16,
+          0.85
+        ]
+      },
+      {
+        "node": "float",
+        "args": [
+          5.25
+        ]
+      }
+    ],
+    "iterator": "nextThrow"
+  },
+  {
+    "mode": "body",
+    "fn": "posterize",
+    "args": [
+      {
+        "node": "vec4",
+        "args": [
+          0.37,
+          0.24,
+          0.16,
+          0.85
+        ]
+      },
+      {
+        "node": "float",
+        "args": [
+          5.25
+        ]
+      }
+    ],
+    "iterator": "doneThrow"
+  },
+  {
+    "mode": "body",
+    "fn": "posterize",
+    "args": [
+      {
+        "node": "vec4",
+        "args": [
+          0.37,
+          0.24,
+          0.16,
+          0.85
+        ]
+      },
+      {
+        "node": "float",
+        "args": [
+          5.25
+        ]
+      }
+    ],
+    "iterator": "valueThrow"
+  },
+  {
+    "mode": "body",
+    "fn": "posterize",
+    "args": [
+      {
+        "node": "vec4",
+        "args": [
+          0.37,
+          0.24,
+          0.16,
+          0.85
+        ]
+      },
+      {
+        "node": "float",
+        "args": [
+          5.25
+        ]
+      }
+    ],
+    "iterator": "returnThrow"
+  },
+  {
+    "mode": "body",
+    "fn": "posterize",
+    "args": [
+      {
+        "node": "vec4",
+        "args": [
+          0.37,
+          0.24,
+          0.16,
+          0.85
+        ]
+      },
+      {
+        "node": "float",
+        "args": [
+          5.25
+        ]
+      }
+    ],
+    "iterator": "returnPrimitive"
+  },
+  {
+    "mode": "body",
+    "fn": "posterize",
+    "args": [
+      {
+        "node": "vec4",
+        "args": [
+          0.37,
+          0.24,
+          0.16,
+          0.85
+        ]
+      },
+      {
+        "node": "float",
+        "args": [
+          5.25
+        ]
+      }
+    ],
+    "iterator": "returnGetterThrow"
+  },
+  {
+    "mode": "body",
+    "fn": "posterize",
+    "args": [
+      {
+        "node": "vec4",
+        "args": [
+          0.37,
+          0.24,
+          0.16,
+          0.85
+        ]
+      },
+      {
+        "node": "float",
+        "args": [
+          5.25
+        ]
+      }
+    ],
+    "iterator": "iteratorThrow"
+  },
+  {
+    "mode": "body",
+    "fn": "posterize",
+    "args": [
+      {
+        "node": "vec4",
+        "args": [
+          0.37,
+          0.24,
+          0.16,
+          0.85
+        ]
+      },
+      {
+        "node": "float",
+        "args": [
+          5.25
+        ]
+      }
+    ],
+    "iterator": "primitiveIterator"
+  },
+  {
+    "mode": "body",
+    "fn": "cdl",
+    "args": [
+      {
+        "node": "vec4",
+        "args": [
+          0.37,
+          0.24,
+          0.16,
+          0.85
+        ]
+      },
+      {
+        "node": "vec3",
+        "args": [
+          1.1,
+          0.9,
+          1.03
+        ]
+      },
+      {
+        "node": "vec3",
+        "args": [
+          0.01,
+          -0.02,
+          0.03
+        ]
+      },
+      {
+        "node": "vec3",
+        "args": [
+          0.9,
+          1.1,
+          1.3
+        ]
+      },
+      {
+        "node": "float",
+        "args": [
+          0.8
+        ]
+      },
+      {
+        "node": "vec3",
+        "args": [
+          0.25,
+          0.6,
+          0.15
+        ]
+      }
+    ]
+  },
+  {
+    "mode": "call",
+    "fn": "cdl",
+    "args": [
+      {
+        "node": "vec4",
+        "args": [
+          0.37,
+          0.24,
+          0.16,
+          0.85
+        ]
+      },
+      {
+        "node": "vec3",
+        "args": [
+          1.1,
+          0.9,
+          1.03
+        ]
+      },
+      {
+        "node": "vec3",
+        "args": [
+          0.01,
+          -0.02,
+          0.03
+        ]
+      },
+      {
+        "node": "vec3",
+        "args": [
+          0.9,
+          1.1,
+          1.3
+        ]
+      },
+      {
+        "node": "float",
+        "args": [
+          0.8
+        ]
+      },
+      {
+        "node": "vec3",
+        "args": [
+          0.25,
+          0.6,
+          0.15
+        ]
+      }
+    ],
+    "build": true
+  },
+  {
+    "mode": "call",
+    "fn": "luminance",
+    "args": [
+      {
+        "node": "vec4",
+        "args": [
+          0.37,
+          0.24,
+          0.16,
+          0.85
+        ]
+      }
+    ],
+    "cm": "collect"
+  },
+  {
+    "mode": "call",
+    "fn": "luminance",
+    "args": [
+      {
+        "node": "vec4",
+        "args": [
+          0.37,
+          0.24,
+          0.16,
+          0.85
+        ]
+      }
+    ],
+    "cm": "getThrow"
+  },
+  {
+    "mode": "call",
+    "fn": "luminance",
+    "args": [
+      {
+        "node": "vec4",
+        "args": [
+          0.37,
+          0.24,
+          0.16,
+          0.85
+        ]
+      }
+    ],
+    "cm": "callThrow"
+  },
+  {
+    "mode": "call",
+    "fn": "luminance",
+    "args": [
+      {
+        "node": "vec4",
+        "args": [
+          0.37,
+          0.24,
+          0.16,
+          0.85
+        ]
+      }
+    ],
+    "cm": "reenter"
+  },
+  {
+    "mode": "body",
+    "fn": "grayscale",
+    "args": [
+      {
+        "node": "vec4",
+        "args": [
+          0.37,
+          0.24,
+          0.16,
+          0.85
+        ]
+      }
+    ],
+    "cm": "collect"
+  },
+  {
+    "mode": "body",
+    "fn": "grayscale",
+    "args": [
+      {
+        "node": "vec4",
+        "args": [
+          0.37,
+          0.24,
+          0.16,
+          0.85
+        ]
+      }
+    ],
+    "cm": "getThrow"
+  },
+  {
+    "mode": "body",
+    "fn": "grayscale",
+    "args": [
+      {
+        "node": "vec4",
+        "args": [
+          0.37,
+          0.24,
+          0.16,
+          0.85
+        ]
+      }
+    ],
+    "cm": "callThrow"
+  },
+  {
+    "mode": "body",
+    "fn": "grayscale",
+    "args": [
+      {
+        "node": "vec4",
+        "args": [
+          0.37,
+          0.24,
+          0.16,
+          0.85
+        ]
+      }
+    ],
+    "cm": "reenter"
+  },
+  {
+    "mode": "body",
+    "fn": "saturation",
+    "args": [
+      {
+        "node": "vec4",
+        "args": [
+          0.37,
+          0.24,
+          0.16,
+          0.85
+        ]
+      }
+    ],
+    "cm": "collect"
+  },
+  {
+    "mode": "body",
+    "fn": "saturation",
+    "args": [
+      {
+        "node": "vec4",
+        "args": [
+          0.37,
+          0.24,
+          0.16,
+          0.85
+        ]
+      }
+    ],
+    "cm": "getThrow"
+  },
+  {
+    "mode": "body",
+    "fn": "saturation",
+    "args": [
+      {
+        "node": "vec4",
+        "args": [
+          0.37,
+          0.24,
+          0.16,
+          0.85
+        ]
+      }
+    ],
+    "cm": "callThrow"
+  },
+  {
+    "mode": "body",
+    "fn": "saturation",
+    "args": [
+      {
+        "node": "vec4",
+        "args": [
+          0.37,
+          0.24,
+          0.16,
+          0.85
+        ]
+      }
+    ],
+    "cm": "reenter"
+  },
+  {
+    "mode": "body",
+    "fn": "cdl",
+    "args": [
+      {
+        "node": "vec4",
+        "args": [
+          0.37,
+          0.24,
+          0.16,
+          0.85
+        ]
+      }
+    ],
+    "cm": "collect"
+  },
+  {
+    "mode": "body",
+    "fn": "cdl",
+    "args": [
+      {
+        "node": "vec4",
+        "args": [
+          0.37,
+          0.24,
+          0.16,
+          0.85
+        ]
+      }
+    ],
+    "cm": "getThrow"
+  },
+  {
+    "mode": "body",
+    "fn": "cdl",
+    "args": [
+      {
+        "node": "vec4",
+        "args": [
+          0.37,
+          0.24,
+          0.16,
+          0.85
+        ]
+      }
+    ],
+    "cm": "callThrow"
+  },
+  {
+    "mode": "body",
+    "fn": "cdl",
+    "args": [
+      {
+        "node": "vec4",
+        "args": [
+          0.37,
+          0.24,
+          0.16,
+          0.85
+        ]
+      }
+    ],
+    "cm": "reenter"
+  },
+  {
+    "mode": "body",
+    "fn": "grayscale",
+    "args": [
+      {
+        "node": "vec4",
+        "args": [
+          0.37,
+          0.24,
+          0.16,
+          0.85
+        ]
+      }
+    ],
+    "instrument": {
+      "argument": 0,
+      "key": "rgb",
+      "mode": "collect"
+    }
+  },
+  {
+    "mode": "body",
+    "fn": "grayscale",
+    "args": [
+      {
+        "node": "vec4",
+        "args": [
+          0.37,
+          0.24,
+          0.16,
+          0.85
+        ]
+      }
+    ],
+    "instrument": {
+      "argument": 0,
+      "key": "rgb",
+      "mode": "getThrow"
+    }
+  },
+  {
+    "mode": "body",
+    "fn": "grayscale",
+    "args": [
+      {
+        "node": "vec4",
+        "args": [
+          0.37,
+          0.24,
+          0.16,
+          0.85
+        ]
+      }
+    ],
+    "instrument": {
+      "argument": 0,
+      "key": "rgb",
+      "mode": "reenter"
+    }
+  },
+  {
+    "mode": "body",
+    "fn": "saturation",
+    "args": [
+      {
+        "node": "vec4",
+        "args": [
+          0.37,
+          0.24,
+          0.16,
+          0.85
+        ]
+      }
+    ],
+    "instrument": {
+      "argument": 0,
+      "key": "rgb",
+      "mode": "collect"
+    }
+  },
+  {
+    "mode": "body",
+    "fn": "saturation",
+    "args": [
+      {
+        "node": "vec4",
+        "args": [
+          0.37,
+          0.24,
+          0.16,
+          0.85
+        ]
+      }
+    ],
+    "instrument": {
+      "argument": 0,
+      "key": "rgb",
+      "mode": "getThrow"
+    }
+  },
+  {
+    "mode": "body",
+    "fn": "saturation",
+    "args": [
+      {
+        "node": "vec4",
+        "args": [
+          0.37,
+          0.24,
+          0.16,
+          0.85
+        ]
+      }
+    ],
+    "instrument": {
+      "argument": 0,
+      "key": "rgb",
+      "mode": "reenter"
+    }
+  },
+  {
+    "mode": "body",
+    "fn": "vibrance",
+    "args": [
+      {
+        "node": "vec4",
+        "args": [
+          0.37,
+          0.24,
+          0.16,
+          0.85
+        ]
+      }
+    ],
+    "instrument": {
+      "argument": 0,
+      "key": "r",
+      "mode": "collect"
+    }
+  },
+  {
+    "mode": "body",
+    "fn": "vibrance",
+    "args": [
+      {
+        "node": "vec4",
+        "args": [
+          0.37,
+          0.24,
+          0.16,
+          0.85
+        ]
+      }
+    ],
+    "instrument": {
+      "argument": 0,
+      "key": "r",
+      "mode": "getThrow"
+    }
+  },
+  {
+    "mode": "body",
+    "fn": "vibrance",
+    "args": [
+      {
+        "node": "vec4",
+        "args": [
+          0.37,
+          0.24,
+          0.16,
+          0.85
+        ]
+      }
+    ],
+    "instrument": {
+      "argument": 0,
+      "key": "r",
+      "mode": "reenter"
+    }
+  },
+  {
+    "mode": "body",
+    "fn": "hue",
+    "args": [
+      {
+        "node": "vec4",
+        "args": [
+          0.37,
+          0.24,
+          0.16,
+          0.85
+        ]
+      }
+    ],
+    "instrument": {
+      "argument": 0,
+      "key": "rgb",
+      "mode": "collect"
+    }
+  },
+  {
+    "mode": "body",
+    "fn": "hue",
+    "args": [
+      {
+        "node": "vec4",
+        "args": [
+          0.37,
+          0.24,
+          0.16,
+          0.85
+        ]
+      }
+    ],
+    "instrument": {
+      "argument": 0,
+      "key": "rgb",
+      "mode": "getThrow"
+    }
+  },
+  {
+    "mode": "body",
+    "fn": "hue",
+    "args": [
+      {
+        "node": "vec4",
+        "args": [
+          0.37,
+          0.24,
+          0.16,
+          0.85
+        ]
+      }
+    ],
+    "instrument": {
+      "argument": 0,
+      "key": "rgb",
+      "mode": "reenter"
+    }
+  },
+  {
+    "mode": "body",
+    "fn": "cdl",
+    "args": [
+      {
+        "node": "vec4",
+        "args": [
+          0.37,
+          0.24,
+          0.16,
+          0.85
+        ]
+      }
+    ],
+    "instrument": {
+      "argument": 0,
+      "key": "rgb",
+      "mode": "collect"
+    }
+  },
+  {
+    "mode": "body",
+    "fn": "cdl",
+    "args": [
+      {
+        "node": "vec4",
+        "args": [
+          0.37,
+          0.24,
+          0.16,
+          0.85
+        ]
+      }
+    ],
+    "instrument": {
+      "argument": 0,
+      "key": "rgb",
+      "mode": "getThrow"
+    }
+  },
+  {
+    "mode": "body",
+    "fn": "cdl",
+    "args": [
+      {
+        "node": "vec4",
+        "args": [
+          0.37,
+          0.24,
+          0.16,
+          0.85
+        ]
+      }
+    ],
+    "instrument": {
+      "argument": 0,
+      "key": "rgb",
+      "mode": "reenter"
+    }
+  },
+  {
+    "mode": "body",
+    "fn": "posterize",
+    "args": [
+      {
+        "node": "vec4",
+        "args": [
+          0.37,
+          0.24,
+          0.16,
+          0.85
+        ]
+      },
+      {
+        "node": "float",
+        "args": [
+          5.25
+        ]
+      }
+    ],
+    "instrument": {
+      "argument": 0,
+      "key": "mul",
+      "mode": "collect"
+    }
+  },
+  {
+    "mode": "body",
+    "fn": "posterize",
+    "args": [
+      {
+        "node": "vec4",
+        "args": [
+          0.37,
+          0.24,
+          0.16,
+          0.85
+        ]
+      },
+      {
+        "node": "float",
+        "args": [
+          5.25
+        ]
+      }
+    ],
+    "instrument": {
+      "argument": 0,
+      "key": "mul",
+      "mode": "getThrow"
+    }
+  },
+  {
+    "mode": "body",
+    "fn": "posterize",
+    "args": [
+      {
+        "node": "vec4",
+        "args": [
+          0.37,
+          0.24,
+          0.16,
+          0.85
+        ]
+      },
+      {
+        "node": "float",
+        "args": [
+          5.25
+        ]
+      }
+    ],
+    "instrument": {
+      "argument": 0,
+      "key": "mul",
+      "mode": "reenter"
+    }
+  },
+  {
+    "mode": "body",
+    "fn": "saturation",
+    "args": [
+      {
+        "node": "vec4",
+        "args": [
+          0.37,
+          0.24,
+          0.16,
+          0.85
+        ]
+      },
+      null
+    ]
+  },
+  {
+    "mode": "body",
+    "fn": "hue",
+    "args": [
+      {
+        "node": "vec4",
+        "args": [
+          0.37,
+          0.24,
+          0.16,
+          0.85
+        ]
+      },
+      null
+    ]
+  },
+  {
+    "mode": "body",
+    "fn": "cdl",
+    "args": [
+      {
+        "node": "vec4",
+        "args": [
+          0.37,
+          0.24,
+          0.16,
+          0.85
+        ]
+      },
+      {
+        "$undefined": true
+      },
+      {
+        "$undefined": true
+      },
+      {
+        "$undefined": true
+      },
+      {
+        "$undefined": true
+      },
+      {
+        "$undefined": true
+      }
+    ]
+  }
+]

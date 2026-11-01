@@ -244,7 +244,7 @@ target_sources(threecpp PRIVATE
     src/nodes/core/BlendModes.cpp
     src/nodes/display/ToneMappingFunctions.cpp
     src/nodes/display/ToneMappingFunctionsRuntime.cpp
-    src/nodes/core/ColorAdjustment.cpp
+    src/nodes/display/ColorAdjustment.cpp
     src/nodes/display/ViewportTextureNode.cpp
     src/nodes/display/RenderOutputNode.cpp
     src/nodes/display/RenderOutputNodeRuntime.cpp
@@ -272,7 +272,7 @@ target_sources(threecpp PRIVATE
     src/nodes/core/SpriteUtils.cpp
     src/nodes/utils/SetNode.cpp
     src/nodes/core/TriplanarTextures.cpp
-    src/nodes/core/FunctionOverloadingNode.cpp
+    src/nodes/utils/FunctionOverloadingNode.cpp
     src/nodes/utils/CubeMapNode.cpp
     src/nodes/utils/EventNode.cpp
     src/nodes/core/PostProcessingUtils.cpp

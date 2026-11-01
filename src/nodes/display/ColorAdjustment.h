@@ -37,3 +37,10 @@ class ColorAdjustment {
     // Whether the constant really is the exact value, which it is not.
     static bool hueAxisIsExact();
 };
+
+#pragma once
+#include "core/JSValue.h"
+#include <string>
+// Real lexical exports; mutable compatibility facade does not replace lexical bindings.
+JSValue nativeColorAdjustmentModule();
+JSValue nativeColorAdjustmentBinding(const std::string& name);
