@@ -1,0 +1,18 @@
+foreach(required IN ITEMS NODE PROBE PARITY_DIR UPSTREAM OUTPUT_ROOT)
+    if(NOT DEFINED ${required} OR "${${required}}" STREQUAL "")
+        message(FATAL_ERROR "Missing BlendModes argument: ${required}")
+    endif()
+endforeach()
+file(MAKE_DIRECTORY "${OUTPUT_ROOT}")
+string(TIMESTAMP stamp "%Y%m%dT%H%M%S" UTC)
+string(RANDOM LENGTH 16 ALPHABET 0123456789abcdef suffix)
+set(output "${OUTPUT_ROOT}/blend-modes-${stamp}-${suffix}")
+if(EXISTS "${output}")
+    message(FATAL_ERROR "Fresh BlendModes evidence path required: ${output}")
+endif()
+execute_process(COMMAND "${NODE}" --expose-gc "${PARITY_DIR}/compare-blend-modes.mjs"
+    --upstream "${UPSTREAM}" --probe "${PROBE}" --output "${output}"
+    RESULT_VARIABLE status)
+if(NOT "${status}" STREQUAL "0")
+    message(FATAL_ERROR "BlendModes validation failed (${status}); preserve ${output}")
+endif()

@@ -1,3 +1,11 @@
+# 2026-11-02: canonical BlendModes and FunctionOverloading source traces
+
+- Port all five pinned BlendModes exports into src/nodes/display/BlendModes.cpp/h, including actual Fn layouts, lazy initialization and the ten source-created Nodes. Move the earlier typed helper and its original four tests from core to display; preserve the typed API, UTF-8 BOM and original source/test bytes except their include paths. Compile the canonical implementation once and remove the three old core paths.
+- FunctionOverloadingNode now records actual source entries, expressions, assignment/iteration and callback positions. The added native checks cover 30 source-location cases, 11 newTarget/Reflect.construct/Proxy cases and three independent heap rounds. The original 170 cases, eight metadata entries and 15 lifetime observations remain intact. This validates the nine selected source-position fields; it does not claim the complete generic V8 CallSite protocol or receiver/method-name behavior.
+- Current unified-library validation passed CPU 15/15 and Vulkan-related 19/19, including two Node-source-only traces. BlendModes passed 178 strict cases, 120 lifetime observations, three heap rounds and actual ten-Node initialization. Original inputs and Node source outputs remain byte-identical to the separately validated candidates. No production JavaScript engine or CEF is introduced.
+- Current path coverage is 668/1251, with 583 absent paths. File presence is not functionality completion. Full Nodes/TSL initialization, traditional and modern Vulkan rendering, remaining native hosts/addons, and Linux/macOS validation remain open.
+- Evidence: D:/Temp/surui/threecpp-node-trace-blends-20261102/combined-final-proof01/proof.json. MaterialXNoise and further Vulkan callback/pass fixes are separate private candidates and are not included in this phase.
+
 # 2026-11-02: native MaterialXCore
 
 - Add the complete pinned MaterialXCore source algorithms at `src/nodes/materialx/MaterialXCore.cpp/h`: mx_rotate2d and mx_rotate3d, using the nine actual TSLBase bindings, existing node operators and live Math access. Keep lazy module initialization; add no fake imports, Node allocations or random calls.

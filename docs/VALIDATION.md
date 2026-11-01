@@ -1,3 +1,21 @@
+# 2026-11-02: current-library BlendModes / FunctionOverloading trace validation
+
+Parent commit: 4580e9fff79f716b301f5831cdb57496c2b136a8. Fixed upstream: 11738a9d55e502fb484cefffcea3a66dc44e9fe9. Source snapshot: 3112 files, unchanged throughout both builds, selected regressions and audit commands.
+
+CPU: eight targets, 14 build steps, 31.8907 seconds. Selected CTests passed 15/15 in 167.45 seconds, with no failures or skips; 1471 dependency hashes remained unchanged. The selected unit executable passed 1402 cases / 213461 assertions. There are 414 registered CPU checks; this phase does not claim a complete rerun of those 414.
+
+Vulkan: 15 targets, 18 build steps, 17.7808 seconds. All 19 selected Vulkan-related checks passed in 57.17 seconds with no skips; 1478 dependency hashes remained unchanged. Two checks only execute Node source traces. This is not a claim of 19 hardware-rendering tests or a successful Khronos validation-layer run.
+
+The current FunctionOverloading extra executable passed 30 strict source-location cases, 11 construction/newTarget cases and three independent heap rounds, and reran the unchanged original 170-case / eight-metadata / 15-lifetime suite. Comparison covers nine selected source-position fields; full receiver branding, method naming, Unicode and exotic generic CallSite behavior remain unproven. No identity or RNG normalization was added.
+
+Current BlendModes passed 178 strict cases including five metadata rows, 120 source/native lifetime observations, three independent native heap checks and actual module initialization of ten Nodes and five layouts. All five source Fn implementations and canonical exports are present. The relocated typed tests preserve their four original cases and 19 assertions.
+
+Fifteen original input/expected/source-output files from the independently validated FunctionOverloading and BlendModes runs were compared byte-for-byte with the current-library outputs. Original comparator policies remain unchanged. Port-audit write/check and its five tests passed. Final source tables, JUnit checks, LastTest logs, comparison artifacts and current CPU library/new probe copies are retained in D:/Temp/surui/threecpp-node-trace-blends-20261102/combined-final-proof01.
+
+CPU library SHA256: 812380b5c747da0d85e8d430c6a3281142837d68482819e0c9a255150f0e5b5c. GPU core library SHA256: cd8f2401e9f83339a4ce17e91038a326bd30f9a81de96ca41f0f562c4b93a559. Separate Vulkan library SHA256: 3df154e8a7b906945348de55d7655654c8b88421d7402f806f43ec73e7baed79.
+
+Current path inventory is 668 present / 583 absent / 1251 total. No module-wide completion is inferred from path presence or selected test passes. The private MaterialXNoise and further Vulkan double-pass candidates are not integrated here; their independent results must not be substituted for unified-library validation. All earlier records below are retained as historical evidence.
+
 # 2026-11-02: MaterialXCore current build validation
 
 - Current CPU/GPU configure and builds passed with 3098 guarded source/test/build files. CPU: five targets, eight build steps, 15.53 seconds. GPU: 15 targets, 17 steps, 15.91 seconds. Actual receipts and library SHAs are in `D:/Temp/surui/threecpp-materialx-20261102/current-build-receipt01.json`.

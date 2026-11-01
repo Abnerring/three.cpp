@@ -1,3 +1,19 @@
+# 当前接续：完整 BlendModes 与 FunctionOverloading 源位置，2026-11-02
+
+目标仍 active：固定 three.js 11738a9d55e502fb484cefffcea3a66dc44e9fe9 全部 src + examples/jsm 原生 C++ 逻辑，Vulkan 后端；禁止 CEF/生产 JS 引擎或桥接。阶段本地 Git 提交，不推送。父提交 4580e9fff79f716b301f5831cdb57496c2b136a8。
+
+当前合入：FunctionOverloadingNode 实际源表达式/回调位置；完整五导出 BlendModes 移到 canonical display，保留旧 typed API/CPP BOM/四 tests 原字节，仅改 include 路径，删除旧 core 三路径。Root/test CMake 均窄替换/追加，两个生产 TU 各编译一次。实际源码快照3112，路径覆盖668/1251，583缺路径，不是功能完成率。
+
+真实统一 CPU8目标14步/31.8907s、GPU15目标18步/17.7808s 均成功。当前 CPU15/15（167.45s）、GPU相关19/19（57.17s，含两项仅 Node 源 trace），0 skip；CPU1471/GPU1478依赖与3112源码前后相同。当前 unit1402 cases/213461 assertions；414只为CPU注册总数，未重跑全套。Function新增30源位置/11 newTarget/三heap，保留原170/metadata8/GC15；Blend178含metadata5/120GC/三heap/实际初始化10Nodes+5layouts。15个输入/源码输出与原私有成功结果逐字节一致。
+
+权威证据 D:/Temp/surui/threecpp-node-trace-blends-20261102/combined-final-proof01/proof.json；同目录保存LastTest、比较输出、当前CPU库与新probe，避免后续构建覆盖唯一实测版本。CPU库812380b5c747da0d85e8d430c6a3281142837d68482819e0c9a255150f0e5b5c；GPU core cd8f2401e9f83339a4ce17e91038a326bd30f9a81de96ca41f0f562c4b93a559；Vulkan separate 3df154e8a7b906945348de55d7655654c8b88421d7402f806f43ec73e7baed79。
+
+下一步不得混作已合入：MaterialXNoise完整74导出/121源码函数/1801调用，冻结主包d8f10401、helper75b99e4e、driver c6ebc26b。ROOT实际 private native 已启动 S/noise-private-native01，session20702，已完成4TU+link并进入全部39check，原单子进程180s限制；必须轮询同handle/真实终态，不因观察超时重启，全部终态前不得修改src/test/utils/CMake或重链其守卫原exe。原1047输入、444GC、三heap/115源码byte仍严格守卫。
+
+Vulkan private01 actual8cases/59assertions成功，但不足以证明第二pass顺序。新02按每pass prepare→draw、异常后仍提交已发命令保留原reason；实际 S/vulkan-double-side-private-native02/final.json 原8全部过，新4 actualGPU probe失败：Actual culling/pass snapshot/exception-preserved/next-frame GPU pixel differs。失败输入、source、native、完整日志全部保留；renderer_candidate正在D-only03补诊断，不能放宽预期/跳过像素就宣称完成。该补丁未入shared。
+
+完整Nodes/TSL初始化图/NodeManager、传统及现代完整Vulkan、剩余addons/原生宿主与Linux/macOS仍未完成。Root是唯一shared写入/native authority，agents只读与新D候选。TEMP/TMP始终D:/Temp/surui；不要删除运行中文件。所有历史正文原字节保留，HANDOFF末798619字节SHA f6b73f2e259a5a5518d1760ca0c6ac3d1ceed98ed915f0cec5a236a5107dcc4c；stage单独 git -c core.autocrlf=false add -- docs/HANDOFF.md。
+
 # 2026-11-02: MaterialXCore handoff
 
 - Current source adds canonical nodes/materialx/MaterialXCore, both real arrow exports and nine source imports. Existing source/headers/barrels are not overwritten. Source table is3098 files, SHA d3f0f3ac33f6d4a242b342eef78cf931c9384d84b9303d98b7e8a293bcfde851. Earlier entries below remain immutable history.

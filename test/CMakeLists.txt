@@ -100,7 +100,7 @@ add_executable(THREECPPTests
         unit/src/nodes/core/DepthConversion.tests.cpp
         unit/src/nodes/display/ViewportDepthTextureNode.tests.cpp
         unit/src/nodes/display/ColorSpaceNode.tests.cpp
-        unit/src/nodes/core/BlendModes.tests.cpp
+        unit/src/nodes/display/BlendModes.tests.cpp
         unit/src/nodes/display/ToneMappingFunctions.tests.cpp
         unit/src/nodes/display/ColorAdjustment.tests.cpp
         unit/src/nodes/display/ViewportTextureNode.tests.cpp
@@ -2565,5 +2565,42 @@ if(THREECPP_NODE_EXECUTABLE AND THREEJS_SOURCE_DIR)
             "-DOUTPUT_ROOT=${CMAKE_BINARY_DIR}/parity/materialx-core"
             -P "${CMAKE_CURRENT_SOURCE_DIR}/cmake/RunMaterialXCoreParity.cmake")
     set_tests_properties(threecpp.materialx-core-parity PROPERTIES TIMEOUT 600 LABELS "native;nodes;parity"
+        ENVIRONMENT "TEMP=D:/Temp/surui;TMP=D:/Temp/surui;THREEJS_SOURCE_DIR=${THREEJS_SOURCE_DIR}")
+endif()
+
+add_executable(ThreeJsFunctionOverloadingExtraParityProbe unit/utils/parity/FunctionOverloadingExtraParityProbe.cpp)
+target_link_libraries(ThreeJsFunctionOverloadingExtraParityProbe PRIVATE threecpp::threecpp)
+if(THREECPP_NODE_EXECUTABLE AND THREEJS_SOURCE_DIR)
+    add_test(NAME threecpp.function-overloading-node-source-trace-newtarget-heap-parity
+        COMMAND "${CMAKE_COMMAND}" "-DNODE=${THREECPP_NODE_EXECUTABLE}"
+            "-DPROBE=$<TARGET_FILE:ThreeJsFunctionOverloadingExtraParityProbe>"
+            "-DPARITY_DIR=${CMAKE_CURRENT_SOURCE_DIR}/unit/utils/parity"
+            "-DUPSTREAM=${THREEJS_SOURCE_DIR}"
+            "-DOUTPUT_ROOT=${CMAKE_BINARY_DIR}/parity/function-overloading-extra"
+            -P "${CMAKE_CURRENT_SOURCE_DIR}/cmake/RunFunctionOverloadingExtraParity.cmake")
+    set_tests_properties(threecpp.function-overloading-node-source-trace-newtarget-heap-parity PROPERTIES
+        TIMEOUT 1200 LABELS "native;nodes;parity;gc"
+        ENVIRONMENT "TEMP=D:/Temp/surui;TMP=D:/Temp/surui;THREEJS_SOURCE_DIR=${THREEJS_SOURCE_DIR}")
+endif()
+
+add_executable(ThreeJsBlendModesParityProbe unit/utils/parity/BlendModesParityProbe.cpp)
+target_link_libraries(ThreeJsBlendModesParityProbe PRIVATE threecpp::threecpp)
+if(MSVC)
+    target_compile_options(ThreeJsBlendModesParityProbe PRIVATE /fp:strict)
+endif()
+add_test(NAME threecpp.blend-modes-lifetime COMMAND ThreeJsBlendModesParityProbe --lifetime)
+add_test(NAME threecpp.blend-modes-heap-lifetime COMMAND ThreeJsBlendModesParityProbe --heap-lifetime)
+set_tests_properties(threecpp.blend-modes-lifetime threecpp.blend-modes-heap-lifetime
+    PROPERTIES LABELS "native;nodes;gc"
+    ENVIRONMENT "TEMP=D:/Temp/surui;TMP=D:/Temp/surui;THREEJS_SOURCE_DIR=${THREEJS_SOURCE_DIR}")
+if(THREECPP_NODE_EXECUTABLE AND THREEJS_SOURCE_DIR)
+    add_test(NAME threecpp.blend-modes-parity
+        COMMAND "${CMAKE_COMMAND}" "-DNODE=${THREECPP_NODE_EXECUTABLE}"
+            "-DPROBE=$<TARGET_FILE:ThreeJsBlendModesParityProbe>"
+            "-DPARITY_DIR=${CMAKE_CURRENT_SOURCE_DIR}/unit/utils/parity"
+            "-DUPSTREAM=${THREEJS_SOURCE_DIR}"
+            "-DOUTPUT_ROOT=${CMAKE_BINARY_DIR}/parity/blend-modes"
+            -P "${CMAKE_CURRENT_SOURCE_DIR}/cmake/RunBlendModesParity.cmake")
+    set_tests_properties(threecpp.blend-modes-parity PROPERTIES TIMEOUT 600 LABELS "native;nodes;parity"
         ENVIRONMENT "TEMP=D:/Temp/surui;TMP=D:/Temp/surui;THREEJS_SOURCE_DIR=${THREEJS_SOURCE_DIR}")
 endif()

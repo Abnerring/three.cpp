@@ -1,4 +1,4 @@
-#include "nodes/core/BlendModes.h"
+#include "nodes/display/BlendModes.h"
 
 #include "catch.hpp"
 

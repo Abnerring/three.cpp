@@ -20,3 +20,9 @@ class BlendModes {
     // the answer inverted. A black blend leaves the base alone and a white one gives white.
     static double screen(double base, double blend);
 };
+#pragma once
+#include "core/JSValue.h"
+#include <string>
+// Real lexical exports; mutable compatibility facade does not replace lexical bindings.
+JSValue nativeBlendModesModule();
+JSValue nativeBlendModesBinding(const std::string& name);

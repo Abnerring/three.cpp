@@ -241,7 +241,7 @@ target_sources(threecpp PRIVATE
     src/nodes/display/ColorSpaceNode.cpp
     src/nodes/display/ColorSpaceNodeRuntime.cpp
     src/nodes/code/ExpressionNode.cpp
-    src/nodes/core/BlendModes.cpp
+    src/nodes/display/BlendModes.cpp
     src/nodes/display/ToneMappingFunctions.cpp
     src/nodes/display/ToneMappingFunctionsRuntime.cpp
     src/nodes/display/ColorAdjustment.cpp

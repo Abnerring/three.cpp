@@ -1,0 +1,12 @@
+// Real executed host source positions, derived from unchanged oracle AST.
+#pragma once
+#include "core/JSSourceTrace.h"
+namespace BlendModesProbeSourceLocations {
+inline JSSourceTrace::Frame runFrame(){return {"run",{"file:///D:/Temp/surui/threecpp-native-alignment-20261102/blend-modes-candidate01/files/test/unit/utils/parity/blend-modes-oracle.mjs",18,1,3505,"dc88583e5b8c0a669dbfc5a5b28f674857a2e7a6c1f7a902aa401b46b3767b6f"},"","",false,false,false,{"file:///D:/Temp/surui/threecpp-native-alignment-20261102/blend-modes-candidate01/files/test/unit/utils/parity/blend-modes-oracle.mjs",18,1,3505,"dc88583e5b8c0a669dbfc5a5b28f674857a2e7a6c1f7a902aa401b46b3767b6f"}};}
+inline JSSourceTrace::Location applyPosition(){return {"file:///D:/Temp/surui/threecpp-native-alignment-20261102/blend-modes-candidate01/files/test/unit/utils/parity/blend-modes-oracle.mjs",25,145,4636,"dc88583e5b8c0a669dbfc5a5b28f674857a2e7a6c1f7a902aa401b46b3767b6f"};}
+inline JSSourceTrace::Location bodyPosition(){return {"file:///D:/Temp/surui/threecpp-native-alignment-20261102/blend-modes-candidate01/files/test/unit/utils/parity/blend-modes-oracle.mjs",25,82,4573,"dc88583e5b8c0a669dbfc5a5b28f674857a2e7a6c1f7a902aa401b46b3767b6f"};}
+inline JSSourceTrace::Frame moduleFrame(){return {"",{"file:///D:/Temp/surui/threecpp-native-alignment-20261102/blend-modes-candidate01/files/test/unit/utils/parity/blend-modes-oracle.mjs",33,147,6914,"dc88583e5b8c0a669dbfc5a5b28f674857a2e7a6c1f7a902aa401b46b3767b6f"},"","",false,false,false,{"file:///D:/Temp/surui/threecpp-native-alignment-20261102/blend-modes-candidate01/files/test/unit/utils/parity/blend-modes-oracle.mjs",1,1,0,"dc88583e5b8c0a669dbfc5a5b28f674857a2e7a6c1f7a902aa401b46b3767b6f"}};}
+inline JSSourceTrace::Location flowBuildStagePosition(){return {"file:///D:/Temp/surui/threecpp-native-alignment-20261102/blend-modes-candidate01/files/test/unit/utils/parity/blend-modes-oracle.mjs",27,167,4884,"dc88583e5b8c0a669dbfc5a5b28f674857a2e7a6c1f7a902aa401b46b3767b6f"};}
+inline JSSourceTrace::Location getNodeTypePosition(){return {"file:///D:/Temp/surui/threecpp-native-alignment-20261102/blend-modes-candidate01/files/test/unit/utils/parity/blend-modes-oracle.mjs",27,219,4936,"dc88583e5b8c0a669dbfc5a5b28f674857a2e7a6c1f7a902aa401b46b3767b6f"};}
+inline JSSourceTrace::Location flowStagesNodePosition(){return {"file:///D:/Temp/surui/threecpp-native-alignment-20261102/blend-modes-candidate01/files/test/unit/utils/parity/blend-modes-oracle.mjs",27,266,4983,"dc88583e5b8c0a669dbfc5a5b28f674857a2e7a6c1f7a902aa401b46b3767b6f"};}
+}

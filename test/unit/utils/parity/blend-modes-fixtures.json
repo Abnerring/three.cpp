@@ -1,0 +1,3766 @@
+[
+  {
+    "mode": "metadata"
+  },
+  {
+    "mode": "bindings"
+  },
+  {
+    "mode": "body",
+    "fn": "blendBurn",
+    "args": [
+      {
+        "node": "vec3",
+        "args": [
+          0.371,
+          0.241,
+          0.173
+        ]
+      },
+      {
+        "node": "vec3",
+        "args": [
+          0.21,
+          0.67,
+          0.43
+        ]
+      }
+    ]
+  },
+  {
+    "mode": "body",
+    "fn": "blendBurn",
+    "args": [
+      {
+        "node": "vec4",
+        "args": [
+          0.371,
+          0.241,
+          0.173,
+          0.87
+        ]
+      },
+      {
+        "node": "vec4",
+        "args": [
+          0.21,
+          0.67,
+          0.43,
+          0.19
+        ]
+      }
+    ]
+  },
+  {
+    "mode": "body",
+    "fn": "blendBurn",
+    "args": [
+      {
+        "node": "vec3",
+        "args": [
+          0.371,
+          0.241,
+          0.173
+        ]
+      },
+      {
+        "node": "vec3",
+        "args": [
+          0.21,
+          0.67,
+          0.43
+        ]
+      }
+    ]
+  },
+  {
+    "mode": "body",
+    "fn": "blendBurn",
+    "args": [
+      {
+        "node": "vec3",
+        "args": [
+          0.371,
+          0.241,
+          0.173
+        ]
+      }
+    ]
+  },
+  {
+    "mode": "body",
+    "fn": "blendBurn",
+    "args": []
+  },
+  {
+    "mode": "body",
+    "fn": "blendBurn",
+    "args": [
+      null,
+      {
+        "node": "vec3",
+        "args": [
+          0.21,
+          0.67,
+          0.43
+        ]
+      }
+    ]
+  },
+  {
+    "mode": "body",
+    "fn": "blendBurn",
+    "args": [
+      0,
+      {
+        "node": "vec3",
+        "args": [
+          0.21,
+          0.67,
+          0.43
+        ]
+      }
+    ]
+  },
+  {
+    "mode": "body",
+    "fn": "blendBurn",
+    "args": [
+      1,
+      2
+    ]
+  },
+  {
+    "mode": "body",
+    "fn": "blendBurn",
+    "args": [
+      {
+        "$symbol": "base"
+      },
+      {
+        "node": "vec3",
+        "args": [
+          0.21,
+          0.67,
+          0.43
+        ]
+      }
+    ]
+  },
+  {
+    "mode": "body",
+    "fn": "blendBurn",
+    "args": [
+      {
+        "node": "vec3",
+        "args": [
+          0.371,
+          0.241,
+          0.173
+        ]
+      },
+      {
+        "$undefined": true
+      }
+    ]
+  },
+  {
+    "mode": "body",
+    "fn": "blendBurn",
+    "args": [
+      {
+        "node": "vec3",
+        "args": [
+          0.371,
+          0.241,
+          0.173
+        ]
+      },
+      {
+        "$symbol": "blend"
+      }
+    ]
+  },
+  {
+    "mode": "body",
+    "fn": "blendBurn",
+    "args": [
+      {
+        "node": "vec3",
+        "args": [
+          0.371,
+          0.241,
+          0.173
+        ]
+      },
+      {
+        "node": "vec3",
+        "args": [
+          0.21,
+          0.67,
+          0.43
+        ]
+      },
+      {
+        "node": "float",
+        "args": [
+          17
+        ]
+      }
+    ]
+  },
+  {
+    "mode": "call",
+    "fn": "blendBurn",
+    "args": [
+      {
+        "node": "vec3",
+        "args": [
+          0.371,
+          0.241,
+          0.173
+        ]
+      },
+      {
+        "node": "vec3",
+        "args": [
+          0.21,
+          0.67,
+          0.43
+        ]
+      }
+    ]
+  },
+  {
+    "mode": "call",
+    "fn": "blendBurn",
+    "args": [
+      {
+        "node": "vec4",
+        "args": [
+          0.371,
+          0.241,
+          0.173,
+          0.87
+        ]
+      },
+      {
+        "node": "vec4",
+        "args": [
+          0.21,
+          0.67,
+          0.43,
+          0.19
+        ]
+      }
+    ]
+  },
+  {
+    "mode": "call",
+    "fn": "blendBurn",
+    "args": []
+  },
+  {
+    "mode": "call",
+    "fn": "blendBurn",
+    "args": [
+      {
+        "node": "vec3",
+        "args": [
+          0.371,
+          0.241,
+          0.173
+        ]
+      }
+    ]
+  },
+  {
+    "mode": "body",
+    "fn": "blendBurn",
+    "args": [
+      {
+        "node": "vec3",
+        "args": [
+          0.371,
+          0.241,
+          0.173
+        ]
+      },
+      {
+        "node": "vec3",
+        "args": [
+          0.21,
+          0.67,
+          0.43
+        ]
+      }
+    ],
+    "build": true
+  },
+  {
+    "mode": "call",
+    "fn": "blendBurn",
+    "args": [
+      {
+        "node": "vec3",
+        "args": [
+          0.371,
+          0.241,
+          0.173
+        ]
+      },
+      {
+        "node": "vec3",
+        "args": [
+          0.21,
+          0.67,
+          0.43
+        ]
+      }
+    ],
+    "build": true
+  },
+  {
+    "mode": "body",
+    "fn": "blendBurn",
+    "args": [
+      {
+        "node": "vec3",
+        "args": [
+          0.371,
+          0.241,
+          0.173
+        ]
+      },
+      {
+        "node": "vec3",
+        "args": [
+          0.21,
+          0.67,
+          0.43
+        ]
+      }
+    ],
+    "iterator": "empty"
+  },
+  {
+    "mode": "body",
+    "fn": "blendBurn",
+    "args": [
+      {
+        "node": "vec3",
+        "args": [
+          0.371,
+          0.241,
+          0.173
+        ]
+      },
+      {
+        "node": "vec3",
+        "args": [
+          0.21,
+          0.67,
+          0.43
+        ]
+      }
+    ],
+    "iterator": "nextThrow"
+  },
+  {
+    "mode": "body",
+    "fn": "blendBurn",
+    "args": [
+      {
+        "node": "vec3",
+        "args": [
+          0.371,
+          0.241,
+          0.173
+        ]
+      },
+      {
+        "node": "vec3",
+        "args": [
+          0.21,
+          0.67,
+          0.43
+        ]
+      }
+    ],
+    "iterator": "doneThrow"
+  },
+  {
+    "mode": "body",
+    "fn": "blendBurn",
+    "args": [
+      {
+        "node": "vec3",
+        "args": [
+          0.371,
+          0.241,
+          0.173
+        ]
+      },
+      {
+        "node": "vec3",
+        "args": [
+          0.21,
+          0.67,
+          0.43
+        ]
+      }
+    ],
+    "iterator": "valueThrow"
+  },
+  {
+    "mode": "body",
+    "fn": "blendBurn",
+    "args": [
+      {
+        "node": "vec3",
+        "args": [
+          0.371,
+          0.241,
+          0.173
+        ]
+      },
+      {
+        "node": "vec3",
+        "args": [
+          0.21,
+          0.67,
+          0.43
+        ]
+      }
+    ],
+    "iterator": "returnGetterThrow"
+  },
+  {
+    "mode": "body",
+    "fn": "blendBurn",
+    "args": [
+      {
+        "node": "vec3",
+        "args": [
+          0.371,
+          0.241,
+          0.173
+        ]
+      },
+      {
+        "node": "vec3",
+        "args": [
+          0.21,
+          0.67,
+          0.43
+        ]
+      }
+    ],
+    "iterator": "returnThrow"
+  },
+  {
+    "mode": "body",
+    "fn": "blendBurn",
+    "args": [
+      {
+        "node": "vec3",
+        "args": [
+          0.371,
+          0.241,
+          0.173
+        ]
+      },
+      {
+        "node": "vec3",
+        "args": [
+          0.21,
+          0.67,
+          0.43
+        ]
+      }
+    ],
+    "iterator": "returnPrimitive"
+  },
+  {
+    "mode": "body",
+    "fn": "blendBurn",
+    "args": [
+      {
+        "node": "vec3",
+        "args": [
+          0.371,
+          0.241,
+          0.173
+        ]
+      },
+      {
+        "node": "vec3",
+        "args": [
+          0.21,
+          0.67,
+          0.43
+        ]
+      }
+    ],
+    "iterator": "iteratorThrow"
+  },
+  {
+    "mode": "body",
+    "fn": "blendBurn",
+    "args": [
+      {
+        "node": "vec3",
+        "args": [
+          0.371,
+          0.241,
+          0.173
+        ]
+      },
+      {
+        "node": "vec3",
+        "args": [
+          0.21,
+          0.67,
+          0.43
+        ]
+      }
+    ],
+    "iterator": "primitiveIterator"
+  },
+  {
+    "mode": "body",
+    "fn": "blendBurn",
+    "args": [
+      {
+        "node": "vec3",
+        "args": [
+          0.371,
+          0.241,
+          0.173
+        ]
+      },
+      {
+        "node": "vec3",
+        "args": [
+          0.21,
+          0.67,
+          0.43
+        ]
+      }
+    ],
+    "iterator": "close"
+  },
+  {
+    "mode": "body",
+    "fn": "blendBurn",
+    "args": [
+      {
+        "node": "vec3",
+        "args": [
+          0.371,
+          0.241,
+          0.173
+        ]
+      },
+      {
+        "node": "vec3",
+        "args": [
+          0.21,
+          0.67,
+          0.43
+        ]
+      }
+    ],
+    "instrument": {
+      "argument": 0,
+      "key": "oneMinus",
+      "mode": "collect"
+    }
+  },
+  {
+    "mode": "body",
+    "fn": "blendBurn",
+    "args": [
+      {
+        "node": "vec3",
+        "args": [
+          0.371,
+          0.241,
+          0.173
+        ]
+      },
+      {
+        "node": "vec3",
+        "args": [
+          0.21,
+          0.67,
+          0.43
+        ]
+      }
+    ],
+    "instrument": {
+      "argument": 0,
+      "key": "oneMinus",
+      "mode": "getThrow"
+    }
+  },
+  {
+    "mode": "body",
+    "fn": "blendBurn",
+    "args": [
+      {
+        "node": "vec3",
+        "args": [
+          0.371,
+          0.241,
+          0.173
+        ]
+      },
+      {
+        "node": "vec3",
+        "args": [
+          0.21,
+          0.67,
+          0.43
+        ]
+      }
+    ],
+    "instrument": {
+      "argument": 0,
+      "key": "oneMinus",
+      "mode": "reenter"
+    }
+  },
+  {
+    "mode": "body",
+    "fn": "blendDodge",
+    "args": [
+      {
+        "node": "vec3",
+        "args": [
+          0.371,
+          0.241,
+          0.173
+        ]
+      },
+      {
+        "node": "vec3",
+        "args": [
+          0.21,
+          0.67,
+          0.43
+        ]
+      }
+    ]
+  },
+  {
+    "mode": "body",
+    "fn": "blendDodge",
+    "args": [
+      {
+        "node": "vec4",
+        "args": [
+          0.371,
+          0.241,
+          0.173,
+          0.87
+        ]
+      },
+      {
+        "node": "vec4",
+        "args": [
+          0.21,
+          0.67,
+          0.43,
+          0.19
+        ]
+      }
+    ]
+  },
+  {
+    "mode": "body",
+    "fn": "blendDodge",
+    "args": [
+      {
+        "node": "vec3",
+        "args": [
+          0.371,
+          0.241,
+          0.173
+        ]
+      },
+      {
+        "node": "vec3",
+        "args": [
+          0.21,
+          0.67,
+          0.43
+        ]
+      }
+    ]
+  },
+  {
+    "mode": "body",
+    "fn": "blendDodge",
+    "args": [
+      {
+        "node": "vec3",
+        "args": [
+          0.371,
+          0.241,
+          0.173
+        ]
+      }
+    ]
+  },
+  {
+    "mode": "body",
+    "fn": "blendDodge",
+    "args": []
+  },
+  {
+    "mode": "body",
+    "fn": "blendDodge",
+    "args": [
+      null,
+      {
+        "node": "vec3",
+        "args": [
+          0.21,
+          0.67,
+          0.43
+        ]
+      }
+    ]
+  },
+  {
+    "mode": "body",
+    "fn": "blendDodge",
+    "args": [
+      0,
+      {
+        "node": "vec3",
+        "args": [
+          0.21,
+          0.67,
+          0.43
+        ]
+      }
+    ]
+  },
+  {
+    "mode": "body",
+    "fn": "blendDodge",
+    "args": [
+      1,
+      2
+    ]
+  },
+  {
+    "mode": "body",
+    "fn": "blendDodge",
+    "args": [
+      {
+        "$symbol": "base"
+      },
+      {
+        "node": "vec3",
+        "args": [
+          0.21,
+          0.67,
+          0.43
+        ]
+      }
+    ]
+  },
+  {
+    "mode": "body",
+    "fn": "blendDodge",
+    "args": [
+      {
+        "node": "vec3",
+        "args": [
+          0.371,
+          0.241,
+          0.173
+        ]
+      },
+      {
+        "$undefined": true
+      }
+    ]
+  },
+  {
+    "mode": "body",
+    "fn": "blendDodge",
+    "args": [
+      {
+        "node": "vec3",
+        "args": [
+          0.371,
+          0.241,
+          0.173
+        ]
+      },
+      {
+        "$symbol": "blend"
+      }
+    ]
+  },
+  {
+    "mode": "body",
+    "fn": "blendDodge",
+    "args": [
+      {
+        "node": "vec3",
+        "args": [
+          0.371,
+          0.241,
+          0.173
+        ]
+      },
+      {
+        "node": "vec3",
+        "args": [
+          0.21,
+          0.67,
+          0.43
+        ]
+      },
+      {
+        "node": "float",
+        "args": [
+          17
+        ]
+      }
+    ]
+  },
+  {
+    "mode": "call",
+    "fn": "blendDodge",
+    "args": [
+      {
+        "node": "vec3",
+        "args": [
+          0.371,
+          0.241,
+          0.173
+        ]
+      },
+      {
+        "node": "vec3",
+        "args": [
+          0.21,
+          0.67,
+          0.43
+        ]
+      }
+    ]
+  },
+  {
+    "mode": "call",
+    "fn": "blendDodge",
+    "args": [
+      {
+        "node": "vec4",
+        "args": [
+          0.371,
+          0.241,
+          0.173,
+          0.87
+        ]
+      },
+      {
+        "node": "vec4",
+        "args": [
+          0.21,
+          0.67,
+          0.43,
+          0.19
+        ]
+      }
+    ]
+  },
+  {
+    "mode": "call",
+    "fn": "blendDodge",
+    "args": []
+  },
+  {
+    "mode": "call",
+    "fn": "blendDodge",
+    "args": [
+      {
+        "node": "vec3",
+        "args": [
+          0.371,
+          0.241,
+          0.173
+        ]
+      }
+    ]
+  },
+  {
+    "mode": "body",
+    "fn": "blendDodge",
+    "args": [
+      {
+        "node": "vec3",
+        "args": [
+          0.371,
+          0.241,
+          0.173
+        ]
+      },
+      {
+        "node": "vec3",
+        "args": [
+          0.21,
+          0.67,
+          0.43
+        ]
+      }
+    ],
+    "build": true
+  },
+  {
+    "mode": "call",
+    "fn": "blendDodge",
+    "args": [
+      {
+        "node": "vec3",
+        "args": [
+          0.371,
+          0.241,
+          0.173
+        ]
+      },
+      {
+        "node": "vec3",
+        "args": [
+          0.21,
+          0.67,
+          0.43
+        ]
+      }
+    ],
+    "build": true
+  },
+  {
+    "mode": "body",
+    "fn": "blendDodge",
+    "args": [
+      {
+        "node": "vec3",
+        "args": [
+          0.371,
+          0.241,
+          0.173
+        ]
+      },
+      {
+        "node": "vec3",
+        "args": [
+          0.21,
+          0.67,
+          0.43
+        ]
+      }
+    ],
+    "iterator": "empty"
+  },
+  {
+    "mode": "body",
+    "fn": "blendDodge",
+    "args": [
+      {
+        "node": "vec3",
+        "args": [
+          0.371,
+          0.241,
+          0.173
+        ]
+      },
+      {
+        "node": "vec3",
+        "args": [
+          0.21,
+          0.67,
+          0.43
+        ]
+      }
+    ],
+    "iterator": "nextThrow"
+  },
+  {
+    "mode": "body",
+    "fn": "blendDodge",
+    "args": [
+      {
+        "node": "vec3",
+        "args": [
+          0.371,
+          0.241,
+          0.173
+        ]
+      },
+      {
+        "node": "vec3",
+        "args": [
+          0.21,
+          0.67,
+          0.43
+        ]
+      }
+    ],
+    "iterator": "doneThrow"
+  },
+  {
+    "mode": "body",
+    "fn": "blendDodge",
+    "args": [
+      {
+        "node": "vec3",
+        "args": [
+          0.371,
+          0.241,
+          0.173
+        ]
+      },
+      {
+        "node": "vec3",
+        "args": [
+          0.21,
+          0.67,
+          0.43
+        ]
+      }
+    ],
+    "iterator": "valueThrow"
+  },
+  {
+    "mode": "body",
+    "fn": "blendDodge",
+    "args": [
+      {
+        "node": "vec3",
+        "args": [
+          0.371,
+          0.241,
+          0.173
+        ]
+      },
+      {
+        "node": "vec3",
+        "args": [
+          0.21,
+          0.67,
+          0.43
+        ]
+      }
+    ],
+    "iterator": "returnGetterThrow"
+  },
+  {
+    "mode": "body",
+    "fn": "blendDodge",
+    "args": [
+      {
+        "node": "vec3",
+        "args": [
+          0.371,
+          0.241,
+          0.173
+        ]
+      },
+      {
+        "node": "vec3",
+        "args": [
+          0.21,
+          0.67,
+          0.43
+        ]
+      }
+    ],
+    "iterator": "returnThrow"
+  },
+  {
+    "mode": "body",
+    "fn": "blendDodge",
+    "args": [
+      {
+        "node": "vec3",
+        "args": [
+          0.371,
+          0.241,
+          0.173
+        ]
+      },
+      {
+        "node": "vec3",
+        "args": [
+          0.21,
+          0.67,
+          0.43
+        ]
+      }
+    ],
+    "iterator": "returnPrimitive"
+  },
+  {
+    "mode": "body",
+    "fn": "blendDodge",
+    "args": [
+      {
+        "node": "vec3",
+        "args": [
+          0.371,
+          0.241,
+          0.173
+        ]
+      },
+      {
+        "node": "vec3",
+        "args": [
+          0.21,
+          0.67,
+          0.43
+        ]
+      }
+    ],
+    "iterator": "iteratorThrow"
+  },
+  {
+    "mode": "body",
+    "fn": "blendDodge",
+    "args": [
+      {
+        "node": "vec3",
+        "args": [
+          0.371,
+          0.241,
+          0.173
+        ]
+      },
+      {
+        "node": "vec3",
+        "args": [
+          0.21,
+          0.67,
+          0.43
+        ]
+      }
+    ],
+    "iterator": "primitiveIterator"
+  },
+  {
+    "mode": "body",
+    "fn": "blendDodge",
+    "args": [
+      {
+        "node": "vec3",
+        "args": [
+          0.371,
+          0.241,
+          0.173
+        ]
+      },
+      {
+        "node": "vec3",
+        "args": [
+          0.21,
+          0.67,
+          0.43
+        ]
+      }
+    ],
+    "iterator": "close"
+  },
+  {
+    "mode": "body",
+    "fn": "blendDodge",
+    "args": [
+      {
+        "node": "vec3",
+        "args": [
+          0.371,
+          0.241,
+          0.173
+        ]
+      },
+      {
+        "node": "vec3",
+        "args": [
+          0.21,
+          0.67,
+          0.43
+        ]
+      }
+    ],
+    "instrument": {
+      "argument": 0,
+      "key": "div",
+      "mode": "collect"
+    }
+  },
+  {
+    "mode": "body",
+    "fn": "blendDodge",
+    "args": [
+      {
+        "node": "vec3",
+        "args": [
+          0.371,
+          0.241,
+          0.173
+        ]
+      },
+      {
+        "node": "vec3",
+        "args": [
+          0.21,
+          0.67,
+          0.43
+        ]
+      }
+    ],
+    "instrument": {
+      "argument": 0,
+      "key": "div",
+      "mode": "getThrow"
+    }
+  },
+  {
+    "mode": "body",
+    "fn": "blendDodge",
+    "args": [
+      {
+        "node": "vec3",
+        "args": [
+          0.371,
+          0.241,
+          0.173
+        ]
+      },
+      {
+        "node": "vec3",
+        "args": [
+          0.21,
+          0.67,
+          0.43
+        ]
+      }
+    ],
+    "instrument": {
+      "argument": 0,
+      "key": "div",
+      "mode": "reenter"
+    }
+  },
+  {
+    "mode": "body",
+    "fn": "blendDodge",
+    "args": [
+      {
+        "node": "vec3",
+        "args": [
+          0.371,
+          0.241,
+          0.173
+        ]
+      },
+      {
+        "node": "vec3",
+        "args": [
+          0.21,
+          0.67,
+          0.43
+        ]
+      }
+    ],
+    "instrument": {
+      "argument": 1,
+      "key": "oneMinus",
+      "mode": "collect"
+    }
+  },
+  {
+    "mode": "body",
+    "fn": "blendDodge",
+    "args": [
+      {
+        "node": "vec3",
+        "args": [
+          0.371,
+          0.241,
+          0.173
+        ]
+      },
+      {
+        "node": "vec3",
+        "args": [
+          0.21,
+          0.67,
+          0.43
+        ]
+      }
+    ],
+    "instrument": {
+      "argument": 1,
+      "key": "oneMinus",
+      "mode": "getThrow"
+    }
+  },
+  {
+    "mode": "body",
+    "fn": "blendDodge",
+    "args": [
+      {
+        "node": "vec3",
+        "args": [
+          0.371,
+          0.241,
+          0.173
+        ]
+      },
+      {
+        "node": "vec3",
+        "args": [
+          0.21,
+          0.67,
+          0.43
+        ]
+      }
+    ],
+    "instrument": {
+      "argument": 1,
+      "key": "oneMinus",
+      "mode": "reenter"
+    }
+  },
+  {
+    "mode": "body",
+    "fn": "blendScreen",
+    "args": [
+      {
+        "node": "vec3",
+        "args": [
+          0.371,
+          0.241,
+          0.173
+        ]
+      },
+      {
+        "node": "vec3",
+        "args": [
+          0.21,
+          0.67,
+          0.43
+        ]
+      }
+    ]
+  },
+  {
+    "mode": "body",
+    "fn": "blendScreen",
+    "args": [
+      {
+        "node": "vec4",
+        "args": [
+          0.371,
+          0.241,
+          0.173,
+          0.87
+        ]
+      },
+      {
+        "node": "vec4",
+        "args": [
+          0.21,
+          0.67,
+          0.43,
+          0.19
+        ]
+      }
+    ]
+  },
+  {
+    "mode": "body",
+    "fn": "blendScreen",
+    "args": [
+      {
+        "node": "vec3",
+        "args": [
+          0.371,
+          0.241,
+          0.173
+        ]
+      },
+      {
+        "node": "vec3",
+        "args": [
+          0.21,
+          0.67,
+          0.43
+        ]
+      }
+    ]
+  },
+  {
+    "mode": "body",
+    "fn": "blendScreen",
+    "args": [
+      {
+        "node": "vec3",
+        "args": [
+          0.371,
+          0.241,
+          0.173
+        ]
+      }
+    ]
+  },
+  {
+    "mode": "body",
+    "fn": "blendScreen",
+    "args": []
+  },
+  {
+    "mode": "body",
+    "fn": "blendScreen",
+    "args": [
+      null,
+      {
+        "node": "vec3",
+        "args": [
+          0.21,
+          0.67,
+          0.43
+        ]
+      }
+    ]
+  },
+  {
+    "mode": "body",
+    "fn": "blendScreen",
+    "args": [
+      0,
+      {
+        "node": "vec3",
+        "args": [
+          0.21,
+          0.67,
+          0.43
+        ]
+      }
+    ]
+  },
+  {
+    "mode": "body",
+    "fn": "blendScreen",
+    "args": [
+      1,
+      2
+    ]
+  },
+  {
+    "mode": "body",
+    "fn": "blendScreen",
+    "args": [
+      {
+        "$symbol": "base"
+      },
+      {
+        "node": "vec3",
+        "args": [
+          0.21,
+          0.67,
+          0.43
+        ]
+      }
+    ]
+  },
+  {
+    "mode": "body",
+    "fn": "blendScreen",
+    "args": [
+      {
+        "node": "vec3",
+        "args": [
+          0.371,
+          0.241,
+          0.173
+        ]
+      },
+      {
+        "$undefined": true
+      }
+    ]
+  },
+  {
+    "mode": "body",
+    "fn": "blendScreen",
+    "args": [
+      {
+        "node": "vec3",
+        "args": [
+          0.371,
+          0.241,
+          0.173
+        ]
+      },
+      {
+        "$symbol": "blend"
+      }
+    ]
+  },
+  {
+    "mode": "body",
+    "fn": "blendScreen",
+    "args": [
+      {
+        "node": "vec3",
+        "args": [
+          0.371,
+          0.241,
+          0.173
+        ]
+      },
+      {
+        "node": "vec3",
+        "args": [
+          0.21,
+          0.67,
+          0.43
+        ]
+      },
+      {
+        "node": "float",
+        "args": [
+          17
+        ]
+      }
+    ]
+  },
+  {
+    "mode": "call",
+    "fn": "blendScreen",
+    "args": [
+      {
+        "node": "vec3",
+        "args": [
+          0.371,
+          0.241,
+          0.173
+        ]
+      },
+      {
+        "node": "vec3",
+        "args": [
+          0.21,
+          0.67,
+          0.43
+        ]
+      }
+    ]
+  },
+  {
+    "mode": "call",
+    "fn": "blendScreen",
+    "args": [
+      {
+        "node": "vec4",
+        "args": [
+          0.371,
+          0.241,
+          0.173,
+          0.87
+        ]
+      },
+      {
+        "node": "vec4",
+        "args": [
+          0.21,
+          0.67,
+          0.43,
+          0.19
+        ]
+      }
+    ]
+  },
+  {
+    "mode": "call",
+    "fn": "blendScreen",
+    "args": []
+  },
+  {
+    "mode": "call",
+    "fn": "blendScreen",
+    "args": [
+      {
+        "node": "vec3",
+        "args": [
+          0.371,
+          0.241,
+          0.173
+        ]
+      }
+    ]
+  },
+  {
+    "mode": "body",
+    "fn": "blendScreen",
+    "args": [
+      {
+        "node": "vec3",
+        "args": [
+          0.371,
+          0.241,
+          0.173
+        ]
+      },
+      {
+        "node": "vec3",
+        "args": [
+          0.21,
+          0.67,
+          0.43
+        ]
+      }
+    ],
+    "build": true
+  },
+  {
+    "mode": "call",
+    "fn": "blendScreen",
+    "args": [
+      {
+        "node": "vec3",
+        "args": [
+          0.371,
+          0.241,
+          0.173
+        ]
+      },
+      {
+        "node": "vec3",
+        "args": [
+          0.21,
+          0.67,
+          0.43
+        ]
+      }
+    ],
+    "build": true
+  },
+  {
+    "mode": "body",
+    "fn": "blendScreen",
+    "args": [
+      {
+        "node": "vec3",
+        "args": [
+          0.371,
+          0.241,
+          0.173
+        ]
+      },
+      {
+        "node": "vec3",
+        "args": [
+          0.21,
+          0.67,
+          0.43
+        ]
+      }
+    ],
+    "iterator": "empty"
+  },
+  {
+    "mode": "body",
+    "fn": "blendScreen",
+    "args": [
+      {
+        "node": "vec3",
+        "args": [
+          0.371,
+          0.241,
+          0.173
+        ]
+      },
+      {
+        "node": "vec3",
+        "args": [
+          0.21,
+          0.67,
+          0.43
+        ]
+      }
+    ],
+    "iterator": "nextThrow"
+  },
+  {
+    "mode": "body",
+    "fn": "blendScreen",
+    "args": [
+      {
+        "node": "vec3",
+        "args": [
+          0.371,
+          0.241,
+          0.173
+        ]
+      },
+      {
+        "node": "vec3",
+        "args": [
+          0.21,
+          0.67,
+          0.43
+        ]
+      }
+    ],
+    "iterator": "doneThrow"
+  },
+  {
+    "mode": "body",
+    "fn": "blendScreen",
+    "args": [
+      {
+        "node": "vec3",
+        "args": [
+          0.371,
+          0.241,
+          0.173
+        ]
+      },
+      {
+        "node": "vec3",
+        "args": [
+          0.21,
+          0.67,
+          0.43
+        ]
+      }
+    ],
+    "iterator": "valueThrow"
+  },
+  {
+    "mode": "body",
+    "fn": "blendScreen",
+    "args": [
+      {
+        "node": "vec3",
+        "args": [
+          0.371,
+          0.241,
+          0.173
+        ]
+      },
+      {
+        "node": "vec3",
+        "args": [
+          0.21,
+          0.67,
+          0.43
+        ]
+      }
+    ],
+    "iterator": "returnGetterThrow"
+  },
+  {
+    "mode": "body",
+    "fn": "blendScreen",
+    "args": [
+      {
+        "node": "vec3",
+        "args": [
+          0.371,
+          0.241,
+          0.173
+        ]
+      },
+      {
+        "node": "vec3",
+        "args": [
+          0.21,
+          0.67,
+          0.43
+        ]
+      }
+    ],
+    "iterator": "returnThrow"
+  },
+  {
+    "mode": "body",
+    "fn": "blendScreen",
+    "args": [
+      {
+        "node": "vec3",
+        "args": [
+          0.371,
+          0.241,
+          0.173
+        ]
+      },
+      {
+        "node": "vec3",
+        "args": [
+          0.21,
+          0.67,
+          0.43
+        ]
+      }
+    ],
+    "iterator": "returnPrimitive"
+  },
+  {
+    "mode": "body",
+    "fn": "blendScreen",
+    "args": [
+      {
+        "node": "vec3",
+        "args": [
+          0.371,
+          0.241,
+          0.173
+        ]
+      },
+      {
+        "node": "vec3",
+        "args": [
+          0.21,
+          0.67,
+          0.43
+        ]
+      }
+    ],
+    "iterator": "iteratorThrow"
+  },
+  {
+    "mode": "body",
+    "fn": "blendScreen",
+    "args": [
+      {
+        "node": "vec3",
+        "args": [
+          0.371,
+          0.241,
+          0.173
+        ]
+      },
+      {
+        "node": "vec3",
+        "args": [
+          0.21,
+          0.67,
+          0.43
+        ]
+      }
+    ],
+    "iterator": "primitiveIterator"
+  },
+  {
+    "mode": "body",
+    "fn": "blendScreen",
+    "args": [
+      {
+        "node": "vec3",
+        "args": [
+          0.371,
+          0.241,
+          0.173
+        ]
+      },
+      {
+        "node": "vec3",
+        "args": [
+          0.21,
+          0.67,
+          0.43
+        ]
+      }
+    ],
+    "iterator": "close"
+  },
+  {
+    "mode": "body",
+    "fn": "blendScreen",
+    "args": [
+      {
+        "node": "vec3",
+        "args": [
+          0.371,
+          0.241,
+          0.173
+        ]
+      },
+      {
+        "node": "vec3",
+        "args": [
+          0.21,
+          0.67,
+          0.43
+        ]
+      }
+    ],
+    "instrument": {
+      "argument": 0,
+      "key": "oneMinus",
+      "mode": "collect"
+    }
+  },
+  {
+    "mode": "body",
+    "fn": "blendScreen",
+    "args": [
+      {
+        "node": "vec3",
+        "args": [
+          0.371,
+          0.241,
+          0.173
+        ]
+      },
+      {
+        "node": "vec3",
+        "args": [
+          0.21,
+          0.67,
+          0.43
+        ]
+      }
+    ],
+    "instrument": {
+      "argument": 0,
+      "key": "oneMinus",
+      "mode": "getThrow"
+    }
+  },
+  {
+    "mode": "body",
+    "fn": "blendScreen",
+    "args": [
+      {
+        "node": "vec3",
+        "args": [
+          0.371,
+          0.241,
+          0.173
+        ]
+      },
+      {
+        "node": "vec3",
+        "args": [
+          0.21,
+          0.67,
+          0.43
+        ]
+      }
+    ],
+    "instrument": {
+      "argument": 0,
+      "key": "oneMinus",
+      "mode": "reenter"
+    }
+  },
+  {
+    "mode": "body",
+    "fn": "blendScreen",
+    "args": [
+      {
+        "node": "vec3",
+        "args": [
+          0.371,
+          0.241,
+          0.173
+        ]
+      },
+      {
+        "node": "vec3",
+        "args": [
+          0.21,
+          0.67,
+          0.43
+        ]
+      }
+    ],
+    "instrument": {
+      "argument": 1,
+      "key": "oneMinus",
+      "mode": "collect"
+    }
+  },
+  {
+    "mode": "body",
+    "fn": "blendScreen",
+    "args": [
+      {
+        "node": "vec3",
+        "args": [
+          0.371,
+          0.241,
+          0.173
+        ]
+      },
+      {
+        "node": "vec3",
+        "args": [
+          0.21,
+          0.67,
+          0.43
+        ]
+      }
+    ],
+    "instrument": {
+      "argument": 1,
+      "key": "oneMinus",
+      "mode": "getThrow"
+    }
+  },
+  {
+    "mode": "body",
+    "fn": "blendScreen",
+    "args": [
+      {
+        "node": "vec3",
+        "args": [
+          0.371,
+          0.241,
+          0.173
+        ]
+      },
+      {
+        "node": "vec3",
+        "args": [
+          0.21,
+          0.67,
+          0.43
+        ]
+      }
+    ],
+    "instrument": {
+      "argument": 1,
+      "key": "oneMinus",
+      "mode": "reenter"
+    }
+  },
+  {
+    "mode": "body",
+    "fn": "blendOverlay",
+    "args": [
+      {
+        "node": "vec3",
+        "args": [
+          0.371,
+          0.241,
+          0.173
+        ]
+      },
+      {
+        "node": "vec3",
+        "args": [
+          0.21,
+          0.67,
+          0.43
+        ]
+      }
+    ]
+  },
+  {
+    "mode": "body",
+    "fn": "blendOverlay",
+    "args": [
+      {
+        "node": "vec4",
+        "args": [
+          0.371,
+          0.241,
+          0.173,
+          0.87
+        ]
+      },
+      {
+        "node": "vec4",
+        "args": [
+          0.21,
+          0.67,
+          0.43,
+          0.19
+        ]
+      }
+    ]
+  },
+  {
+    "mode": "body",
+    "fn": "blendOverlay",
+    "args": [
+      {
+        "node": "vec3",
+        "args": [
+          0.371,
+          0.241,
+          0.173
+        ]
+      },
+      {
+        "node": "vec3",
+        "args": [
+          0.21,
+          0.67,
+          0.43
+        ]
+      }
+    ]
+  },
+  {
+    "mode": "body",
+    "fn": "blendOverlay",
+    "args": [
+      {
+        "node": "vec3",
+        "args": [
+          0.371,
+          0.241,
+          0.173
+        ]
+      }
+    ]
+  },
+  {
+    "mode": "body",
+    "fn": "blendOverlay",
+    "args": []
+  },
+  {
+    "mode": "body",
+    "fn": "blendOverlay",
+    "args": [
+      null,
+      {
+        "node": "vec3",
+        "args": [
+          0.21,
+          0.67,
+          0.43
+        ]
+      }
+    ]
+  },
+  {
+    "mode": "body",
+    "fn": "blendOverlay",
+    "args": [
+      0,
+      {
+        "node": "vec3",
+        "args": [
+          0.21,
+          0.67,
+          0.43
+        ]
+      }
+    ]
+  },
+  {
+    "mode": "body",
+    "fn": "blendOverlay",
+    "args": [
+      1,
+      2
+    ]
+  },
+  {
+    "mode": "body",
+    "fn": "blendOverlay",
+    "args": [
+      {
+        "$symbol": "base"
+      },
+      {
+        "node": "vec3",
+        "args": [
+          0.21,
+          0.67,
+          0.43
+        ]
+      }
+    ]
+  },
+  {
+    "mode": "body",
+    "fn": "blendOverlay",
+    "args": [
+      {
+        "node": "vec3",
+        "args": [
+          0.371,
+          0.241,
+          0.173
+        ]
+      },
+      {
+        "$undefined": true
+      }
+    ]
+  },
+  {
+    "mode": "body",
+    "fn": "blendOverlay",
+    "args": [
+      {
+        "node": "vec3",
+        "args": [
+          0.371,
+          0.241,
+          0.173
+        ]
+      },
+      {
+        "$symbol": "blend"
+      }
+    ]
+  },
+  {
+    "mode": "body",
+    "fn": "blendOverlay",
+    "args": [
+      {
+        "node": "vec3",
+        "args": [
+          0.371,
+          0.241,
+          0.173
+        ]
+      },
+      {
+        "node": "vec3",
+        "args": [
+          0.21,
+          0.67,
+          0.43
+        ]
+      },
+      {
+        "node": "float",
+        "args": [
+          17
+        ]
+      }
+    ]
+  },
+  {
+    "mode": "call",
+    "fn": "blendOverlay",
+    "args": [
+      {
+        "node": "vec3",
+        "args": [
+          0.371,
+          0.241,
+          0.173
+        ]
+      },
+      {
+        "node": "vec3",
+        "args": [
+          0.21,
+          0.67,
+          0.43
+        ]
+      }
+    ]
+  },
+  {
+    "mode": "call",
+    "fn": "blendOverlay",
+    "args": [
+      {
+        "node": "vec4",
+        "args": [
+          0.371,
+          0.241,
+          0.173,
+          0.87
+        ]
+      },
+      {
+        "node": "vec4",
+        "args": [
+          0.21,
+          0.67,
+          0.43,
+          0.19
+        ]
+      }
+    ]
+  },
+  {
+    "mode": "call",
+    "fn": "blendOverlay",
+    "args": []
+  },
+  {
+    "mode": "call",
+    "fn": "blendOverlay",
+    "args": [
+      {
+        "node": "vec3",
+        "args": [
+          0.371,
+          0.241,
+          0.173
+        ]
+      }
+    ]
+  },
+  {
+    "mode": "body",
+    "fn": "blendOverlay",
+    "args": [
+      {
+        "node": "vec3",
+        "args": [
+          0.371,
+          0.241,
+          0.173
+        ]
+      },
+      {
+        "node": "vec3",
+        "args": [
+          0.21,
+          0.67,
+          0.43
+        ]
+      }
+    ],
+    "build": true
+  },
+  {
+    "mode": "call",
+    "fn": "blendOverlay",
+    "args": [
+      {
+        "node": "vec3",
+        "args": [
+          0.371,
+          0.241,
+          0.173
+        ]
+      },
+      {
+        "node": "vec3",
+        "args": [
+          0.21,
+          0.67,
+          0.43
+        ]
+      }
+    ],
+    "build": true
+  },
+  {
+    "mode": "body",
+    "fn": "blendOverlay",
+    "args": [
+      {
+        "node": "vec3",
+        "args": [
+          0.371,
+          0.241,
+          0.173
+        ]
+      },
+      {
+        "node": "vec3",
+        "args": [
+          0.21,
+          0.67,
+          0.43
+        ]
+      }
+    ],
+    "iterator": "empty"
+  },
+  {
+    "mode": "body",
+    "fn": "blendOverlay",
+    "args": [
+      {
+        "node": "vec3",
+        "args": [
+          0.371,
+          0.241,
+          0.173
+        ]
+      },
+      {
+        "node": "vec3",
+        "args": [
+          0.21,
+          0.67,
+          0.43
+        ]
+      }
+    ],
+    "iterator": "nextThrow"
+  },
+  {
+    "mode": "body",
+    "fn": "blendOverlay",
+    "args": [
+      {
+        "node": "vec3",
+        "args": [
+          0.371,
+          0.241,
+          0.173
+        ]
+      },
+      {
+        "node": "vec3",
+        "args": [
+          0.21,
+          0.67,
+          0.43
+        ]
+      }
+    ],
+    "iterator": "doneThrow"
+  },
+  {
+    "mode": "body",
+    "fn": "blendOverlay",
+    "args": [
+      {
+        "node": "vec3",
+        "args": [
+          0.371,
+          0.241,
+          0.173
+        ]
+      },
+      {
+        "node": "vec3",
+        "args": [
+          0.21,
+          0.67,
+          0.43
+        ]
+      }
+    ],
+    "iterator": "valueThrow"
+  },
+  {
+    "mode": "body",
+    "fn": "blendOverlay",
+    "args": [
+      {
+        "node": "vec3",
+        "args": [
+          0.371,
+          0.241,
+          0.173
+        ]
+      },
+      {
+        "node": "vec3",
+        "args": [
+          0.21,
+          0.67,
+          0.43
+        ]
+      }
+    ],
+    "iterator": "returnGetterThrow"
+  },
+  {
+    "mode": "body",
+    "fn": "blendOverlay",
+    "args": [
+      {
+        "node": "vec3",
+        "args": [
+          0.371,
+          0.241,
+          0.173
+        ]
+      },
+      {
+        "node": "vec3",
+        "args": [
+          0.21,
+          0.67,
+          0.43
+        ]
+      }
+    ],
+    "iterator": "returnThrow"
+  },
+  {
+    "mode": "body",
+    "fn": "blendOverlay",
+    "args": [
+      {
+        "node": "vec3",
+        "args": [
+          0.371,
+          0.241,
+          0.173
+        ]
+      },
+      {
+        "node": "vec3",
+        "args": [
+          0.21,
+          0.67,
+          0.43
+        ]
+      }
+    ],
+    "iterator": "returnPrimitive"
+  },
+  {
+    "mode": "body",
+    "fn": "blendOverlay",
+    "args": [
+      {
+        "node": "vec3",
+        "args": [
+          0.371,
+          0.241,
+          0.173
+        ]
+      },
+      {
+        "node": "vec3",
+        "args": [
+          0.21,
+          0.67,
+          0.43
+        ]
+      }
+    ],
+    "iterator": "iteratorThrow"
+  },
+  {
+    "mode": "body",
+    "fn": "blendOverlay",
+    "args": [
+      {
+        "node": "vec3",
+        "args": [
+          0.371,
+          0.241,
+          0.173
+        ]
+      },
+      {
+        "node": "vec3",
+        "args": [
+          0.21,
+          0.67,
+          0.43
+        ]
+      }
+    ],
+    "iterator": "primitiveIterator"
+  },
+  {
+    "mode": "body",
+    "fn": "blendOverlay",
+    "args": [
+      {
+        "node": "vec3",
+        "args": [
+          0.371,
+          0.241,
+          0.173
+        ]
+      },
+      {
+        "node": "vec3",
+        "args": [
+          0.21,
+          0.67,
+          0.43
+        ]
+      }
+    ],
+    "iterator": "close"
+  },
+  {
+    "mode": "body",
+    "fn": "blendOverlay",
+    "args": [
+      {
+        "node": "vec3",
+        "args": [
+          0.371,
+          0.241,
+          0.173
+        ]
+      },
+      {
+        "node": "vec3",
+        "args": [
+          0.21,
+          0.67,
+          0.43
+        ]
+      }
+    ],
+    "instrument": {
+      "argument": 0,
+      "key": "mul",
+      "mode": "collect"
+    }
+  },
+  {
+    "mode": "body",
+    "fn": "blendOverlay",
+    "args": [
+      {
+        "node": "vec3",
+        "args": [
+          0.371,
+          0.241,
+          0.173
+        ]
+      },
+      {
+        "node": "vec3",
+        "args": [
+          0.21,
+          0.67,
+          0.43
+        ]
+      }
+    ],
+    "instrument": {
+      "argument": 0,
+      "key": "mul",
+      "mode": "getThrow"
+    }
+  },
+  {
+    "mode": "body",
+    "fn": "blendOverlay",
+    "args": [
+      {
+        "node": "vec3",
+        "args": [
+          0.371,
+          0.241,
+          0.173
+        ]
+      },
+      {
+        "node": "vec3",
+        "args": [
+          0.21,
+          0.67,
+          0.43
+        ]
+      }
+    ],
+    "instrument": {
+      "argument": 0,
+      "key": "mul",
+      "mode": "reenter"
+    }
+  },
+  {
+    "mode": "body",
+    "fn": "blendOverlay",
+    "args": [
+      {
+        "node": "vec3",
+        "args": [
+          0.371,
+          0.241,
+          0.173
+        ]
+      },
+      {
+        "node": "vec3",
+        "args": [
+          0.21,
+          0.67,
+          0.43
+        ]
+      }
+    ],
+    "instrument": {
+      "argument": 0,
+      "key": "oneMinus",
+      "mode": "collect"
+    }
+  },
+  {
+    "mode": "body",
+    "fn": "blendOverlay",
+    "args": [
+      {
+        "node": "vec3",
+        "args": [
+          0.371,
+          0.241,
+          0.173
+        ]
+      },
+      {
+        "node": "vec3",
+        "args": [
+          0.21,
+          0.67,
+          0.43
+        ]
+      }
+    ],
+    "instrument": {
+      "argument": 0,
+      "key": "oneMinus",
+      "mode": "getThrow"
+    }
+  },
+  {
+    "mode": "body",
+    "fn": "blendOverlay",
+    "args": [
+      {
+        "node": "vec3",
+        "args": [
+          0.371,
+          0.241,
+          0.173
+        ]
+      },
+      {
+        "node": "vec3",
+        "args": [
+          0.21,
+          0.67,
+          0.43
+        ]
+      }
+    ],
+    "instrument": {
+      "argument": 0,
+      "key": "oneMinus",
+      "mode": "reenter"
+    }
+  },
+  {
+    "mode": "body",
+    "fn": "blendOverlay",
+    "args": [
+      {
+        "node": "vec3",
+        "args": [
+          0.371,
+          0.241,
+          0.173
+        ]
+      },
+      {
+        "node": "vec3",
+        "args": [
+          0.21,
+          0.67,
+          0.43
+        ]
+      }
+    ],
+    "instrument": {
+      "argument": 1,
+      "key": "oneMinus",
+      "mode": "collect"
+    }
+  },
+  {
+    "mode": "body",
+    "fn": "blendOverlay",
+    "args": [
+      {
+        "node": "vec3",
+        "args": [
+          0.371,
+          0.241,
+          0.173
+        ]
+      },
+      {
+        "node": "vec3",
+        "args": [
+          0.21,
+          0.67,
+          0.43
+        ]
+      }
+    ],
+    "instrument": {
+      "argument": 1,
+      "key": "oneMinus",
+      "mode": "getThrow"
+    }
+  },
+  {
+    "mode": "body",
+    "fn": "blendOverlay",
+    "args": [
+      {
+        "node": "vec3",
+        "args": [
+          0.371,
+          0.241,
+          0.173
+        ]
+      },
+      {
+        "node": "vec3",
+        "args": [
+          0.21,
+          0.67,
+          0.43
+        ]
+      }
+    ],
+    "instrument": {
+      "argument": 1,
+      "key": "oneMinus",
+      "mode": "reenter"
+    }
+  },
+  {
+    "mode": "body",
+    "fn": "blendColor",
+    "args": [
+      {
+        "node": "vec4",
+        "args": [
+          0.371,
+          0.241,
+          0.173,
+          0.87
+        ]
+      },
+      {
+        "node": "vec4",
+        "args": [
+          0.21,
+          0.67,
+          0.43,
+          0.19
+        ]
+      }
+    ]
+  },
+  {
+    "mode": "body",
+    "fn": "blendColor",
+    "args": [
+      {
+        "node": "vec4",
+        "args": [
+          0.371,
+          0.241,
+          0.173,
+          0.87
+        ]
+      },
+      {
+        "node": "vec4",
+        "args": [
+          0.21,
+          0.67,
+          0.43,
+          0.19
+        ]
+      }
+    ]
+  },
+  {
+    "mode": "body",
+    "fn": "blendColor",
+    "args": [
+      {
+        "node": "vec3",
+        "args": [
+          0.371,
+          0.241,
+          0.173
+        ]
+      },
+      {
+        "node": "vec3",
+        "args": [
+          0.21,
+          0.67,
+          0.43
+        ]
+      }
+    ]
+  },
+  {
+    "mode": "body",
+    "fn": "blendColor",
+    "args": [
+      {
+        "node": "vec4",
+        "args": [
+          0.371,
+          0.241,
+          0.173,
+          0.87
+        ]
+      }
+    ]
+  },
+  {
+    "mode": "body",
+    "fn": "blendColor",
+    "args": []
+  },
+  {
+    "mode": "body",
+    "fn": "blendColor",
+    "args": [
+      null,
+      {
+        "node": "vec4",
+        "args": [
+          0.21,
+          0.67,
+          0.43,
+          0.19
+        ]
+      }
+    ]
+  },
+  {
+    "mode": "body",
+    "fn": "blendColor",
+    "args": [
+      0,
+      {
+        "node": "vec4",
+        "args": [
+          0.21,
+          0.67,
+          0.43,
+          0.19
+        ]
+      }
+    ]
+  },
+  {
+    "mode": "body",
+    "fn": "blendColor",
+    "args": [
+      1,
+      2
+    ]
+  },
+  {
+    "mode": "body",
+    "fn": "blendColor",
+    "args": [
+      {
+        "$symbol": "base"
+      },
+      {
+        "node": "vec4",
+        "args": [
+          0.21,
+          0.67,
+          0.43,
+          0.19
+        ]
+      }
+    ]
+  },
+  {
+    "mode": "body",
+    "fn": "blendColor",
+    "args": [
+      {
+        "node": "vec4",
+        "args": [
+          0.371,
+          0.241,
+          0.173,
+          0.87
+        ]
+      },
+      {
+        "$undefined": true
+      }
+    ]
+  },
+  {
+    "mode": "body",
+    "fn": "blendColor",
+    "args": [
+      {
+        "node": "vec4",
+        "args": [
+          0.371,
+          0.241,
+          0.173,
+          0.87
+        ]
+      },
+      {
+        "$symbol": "blend"
+      }
+    ]
+  },
+  {
+    "mode": "body",
+    "fn": "blendColor",
+    "args": [
+      {
+        "node": "vec4",
+        "args": [
+          0.371,
+          0.241,
+          0.173,
+          0.87
+        ]
+      },
+      {
+        "node": "vec4",
+        "args": [
+          0.21,
+          0.67,
+          0.43,
+          0.19
+        ]
+      },
+      {
+        "node": "float",
+        "args": [
+          17
+        ]
+      }
+    ]
+  },
+  {
+    "mode": "call",
+    "fn": "blendColor",
+    "args": [
+      {
+        "node": "vec4",
+        "args": [
+          0.371,
+          0.241,
+          0.173,
+          0.87
+        ]
+      },
+      {
+        "node": "vec4",
+        "args": [
+          0.21,
+          0.67,
+          0.43,
+          0.19
+        ]
+      }
+    ]
+  },
+  {
+    "mode": "call",
+    "fn": "blendColor",
+    "args": [
+      {
+        "node": "vec4",
+        "args": [
+          0.371,
+          0.241,
+          0.173,
+          0.87
+        ]
+      },
+      {
+        "node": "vec4",
+        "args": [
+          0.21,
+          0.67,
+          0.43,
+          0.19
+        ]
+      }
+    ]
+  },
+  {
+    "mode": "call",
+    "fn": "blendColor",
+    "args": []
+  },
+  {
+    "mode": "call",
+    "fn": "blendColor",
+    "args": [
+      {
+        "node": "vec4",
+        "args": [
+          0.371,
+          0.241,
+          0.173,
+          0.87
+        ]
+      }
+    ]
+  },
+  {
+    "mode": "body",
+    "fn": "blendColor",
+    "args": [
+      {
+        "node": "vec4",
+        "args": [
+          0.371,
+          0.241,
+          0.173,
+          0.87
+        ]
+      },
+      {
+        "node": "vec4",
+        "args": [
+          0.21,
+          0.67,
+          0.43,
+          0.19
+        ]
+      }
+    ],
+    "build": true
+  },
+  {
+    "mode": "call",
+    "fn": "blendColor",
+    "args": [
+      {
+        "node": "vec4",
+        "args": [
+          0.371,
+          0.241,
+          0.173,
+          0.87
+        ]
+      },
+      {
+        "node": "vec4",
+        "args": [
+          0.21,
+          0.67,
+          0.43,
+          0.19
+        ]
+      }
+    ],
+    "build": true
+  },
+  {
+    "mode": "body",
+    "fn": "blendColor",
+    "args": [
+      {
+        "node": "vec4",
+        "args": [
+          0.371,
+          0.241,
+          0.173,
+          0.87
+        ]
+      },
+      {
+        "node": "vec4",
+        "args": [
+          0.21,
+          0.67,
+          0.43,
+          0.19
+        ]
+      }
+    ],
+    "iterator": "empty"
+  },
+  {
+    "mode": "body",
+    "fn": "blendColor",
+    "args": [
+      {
+        "node": "vec4",
+        "args": [
+          0.371,
+          0.241,
+          0.173,
+          0.87
+        ]
+      },
+      {
+        "node": "vec4",
+        "args": [
+          0.21,
+          0.67,
+          0.43,
+          0.19
+        ]
+      }
+    ],
+    "iterator": "nextThrow"
+  },
+  {
+    "mode": "body",
+    "fn": "blendColor",
+    "args": [
+      {
+        "node": "vec4",
+        "args": [
+          0.371,
+          0.241,
+          0.173,
+          0.87
+        ]
+      },
+      {
+        "node": "vec4",
+        "args": [
+          0.21,
+          0.67,
+          0.43,
+          0.19
+        ]
+      }
+    ],
+    "iterator": "doneThrow"
+  },
+  {
+    "mode": "body",
+    "fn": "blendColor",
+    "args": [
+      {
+        "node": "vec4",
+        "args": [
+          0.371,
+          0.241,
+          0.173,
+          0.87
+        ]
+      },
+      {
+        "node": "vec4",
+        "args": [
+          0.21,
+          0.67,
+          0.43,
+          0.19
+        ]
+      }
+    ],
+    "iterator": "valueThrow"
+  },
+  {
+    "mode": "body",
+    "fn": "blendColor",
+    "args": [
+      {
+        "node": "vec4",
+        "args": [
+          0.371,
+          0.241,
+          0.173,
+          0.87
+        ]
+      },
+      {
+        "node": "vec4",
+        "args": [
+          0.21,
+          0.67,
+          0.43,
+          0.19
+        ]
+      }
+    ],
+    "iterator": "returnGetterThrow"
+  },
+  {
+    "mode": "body",
+    "fn": "blendColor",
+    "args": [
+      {
+        "node": "vec4",
+        "args": [
+          0.371,
+          0.241,
+          0.173,
+          0.87
+        ]
+      },
+      {
+        "node": "vec4",
+        "args": [
+          0.21,
+          0.67,
+          0.43,
+          0.19
+        ]
+      }
+    ],
+    "iterator": "returnThrow"
+  },
+  {
+    "mode": "body",
+    "fn": "blendColor",
+    "args": [
+      {
+        "node": "vec4",
+        "args": [
+          0.371,
+          0.241,
+          0.173,
+          0.87
+        ]
+      },
+      {
+        "node": "vec4",
+        "args": [
+          0.21,
+          0.67,
+          0.43,
+          0.19
+        ]
+      }
+    ],
+    "iterator": "returnPrimitive"
+  },
+  {
+    "mode": "body",
+    "fn": "blendColor",
+    "args": [
+      {
+        "node": "vec4",
+        "args": [
+          0.371,
+          0.241,
+          0.173,
+          0.87
+        ]
+      },
+      {
+        "node": "vec4",
+        "args": [
+          0.21,
+          0.67,
+          0.43,
+          0.19
+        ]
+      }
+    ],
+    "iterator": "iteratorThrow"
+  },
+  {
+    "mode": "body",
+    "fn": "blendColor",
+    "args": [
+      {
+        "node": "vec4",
+        "args": [
+          0.371,
+          0.241,
+          0.173,
+          0.87
+        ]
+      },
+      {
+        "node": "vec4",
+        "args": [
+          0.21,
+          0.67,
+          0.43,
+          0.19
+        ]
+      }
+    ],
+    "iterator": "primitiveIterator"
+  },
+  {
+    "mode": "body",
+    "fn": "blendColor",
+    "args": [
+      {
+        "node": "vec4",
+        "args": [
+          0.371,
+          0.241,
+          0.173,
+          0.87
+        ]
+      },
+      {
+        "node": "vec4",
+        "args": [
+          0.21,
+          0.67,
+          0.43,
+          0.19
+        ]
+      }
+    ],
+    "iterator": "close"
+  },
+  {
+    "mode": "body",
+    "fn": "blendColor",
+    "args": [
+      {
+        "node": "vec4",
+        "args": [
+          0.371,
+          0.241,
+          0.173,
+          0.87
+        ]
+      },
+      {
+        "node": "vec4",
+        "args": [
+          0.21,
+          0.67,
+          0.43,
+          0.19
+        ]
+      }
+    ],
+    "instrument": {
+      "argument": 0,
+      "key": "a",
+      "mode": "collect"
+    }
+  },
+  {
+    "mode": "body",
+    "fn": "blendColor",
+    "args": [
+      {
+        "node": "vec4",
+        "args": [
+          0.371,
+          0.241,
+          0.173,
+          0.87
+        ]
+      },
+      {
+        "node": "vec4",
+        "args": [
+          0.21,
+          0.67,
+          0.43,
+          0.19
+        ]
+      }
+    ],
+    "instrument": {
+      "argument": 0,
+      "key": "a",
+      "mode": "getThrow"
+    }
+  },
+  {
+    "mode": "body",
+    "fn": "blendColor",
+    "args": [
+      {
+        "node": "vec4",
+        "args": [
+          0.371,
+          0.241,
+          0.173,
+          0.87
+        ]
+      },
+      {
+        "node": "vec4",
+        "args": [
+          0.21,
+          0.67,
+          0.43,
+          0.19
+        ]
+      }
+    ],
+    "instrument": {
+      "argument": 0,
+      "key": "a",
+      "mode": "reenter"
+    }
+  },
+  {
+    "mode": "body",
+    "fn": "blendColor",
+    "args": [
+      {
+        "node": "vec4",
+        "args": [
+          0.371,
+          0.241,
+          0.173,
+          0.87
+        ]
+      },
+      {
+        "node": "vec4",
+        "args": [
+          0.21,
+          0.67,
+          0.43,
+          0.19
+        ]
+      }
+    ],
+    "instrument": {
+      "argument": 1,
+      "key": "a",
+      "mode": "collect"
+    }
+  },
+  {
+    "mode": "body",
+    "fn": "blendColor",
+    "args": [
+      {
+        "node": "vec4",
+        "args": [
+          0.371,
+          0.241,
+          0.173,
+          0.87
+        ]
+      },
+      {
+        "node": "vec4",
+        "args": [
+          0.21,
+          0.67,
+          0.43,
+          0.19
+        ]
+      }
+    ],
+    "instrument": {
+      "argument": 1,
+      "key": "a",
+      "mode": "getThrow"
+    }
+  },
+  {
+    "mode": "body",
+    "fn": "blendColor",
+    "args": [
+      {
+        "node": "vec4",
+        "args": [
+          0.371,
+          0.241,
+          0.173,
+          0.87
+        ]
+      },
+      {
+        "node": "vec4",
+        "args": [
+          0.21,
+          0.67,
+          0.43,
+          0.19
+        ]
+      }
+    ],
+    "instrument": {
+      "argument": 1,
+      "key": "a",
+      "mode": "reenter"
+    }
+  },
+  {
+    "mode": "body",
+    "fn": "blendColor",
+    "args": [
+      {
+        "node": "vec4",
+        "args": [
+          0.371,
+          0.241,
+          0.173,
+          0.87
+        ]
+      },
+      {
+        "node": "vec4",
+        "args": [
+          0.21,
+          0.67,
+          0.43,
+          0.19
+        ]
+      }
+    ],
+    "instrument": {
+      "argument": 0,
+      "key": "rgb",
+      "mode": "collect"
+    }
+  },
+  {
+    "mode": "body",
+    "fn": "blendColor",
+    "args": [
+      {
+        "node": "vec4",
+        "args": [
+          0.371,
+          0.241,
+          0.173,
+          0.87
+        ]
+      },
+      {
+        "node": "vec4",
+        "args": [
+          0.21,
+          0.67,
+          0.43,
+          0.19
+        ]
+      }
+    ],
+    "instrument": {
+      "argument": 0,
+      "key": "rgb",
+      "mode": "getThrow"
+    }
+  },
+  {
+    "mode": "body",
+    "fn": "blendColor",
+    "args": [
+      {
+        "node": "vec4",
+        "args": [
+          0.371,
+          0.241,
+          0.173,
+          0.87
+        ]
+      },
+      {
+        "node": "vec4",
+        "args": [
+          0.21,
+          0.67,
+          0.43,
+          0.19
+        ]
+      }
+    ],
+    "instrument": {
+      "argument": 0,
+      "key": "rgb",
+      "mode": "reenter"
+    }
+  },
+  {
+    "mode": "body",
+    "fn": "blendColor",
+    "args": [
+      {
+        "node": "vec4",
+        "args": [
+          0.371,
+          0.241,
+          0.173,
+          0.87
+        ]
+      },
+      {
+        "node": "vec4",
+        "args": [
+          0.21,
+          0.67,
+          0.43,
+          0.19
+        ]
+      }
+    ],
+    "instrument": {
+      "argument": 1,
+      "key": "rgb",
+      "mode": "collect"
+    }
+  },
+  {
+    "mode": "body",
+    "fn": "blendColor",
+    "args": [
+      {
+        "node": "vec4",
+        "args": [
+          0.371,
+          0.241,
+          0.173,
+          0.87
+        ]
+      },
+      {
+        "node": "vec4",
+        "args": [
+          0.21,
+          0.67,
+          0.43,
+          0.19
+        ]
+      }
+    ],
+    "instrument": {
+      "argument": 1,
+      "key": "rgb",
+      "mode": "getThrow"
+    }
+  },
+  {
+    "mode": "body",
+    "fn": "blendColor",
+    "args": [
+      {
+        "node": "vec4",
+        "args": [
+          0.371,
+          0.241,
+          0.173,
+          0.87
+        ]
+      },
+      {
+        "node": "vec4",
+        "args": [
+          0.21,
+          0.67,
+          0.43,
+          0.19
+        ]
+      }
+    ],
+    "instrument": {
+      "argument": 1,
+      "key": "rgb",
+      "mode": "reenter"
+    }
+  }
+]

@@ -1,0 +1,80 @@
+[
+  {
+    "name": "implicit-ordinary",
+    "kind": "implicit",
+    "prototype": "ordinary",
+    "proxy": false,
+    "gc": false
+  },
+  {
+    "name": "implicit-ordinary-proxy",
+    "kind": "implicit",
+    "prototype": "ordinary",
+    "proxy": true,
+    "gc": true
+  },
+  {
+    "name": "explicit-ordinary",
+    "kind": "explicit",
+    "prototype": "ordinary",
+    "proxy": false,
+    "gc": false
+  },
+  {
+    "name": "explicit-ordinary-proxy",
+    "kind": "explicit",
+    "prototype": "ordinary",
+    "proxy": true,
+    "gc": true
+  },
+  {
+    "name": "reflect-ordinary",
+    "kind": "reflect",
+    "prototype": "ordinary",
+    "proxy": false,
+    "gc": false
+  },
+  {
+    "name": "reflect-ordinary-proxy",
+    "kind": "reflect",
+    "prototype": "ordinary",
+    "proxy": true,
+    "gc": true
+  },
+  {
+    "name": "reflect-null",
+    "kind": "reflect",
+    "prototype": "null",
+    "proxy": false,
+    "gc": false
+  },
+  {
+    "name": "reflect-null-proxy",
+    "kind": "reflect",
+    "prototype": "null",
+    "proxy": true,
+    "gc": true
+  },
+  {
+    "name": "reflect-primitive",
+    "kind": "reflect",
+    "prototype": "primitive",
+    "proxy": false,
+    "gc": false
+  },
+  {
+    "name": "reflect-primitive-proxy",
+    "kind": "reflect",
+    "prototype": "primitive",
+    "proxy": true,
+    "gc": true
+  },
+  {
+    "name": "reflect-proxy-throw",
+    "kind": "reflect",
+    "prototype": "ordinary",
+    "proxy": true,
+    "throw": true,
+    "gc": true
+  }
+]

@@ -1,0 +1,163 @@
+[
+  {
+    "name": "constructor-functionNodes",
+    "target": "constructor",
+    "key": "functionNodes"
+  },
+  {
+    "name": "constructor-parametersNodes",
+    "target": "constructor",
+    "key": "parametersNodes"
+  },
+  {
+    "name": "constructor-_candidateFn",
+    "target": "constructor",
+    "key": "_candidateFn"
+  },
+  {
+    "name": "constructor-global",
+    "target": "constructor",
+    "key": "global"
+  },
+  {
+    "name": "factory-constructor",
+    "target": "constructor",
+    "key": "functionNodes",
+    "factory": true
+  },
+  {
+    "name": "parameters",
+    "target": "parameters",
+    "method": "getCandidateFn"
+  },
+  {
+    "name": "cacheGet",
+    "target": "cacheGet",
+    "method": "getCandidateFn"
+  },
+  {
+    "name": "cacheSet",
+    "target": "cacheSet",
+    "method": "getCandidateFn"
+  },
+  {
+    "name": "functions",
+    "target": "functions",
+    "method": "getCandidateFn"
+  },
+  {
+    "name": "shader",
+    "target": "shader",
+    "method": "getCandidateFn"
+  },
+  {
+    "name": "layout",
+    "target": "layout",
+    "method": "getCandidateFn"
+  },
+  {
+    "name": "inputs",
+    "target": "inputs",
+    "method": "getCandidateFn"
+  },
+  {
+    "name": "paramsLength",
+    "target": "paramsLength",
+    "method": "getCandidateFn"
+  },
+  {
+    "name": "inputsLength",
+    "target": "inputsLength",
+    "method": "getCandidateFn"
+  },
+  {
+    "name": "paramIndex",
+    "target": "paramIndex",
+    "method": "getCandidateFn"
+  },
+  {
+    "name": "inputIndex",
+    "target": "inputIndex",
+    "method": "getCandidateFn"
+  },
+  {
+    "name": "paramMethod",
+    "target": "paramMethod",
+    "method": "getCandidateFn"
+  },
+  {
+    "name": "inputType",
+    "target": "inputType",
+    "method": "getCandidateFn"
+  },
+  {
+    "name": "resultShader",
+    "target": "resultShader",
+    "method": "generateNodeType"
+  },
+  {
+    "name": "candidate",
+    "target": "candidate",
+    "method": "setup"
+  },
+  {
+    "name": "method",
+    "target": "method",
+    "method": "setup"
+  },
+  {
+    "name": "iterator",
+    "target": "iterator",
+    "method": "getCandidateFn"
+  },
+  {
+    "name": "spread",
+    "target": "spread",
+    "method": "setup"
+  },
+  {
+    "name": "error",
+    "target": "error",
+    "method": "getCandidateFn"
+  },
+  {
+    "name": "shader-throw",
+    "target": "shader",
+    "method": "getCandidateFn",
+    "throw": true,
+    "gc": true
+  },
+  {
+    "name": "paramMethod-throw",
+    "target": "paramMethod",
+    "method": "getCandidateFn",
+    "throw": true,
+    "gc": true
+  },
+  {
+    "name": "candidate-throw",
+    "target": "candidate",
+    "method": "setup",
+    "throw": true,
+    "gc": true
+  },
+  {
+    "name": "shader-reenter",
+    "target": "shader",
+    "method": "getCandidateFn",
+    "gc": true,
+    "reenter": true
+  },
+  {
+    "name": "paramMethod-reenter",
+    "target": "paramMethod",
+    "method": "getCandidateFn",
+    "gc": true,
+    "reenter": true
+  },
+  {
+    "name": "generate-shader",
+    "target": "shader",
+    "method": "generateNodeType"
+  }
+]

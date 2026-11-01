@@ -201,8 +201,8 @@
     "note": "Accepted port scope is src and examples/jsm, including tracked third-party dependencies. Editor/manual web applications are excluded from native application rewrites. Native host behavior, packaging and all three platforms require separate implementation and verification evidence."
   },
   "counts": {
-    "partial-unverified": 487,
-    "missing": 454,
+    "partial-unverified": 488,
+    "missing": 453,
     "vulkan-port-pending": 290,
     "dependency-unverified": 20
   },
@@ -210,8 +210,8 @@
     "src": {
       "modules": 755,
       "counts": {
-        "partial-unverified": 351,
-        "missing": 114,
+        "partial-unverified": 352,
+        "missing": 113,
         "vulkan-port-pending": 290
       }
     },
@@ -817,7 +817,7 @@
       "path": "src/nodes/display",
       "upstreamFiles": 18,
       "moduleCount": 18,
-      "modulesWithCppFiles": 14,
+      "modulesWithCppFiles": 15,
       "verifiedComplete": 0
     },
     {
@@ -9831,11 +9831,11 @@
       "scope": "src",
       "kind": "core",
       "upstreamSha256": "fda8b12df5de6b620042d5eea38039fdc27c4c3f4a2968790c234f0b3db80a7e",
-      "header": null,
-      "implementation": null,
+      "header": "src/nodes/display/BlendModes.h",
+      "implementation": "src/nodes/display/BlendModes.cpp",
       "expectedHeader": "src/nodes/display/BlendModes.h",
       "expectedImplementation": "src/nodes/display/BlendModes.cpp",
-      "status": "missing",
+      "status": "partial-unverified",
       "verifiedComplete": false,
       "apiExtraction": "partial-static",
       "verification": {
@@ -9844,7 +9844,9 @@
           "pointer": "/modules/302"
         },
         "upstreamUnitTests": [],
-        "cppUnitTests": [],
+        "cppUnitTests": [
+          "test/unit/src/nodes/display/BlendModes.tests.cpp"
+        ],
         "reviewedImplementation": [],
         "differentialResults": [],
         "renderingResults": [],
