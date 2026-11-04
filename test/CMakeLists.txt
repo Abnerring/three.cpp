@@ -120,6 +120,7 @@ add_executable(THREECPPTests
         unit/src/nodes/core/PassTexture.tests.cpp
         unit/src/nodes/core/UVUtils.tests.cpp
         unit/src/nodes/utils/ConvertNode.tests.cpp
+        unit/src/nodes/utils/MatcapUV.tests.cpp
         unit/src/nodes/utils/MaxMipLevelNode.tests.cpp
         unit/src/nodes/utils/Remap.tests.cpp
         unit/src/nodes/core/SampleNode.tests.cpp
@@ -2751,4 +2752,12 @@ if(THREECPP_NODE_EXECUTABLE AND THREEJS_SOURCE_DIR)
     add_test(NAME threecpp.threejs-get-sh-irradiance-at-parity
         COMMAND "${THREECPP_NODE_EXECUTABLE}" "${CMAKE_CURRENT_SOURCE_DIR}/unit/utils/parity/compare-get-sh-irradiance-at.mjs"
         "${THREEJS_SOURCE_DIR}" "$<TARGET_FILE:ThreeJsGetShIrradianceAtParityProbe>")
+endif()
+
+add_executable(ThreeJsMatcapUVParityProbe unit/utils/parity/MatcapUVParityProbe.cpp)
+target_link_libraries(ThreeJsMatcapUVParityProbe PRIVATE threecpp::threecpp)
+if(THREECPP_NODE_EXECUTABLE AND THREEJS_SOURCE_DIR)
+    add_test(NAME threecpp.threejs-matcap-uv-parity
+        COMMAND "${THREECPP_NODE_EXECUTABLE}" "${CMAKE_CURRENT_SOURCE_DIR}/unit/utils/parity/compare-matcap-uv.mjs"
+        "${THREEJS_SOURCE_DIR}" "$<TARGET_FILE:ThreeJsMatcapUVParityProbe>")
 endif()

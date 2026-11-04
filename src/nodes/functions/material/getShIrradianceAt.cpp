@@ -70,4 +70,3 @@ JSValue nativeGetShIrradianceAtBinding(const std::string& name) {
 JSValue nativeGetShIrradianceAt() {
     return nativeGetShIrradianceAtBinding("default");
 }
-

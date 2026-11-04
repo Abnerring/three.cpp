@@ -254,6 +254,7 @@ target_sources(threecpp PRIVATE
     src/nodes/core/PassTexture.cpp
     src/nodes/core/UVUtils.cpp
     src/nodes/utils/ConvertNode.cpp
+    src/nodes/utils/MatcapUV.cpp
     src/nodes/utils/MaxMipLevelNode.cpp
     src/nodes/utils/Remap.cpp
     src/nodes/core/SampleNode.cpp

@@ -201,8 +201,8 @@
     "note": "Accepted port scope is src and examples/jsm, including tracked third-party dependencies. Editor/manual web applications are excluded from native application rewrites. Native host behavior, packaging and all three platforms require separate implementation and verification evidence."
   },
   "counts": {
-    "partial-unverified": 499,
-    "missing": 442,
+    "partial-unverified": 501,
+    "missing": 440,
     "vulkan-port-pending": 290,
     "dependency-unverified": 20
   },
@@ -210,8 +210,8 @@
     "src": {
       "modules": 755,
       "counts": {
-        "partial-unverified": 363,
-        "missing": 102,
+        "partial-unverified": 365,
+        "missing": 100,
         "vulkan-port-pending": 290
       }
     },
@@ -845,7 +845,7 @@
       "path": "src/nodes/functions/material",
       "upstreamFiles": 5,
       "moduleCount": 5,
-      "modulesWithCppFiles": 3,
+      "modulesWithCppFiles": 4,
       "verifiedComplete": 0
     },
     {
@@ -922,7 +922,7 @@
       "path": "src/nodes/utils",
       "upstreamFiles": 31,
       "moduleCount": 31,
-      "modulesWithCppFiles": 18,
+      "modulesWithCppFiles": 19,
       "verifiedComplete": 0
     },
     {
@@ -11001,11 +11001,11 @@
       "scope": "src",
       "kind": "core",
       "upstreamSha256": "0a5316593617b93aac6ee58a90b2660e15022daf05f54ddd6ae5feac7c0963ca",
-      "header": null,
-      "implementation": null,
+      "header": "src/nodes/functions/material/getShIrradianceAt.h",
+      "implementation": "src/nodes/functions/material/getShIrradianceAt.cpp",
       "expectedHeader": "src/nodes/functions/material/getShIrradianceAt.h",
       "expectedImplementation": "src/nodes/functions/material/getShIrradianceAt.cpp",
-      "status": "missing",
+      "status": "partial-unverified",
       "verifiedComplete": false,
       "apiExtraction": "partial-static",
       "verification": {
@@ -12807,11 +12807,11 @@
       "scope": "src",
       "kind": "core",
       "upstreamSha256": "f034cf6c1eba2b9bc38de21c94b9ed6b075c18f8d6c3369a4e20b5535201af60",
-      "header": null,
-      "implementation": null,
+      "header": "src/nodes/utils/MatcapUV.h",
+      "implementation": "src/nodes/utils/MatcapUV.cpp",
       "expectedHeader": "src/nodes/utils/MatcapUV.h",
       "expectedImplementation": "src/nodes/utils/MatcapUV.cpp",
-      "status": "missing",
+      "status": "partial-unverified",
       "verifiedComplete": false,
       "apiExtraction": "partial-static",
       "verification": {
@@ -12820,7 +12820,9 @@
           "pointer": "/modules/410"
         },
         "upstreamUnitTests": [],
-        "cppUnitTests": [],
+        "cppUnitTests": [
+          "test/unit/src/nodes/utils/MatcapUV.tests.cpp"
+        ],
         "reviewedImplementation": [],
         "differentialResults": [],
         "renderingResults": [],
