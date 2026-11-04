@@ -201,8 +201,8 @@
     "note": "Accepted port scope is src and examples/jsm, including tracked third-party dependencies. Editor/manual web applications are excluded from native application rewrites. Native host behavior, packaging and all three platforms require separate implementation and verification evidence."
   },
   "counts": {
-    "partial-unverified": 497,
-    "missing": 444,
+    "partial-unverified": 499,
+    "missing": 442,
     "vulkan-port-pending": 290,
     "dependency-unverified": 20
   },
@@ -210,8 +210,8 @@
     "src": {
       "modules": 755,
       "counts": {
-        "partial-unverified": 361,
-        "missing": 104,
+        "partial-unverified": 363,
+        "missing": 102,
         "vulkan-port-pending": 290
       }
     },
@@ -845,7 +845,7 @@
       "path": "src/nodes/functions/material",
       "upstreamFiles": 5,
       "moduleCount": 5,
-      "modulesWithCppFiles": 1,
+      "modulesWithCppFiles": 3,
       "verifiedComplete": 0
     },
     {
@@ -10920,11 +10920,11 @@
       "scope": "src",
       "kind": "core",
       "upstreamSha256": "a849438ee93ad8c26bbdcbfa03c8465f0ef7807ee476e681c1c2455b57da9663",
-      "header": null,
-      "implementation": null,
+      "header": "src/nodes/functions/material/getGeometryRoughness.h",
+      "implementation": "src/nodes/functions/material/getGeometryRoughness.cpp",
       "expectedHeader": "src/nodes/functions/material/getGeometryRoughness.h",
       "expectedImplementation": "src/nodes/functions/material/getGeometryRoughness.cpp",
-      "status": "missing",
+      "status": "partial-unverified",
       "verifiedComplete": false,
       "apiExtraction": "partial-static",
       "verification": {
@@ -10974,11 +10974,11 @@
       "scope": "src",
       "kind": "core",
       "upstreamSha256": "218a83eab7b138e1d185c685f81a7e9a0a677d7b3627ca8d31f8e734b1288558",
-      "header": null,
-      "implementation": null,
+      "header": "src/nodes/functions/material/getRoughness.h",
+      "implementation": "src/nodes/functions/material/getRoughness.cpp",
       "expectedHeader": "src/nodes/functions/material/getRoughness.h",
       "expectedImplementation": "src/nodes/functions/material/getRoughness.cpp",
-      "status": "missing",
+      "status": "partial-unverified",
       "verifiedComplete": false,
       "apiExtraction": "partial-static",
       "verification": {

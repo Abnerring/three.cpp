@@ -108,6 +108,8 @@ add_executable(THREECPPTests
         unit/src/nodes/functions/D_GGX.tests.cpp
         unit/src/nodes/functions/D_GGX_Anisotropic.tests.cpp
         unit/src/nodes/functions/F_Schlick.tests.cpp
+        unit/src/nodes/functions/getGeometryRoughness.tests.cpp
+        unit/src/nodes/functions/getRoughness.tests.cpp
         unit/src/nodes/functions/V_GGX_SmithCorrelated.tests.cpp
         unit/src/nodes/functions/V_GGX_SmithCorrelated_Anisotropic.tests.cpp
         unit/src/nodes/functions/Schlick_to_F0.tests.cpp
@@ -2662,6 +2664,14 @@ if(THREECPP_NODE_EXECUTABLE AND THREEJS_SOURCE_DIR)
         "${THREEJS_SOURCE_DIR}" "$<TARGET_FILE:ThreeJsPointUVNodeParityProbe>")
 endif()
 
+add_executable(ThreeJsGetRoughnessParityProbe unit/utils/parity/GetRoughnessParityProbe.cpp)
+target_link_libraries(ThreeJsGetRoughnessParityProbe PRIVATE threecpp::threecpp)
+if(THREECPP_NODE_EXECUTABLE AND THREEJS_SOURCE_DIR)
+    add_test(NAME threecpp.threejs-get-roughness-parity
+        COMMAND "${THREECPP_NODE_EXECUTABLE}" "${CMAKE_CURRENT_SOURCE_DIR}/unit/utils/parity/compare-get-roughness.mjs"
+        "${THREEJS_SOURCE_DIR}" "$<TARGET_FILE:ThreeJsGetRoughnessParityProbe>")
+endif()
+
 add_executable(ThreeJsBRDFLambertParityProbe unit/utils/parity/BRDFLambertParityProbe.cpp)
 target_link_libraries(ThreeJsBRDFLambertParityProbe PRIVATE threecpp::threecpp)
 if(THREECPP_NODE_EXECUTABLE AND THREEJS_SOURCE_DIR)
@@ -2724,4 +2734,12 @@ if(THREECPP_NODE_EXECUTABLE AND THREEJS_SOURCE_DIR)
     add_test(NAME threecpp.threejs-user-data-node-parity
         COMMAND "${THREECPP_NODE_EXECUTABLE}" "${CMAKE_CURRENT_SOURCE_DIR}/unit/utils/parity/compare-user-data-node.mjs"
         "${THREEJS_SOURCE_DIR}" "$<TARGET_FILE:ThreeJsUserDataNodeParityProbe>")
+endif()
+
+add_executable(ThreeJsGetGeometryRoughnessParityProbe unit/utils/parity/GetGeometryRoughnessParityProbe.cpp)
+target_link_libraries(ThreeJsGetGeometryRoughnessParityProbe PRIVATE threecpp::threecpp)
+if(THREECPP_NODE_EXECUTABLE AND THREEJS_SOURCE_DIR)
+    add_test(NAME threecpp.threejs-get-geometry-roughness-parity
+        COMMAND "${THREECPP_NODE_EXECUTABLE}" "${CMAKE_CURRENT_SOURCE_DIR}/unit/utils/parity/compare-get-geometry-roughness.mjs"
+        "${THREEJS_SOURCE_DIR}" "$<TARGET_FILE:ThreeJsGetGeometryRoughnessParityProbe>")
 endif()
