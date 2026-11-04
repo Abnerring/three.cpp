@@ -104,6 +104,7 @@ add_executable(THREECPPTests
         unit/src/nodes/display/BlendModes.tests.cpp
         unit/src/nodes/display/ToneMappingFunctions.tests.cpp
         unit/src/nodes/display/ColorAdjustment.tests.cpp
+        unit/src/nodes/functions/BRDF_Lambert.tests.cpp
         unit/src/nodes/display/ViewportTextureNode.tests.cpp
         unit/src/nodes/display/RenderOutputNode.tests.cpp
         unit/src/nodes/core/ToonOutlinePass.tests.cpp
@@ -2653,6 +2654,14 @@ if(THREECPP_NODE_EXECUTABLE AND THREEJS_SOURCE_DIR)
     add_test(NAME threecpp.threejs-point-uv-node-parity
         COMMAND "${THREECPP_NODE_EXECUTABLE}" "${CMAKE_CURRENT_SOURCE_DIR}/unit/utils/parity/compare-point-uv-node.mjs"
         "${THREEJS_SOURCE_DIR}" "$<TARGET_FILE:ThreeJsPointUVNodeParityProbe>")
+endif()
+
+add_executable(ThreeJsBRDFLambertParityProbe unit/utils/parity/BRDFLambertParityProbe.cpp)
+target_link_libraries(ThreeJsBRDFLambertParityProbe PRIVATE threecpp::threecpp)
+if(THREECPP_NODE_EXECUTABLE AND THREEJS_SOURCE_DIR)
+    add_test(NAME threecpp.threejs-brdf-lambert-parity
+        COMMAND "${THREECPP_NODE_EXECUTABLE}" "${CMAKE_CURRENT_SOURCE_DIR}/unit/utils/parity/compare-brdf-lambert.mjs"
+        "${THREEJS_SOURCE_DIR}" "$<TARGET_FILE:ThreeJsBRDFLambertParityProbe>")
 endif()
 
 add_executable(ThreeJsUserDataNodeParityProbe unit/utils/parity/UserDataNodeParityProbe.cpp)
