@@ -265,6 +265,7 @@ target_sources(threecpp PRIVATE
     src/nodes/utils/MatcapUV.cpp
     src/nodes/utils/MaxMipLevelNode.cpp
     src/nodes/utils/Remap.cpp
+    src/nodes/utils/SpriteSheetUV.cpp
     src/nodes/utils/Timer.cpp
     src/nodes/core/SampleNode.cpp
     src/nodes/core/RotateNode.cpp

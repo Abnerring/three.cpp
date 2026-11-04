@@ -143,6 +143,7 @@ add_executable(THREECPPTests
         unit/src/nodes/utils/MatcapUV.tests.cpp
         unit/src/nodes/utils/MaxMipLevelNode.tests.cpp
         unit/src/nodes/utils/Remap.tests.cpp
+        unit/src/nodes/utils/SpriteSheetUV.tests.cpp
         unit/src/nodes/utils/Timer.tests.cpp
         unit/src/nodes/core/SampleNode.tests.cpp
         unit/src/nodes/core/RotateNode.tests.cpp
@@ -953,12 +954,26 @@ if(THREECPP_NODE_EXECUTABLE AND THREEJS_SOURCE_DIR)
         COMMAND "${THREECPP_NODE_EXECUTABLE}" "${CMAKE_CURRENT_SOURCE_DIR}/unit/utils/parity/compare-oscillators.mjs"
         "${THREEJS_SOURCE_DIR}" "$<TARGET_FILE:ThreeJsOscillatorsParityProbe>")
 endif()
+add_executable(ThreeJsRotateNodeParityProbe unit/utils/parity/RotateNodeParityProbe.cpp)
+target_link_libraries(ThreeJsRotateNodeParityProbe PRIVATE threecpp::threecpp)
+if(THREECPP_NODE_EXECUTABLE AND THREEJS_SOURCE_DIR)
+    add_test(NAME threecpp.threejs-rotate-node-parity
+        COMMAND "${THREECPP_NODE_EXECUTABLE}" "${CMAKE_CURRENT_SOURCE_DIR}/unit/utils/parity/compare-rotate-node.mjs"
+        "${THREEJS_SOURCE_DIR}" "$<TARGET_FILE:ThreeJsRotateNodeParityProbe>")
+endif()
 add_executable(ThreeJsArraysParityProbe unit/utils/parity/ArraysParityProbe.cpp)
 target_link_libraries(ThreeJsArraysParityProbe PRIVATE threecpp::threecpp)
 if(THREECPP_NODE_EXECUTABLE AND THREEJS_SOURCE_DIR)
     add_test(NAME threecpp.threejs-arrays-parity
         COMMAND "${THREECPP_NODE_EXECUTABLE}" "${CMAKE_CURRENT_SOURCE_DIR}/unit/utils/parity/compare-arrays.mjs"
         "${THREEJS_SOURCE_DIR}" "$<TARGET_FILE:ThreeJsArraysParityProbe>")
+endif()
+add_executable(ThreeJsSpriteSheetUVParityProbe unit/utils/parity/SpriteSheetUVParityProbe.cpp)
+target_link_libraries(ThreeJsSpriteSheetUVParityProbe PRIVATE threecpp::threecpp)
+if(THREECPP_NODE_EXECUTABLE AND THREEJS_SOURCE_DIR)
+    add_test(NAME threecpp.threejs-sprite-sheet-uv-parity
+        COMMAND "${THREECPP_NODE_EXECUTABLE}" "${CMAKE_CURRENT_SOURCE_DIR}/unit/utils/parity/compare-sprite-sheet-uv.mjs"
+        "${THREEJS_SOURCE_DIR}" "$<TARGET_FILE:ThreeJsSpriteSheetUVParityProbe>")
 endif()
 if(THREECPP_BUILD_VULKAN)
     add_executable(VulkanShaderCompilerTests unit/three.source.unit.cpp
