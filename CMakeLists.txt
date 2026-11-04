@@ -323,11 +323,15 @@ target_sources(threecpp PRIVATE
     src/nodes/math/Hash.cpp
     src/nodes/math/MathUtils.cpp
     src/nodes/math/BitcastNode.cpp
+    src/nodes/math/PackFloatNode.cpp
+    src/nodes/math/UnpackFloatNode.cpp
     src/nodes/functions/material/getAlphaHashThreshold.cpp
     src/nodes/functions/material/getGeometryRoughness.cpp
+    src/nodes/functions/material/getParallaxCorrectNormal.cpp
     src/nodes/functions/material/getRoughness.cpp
     src/nodes/functions/material/getShIrradianceAt.cpp
     src/nodes/functions/BSDF/BRDF_Lambert.cpp
+    src/nodes/functions/BSDF/BRDF_EON.cpp
     src/nodes/functions/BSDF/BRDF_Sheen.cpp
     src/nodes/functions/BSDF/D_GGX.cpp
     src/nodes/functions/BSDF/D_GGX_Anisotropic.cpp

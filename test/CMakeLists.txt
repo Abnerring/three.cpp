@@ -84,6 +84,8 @@ add_executable(THREECPPTests
         unit/src/nodes/accessors/ModelNode.tests.cpp
         unit/src/nodes/accessors/Object3DNode.tests.cpp
         unit/src/nodes/math/BitcastNode.tests.cpp
+        unit/src/nodes/math/PackFloatNode.tests.cpp
+        unit/src/nodes/math/UnpackFloatNode.tests.cpp
         unit/src/nodes/display/FrontFacingNode.tests.cpp
         unit/src/nodes/display/ColorSpaceFunctions.tests.cpp
         unit/src/nodes/display/ToneMappingNode.tests.cpp
@@ -106,11 +108,13 @@ add_executable(THREECPPTests
         unit/src/nodes/display/ToneMappingFunctions.tests.cpp
         unit/src/nodes/display/ColorAdjustment.tests.cpp
         unit/src/nodes/functions/BRDF_Lambert.tests.cpp
+        unit/src/nodes/functions/BRDF_EON.tests.cpp
         unit/src/nodes/functions/BRDF_Sheen.tests.cpp
         unit/src/nodes/functions/D_GGX.tests.cpp
         unit/src/nodes/functions/D_GGX_Anisotropic.tests.cpp
         unit/src/nodes/functions/F_Schlick.tests.cpp
         unit/src/nodes/functions/getGeometryRoughness.tests.cpp
+        unit/src/nodes/functions/getParallaxCorrectNormal.tests.cpp
         unit/src/nodes/functions/getRoughness.tests.cpp
         unit/src/nodes/functions/getShIrradianceAt.tests.cpp
         unit/src/nodes/functions/V_GGX_SmithCorrelated.tests.cpp
@@ -841,6 +845,13 @@ if(THREECPP_NODE_EXECUTABLE AND THREEJS_SOURCE_DIR)
     add_test(NAME threecpp.threejs-brdf-sheen-parity
         COMMAND "${THREECPP_NODE_EXECUTABLE}" "${CMAKE_CURRENT_SOURCE_DIR}/unit/utils/parity/compare-brdf-sheen.mjs"
         "${THREEJS_SOURCE_DIR}" "$<TARGET_FILE:ThreeJsBRDFSheenParityProbe>")
+endif()
+add_executable(ThreeJsBRDFEONParityProbe unit/utils/parity/BRDFEONParityProbe.cpp)
+target_link_libraries(ThreeJsBRDFEONParityProbe PRIVATE threecpp::threecpp)
+if(THREECPP_NODE_EXECUTABLE AND THREEJS_SOURCE_DIR)
+    add_test(NAME threecpp.threejs-brdf-eon-parity
+        COMMAND "${THREECPP_NODE_EXECUTABLE}" "${CMAKE_CURRENT_SOURCE_DIR}/unit/utils/parity/compare-brdf-eon.mjs"
+        "${THREEJS_SOURCE_DIR}" "$<TARGET_FILE:ThreeJsBRDFEONParityProbe>")
 endif()
 if(THREECPP_BUILD_VULKAN)
     add_executable(VulkanShaderCompilerTests unit/three.source.unit.cpp
@@ -2757,6 +2768,14 @@ if(THREECPP_NODE_EXECUTABLE AND THREEJS_SOURCE_DIR)
         "${THREEJS_SOURCE_DIR}" "$<TARGET_FILE:ThreeJsGetGeometryRoughnessParityProbe>")
 endif()
 
+add_executable(ThreeJsGetParallaxCorrectNormalParityProbe unit/utils/parity/GetParallaxCorrectNormalParityProbe.cpp)
+target_link_libraries(ThreeJsGetParallaxCorrectNormalParityProbe PRIVATE threecpp::threecpp)
+if(THREECPP_NODE_EXECUTABLE AND THREEJS_SOURCE_DIR)
+    add_test(NAME threecpp.threejs-get-parallax-correct-normal-parity
+        COMMAND "${THREECPP_NODE_EXECUTABLE}" "${CMAKE_CURRENT_SOURCE_DIR}/unit/utils/parity/compare-get-parallax-correct-normal.mjs"
+        "${THREEJS_SOURCE_DIR}" "$<TARGET_FILE:ThreeJsGetParallaxCorrectNormalParityProbe>")
+endif()
+
 add_executable(ThreeJsGetShIrradianceAtParityProbe unit/utils/parity/GetShIrradianceAtParityProbe.cpp)
 target_link_libraries(ThreeJsGetShIrradianceAtParityProbe PRIVATE threecpp::threecpp)
 if(THREECPP_NODE_EXECUTABLE AND THREEJS_SOURCE_DIR)
@@ -2787,4 +2806,20 @@ if(THREECPP_NODE_EXECUTABLE AND THREEJS_SOURCE_DIR)
     add_test(NAME threecpp.threejs-bitcast-node-parity
         COMMAND "${THREECPP_NODE_EXECUTABLE}" "${CMAKE_CURRENT_SOURCE_DIR}/unit/utils/parity/compare-bitcast-node.mjs"
         "${THREEJS_SOURCE_DIR}" "$<TARGET_FILE:ThreeJsBitcastNodeParityProbe>")
+endif()
+
+add_executable(ThreeJsPackFloatNodeParityProbe unit/utils/parity/PackFloatNodeParityProbe.cpp)
+target_link_libraries(ThreeJsPackFloatNodeParityProbe PRIVATE threecpp::threecpp)
+if(THREECPP_NODE_EXECUTABLE AND THREEJS_SOURCE_DIR)
+    add_test(NAME threecpp.threejs-pack-float-node-parity
+        COMMAND "${THREECPP_NODE_EXECUTABLE}" "${CMAKE_CURRENT_SOURCE_DIR}/unit/utils/parity/compare-pack-float-node.mjs"
+        "${THREEJS_SOURCE_DIR}" "$<TARGET_FILE:ThreeJsPackFloatNodeParityProbe>")
+endif()
+
+add_executable(ThreeJsUnpackFloatNodeParityProbe unit/utils/parity/UnpackFloatNodeParityProbe.cpp)
+target_link_libraries(ThreeJsUnpackFloatNodeParityProbe PRIVATE threecpp::threecpp)
+if(THREECPP_NODE_EXECUTABLE AND THREEJS_SOURCE_DIR)
+    add_test(NAME threecpp.threejs-unpack-float-node-parity
+        COMMAND "${THREECPP_NODE_EXECUTABLE}" "${CMAKE_CURRENT_SOURCE_DIR}/unit/utils/parity/compare-unpack-float-node.mjs"
+        "${THREEJS_SOURCE_DIR}" "$<TARGET_FILE:ThreeJsUnpackFloatNodeParityProbe>")
 endif()

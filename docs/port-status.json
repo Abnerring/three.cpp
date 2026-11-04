@@ -201,8 +201,8 @@
     "note": "Accepted port scope is src and examples/jsm, including tracked third-party dependencies. Editor/manual web applications are excluded from native application rewrites. Native host behavior, packaging and all three platforms require separate implementation and verification evidence."
   },
   "counts": {
-    "partial-unverified": 504,
-    "missing": 437,
+    "partial-unverified": 508,
+    "missing": 433,
     "vulkan-port-pending": 290,
     "dependency-unverified": 20
   },
@@ -210,8 +210,8 @@
     "src": {
       "modules": 755,
       "counts": {
-        "partial-unverified": 368,
-        "missing": 97,
+        "partial-unverified": 372,
+        "missing": 93,
         "vulkan-port-pending": 290
       }
     },
@@ -838,14 +838,14 @@
       "path": "src/nodes/functions/BSDF",
       "upstreamFiles": 13,
       "moduleCount": 13,
-      "modulesWithCppFiles": 8,
+      "modulesWithCppFiles": 9,
       "verifiedComplete": 0
     },
     {
       "path": "src/nodes/functions/material",
       "upstreamFiles": 5,
       "moduleCount": 5,
-      "modulesWithCppFiles": 4,
+      "modulesWithCppFiles": 5,
       "verifiedComplete": 0
     },
     {
@@ -880,7 +880,7 @@
       "path": "src/nodes/math",
       "upstreamFiles": 11,
       "moduleCount": 11,
-      "modulesWithCppFiles": 6,
+      "modulesWithCppFiles": 8,
       "verifiedComplete": 0
     },
     {
@@ -10380,11 +10380,11 @@
       "scope": "src",
       "kind": "core",
       "upstreamSha256": "19a747218c2d93783208e217687d9037aaa16f7bc08362462f0267cce02bd32d",
-      "header": null,
-      "implementation": null,
+      "header": "src/nodes/functions/BSDF/BRDF_EON.h",
+      "implementation": "src/nodes/functions/BSDF/BRDF_EON.cpp",
       "expectedHeader": "src/nodes/functions/BSDF/BRDF_EON.h",
       "expectedImplementation": "src/nodes/functions/BSDF/BRDF_EON.cpp",
-      "status": "missing",
+      "status": "partial-unverified",
       "verifiedComplete": false,
       "apiExtraction": "partial-static",
       "verification": {
@@ -10947,11 +10947,11 @@
       "scope": "src",
       "kind": "core",
       "upstreamSha256": "cb7dce35e4a6cd80500bbc4e021ffe46fb195a41d1327818e99b56217c327ba5",
-      "header": null,
-      "implementation": null,
+      "header": "src/nodes/functions/material/getParallaxCorrectNormal.h",
+      "implementation": "src/nodes/functions/material/getParallaxCorrectNormal.cpp",
       "expectedHeader": "src/nodes/functions/material/getParallaxCorrectNormal.h",
       "expectedImplementation": "src/nodes/functions/material/getParallaxCorrectNormal.cpp",
-      "status": "missing",
+      "status": "partial-unverified",
       "verifiedComplete": false,
       "apiExtraction": "partial-static",
       "verification": {
@@ -12164,11 +12164,11 @@
       "scope": "src",
       "kind": "core",
       "upstreamSha256": "b16871de6398aadaf9e7a774e7cea0e4bf0ed90222aa628d46a942c996c05dd4",
-      "header": null,
-      "implementation": null,
+      "header": "src/nodes/math/PackFloatNode.h",
+      "implementation": "src/nodes/math/PackFloatNode.cpp",
       "expectedHeader": "src/nodes/math/PackFloatNode.h",
       "expectedImplementation": "src/nodes/math/PackFloatNode.cpp",
-      "status": "missing",
+      "status": "partial-unverified",
       "verifiedComplete": false,
       "apiExtraction": "partial-static",
       "verification": {
@@ -12177,7 +12177,9 @@
           "pointer": "/modules/387"
         },
         "upstreamUnitTests": [],
-        "cppUnitTests": [],
+        "cppUnitTests": [
+          "test/unit/src/nodes/math/PackFloatNode.tests.cpp"
+        ],
         "reviewedImplementation": [],
         "differentialResults": [],
         "renderingResults": [],
@@ -12245,11 +12247,11 @@
       "scope": "src",
       "kind": "core",
       "upstreamSha256": "944019fd8b15f35fd022007e1f2de03f11606e2a43de91cbe44d2f5d44614a2a",
-      "header": null,
-      "implementation": null,
+      "header": "src/nodes/math/UnpackFloatNode.h",
+      "implementation": "src/nodes/math/UnpackFloatNode.cpp",
       "expectedHeader": "src/nodes/math/UnpackFloatNode.h",
       "expectedImplementation": "src/nodes/math/UnpackFloatNode.cpp",
-      "status": "missing",
+      "status": "partial-unverified",
       "verifiedComplete": false,
       "apiExtraction": "partial-static",
       "verification": {
@@ -12258,7 +12260,9 @@
           "pointer": "/modules/390"
         },
         "upstreamUnitTests": [],
-        "cppUnitTests": [],
+        "cppUnitTests": [
+          "test/unit/src/nodes/math/UnpackFloatNode.tests.cpp"
+        ],
         "reviewedImplementation": [],
         "differentialResults": [],
         "renderingResults": [],
