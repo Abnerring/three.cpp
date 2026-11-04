@@ -96,6 +96,7 @@ add_executable(THREECPPTests
         unit/src/nodes/math/Packed4x8IntegerNode.tests.cpp
         unit/src/nodes/math/PackFloatNode.tests.cpp
         unit/src/nodes/math/UnpackFloatNode.tests.cpp
+        unit/src/nodes/math/TriNoise3D.tests.cpp
         unit/src/nodes/geometry/RangeNode.tests.cpp
         unit/src/nodes/display/FrontFacingNode.tests.cpp
         unit/src/nodes/display/ColorSpaceFunctions.tests.cpp
@@ -974,6 +975,13 @@ if(THREECPP_NODE_EXECUTABLE AND THREEJS_SOURCE_DIR)
     add_test(NAME threecpp.threejs-sprite-sheet-uv-parity
         COMMAND "${THREECPP_NODE_EXECUTABLE}" "${CMAKE_CURRENT_SOURCE_DIR}/unit/utils/parity/compare-sprite-sheet-uv.mjs"
         "${THREEJS_SOURCE_DIR}" "$<TARGET_FILE:ThreeJsSpriteSheetUVParityProbe>")
+endif()
+add_executable(ThreeJsTriNoise3DParityProbe unit/utils/parity/TriNoise3DParityProbe.cpp)
+target_link_libraries(ThreeJsTriNoise3DParityProbe PRIVATE threecpp::threecpp)
+if(THREECPP_NODE_EXECUTABLE AND THREEJS_SOURCE_DIR)
+    add_test(NAME threecpp.threejs-tri-noise-3d-parity
+        COMMAND "${THREECPP_NODE_EXECUTABLE}" "${CMAKE_CURRENT_SOURCE_DIR}/unit/utils/parity/compare-tri-noise-3d.mjs"
+        "${THREEJS_SOURCE_DIR}" "$<TARGET_FILE:ThreeJsTriNoise3DParityProbe>")
 endif()
 if(THREECPP_BUILD_VULKAN)
     add_executable(VulkanShaderCompilerTests unit/three.source.unit.cpp
