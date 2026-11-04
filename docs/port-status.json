@@ -201,8 +201,8 @@
     "note": "Accepted port scope is src and examples/jsm, including tracked third-party dependencies. Editor/manual web applications are excluded from native application rewrites. Native host behavior, packaging and all three platforms require separate implementation and verification evidence."
   },
   "counts": {
-    "partial-unverified": 529,
-    "missing": 412,
+    "partial-unverified": 531,
+    "missing": 410,
     "vulkan-port-pending": 290,
     "dependency-unverified": 20
   },
@@ -210,8 +210,8 @@
     "src": {
       "modules": 755,
       "counts": {
-        "partial-unverified": 393,
-        "missing": 72,
+        "partial-unverified": 395,
+        "missing": 70,
         "vulkan-port-pending": 290
       }
     },
@@ -796,7 +796,7 @@
       "path": "src/nodes/accessors",
       "upstreamFiles": 43,
       "moduleCount": 43,
-      "modulesWithCppFiles": 42,
+      "modulesWithCppFiles": 43,
       "verifiedComplete": 0
     },
     {
@@ -831,7 +831,7 @@
       "path": "src/nodes/functions",
       "upstreamFiles": 6,
       "moduleCount": 6,
-      "modulesWithCppFiles": 0,
+      "modulesWithCppFiles": 1,
       "verifiedComplete": 0
     },
     {
@@ -7653,11 +7653,11 @@
       "scope": "src",
       "kind": "core",
       "upstreamSha256": "7471ab2f42cd4b74ce2218db16a53934cc78e9639d67eb24aec3e88d3cf6a27e",
-      "header": null,
-      "implementation": null,
+      "header": "src/nodes/accessors/Lights.h",
+      "implementation": "src/nodes/accessors/Lights.cpp",
       "expectedHeader": "src/nodes/accessors/Lights.h",
       "expectedImplementation": "src/nodes/accessors/Lights.cpp",
-      "status": "missing",
+      "status": "partial-unverified",
       "verifiedComplete": false,
       "apiExtraction": "static-only",
       "verification": {
@@ -7666,7 +7666,9 @@
           "pointer": "/modules/224"
         },
         "upstreamUnitTests": [],
-        "cppUnitTests": [],
+        "cppUnitTests": [
+          "test/unit/src/nodes/accessors/Lights.tests.cpp"
+        ],
         "reviewedImplementation": [],
         "differentialResults": [],
         "renderingResults": [],
@@ -10745,11 +10747,11 @@
       "scope": "src",
       "kind": "core",
       "upstreamSha256": "c5e8ef5cef123297860806f88815d2da7fa9e264c1d7519abce4c5b4aa33ec38",
-      "header": null,
-      "implementation": null,
+      "header": "src/nodes/functions/BasicLightingModel.h",
+      "implementation": "src/nodes/functions/BasicLightingModel.cpp",
       "expectedHeader": "src/nodes/functions/BasicLightingModel.h",
       "expectedImplementation": "src/nodes/functions/BasicLightingModel.cpp",
-      "status": "missing",
+      "status": "partial-unverified",
       "verifiedComplete": false,
       "apiExtraction": "static-only",
       "verification": {
@@ -10758,7 +10760,9 @@
           "pointer": "/modules/334"
         },
         "upstreamUnitTests": [],
-        "cppUnitTests": [],
+        "cppUnitTests": [
+          "test/unit/src/nodes/functions/BasicLightingModel.tests.cpp"
+        ],
         "reviewedImplementation": [],
         "differentialResults": [],
         "renderingResults": [],
