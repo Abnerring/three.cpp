@@ -107,6 +107,7 @@ add_executable(THREECPPTests
         unit/src/nodes/functions/BRDF_Lambert.tests.cpp
         unit/src/nodes/functions/D_GGX.tests.cpp
         unit/src/nodes/functions/F_Schlick.tests.cpp
+        unit/src/nodes/functions/V_GGX_SmithCorrelated.tests.cpp
         unit/src/nodes/functions/Schlick_to_F0.tests.cpp
         unit/src/nodes/display/ViewportTextureNode.tests.cpp
         unit/src/nodes/display/RenderOutputNode.tests.cpp
@@ -2689,6 +2690,14 @@ if(THREECPP_NODE_EXECUTABLE AND THREEJS_SOURCE_DIR)
     add_test(NAME threecpp.threejs-f-schlick-parity
         COMMAND "${THREECPP_NODE_EXECUTABLE}" "${CMAKE_CURRENT_SOURCE_DIR}/unit/utils/parity/compare-f-schlick.mjs"
         "${THREEJS_SOURCE_DIR}" "$<TARGET_FILE:ThreeJsFSchlickParityProbe>")
+endif()
+
+add_executable(ThreeJsVGGXSmithCorrelatedParityProbe unit/utils/parity/VGGXSmithCorrelatedParityProbe.cpp)
+target_link_libraries(ThreeJsVGGXSmithCorrelatedParityProbe PRIVATE threecpp::threecpp)
+if(THREECPP_NODE_EXECUTABLE AND THREEJS_SOURCE_DIR)
+    add_test(NAME threecpp.threejs-v-ggx-smith-correlated-parity
+        COMMAND "${THREECPP_NODE_EXECUTABLE}" "${CMAKE_CURRENT_SOURCE_DIR}/unit/utils/parity/compare-v-ggx-smith-correlated.mjs"
+        "${THREEJS_SOURCE_DIR}" "$<TARGET_FILE:ThreeJsVGGXSmithCorrelatedParityProbe>")
 endif()
 
 add_executable(ThreeJsUserDataNodeParityProbe unit/utils/parity/UserDataNodeParityProbe.cpp)
