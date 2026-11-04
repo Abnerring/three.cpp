@@ -985,6 +985,13 @@ if(THREECPP_NODE_EXECUTABLE AND THREEJS_SOURCE_DIR)
         COMMAND "${THREECPP_NODE_EXECUTABLE}" "${CMAKE_CURRENT_SOURCE_DIR}/unit/utils/parity/compare-tri-noise-3d.mjs"
         "${THREEJS_SOURCE_DIR}" "$<TARGET_FILE:ThreeJsTriNoise3DParityProbe>")
 endif()
+add_executable(ThreeJsTriplanarTexturesParityProbe unit/utils/parity/TriplanarTexturesParityProbe.cpp)
+target_link_libraries(ThreeJsTriplanarTexturesParityProbe PRIVATE threecpp::threecpp)
+if(THREECPP_NODE_EXECUTABLE AND THREEJS_SOURCE_DIR)
+    add_test(NAME threecpp.threejs-triplanar-textures-parity
+        COMMAND "${THREECPP_NODE_EXECUTABLE}" "${CMAKE_CURRENT_SOURCE_DIR}/unit/utils/parity/compare-triplanar-textures.mjs"
+        "${THREEJS_SOURCE_DIR}" "$<TARGET_FILE:ThreeJsTriplanarTexturesParityProbe>")
+endif()
 add_executable(ThreeJsBarrierNodeParityProbe unit/utils/parity/BarrierNodeParityProbe.cpp)
 target_link_libraries(ThreeJsBarrierNodeParityProbe PRIVATE threecpp::threecpp)
 if(THREECPP_NODE_EXECUTABLE AND THREEJS_SOURCE_DIR)
