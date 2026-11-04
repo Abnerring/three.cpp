@@ -201,8 +201,8 @@
     "note": "Accepted port scope is src and examples/jsm, including tracked third-party dependencies. Editor/manual web applications are excluded from native application rewrites. Native host behavior, packaging and all three platforms require separate implementation and verification evidence."
   },
   "counts": {
-    "partial-unverified": 512,
-    "missing": 429,
+    "partial-unverified": 515,
+    "missing": 426,
     "vulkan-port-pending": 290,
     "dependency-unverified": 20
   },
@@ -210,8 +210,8 @@
     "src": {
       "modules": 755,
       "counts": {
-        "partial-unverified": 376,
-        "missing": 89,
+        "partial-unverified": 379,
+        "missing": 86,
         "vulkan-port-pending": 290
       }
     },
@@ -796,7 +796,7 @@
       "path": "src/nodes/accessors",
       "upstreamFiles": 43,
       "moduleCount": 43,
-      "modulesWithCppFiles": 35,
+      "modulesWithCppFiles": 36,
       "verifiedComplete": 0
     },
     {
@@ -852,7 +852,7 @@
       "path": "src/nodes/geometry",
       "upstreamFiles": 1,
       "moduleCount": 1,
-      "modulesWithCppFiles": 0,
+      "modulesWithCppFiles": 1,
       "verifiedComplete": 0
     },
     {
@@ -880,7 +880,7 @@
       "path": "src/nodes/math",
       "upstreamFiles": 11,
       "moduleCount": 11,
-      "modulesWithCppFiles": 9,
+      "modulesWithCppFiles": 10,
       "verifiedComplete": 0
     },
     {
@@ -8199,11 +8199,11 @@
       "scope": "src",
       "kind": "core",
       "upstreamSha256": "5b5311c242aecfd1b0930838710f641b754c84f1c8e12c7e6252e230ecbe3628",
-      "header": null,
-      "implementation": null,
+      "header": "src/nodes/accessors/StorageTextureNode.h",
+      "implementation": "src/nodes/accessors/StorageTextureNode.cpp",
       "expectedHeader": "src/nodes/accessors/StorageTextureNode.h",
       "expectedImplementation": "src/nodes/accessors/StorageTextureNode.cpp",
-      "status": "missing",
+      "status": "partial-unverified",
       "verifiedComplete": false,
       "apiExtraction": "partial-static",
       "verification": {
@@ -8212,7 +8212,9 @@
           "pointer": "/modules/244"
         },
         "upstreamUnitTests": [],
-        "cppUnitTests": [],
+        "cppUnitTests": [
+          "test/unit/src/nodes/accessors/StorageTextureNode.tests.cpp"
+        ],
         "reviewedImplementation": [],
         "differentialResults": [],
         "renderingResults": [],
@@ -11028,11 +11030,11 @@
       "scope": "src",
       "kind": "core",
       "upstreamSha256": "3d741e876dad7a92ef0e3e6d8a3fe1b12d8b1b138bbd53f5c341cfdb1d2dd320",
-      "header": null,
-      "implementation": null,
+      "header": "src/nodes/geometry/RangeNode.h",
+      "implementation": "src/nodes/geometry/RangeNode.cpp",
       "expectedHeader": "src/nodes/geometry/RangeNode.h",
       "expectedImplementation": "src/nodes/geometry/RangeNode.cpp",
-      "status": "missing",
+      "status": "partial-unverified",
       "verifiedComplete": false,
       "apiExtraction": "partial-static",
       "verification": {
@@ -11041,7 +11043,9 @@
           "pointer": "/modules/345"
         },
         "upstreamUnitTests": [],
-        "cppUnitTests": [],
+        "cppUnitTests": [
+          "test/unit/src/nodes/geometry/RangeNode.tests.cpp"
+        ],
         "reviewedImplementation": [],
         "differentialResults": [],
         "renderingResults": [],
@@ -12195,11 +12199,11 @@
       "scope": "src",
       "kind": "core",
       "upstreamSha256": "4771eb4370d0904c4cccc90fc98e7efe17ced400b0b11598ab2e4ce8ad8bec4f",
-      "header": null,
-      "implementation": null,
+      "header": "src/nodes/math/Packed4x8IntegerNode.h",
+      "implementation": "src/nodes/math/Packed4x8IntegerNode.cpp",
       "expectedHeader": "src/nodes/math/Packed4x8IntegerNode.h",
       "expectedImplementation": "src/nodes/math/Packed4x8IntegerNode.cpp",
-      "status": "missing",
+      "status": "partial-unverified",
       "verifiedComplete": false,
       "apiExtraction": "partial-static",
       "verification": {
@@ -12208,7 +12212,9 @@
           "pointer": "/modules/388"
         },
         "upstreamUnitTests": [],
-        "cppUnitTests": [],
+        "cppUnitTests": [
+          "test/unit/src/nodes/math/Packed4x8IntegerNode.tests.cpp"
+        ],
         "reviewedImplementation": [],
         "differentialResults": [],
         "renderingResults": [],

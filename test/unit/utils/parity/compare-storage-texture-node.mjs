@@ -1,0 +1,21 @@
+import assert from 'node:assert/strict';
+import {execFileSync} from 'node:child_process';
+import path from 'node:path';
+import {pathToFileURL} from 'node:url';
+
+const upstream = path.resolve(process.argv[2]);
+const binary = path.resolve(process.argv[3]);
+const lock = (await import('../../../../upstream.json', {with: {type: 'json'}})).default;
+assert.equal(execFileSync('git', ['-C', upstream, 'rev-parse', 'HEAD'], {encoding: 'utf8'}).trim(), lock.commit);
+const {storageTexture} = await import(pathToFileURL(path.join(upstream, 'src/nodes/accessors/StorageTextureNode.js')));
+const {Texture} = await import(pathToFileURL(path.join(upstream, 'src/textures/Texture.js')));
+const {vec2, vec4} = await import(pathToFileURL(path.join(upstream, 'src/nodes/tsl/TSLCore.js')));
+const texture = new Texture();
+const uv = vec2(2, 3);
+const value = vec4(1, 0, 0, 1);
+const node = storageTexture(texture, uv, value);
+const describe = node => ({type: node.type, isStorageTextureNode: node.isStorageTextureNode, access: node.access, mipLevel: node.mipLevel, uvNodeType: node.uvNode.type, storeNodeType: node.storeNode.type, inputType: node.getInputType()});
+const expected = {node: describe(node), readOnly: describe(node.toReadOnly())};
+const actual = JSON.parse(execFileSync(binary, {encoding: 'utf8'}));
+assert.deepEqual(actual, expected);
+console.log('StorageTextureNode native/module parity passed');

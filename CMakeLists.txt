@@ -207,6 +207,7 @@ target_sources(threecpp PRIVATE
     src/nodes/accessors/PointUVNode.cpp
     src/nodes/accessors/TextureSizeNode.cpp
     src/nodes/accessors/TextureNode.cpp
+    src/nodes/accessors/StorageTextureNode.cpp
     src/nodes/accessors/CubeTextureNode.cpp
     src/nodes/accessors/ReflectVector.cpp
     src/nodes/accessors/MaterialProperties.cpp
@@ -324,8 +325,10 @@ target_sources(threecpp PRIVATE
     src/nodes/math/MathUtils.cpp
     src/nodes/math/BitcastNode.cpp
     src/nodes/math/BitcountNode.cpp
+    src/nodes/math/Packed4x8IntegerNode.cpp
     src/nodes/math/PackFloatNode.cpp
     src/nodes/math/UnpackFloatNode.cpp
+    src/nodes/geometry/RangeNode.cpp
     src/nodes/functions/material/getAlphaHashThreshold.cpp
     src/nodes/functions/material/getGeometryRoughness.cpp
     src/nodes/functions/material/getParallaxCorrectNormal.cpp

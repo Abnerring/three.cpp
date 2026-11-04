@@ -83,10 +83,13 @@ add_executable(THREECPPTests
         unit/src/nodes/core/MaterialProperties.tests.cpp
         unit/src/nodes/accessors/ModelNode.tests.cpp
         unit/src/nodes/accessors/Object3DNode.tests.cpp
+        unit/src/nodes/accessors/StorageTextureNode.tests.cpp
         unit/src/nodes/math/BitcastNode.tests.cpp
         unit/src/nodes/math/BitcountNode.tests.cpp
+        unit/src/nodes/math/Packed4x8IntegerNode.tests.cpp
         unit/src/nodes/math/PackFloatNode.tests.cpp
         unit/src/nodes/math/UnpackFloatNode.tests.cpp
+        unit/src/nodes/geometry/RangeNode.tests.cpp
         unit/src/nodes/display/FrontFacingNode.tests.cpp
         unit/src/nodes/display/ColorSpaceFunctions.tests.cpp
         unit/src/nodes/display/ToneMappingNode.tests.cpp
@@ -877,6 +880,13 @@ if(THREECPP_NODE_EXECUTABLE AND THREEJS_SOURCE_DIR)
     add_test(NAME threecpp.threejs-environment-brdf-parity
         COMMAND "${THREECPP_NODE_EXECUTABLE}" "${CMAKE_CURRENT_SOURCE_DIR}/unit/utils/parity/compare-environment-brdf.mjs"
         "${THREEJS_SOURCE_DIR}" "$<TARGET_FILE:ThreeJsEnvironmentBRDFParityProbe>")
+endif()
+add_executable(ThreeJsStorageTextureNodeParityProbe unit/utils/parity/StorageTextureNodeParityProbe.cpp)
+target_link_libraries(ThreeJsStorageTextureNodeParityProbe PRIVATE threecpp::threecpp)
+if(THREECPP_NODE_EXECUTABLE AND THREEJS_SOURCE_DIR)
+    add_test(NAME threecpp.threejs-storage-texture-node-parity
+        COMMAND "${THREECPP_NODE_EXECUTABLE}" "${CMAKE_CURRENT_SOURCE_DIR}/unit/utils/parity/compare-storage-texture-node.mjs"
+        "${THREEJS_SOURCE_DIR}" "$<TARGET_FILE:ThreeJsStorageTextureNodeParityProbe>")
 endif()
 if(THREECPP_BUILD_VULKAN)
     add_executable(VulkanShaderCompilerTests unit/three.source.unit.cpp
@@ -2841,6 +2851,14 @@ if(THREECPP_NODE_EXECUTABLE AND THREEJS_SOURCE_DIR)
         "${THREEJS_SOURCE_DIR}" "$<TARGET_FILE:ThreeJsBitcountNodeParityProbe>")
 endif()
 
+add_executable(ThreeJsPacked4x8IntegerNodeParityProbe unit/utils/parity/Packed4x8IntegerNodeParityProbe.cpp)
+target_link_libraries(ThreeJsPacked4x8IntegerNodeParityProbe PRIVATE threecpp::threecpp)
+if(THREECPP_NODE_EXECUTABLE AND THREEJS_SOURCE_DIR)
+    add_test(NAME threecpp.threejs-packed-4x8-integer-node-parity
+        COMMAND "${THREECPP_NODE_EXECUTABLE}" "${CMAKE_CURRENT_SOURCE_DIR}/unit/utils/parity/compare-packed-4x8-integer-node.mjs"
+        "${THREEJS_SOURCE_DIR}" "$<TARGET_FILE:ThreeJsPacked4x8IntegerNodeParityProbe>")
+endif()
+
 add_executable(ThreeJsPackFloatNodeParityProbe unit/utils/parity/PackFloatNodeParityProbe.cpp)
 target_link_libraries(ThreeJsPackFloatNodeParityProbe PRIVATE threecpp::threecpp)
 if(THREECPP_NODE_EXECUTABLE AND THREEJS_SOURCE_DIR)
@@ -2855,4 +2873,12 @@ if(THREECPP_NODE_EXECUTABLE AND THREEJS_SOURCE_DIR)
     add_test(NAME threecpp.threejs-unpack-float-node-parity
         COMMAND "${THREECPP_NODE_EXECUTABLE}" "${CMAKE_CURRENT_SOURCE_DIR}/unit/utils/parity/compare-unpack-float-node.mjs"
         "${THREEJS_SOURCE_DIR}" "$<TARGET_FILE:ThreeJsUnpackFloatNodeParityProbe>")
+endif()
+
+add_executable(ThreeJsRangeNodeParityProbe unit/utils/parity/RangeNodeParityProbe.cpp)
+target_link_libraries(ThreeJsRangeNodeParityProbe PRIVATE threecpp::threecpp)
+if(THREECPP_NODE_EXECUTABLE AND THREEJS_SOURCE_DIR)
+    add_test(NAME threecpp.threejs-range-node-parity
+        COMMAND "${THREECPP_NODE_EXECUTABLE}" "${CMAKE_CURRENT_SOURCE_DIR}/unit/utils/parity/compare-range-node.mjs"
+        "${THREEJS_SOURCE_DIR}" "$<TARGET_FILE:ThreeJsRangeNodeParityProbe>")
 endif()
