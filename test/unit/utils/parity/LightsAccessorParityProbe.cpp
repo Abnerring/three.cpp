@@ -6,12 +6,6 @@
 namespace {
 using namespace UtilityNodeRuntime;
 
-void own(JSValue object, const char* key, const JSValue& value) {
-    JSPropertyDescriptor descriptor;
-    descriptor.value = value;
-    descriptor.writable = descriptor.enumerable = descriptor.configurable = true;
-    object.defineProperty(key, descriptor);
-}
 }
 
 int main() {
