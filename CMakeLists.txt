@@ -257,6 +257,7 @@ target_sources(threecpp PRIVATE
     src/nodes/utils/MatcapUV.cpp
     src/nodes/utils/MaxMipLevelNode.cpp
     src/nodes/utils/Remap.cpp
+    src/nodes/utils/Timer.cpp
     src/nodes/core/SampleNode.cpp
     src/nodes/core/RotateNode.cpp
     src/nodes/utils/FlipNode.cpp
@@ -321,11 +322,13 @@ target_sources(threecpp PRIVATE
     src/nodes/math/ConditionalNode.cpp
     src/nodes/math/Hash.cpp
     src/nodes/math/MathUtils.cpp
+    src/nodes/math/BitcastNode.cpp
     src/nodes/functions/material/getAlphaHashThreshold.cpp
     src/nodes/functions/material/getGeometryRoughness.cpp
     src/nodes/functions/material/getRoughness.cpp
     src/nodes/functions/material/getShIrradianceAt.cpp
     src/nodes/functions/BSDF/BRDF_Lambert.cpp
+    src/nodes/functions/BSDF/BRDF_Sheen.cpp
     src/nodes/functions/BSDF/D_GGX.cpp
     src/nodes/functions/BSDF/D_GGX_Anisotropic.cpp
     src/nodes/functions/BSDF/F_Schlick.cpp

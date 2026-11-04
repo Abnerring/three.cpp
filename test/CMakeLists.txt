@@ -83,6 +83,7 @@ add_executable(THREECPPTests
         unit/src/nodes/core/MaterialProperties.tests.cpp
         unit/src/nodes/accessors/ModelNode.tests.cpp
         unit/src/nodes/accessors/Object3DNode.tests.cpp
+        unit/src/nodes/math/BitcastNode.tests.cpp
         unit/src/nodes/display/FrontFacingNode.tests.cpp
         unit/src/nodes/display/ColorSpaceFunctions.tests.cpp
         unit/src/nodes/display/ToneMappingNode.tests.cpp
@@ -105,6 +106,7 @@ add_executable(THREECPPTests
         unit/src/nodes/display/ToneMappingFunctions.tests.cpp
         unit/src/nodes/display/ColorAdjustment.tests.cpp
         unit/src/nodes/functions/BRDF_Lambert.tests.cpp
+        unit/src/nodes/functions/BRDF_Sheen.tests.cpp
         unit/src/nodes/functions/D_GGX.tests.cpp
         unit/src/nodes/functions/D_GGX_Anisotropic.tests.cpp
         unit/src/nodes/functions/F_Schlick.tests.cpp
@@ -123,6 +125,7 @@ add_executable(THREECPPTests
         unit/src/nodes/utils/MatcapUV.tests.cpp
         unit/src/nodes/utils/MaxMipLevelNode.tests.cpp
         unit/src/nodes/utils/Remap.tests.cpp
+        unit/src/nodes/utils/Timer.tests.cpp
         unit/src/nodes/core/SampleNode.tests.cpp
         unit/src/nodes/core/RotateNode.tests.cpp
         unit/src/nodes/utils/FlipNode.tests.cpp
@@ -830,6 +833,14 @@ if(THREECPP_BUILD_ADDONS)
     target_link_libraries(ThreeJsJsmShadersParityProbe PRIVATE threecpp::addons)
     add_executable(ThreeJsRectAreaLightParityProbe unit/utils/parity/RectAreaLightParityProbe.cpp)
     target_link_libraries(ThreeJsRectAreaLightParityProbe PRIVATE threecpp::addons)
+endif()
+
+add_executable(ThreeJsBRDFSheenParityProbe unit/utils/parity/BRDFSheenParityProbe.cpp)
+target_link_libraries(ThreeJsBRDFSheenParityProbe PRIVATE threecpp::threecpp)
+if(THREECPP_NODE_EXECUTABLE AND THREEJS_SOURCE_DIR)
+    add_test(NAME threecpp.threejs-brdf-sheen-parity
+        COMMAND "${THREECPP_NODE_EXECUTABLE}" "${CMAKE_CURRENT_SOURCE_DIR}/unit/utils/parity/compare-brdf-sheen.mjs"
+        "${THREEJS_SOURCE_DIR}" "$<TARGET_FILE:ThreeJsBRDFSheenParityProbe>")
 endif()
 if(THREECPP_BUILD_VULKAN)
     add_executable(VulkanShaderCompilerTests unit/three.source.unit.cpp
@@ -2760,4 +2771,20 @@ if(THREECPP_NODE_EXECUTABLE AND THREEJS_SOURCE_DIR)
     add_test(NAME threecpp.threejs-matcap-uv-parity
         COMMAND "${THREECPP_NODE_EXECUTABLE}" "${CMAKE_CURRENT_SOURCE_DIR}/unit/utils/parity/compare-matcap-uv.mjs"
         "${THREEJS_SOURCE_DIR}" "$<TARGET_FILE:ThreeJsMatcapUVParityProbe>")
+endif()
+
+add_executable(ThreeJsTimerParityProbe unit/utils/parity/TimerParityProbe.cpp)
+target_link_libraries(ThreeJsTimerParityProbe PRIVATE threecpp::threecpp)
+if(THREECPP_NODE_EXECUTABLE AND THREEJS_SOURCE_DIR)
+    add_test(NAME threecpp.threejs-timer-parity
+        COMMAND "${THREECPP_NODE_EXECUTABLE}" "${CMAKE_CURRENT_SOURCE_DIR}/unit/utils/parity/compare-timer.mjs"
+        "${THREEJS_SOURCE_DIR}" "$<TARGET_FILE:ThreeJsTimerParityProbe>")
+endif()
+
+add_executable(ThreeJsBitcastNodeParityProbe unit/utils/parity/BitcastNodeParityProbe.cpp)
+target_link_libraries(ThreeJsBitcastNodeParityProbe PRIVATE threecpp::threecpp)
+if(THREECPP_NODE_EXECUTABLE AND THREEJS_SOURCE_DIR)
+    add_test(NAME threecpp.threejs-bitcast-node-parity
+        COMMAND "${THREECPP_NODE_EXECUTABLE}" "${CMAKE_CURRENT_SOURCE_DIR}/unit/utils/parity/compare-bitcast-node.mjs"
+        "${THREEJS_SOURCE_DIR}" "$<TARGET_FILE:ThreeJsBitcastNodeParityProbe>")
 endif()

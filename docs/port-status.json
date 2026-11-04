@@ -201,8 +201,8 @@
     "note": "Accepted port scope is src and examples/jsm, including tracked third-party dependencies. Editor/manual web applications are excluded from native application rewrites. Native host behavior, packaging and all three platforms require separate implementation and verification evidence."
   },
   "counts": {
-    "partial-unverified": 501,
-    "missing": 440,
+    "partial-unverified": 504,
+    "missing": 437,
     "vulkan-port-pending": 290,
     "dependency-unverified": 20
   },
@@ -210,8 +210,8 @@
     "src": {
       "modules": 755,
       "counts": {
-        "partial-unverified": 365,
-        "missing": 100,
+        "partial-unverified": 368,
+        "missing": 97,
         "vulkan-port-pending": 290
       }
     },
@@ -838,7 +838,7 @@
       "path": "src/nodes/functions/BSDF",
       "upstreamFiles": 13,
       "moduleCount": 13,
-      "modulesWithCppFiles": 7,
+      "modulesWithCppFiles": 8,
       "verifiedComplete": 0
     },
     {
@@ -880,7 +880,7 @@
       "path": "src/nodes/math",
       "upstreamFiles": 11,
       "moduleCount": 11,
-      "modulesWithCppFiles": 5,
+      "modulesWithCppFiles": 6,
       "verifiedComplete": 0
     },
     {
@@ -922,7 +922,7 @@
       "path": "src/nodes/utils",
       "upstreamFiles": 31,
       "moduleCount": 31,
-      "modulesWithCppFiles": 19,
+      "modulesWithCppFiles": 20,
       "verifiedComplete": 0
     },
     {
@@ -10461,11 +10461,11 @@
       "scope": "src",
       "kind": "core",
       "upstreamSha256": "0aba19b0c9d936c2a8b17691a84ea20a5ee7461c98b312c3318547c111d6f77c",
-      "header": null,
-      "implementation": null,
+      "header": "src/nodes/functions/BSDF/BRDF_Sheen.h",
+      "implementation": "src/nodes/functions/BSDF/BRDF_Sheen.cpp",
       "expectedHeader": "src/nodes/functions/BSDF/BRDF_Sheen.h",
       "expectedImplementation": "src/nodes/functions/BSDF/BRDF_Sheen.cpp",
-      "status": "missing",
+      "status": "partial-unverified",
       "verifiedComplete": false,
       "apiExtraction": "partial-static",
       "verification": {
@@ -11973,11 +11973,11 @@
       "scope": "src",
       "kind": "core",
       "upstreamSha256": "a6cabf7482abd2c08765c306f1730ae47231d34a347569bbf0e9915981e70745",
-      "header": null,
-      "implementation": null,
+      "header": "src/nodes/math/BitcastNode.h",
+      "implementation": "src/nodes/math/BitcastNode.cpp",
       "expectedHeader": "src/nodes/math/BitcastNode.h",
       "expectedImplementation": "src/nodes/math/BitcastNode.cpp",
-      "status": "missing",
+      "status": "partial-unverified",
       "verifiedComplete": false,
       "apiExtraction": "partial-static",
       "verification": {
@@ -11986,7 +11986,9 @@
           "pointer": "/modules/380"
         },
         "upstreamUnitTests": [],
-        "cppUnitTests": [],
+        "cppUnitTests": [
+          "test/unit/src/nodes/math/BitcastNode.tests.cpp"
+        ],
         "reviewedImplementation": [],
         "differentialResults": [],
         "renderingResults": [],
@@ -13255,11 +13257,11 @@
       "scope": "src",
       "kind": "core",
       "upstreamSha256": "b9a65e3d2eb5ef0dac5339de20cabeacfc6d326bec7b7d4d49acc96a69acc473",
-      "header": null,
-      "implementation": null,
+      "header": "src/nodes/utils/Timer.h",
+      "implementation": "src/nodes/utils/Timer.cpp",
       "expectedHeader": "src/nodes/utils/Timer.h",
       "expectedImplementation": "src/nodes/utils/Timer.cpp",
-      "status": "missing",
+      "status": "partial-unverified",
       "verifiedComplete": false,
       "apiExtraction": "partial-static",
       "verification": {
@@ -13268,7 +13270,9 @@
           "pointer": "/modules/426"
         },
         "upstreamUnitTests": [],
-        "cppUnitTests": [],
+        "cppUnitTests": [
+          "test/unit/src/nodes/utils/Timer.tests.cpp"
+        ],
         "reviewedImplementation": [],
         "differentialResults": [],
         "renderingResults": [],
