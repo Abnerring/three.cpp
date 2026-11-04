@@ -333,6 +333,7 @@ target_sources(threecpp PRIVATE
     src/nodes/math/MathNode.cpp
     src/nodes/math/TriNoise3D.cpp
     src/nodes/procedural/Checker.cpp
+    src/nodes/shapes/Shapes.cpp
     src/nodes/math/ConditionalNode.cpp
     src/nodes/math/Hash.cpp
     src/nodes/math/MathUtils.cpp

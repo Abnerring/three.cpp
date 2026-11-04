@@ -99,6 +99,7 @@ add_executable(THREECPPTests
         unit/src/nodes/math/UnpackFloatNode.tests.cpp
         unit/src/nodes/math/TriNoise3D.tests.cpp
         unit/src/nodes/procedural/Checker.tests.cpp
+        unit/src/nodes/shapes/Shapes.tests.cpp
         unit/src/nodes/gpgpu/BarrierNode.tests.cpp
         unit/src/nodes/geometry/RangeNode.tests.cpp
         unit/src/nodes/display/FrontFacingNode.tests.cpp
@@ -1002,6 +1003,13 @@ if(THREECPP_NODE_EXECUTABLE AND THREEJS_SOURCE_DIR)
     add_test(NAME threecpp.threejs-checker-parity
         COMMAND "${THREECPP_NODE_EXECUTABLE}" "${CMAKE_CURRENT_SOURCE_DIR}/unit/utils/parity/compare-checker.mjs"
         "${THREEJS_SOURCE_DIR}" "$<TARGET_FILE:ThreeJsCheckerParityProbe>")
+endif()
+add_executable(ThreeJsShapesParityProbe unit/utils/parity/ShapesParityProbe.cpp)
+target_link_libraries(ThreeJsShapesParityProbe PRIVATE threecpp::threecpp)
+if(THREECPP_NODE_EXECUTABLE AND THREEJS_SOURCE_DIR)
+    add_test(NAME threecpp.threejs-shapes-parity
+        COMMAND "${THREECPP_NODE_EXECUTABLE}" "${CMAKE_CURRENT_SOURCE_DIR}/unit/utils/parity/compare-shapes.mjs"
+        "${THREEJS_SOURCE_DIR}" "$<TARGET_FILE:ThreeJsShapesParityProbe>")
 endif()
 add_executable(ThreeJsTriplanarTexturesParityProbe unit/utils/parity/TriplanarTexturesParityProbe.cpp)
 target_link_libraries(ThreeJsTriplanarTexturesParityProbe PRIVATE threecpp::threecpp)
