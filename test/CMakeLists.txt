@@ -84,6 +84,7 @@ add_executable(THREECPPTests
         unit/src/nodes/accessors/ModelNode.tests.cpp
         unit/src/nodes/accessors/Object3DNode.tests.cpp
         unit/src/nodes/accessors/StorageTextureNode.tests.cpp
+        unit/src/nodes/accessors/TextureBicubic.tests.cpp
         unit/src/nodes/math/BitcastNode.tests.cpp
         unit/src/nodes/math/BitcountNode.tests.cpp
         unit/src/nodes/math/Packed4x8IntegerNode.tests.cpp
@@ -887,6 +888,13 @@ if(THREECPP_NODE_EXECUTABLE AND THREEJS_SOURCE_DIR)
     add_test(NAME threecpp.threejs-storage-texture-node-parity
         COMMAND "${THREECPP_NODE_EXECUTABLE}" "${CMAKE_CURRENT_SOURCE_DIR}/unit/utils/parity/compare-storage-texture-node.mjs"
         "${THREEJS_SOURCE_DIR}" "$<TARGET_FILE:ThreeJsStorageTextureNodeParityProbe>")
+endif()
+add_executable(ThreeJsTextureBicubicParityProbe unit/utils/parity/TextureBicubicParityProbe.cpp)
+target_link_libraries(ThreeJsTextureBicubicParityProbe PRIVATE threecpp::threecpp)
+if(THREECPP_NODE_EXECUTABLE AND THREEJS_SOURCE_DIR)
+    add_test(NAME threecpp.threejs-texture-bicubic-parity
+        COMMAND "${THREECPP_NODE_EXECUTABLE}" "${CMAKE_CURRENT_SOURCE_DIR}/unit/utils/parity/compare-texture-bicubic.mjs"
+        "${THREEJS_SOURCE_DIR}" "$<TARGET_FILE:ThreeJsTextureBicubicParityProbe>")
 endif()
 if(THREECPP_BUILD_VULKAN)
     add_executable(VulkanShaderCompilerTests unit/three.source.unit.cpp
