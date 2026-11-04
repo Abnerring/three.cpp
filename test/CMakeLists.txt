@@ -146,7 +146,7 @@ add_executable(THREECPPTests
         unit/src/nodes/utils/SpriteSheetUV.tests.cpp
         unit/src/nodes/utils/Timer.tests.cpp
         unit/src/nodes/core/SampleNode.tests.cpp
-        unit/src/nodes/core/RotateNode.tests.cpp
+        unit/src/nodes/utils/RotateNode.tests.cpp
         unit/src/nodes/utils/FlipNode.tests.cpp
         unit/src/nodes/utils/SplitNode.tests.cpp
         unit/src/nodes/utils/JoinNode.tests.cpp

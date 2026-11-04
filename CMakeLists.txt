@@ -268,7 +268,7 @@ target_sources(threecpp PRIVATE
     src/nodes/utils/SpriteSheetUV.cpp
     src/nodes/utils/Timer.cpp
     src/nodes/core/SampleNode.cpp
-    src/nodes/core/RotateNode.cpp
+    src/nodes/utils/RotateNode.cpp
     src/nodes/utils/FlipNode.cpp
     src/nodes/utils/SplitNode.cpp
     src/nodes/utils/JoinNode.cpp

@@ -13088,11 +13088,11 @@
       "scope": "src",
       "kind": "core",
       "upstreamSha256": "3615c2340aa0bc579473f0807635026f7d860e89eaedf97c57dafbe142101c19",
-      "header": null,
-      "implementation": null,
+      "header": "src/nodes/utils/RotateNode.h",
+      "implementation": "src/nodes/utils/RotateNode.cpp",
       "expectedHeader": "src/nodes/utils/RotateNode.h",
       "expectedImplementation": "src/nodes/utils/RotateNode.cpp",
-      "status": "missing",
+      "status": "partial-unverified",
       "verifiedComplete": false,
       "apiExtraction": "partial-static",
       "verification": {
@@ -13101,7 +13101,9 @@
           "pointer": "/modules/419"
         },
         "upstreamUnitTests": [],
-        "cppUnitTests": [],
+        "cppUnitTests": [
+          "test/unit/src/nodes/utils/RotateNode.tests.cpp"
+        ],
         "reviewedImplementation": [],
         "differentialResults": [],
         "renderingResults": [],
