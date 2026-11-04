@@ -201,8 +201,8 @@
     "note": "Accepted port scope is src and examples/jsm, including tracked third-party dependencies. Editor/manual web applications are excluded from native application rewrites. Native host behavior, packaging and all three platforms require separate implementation and verification evidence."
   },
   "counts": {
-    "partial-unverified": 493,
-    "missing": 448,
+    "partial-unverified": 494,
+    "missing": 447,
     "vulkan-port-pending": 290,
     "dependency-unverified": 20
   },
@@ -210,8 +210,8 @@
     "src": {
       "modules": 755,
       "counts": {
-        "partial-unverified": 357,
-        "missing": 108,
+        "partial-unverified": 358,
+        "missing": 107,
         "vulkan-port-pending": 290
       }
     },
@@ -838,7 +838,7 @@
       "path": "src/nodes/functions/BSDF",
       "upstreamFiles": 13,
       "moduleCount": 13,
-      "modulesWithCppFiles": 3,
+      "modulesWithCppFiles": 4,
       "verifiedComplete": 0
     },
     {
@@ -10596,11 +10596,11 @@
       "scope": "src",
       "kind": "core",
       "upstreamSha256": "6ad314dbea806fd2cdb645f24f17273ab424345dc94bcd3f6e42dbcf84e5ec48",
-      "header": null,
-      "implementation": null,
+      "header": "src/nodes/functions/BSDF/F_Schlick.h",
+      "implementation": "src/nodes/functions/BSDF/F_Schlick.cpp",
       "expectedHeader": "src/nodes/functions/BSDF/F_Schlick.h",
       "expectedImplementation": "src/nodes/functions/BSDF/F_Schlick.cpp",
-      "status": "missing",
+      "status": "partial-unverified",
       "verifiedComplete": false,
       "apiExtraction": "partial-static",
       "verification": {
