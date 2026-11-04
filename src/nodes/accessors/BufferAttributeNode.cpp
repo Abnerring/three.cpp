@@ -81,6 +81,12 @@ JSValue nativeBufferAttributeNodeConstructor(){
         self.set("isBufferNode",true);self.set("bufferType",type);self.set("bufferStride",stride);self.set("bufferOffset",offset);self.set("usage",StaticDrawUsage);
         self.set("instanced",false);self.set("attribute",nullptr);self.set("global",true);
         if(value.toBoolean()&&value.get("isBufferAttribute").strictEquals(true)&&value.get("itemSize").toNumber()<=4){self.set("attribute",value);self.set("usage",value.get("usage"));self.set("instanced",value.get("isInstancedBufferAttribute"));}
+        else if(value.toBoolean()&&value.get("isInterleavedBufferAttribute").strictEquals(true)){
+            // Interleaved attributes can represent a matrix column (itemSize > 4),
+            // so they are retained directly instead of being rebuilt from their array.
+            self.set("attribute",value);
+            self.set("usage",value.get("data").get("usage"));
+        }
         return self;
     },{holder},"BufferAttributeNode",1);
     holder.set("constructor",constructor);holder.set("bindings",bindings);constructor.setPrototype(base);auto prototype=constructor.get("prototype");prototype.setPrototype(base.get("prototype"));
