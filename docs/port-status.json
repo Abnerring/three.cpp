@@ -201,8 +201,8 @@
     "note": "Accepted port scope is src and examples/jsm, including tracked third-party dependencies. Editor/manual web applications are excluded from native application rewrites. Native host behavior, packaging and all three platforms require separate implementation and verification evidence."
   },
   "counts": {
-    "partial-unverified": 519,
-    "missing": 422,
+    "partial-unverified": 522,
+    "missing": 419,
     "vulkan-port-pending": 290,
     "dependency-unverified": 20
   },
@@ -210,8 +210,8 @@
     "src": {
       "modules": 755,
       "counts": {
-        "partial-unverified": 383,
-        "missing": 82,
+        "partial-unverified": 386,
+        "missing": 79,
         "vulkan-port-pending": 290
       }
     },
@@ -796,7 +796,7 @@
       "path": "src/nodes/accessors",
       "upstreamFiles": 43,
       "moduleCount": 43,
-      "modulesWithCppFiles": 38,
+      "modulesWithCppFiles": 41,
       "verifiedComplete": 0
     },
     {
@@ -7377,11 +7377,11 @@
       "scope": "src",
       "kind": "core",
       "upstreamSha256": "685b822afb0ffb001391f81cd92291a4d6359285fecb3daba38325f43e68cd19",
-      "header": null,
-      "implementation": null,
+      "header": "src/nodes/accessors/Arrays.h",
+      "implementation": "src/nodes/accessors/Arrays.cpp",
       "expectedHeader": "src/nodes/accessors/Arrays.h",
       "expectedImplementation": "src/nodes/accessors/Arrays.cpp",
-      "status": "missing",
+      "status": "partial-unverified",
       "verifiedComplete": false,
       "apiExtraction": "static-only",
       "verification": {
@@ -7390,7 +7390,9 @@
           "pointer": "/modules/214"
         },
         "upstreamUnitTests": [],
-        "cppUnitTests": [],
+        "cppUnitTests": [
+          "test/unit/src/nodes/accessors/Arrays.tests.cpp"
+        ],
         "reviewedImplementation": [],
         "differentialResults": [],
         "renderingResults": [],
@@ -8172,11 +8174,11 @@
       "scope": "src",
       "kind": "core",
       "upstreamSha256": "8775d2d8ec51dfd98071fafb61c0f5d5619c7ac28b17b862374ec3a0617fa0e9",
-      "header": null,
-      "implementation": null,
+      "header": "src/nodes/accessors/StorageTexture3DNode.h",
+      "implementation": "src/nodes/accessors/StorageTexture3DNode.cpp",
       "expectedHeader": "src/nodes/accessors/StorageTexture3DNode.h",
       "expectedImplementation": "src/nodes/accessors/StorageTexture3DNode.cpp",
-      "status": "missing",
+      "status": "partial-unverified",
       "verifiedComplete": false,
       "apiExtraction": "partial-static",
       "verification": {
@@ -8185,7 +8187,9 @@
           "pointer": "/modules/243"
         },
         "upstreamUnitTests": [],
-        "cppUnitTests": [],
+        "cppUnitTests": [
+          "test/unit/src/nodes/accessors/StorageTexture3DNode.tests.cpp"
+        ],
         "reviewedImplementation": [],
         "differentialResults": [],
         "renderingResults": [],
@@ -8481,11 +8485,11 @@
       "scope": "src",
       "kind": "core",
       "upstreamSha256": "8cda700e94cca93f58f9a7dd76b77f61051853af04990169b67b86d2a17c8eb5",
-      "header": null,
-      "implementation": null,
+      "header": "src/nodes/accessors/VelocityNode.h",
+      "implementation": "src/nodes/accessors/VelocityNode.cpp",
       "expectedHeader": "src/nodes/accessors/VelocityNode.h",
       "expectedImplementation": "src/nodes/accessors/VelocityNode.cpp",
-      "status": "missing",
+      "status": "partial-unverified",
       "verifiedComplete": false,
       "apiExtraction": "partial-static",
       "verification": {
@@ -8494,7 +8498,9 @@
           "pointer": "/modules/254"
         },
         "upstreamUnitTests": [],
-        "cppUnitTests": [],
+        "cppUnitTests": [
+          "test/unit/src/nodes/accessors/VelocityNode.tests.cpp"
+        ],
         "reviewedImplementation": [],
         "differentialResults": [],
         "renderingResults": [],

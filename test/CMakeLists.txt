@@ -88,6 +88,7 @@ add_executable(THREECPPTests
         unit/src/nodes/accessors/TextureBicubic.tests.cpp
         unit/src/nodes/accessors/Texture3DNode.tests.cpp
         unit/src/nodes/accessors/Arrays.tests.cpp
+        unit/src/nodes/accessors/VelocityNode.tests.cpp
         unit/src/nodes/math/BitcastNode.tests.cpp
         unit/src/nodes/math/BitcountNode.tests.cpp
         unit/src/nodes/math/Packed4x8IntegerNode.tests.cpp
@@ -928,6 +929,13 @@ if(THREECPP_NODE_EXECUTABLE AND THREEJS_SOURCE_DIR)
     add_test(NAME threecpp.threejs-texture3d-node-parity
         COMMAND "${THREECPP_NODE_EXECUTABLE}" "${CMAKE_CURRENT_SOURCE_DIR}/unit/utils/parity/compare-texture3d-node.mjs"
         "${THREEJS_SOURCE_DIR}" "$<TARGET_FILE:ThreeJsTexture3DNodeParityProbe>")
+endif()
+add_executable(ThreeJsVelocityNodeParityProbe unit/utils/parity/VelocityNodeParityProbe.cpp)
+target_link_libraries(ThreeJsVelocityNodeParityProbe PRIVATE threecpp::threecpp)
+if(THREECPP_NODE_EXECUTABLE AND THREEJS_SOURCE_DIR)
+    add_test(NAME threecpp.threejs-velocity-node-parity
+        COMMAND "${THREECPP_NODE_EXECUTABLE}" "${CMAKE_CURRENT_SOURCE_DIR}/unit/utils/parity/compare-velocity-node.mjs"
+        "${THREEJS_SOURCE_DIR}" "$<TARGET_FILE:ThreeJsVelocityNodeParityProbe>")
 endif()
 add_executable(ThreeJsArraysParityProbe unit/utils/parity/ArraysParityProbe.cpp)
 target_link_libraries(ThreeJsArraysParityProbe PRIVATE threecpp::threecpp)
