@@ -199,6 +199,7 @@ target_sources(threecpp PRIVATE
     src/nodes/lighting/AONode.cpp
     src/nodes/lighting/IrradianceNode.cpp
     src/nodes/lighting/LightUtils.cpp
+    src/nodes/lighting/BasicLightMapNode.cpp
     src/nodes/accessors/BuiltinNode.cpp
     src/nodes/core/SceneProperties.cpp
     src/nodes/accessors/Tangent.cpp

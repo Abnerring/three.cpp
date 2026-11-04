@@ -201,8 +201,8 @@
     "note": "Accepted port scope is src and examples/jsm, including tracked third-party dependencies. Editor/manual web applications are excluded from native application rewrites. Native host behavior, packaging and all three platforms require separate implementation and verification evidence."
   },
   "counts": {
-    "partial-unverified": 532,
-    "missing": 409,
+    "partial-unverified": 535,
+    "missing": 406,
     "vulkan-port-pending": 290,
     "dependency-unverified": 20
   },
@@ -210,8 +210,8 @@
     "src": {
       "modules": 755,
       "counts": {
-        "partial-unverified": 396,
-        "missing": 69,
+        "partial-unverified": 399,
+        "missing": 66,
         "vulkan-port-pending": 290
       }
     },
@@ -866,7 +866,7 @@
       "path": "src/nodes/lighting",
       "upstreamFiles": 23,
       "moduleCount": 23,
-      "modulesWithCppFiles": 4,
+      "modulesWithCppFiles": 6,
       "verifiedComplete": 0
     },
     {
@@ -908,7 +908,7 @@
       "path": "src/nodes/shapes",
       "upstreamFiles": 1,
       "moduleCount": 1,
-      "modulesWithCppFiles": 0,
+      "modulesWithCppFiles": 1,
       "verifiedComplete": 0
     },
     {
@@ -11347,11 +11347,11 @@
       "scope": "src",
       "kind": "core",
       "upstreamSha256": "25c0ca926e40eef80ff25e1c2227982a4d6ad76a64f90297c5c5acb16971221f",
-      "header": null,
-      "implementation": null,
+      "header": "src/nodes/lighting/BasicLightMapNode.h",
+      "implementation": "src/nodes/lighting/BasicLightMapNode.cpp",
       "expectedHeader": "src/nodes/lighting/BasicLightMapNode.h",
       "expectedImplementation": "src/nodes/lighting/BasicLightMapNode.cpp",
-      "status": "missing",
+      "status": "partial-unverified",
       "verifiedComplete": false,
       "apiExtraction": "static-only",
       "verification": {
@@ -11360,7 +11360,9 @@
           "pointer": "/modules/356"
         },
         "upstreamUnitTests": [],
-        "cppUnitTests": [],
+        "cppUnitTests": [
+          "test/unit/src/nodes/lighting/BasicLightMapNode.tests.cpp"
+        ],
         "reviewedImplementation": [],
         "differentialResults": [],
         "renderingResults": [],
@@ -11536,11 +11538,11 @@
       "scope": "src",
       "kind": "core",
       "upstreamSha256": "9f16ecb52c934064294d74080008cdd36d9e27b92cdee82ad00ea77a3bf79f05",
-      "header": null,
-      "implementation": null,
+      "header": "src/nodes/lighting/LightUtils.h",
+      "implementation": "src/nodes/lighting/LightUtils.cpp",
       "expectedHeader": "src/nodes/lighting/LightUtils.h",
       "expectedImplementation": "src/nodes/lighting/LightUtils.cpp",
-      "status": "missing",
+      "status": "partial-unverified",
       "verifiedComplete": false,
       "apiExtraction": "partial-static",
       "verification": {
@@ -11549,7 +11551,9 @@
           "pointer": "/modules/363"
         },
         "upstreamUnitTests": [],
-        "cppUnitTests": [],
+        "cppUnitTests": [
+          "test/unit/src/nodes/lighting/LightUtils.tests.cpp"
+        ],
         "reviewedImplementation": [],
         "differentialResults": [],
         "renderingResults": [],
@@ -12441,11 +12445,11 @@
       "scope": "src",
       "kind": "core",
       "upstreamSha256": "77f0008056e5c84b1503cc1fe8dc9b7c10c8f654c22bbf9c302bfa7fe8c2aa7d",
-      "header": null,
-      "implementation": null,
+      "header": "src/nodes/shapes/Shapes.h",
+      "implementation": "src/nodes/shapes/Shapes.cpp",
       "expectedHeader": "src/nodes/shapes/Shapes.h",
       "expectedImplementation": "src/nodes/shapes/Shapes.cpp",
-      "status": "missing",
+      "status": "partial-unverified",
       "verifiedComplete": false,
       "apiExtraction": "partial-static",
       "verification": {
@@ -12454,7 +12458,9 @@
           "pointer": "/modules/396"
         },
         "upstreamUnitTests": [],
-        "cppUnitTests": [],
+        "cppUnitTests": [
+          "test/unit/src/nodes/shapes/Shapes.tests.cpp"
+        ],
         "reviewedImplementation": [],
         "differentialResults": [],
         "renderingResults": [],

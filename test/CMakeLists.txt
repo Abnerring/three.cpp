@@ -91,6 +91,7 @@ add_executable(THREECPPTests
         unit/src/nodes/accessors/VelocityNode.tests.cpp
         unit/src/nodes/accessors/SceneProperties.tests.cpp
         unit/src/nodes/accessors/Lights.tests.cpp
+        unit/src/nodes/lighting/BasicLightMapNode.tests.cpp
         unit/src/nodes/utils/Oscillators.tests.cpp
         unit/src/nodes/math/BitcastNode.tests.cpp
         unit/src/nodes/math/BitcountNode.tests.cpp
@@ -876,6 +877,14 @@ if(THREECPP_NODE_EXECUTABLE AND THREEJS_SOURCE_DIR)
     add_test(NAME threecpp.threejs-basic-lighting-model-parity
         COMMAND "${THREECPP_NODE_EXECUTABLE}" "${CMAKE_CURRENT_SOURCE_DIR}/unit/utils/parity/compare-basic-lighting-model.mjs"
         "${THREEJS_SOURCE_DIR}" "$<TARGET_FILE:ThreeJsBasicLightingModelParityProbe>")
+endif()
+
+add_executable(ThreeJsBasicLightMapNodeParityProbe unit/utils/parity/BasicLightMapNodeParityProbe.cpp)
+target_link_libraries(ThreeJsBasicLightMapNodeParityProbe PRIVATE threecpp::threecpp)
+if(THREECPP_NODE_EXECUTABLE AND THREEJS_SOURCE_DIR)
+    add_test(NAME threecpp.threejs-basic-light-map-node-parity
+        COMMAND "${THREECPP_NODE_EXECUTABLE}" "${CMAKE_CURRENT_SOURCE_DIR}/unit/utils/parity/compare-basic-light-map-node.mjs"
+        "${THREEJS_SOURCE_DIR}" "$<TARGET_FILE:ThreeJsBasicLightMapNodeParityProbe>")
 endif()
 
 add_executable(ThreeJsLightUtilsParityProbe unit/utils/parity/LightUtilsParityProbe.cpp)
