@@ -325,6 +325,7 @@ target_sources(threecpp PRIVATE
     src/nodes/functions/BSDF/D_GGX.cpp
     src/nodes/functions/BSDF/F_Schlick.cpp
     src/nodes/functions/BSDF/V_GGX_SmithCorrelated.cpp
+    src/nodes/functions/BSDF/V_GGX_SmithCorrelated_Anisotropic.cpp
     src/nodes/functions/BSDF/Schlick_to_F0.cpp
     src/nodes/core/VaryingNode.cpp
     src/nodes/core/MRTNode.cpp
