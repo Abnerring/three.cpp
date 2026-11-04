@@ -1,4 +1,5 @@
 #include "nodes/core/RotateNode.h"
+#include "nodes/tsl/TSLBase.h"
 
 #include "catch.hpp"
 
@@ -65,4 +66,32 @@ TEST_CASE("RotateNode multiplies its three matrices left to right") {
     // The default order's first axis is the first of the three.
     REQUIRE(RotateNode::usesSharedSineOrder('X'));
     REQUIRE(std::string(RotateNode::kTypeName) == "RotateNode");
+}
+TEST_CASE("RotateNode mirrors the pinned node proxy constructor") {
+    nativeRotateNodeModule();
+    const auto vec2 = nativeTSLBaseBinding("vec2");
+    const auto floatNode = nativeTSLBaseBinding("float");
+    const auto position = vec2.call({}, {0.25, 0.5});
+    const auto angle = floatNode.call({}, {0.75});
+    const auto node = nativeRotateNodeBinding("rotate").call({}, {position, angle});
+    REQUIRE(node.get("type") == "RotateNode");
+    REQUIRE(node.get("positionNode").sameValue(position));
+    REQUIRE(node.get("rotationNode").sameValue(angle));
+    REQUIRE(node.get("getOrder").call(node) == "XYZ");
+    REQUIRE(node.get("setOrder").call(node, {"YZX"}).sameValue(node));
+    REQUIRE(node.get("getOrder").call(node) == "YZX");
+    REQUIRE(node.get("customCacheKey").call(node).isNumber());
+}
+
+TEST_CASE("RotateNode keeps the order in serialization") {
+    nativeRotateNodeModule();
+    const auto position = nativeTSLBaseBinding("vec3").call({}, {1, 2, 3});
+    const auto rotation = nativeTSLBaseBinding("vec3").call({}, {0.1, 0.2, 0.3});
+    const auto node = nativeRotateNodeBinding("rotate").call({}, {position, rotation, "ZXY"});
+    const auto data = JSValue::object();
+    node.get("serialize").call(node, {data});
+    REQUIRE(data.get("order") == "ZXY");
+    node.get("setOrder").call(node, {"XYZ"});
+    node.get("deserialize").call(node, {data});
+    REQUIRE(node.get("getOrder").call(node) == "ZXY");
 }

@@ -1,12 +1,33 @@
 ﻿#pragma once
+#include "core/JSValue.h"
 #include <string>
+
+JSValue nativeRotateNodeConstructor();
+JSValue nativeRotateNodeModule();
+JSValue nativeRotateNodeBinding(const std::string& name);
 
 // Port of the matrix construction in src/nodes/utils/RotateNode.js at the pinned revision. The
 // two dimensional case is one matrix and the three dimensional one is three chained; what is
 // worth writing down is the sign that two of the three share and the third does not.
 class RotateNode {
+    JSValue object_;
   public:
     static constexpr const char* kTypeName = "RotateNode";
+
+    explicit RotateNode(const JSValue& positionNode = {}, const JSValue& rotationNode = {},
+                        const JSValue& order = "XYZ")
+        : object_(nativeRotateNodeConstructor().construct({positionNode, rotationNode, order})) {}
+
+    JSValue object() const { return object_; }
+    operator JSValue() const { return object_; }
+    static JSValue constructor() { return nativeRotateNodeConstructor(); }
+    static JSValue prototype() { return constructor().get("prototype"); }
+
+    JSValue setOrder(const JSValue& order) const { return object_.get("setOrder").call(object_, {order}); }
+    JSValue getOrder() const { return object_.get("getOrder").call(object_); }
+    JSValue customCacheKey() const { return object_.get("customCacheKey").call(object_); }
+    JSValue generateNodeType(const JSValue& builder) const { return object_.get("generateNodeType").call(object_, {builder}); }
+    JSValue setup(const JSValue& builder) const { return object_.get("setup").call(object_, {builder}); }
 
     // A two dimensional point turned by an angle, counter clockwise. The matrix is built from
     // the cosine and sine in a fixed pattern whose first column is the cosine and sine and
