@@ -323,6 +323,7 @@ target_sources(threecpp PRIVATE
     src/nodes/functions/material/getAlphaHashThreshold.cpp
     src/nodes/functions/material/getGeometryRoughness.cpp
     src/nodes/functions/material/getRoughness.cpp
+    src/nodes/functions/material/getShIrradianceAt.cpp
     src/nodes/functions/BSDF/BRDF_Lambert.cpp
     src/nodes/functions/BSDF/D_GGX.cpp
     src/nodes/functions/BSDF/D_GGX_Anisotropic.cpp

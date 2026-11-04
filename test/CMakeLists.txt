@@ -110,6 +110,7 @@ add_executable(THREECPPTests
         unit/src/nodes/functions/F_Schlick.tests.cpp
         unit/src/nodes/functions/getGeometryRoughness.tests.cpp
         unit/src/nodes/functions/getRoughness.tests.cpp
+        unit/src/nodes/functions/getShIrradianceAt.tests.cpp
         unit/src/nodes/functions/V_GGX_SmithCorrelated.tests.cpp
         unit/src/nodes/functions/V_GGX_SmithCorrelated_Anisotropic.tests.cpp
         unit/src/nodes/functions/Schlick_to_F0.tests.cpp
@@ -2742,4 +2743,12 @@ if(THREECPP_NODE_EXECUTABLE AND THREEJS_SOURCE_DIR)
     add_test(NAME threecpp.threejs-get-geometry-roughness-parity
         COMMAND "${THREECPP_NODE_EXECUTABLE}" "${CMAKE_CURRENT_SOURCE_DIR}/unit/utils/parity/compare-get-geometry-roughness.mjs"
         "${THREEJS_SOURCE_DIR}" "$<TARGET_FILE:ThreeJsGetGeometryRoughnessParityProbe>")
+endif()
+
+add_executable(ThreeJsGetShIrradianceAtParityProbe unit/utils/parity/GetShIrradianceAtParityProbe.cpp)
+target_link_libraries(ThreeJsGetShIrradianceAtParityProbe PRIVATE threecpp::threecpp)
+if(THREECPP_NODE_EXECUTABLE AND THREEJS_SOURCE_DIR)
+    add_test(NAME threecpp.threejs-get-sh-irradiance-at-parity
+        COMMAND "${THREECPP_NODE_EXECUTABLE}" "${CMAKE_CURRENT_SOURCE_DIR}/unit/utils/parity/compare-get-sh-irradiance-at.mjs"
+        "${THREEJS_SOURCE_DIR}" "$<TARGET_FILE:ThreeJsGetShIrradianceAtParityProbe>")
 endif()
