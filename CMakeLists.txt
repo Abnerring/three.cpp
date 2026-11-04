@@ -322,6 +322,7 @@ target_sources(threecpp PRIVATE
     src/nodes/math/MathUtils.cpp
     src/nodes/functions/material/getAlphaHashThreshold.cpp
     src/nodes/functions/BSDF/BRDF_Lambert.cpp
+    src/nodes/functions/BSDF/Schlick_to_F0.cpp
     src/nodes/core/VaryingNode.cpp
     src/nodes/core/MRTNode.cpp
     src/nodes/core/UniformNode.cpp

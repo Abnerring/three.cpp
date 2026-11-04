@@ -105,6 +105,7 @@ add_executable(THREECPPTests
         unit/src/nodes/display/ToneMappingFunctions.tests.cpp
         unit/src/nodes/display/ColorAdjustment.tests.cpp
         unit/src/nodes/functions/BRDF_Lambert.tests.cpp
+        unit/src/nodes/functions/Schlick_to_F0.tests.cpp
         unit/src/nodes/display/ViewportTextureNode.tests.cpp
         unit/src/nodes/display/RenderOutputNode.tests.cpp
         unit/src/nodes/core/ToonOutlinePass.tests.cpp
@@ -2662,6 +2663,14 @@ if(THREECPP_NODE_EXECUTABLE AND THREEJS_SOURCE_DIR)
     add_test(NAME threecpp.threejs-brdf-lambert-parity
         COMMAND "${THREECPP_NODE_EXECUTABLE}" "${CMAKE_CURRENT_SOURCE_DIR}/unit/utils/parity/compare-brdf-lambert.mjs"
         "${THREEJS_SOURCE_DIR}" "$<TARGET_FILE:ThreeJsBRDFLambertParityProbe>")
+endif()
+
+add_executable(ThreeJsSchlickToF0ParityProbe unit/utils/parity/SchlickToF0ParityProbe.cpp)
+target_link_libraries(ThreeJsSchlickToF0ParityProbe PRIVATE threecpp::threecpp)
+if(THREECPP_NODE_EXECUTABLE AND THREEJS_SOURCE_DIR)
+    add_test(NAME threecpp.threejs-schlick-to-f0-parity
+        COMMAND "${THREECPP_NODE_EXECUTABLE}" "${CMAKE_CURRENT_SOURCE_DIR}/unit/utils/parity/compare-schlick-to-f0.mjs"
+        "${THREEJS_SOURCE_DIR}" "$<TARGET_FILE:ThreeJsSchlickToF0ParityProbe>")
 endif()
 
 add_executable(ThreeJsUserDataNodeParityProbe unit/utils/parity/UserDataNodeParityProbe.cpp)
