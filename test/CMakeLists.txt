@@ -84,6 +84,7 @@ add_executable(THREECPPTests
         unit/src/nodes/accessors/ModelNode.tests.cpp
         unit/src/nodes/accessors/Object3DNode.tests.cpp
         unit/src/nodes/accessors/StorageTextureNode.tests.cpp
+        unit/src/nodes/accessors/StorageTexture3DNode.tests.cpp
         unit/src/nodes/accessors/TextureBicubic.tests.cpp
         unit/src/nodes/accessors/Texture3DNode.tests.cpp
         unit/src/nodes/accessors/Arrays.tests.cpp
@@ -906,6 +907,13 @@ if(THREECPP_NODE_EXECUTABLE AND THREEJS_SOURCE_DIR)
     add_test(NAME threecpp.threejs-storage-texture-node-parity
         COMMAND "${THREECPP_NODE_EXECUTABLE}" "${CMAKE_CURRENT_SOURCE_DIR}/unit/utils/parity/compare-storage-texture-node.mjs"
         "${THREEJS_SOURCE_DIR}" "$<TARGET_FILE:ThreeJsStorageTextureNodeParityProbe>")
+endif()
+add_executable(ThreeJsStorageTexture3DNodeParityProbe unit/utils/parity/StorageTexture3DNodeParityProbe.cpp)
+target_link_libraries(ThreeJsStorageTexture3DNodeParityProbe PRIVATE threecpp::threecpp)
+if(THREECPP_NODE_EXECUTABLE AND THREEJS_SOURCE_DIR)
+    add_test(NAME threecpp.threejs-storage-texture3d-node-parity
+        COMMAND "${THREECPP_NODE_EXECUTABLE}" "${CMAKE_CURRENT_SOURCE_DIR}/unit/utils/parity/compare-storage-texture3d-node.mjs"
+        "${THREEJS_SOURCE_DIR}" "$<TARGET_FILE:ThreeJsStorageTexture3DNodeParityProbe>")
 endif()
 add_executable(ThreeJsTextureBicubicParityProbe unit/utils/parity/TextureBicubicParityProbe.cpp)
 target_link_libraries(ThreeJsTextureBicubicParityProbe PRIVATE threecpp::threecpp)

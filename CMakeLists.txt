@@ -210,6 +210,7 @@ target_sources(threecpp PRIVATE
     src/nodes/accessors/TextureBicubic.cpp
     src/nodes/accessors/StorageTextureNode.cpp
     src/nodes/accessors/Texture3DNode.cpp
+    src/nodes/accessors/StorageTexture3DNode.cpp
     src/nodes/accessors/Arrays.cpp
     src/nodes/accessors/CubeTextureNode.cpp
     src/nodes/accessors/ReflectVector.cpp
