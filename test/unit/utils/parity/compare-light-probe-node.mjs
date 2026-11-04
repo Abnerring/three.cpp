@@ -1,0 +1,20 @@
+import assert from 'node:assert/strict';
+import { pathToFileURL } from 'node:url';
+import { spawnSync } from 'node:child_process';
+import path from 'node:path';
+
+const [ upstream, probe ] = process.argv.slice(2);
+assert(upstream && probe);
+const { default: LightProbeNode } = await import(pathToFileURL(path.join(upstream, 'src/nodes/lighting/LightProbeNode.js')).href);
+const { Vector3 } = await import(pathToFileURL(path.join(upstream, 'src/math/Vector3.js')).href);
+const { Color } = await import(pathToFileURL(path.join(upstream, 'src/math/Color.js')).href);
+const light = { uuid: 'probe', intensity: 2, color: new Color(.1, .2, .3), sh: { coefficients: Array.from({ length: 9 }, (_, i) => new Vector3(i + 1, i + 2, i + 3)) } };
+const node = new LightProbeNode(light);
+node.update({});
+const vector = value => ({ x: value.x, y: value.y, z: value.z });
+const expected = { type: node.type, isLightingNode: node.isLightingNode, isAnalyticLightNode: node.isAnalyticLightNode, arrayLength: node.lightProbe.array.length, first: vector(node.lightProbe.array[0]), last: vector(node.lightProbe.array[8]) };
+const result = spawnSync(path.resolve(probe), [], { input: '', encoding: 'utf8' });
+assert.equal(result.status, 0, result.stderr);
+const actual = JSON.parse(result.stdout);
+assert.deepEqual(actual, expected);
+console.log('LightProbeNode native/module parity passed');
