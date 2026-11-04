@@ -1,4 +1,5 @@
 #include "renderers/VulkanRenderer.h"
+#include "core/InterleavedBufferAttribute.h"
 #include "core/RenderTarget.h"
 #include "core/WebGLCubeRenderTarget.h"
 #include "cameras/CubeCamera.h"
@@ -336,9 +337,15 @@ std::array<HIGH_PRECISION, 4> transform(const Matrix4& matrix, HIGH_PRECISION x,
 
 std::shared_ptr<BufferAttribute> ordinaryAttribute(const std::shared_ptr<VertexAttribute>& value) {
     const auto result = std::dynamic_pointer_cast<BufferAttribute>(value);
-    if (value && !result)
-        throw std::invalid_argument("Vulkan interleaved vertex attributes are not implemented yet");
-    return result;
+    if (result) return result;
+    const auto interleaved = std::dynamic_pointer_cast<InterleavedBufferAttribute>(value);
+    if (interleaved) {
+        const auto deinterleaved = interleaved->cloneAttribute();
+        const auto attribute = std::dynamic_pointer_cast<BufferAttribute>(deinterleaved);
+        if (attribute) return attribute;
+    }
+    if (value) throw std::invalid_argument("Vulkan vertex attribute cannot be converted to a BufferAttribute");
+    return {};
 }
 
 std::uint32_t unsignedLong(double value) {

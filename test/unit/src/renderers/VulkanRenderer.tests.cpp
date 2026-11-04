@@ -6,6 +6,8 @@
 #include "geometries/PlaneGeometry.h"
 #include "extras/DataUtils.h"
 #include "core/NativeObject.h"
+#include "core/InterleavedBuffer.h"
+#include "core/InterleavedBufferAttribute.h"
 #include "core/RenderTarget.h"
 #include "core/WebGLCubeRenderTarget.h"
 #include "core/JSJobs.h"
@@ -305,8 +307,15 @@ void instancingTests(bool validation) {
     Scene morphScene;
     auto morphGeometry=std::make_shared<PlaneGeometry>(.3,.3);
     const auto morphPosition=std::dynamic_pointer_cast<BufferAttribute>(morphGeometry->getAttribute("position"));
-    auto target=morphPosition->clone();
-    for(double i=0;i<target->count;++i) target->setY(i,target->getY(i)+.4);
+    std::vector<float> interleavedTarget;
+    for (double i = 0; i < morphPosition->count; ++i) {
+        interleavedTarget.push_back(float(morphPosition->getX(i)));
+        interleavedTarget.push_back(float(morphPosition->getY(i) + .4));
+        interleavedTarget.push_back(float(morphPosition->getZ(i)));
+        interleavedTarget.push_back(123.0f);
+    }
+    const auto morphData=std::make_shared<InterleavedBuffer>(Float32Array(interleavedTarget),4);
+    const auto target=std::make_shared<InterleavedBufferAttribute>(morphData->object(),3,0);
     morphGeometry->morphAttributes["position"]={target};
     auto morphMesh=std::make_shared<InstancedMesh>(morphGeometry,material,2);
     left.makeTranslation(-.5,0,0);right.makeTranslation(.5,0,0);
