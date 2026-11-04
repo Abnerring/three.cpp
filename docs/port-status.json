@@ -201,8 +201,8 @@
     "note": "Accepted port scope is src and examples/jsm, including tracked third-party dependencies. Editor/manual web applications are excluded from native application rewrites. Native host behavior, packaging and all three platforms require separate implementation and verification evidence."
   },
   "counts": {
-    "partial-unverified": 508,
-    "missing": 433,
+    "partial-unverified": 512,
+    "missing": 429,
     "vulkan-port-pending": 290,
     "dependency-unverified": 20
   },
@@ -210,8 +210,8 @@
     "src": {
       "modules": 755,
       "counts": {
-        "partial-unverified": 372,
-        "missing": 93,
+        "partial-unverified": 376,
+        "missing": 89,
         "vulkan-port-pending": 290
       }
     },
@@ -838,7 +838,7 @@
       "path": "src/nodes/functions/BSDF",
       "upstreamFiles": 13,
       "moduleCount": 13,
-      "modulesWithCppFiles": 9,
+      "modulesWithCppFiles": 12,
       "verifiedComplete": 0
     },
     {
@@ -880,7 +880,7 @@
       "path": "src/nodes/math",
       "upstreamFiles": 11,
       "moduleCount": 11,
-      "modulesWithCppFiles": 8,
+      "modulesWithCppFiles": 9,
       "verifiedComplete": 0
     },
     {
@@ -10407,11 +10407,11 @@
       "scope": "src",
       "kind": "core",
       "upstreamSha256": "3eada3365823aaccbb60f6693b68109f0e73d133d6924ef41cda96b6f0f8102f",
-      "header": null,
-      "implementation": null,
+      "header": "src/nodes/functions/BSDF/BRDF_GGX.h",
+      "implementation": "src/nodes/functions/BSDF/BRDF_GGX.cpp",
       "expectedHeader": "src/nodes/functions/BSDF/BRDF_GGX.h",
       "expectedImplementation": "src/nodes/functions/BSDF/BRDF_GGX.cpp",
-      "status": "missing",
+      "status": "partial-unverified",
       "verifiedComplete": false,
       "apiExtraction": "partial-static",
       "verification": {
@@ -10488,11 +10488,11 @@
       "scope": "src",
       "kind": "core",
       "upstreamSha256": "010b005d7763b7bd7c9718187eba86b603d19d7c4ea6218d081ab44d672775ce",
-      "header": null,
-      "implementation": null,
+      "header": "src/nodes/functions/BSDF/DFGLUT.h",
+      "implementation": "src/nodes/functions/BSDF/DFGLUT.cpp",
       "expectedHeader": "src/nodes/functions/BSDF/DFGLUT.h",
       "expectedImplementation": "src/nodes/functions/BSDF/DFGLUT.cpp",
-      "status": "missing",
+      "status": "partial-unverified",
       "verifiedComplete": false,
       "apiExtraction": "partial-static",
       "verification": {
@@ -10569,11 +10569,11 @@
       "scope": "src",
       "kind": "core",
       "upstreamSha256": "cdfad3de895ee3897127c423bd903f53c3ab6cfed3ae6e5bb079211ac422977f",
-      "header": null,
-      "implementation": null,
+      "header": "src/nodes/functions/BSDF/EnvironmentBRDF.h",
+      "implementation": "src/nodes/functions/BSDF/EnvironmentBRDF.cpp",
       "expectedHeader": "src/nodes/functions/BSDF/EnvironmentBRDF.h",
       "expectedImplementation": "src/nodes/functions/BSDF/EnvironmentBRDF.cpp",
-      "status": "missing",
+      "status": "partial-unverified",
       "verifiedComplete": false,
       "apiExtraction": "partial-static",
       "verification": {
@@ -12002,11 +12002,11 @@
       "scope": "src",
       "kind": "core",
       "upstreamSha256": "38969c499c99357fdb1cd1a538b8f8deedab1c8ab78b41beffb4ef9acff01486",
-      "header": null,
-      "implementation": null,
+      "header": "src/nodes/math/BitcountNode.h",
+      "implementation": "src/nodes/math/BitcountNode.cpp",
       "expectedHeader": "src/nodes/math/BitcountNode.h",
       "expectedImplementation": "src/nodes/math/BitcountNode.cpp",
-      "status": "missing",
+      "status": "partial-unverified",
       "verifiedComplete": false,
       "apiExtraction": "partial-static",
       "verification": {
@@ -12015,7 +12015,9 @@
           "pointer": "/modules/381"
         },
         "upstreamUnitTests": [],
-        "cppUnitTests": [],
+        "cppUnitTests": [
+          "test/unit/src/nodes/math/BitcountNode.tests.cpp"
+        ],
         "reviewedImplementation": [],
         "differentialResults": [],
         "renderingResults": [],
