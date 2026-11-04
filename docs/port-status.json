@@ -201,8 +201,8 @@
     "note": "Accepted port scope is src and examples/jsm, including tracked third-party dependencies. Editor/manual web applications are excluded from native application rewrites. Native host behavior, packaging and all three platforms require separate implementation and verification evidence."
   },
   "counts": {
-    "partial-unverified": 527,
-    "missing": 414,
+    "partial-unverified": 529,
+    "missing": 412,
     "vulkan-port-pending": 290,
     "dependency-unverified": 20
   },
@@ -210,8 +210,8 @@
     "src": {
       "modules": 755,
       "counts": {
-        "partial-unverified": 391,
-        "missing": 74,
+        "partial-unverified": 393,
+        "missing": 72,
         "vulkan-port-pending": 290
       }
     },
@@ -859,7 +859,7 @@
       "path": "src/nodes/gpgpu",
       "upstreamFiles": 6,
       "moduleCount": 6,
-      "modulesWithCppFiles": 1,
+      "modulesWithCppFiles": 2,
       "verifiedComplete": 0
     },
     {
@@ -922,7 +922,7 @@
       "path": "src/nodes/utils",
       "upstreamFiles": 31,
       "moduleCount": 31,
-      "modulesWithCppFiles": 23,
+      "modulesWithCppFiles": 24,
       "verifiedComplete": 0
     },
     {
@@ -11098,11 +11098,11 @@
       "scope": "src",
       "kind": "core",
       "upstreamSha256": "8c11d7b8617496200c2d3be47115fbb85627d889810c74f1a1f94807fb810ffe",
-      "header": null,
-      "implementation": null,
+      "header": "src/nodes/gpgpu/BarrierNode.h",
+      "implementation": "src/nodes/gpgpu/BarrierNode.cpp",
       "expectedHeader": "src/nodes/gpgpu/BarrierNode.h",
       "expectedImplementation": "src/nodes/gpgpu/BarrierNode.cpp",
-      "status": "missing",
+      "status": "partial-unverified",
       "verifiedComplete": false,
       "apiExtraction": "static-only",
       "verification": {
@@ -11111,7 +11111,9 @@
           "pointer": "/modules/347"
         },
         "upstreamUnitTests": [],
-        "cppUnitTests": [],
+        "cppUnitTests": [
+          "test/unit/src/nodes/gpgpu/BarrierNode.tests.cpp"
+        ],
         "reviewedImplementation": [],
         "differentialResults": [],
         "renderingResults": [],
@@ -13318,11 +13320,11 @@
       "scope": "src",
       "kind": "core",
       "upstreamSha256": "78f744c477ca99bd13fcfb78f16ba7ff0f7977e21f1449d386910ffcdf7544ad",
-      "header": null,
-      "implementation": null,
+      "header": "src/nodes/utils/TriplanarTextures.h",
+      "implementation": "src/nodes/utils/TriplanarTextures.cpp",
       "expectedHeader": "src/nodes/utils/TriplanarTextures.h",
       "expectedImplementation": "src/nodes/utils/TriplanarTextures.cpp",
-      "status": "missing",
+      "status": "partial-unverified",
       "verifiedComplete": false,
       "apiExtraction": "partial-static",
       "verification": {
@@ -13331,7 +13333,9 @@
           "pointer": "/modules/427"
         },
         "upstreamUnitTests": [],
-        "cppUnitTests": [],
+        "cppUnitTests": [
+          "test/unit/src/nodes/utils/TriplanarTextures.tests.cpp"
+        ],
         "reviewedImplementation": [],
         "differentialResults": [],
         "renderingResults": [],
