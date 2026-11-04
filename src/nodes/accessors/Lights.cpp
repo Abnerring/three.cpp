@@ -40,7 +40,7 @@ JSValue update(const JSValue&, const Args& args, const Args& captures) {
         const auto shadowMap = renderer.get("shadowMap");
         if (!castShadow || shadowMap.get("enabled").strictEquals(false)) {
             const auto shadow = light.get("shadow");
-            const auto camera = shadow.get("camera");
+            auto camera = shadow.get("camera");
             if (!camera.get("coordinateSystem").strictEquals(frame.get("camera").get("coordinateSystem"))) {
                 camera.set("coordinateSystem", frame.get("camera").get("coordinateSystem"));
                 invoke(camera, "updateProjectionMatrix")();
@@ -87,7 +87,7 @@ JSValue lightExport(const JSValue&, const Args& args, const Args& captures) {
     const auto table = captures[0];
     const auto name = captures[1].string();
     const auto light = arg(args, 0);
-    const auto data = lightData(table, light);
+    auto data = lightData(table, light);
 
     if (name == "lightShadowMatrix") {
         auto value = data.get("shadowMatrix");
@@ -136,7 +136,7 @@ JSValue lightExport(const JSValue&, const Args& args, const Args& captures) {
                     if (camera.isUndefined() || camera.isNull()) camera = JSValue::object(nullptr);
                     const auto table = captures[0];
                     const auto light = captures[1];
-                    const auto data = captures[2];
+                    auto data = captures[2];
                     if (camera.get("isArrayCamera").toBoolean() && camera.get("cameras").get("length").toNumber() > 0) {
                         const auto position = exportedFunction("lightPosition", table).call({}, {light});
                         return invoke(table.get("cameraViewMatrix"), "mul")({
