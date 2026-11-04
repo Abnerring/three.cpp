@@ -201,8 +201,8 @@
     "note": "Accepted port scope is src and examples/jsm, including tracked third-party dependencies. Editor/manual web applications are excluded from native application rewrites. Native host behavior, packaging and all three platforms require separate implementation and verification evidence."
   },
   "counts": {
-    "partial-unverified": 488,
-    "missing": 453,
+    "partial-unverified": 491,
+    "missing": 450,
     "vulkan-port-pending": 290,
     "dependency-unverified": 20
   },
@@ -210,8 +210,8 @@
     "src": {
       "modules": 755,
       "counts": {
-        "partial-unverified": 352,
-        "missing": 113,
+        "partial-unverified": 355,
+        "missing": 110,
         "vulkan-port-pending": 290
       }
     },
@@ -796,7 +796,7 @@
       "path": "src/nodes/accessors",
       "upstreamFiles": 43,
       "moduleCount": 43,
-      "modulesWithCppFiles": 33,
+      "modulesWithCppFiles": 35,
       "verifiedComplete": 0
     },
     {
@@ -838,7 +838,7 @@
       "path": "src/nodes/functions/BSDF",
       "upstreamFiles": 13,
       "moduleCount": 13,
-      "modulesWithCppFiles": 0,
+      "modulesWithCppFiles": 1,
       "verifiedComplete": 0
     },
     {
@@ -7900,11 +7900,11 @@
       "scope": "src",
       "kind": "core",
       "upstreamSha256": "7dc05e9259762fe40a79c3e203ebdcaea231f2f4bb5221cb2f73c8ad2c40ab56",
-      "header": null,
-      "implementation": null,
+      "header": "src/nodes/accessors/PointUVNode.h",
+      "implementation": "src/nodes/accessors/PointUVNode.cpp",
       "expectedHeader": "src/nodes/accessors/PointUVNode.h",
       "expectedImplementation": "src/nodes/accessors/PointUVNode.cpp",
-      "status": "missing",
+      "status": "partial-unverified",
       "verifiedComplete": false,
       "apiExtraction": "partial-static",
       "verification": {
@@ -8446,11 +8446,11 @@
       "scope": "src",
       "kind": "core",
       "upstreamSha256": "8cf6055615c03668ed2c5e79de59546e6ea2e232500170100c4270d358b36f0e",
-      "header": null,
-      "implementation": null,
+      "header": "src/nodes/accessors/UserDataNode.h",
+      "implementation": "src/nodes/accessors/UserDataNode.cpp",
       "expectedHeader": "src/nodes/accessors/UserDataNode.h",
       "expectedImplementation": "src/nodes/accessors/UserDataNode.cpp",
-      "status": "missing",
+      "status": "partial-unverified",
       "verifiedComplete": false,
       "apiExtraction": "static-only",
       "verification": {
@@ -8459,7 +8459,9 @@
           "pointer": "/modules/253"
         },
         "upstreamUnitTests": [],
-        "cppUnitTests": [],
+        "cppUnitTests": [
+          "test/unit/src/nodes/accessors/UserDataNode.tests.cpp"
+        ],
         "reviewedImplementation": [],
         "differentialResults": [],
         "renderingResults": [],
@@ -10432,11 +10434,11 @@
       "scope": "src",
       "kind": "core",
       "upstreamSha256": "664d7c276feb7733b67823cdd13f3c88cb7af050e18118cbd07cea00a18a2538",
-      "header": null,
-      "implementation": null,
+      "header": "src/nodes/functions/BSDF/BRDF_Lambert.h",
+      "implementation": "src/nodes/functions/BSDF/BRDF_Lambert.cpp",
       "expectedHeader": "src/nodes/functions/BSDF/BRDF_Lambert.h",
       "expectedImplementation": "src/nodes/functions/BSDF/BRDF_Lambert.cpp",
-      "status": "missing",
+      "status": "partial-unverified",
       "verifiedComplete": false,
       "apiExtraction": "partial-static",
       "verification": {

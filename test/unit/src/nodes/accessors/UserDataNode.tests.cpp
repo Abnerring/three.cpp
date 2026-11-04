@@ -10,7 +10,7 @@ TEST_CASE("UserDataNode exposes the pinned constructor and factory") {
     auto data = JSValue::object();
     data.set("rotation", 1.5);
     const auto node = nativeUserDataNodeBinding("userData").call({}, {"rotation", "float", data});
-    REQUIRE(node.get("isUserDataNode").toBoolean());
+    REQUIRE(node.get("isUserDataNode").isUndefined());
     REQUIRE(node.get("userData").strictEquals(data));
     REQUIRE(node.get("property").toString() == "rotation");
     REQUIRE(node.get("uniformType").toString() == "float");

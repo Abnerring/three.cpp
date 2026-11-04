@@ -11,7 +11,6 @@ class UserDataNode {
     JSValue object_;
 
   public:
-    static constexpr bool isUserDataNode = true;
     static constexpr const char* kTypeName = "UserDataNode";
 
     explicit UserDataNode(const JSValue& property = {}, const JSValue& inputType = {},

@@ -30,7 +30,6 @@ JSValue nativeUserDataNodeModule() {
             auto self = captures[0].get("constructor").getPrototype().construct(
                 {arg(args, 0), arg(args, 1), userData}, target);
             self.set("userData", userData);
-            self.set("isUserDataNode", true);
             return self;
         },
         {holder}, "UserDataNode", 2);
