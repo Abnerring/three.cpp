@@ -1,0 +1,20 @@
+import assert from 'node:assert/strict';
+import {execFileSync} from 'node:child_process';
+import path from 'node:path';
+import {pathToFileURL} from 'node:url';
+
+const upstream = path.resolve(process.argv[2]);
+const binary = path.resolve(process.argv[3]);
+const lock = (await import('../../../../upstream.json', {with: {type: 'json'}})).default;
+assert.equal(execFileSync('git', ['-C', upstream, 'rev-parse', 'HEAD'], {encoding: 'utf8'}).trim(), lock.commit);
+const {texture3D, texture3DLoad, texture3DLevel} = await import(pathToFileURL(path.join(upstream, 'src/nodes/accessors/Texture3DNode.js')));
+const {Texture} = await import(pathToFileURL(path.join(upstream, 'src/textures/Texture.js')));
+const {vec3, float} = await import(pathToFileURL(path.join(upstream, 'src/nodes/tsl/TSLCore.js')));
+const texture = new Texture();
+const uv = vec3(.25, .5, .75);
+const level = float(2);
+const describe = node => ({type: node.type, isTexture3DNode: node.isTexture3DNode, inputType: node.getInputType(), sampler: node.getSampler(), updateMatrix: node.updateMatrix, uvNodeType: node.uvNode.type, levelNodeType: node.levelNode?.type ?? null});
+const expected = {node: describe(texture3D(texture, uv)), load: describe(texture3DLoad(texture, uv)), level: describe(texture3DLevel(texture, uv, level))};
+const actual = JSON.parse(execFileSync(binary, {encoding: 'utf8'}));
+assert.deepEqual(actual, expected);
+console.log('Texture3DNode native/module parity passed');
