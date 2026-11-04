@@ -84,6 +84,7 @@ add_executable(THREECPPTests
         unit/src/nodes/accessors/ModelNode.tests.cpp
         unit/src/nodes/accessors/Object3DNode.tests.cpp
         unit/src/nodes/math/BitcastNode.tests.cpp
+        unit/src/nodes/math/BitcountNode.tests.cpp
         unit/src/nodes/math/PackFloatNode.tests.cpp
         unit/src/nodes/math/UnpackFloatNode.tests.cpp
         unit/src/nodes/display/FrontFacingNode.tests.cpp
@@ -109,7 +110,10 @@ add_executable(THREECPPTests
         unit/src/nodes/display/ColorAdjustment.tests.cpp
         unit/src/nodes/functions/BRDF_Lambert.tests.cpp
         unit/src/nodes/functions/BRDF_EON.tests.cpp
+        unit/src/nodes/functions/BRDF_GGX.tests.cpp
         unit/src/nodes/functions/BRDF_Sheen.tests.cpp
+        unit/src/nodes/functions/DFGLUT.tests.cpp
+        unit/src/nodes/functions/EnvironmentBRDF.tests.cpp
         unit/src/nodes/functions/D_GGX.tests.cpp
         unit/src/nodes/functions/D_GGX_Anisotropic.tests.cpp
         unit/src/nodes/functions/F_Schlick.tests.cpp
@@ -852,6 +856,27 @@ if(THREECPP_NODE_EXECUTABLE AND THREEJS_SOURCE_DIR)
     add_test(NAME threecpp.threejs-brdf-eon-parity
         COMMAND "${THREECPP_NODE_EXECUTABLE}" "${CMAKE_CURRENT_SOURCE_DIR}/unit/utils/parity/compare-brdf-eon.mjs"
         "${THREEJS_SOURCE_DIR}" "$<TARGET_FILE:ThreeJsBRDFEONParityProbe>")
+endif()
+add_executable(ThreeJsBRDFGGXParityProbe unit/utils/parity/BRDFGGXParityProbe.cpp)
+target_link_libraries(ThreeJsBRDFGGXParityProbe PRIVATE threecpp::threecpp)
+if(THREECPP_NODE_EXECUTABLE AND THREEJS_SOURCE_DIR)
+    add_test(NAME threecpp.threejs-brdf-ggx-parity
+        COMMAND "${THREECPP_NODE_EXECUTABLE}" "${CMAKE_CURRENT_SOURCE_DIR}/unit/utils/parity/compare-brdf-ggx.mjs"
+        "${THREEJS_SOURCE_DIR}" "$<TARGET_FILE:ThreeJsBRDFGGXParityProbe>")
+endif()
+add_executable(ThreeJsDFGLUTParityProbe unit/utils/parity/DFGLUTParityProbe.cpp)
+target_link_libraries(ThreeJsDFGLUTParityProbe PRIVATE threecpp::threecpp)
+if(THREECPP_NODE_EXECUTABLE AND THREEJS_SOURCE_DIR)
+    add_test(NAME threecpp.threejs-dfglut-parity
+        COMMAND "${THREECPP_NODE_EXECUTABLE}" "${CMAKE_CURRENT_SOURCE_DIR}/unit/utils/parity/compare-dfglut.mjs"
+        "${THREEJS_SOURCE_DIR}" "$<TARGET_FILE:ThreeJsDFGLUTParityProbe>")
+endif()
+add_executable(ThreeJsEnvironmentBRDFParityProbe unit/utils/parity/EnvironmentBRDFParityProbe.cpp)
+target_link_libraries(ThreeJsEnvironmentBRDFParityProbe PRIVATE threecpp::threecpp)
+if(THREECPP_NODE_EXECUTABLE AND THREEJS_SOURCE_DIR)
+    add_test(NAME threecpp.threejs-environment-brdf-parity
+        COMMAND "${THREECPP_NODE_EXECUTABLE}" "${CMAKE_CURRENT_SOURCE_DIR}/unit/utils/parity/compare-environment-brdf.mjs"
+        "${THREEJS_SOURCE_DIR}" "$<TARGET_FILE:ThreeJsEnvironmentBRDFParityProbe>")
 endif()
 if(THREECPP_BUILD_VULKAN)
     add_executable(VulkanShaderCompilerTests unit/three.source.unit.cpp
@@ -2806,6 +2831,14 @@ if(THREECPP_NODE_EXECUTABLE AND THREEJS_SOURCE_DIR)
     add_test(NAME threecpp.threejs-bitcast-node-parity
         COMMAND "${THREECPP_NODE_EXECUTABLE}" "${CMAKE_CURRENT_SOURCE_DIR}/unit/utils/parity/compare-bitcast-node.mjs"
         "${THREEJS_SOURCE_DIR}" "$<TARGET_FILE:ThreeJsBitcastNodeParityProbe>")
+endif()
+
+add_executable(ThreeJsBitcountNodeParityProbe unit/utils/parity/BitcountNodeParityProbe.cpp)
+target_link_libraries(ThreeJsBitcountNodeParityProbe PRIVATE threecpp::threecpp)
+if(THREECPP_NODE_EXECUTABLE AND THREEJS_SOURCE_DIR)
+    add_test(NAME threecpp.threejs-bitcount-node-parity
+        COMMAND "${THREECPP_NODE_EXECUTABLE}" "${CMAKE_CURRENT_SOURCE_DIR}/unit/utils/parity/compare-bitcount-node.mjs"
+        "${THREEJS_SOURCE_DIR}" "$<TARGET_FILE:ThreeJsBitcountNodeParityProbe>")
 endif()
 
 add_executable(ThreeJsPackFloatNodeParityProbe unit/utils/parity/PackFloatNodeParityProbe.cpp)
