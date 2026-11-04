@@ -7,4 +7,3 @@
 JSValue nativeBRDFLambert();
 JSValue nativeBRDFLambertModule();
 JSValue nativeBRDFLambertBinding(const std::string& name);
-

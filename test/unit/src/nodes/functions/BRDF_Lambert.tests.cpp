@@ -23,4 +23,3 @@ TEST_CASE("BRDF_Lambert multiplies diffuseColor by one over pi") {
     REQUIRE(result.get("type").strictEquals("VarNode"));
     REQUIRE(result.get("node").get("type").strictEquals("Node"));
 }
-

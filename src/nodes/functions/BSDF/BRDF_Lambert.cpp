@@ -50,4 +50,3 @@ JSValue nativeBRDFLambertBinding(const std::string& name) {
 JSValue nativeBRDFLambert() {
     return nativeBRDFLambertBinding("default");
 }
-
