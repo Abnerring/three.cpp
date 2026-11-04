@@ -195,6 +195,8 @@ target_sources(threecpp PRIVATE
     src/nodes/accessors/VertexColorNode.cpp
     src/nodes/accessors/ClippingNode.cpp
     src/nodes/lighting/LightingNode.cpp
+    src/nodes/lighting/AnalyticLightNode.cpp
+    src/nodes/lighting/LightProbeNode.cpp
     src/nodes/lighting/LightingContextNode.cpp
     src/nodes/lighting/AONode.cpp
     src/nodes/lighting/IrradianceNode.cpp
@@ -273,6 +275,7 @@ target_sources(threecpp PRIVATE
     src/nodes/utils/Timer.cpp
     src/nodes/core/SampleNode.cpp
     src/nodes/utils/RotateNode.cpp
+    src/nodes/utils/ViewportUtils.cpp
     src/nodes/utils/FlipNode.cpp
     src/nodes/utils/SplitNode.cpp
     src/nodes/utils/JoinNode.cpp
