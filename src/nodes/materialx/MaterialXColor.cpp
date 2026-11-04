@@ -73,7 +73,19 @@ JSValue rgbBody(const JSValue&, const Args& args, const Args& captures) {
     auto satIf = module.get("If").call({}, {invoke(maxComp, "greaterThan")({0.0}), JSValue::function([](const JSValue&, const Args&, const Args& c) -> JSValue { invoke(c[0], "assign")({invoke(c[1], "div")({c[2]})}); return {}; }, {satValue, delta, maxComp}, "", 0)});
     invoke(satIf, "Else")({JSValue::function(assign, {satValue, JSValue(0.0)}, "", 0)});
     auto hueIf = module.get("If").call({}, {invoke(satValue, "lessThanEqual")({0.0}), JSValue::function(assign, {hueValue, JSValue(0.0)}, "", 0)});
-    invoke(hueIf, "Else")({JSValue::function(assign, {hueValue, JSValue(0.0)}, "", 0)});
+    auto hueElse = JSValue::function([](const JSValue&, const Args&, const Args& c) -> JSValue {
+        const auto module = c[0], hue = c[1], red = c[2], green = c[3], blue = c[4], maxComp = c[5], delta = c[6];
+        const auto gb = invoke(green, "sub")({blue});
+        const auto br = invoke(blue, "sub")({red});
+        const auto rg = invoke(red, "sub")({green});
+        auto chain = module.get("If").call({}, {invoke(red, "greaterThanEqual")({maxComp}), JSValue::function(assign, {hue, invoke(gb, "div")({delta})}, "", 0)});
+        chain = invoke(chain, "ElseIf")({invoke(green, "greaterThanEqual")({maxComp}), JSValue::function(assign, {hue, module.get("add").call({}, {2.0, invoke(br, "div")({delta})})}, "", 0)});
+        invoke(chain, "Else")({JSValue::function(assign, {hue, module.get("add").call({}, {4.0, invoke(rg, "div")({delta})})}, "", 0)});
+        invoke(hue, "mulAssign")({1.0 / 6.0});
+        module.get("If").call({}, {invoke(hue, "lessThan")({0.0}), JSValue::function([](const JSValue&, const Args&, const Args& d) -> JSValue { invoke(d[0], "addAssign")({1.0}); return {}; }, {hue}, "", 0)});
+        return {};
+    }, {module, hueValue, red, green, blue, maxComp, delta}, "", 0);
+    invoke(hueIf, "Else")({hueElse});
     return module.get("vec3").call({}, {hueValue, satValue, valValue});
 }
 }
@@ -82,7 +94,7 @@ JSValue nativeMaterialXColorModule() {
     static thread_local JSWeakValue weak;
     if (const auto value = weak.lock(); value && value->isObject()) return *value;
     auto module = JSValue::object(nullptr); module.retainForHeapLifetime(); weak = JSWeakValue(module);
-    for (const auto* name : {"float", "int", "vec3", "If"}) own(module, name, nativeTSLBaseBinding(name));
+    for (const auto* name : {"float", "int", "vec3", "If", "add"}) own(module, name, nativeTSLBaseBinding(name));
     for (const auto* name : {"floor", "trunc", "min", "max"}) own(module, name, nativeMathNodeBinding(name));
     const auto make = [&](const char* name, JSValue::NativeFunction body, const char* input) {
         auto callback = JSValue::function(body, {module}, name, 1);
