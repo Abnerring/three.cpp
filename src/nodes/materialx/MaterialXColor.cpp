@@ -30,6 +30,15 @@ JSValue assign(const JSValue&, const Args&, const Args& captures) {
     invoke(captures[0], "assign")({captures[1]});
     return {};
 }
+std::string crlf(std::string source) {
+    std::string result;
+    result.reserve(source.size() + source.size() / 16);
+    for (std::size_t i = 0; i < source.size(); ++i) {
+        if (source[i] == '\n' && (i == 0 || source[i - 1] != '\r')) result.push_back('\r');
+        result.push_back(source[i]);
+    }
+    return result;
+}
 
 JSValue hsvBody(const JSValue&, const Args& args, const Args& captures) {
     const auto module = captures[0], hsv = firstInput(args);
@@ -98,7 +107,7 @@ JSValue nativeMaterialXColorModule() {
     for (const auto* name : {"floor", "trunc", "min", "max"}) own(module, name, nativeMathNodeBinding(name));
     const auto make = [&](const char* name, JSValue::NativeFunction body, const char* input) {
         auto callback = JSValue::function(body, {module}, name, 1);
-        callback.setFunctionSourceText(name == std::string("mx_hsvtorgb") ? R"(( [ hsv ] ) => {
+        const auto source = name == std::string("mx_hsvtorgb") ? std::string(R"(( [ hsv ] ) => {
 
 	const s = hsv.y;
 	const v = hsv.z;
@@ -149,7 +158,7 @@ JSValue nativeMaterialXColorModule() {
 
 	return result;
 
-} )" : R"(( [ c_immutable ] ) => {
+} )") : std::string(R"(( [ c_immutable ] ) => {
 
 	const c = vec3( c_immutable ).toVar();
 	const r = float( c.x ).toVar();
@@ -203,7 +212,8 @@ JSValue nativeMaterialXColorModule() {
 
 	return vec3( h, s, v );
 
-} )" );
+} )");
+        callback.setFunctionSourceText(crlf(source));
         auto layout = JSValue::object(); own(layout, input, "vec3"); own(layout, "return", "vec3");
         own(module, name, nativeTSLBaseBinding("Fn").call({}, {callback, layout}));
     };

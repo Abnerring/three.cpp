@@ -14,6 +14,15 @@ JSValue arg(const Args& args, std::size_t i) { return i < args.size() ? args[i] 
 JSValue firstInput(const Args& args) { const auto v = arg(args, 0); return v.isObject() && !v.get("0").isUndefined() ? v.get("0") : v; }
 struct Invocation { JSValue object, method; JSValue operator()(const Args& args = {}) const { return method.call(object, args); } };
 Invocation invoke(const JSValue& o, const char* n) { return {o, o.get(n)}; }
+std::string crlf(std::string source) {
+    std::string result;
+    result.reserve(source.size() + source.size() / 16);
+    for (std::size_t i = 0; i < source.size(); ++i) {
+        if (source[i] == '\n' && (i == 0 || source[i - 1] != '\r')) result.push_back('\r');
+        result.push_back(source[i]);
+    }
+    return result;
+}
 
 JSValue body(const JSValue&, const Args& args, const Args& captures) {
     const auto module = captures[0];
@@ -32,7 +41,7 @@ JSValue nativeMaterialXColorTransformModule() {
     auto module = JSValue::object(nullptr); module.retainForHeapLifetime(); weak = JSWeakValue(module);
     for (const auto* n : {"vec3", "bvec3"}) own(module, n, nativeTSLBaseBinding(n));
     auto callback = JSValue::function(body, {module}, "mx_srgb_texture_to_lin_rec709", 1);
-    callback.setFunctionSourceText(R"(( [ color_immutable ] ) => {
+    callback.setFunctionSourceText(crlf(R"(( [ color_immutable ] ) => {
 
 	const color = vec3( color_immutable ).toVar();
 	const isAbove = bvec3( greaterThan( color, vec3( 0.04045 ) ) ).toVar();
@@ -41,7 +50,7 @@ JSValue nativeMaterialXColorTransformModule() {
 
 	return mix( linSeg, powSeg, isAbove );
 
-} )");
+} )"));
     auto layout = JSValue::object(); own(layout, "color", "vec3"); own(layout, "return", "vec3");
     own(module, "mx_srgb_texture_to_lin_rec709", nativeTSLBaseBinding("Fn").call({}, {callback, layout}));
     auto facade = JSValue::object(); own(facade, "mx_srgb_texture_to_lin_rec709", module.get("mx_srgb_texture_to_lin_rec709")); return facade;
