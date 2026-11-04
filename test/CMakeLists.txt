@@ -106,6 +106,7 @@ add_executable(THREECPPTests
         unit/src/nodes/display/ColorAdjustment.tests.cpp
         unit/src/nodes/functions/BRDF_Lambert.tests.cpp
         unit/src/nodes/functions/D_GGX.tests.cpp
+        unit/src/nodes/functions/D_GGX_Anisotropic.tests.cpp
         unit/src/nodes/functions/F_Schlick.tests.cpp
         unit/src/nodes/functions/V_GGX_SmithCorrelated.tests.cpp
         unit/src/nodes/functions/V_GGX_SmithCorrelated_Anisotropic.tests.cpp
@@ -2683,6 +2684,14 @@ if(THREECPP_NODE_EXECUTABLE AND THREEJS_SOURCE_DIR)
     add_test(NAME threecpp.threejs-d-ggx-parity
         COMMAND "${THREECPP_NODE_EXECUTABLE}" "${CMAKE_CURRENT_SOURCE_DIR}/unit/utils/parity/compare-d-ggx.mjs"
         "${THREEJS_SOURCE_DIR}" "$<TARGET_FILE:ThreeJsDGGXParityProbe>")
+endif()
+
+add_executable(ThreeJsDGGXAnisotropicParityProbe unit/utils/parity/DGGXAnisotropicParityProbe.cpp)
+target_link_libraries(ThreeJsDGGXAnisotropicParityProbe PRIVATE threecpp::threecpp)
+if(THREECPP_NODE_EXECUTABLE AND THREEJS_SOURCE_DIR)
+    add_test(NAME threecpp.threejs-d-ggx-anisotropic-parity
+        COMMAND "${THREECPP_NODE_EXECUTABLE}" "${CMAKE_CURRENT_SOURCE_DIR}/unit/utils/parity/compare-d-ggx-anisotropic.mjs"
+        "${THREEJS_SOURCE_DIR}" "$<TARGET_FILE:ThreeJsDGGXAnisotropicParityProbe>")
 endif()
 
 add_executable(ThreeJsFSchlickParityProbe unit/utils/parity/FSchlickParityProbe.cpp)
