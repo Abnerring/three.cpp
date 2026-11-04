@@ -74,13 +74,13 @@ TEST_CASE("RotateNode mirrors the pinned node proxy constructor") {
     const auto position = vec2.call({}, {0.25, 0.5});
     const auto angle = floatNode.call({}, {0.75});
     const auto node = nativeRotateNodeBinding("rotate").call({}, {position, angle});
-    REQUIRE(node.get("type") == "RotateNode");
+    REQUIRE(node.get("type").strictEquals("RotateNode"));
     REQUIRE(node.get("positionNode").sameValue(position));
     REQUIRE(node.get("rotationNode").sameValue(angle));
-    REQUIRE(node.get("getOrder").call(node) == "XYZ");
+    REQUIRE(node.get("getOrder").call(node).strictEquals("XYZ"));
     REQUIRE(node.get("setOrder").call(node, {"YZX"}).sameValue(node));
-    REQUIRE(node.get("getOrder").call(node) == "YZX");
-    REQUIRE(node.get("customCacheKey").call(node).isNumber());
+    REQUIRE(node.get("getOrder").call(node).strictEquals("YZX"));
+    REQUIRE(node.get("customCacheKey").call(node).type() == JSValue::Type::Number);
 }
 
 TEST_CASE("RotateNode keeps the order in serialization") {
@@ -88,10 +88,13 @@ TEST_CASE("RotateNode keeps the order in serialization") {
     const auto position = nativeTSLBaseBinding("vec3").call({}, {1, 2, 3});
     const auto rotation = nativeTSLBaseBinding("vec3").call({}, {0.1, 0.2, 0.3});
     const auto node = nativeRotateNodeBinding("rotate").call({}, {position, rotation, "ZXY"});
-    const auto data = JSValue::object();
+    auto data = JSValue::object();
+    auto meta = JSValue::object();
+    meta.set("nodes", JSValue::object());
+    data.set("meta", meta);
     node.get("serialize").call(node, {data});
-    REQUIRE(data.get("order") == "ZXY");
+    REQUIRE(data.get("order").strictEquals("ZXY"));
     node.get("setOrder").call(node, {"XYZ"});
     node.get("deserialize").call(node, {data});
-    REQUIRE(node.get("getOrder").call(node) == "ZXY");
+    REQUIRE(node.get("getOrder").call(node).strictEquals("ZXY"));
 }
