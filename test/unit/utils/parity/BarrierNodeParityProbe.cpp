@@ -37,8 +37,9 @@ int main() {
         auto result = JSValue::object();
         own(result, "constructorName", module.get("default").get("name"));
         own(result, "constructorLength", module.get("default").get("length"));
+        own(result, "constructorType", module.get("default").get("type"));
         for (const auto* scope : {"workgroup", "storage", "texture"})
-            own(result, scope, describeNode(module.get("barrier").call({}, {scope})));
+            own(result, scope, describeNode(module.get("default").construct({scope})));
         for (const auto* name : {"workgroupBarrier", "storageBarrier", "textureBarrier"})
             own(result, name, describeFunction(module.get(name)));
         std::cout << result.toJSON()->dump();

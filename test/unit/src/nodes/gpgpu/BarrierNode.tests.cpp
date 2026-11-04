@@ -7,7 +7,7 @@ TEST_CASE("BarrierNode exports the three synchronization scopes") {
     const auto barrier = nativeBarrierNodeBinding("barrier");
     for (const auto* scope : {"workgroup", "storage", "texture"}) {
         const auto node = barrier.call({}, {scope});
-        REQUIRE(node.get("type").strictEquals("BarrierNode"));
+        REQUIRE(node.get("type").strictEquals("Node"));
         REQUIRE(node.get("scope").strictEquals(scope));
         REQUIRE(node.get("isBarrierNode").strictEquals(true));
         REQUIRE(node.get("isCacheable").call(node).strictEquals(false));

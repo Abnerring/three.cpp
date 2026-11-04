@@ -78,6 +78,14 @@ JSValue nativeBarrierNodeModule() {
         },
         {{"isCacheable", 0}, {"setup", 1}, {"generate", 1}}, method);
 
+    // BarrierNode does not declare a static `type` getter in three.js, so Node's
+    // inherited type remains "Node" for both the constructor and its instances.
+    JSPropertyDescriptor inheritedType;
+    inheritedType.getter = JSValue::function(
+        +[](const JSValue&, const Args&, const Args&) -> JSValue { return "Node"; }, {}, "get type", 0);
+    inheritedType.configurable = true;
+    constructor.defineProperty("type", inheritedType);
+
     const auto proxy = nativeTSLCoreBinding("nodeProxy").call({}, {constructor});
     const auto barrier = proxy;
     auto bindings = JSValue::object(nullptr);
@@ -88,7 +96,7 @@ JSValue nativeBarrierNodeModule() {
     own(bindings, "textureBarrier", makeBarrierFunction("texture", barrier));
 
     auto module = JSValue::object(nullptr);
-    for (const auto& name : {"default", "barrier", "workgroupBarrier", "storageBarrier", "textureBarrier"})
+    for (const auto& name : {"default", "workgroupBarrier", "storageBarrier", "textureBarrier"})
         own(module, name, bindings.get(name));
     bindings.retainForHeapLifetime();
     lexical() = JSWeakValue(bindings);

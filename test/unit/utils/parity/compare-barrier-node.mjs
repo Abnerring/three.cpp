@@ -21,9 +21,10 @@ const describeFunction = functionValue => ({
 const expected = {
   constructorName: module.default.name,
   constructorLength: module.default.length,
-  workgroup: describeNode(module.barrier('workgroup')),
-  storage: describeNode(module.barrier('storage')),
-  texture: describeNode(module.barrier('texture')),
+  constructorType: module.default.type,
+  workgroup: describeNode(new module.default('workgroup')),
+  storage: describeNode(new module.default('storage')),
+  texture: describeNode(new module.default('texture')),
   workgroupBarrier: describeFunction(module.workgroupBarrier),
   storageBarrier: describeFunction(module.storageBarrier),
   textureBarrier: describeFunction(module.textureBarrier)
