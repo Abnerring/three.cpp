@@ -201,8 +201,8 @@
     "note": "Accepted port scope is src and examples/jsm, including tracked third-party dependencies. Editor/manual web applications are excluded from native application rewrites. Native host behavior, packaging and all three platforms require separate implementation and verification evidence."
   },
   "counts": {
-    "partial-unverified": 515,
-    "missing": 426,
+    "partial-unverified": 519,
+    "missing": 422,
     "vulkan-port-pending": 290,
     "dependency-unverified": 20
   },
@@ -210,8 +210,8 @@
     "src": {
       "modules": 755,
       "counts": {
-        "partial-unverified": 379,
-        "missing": 86,
+        "partial-unverified": 383,
+        "missing": 82,
         "vulkan-port-pending": 290
       }
     },
@@ -796,7 +796,7 @@
       "path": "src/nodes/accessors",
       "upstreamFiles": 43,
       "moduleCount": 43,
-      "modulesWithCppFiles": 36,
+      "modulesWithCppFiles": 38,
       "verifiedComplete": 0
     },
     {
@@ -873,7 +873,7 @@
       "path": "src/nodes/materialx",
       "upstreamFiles": 6,
       "moduleCount": 5,
-      "modulesWithCppFiles": 1,
+      "modulesWithCppFiles": 3,
       "verifiedComplete": 0
     },
     {
@@ -8286,11 +8286,11 @@
       "scope": "src",
       "kind": "core",
       "upstreamSha256": "8a61188e9d23457b485e3a712480e816e046d02f97d21bf968833dbde36c390e",
-      "header": null,
-      "implementation": null,
+      "header": "src/nodes/accessors/Texture3DNode.h",
+      "implementation": "src/nodes/accessors/Texture3DNode.cpp",
       "expectedHeader": "src/nodes/accessors/Texture3DNode.h",
       "expectedImplementation": "src/nodes/accessors/Texture3DNode.cpp",
-      "status": "missing",
+      "status": "partial-unverified",
       "verifiedComplete": false,
       "apiExtraction": "partial-static",
       "verification": {
@@ -8299,7 +8299,9 @@
           "pointer": "/modules/247"
         },
         "upstreamUnitTests": [],
-        "cppUnitTests": [],
+        "cppUnitTests": [
+          "test/unit/src/nodes/accessors/Texture3DNode.tests.cpp"
+        ],
         "reviewedImplementation": [],
         "differentialResults": [],
         "renderingResults": [],
@@ -8313,11 +8315,11 @@
       "scope": "src",
       "kind": "core",
       "upstreamSha256": "55bc9e1ad0ffd910e6a0a6e7db872c80d276bffaf969bba0502f4950dd751fe5",
-      "header": null,
-      "implementation": null,
+      "header": "src/nodes/accessors/TextureBicubic.h",
+      "implementation": "src/nodes/accessors/TextureBicubic.cpp",
       "expectedHeader": "src/nodes/accessors/TextureBicubic.h",
       "expectedImplementation": "src/nodes/accessors/TextureBicubic.cpp",
-      "status": "missing",
+      "status": "partial-unverified",
       "verifiedComplete": false,
       "apiExtraction": "partial-static",
       "verification": {
@@ -8326,7 +8328,9 @@
           "pointer": "/modules/248"
         },
         "upstreamUnitTests": [],
-        "cppUnitTests": [],
+        "cppUnitTests": [
+          "test/unit/src/nodes/accessors/TextureBicubic.tests.cpp"
+        ],
         "reviewedImplementation": [],
         "differentialResults": [],
         "renderingResults": [],
@@ -11842,11 +11846,11 @@
       "scope": "src",
       "kind": "core",
       "upstreamSha256": "6a34e1bb77a91e3939eb3d0447a7afb891f5f15c29e66685cef89b0baf5e8cb0",
-      "header": null,
-      "implementation": null,
+      "header": "src/nodes/materialx/MaterialXColor.h",
+      "implementation": "src/nodes/materialx/MaterialXColor.cpp",
       "expectedHeader": "src/nodes/materialx/MaterialXColor.h",
       "expectedImplementation": "src/nodes/materialx/MaterialXColor.cpp",
-      "status": "missing",
+      "status": "partial-unverified",
       "verifiedComplete": false,
       "apiExtraction": "partial-static",
       "verification": {
@@ -11869,11 +11873,11 @@
       "scope": "src",
       "kind": "core",
       "upstreamSha256": "156df3b2fb80feb131c9c68780c4a06de9c3081eb5cb59f44ef949725a24ff6b",
-      "header": null,
-      "implementation": null,
+      "header": "src/nodes/materialx/MaterialXColorTransform.h",
+      "implementation": "src/nodes/materialx/MaterialXColorTransform.cpp",
       "expectedHeader": "src/nodes/materialx/MaterialXColorTransform.h",
       "expectedImplementation": "src/nodes/materialx/MaterialXColorTransform.cpp",
-      "status": "missing",
+      "status": "partial-unverified",
       "verifiedComplete": false,
       "apiExtraction": "partial-static",
       "verification": {

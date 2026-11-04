@@ -1,5 +1,6 @@
 #include "nodes/accessors/Texture3DNode.h"
 #include "nodes/tsl/TSLCore.h"
+#include "nodes/tsl/TSLBase.h"
 #include "textures/Texture.h"
 
 #include "catch.hpp"
@@ -14,8 +15,8 @@ TEST_CASE("Texture3DNode exports the texture3D factories") {
 
 TEST_CASE("Texture3DNode preserves three.js metadata and coordinate types") {
     const auto texture = nativeTextureConstructor().construct();
-    const auto uv = nativeTSLCoreBinding("vec3").call({}, {.25, .5, .75});
-    const auto level = nativeTSLCoreBinding("float").call({}, {2});
+    const auto uv = nativeTSLBaseBinding("vec3").call({}, {.25, .5, .75});
+    const auto level = nativeTSLBaseBinding("float").call({}, {2});
     const auto texture3D = nativeTexture3DNodeBinding("texture3D");
     const auto node = texture3D.call({}, {texture, uv});
     REQUIRE(node.get("type").strictEquals("Texture3DNode"));
@@ -31,7 +32,12 @@ TEST_CASE("Texture3DNode preserves three.js metadata and coordinate types") {
     REQUIRE(loaded.get("getSampler").call(loaded).strictEquals(false));
     const auto levelNode = nativeTexture3DNodeBinding("texture3DLevel").call({}, {texture, uv, level});
     REQUIRE(levelNode.get("levelNode").get("type").strictEquals("VarNode"));
-    REQUIRE(levelNode.get("levelNode").get("node").sameValue(level));
+    const auto unwrap = [](JSValue value) {
+        for (int depth = 0; depth < 4 && value.get("type").strictEquals("VarNode"); ++depth)
+            value = value.get("node");
+        return value;
+    };
+    REQUIRE(unwrap(levelNode.get("levelNode")).sameValue(unwrap(level)));
 }
 
 TEST_CASE("Texture3DNode emits ivec3 coordinates for load and offsets") {

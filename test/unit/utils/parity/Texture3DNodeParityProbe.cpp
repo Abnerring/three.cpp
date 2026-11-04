@@ -1,5 +1,5 @@
 #include "nodes/accessors/Texture3DNode.h"
-#include "nodes/tsl/TSLCore.h"
+#include "nodes/tsl/TSLBase.h"
 #include "textures/Texture.h"
 
 #include <iostream>
@@ -30,8 +30,8 @@ int main() {
     try {
         nativeTexture3DNodeModule();
         const auto texture = nativeTextureConstructor().construct();
-        const auto uv = nativeTSLCoreBinding("vec3").call({}, {.25, .5, .75});
-        const auto level = nativeTSLCoreBinding("float").call({}, {2});
+        const auto uv = nativeTSLBaseBinding("vec3").call({}, {.25, .5, .75});
+        const auto level = nativeTSLBaseBinding("float").call({}, {2});
         const auto texture3D = nativeTexture3DNodeBinding("texture3D");
         const auto node = texture3D.call({}, {texture, uv});
         const auto load = nativeTexture3DNodeBinding("texture3DLoad").call({}, {texture, uv});

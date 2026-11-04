@@ -85,6 +85,7 @@ add_executable(THREECPPTests
         unit/src/nodes/accessors/Object3DNode.tests.cpp
         unit/src/nodes/accessors/StorageTextureNode.tests.cpp
         unit/src/nodes/accessors/TextureBicubic.tests.cpp
+        unit/src/nodes/accessors/Texture3DNode.tests.cpp
         unit/src/nodes/math/BitcastNode.tests.cpp
         unit/src/nodes/math/BitcountNode.tests.cpp
         unit/src/nodes/math/Packed4x8IntegerNode.tests.cpp
@@ -854,6 +855,22 @@ if(THREECPP_NODE_EXECUTABLE AND THREEJS_SOURCE_DIR)
         COMMAND "${THREECPP_NODE_EXECUTABLE}" "${CMAKE_CURRENT_SOURCE_DIR}/unit/utils/parity/compare-brdf-sheen.mjs"
         "${THREEJS_SOURCE_DIR}" "$<TARGET_FILE:ThreeJsBRDFSheenParityProbe>")
 endif()
+
+add_executable(ThreeJsMaterialXColorParityProbe unit/utils/parity/MaterialXColorParityProbe.cpp)
+target_link_libraries(ThreeJsMaterialXColorParityProbe PRIVATE threecpp::threecpp)
+add_test(NAME threecpp.materialx-color-metadata COMMAND ThreeJsMaterialXColorParityProbe --metadata)
+add_test(NAME threecpp.materialx-color-smoke COMMAND ThreeJsMaterialXColorParityProbe)
+set_tests_properties(threecpp.materialx-color-metadata threecpp.materialx-color-smoke PROPERTIES
+    LABELS "native;nodes;materialx"
+    ENVIRONMENT "TEMP=D:/Temp/surui;TMP=D:/Temp/surui;THREEJS_SOURCE_DIR=${THREEJS_SOURCE_DIR}")
+if(THREECPP_NODE_EXECUTABLE AND THREEJS_SOURCE_DIR)
+    add_test(NAME threecpp.materialx-color-parity
+        COMMAND "${THREECPP_NODE_EXECUTABLE}"
+            "${CMAKE_CURRENT_SOURCE_DIR}/unit/utils/parity/compare-materialx-color.mjs"
+            "${THREEJS_SOURCE_DIR}" "$<TARGET_FILE:ThreeJsMaterialXColorParityProbe>")
+    set_tests_properties(threecpp.materialx-color-parity PROPERTIES TIMEOUT 120 LABELS "native;nodes;materialx;parity"
+        ENVIRONMENT "TEMP=D:/Temp/surui;TMP=D:/Temp/surui;THREEJS_SOURCE_DIR=${THREEJS_SOURCE_DIR}")
+endif()
 add_executable(ThreeJsBRDFEONParityProbe unit/utils/parity/BRDFEONParityProbe.cpp)
 target_link_libraries(ThreeJsBRDFEONParityProbe PRIVATE threecpp::threecpp)
 if(THREECPP_NODE_EXECUTABLE AND THREEJS_SOURCE_DIR)
@@ -895,6 +912,13 @@ if(THREECPP_NODE_EXECUTABLE AND THREEJS_SOURCE_DIR)
     add_test(NAME threecpp.threejs-texture-bicubic-parity
         COMMAND "${THREECPP_NODE_EXECUTABLE}" "${CMAKE_CURRENT_SOURCE_DIR}/unit/utils/parity/compare-texture-bicubic.mjs"
         "${THREEJS_SOURCE_DIR}" "$<TARGET_FILE:ThreeJsTextureBicubicParityProbe>")
+endif()
+add_executable(ThreeJsTexture3DNodeParityProbe unit/utils/parity/Texture3DNodeParityProbe.cpp)
+target_link_libraries(ThreeJsTexture3DNodeParityProbe PRIVATE threecpp::threecpp)
+if(THREECPP_NODE_EXECUTABLE AND THREEJS_SOURCE_DIR)
+    add_test(NAME threecpp.threejs-texture3d-node-parity
+        COMMAND "${THREECPP_NODE_EXECUTABLE}" "${CMAKE_CURRENT_SOURCE_DIR}/unit/utils/parity/compare-texture3d-node.mjs"
+        "${THREEJS_SOURCE_DIR}" "$<TARGET_FILE:ThreeJsTexture3DNodeParityProbe>")
 endif()
 if(THREECPP_BUILD_VULKAN)
     add_executable(VulkanShaderCompilerTests unit/three.source.unit.cpp

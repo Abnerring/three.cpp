@@ -209,6 +209,7 @@ target_sources(threecpp PRIVATE
     src/nodes/accessors/TextureNode.cpp
     src/nodes/accessors/TextureBicubic.cpp
     src/nodes/accessors/StorageTextureNode.cpp
+    src/nodes/accessors/Texture3DNode.cpp
     src/nodes/accessors/CubeTextureNode.cpp
     src/nodes/accessors/ReflectVector.cpp
     src/nodes/accessors/MaterialProperties.cpp
@@ -727,3 +728,7 @@ target_sources(threecpp PRIVATE
 # Add only after this isolated source candidate passes ROOT native validation.
 target_sources(threecpp PRIVATE src/renderers/common/QuadMesh.cpp)
 target_sources(threecpp PRIVATE src/nodes/materialx/MaterialXCore.cpp)
+target_sources(threecpp PRIVATE
+    src/nodes/materialx/MaterialXColor.cpp
+    src/nodes/materialx/MaterialXColorTransform.cpp
+)
