@@ -121,7 +121,7 @@ JSValue rotateMethod(const JSValue& receiver, const Args& args, const Args& capt
         return invoke(matrixChain, "mul")({position4}).get("xyz");
     }
     if (name == "serialize") {
-        const auto data = arg(args, 0);
+        auto data = arg(args, 0);
         superMethod(self, "serialize", captures, {data});
         data.set("order", self.get("_order"));
         return {};
