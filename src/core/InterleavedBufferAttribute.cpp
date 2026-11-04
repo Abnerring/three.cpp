@@ -1,13 +1,20 @@
 // Direct port of three.js InterleavedBufferAttribute.js at
 // 11738a9d55e502fb484cefffcea3a66dc44e9fe9. See repository LICENSE.
 #include "core/InterleavedBufferAttribute.h"
+#include "core/InterleavedBufferAttributeSource.inc"
 #include "core/JSDataSnapshot.h"
 #include "core/BufferAttribute.h"
 #include "math/MathUtils.h"
 #include <iostream>
+#include <string_view>
 
 namespace {
 using Args=std::vector<JSValue>;
+const char* sourceFor(const char* name) {
+    for (const auto& entry : InterleavedBufferAttributeSource::methods)
+        if (std::string_view(entry.name) == name) return entry.source;
+    return nullptr;
+}
 using Interpolant_detail::add;
 using Interpolant_detail::multiply;
 JSValue arg(const Args& args,std::size_t i) {return i<args.size()?args[i]:JSValue{};}
@@ -164,15 +171,16 @@ void InterleavedBufferAttribute::initialize(JSValue self,JSValue data,JSValue it
 JSValue InterleavedBufferAttribute::constructor() {
     static thread_local JSWeakValue weak;
     if(const auto value=weak.lock();value&&value->isConstructible())return *value;
-        const auto constructor=JSValue::constructor([](const JSValue& self,const Args& args,const Args&)->JSValue {
+        auto constructor=JSValue::constructor([](const JSValue& self,const Args& args,const Args&)->JSValue {
             initialize(self,arg(args,0),arg(args,1),arg(args,2),arg(args,3));return {};
-        },{},"InterleavedBufferAttribute",3);auto result=constructor.get("prototype");
+        },{},"InterleavedBufferAttribute",3);constructor.setFunctionSourceText(InterleavedBufferAttributeSource::classSource);auto result=constructor.get("prototype");
         for(const auto& [name,arity]:std::initializer_list<std::pair<const char*,unsigned>>{{"getComponent",2},{"setComponent",3},{"getX",1},{"getY",1},{"getZ",1},{"getW",1},
             {"setX",2},{"setY",2},{"setZ",2},{"setW",2},{"setXY",3},{"setXYZ",4},{"setXYZW",5},{"applyMatrix4",1},{"applyNormalMatrix",1},{"transformDirection",1},{"clone",1},{"toJSON",1}}) {
-            JSPropertyDescriptor d;d.value=JSValue::function(method,{name},name,arity);d.writable=d.configurable=true;result.defineProperty(name,d);
+            auto function=JSValue::function(method,{name},name,arity);if(const auto source=sourceFor(name))function.setFunctionSourceText(source);JSPropertyDescriptor d;d.value=function;d.writable=d.configurable=true;result.defineProperty(name,d);
         }
         for(const char* name:{"count","array","needsUpdate"}) {
-            JSPropertyDescriptor d;const auto function=JSValue::function(method,{name},std::string(name==std::string("needsUpdate")?"set ":"get ")+name,name==std::string("needsUpdate")?1:0);
+            JSPropertyDescriptor d;auto function=JSValue::function(method,{name},std::string(name==std::string("needsUpdate")?"set ":"get ")+name,name==std::string("needsUpdate")?1:0);
+            if(const auto source=sourceFor(name))function.setFunctionSourceText(source);
             if(name==std::string("needsUpdate")) d.setter=function;else d.getter=function;d.configurable=true;result.defineProperty(name,d);
         }
         constructor.retainForHeapLifetime();weak=JSWeakValue(constructor);return constructor;

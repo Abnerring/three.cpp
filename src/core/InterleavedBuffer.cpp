@@ -1,12 +1,19 @@
 // Direct port of three.js InterleavedBuffer.js at
 // 11738a9d55e502fb484cefffcea3a66dc44e9fe9. See repository LICENSE.
 #include "core/InterleavedBuffer.h"
+#include "core/InterleavedBufferSource.inc"
 #include "math/MathUtils.h"
 #include "core/JSGlobal.h"
 #include "constants.h"
+#include <string_view>
 
 namespace {
 using Args = std::vector<JSValue>;
+const char* sourceFor(const char* name) {
+    for (const auto& entry : InterleavedBufferSource::methods)
+        if (std::string_view(entry.name) == name) return entry.source;
+    return nullptr;
+}
 JSValue arg(const Args& args, std::size_t index) { return index<args.size()?args[index]:JSValue{}; }
 void own(JSValue receiver,const char* key,const JSValue& value) {
     JSPropertyDescriptor descriptor; descriptor.value=value;
@@ -121,14 +128,20 @@ JSValue InterleavedBuffer::constructor() {
         auto constructor=JSValue::constructor([](const JSValue& self,const Args& args,const Args&)->JSValue {
             initialize(self,arg(args,0),arg(args,1)); return {};
         },{},"InterleavedBuffer",2);
+        constructor.setFunctionSourceText(InterleavedBufferSource::classSource);
         auto result=constructor.get("prototype");
         JSPropertyDescriptor descriptor; descriptor.writable=descriptor.configurable=true;
         for(const auto& [name,arity]:std::initializer_list<std::pair<const char*,unsigned>>{
             {"onUploadCallback",0},{"setUsage",1},{"addUpdateRange",2},{"clearUpdateRanges",0},{"copy",1},
             {"copyAt",3},{"set",1},{"clone",1},{"onUpload",1},{"toJSON",1}}) {
-            descriptor.value=JSValue::function(method,{name},name,arity); result.defineProperty(name,descriptor);
+            auto function=JSValue::function(method,{name},name,arity);
+            if (const auto source=sourceFor(name)) function.setFunctionSourceText(source);
+            descriptor.value=function; result.defineProperty(name,descriptor);
         }
-        JSPropertyDescriptor setter; setter.setter=JSValue::function(method,{"needsUpdate"},"set needsUpdate",1);
+        JSPropertyDescriptor setter;
+        auto needsUpdate=JSValue::function(method,{"needsUpdate"},"set needsUpdate",1);
+        needsUpdate.setFunctionSourceText(InterleavedBufferSource::needsUpdateSource);
+        setter.setter=needsUpdate;
         setter.configurable=true; result.defineProperty("needsUpdate",setter);
         constructor.retainForHeapLifetime();weak=JSWeakValue(constructor);return constructor;
 }
