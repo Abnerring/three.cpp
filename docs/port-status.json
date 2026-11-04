@@ -201,8 +201,8 @@
     "note": "Accepted port scope is src and examples/jsm, including tracked third-party dependencies. Editor/manual web applications are excluded from native application rewrites. Native host behavior, packaging and all three platforms require separate implementation and verification evidence."
   },
   "counts": {
-    "partial-unverified": 492,
-    "missing": 449,
+    "partial-unverified": 493,
+    "missing": 448,
     "vulkan-port-pending": 290,
     "dependency-unverified": 20
   },
@@ -210,8 +210,8 @@
     "src": {
       "modules": 755,
       "counts": {
-        "partial-unverified": 356,
-        "missing": 109,
+        "partial-unverified": 357,
+        "missing": 108,
         "vulkan-port-pending": 290
       }
     },
@@ -838,7 +838,7 @@
       "path": "src/nodes/functions/BSDF",
       "upstreamFiles": 13,
       "moduleCount": 13,
-      "modulesWithCppFiles": 2,
+      "modulesWithCppFiles": 3,
       "verifiedComplete": 0
     },
     {
@@ -10515,11 +10515,11 @@
       "scope": "src",
       "kind": "core",
       "upstreamSha256": "b7ecdd6e05dfd2848c9407ddadce4fa6dceb132f2e6fd4e5987da49c694f5af2",
-      "header": null,
-      "implementation": null,
+      "header": "src/nodes/functions/BSDF/D_GGX.h",
+      "implementation": "src/nodes/functions/BSDF/D_GGX.cpp",
       "expectedHeader": "src/nodes/functions/BSDF/D_GGX.h",
       "expectedImplementation": "src/nodes/functions/BSDF/D_GGX.cpp",
-      "status": "missing",
+      "status": "partial-unverified",
       "verifiedComplete": false,
       "apiExtraction": "partial-static",
       "verification": {
