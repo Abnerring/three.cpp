@@ -4,6 +4,7 @@
 #include "textures/Texture.h"
 
 #include <iostream>
+#include <vector>
 
 namespace {
 void own(JSValue object, const char* key, const JSValue& value) {
@@ -46,7 +47,7 @@ int main() {
         const auto scale = floating.call({}, {2});
         const auto position = vec3.call({}, {1, 2, 3});
         const auto normal = vec3.call({}, {0, 1, 0});
-        const Args callArgs = {textureNode, nullptr, nullptr, scale, position, normal};
+        const std::vector<JSValue> callArgs = {textureNode, nullptr, nullptr, scale, position, normal};
         const auto call = textures.call({}, callArgs);
         const auto aliasCall = textureAlias.call({}, callArgs);
 

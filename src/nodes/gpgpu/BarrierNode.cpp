@@ -15,7 +15,7 @@ JSWeakValue& lexical() {
 JSValue method(const JSValue& receiver, const Args& args, const Args& captures) {
     auto self = receiver;
     const auto name = captures[0].string();
-    const auto builder = arg(args, 0);
+    auto builder = arg(args, 0);
 
     if (name == "isCacheable") return false;
 
