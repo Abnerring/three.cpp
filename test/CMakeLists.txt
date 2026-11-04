@@ -89,6 +89,8 @@ add_executable(THREECPPTests
         unit/src/nodes/accessors/Texture3DNode.tests.cpp
         unit/src/nodes/accessors/Arrays.tests.cpp
         unit/src/nodes/accessors/VelocityNode.tests.cpp
+        unit/src/nodes/accessors/SceneProperties.tests.cpp
+        unit/src/nodes/utils/Oscillators.tests.cpp
         unit/src/nodes/math/BitcastNode.tests.cpp
         unit/src/nodes/math/BitcountNode.tests.cpp
         unit/src/nodes/math/Packed4x8IntegerNode.tests.cpp
@@ -936,6 +938,20 @@ if(THREECPP_NODE_EXECUTABLE AND THREEJS_SOURCE_DIR)
     add_test(NAME threecpp.threejs-velocity-node-parity
         COMMAND "${THREECPP_NODE_EXECUTABLE}" "${CMAKE_CURRENT_SOURCE_DIR}/unit/utils/parity/compare-velocity-node.mjs"
         "${THREEJS_SOURCE_DIR}" "$<TARGET_FILE:ThreeJsVelocityNodeParityProbe>")
+endif()
+add_executable(ThreeJsScenePropertiesParityProbe unit/utils/parity/ScenePropertiesParityProbe.cpp)
+target_link_libraries(ThreeJsScenePropertiesParityProbe PRIVATE threecpp::threecpp)
+if(THREECPP_NODE_EXECUTABLE AND THREEJS_SOURCE_DIR)
+    add_test(NAME threecpp.threejs-scene-properties-parity
+        COMMAND "${THREECPP_NODE_EXECUTABLE}" "${CMAKE_CURRENT_SOURCE_DIR}/unit/utils/parity/compare-scene-properties.mjs"
+        "${THREEJS_SOURCE_DIR}" "$<TARGET_FILE:ThreeJsScenePropertiesParityProbe>")
+endif()
+add_executable(ThreeJsOscillatorsParityProbe unit/utils/parity/OscillatorsParityProbe.cpp)
+target_link_libraries(ThreeJsOscillatorsParityProbe PRIVATE threecpp::threecpp)
+if(THREECPP_NODE_EXECUTABLE AND THREEJS_SOURCE_DIR)
+    add_test(NAME threecpp.threejs-oscillators-parity
+        COMMAND "${THREECPP_NODE_EXECUTABLE}" "${CMAKE_CURRENT_SOURCE_DIR}/unit/utils/parity/compare-oscillators.mjs"
+        "${THREEJS_SOURCE_DIR}" "$<TARGET_FILE:ThreeJsOscillatorsParityProbe>")
 endif()
 add_executable(ThreeJsArraysParityProbe unit/utils/parity/ArraysParityProbe.cpp)
 target_link_libraries(ThreeJsArraysParityProbe PRIVATE threecpp::threecpp)

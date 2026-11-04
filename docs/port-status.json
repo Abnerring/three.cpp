@@ -201,8 +201,8 @@
     "note": "Accepted port scope is src and examples/jsm, including tracked third-party dependencies. Editor/manual web applications are excluded from native application rewrites. Native host behavior, packaging and all three platforms require separate implementation and verification evidence."
   },
   "counts": {
-    "partial-unverified": 522,
-    "missing": 419,
+    "partial-unverified": 524,
+    "missing": 417,
     "vulkan-port-pending": 290,
     "dependency-unverified": 20
   },
@@ -210,8 +210,8 @@
     "src": {
       "modules": 755,
       "counts": {
-        "partial-unverified": 386,
-        "missing": 79,
+        "partial-unverified": 388,
+        "missing": 77,
         "vulkan-port-pending": 290
       }
     },
@@ -796,7 +796,7 @@
       "path": "src/nodes/accessors",
       "upstreamFiles": 43,
       "moduleCount": 43,
-      "modulesWithCppFiles": 41,
+      "modulesWithCppFiles": 42,
       "verifiedComplete": 0
     },
     {
@@ -922,7 +922,7 @@
       "path": "src/nodes/utils",
       "upstreamFiles": 31,
       "moduleCount": 31,
-      "modulesWithCppFiles": 20,
+      "modulesWithCppFiles": 21,
       "verifiedComplete": 0
     },
     {
@@ -8093,11 +8093,11 @@
       "scope": "src",
       "kind": "core",
       "upstreamSha256": "0b5b2269c8cf10cf46e95218a20931cf32b989b687c8f09de2a0829341ada08a",
-      "header": null,
-      "implementation": null,
+      "header": "src/nodes/accessors/SceneProperties.h",
+      "implementation": "src/nodes/accessors/SceneProperties.cpp",
       "expectedHeader": "src/nodes/accessors/SceneProperties.h",
       "expectedImplementation": "src/nodes/accessors/SceneProperties.cpp",
-      "status": "missing",
+      "status": "partial-unverified",
       "verifiedComplete": false,
       "apiExtraction": "partial-static",
       "verification": {
@@ -8106,7 +8106,9 @@
           "pointer": "/modules/240"
         },
         "upstreamUnitTests": [],
-        "cppUnitTests": [],
+        "cppUnitTests": [
+          "test/unit/src/nodes/accessors/SceneProperties.tests.cpp"
+        ],
         "reviewedImplementation": [],
         "differentialResults": [],
         "renderingResults": [],
@@ -12918,11 +12920,11 @@
       "scope": "src",
       "kind": "core",
       "upstreamSha256": "6e63ae32029857610caa7ca3e71f538550443cf878b8fb00b808fabe1f25dd81",
-      "header": null,
-      "implementation": null,
+      "header": "src/nodes/utils/Oscillators.h",
+      "implementation": "src/nodes/utils/Oscillators.cpp",
       "expectedHeader": "src/nodes/utils/Oscillators.h",
       "expectedImplementation": "src/nodes/utils/Oscillators.cpp",
-      "status": "missing",
+      "status": "partial-unverified",
       "verifiedComplete": false,
       "apiExtraction": "static-only",
       "verification": {
@@ -12931,7 +12933,9 @@
           "pointer": "/modules/413"
         },
         "upstreamUnitTests": [],
-        "cppUnitTests": [],
+        "cppUnitTests": [
+          "test/unit/src/nodes/utils/Oscillators.tests.cpp"
+        ],
         "reviewedImplementation": [],
         "differentialResults": [],
         "renderingResults": [],
