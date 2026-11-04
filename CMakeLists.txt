@@ -214,6 +214,7 @@ target_sources(threecpp PRIVATE
     src/nodes/accessors/Arrays.cpp
     src/nodes/accessors/VelocityNode.cpp
     src/nodes/accessors/SceneProperties.cpp
+    src/nodes/accessors/Lights.cpp
     src/nodes/utils/Oscillators.cpp
     src/nodes/accessors/CubeTextureNode.cpp
     src/nodes/accessors/ReflectVector.cpp

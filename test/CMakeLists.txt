@@ -90,6 +90,7 @@ add_executable(THREECPPTests
         unit/src/nodes/accessors/Arrays.tests.cpp
         unit/src/nodes/accessors/VelocityNode.tests.cpp
         unit/src/nodes/accessors/SceneProperties.tests.cpp
+        unit/src/nodes/accessors/Lights.tests.cpp
         unit/src/nodes/utils/Oscillators.tests.cpp
         unit/src/nodes/math/BitcastNode.tests.cpp
         unit/src/nodes/math/BitcountNode.tests.cpp
@@ -1662,6 +1663,8 @@ add_executable(ThreeJsRenderTargetParityProbe unit/utils/parity/RenderTargetPari
 target_link_libraries(ThreeJsRenderTargetParityProbe PRIVATE threecpp::threecpp)
 add_executable(ThreeJsLightsParityProbe unit/utils/parity/LightsParityProbe.cpp)
 target_link_libraries(ThreeJsLightsParityProbe PRIVATE threecpp::threecpp)
+add_executable(ThreeJsLightsAccessorParityProbe unit/utils/parity/LightsAccessorParityProbe.cpp)
+target_link_libraries(ThreeJsLightsAccessorParityProbe PRIVATE threecpp::threecpp)
 add_executable(ThreeJsMaterialParityProbe unit/utils/parity/MaterialParityProbe.cpp)
 target_link_libraries(ThreeJsMaterialParityProbe PRIVATE threecpp::threecpp)
 add_executable(ThreeJsMaterialClippingParityProbe unit/utils/parity/MaterialClippingParityProbe.cpp)
@@ -1745,6 +1748,9 @@ if(THREEJS_SOURCE_DIR AND THREECPP_NODE_EXECUTABLE)
     add_test(NAME threecpp.threejs-lights-parity
         COMMAND "${THREECPP_NODE_EXECUTABLE}" "${CMAKE_CURRENT_SOURCE_DIR}/unit/utils/parity/compare-lights.mjs"
         "${THREEJS_SOURCE_DIR}" "$<TARGET_FILE:ThreeJsLightsParityProbe>")
+    add_test(NAME threecpp.threejs-lights-accessors-parity
+        COMMAND "${THREECPP_NODE_EXECUTABLE}" "${CMAKE_CURRENT_SOURCE_DIR}/unit/utils/parity/compare-lights-accessors.mjs"
+        "${THREEJS_SOURCE_DIR}" "$<TARGET_FILE:ThreeJsLightsAccessorParityProbe>")
     add_test(NAME threecpp.threejs-materials-parity
         COMMAND "${THREECPP_NODE_EXECUTABLE}" --expose-gc "${CMAKE_CURRENT_SOURCE_DIR}/unit/utils/parity/compare-materials.mjs"
         "${THREEJS_SOURCE_DIR}" "$<TARGET_FILE:ThreeJsMaterialParityProbe>")
