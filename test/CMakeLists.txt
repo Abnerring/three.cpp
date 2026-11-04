@@ -122,6 +122,7 @@ add_executable(THREECPPTests
         unit/src/nodes/display/ToneMappingFunctions.tests.cpp
         unit/src/nodes/display/ColorAdjustment.tests.cpp
         unit/src/nodes/functions/BRDF_Lambert.tests.cpp
+        unit/src/nodes/functions/BasicLightingModel.tests.cpp
         unit/src/nodes/functions/BRDF_EON.tests.cpp
         unit/src/nodes/functions/BRDF_GGX.tests.cpp
         unit/src/nodes/functions/BRDF_Sheen.tests.cpp
@@ -864,6 +865,14 @@ if(THREECPP_NODE_EXECUTABLE AND THREEJS_SOURCE_DIR)
     add_test(NAME threecpp.threejs-brdf-sheen-parity
         COMMAND "${THREECPP_NODE_EXECUTABLE}" "${CMAKE_CURRENT_SOURCE_DIR}/unit/utils/parity/compare-brdf-sheen.mjs"
         "${THREEJS_SOURCE_DIR}" "$<TARGET_FILE:ThreeJsBRDFSheenParityProbe>")
+endif()
+
+add_executable(ThreeJsBasicLightingModelParityProbe unit/utils/parity/BasicLightingModelParityProbe.cpp)
+target_link_libraries(ThreeJsBasicLightingModelParityProbe PRIVATE threecpp::threecpp)
+if(THREECPP_NODE_EXECUTABLE AND THREEJS_SOURCE_DIR)
+    add_test(NAME threecpp.threejs-basic-lighting-model-parity
+        COMMAND "${THREECPP_NODE_EXECUTABLE}" "${CMAKE_CURRENT_SOURCE_DIR}/unit/utils/parity/compare-basic-lighting-model.mjs"
+        "${THREEJS_SOURCE_DIR}" "$<TARGET_FILE:ThreeJsBasicLightingModelParityProbe>")
 endif()
 
 add_executable(ThreeJsMaterialXColorParityProbe unit/utils/parity/MaterialXColorParityProbe.cpp)
