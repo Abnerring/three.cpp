@@ -97,6 +97,7 @@ add_executable(THREECPPTests
         unit/src/nodes/math/PackFloatNode.tests.cpp
         unit/src/nodes/math/UnpackFloatNode.tests.cpp
         unit/src/nodes/math/TriNoise3D.tests.cpp
+        unit/src/nodes/gpgpu/BarrierNode.tests.cpp
         unit/src/nodes/geometry/RangeNode.tests.cpp
         unit/src/nodes/display/FrontFacingNode.tests.cpp
         unit/src/nodes/display/ColorSpaceFunctions.tests.cpp
@@ -157,6 +158,7 @@ add_executable(THREECPPTests
         unit/src/nodes/core/SpriteUtils.tests.cpp
         unit/src/nodes/utils/SetNode.tests.cpp
         unit/src/nodes/core/TriplanarTextures.tests.cpp
+        unit/src/nodes/utils/TriplanarTextures.tests.cpp
         unit/src/nodes/utils/FunctionOverloadingNode.tests.cpp
         unit/src/nodes/utils/CubeMapNode.tests.cpp
         unit/src/nodes/utils/EventNode.tests.cpp
@@ -982,6 +984,13 @@ if(THREECPP_NODE_EXECUTABLE AND THREEJS_SOURCE_DIR)
     add_test(NAME threecpp.threejs-tri-noise-3d-parity
         COMMAND "${THREECPP_NODE_EXECUTABLE}" "${CMAKE_CURRENT_SOURCE_DIR}/unit/utils/parity/compare-tri-noise-3d.mjs"
         "${THREEJS_SOURCE_DIR}" "$<TARGET_FILE:ThreeJsTriNoise3DParityProbe>")
+endif()
+add_executable(ThreeJsBarrierNodeParityProbe unit/utils/parity/BarrierNodeParityProbe.cpp)
+target_link_libraries(ThreeJsBarrierNodeParityProbe PRIVATE threecpp::threecpp)
+if(THREECPP_NODE_EXECUTABLE AND THREEJS_SOURCE_DIR)
+    add_test(NAME threecpp.threejs-barrier-node-parity
+        COMMAND "${THREECPP_NODE_EXECUTABLE}" "${CMAKE_CURRENT_SOURCE_DIR}/unit/utils/parity/compare-barrier-node.mjs"
+        "${THREEJS_SOURCE_DIR}" "$<TARGET_FILE:ThreeJsBarrierNodeParityProbe>")
 endif()
 if(THREECPP_BUILD_VULKAN)
     add_executable(VulkanShaderCompilerTests unit/three.source.unit.cpp

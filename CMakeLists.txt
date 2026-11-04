@@ -226,6 +226,7 @@ target_sources(threecpp PRIVATE
     src/nodes/accessors/UniformArrayNode.cpp
     src/nodes/accessors/Camera.cpp
     src/nodes/gpgpu/ComputeNode.cpp
+    src/nodes/gpgpu/BarrierNode.cpp
     src/nodes/core/MaterialProperties.cpp
     src/nodes/accessors/ModelNode.cpp
     src/nodes/accessors/Object3DNode.cpp
@@ -285,6 +286,7 @@ target_sources(threecpp PRIVATE
     src/nodes/core/SpriteUtils.cpp
     src/nodes/utils/SetNode.cpp
     src/nodes/core/TriplanarTextures.cpp
+    src/nodes/utils/TriplanarTextures.cpp
     src/nodes/utils/FunctionOverloadingNode.cpp
     src/nodes/utils/CubeMapNode.cpp
     src/nodes/utils/EventNode.cpp
