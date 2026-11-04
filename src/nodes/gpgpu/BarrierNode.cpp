@@ -13,7 +13,7 @@ JSWeakValue& lexical() {
 }
 
 JSValue method(const JSValue& receiver, const Args& args, const Args& captures) {
-    const auto self = receiver;
+    auto self = receiver;
     const auto name = captures[0].string();
     const auto builder = arg(args, 0);
 
@@ -68,7 +68,7 @@ JSValue nativeBarrierNodeModule() {
     JSModuleInitializationScope scope(initializing, "BarrierNode module");
     nativeTSLCore();
 
-    const auto constructor = makeConstructor(
+    auto constructor = makeConstructor(
         "BarrierNode", 1,
         +[](const JSValue& target, const Args& args, const Args& captures) -> JSValue {
             auto self = superConstruct(target, captures);
