@@ -189,6 +189,7 @@ target_sources(threecpp PRIVATE
     src/nodes/accessors/AccessorsUtils.cpp
     src/nodes/accessors/ReferenceNode.cpp
     src/nodes/accessors/MaterialReferenceNode.cpp
+    src/nodes/accessors/UserDataNode.cpp
     src/nodes/accessors/MaterialNode.cpp
     src/nodes/accessors/ModelViewProjectionNode.cpp
     src/nodes/accessors/VertexColorNode.cpp
@@ -203,6 +204,7 @@ target_sources(threecpp PRIVATE
     src/nodes/accessors/Normal.cpp
     src/nodes/accessors/Position.cpp
     src/nodes/accessors/UV.cpp
+    src/nodes/accessors/PointUVNode.cpp
     src/nodes/accessors/TextureSizeNode.cpp
     src/nodes/accessors/TextureNode.cpp
     src/nodes/accessors/CubeTextureNode.cpp

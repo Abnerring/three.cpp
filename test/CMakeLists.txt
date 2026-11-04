@@ -78,6 +78,7 @@ add_executable(THREECPPTests
         unit/src/nodes/accessors/Tangent.tests.cpp
         unit/src/nodes/accessors/Normal.tests.cpp
         unit/src/nodes/accessors/ReferenceElementNode.tests.cpp
+        unit/src/nodes/accessors/UserDataNode.tests.cpp
         unit/src/nodes/accessors/Camera.tests.cpp
         unit/src/nodes/core/MaterialProperties.tests.cpp
         unit/src/nodes/accessors/ModelNode.tests.cpp
@@ -2644,4 +2645,12 @@ if(THREECPP_NODE_EXECUTABLE AND THREEJS_SOURCE_DIR)
     set_tests_properties(threecpp.vulkan-double-side-source-binding-trace PROPERTIES
         TIMEOUT 420 LABELS "Vulkan;parity;source;callbacks"
         ENVIRONMENT "TEMP=D:/Temp/surui;TMP=D:/Temp/surui;THREEJS_SOURCE_DIR=${THREEJS_SOURCE_DIR}")
+endif()
+
+add_executable(ThreeJsPointUVNodeParityProbe unit/utils/parity/PointUVNodeParityProbe.cpp)
+target_link_libraries(ThreeJsPointUVNodeParityProbe PRIVATE threecpp::threecpp)
+if(THREECPP_NODE_EXECUTABLE AND THREEJS_SOURCE_DIR)
+    add_test(NAME threecpp.threejs-point-uv-node-parity
+        COMMAND "${THREECPP_NODE_EXECUTABLE}" "${CMAKE_CURRENT_SOURCE_DIR}/unit/utils/parity/compare-point-uv-node.mjs"
+        "${THREEJS_SOURCE_DIR}" "$<TARGET_FILE:ThreeJsPointUVNodeParityProbe>")
 endif()

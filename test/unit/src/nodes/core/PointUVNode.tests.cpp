@@ -1,4 +1,5 @@
 #include "nodes/core/PointUVNode.h"
+#include "nodes/accessors/PointUVNode.h"
 
 #include "catch.hpp"
 
@@ -25,4 +26,19 @@ TEST_CASE("PointUVNode turns the vertical coordinate over") {
     REQUIRE(text.find("1.0 - gl_PointCoord.y") != std::string::npos);
     // The result is a two part vector, which the type already said.
     REQUIRE(text.find("vec2") == 0);
+}
+
+TEST_CASE("PointUVNode managed module follows Node and TSL exports") {
+    const auto module = nativePointUVNodeModule();
+    const auto constructor = nativePointUVNodeConstructor();
+    REQUIRE(module.get("default").sameValue(constructor));
+    REQUIRE(module.get("pointUV").get("isPointUVNode").strictEquals(true));
+
+    const auto instance = constructor.construct();
+    REQUIRE(instance.get("isPointUVNode").strictEquals(true));
+    REQUIRE(instance.get("nodeType").strictEquals("vec2"));
+    REQUIRE(constructor.get("type").strictEquals("PointUVNode"));
+    REQUIRE(instance.get("isCacheable").call(instance).strictEquals(false));
+    REQUIRE(instance.get("generate").call(instance, {nullptr}).strictEquals(
+        "vec2( gl_PointCoord.x, 1.0 - gl_PointCoord.y )"));
 }
