@@ -2531,7 +2531,9 @@ struct VulkanRenderer::Impl {
             (std::uint64_t(colorStride) << 33) | (std::uint64_t(colors) << 49) |
             (std::uint64_t(fog) << 50) | (std::uint64_t(colorSize == 4) << 51);
         const std::string key = std::to_string(baseKey) + ":" + std::to_string(mapSize) + ":" +
-            std::to_string(alphaSize) + ":" + std::to_string(mapUv) + ":" + std::to_string(alphaUv) + ":" + std::to_string(active->colorFormat);
+            std::to_string(alphaSize) + ":" + std::to_string(mapUv) + ":" + std::to_string(alphaUv) + ":" +
+            std::to_string(active->colorFormat) + ":" + std::to_string(material.polygonOffset) + ":" +
+            std::to_string(material.polygonOffsetFactor) + ":" + std::to_string(material.polygonOffsetUnits);
         if (auto found = pipelines.find(key); found != pipelines.end())
             return found->second;
         const auto stages = shaderModules->pipelineStages();
@@ -2555,6 +2557,9 @@ struct VulkanRenderer::Impl {
         // Negating clip-space Y converts three.js' upward axis to top-down image rows.
         rasterization.frontFace =
             mirrored ? VK_FRONT_FACE_CLOCKWISE : VK_FRONT_FACE_COUNTER_CLOCKWISE;
+        rasterization.depthBiasEnable = material.polygonOffset;
+        rasterization.depthBiasConstantFactor = static_cast<float>(material.polygonOffsetUnits);
+        rasterization.depthBiasSlopeFactor = static_cast<float>(material.polygonOffsetFactor);
         rasterization.lineWidth = 1;
         VkPipelineMultisampleStateCreateInfo multisample{
             VK_STRUCTURE_TYPE_PIPELINE_MULTISAMPLE_STATE_CREATE_INFO};
@@ -3616,7 +3621,7 @@ void VulkanRenderer::render(Scene& scene, Camera& camera) {
                     std::memcpy(clippingData.data() + 16 + i * sizeof(float), &value, sizeof(value));
                 }
             }
-            if (material.polygonOffset || (material.wireframe && material.wireframeLinewidth != 1))
+            if (material.wireframe && material.wireframeLinewidth != 1)
                 throw std::invalid_argument(
                     "Vulkan polygon offset and wide wireframe lines are not implemented yet");
             if ((material.blending == 3 || material.blending == 4) && !material.premultipliedAlpha)

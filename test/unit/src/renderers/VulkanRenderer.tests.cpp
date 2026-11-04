@@ -349,7 +349,7 @@ void instancingTests(bool validation) {
     morphMesh->morphTexture->needsUpdate=true;renderHostTurn(renderer, morphScene,camera);
     expectPixel(renderer,{0,0,255,255},"Versioned morph weights update GPU deformation",48,32);
     weights.morphTargetInfluences->at(0)=1;morphMesh->setMorphAt(1,weights);morphMesh->morphTexture->needsUpdate=true;
-    for(double i=0;i<target->count;++i) target->setY(i,target->getY(i)+.3);
+    for(double i=0;i<morphPosition->count;++i) target->setY(i,target->getY(i)+.3);
     target->needsUpdate=true;renderHostTurn(renderer, morphScene,camera);
     expectPixel(renderer,{0,0,255,255},"Morph target cache preserves unchanged target-count storage",48,19);
     morphMesh->instanceMatrix->meshPerAttribute=2;material->alphaTest=.01;renderHostTurn(renderer, morphScene,camera);
@@ -401,6 +401,34 @@ void instancingTests(bool validation) {
     expectPixel(renderer,{0,0,255,255},"LOD automatic update requires strict true");
     lod->autoUpdate=true;renderHostTurn(renderer, lodScene,camera);
     expectPixel(renderer,{255,0,0,255},"LOD resumes automatic selection");
+}
+
+void polygonOffsetTests(bool validation) {
+    VulkanRenderer renderer({64, 64, validation});
+    renderer.srgbOutput = false;
+    renderer.setClearColor(Color(0, 0, 0), 1);
+    OrthographicCamera camera(-1, 1, 1, -1, .1, 20);
+    camera.position.z = 5;
+    Scene scene;
+    auto first = plane(Color(1, 0, 0));
+    auto second = plane(Color(0, 1, 0));
+    auto offset = basic(second);
+    offset->polygonOffset = true;
+    offset->polygonOffsetFactor = 1;
+    offset->polygonOffsetUnits = 1;
+    first->renderOrder = 0;
+    second->renderOrder = 1;
+    scene.add(first);
+    scene.add(second);
+    renderHostTurn(renderer, scene, camera);
+    expectPixel(renderer, {255, 0, 0, 255},
+                "Positive polygon offset moves a coplanar draw behind the existing depth");
+    offset->polygonOffsetFactor = -1;
+    offset->polygonOffsetUnits = -1;
+    renderHostTurn(renderer, scene, camera);
+    expectPixel(renderer, {0, 255, 0, 255},
+                "Negative polygon offset moves a coplanar draw in front of the existing depth");
+    require(renderer.getValidationMessages().empty(), "Polygon offset leaves valid Vulkan state");
 }
 
 void textureTests(bool validation) {
@@ -1951,6 +1979,7 @@ int main(int argc, char** argv) {
             if (std::string(argv[i]) == "--validation") validation = true;
         if (argc > 1 && std::string(argv[1]) == "--first") { unsupportedMeshTests(validation); std::cout << "first group ok\n"; return 0; }
         if (argc > 1 && std::string(argv[1]) == "--third") { instancingTests(validation); std::cout << "third group ok\n"; return 0; }
+        if (argc > 1 && std::string(argv[1]) == "--polygon-offset") { polygonOffsetTests(validation); std::cout << "polygon offset group ok\n"; return 0; }
         if (argc > 1 && std::string(argv[1]) == "--second") { unsupportedPrimitiveTests(validation); std::cout << "second group ok\n"; return 0; }
         if (argc > 1 && std::string(argv[1]) == "--cube") { std::cerr << "[group] renderTargetTests\n"; renderTargetTests(validation); std::cerr << "[group] cubeRenderTargetTests\n"; cubeRenderTargetTests(validation); std::cerr << "[group] cubeCameraUpdateTests\n"; cubeCameraUpdateTests(validation); std::cerr << "[group] equirectangularToCubeTests\n"; equirectangularToCubeTests(validation); std::cerr << "[group] equirectangularDirectionTests\n"; equirectangularDirectionTests(validation); std::cerr << "[group] blurCubeTests\n"; blurCubeTests(validation); std::cerr << "[group] parkRestoreTests\n"; parkRestoreTests(validation); std::cout << "cube group: " << assertions << " assertions\n"; return 0; }
         std::cerr << "[group] unsupportedMeshTests" << '\n';
@@ -1959,6 +1988,8 @@ int main(int argc, char** argv) {
         unsupportedPrimitiveTests(validation);
         std::cerr << "[group] instancingTests" << '\n';
         instancingTests(validation);
+        std::cerr << "[group] polygonOffsetTests" << '\n';
+        polygonOffsetTests(validation);
         std::cerr << "[group] textureTests" << '\n';
         textureTests(validation);
         std::cerr << "[group] mipmapTests" << '\n';
