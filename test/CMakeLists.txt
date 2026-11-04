@@ -140,6 +140,7 @@ add_executable(THREECPPTests
         unit/src/nodes/functions/V_GGX_SmithCorrelated.tests.cpp
         unit/src/nodes/functions/V_GGX_SmithCorrelated_Anisotropic.tests.cpp
         unit/src/nodes/functions/Schlick_to_F0.tests.cpp
+        unit/src/nodes/lighting/LightUtils.tests.cpp
         unit/src/nodes/display/ViewportTextureNode.tests.cpp
         unit/src/nodes/display/RenderOutputNode.tests.cpp
         unit/src/nodes/core/ToonOutlinePass.tests.cpp
@@ -875,6 +876,14 @@ if(THREECPP_NODE_EXECUTABLE AND THREEJS_SOURCE_DIR)
     add_test(NAME threecpp.threejs-basic-lighting-model-parity
         COMMAND "${THREECPP_NODE_EXECUTABLE}" "${CMAKE_CURRENT_SOURCE_DIR}/unit/utils/parity/compare-basic-lighting-model.mjs"
         "${THREEJS_SOURCE_DIR}" "$<TARGET_FILE:ThreeJsBasicLightingModelParityProbe>")
+endif()
+
+add_executable(ThreeJsLightUtilsParityProbe unit/utils/parity/LightUtilsParityProbe.cpp)
+target_link_libraries(ThreeJsLightUtilsParityProbe PRIVATE threecpp::threecpp)
+if(THREECPP_NODE_EXECUTABLE AND THREEJS_SOURCE_DIR)
+    add_test(NAME threecpp.threejs-light-utils-parity
+        COMMAND "${THREECPP_NODE_EXECUTABLE}" "${CMAKE_CURRENT_SOURCE_DIR}/unit/utils/parity/compare-light-utils.mjs"
+        "${THREEJS_SOURCE_DIR}" "$<TARGET_FILE:ThreeJsLightUtilsParityProbe>")
 endif()
 
 add_executable(ThreeJsMaterialXColorParityProbe unit/utils/parity/MaterialXColorParityProbe.cpp)
