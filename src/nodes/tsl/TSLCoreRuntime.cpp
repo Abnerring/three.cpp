@@ -262,7 +262,11 @@ void installNativeTSLCoreExtensions(const JSValue& module,const JSValue& constNo
             return node;
         },
         {}, "Stack", 1));
-    module.get("addMethodChaining").call({}, {JSValue("toStack"), module.get("Stack")});
+    // Registering twice would warn about redefining the chain method, and TSLCore is initialised once per heap
+    // while Node.prototype is shared, so only register when the method is still missing.
+    if (nativeNodeConstructor().get("prototype").get("toStack").isUndefined()) {
+        module.get("addMethodChaining").call({}, {JSValue("toStack"), module.get("Stack")});
+    }
     }
     const auto element=module.get("nodeProxy").call({}, {nativeArrayElementNodeConstructor()});own(module,"element",invoke(element,"setParameterLength")({2}));
     own(module,"convert",JSValue::function([](const JSValue&,const Args& args,const Args& cap)->JSValue {JSSourceTrace::FrameScope sourceTraceTSL_31({"convert",{"file:///D:/Temp/surui/threejs-pinned-11738a9-20261101/src/nodes/tsl/TSLCore.js",1288,24,26721,"272524b87c2ded3333c693631d8aac2000a4af14adfbdfaf975027f5036808fd"},std::string{},"",false,false,false,{"file:///D:/Temp/surui/threejs-pinned-11738a9-20261101/src/nodes/tsl/TSLCore.js",1288,24,26721,"272524b87c2ded3333c693631d8aac2000a4af14adfbdfaf975027f5036808fd"}});return nativeConvertNodeConstructor().construct({cap[0].call({}, {arg(args,0)}),arg(args,1)});},{module.get("nodeObject")},"convert",2));

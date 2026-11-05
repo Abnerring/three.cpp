@@ -1,5 +1,6 @@
 #include "loaders/nodes/NodeLoader.h"
 
+#include "loaders/LoadingManager.h"
 #include "nodes/core/Node.h"
 
 #include "catch.hpp"
@@ -41,10 +42,18 @@ TEST_CASE("NodeLoader keeps its textures and node registries") {
     // The class declares no static type getter.
     REQUIRE(ctor.get("type").isUndefined());
 
-    // The manager is passed through to the base loader; without one it stays undefined.
+    // Without an argument the base loader falls back to the DefaultLoadingManager singleton.
+    const auto loader = ctor.construct();
+    REQUIRE(loader.get("manager").sameValue(nativeDefaultLoadingManager()));
+    // The base loader defaults match the pinned ones.
+    REQUIRE(loader.get("crossOrigin").strictEquals("anonymous"));
+    REQUIRE(loader.get("withCredentials").strictEquals(false));
+    REQUIRE(loader.get("path").strictEquals(""));
+    REQUIRE(loader.get("resourcePath").strictEquals(""));
+    // An explicit manager is used as given.
     auto manager = JSValue::object(nullptr);
-    const auto loader = ctor.construct({manager});
-    REQUIRE(loader.get("manager").isObject());
+    const auto explicitLoader = ctor.construct({manager});
+    REQUIRE(explicitLoader.get("manager").sameValue(manager));
     REQUIRE(loader.get("textures").isObject());
     REQUIRE(loader.get("nodes").isObject());
     REQUIRE(loader.get("load").get("length").strictEquals(4));

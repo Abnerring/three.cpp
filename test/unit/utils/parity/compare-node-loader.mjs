@@ -8,6 +8,7 @@ const lock = (await import('../../../../upstream.json', { with: { type: 'json' }
 assert.equal(execFileSync('git', [ '-C', upstream, 'rev-parse', 'HEAD' ], { encoding: 'utf8' }).trim(), lock.commit);
 
 const mod = await import(pathToFileURL(path.join(upstream, 'src/loaders/nodes/NodeLoader.js')).href);
+const { DefaultLoadingManager } = await import(pathToFileURL(path.join(upstream, 'src/loaders/LoadingManager.js')).href);
 const NodeLoader = mod.default;
 
 const log = [];
@@ -17,6 +18,10 @@ const makeNodeClass = () => class TestNode {
 };
 
 const loader = new NodeLoader();
+const managerIsDefault = loader.manager === DefaultLoadingManager;
+const crossOrigin = loader.crossOrigin;
+const withCredentials = loader.withCredentials;
+const pathValue = loader.path;
 const textures = {};
 const setTexturesSame = loader.setTextures(textures) === loader;
 const texturesStored = loader.textures === textures;
@@ -53,6 +58,10 @@ const expected = {
   name: NodeLoader.name,
   length: NodeLoader.length,
 
+  managerIsDefault,
+  crossOrigin,
+  withCredentials,
+  path: pathValue,
   texturesIsObject: typeof loader.textures === 'object',
   nodesIsObject: typeof loader.nodes === 'object',
   setTexturesSame,
@@ -70,6 +79,10 @@ const expected = {
   arityTable,
   source: NodeLoader.toString()
 };
-const actual = JSON.parse(execFileSync(path.resolve(probe), { encoding: 'utf8' }));
+// The runtime prints TSL warnings on stdout before the JSON payload, so parse the last line and also assert
+// that the duplicated chain registration warning is gone.
+const stdout = execFileSync(path.resolve(probe), { encoding: 'utf8' });
+assert.ok(!stdout.includes('Redefinition of method chaining'), 'duplicate chain registration warning');
+const actual = JSON.parse(stdout.trim().split('\n').at(-1));
 assert.deepEqual(actual, expected);
 console.log('NodeLoader parity passed');

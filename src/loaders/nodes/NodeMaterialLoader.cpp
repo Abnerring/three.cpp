@@ -69,7 +69,7 @@ JSValue nativeNodeMaterialLoaderModule() {
         +[](const JSValue& target, const Args& args, const Args& captures) -> JSValue {
             // super( manager ): the base class is the prototype of the constructor the holder carries.
             const auto base = captures[0].get("constructor").getPrototype();
-            auto self = base.construct({arg(args, 0, nullptr)}, target);
+            auto self = base.construct({arg(args, 0)}, target);
             self.set("nodes", JSValue::object(nullptr));
             self.set("nodeMaterials", JSValue::object(nullptr));
             return self;

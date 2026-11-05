@@ -1,6 +1,7 @@
 #include "loaders/nodes/NodeLoader.h"
 
 #include "core/JSValue.h"
+#include "loaders/LoadingManager.h"
 
 #include <iostream>
 #include <string>
@@ -36,6 +37,11 @@ int main() {
         const auto module = nativeNodeLoaderModule();
         const auto ctor = module.get("default");
         const auto loader = ctor.construct();
+        const bool managerIsDefault =
+            loader.get("manager").sameValue(nativeDefaultLoadingManager());
+        const auto crossOrigin = loader.get("crossOrigin");
+        const auto withCredentials = loader.get("withCredentials");
+        const auto pathValue = loader.get("path");
 
         auto textures = JSValue::object(nullptr);
         const bool setTexturesSame = loader.get("setTextures").call(loader, {textures}).sameValue(loader);
@@ -90,6 +96,10 @@ int main() {
         output.set("length", ctor.get("length"));
 
 
+        output.set("managerIsDefault", managerIsDefault);
+        output.set("crossOrigin", crossOrigin);
+        output.set("withCredentials", withCredentials);
+        output.set("path", pathValue);
         output.set("texturesIsObject", loader.get("textures").isObject());
         output.set("nodesIsObject", loader.get("nodes").isObject());
         output.set("setTexturesSame", setTexturesSame);

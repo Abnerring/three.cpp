@@ -1,4 +1,43 @@
-# 当前接续：Three.Legacy 空模块移植（上游 0 字节）；确认 ObjectLoader 缺 JS 类导致 NodeObjectLoader 阻塞，2026-11-05
+# 当前接续：两处运行时保真修复——Loader 缺省 manager 默认化、toStack 重复注册告警消除（均已行为级验证），2026-11-05
+
+目标保持 active：固定 three.js 11738a9d55e502fb484cefffcea3a66dc44e9fe9 全部 src + examples/jsm 原生 C++ 逻辑，Vulkan 后端；禁止 CEF/生产 JS 引擎/桥接。阶段本地 Git 提交，不推送。
+
+**本轮是运行时保真修复 + 验证补强，不新增模块，审计计数不变（src missing 19 / partial 446）——不声称覆盖率提升。**
+
+## 修复 1：`Loader` 的 `DefaultLoadingManager` 默认化（第 45 轮记录的问题）
+
+第 45 轮记录「本端口 `Loader` 不默认 `DefaultLoadingManager`」。**本轮查明真正根因不在 `Loader`**：`Loader.cpp` 本来就写的是
+`self.set("manager", manager.isUndefined()?DefaultLoadingManager.object():manager)`——**正确**。问题在我新写的两个子类里：
+
+```cpp
+base.construct({arg(args, 0, nullptr)}, target)   // ✗ 缺省时传 null（不是 undefined）→ 基类当成显式 manager
+base.construct({arg(args, 0)}, target)            // ✓ 缺省为 JSValue{}（undefined）→ 基类走默认分支
+```
+修正 `NodeLoader.cpp` 与 `NodeMaterialLoader.cpp`（两者同一行模式）。
+
+验证：`new NodeLoader()` 的 `manager` **与 `nativeDefaultLoadingManager()` 同一**；`crossOrigin === "anonymous"`、`withCredentials === false`、`path === ""`、`resourcePath === ""` 四项默认值与上游一致；显式传入 manager 时按原样使用。差分把 `managerIsDefault`/`crossOrigin`/`withCredentials`/`path` 四项加入比较并通过。
+
+## 修复 2：`toStack` 链式方法重复注册告警
+
+第 40/42 轮记录「Redefinition of method chaining 'toStack'」告警（低优先）。根因：TSLCore 每个堆初始化一次，而 `Node.prototype` 是共享的，所以重复注册。修复：注册前检查
+`nativeNodeConstructor().get("prototype").get("toStack").isUndefined()`，只在缺失时注册。
+
+验证：探针进程输出里该告警计数 **0**；差分脚本新增断言 `!stdout.includes('Redefinition of method chaining')` 并通过。
+
+验证汇总：构建 exit 0。THREECPPTests **1645 cases / 214,902 assertions 全过**（较上轮 1645/214,897 → 断言 +5，用例数不变）。差分 `threecpp.threejs-node-loader-parity` **Passed**（含新增四项默认值比较与告警缺失断言）。
+
+## 未做/未验证（如实记录）
+
+- `NodeMaterialLoader` 的 manager 默认化**与 NodeLoader 同一处代码修正**，但**未单独加断言**（其差分未扩展）。
+- 其他继承 `Loader` 的类（如各 `*Loader`）是否有同类 `arg(args,0,nullptr)` 传参问题**未系统排查**。
+- 本轮未触碰任何模块功能面，`src` 剩余 19 个 missing 不变。
+
+## 下一步建议（沿用上轮排序）
+
+① **`ShadowNode`(24,331)** —— 依赖全部齐备，lighting 核心缺口，建议单独大轮（835 行，含 VSM 两个 `Fn`、`setupShadow` 240 行）；
+② `PointShadowNode`(12,693) 依赖 `ShadowNode`，可连做；
+③ **`PhysicalLightingModel`(32,829)** —— 解锁三材质 + `NodeMaterials` 链路；
+④ 把 `ObjectLoader` 提升为 JS 类后可做 `NodeObjectLoader`（`src/loaders/nodes` 清零）。# 当前接续：Three.Legacy 空模块移植（上游 0 字节）；确认 ObjectLoader 缺 JS 类导致 NodeObjectLoader 阻塞，2026-11-05
 
 目标保持 active：固定 three.js 11738a9d55e502fb484cefffcea3a66dc44e9fe9 全部 src + examples/jsm 原生 C++ 逻辑，Vulkan 后端；禁止 CEF/生产 JS 引擎/桥接。阶段本地 Git 提交，不推送。
 
