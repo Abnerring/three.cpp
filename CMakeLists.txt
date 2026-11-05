@@ -284,6 +284,7 @@ target_sources(threecpp PRIVATE
     src/nodes/core/SampleNode.cpp
     src/nodes/utils/RotateNode.cpp
     src/nodes/utils/ViewportUtils.cpp
+    src/nodes/utils/PostProcessingUtils.cpp
     src/nodes/utils/UVUtils.cpp
     src/nodes/utils/FlipNode.cpp
     src/nodes/utils/SplitNode.cpp

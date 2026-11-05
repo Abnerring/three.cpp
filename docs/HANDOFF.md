@@ -1,3 +1,21 @@
+# 当前接续：PostProcessingUtils 已移植（导出面差分通过），2026-11-05
+
+目标保持 active：固定 three.js 11738a9d55e502fb484cefffcea3a66dc44e9fe9 全部 src + examples/jsm 原生 C++ 逻辑，Vulkan 后端；禁止 CEF/生产 JS 引擎/桥接。阶段本地 Git 提交，不推送。
+
+本轮新增 `src/nodes/utils/PostProcessingUtils.{h,cpp}`，**7 个导出全部实现**为 TSL `Fn` 函数：`isBackgroundDepth`、`getViewPosition`、`getScreenPosition`、`getScreenPositionFromClip`、`getNormalFromDepth`、`interleavedGradientNoise`、`vogelDiskSample`。**本轮先确认了两条此前不确定的调用约定**：① `Fn` 的调用方以 `fn.call({}, args…)` 传入（`LightUtils.tests.cpp:27`、`UtilityShaderNodesParityProbe.cpp:91` 有先例）；② jsFunc 的第一个参数是**参数可迭代对象**、第二个是 **builder**（`Normal.cpp:51`、`ViewportDepthNode.cpp:87` 有先例），故用 `takeParams(...)` 统一取参、`arg(args,1)` 取 builder。`getNormalFromDepth` 通过 `viewPositionCache()` 懒取本模块自己的 `getViewPosition` 复用，与源码一致。
+
+**一处必须写明的能力边界**：builder 在测试环境中**不可达**（Fn 的 `call` 只把参数数组传给 jsFunc），因此 `isBackgroundDepth` / `getViewPosition` 里**依赖 builder 的分支只有在 builder 被线程进来时才可达**；两处都加了守卫——builder 缺失时按"标志不是严格 true"处理，走普通分支。**所以 reversedDepthBuffer / WebGPU coordinateSystem 两条分支本轮没有被执行验证。**
+
+验证：构建 exit 0（首轮 `ivec2( uv.mul( size ) )` 被我写成二元 `i2`，改为 `ivec2` 单参形式后通过；另有一次我自己写出的 `getNormalFromDepth` 含死代码并返回空节点，**已重写为完整实现**——返回空节点正是项目禁止的静默错值）。THREECPPTests **1532 cases / 214,158 assertions 全过**，较上轮 1529/214,139 增 3 例 19 断言，与新增 3 个用例一致（注意 `*PostProcessingUtils*` 过滤命中 7 例，其中 4 例来自既有的 `src/nodes/core/PostProcessingUtils`，非本轮）。差分 `threecpp.threejs-post-processing-utils-parity` **Passed 0.88s**。
+
+**差分的范围必须如实说明**：它只比较**导出面**——7 个名字的顺序与存在性、以及每个都是 function。**没有比较任何数值**：这些导出都是 `Fn` 包装，其 `length` 是包装函数的长度而非 helper 的参数个数，且求值需要真实 TSL 图与 builder。**因此 `interleavedGradientNoise`(52.9829189 / 0.06711056 / 0.00583715)、`vogelDiskSample`(2.399963229728653 等) 的数值一致性本轮未验证，不能声称已验证。** 单元测试只验证：导出齐全、可调用；`isBackgroundDepth` 在有/无 reversed builder 时产生**不同节点**（证明分支按严格标志切换）；`getScreenPositionFromClip`/`interleavedGradientNoise`/`vogelDiskSample` 对节点输入返回节点。
+
+审计（固定 worktree，HEAD=11738a9d55）刷新后应为 **src missing 54→53、partial 411→412**；`src/nodes/utils/PostProcessingUtils.js` 记 `partial-unverified` 并登记 h/cpp（若读数与预期不符，提交会被脚本拦下并在此说明）。
+
+**解锁效果（下一轮可直接做）**：shadow 四件 `PointShadowNode` / `ShadowBaseNode` / `ShadowFilterNode` / `ShadowNode` 的 PostProcessingUtils 依赖现已具备；`ShadowBaseNode` 另需 `materials/nodes/NodeMaterial` 与 `renderers/common/ChainMap`（均已在部分移植之列，需逐项确认）。
+
+下一步：`ShadowBaseNode`（6605 B，依赖最少）→ `ShadowFilterNode`（4761 B）→ `ShadowNode`（24331 B）→ `PointShadowNode`（12693 B）。`RectAreaLightNode` 仍卡 `src/nodes/functions/BSDF/LTC.js`。
+
 # 当前接续：PointLightNode 已移植并差分验收（含模块级工厂函数），2026-11-05
 
 目标保持 active：固定 three.js 11738a9d55e502fb484cefffcea3a66dc44e9fe9 全部 src + examples/jsm 原生 C++ 逻辑，Vulkan 后端；禁止 CEF/生产 JS 引擎/桥接。阶段本地 Git 提交，不推送。
