@@ -1,3 +1,17 @@
+# 当前接续：AnalyticLightNode 补 getLightVector 并修正 length，2026-11-05
+
+目标保持 active：固定 three.js 11738a9d55e502fb484cefffcea3a66dc44e9fe9 全部 src + examples/jsm 原生 C++ 逻辑，Vulkan 后端；禁止 CEF/生产 JS 引擎/桥接。阶段本地 Git 提交，不推送。
+
+本轮不是新模块，而是修已移植模块的**父类缺口**：`AnalyticLightNode` 缺少 `getLightVector`（`SpotLightNode` 与 `PointLightNode` 的前置，上游定义在本文件 `getLightVector( builder )`）。新增该原型方法，实现 `lightViewPosition( this.light ).sub( builder.context.positionView || positionView )`，保持源码的短路语义（context 值真值优先，否则用 `positionView` accessor）。`LightingEventNodeSources.inc` 的 `AnalyticLightNodeSource` 追加以**单成员插入器** `build/add-member-trace.mjs` 从固定版本按字节提取的 `getLightVectorSource`。
+
+**顺带修正一个既有错误**：`makeClass("AnalyticLightNode", 1, ...)` 的 arity 让 `Function.length` 为 1，而上游 `constructor( light = null )` 有默认参数、`length` 应为 **0**。这是新增的差分探针第一次跑就抓到的（`deepStrictEqual` 报 `length` 1 vs 0），已改为 0。**注意 `LightProbeNode` 仍是 `makeClass(..., 1, ...)`，同样与上游 `length=0` 不符，尚未修**，列为下一步。
+
+验证：构建 exit 0。THREECPPTests **1513 cases / 214,035 assertions 全过**，较上轮 1511/214,024 增 2 例 11 断言，与 `*AnalyticLightNode*` 过滤的 2 用例/11 断言一致。四个差分全过：ambient 0.39s / directional 0.80s / hemisphere 1.11s / **analytic 0.87s**。analytic 差分比较 `name`、`length`、static `type`、`prototype.getLightVector` 的 `isCallable`/`length=1`/`name`/**`toString` 源位置逐字节**。该差分**只比较本端口实际追踪的成员**，不比较整个 classSource——因为本端口的 `AnalyticLightNodeSource::classSource` 是**精简模型**（无 `disposeShadow`/`setupShadowNode`/`setupShadow`/`setup` 完整体，shadow 依赖尚未移植的 `ShadowNode`），拿它与上游整类 `toString` 比值会是端口不成立的声明。此限制已写进 compare 脚本注释。
+
+审计（固定 worktree，HEAD=11738a9d55）刷新后**计数未变**：src missing 58 / partial 407 / vulkan 290；总计 partial 543 / missing 398 / vulkan-port-pending 290 / dependency 20。**因为 `AnalyticLightNode` 本就是 partial-unverified，补方法不改变模块状态**——本轮不增加任何覆盖率数字，只提高该模块自身的忠实度。
+
+下一步：`SpotLightNode`（`getLightVector` 已就绪；还需定位 `getSpotAttenuation` 用到的 `smoothstep` 与 `getDistanceAttenuation` 调用方式、`light.colorNode`/`light.map` 分支），随后 `PointLightNode`（还需 `PointShadowNode`）。另需修 `LightProbeNode` 的 `length` 0，并考虑为 `AnalyticLightNode` 补 `disposeShadow` 等一旦 `ShadowNode` 落地就可闭合的成员。
+
 # 当前接续：HemisphereLightNode 已移植并差分验收，2026-11-05
 
 目标保持 active：固定 three.js 11738a9d55e502fb484cefffcea3a66dc44e9fe9 全部 src + examples/jsm 原生 C++ 逻辑，Vulkan 后端；禁止 CEF/生产 JS 引擎/桥接。阶段本地 Git 提交，不推送。

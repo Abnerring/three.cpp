@@ -39,6 +39,7 @@ constexpr const char* setupSource="setup( builder ) { }";
 constexpr const char* setupDirectSource="setupDirect( builder ) { }";
 constexpr const char* setupDirectRectAreaSource="setupDirectRectArea( builder ) { }";
 constexpr const char* disposeSource="dispose() { }";
+constexpr const char* getLightVectorSource="getLightVector( builder ) {\r\n\r\n\t\treturn lightViewPosition( this.light ).sub( builder.context.positionView || positionView );\r\n\r\n\t}";
 }
 namespace LightProbeNodeSource {
 constexpr const char* classSource="class LightProbeNode extends AnalyticLightNode {\r\n\r\n\tstatic get type() { return 'LightProbeNode'; }\r\n\r\n\tconstructor( light = null ) {\r\n\r\n\t\tsuper( light );\r\n\t\tconst array = [];\r\n\t\tfor ( let i = 0; i < 9; i ++ ) array.push( new Vector3() );\r\n\t\tthis.lightProbe = uniformArray( array );\r\n\r\n\t}\r\n\r\n\tupdate( frame ) {\r\n\r\n\t\tsuper.update( frame );\r\n\t\tfor ( let i = 0; i < 9; i ++ ) this.lightProbe.array[ i ].copy( this.light.sh.coefficients[ i ] ).multiplyScalar( this.light.intensity );\r\n\r\n\t}\r\n\r\n\tsetup( builder ) {\r\n\r\n\t\tconst irradiance = getShIrradianceAt( normalWorld, this.lightProbe );\r\n\t\tbuilder.context.irradiance.addAssign( irradiance );\r\n\r\n\t}\r\r\n\r\n}";
