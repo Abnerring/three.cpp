@@ -1,4 +1,39 @@
-# 当前接续：Linker 差分落地（9 项引用/记账比较，首次即通过），2026-11-05
+# 当前接续：Linker 分支补测（Ternary/Conditional/AccessorElements），并确认 AST 类的花括号初始化坑，2026-11-05
+
+目标保持 active：固定 three.js 11738a9d55e502fb484cefffcea3a66dc44e9fe9 全部 src + examples/jsm 原生 C++ 逻辑，Vulkan 后端；禁止 CEF/生产 JS 引擎/桥接。阶段本地 Git 提交，不推送。
+
+## 本轮内容
+
+r103 记录 Linker 的 `Conditional`/`Ternary`/`AccessorElements` 分支无测试。本轮补上第 6 个用例：
+
+- `Ternary(cond,left,right)` 三个 accessor 均解析到同一 `Uniform`；
+- `Conditional(cond, body)` 的 cond 与 body 内 accessor 均解析；
+- `AccessorElements(object, {StaticElement(accessor), DynamicElement(accessor)})` 的 object 与两个元素 accessor 均解析；
+- 断言 `uniform.linker.accesses.size() == 8`（3 + 2 + 3）。
+
+## 本轮确认的重要编译陷阱（多次踩坑的根因）
+
+**对本代码库的 AST 类，用「花括号初始化列表」作构造参数会触发 MSVC C2665「没有重载函数可以转换所有参数类型」**：
+
+```cpp
+AccessorElements elements(&obj, {&staticElement, &dynamicElement});   // ❌ C2665
+std::vector<ASTNode*> list{&staticElement, &dynamicElement};
+AccessorElements elements(&obj, list);                                 // ✅
+```
+r99/r100 的 `SwitchCase` 数组化尝试、r104 首次测试都栽在此处（错误信息只报「无匹配构造」，很有误导性）。**规则：这些 AST 类的 vector 参数一律显式构造 `std::vector<ASTNode*>` 并存入具名变量**（同时避免 `make_shared<...>()->value` 这类临时对象悬垂写法）。
+
+## 验证
+
+- 构建 exit 0；过滤 `*Linker*` = **6 cases / 27 assertions** 全过；`THREECPPAddonTests` 全套 **1361 cases / 38,877 assertions** 通过（+1 例 / +9 断言）。
+- 审计不变（测试补充）：examples/jsm 323 / 153；src 13 / 452。
+
+**未执行验证（如实记录）**：`Switch`（单条件）分支仍未测；多条件 switch 仍不支持（AST 单指针差异）；`doWhile` / `unary after` 语义未测。
+
+## 下一步
+
+1. 补 `Switch` 单条件用例（注意用显式 `std::vector` 传 cases/body）；
+2. 之后：`ShadowNode`(24,331) / `PhysicalLightingModel`(32,829)；
+3. transpiler 目录剩余均为大模块：`GLSLDecoder`(35,643)、`TSLEncoder`(20,898)、`WGSLEncoder`(20,320)、`Transpiler`(1,627)、`ShaderToyDecoder`(1,084)（后两者依赖 decoder，需先做 GLSLDecoder）。# 当前接续：Linker 差分落地（9 项引用/记账比较，首次即通过），2026-11-05
 
 目标保持 active：固定 three.js 11738a9d55e502fb484cefffcea3a66dc44e9fe9 全部 src + examples/jsm 原生 C++ 逻辑，Vulkan 后端；禁止 CEF/生产 JS 引擎/桥接。阶段本地 Git 提交，不推送。
 

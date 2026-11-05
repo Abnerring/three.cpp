@@ -60,3 +60,41 @@ TEST_CASE("Linker follows loop conditions and function call arguments") {
     // Each accessor records itself once on the resolved node.
     REQUIRE(uniform.linker.accesses.size() == 2);
 }
+
+TEST_CASE("Linker covers the conditional, ternary and accessor element branches") {
+    Uniform uniform("float", "uValue");
+
+    Accessor ternaryCond("uValue");
+    Accessor ternaryLeft("uValue");
+    Accessor ternaryRight("uValue");
+    Ternary ternary(&ternaryCond, &ternaryLeft, &ternaryRight);
+
+    Accessor conditionalCond("uValue");
+    Accessor bodyAccess("uValue");
+    Conditional conditional(&conditionalCond, {&bodyAccess});
+
+    Accessor objectAccess("uValue");
+    Accessor staticAccess("uValue");
+    Accessor dynamicAccess("uValue");
+    StaticElement staticElement(&staticAccess);
+    DynamicElement dynamicElement(&dynamicAccess);
+    std::vector<ASTNode*> elementList{&staticElement, &dynamicElement};
+    AccessorElements elements(&objectAccess, elementList);
+
+    std::vector<ASTNode*> programBody{&uniform, &ternary, &conditional, &elements};
+    Program program;
+    program.body = programBody;
+
+    Linker linker;
+    linker.process(&program);
+    REQUIRE(ternaryCond.linker.reference == &uniform);
+    REQUIRE(ternaryLeft.linker.reference == &uniform);
+    REQUIRE(ternaryRight.linker.reference == &uniform);
+    REQUIRE(conditionalCond.linker.reference == &uniform);
+    REQUIRE(bodyAccess.linker.reference == &uniform);
+    REQUIRE(objectAccess.linker.reference == &uniform);
+    REQUIRE(staticAccess.linker.reference == &uniform);
+    REQUIRE(dynamicAccess.linker.reference == &uniform);
+    // Three ternary accessors, two conditional accessors and three element accessors.
+    REQUIRE(uniform.linker.accesses.size() == 8);
+}
