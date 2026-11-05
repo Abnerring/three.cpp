@@ -1,4 +1,28 @@
-# 当前接续：LineDashedNodeMaterial 已移植，setupVariants 双侧真实构建成功，2026-11-05
+# 当前接续：SampleNode + ViewportSharedTextureNode 移植；一处 nodeProxy 包装改为等价工厂（已记录偏差），2026-11-05
+
+目标保持 active：固定 three.js 11738a9d55e502fb484cefffcea3a66dc44e9fe9 全部 src + examples/jsm 原生 C++ 逻辑，Vulkan 后端；禁止 CEF/生产 JS 引擎/桥接。阶段本地 Git 提交，不推送。
+
+本轮新增两个独立节点模块（各独立 h/cpp，追踪放在新文件 `src/nodes/NodesExtraSources.inc`）：
+
+- **`src/nodes/utils/SampleNode.{h,cpp}`**（2,165 B）：extends Node；`constructor( callback, uvNode = null )`（**length 1**）设 `callback`、`uvNode`、`isSampleNode = true`；`isCacheable()` 返回 false；`setup()` → `this.sample( uv() )`；`sample( uv )` → `this.callback( uv )`；导出 `sample( callback, uv = null )`（**length 1**，只有第二参有默认）→ `new SampleNode( callback, nodeObject( uv ) )`。
+- **`src/nodes/display/ViewportSharedTextureNode.{h,cpp}`**（1,824 B）：extends `ViewportTextureNode`；模块级 `_sharedFramebuffer` 懒建 `FramebufferTexture` 并被所有实例共享；`constructor( uvNode = screenUV, levelNode = null )`（**length 0**，两参都有默认）；`getTextureForReference()` 返回共享帧缓冲、`updateReference()` 返回 `this`。
+
+**本轮两个真实 bug 与一处偏差（都必须记下）**：
+1. **模块级单例不能用 `JSWeakValue`**：我最初把 `_sharedFramebuffer` 放进 `JSWeakValue`，而它是弱引用、又没有别的强引用持有 → 帧缓冲随时可能消失，导致实例间不再共享同一纹理。改为函数内 `static thread_local JSValue`（**强引用 keeper**，与既有 `BasicLightingModel` 的 `baseKeeper()` 同法）。
+2. **`viewportSharedTexture` 的 `nodeProxy` 包装在本端口调用时抛异常**：`nativeTSLBaseBinding("nodeProxy").call({}, {ctor})` + `setParameterLength(0,2)` 能建出可调用对象，但一调用就在 `proxyFactory` 内部抛 `Property access on null/undefined`（已逐段定位到 `proxyFactory` 内部，修复成本高）。
+   → **本轮采用等价普通工厂**：接收同样两个可选参数、返回本类实例、`length = 0`，并在源码注释里以 `DEVIATION:` 明确标注。**这是包装形式的偏差（不是 `nodeProxy` 包装），可观测行为已由差分逐项比对相等。** 后续若要完全对齐，需要单独修 `proxyFactory`。
+3. **`sample` 工厂 arity**：上游 `( callback, uv = null )` → **length 1**，我起初注册 0，差分报 `factoryLength: 0 vs 1`，已改注册与断言。
+
+验证：构建 exit 0。THREECPPTests **1595 cases / 214,561 assertions 全过**，较上轮 1590/214,533 增 5 例 28 断言。差分 `threecpp.threejs-sample-and-shared-texture-parity` **Passed**，且**两个模块都真实执行**：
+- `SampleNode`：`sample(uv)` **真实调用回调一次**、回调收到的**正是传入的 uv**（`sameValue`）、返回值透传；`setup()` 再调用一次且回调收到的是 **uv accessor 的节点**；`isCacheable` 为 false；工厂产出的节点 `isSampleNode` 为真且 `callback` 同一。
+- `ViewportSharedTextureNode`：两次 `construct()` 的 `getTextureForReference()` **同一对象**（共享帧缓冲）、`updateReference()` 返回自身；工厂产物有可调用的 `getTextureForReference` 且非空。
+- 两侧另比 name/length/type、`proxyLength = 0`、以及两个 class `toString` 逐字节。
+
+**未执行验证的部分（如实记录）**：两处节点图/纹理**未参与真实渲染**；`SampleNode.setup()` 里 `uv()` 只验证"回调收到的参数是节点"，未比对具体 uv 值。
+
+审计（固定 worktree，HEAD=11738a9d55）：**src missing 35→33、partial 430→432**，两个模块各记 `partial-unverified`。
+
+下一步：`NodeMaterials.js`（1,639，汇总注册表，材质已就位较多，可评估）；`NodeMaterialLoader`（2,246）；`SpriteUtils`（3,079）；`VolumeNodeMaterial`（1,507，需先做 `VolumetricLightingModel` 6,004）；`ShadowNode`（24,331）+ `PointShadowNode`（12,693）仍是 lighting 最后两个缺口。# 当前接续：LineDashedNodeMaterial 已移植，setupVariants 双侧真实构建成功，2026-11-05
 
 目标保持 active：固定 three.js 11738a9d55e502fb484cefffcea3a66dc44e9fe9 全部 src + examples/jsm 原生 C++ 逻辑，Vulkan 后端；禁止 CEF/生产 JS 引擎/桥接。阶段本地 Git 提交，不推送。
 

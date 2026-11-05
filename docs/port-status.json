@@ -201,8 +201,8 @@
     "note": "Accepted port scope is src and examples/jsm, including tracked third-party dependencies. Editor/manual web applications are excluded from native application rewrites. Native host behavior, packaging and all three platforms require separate implementation and verification evidence."
   },
   "counts": {
-    "partial-unverified": 566,
-    "missing": 375,
+    "partial-unverified": 568,
+    "missing": 373,
     "vulkan-port-pending": 290,
     "dependency-unverified": 20
   },
@@ -210,8 +210,8 @@
     "src": {
       "modules": 755,
       "counts": {
-        "partial-unverified": 430,
-        "missing": 35,
+        "partial-unverified": 432,
+        "missing": 33,
         "vulkan-port-pending": 290
       }
     },
@@ -817,7 +817,7 @@
       "path": "src/nodes/display",
       "upstreamFiles": 18,
       "moduleCount": 18,
-      "modulesWithCppFiles": 15,
+      "modulesWithCppFiles": 16,
       "verifiedComplete": 0
     },
     {
@@ -922,7 +922,7 @@
       "path": "src/nodes/utils",
       "upstreamFiles": 31,
       "moduleCount": 31,
-      "modulesWithCppFiles": 27,
+      "modulesWithCppFiles": 28,
       "verifiedComplete": 0
     },
     {
@@ -10321,11 +10321,11 @@
       "scope": "src",
       "kind": "core",
       "upstreamSha256": "7e4d40a7529e574aecf0843b6bffb5ae990edcdd347458e60220537aec4c1a63",
-      "header": null,
-      "implementation": null,
+      "header": "src/nodes/display/ViewportSharedTextureNode.h",
+      "implementation": "src/nodes/display/ViewportSharedTextureNode.cpp",
       "expectedHeader": "src/nodes/display/ViewportSharedTextureNode.h",
       "expectedImplementation": "src/nodes/display/ViewportSharedTextureNode.cpp",
-      "status": "missing",
+      "status": "partial-unverified",
       "verifiedComplete": false,
       "apiExtraction": "partial-static",
       "verification": {
@@ -10334,7 +10334,9 @@
           "pointer": "/modules/318"
         },
         "upstreamUnitTests": [],
-        "cppUnitTests": [],
+        "cppUnitTests": [
+          "test/unit/src/nodes/display/ViewportSharedTextureNode.tests.cpp"
+        ],
         "reviewedImplementation": [],
         "differentialResults": [],
         "renderingResults": [],
@@ -13179,11 +13181,11 @@
       "scope": "src",
       "kind": "core",
       "upstreamSha256": "634e9a9b810ddf3e0c17621caf39282be16b429f5c8fd6e46e41388cb7765728",
-      "header": null,
-      "implementation": null,
+      "header": "src/nodes/utils/SampleNode.h",
+      "implementation": "src/nodes/utils/SampleNode.cpp",
       "expectedHeader": "src/nodes/utils/SampleNode.h",
       "expectedImplementation": "src/nodes/utils/SampleNode.cpp",
-      "status": "missing",
+      "status": "partial-unverified",
       "verifiedComplete": false,
       "apiExtraction": "static-only",
       "verification": {
@@ -13192,7 +13194,9 @@
           "pointer": "/modules/420"
         },
         "upstreamUnitTests": [],
-        "cppUnitTests": [],
+        "cppUnitTests": [
+          "test/unit/src/nodes/utils/SampleNode.tests.cpp"
+        ],
         "reviewedImplementation": [],
         "differentialResults": [],
         "renderingResults": [],
