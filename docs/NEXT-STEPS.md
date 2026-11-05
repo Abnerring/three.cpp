@@ -397,3 +397,22 @@ const VSMPassHorizontal = Fn( ( { samples, radius, size, shadowPass, depthLayer 
 - 返回 `result`。
 
 **实现要点**：需要 `inputObject` 辅助（同 `ShadowNode.cpp`）；`If` 用 `nativeTSLBaseBinding("If")`（callable: `If(condition)(body)`）；`onRenderUpdate` 用 `invoke(uniform, "onRenderUpdate")({callback})`，callback 捕获 `shadow`；`vogelDiskSample`/`interleavedGradientNoise` 绑定待确认（`nativePostProcessingUtilsBinding`）。`setupShadowFilter` 只需 `return pointShadowFilter({filterFn, depthTexture, shadowCoord, shadow})`。
+
+#### PassNode 构造器规格（r167，`constructor( scope, scene, camera, options = {} )`）
+
+- `super('vec4')`（Node 基类带节点类型字符串）；
+- 字段顺序：`scope`、`scene`、`camera`、`options`、`_width=1`、`_height=1`；
+- `renderTarget = new RenderTarget(_width, _height, {type: HalfFloatType, ...options})`，`renderTarget.texture.name='output'`；
+- `depthTexture = null`；若 `scope === PassNode.DEPTH || options.depthBuffer !== false`：
+  - `options.depthTexture !== undefined ? options.depthTexture : new DepthTexture()`；
+  - 若 `renderTarget.stencilBuffer === true` → `depthTexture.format = DepthStencilFormat`、`type = UnsignedInt248Type`；
+  - `depthTexture.isRenderTargetTexture = true`、`name='depth'`、`renderTarget.depthTexture = depthTexture`；
+- `overrideMaterial=null`、`transparent=true`、`opaque=true`、`lighting=null`；
+- `autoClear/autoClearColor/autoClearDepth/autoClearStencil`（options 覆盖，默认 true）；
+- `contextNode=null`、`_contextNodeCache=null`；
+- `_textures = { output: renderTarget.texture }`，`depthTexture !== null` 时加 `depth`；
+- `_textureNodes={}`、`_linearDepthNodes={}`、`_viewZNodes={}`、`_previousTextures={}`、`_previousTextureNodes={}`；
+- `_cameraNear = uniform(0)`、`_cameraFar = uniform(0)`；
+- `_mrt=null`、`_layers=null`、`_resolutionScale=1`、`_viewport=null`、`_scissor=null`；
+- `isPassNode=true`、`updateBeforeType = NodeUpdateType.FRAME`、`global=true`。
+- **静态 getter**：`PassNode.COLOR`/`PassNode.DEPTH`（值见 L1082/L1093，Stage D 时读取）。
