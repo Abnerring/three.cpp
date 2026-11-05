@@ -203,6 +203,7 @@ target_sources(threecpp PRIVATE
     src/nodes/lighting/IESSpotLightNode.cpp
     src/nodes/lighting/ProjectorLightNode.cpp
     src/nodes/lighting/PointLightNode.cpp
+    src/nodes/lighting/ShadowBaseNode.cpp
     src/nodes/lighting/BasicEnvironmentNode.cpp
     src/nodes/lighting/LightProbeNode.cpp
     src/nodes/lighting/LightingContextNode.cpp

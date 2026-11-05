@@ -1,3 +1,21 @@
+# 当前接续：ShadowBaseNode 已移植并差分验收（含真实回调行为），2026-11-05
+
+目标保持 active：固定 three.js 11738a9d55e502fb484cefffcea3a66dc44e9fe9 全部 src + examples/jsm 原生 C++ 逻辑，Vulkan 后端；禁止 CEF/生产 JS 引擎/桥接。阶段本地 Git 提交，不推送。
+
+本轮新增 `src/nodes/lighting/ShadowBaseNode.{h,cpp}`（extends Node），含模块级三件私有状态：`_shadowMaterialLib = new WeakMap()`、`_shadowRenderObjectLibrary = new ChainMap()`、`_shadowRenderObjectKeys = []`（复用同一个 key 数组，因为 ChainMap 是逐键嵌套）。导出 `shadowPositionWorld = property('vec3','shadowPositionWorld')`。实现要点：`getShadowMaterial` 按灯缓存 NodeMaterial（`colorNode=vec4(0,0,0,1)`、`isShadowPassMaterial=true`、`name='ShadowMaterial'`、`blending=NoBlending(0)`、`fog=false`）；`disposeShadowMaterial` 先 `material.dispose()` 再从 WeakMap 删除；`getShadowRenderObjectFunction` 以 (renderer, shadow) 为键缓存，且**当缓存的 `.shadowType` 与当前 `renderer.shadowMap.type` 不同时重建**，返回函数的 `length` 为 9，内部条件严格复现 `object.castShadow === true || ( object.receiveShadow && shadowType === VSMShadowMap )`，成立时依次调 `onBeforeShadow` / `renderer.renderObject` / `onAfterShadow`。
+
+**本轮修掉一个追踪器缺陷（会影响所有后续模块）**：`gen-node-source-trace.mjs` 的 `classSource` 从 `class X` 切到下一个 `export default`，**当类与 `export default` 之间还有别的导出时就会切多**。`ShadowBaseNode` 恰好在中间有 `export const shadowPositionWorld`，于是 classSource 多带了 63 字符（一段 JSDoc + 该 export 语句），差分把这段当成类体比较而失败。新写 `build/fix-class-source.mjs`：**括号配平**定位类体结束位置再重算字面量。该脚本第一版又用 `source.indexOf('class ')` 命中了 JSDoc 里的 "Base class for all shadow nodes."，改为行首锚定正则 `^class\s+\w+\s+extends\s` 后正确。四个已通过差分的类做 dry-run 时 `removed` 为 184/103/75/79——这不是脚本错，而是**转义风格差异**（生成器把制表符写成 `\t`，脚本写字面制表符），两者是**同一个 C++ 字符串值**，所以它们的 toString 差分一直是逐字节通过的。
+
+验证：构建 exit 0。THREECPPTests **1536 cases / 214,192 assertions 全过**，较上轮 1532/214,158 增 4 例 34 断言，与 `*ShadowBaseNode*` 过滤的 4 用例/34 断言一致。差分 `threecpp.threejs-shadow-base-node-parity` **Passed 0.66s**，且**比较的是真实行为**：材质是否按灯缓存（同一灯同一实例、不同灯不同实例、dispose 后重建为新实例）、材质五个属性、渲染函数 `length=9` 与 `.shadowType`、同键是否命中缓存、**castShadow 对象的 before/render/after 调用计数（1/1/1）**、**非投射对象调用计数不变**、**VSM 下 receiveShadow 对象计数（1/1/1）**、以及 class `toString` 逐字节。
+
+**本轮两处自我更正**：① 单测原把 `shadowPositionWorld.type` 当成 `"vec3"`，实际 `.type` 是 `"PropertyNode"`、值类型在 `.nodeType === "vec3"`；② 测试/探针里 `Args` 在 `LightingNodeRuntime` 命名空间内、全局不可见，被 MSVC 当成 `int`（本项目已知陷阱），改用显式 `std::vector<JSValue>` 并用非 const 句柄拷贝调用 `set`。
+
+**未执行验证的部分（如实记录）**：`setupShadowPosition` 只验证了"传入配置对象不抛异常"，因为 `shadowPositionWorld.assign(...)` 的**赋值效果在当前环境不可观测**（没有求值/回读能力）。
+
+审计（固定 worktree，HEAD=11738a9d55）刷新后应为 **src missing 53→52、partial 412→413**；ShadowBaseNode 记 `partial-unverified` 并登记 h/cpp（若读数与预期不符，提交会被脚本拦下并在此说明）。
+
+`src/nodes/lighting` 仍缺 **6 个**：EnvironmentNode、LightsNode、PointShadowNode、RectAreaLightNode、ShadowFilterNode、ShadowNode。**下一步 `ShadowFilterNode`（4761 B）**——它 extends ShadowBaseNode，本轮已铺好基类；随后 `ShadowNode`（24331 B）→ `PointShadowNode`（12693 B）。`RectAreaLightNode` 仍卡 `src/nodes/functions/BSDF/LTC.js`。
+
 # 当前接续：PostProcessingUtils 已移植（导出面差分通过），2026-11-05
 
 目标保持 active：固定 three.js 11738a9d55e502fb484cefffcea3a66dc44e9fe9 全部 src + examples/jsm 原生 C++ 逻辑，Vulkan 后端；禁止 CEF/生产 JS 引擎/桥接。阶段本地 Git 提交，不推送。
