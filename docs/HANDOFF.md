@@ -1,4 +1,30 @@
-# 当前接续：`PhysicalLightingModel` **Stage B 第二批**（常量/IOR 转换/IBLSheenBRDF），2026-11-05
+# 当前接续：`PhysicalLightingModel` **`evalSensitivity`** 落地（Stage B 收尾第一步），2026-11-05
+
+目标保持 active：固定 three.js 11738a9d55e502fb484cefffcea3a66dc44e9fe9 全部 src + examples/jsm 原生 C++ 逻辑，Vulkan 后端；禁止 CEF/生产 JS 引擎/桥接。阶段本地 Git 提交，不推送。
+
+## 本轮交付
+
+**`evalSensitivity(OPD, shift)`**（L199–215）：
+- `phase = OPD.mul(2π·1e-9)`；
+- `val/pos/VAR` 三个 vec3 常量（光谱参数）；
+- `x = float(9.7470e-14·√(2π·4.5282e9)) · cos(phase·2.2399e6 + shift.x) · exp(phase²·(-4.5282e9))`；
+- `xyz = val·sqrt(VAR·2π)·cos(pos·phase + shift)·exp(-phase²·VAR)`；
+- 合成 `vec3(xyz.x + x, xyz.y, xyz.z).div(1.0685e-7)`，再 `XYZ_TO_REC709.mul(...)` 返回 RGB 节点。
+
+钩子 `nativePhysicalLightingModelHelper("evalSensitivity")` 暴露（callable 包装）。
+
+## 验证
+
+- 构建 exit 0；`*PhysicalLightingModel*` = **5 cases / 32 assertions** 全过；`THREECPPAddonTests` 全套 **1435 cases / 39,303 assertions** 通过。
+- 审计不变：src 7 / 458。
+
+**未执行验证（如实记录）**：数值未断言；`evalIridescence`（依赖 `Loop`/`If`/`F_Schlick` 与本次函数）、`getTransmissionSample`、`getIBLVolumeRefraction` 未实现；9 个 lighting hook 仍抛错。
+
+## 下一步
+
+1. `evalIridescence` Fn（L217–287：`mix/smoothstep`、`IorToFresnel0`、`F_Schlick`、`If`、`Loop` 两次 `evalSensitivity`、`max(0)`）；
+2. `getTransmissionSample`（viewport 纹理 + `applyIorToRoughness` + `textureBicubicLevel`）；
+3. Stage C：`start()`；Stage D/E/F：其余 hook。# 当前接续：`PhysicalLightingModel` **Stage B 第二批**（常量/IOR 转换/IBLSheenBRDF），2026-11-05
 
 目标保持 active：固定 three.js 11738a9d55e502fb484cefffcea3a66dc44e9fe9 全部 src + examples/jsm 原生 C++ 逻辑，Vulkan 后端；禁止 CEF/生产 JS 引擎/桥接。阶段本地 Git 提交，不推送。
 

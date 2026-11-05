@@ -6,6 +6,7 @@
 #include "nodes/tsl/TSLBase.h"
 #include "nodes/tsl/TSLCore.h"
 
+#include <cmath>
 #include <stdexcept>
 #include <string>
 
@@ -18,9 +19,39 @@ JSWeakValue& baseKeeper() { static thread_local JSWeakValue weak; return weak; }
 JSValue floatNode(double value);
 JSValue vec3Node(const JSValue& x, const JSValue& y, const JSValue& z);
 JSValue inputObject(const Args& args);
+JSValue constants();
 
 [[noreturn]] JSValue notPorted(const char* name) {
     throw std::runtime_error(std::string("PhysicalLightingModel: ") + name + " is not ported yet");
+}
+
+// evalSensitivity( OPD, shift ) { ... spectral sensitivity transfer function ... }
+JSValue evalSensitivity(const JSValue& OPD, const JSValue& shift) {
+    const auto twoPi = 2.0 * 3.14159265358979323846;
+    const auto phase = invoke(OPD, "mul")({JSValue(twoPi * 1.0e-9)});
+    const auto val = vec3Node(JSValue(5.4856e-13), JSValue(4.4201e-13), JSValue(5.2481e-13));
+    const auto pos = vec3Node(JSValue(1.6810e+06), JSValue(1.7953e+06), JSValue(2.2084e+06));
+    const auto VAR = vec3Node(JSValue(4.3278e+09), JSValue(9.3046e+09), JSValue(6.6121e+09));
+
+    const auto phaseSquared = invoke(phase, "pow2")();
+    const auto amplitude = floatNode(9.7470e-14 * std::sqrt(twoPi * 4.5282e+09));
+    auto x = invoke(amplitude, "mul")(
+        {invoke(invoke(invoke(phase, "mul")({JSValue(2.2399e+06)}), "add")({shift.get("x")}), "cos")()});
+    x = invoke(x, "mul")(
+        {nativeMathNodeBinding("exp").call({}, {invoke(phaseSquared, "mul")({JSValue(-4.5282e+09)})})});
+
+    const auto varScaled = invoke(VAR, "mul")({JSValue(twoPi)});
+    const auto varSqrt = invoke(varScaled, "sqrt")();
+    auto xyz = invoke(val, "mul")({varSqrt});
+    xyz = invoke(xyz, "mul")(
+        {invoke(invoke(invoke(pos, "mul")({phase}), "add")({shift}), "cos")()});
+    xyz = invoke(xyz, "mul")(
+        {nativeMathNodeBinding("exp").call(
+            {}, {invoke(invoke(phaseSquared, "negate")(), "mul")({VAR})})});
+
+    auto combined = vec3Node(invoke(xyz.get("x"), "add")({x}), xyz.get("y"), xyz.get("z"));
+    const auto normalized = invoke(combined, "div")({JSValue(1.0685e-7)});
+    return invoke(constants().get("XYZ_TO_REC709"), "mul")({normalized});
 }
 
 JSWeakValue& constantsCache() { static thread_local JSWeakValue weak; return weak; }
@@ -303,6 +334,12 @@ JSValue nativePhysicalLightingModelHelper(const std::string& name) {
     if (name == "XYZ_TO_REC709") return constants().get("XYZ_TO_REC709");
     if (name == "clearcoatF0") return constants().get("clearcoatF0");
     if (name == "clearcoatF90") return constants().get("clearcoatF90");
+    if (name == "evalSensitivity") {
+        return JSValue::function(
+            +[](const JSValue&, const Args& args, const Args&) -> JSValue {
+                return evalSensitivity(arg(args, 0), arg(args, 1));
+            });
+    }
     if (name == "Fresnel0ToIor") {
         return JSValue::function(
             +[](const JSValue&, const Args& args, const Args&) -> JSValue {

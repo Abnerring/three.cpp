@@ -84,3 +84,9 @@ TEST_CASE("PhysicalLightingModel constant and BRDF helpers") {
     const auto fresnel = nativePhysicalLightingModelHelper("IorToFresnel0").call({}, {transmitted, incident});
     REQUIRE(fresnel.get("isNode").toBoolean());
 }
+TEST_CASE("PhysicalLightingModel evalSensitivity builds a spectral node") {
+    const auto opd = nativeTSLBaseBinding("float").call({}, {JSValue(500.0)});
+    const auto shift = nativeTSLBaseBinding("vec3").call({}, {JSValue(0.0), JSValue(0.0), JSValue(0.0)});
+    const auto rgb = nativePhysicalLightingModelHelper("evalSensitivity").call({}, {opd, shift});
+    REQUIRE(rgb.get("isNode").toBoolean());
+}
