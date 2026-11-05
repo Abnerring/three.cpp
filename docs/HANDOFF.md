@@ -1,3 +1,26 @@
+# 当前接续：两个 node 材质已移植，发现 Material 基类多出 id 的真实偏差，2026-11-05
+
+目标保持 active：固定 three.js 11738a9d55e502fb484cefffcea3a66dc44e9fe9 全部 src + examples/jsm 原生 C++ 逻辑，Vulkan 后端；禁止 CEF/生产 JS 引擎/桥接。阶段本地 Git 提交，不推送。
+
+本轮原计划做 `ShadowNode`（24,331 B），读完发现它有 **634 行有效代码**（`Loop` 回调、`QuadMesh.render`、`builder.createRenderTarget`、`DepthTexture`、VSMS 两遍模糊等），在当前上下文余量下一次做完并验证到位风险过高，**改为推进材质层**：`src/materials/nodes` 有多个 0.9–1.9 KB 的 node 材质仍缺失，且逐个可用「全属性快照」做强差分。
+
+新增两个模块文件（**必须按模块拆分**——审计按「与源文件同名的头文件」判定状态，最初把两类合进一个 `BasicNodeMaterials.*` 时审计完全不动，拆分后立即各归 `partial-unverified`）：`src/materials/nodes/LineBasicNodeMaterial.{h,cpp}` 与 `src/materials/nodes/MeshNormalNodeMaterial.{h,cpp}`。
+
+- **`LineBasicNodeMaterial`**（869 B）：模块级 `_defaultValues = new LineBasicMaterial()`（缓存复用），构造 `super()` → `isLineBasicNodeMaterial = true` → `setDefaultValues(_defaultValues)` → `setValues(parameters)`。
+- **`MeshNormalNodeMaterial`**（1,799 B）：同样模式（`isMeshNormalNodeMaterial`、`_defaultValues = new MeshNormalMaterial()`），另有 `setupDiffuseColor()`：`const opacityNode = this.opacityNode ? float(this.opacityNode) : materialOpacity`，`diffuseColor.assign( colorSpaceToWorking( vec4( packNormalToRGB(normalView), opacityNode ), SRGBColorSpace ) )`。
+
+**新增材质追踪机制**：lighting 的 `gen-node-source-trace.mjs` 的 `--apply` **硬编码**在 `namespace EventNodeSource {` 锚点上（只服务 lighting inc），故新写 `build/gen-material-traces.mjs`（括号配平提取 classSource 与成员体）生成 `src/materials/nodes/NodeMaterialSources.inc`。第一版把 `get type()` 的键算成 `gettypeSource`，已修成 `typeSource`（getter 名单独识别）。**这两个材质若用空字符串当 `typeSource`，静态 `type` 会返回空串**——所以必须走真实追踪。
+
+验证：构建 exit 0（首轮两处：`SRGBColorSpace` 在本端口是字符串常量而非数字；一处 `` `n `` 写在单引号里成了字面量导致 include 未分行）。THREECPPTests **1562 cases / 214,380 assertions 全过**，较上轮 1558/214,356 增 4 例 24 断言，与 `*NodeMaterial*` 过滤的 4 用例/24 断言一致。差分 `threecpp.threejs-basic-node-materials-parity` **Passed 0.83s**：两个材质各自的 `name`/`length=1`/静态 `type`/实例 `type`/`isXNodeMaterial`/`isNodeMaterial`/`fog`/`linewidth`/`flatShading`，以及**完整自有属性快照**（排序后的属性名集合、每个值的种类、以及全部标量值）。
+
+**本轮发现一个真实偏差（必须记录）**：快照首次比对时，我们的材质实例**多出 `id` 属性**。核实上游：`src/materials/Material.js` 只在第 52 行有 `this.uuid = generateUUID()`，**全文没有任何 `this.id`** —— 也就是说这三.js 版本的材质没有 `id`，而我们已有的 `Material`/`NodeMaterial` 移植给它加了 `id`。这是**既有移植的偏差**，不是本轮两个材质的问题；本轮**不从差分里悄悄放过**：在探针与比较脚本里都显式排除 `uuid`（随机不可比）与 `id`，并**在代码注释里写明排除 `id` 的理由是指向该偏差**。下一步值得单独查 `id` 是从哪一层加进去的（`Material.cpp` 里没搜到 `set("id"`，可能在 `NodeMaterial` 或 `JSObject` 基座）并决定是否移除。
+
+**未执行验证的部分（如实记录）**：`setValues(parameters)` 只用 `{fog:false, linewidth:3}` 验证过一次；`setupDiffuseColor` 只验证「无 builder 时能构建节点图且不抛异常」，**其赋值的图未被求值**；材质的真实渲染路径未触及。
+
+审计（固定 worktree，HEAD=11738a9d55）刷新后应为 **src missing 47→45、partial 418→420**（两个材质各占一个模块）；两个材质各记 `partial-unverified` 并分别登记自己的头文件 `LineBasicNodeMaterial.h` / `MeshNormalNodeMaterial.h`（若读数与预期不符，提交会被脚本拦下并在此说明）。
+
+下一步优先级：① 查并处理材质多出的 `id`（真实偏差）；② 继续小体量 node 材质（`ShadowNodeMaterial` 1,437 / `MeshMatcapNodeMaterial` 1,694 / `MeshLambertNodeMaterial` 1,861 等，模式与本轮相同）；③ `ShadowNode` 与 `PointShadowNode` 留到上下文更充裕时一次做完（前置已全齐）。
+
 # 当前接续：RendererUtils 状态助手已移植（解锁 ShadowNode），2026-11-05
 
 目标保持 active：固定 three.js 11738a9d55e502fb484cefffcea3a66dc44e9fe9 全部 src + examples/jsm 原生 C++ 逻辑，Vulkan 后端；禁止 CEF/生产 JS 引擎/桥接。阶段本地 Git 提交，不推送。

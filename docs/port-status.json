@@ -201,8 +201,8 @@
     "note": "Accepted port scope is src and examples/jsm, including tracked third-party dependencies. Editor/manual web applications are excluded from native application rewrites. Native host behavior, packaging and all three platforms require separate implementation and verification evidence."
   },
   "counts": {
-    "partial-unverified": 554,
-    "missing": 387,
+    "partial-unverified": 556,
+    "missing": 385,
     "vulkan-port-pending": 290,
     "dependency-unverified": 20
   },
@@ -210,8 +210,8 @@
     "src": {
       "modules": 755,
       "counts": {
-        "partial-unverified": 418,
-        "missing": 47,
+        "partial-unverified": 420,
+        "missing": 45,
         "vulkan-port-pending": 290
       }
     },
@@ -761,7 +761,7 @@
       "path": "src/materials/nodes",
       "upstreamFiles": 19,
       "moduleCount": 19,
-      "modulesWithCppFiles": 1,
+      "modulesWithCppFiles": 3,
       "verifiedComplete": 0
     },
     {
@@ -5924,11 +5924,11 @@
       "scope": "src",
       "kind": "core",
       "upstreamSha256": "5b7d3e1e9c07ed95677989a0466dc1a3150018bacfba905e77c597e6d704147f",
-      "header": null,
-      "implementation": null,
+      "header": "src/materials/nodes/LineBasicNodeMaterial.h",
+      "implementation": "src/materials/nodes/LineBasicNodeMaterial.cpp",
       "expectedHeader": "src/materials/nodes/LineBasicNodeMaterial.h",
       "expectedImplementation": "src/materials/nodes/LineBasicNodeMaterial.cpp",
-      "status": "missing",
+      "status": "partial-unverified",
       "verifiedComplete": false,
       "apiExtraction": "static-only",
       "verification": {
@@ -6059,11 +6059,11 @@
       "scope": "src",
       "kind": "core",
       "upstreamSha256": "0f490609b13034b27f80c4788d68aed8abded8f17b55a8e75e5283d1c09901ce",
-      "header": null,
-      "implementation": null,
+      "header": "src/materials/nodes/MeshNormalNodeMaterial.h",
+      "implementation": "src/materials/nodes/MeshNormalNodeMaterial.cpp",
       "expectedHeader": "src/materials/nodes/MeshNormalNodeMaterial.h",
       "expectedImplementation": "src/materials/nodes/MeshNormalNodeMaterial.cpp",
-      "status": "missing",
+      "status": "partial-unverified",
       "verifiedComplete": false,
       "apiExtraction": "static-only",
       "verification": {

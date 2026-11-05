@@ -109,6 +109,7 @@ add_executable(THREECPPTests
         unit/src/nodes/lighting/RectAreaLightNode.tests.cpp
         unit/src/nodes/lighting/LightsNode.tests.cpp
         unit/src/renderers/common/RendererUtils.tests.cpp
+        unit/src/materials/nodes/BasicNodeMaterials.tests.cpp
         unit/src/nodes/utils/Oscillators.tests.cpp
         unit/src/nodes/utils/ViewportUtils.tests.cpp
         unit/src/nodes/utils/PostProcessingUtils.tests.cpp
@@ -1043,6 +1044,13 @@ if(THREECPP_NODE_EXECUTABLE AND THREEJS_SOURCE_DIR)
     add_test(NAME threecpp.threejs-renderer-utils-parity
         COMMAND "${THREECPP_NODE_EXECUTABLE}" "${CMAKE_CURRENT_SOURCE_DIR}/unit/utils/parity/compare-renderer-utils.mjs"
         "${THREEJS_SOURCE_DIR}" "$<TARGET_FILE:ThreeJsRendererUtilsParityProbe>")
+endif()
+add_executable(ThreeJsBasicNodeMaterialsParityProbe unit/utils/parity/BasicNodeMaterialsParityProbe.cpp)
+target_link_libraries(ThreeJsBasicNodeMaterialsParityProbe PRIVATE threecpp::threecpp)
+if(THREECPP_NODE_EXECUTABLE AND THREEJS_SOURCE_DIR)
+    add_test(NAME threecpp.threejs-basic-node-materials-parity
+        COMMAND "${THREECPP_NODE_EXECUTABLE}" "${CMAKE_CURRENT_SOURCE_DIR}/unit/utils/parity/compare-basic-node-materials.mjs"
+        "${THREEJS_SOURCE_DIR}" "$<TARGET_FILE:ThreeJsBasicNodeMaterialsParityProbe>")
 endif()
 add_executable(ThreeJsMaterialXColorParityProbe unit/utils/parity/MaterialXColorParityProbe.cpp)
 target_link_libraries(ThreeJsMaterialXColorParityProbe PRIVATE threecpp::threecpp)
