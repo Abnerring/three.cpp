@@ -588,3 +588,60 @@ TEST_CASE("ShadowNode setupShadow uses the high precision shadow position branch
     REQUIRE(output.toBoolean());
     REQUIRE(output.get("isNode").toBoolean());
 }
+TEST_CASE("ShadowNode setupShadow samples a transmitted shadow colour") {
+    auto mapSize = JSValue::object(nullptr);
+    mapSize.set("width", JSValue(64));
+    mapSize.set("height", JSValue(64));
+    auto shadowCamera = JSValue::object(nullptr);
+    shadowCamera.set("coordinateSystem", JSValue(0));
+    shadowCamera.set("layers", JSValue::object(nullptr));
+    shadowCamera.set("updateProjectionMatrix", JSValue::function(
+        +[](const JSValue&, const std::vector<JSValue>&, const std::vector<JSValue>&) {
+            return JSValue{};
+        }));
+    auto shadow = JSValue::object(nullptr);
+    shadow.set("mapSize", mapSize);
+    shadow.set("camera", shadowCamera);
+    shadow.set("biasNode", nativeTSLBaseBinding("float").call({}, {JSValue(0.0)}));
+    auto light = JSValue::object(nullptr);
+    light.set("shadow", shadow);
+    light.set("isLight", true);
+    auto camera = JSValue::object(nullptr);
+    camera.set("coordinateSystem", JSValue(0));
+    auto rendererShadowMap = JSValue::object(nullptr);
+    rendererShadowMap.set("type", JSValue(1));
+    rendererShadowMap.set("enabled", true);
+    rendererShadowMap.set("transmitted", true);
+    auto renderer = JSValue::object(nullptr);
+    renderer.set("shadowMap", rendererShadowMap);
+    renderer.set("reversedDepthBuffer", false);
+    renderer.set("highPrecision", false);
+    renderer.set("hasCompatibility", JSValue::function(
+        +[](const JSValue&, const std::vector<JSValue>&, const std::vector<JSValue>&) {
+            return JSValue(false);
+        }));
+    auto builder = JSValue::object(nullptr);
+    builder.set("renderer", renderer);
+    builder.set("camera", camera);
+    builder.set("material", JSValue::object(nullptr));
+    builder.set("context", JSValue::object(nullptr));
+
+    auto node = nativeShadowNodeConstructor().construct({light});
+    node.set("setupRenderTarget", JSValue::function(
+        +[](const JSValue&, const std::vector<JSValue>&, const std::vector<JSValue>&) {
+            auto targets = JSValue::object(nullptr);
+            auto depthTexture = JSValue::object(nullptr);
+            depthTexture.set("isArrayTexture", false);
+            targets.set("depthTexture", depthTexture);
+            auto mapTexture = JSValue::object(nullptr);
+            mapTexture.set("isCubeTexture", false);
+            auto shadowMapObject = JSValue::object(nullptr);
+            shadowMapObject.set("texture", mapTexture);
+            shadowMapObject.set("depth", JSValue(1));
+            targets.set("shadowMap", shadowMapObject);
+            return targets;
+        }));
+    const auto output = node.get("setupShadow").call(node, {builder});
+    REQUIRE(output.toBoolean());
+    REQUIRE(output.get("isNode").toBoolean());
+}

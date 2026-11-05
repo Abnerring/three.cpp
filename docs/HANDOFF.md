@@ -1,4 +1,28 @@
-# 当前接续：段 3 **高精度分支**测试通过（同时覆盖段 2 VSM 组装），2026-11-05
+# 当前接续：段 4 **transmitted 阴影颜色路径**测试通过，2026-11-05
+
+目标保持 active：固定 three.js 11738a9d55e502fb484cefffcea3a66dc44e9fe9 全部 src + examples/jsm 原生 C++ 逻辑，Vulkan 后端；禁止 CEF/生产 JS 引擎/桥接。阶段本地 Git 提交，不推送。
+
+## 本轮交付
+
+用例「samples a transmitted shadow colour」：
+- `renderer.shadowMap.type = 1`（PCF，filter 存在）、`transmitted = true`；
+- `shadowMap.texture.isCubeTexture = false` → 走 `texture(mapTexture, shadowCoord)` 分支；
+- 其余与 r144 相同的桩（`setupRenderTarget` 返回 `{depthTexture, shadowMap(depth:1)}`、`biasNode`、`hasCompatibility=false`、`highPrecision=false`）；
+- 断言：`setupShadow` 返回 truthy 且 **`isNode == true`** —— 覆盖「transmitted → 取色 → 与过滤结果 mix → 输出」路径。
+
+## 验证
+
+- 构建 exit 0；过滤 `*ShadowNode*` = **20 cases / 60 assertions** 全过（+1 例 / +2 断言）。
+- `THREECPPAddonTests` 全套 **1385 cases / 38,963 assertions** 通过。
+- 审计不变（ShadowNode 已 partial）：src 12 / 453；examples/jsm 322 / 154。
+
+**未执行验证（如实记录）**：**cube texture 分支未测**（`isCubeTexture = true` → `cubeTexture(..., shadowCoord.xyz)`，需 vec4 的 `.xyz` 可用性验证）；数组纹理 `.depth(depthLayer)` 分支未测；`toInspector` 仍省略；未断言图结构/数值；`updateShadow` 无测试。
+
+## 下一步
+
+1. cube texture 分支 + 数组纹理分支测试（若 `.xyz` 在 vec3 上可用则易加）；
+2. `updateShadow` 真实 renderer 夹具；
+3. 收口 `ShadowNode` 后推进 **`PointShadowNode`(12,693)**、`PhysicalLightingModel`(32,829)。# 当前接续：段 3 **高精度分支**测试通过（同时覆盖段 2 VSM 组装），2026-11-05
 
 目标保持 active：固定 three.js 11738a9d55e502fb484cefffcea3a66dc44e9fe9 全部 src + examples/jsm 原生 C++ 逻辑，Vulkan 后端；禁止 CEF/生产 JS 引擎/桥接。阶段本地 Git 提交，不推送。
 
