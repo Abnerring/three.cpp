@@ -1,4 +1,29 @@
-# 当前接续：PointsNodeMaterial 已移植（alphaToCoverage 访问器语义 + setupPositionView 真实构建），2026-11-05
+# 当前接续：ComputeBuiltinNode 已移植（gpgpu 家族第一个，含 stub builder 的真实 generate 验证），2026-11-05
+
+目标保持 active：固定 three.js 11738a9d55e502fb484cefffcea3a66dc44e9fe9 全部 src + examples/jsm 原生 C++ 逻辑，Vulkan 后端；禁止 CEF/生产 JS 引擎/桥接。阶段本地 Git 提交，不推送。
+
+本轮新增 `src/nodes/gpgpu/ComputeBuiltinNode.{h,cpp}`（5,431 B 源），并新建追踪文件 `src/nodes/gpgpu/GpgpuNodeSources.inc`（后续 `WorkgroupInfoNode`/`AtomicFunctionNode`/`SubgroupFunctionNode` 可复用）。
+
+- `constructor( builtinName, nodeType )`（**length 2**）：`super( nodeType )`（第二个参数传给基类 Node）→ `this._builtinName = builtinName`。
+- `isCacheable( /*builder*/ )`→`false`、`generateNodeType( /*builder*/ )`、`getBuiltinName( /*builder*/ )` **三个方法参数被注释掉，故 arity 均为 0**；`getHash( builder )` 1、`setBuiltinName( builtinName )` 1（返回 `this`）、`hasBuiltin( builder )` 1、`generate( builder, output )` 2、`serialize( data )` 1、`deserialize( data )` 1。
+- `generate`：compute 阶段 `builder.format( builtinName, nodeType, output )`；否则 `warn("TSL: Compute built-in value \"…\" can not be accessed in the <stage> stage")` 并 `builder.generateConst( nodeType )`。
+- `serialize/deserialize` 先调用基类同名方法（**存在性判断后再调**，因为本端口 Node 原型的 JS 层是否有这两个方法需运行时确认），再读写 `data.global` 与 `data._builtinName`。
+- 模块导出 5 个**单例**节点：`numWorkgroups`/`workgroupId`/`globalId`/`localId`（`uvec3`）、`subgroupSize`（`uint`），均用**强引用 keeper**（弱引用会丢）。
+
+**本轮三处实现修正（均由编译/实跑暴露）**：
+1. `makeClass`/`method`/`publish` 声明在 **`nodes/lighting/LightingNodeRuntime.h`** 的 `LightingNodeRuntime` 命名空间里，且用法要求 `using namespace LightingNodeRuntime;`（与 `SampleNode.cpp` 同法）；我最初写成了 `UtilityNodeRuntime`，并误留了自造的 `LightingNodeRuntimeUnused` 命名空间与不存在的 `nativeNodeModule()`，均已删除。
+2. 一度给 `generate` 加了「`getNodeType` 不可调用则回退到 `nodeType`」的兜底，**实测本端口 Node 原型是有 `getNodeType` 的**，问题在桩 builder 缺方法；已**恢复为忠实调用**并补齐桩。
+3. 桩 builder 需提供 `getDataFromNode`/`getNodeType` 才能让 `Node.getNodeType` 工作（**上游同样如此**：无桩时上游抛 `builder.getDataFromNode is not a function`），两测的 fragment 阶段桩都要补。
+
+验证：构建 exit 0。THREECPPTests **1617 cases / 214,686 assertions 全过**，较上轮 1613/214,658 增 4 例 28 断言。差分 `threecpp.threejs-compute-builtin-node-parity` **Passed**，比较：name/length=2/静态与实例 type、`isNode`、`nodeType`（第二个构造参数**确实进入基类 nodeType 字段**）、`isCacheable === false`、`setBuiltinName` **返回自身**且改名生效、`getHash`、`hasBuiltin`（true）、**`generate` 在 compute 阶段返回 `builder.format` 的结果且确实调用了 format**、`generateNodeType`、**fragment 阶段返回 `builder.generateConst` 的结果**、`serialize` 的 `_builtinName` 与 `global`（未设时序列化为 undefined，两侧一致）、`deserialize` 恢复两字段、**5 个模块级单例的名称/类型/isNode**、class `toString` 逐字节、`setBuiltinName.length`。
+
+**未执行验证的部分（如实记录）**：`warn` 的实际输出（只比较其后续返回值）；`serialize` 里基类方法的实际写入内容（若基类无该方法则跳过）；真实的 `builder` 渲染/着色器生成路径；节点图未求值。
+
+审计（固定 worktree，HEAD=11738a9d55）：**src missing 28→27、partial 437→438**，`ComputeBuiltinNode` 记 `partial-unverified`。
+
+`src/nodes/gpgpu` 还剩 3 个：`AtomicFunctionNode`(8,931)、`SubgroupFunctionNode`(16,784)、`WorkgroupInfoNode`(6,085)，**本轮建立的 `GpgpuNodeSources.inc` 与 stub builder 范式可直接复用**。
+
+下一步：`WorkgroupInfoNode`（6,085，最小）→ `AtomicFunctionNode`（8,931）→ `SubgroupFunctionNode`（16,784）；或转做 `MeshStandardNodeMaterial`（需先做 32,829 B 的 `PhysicalLightingModel`，建议拆专门轮次）。# 当前接续：PointsNodeMaterial 已移植（alphaToCoverage 访问器语义 + setupPositionView 真实构建），2026-11-05
 
 目标保持 active：固定 three.js 11738a9d55e502fb484cefffcea3a66dc44e9fe9 全部 src + examples/jsm 原生 C++ 逻辑，Vulkan 后端；禁止 CEF/生产 JS 引擎/桥接。阶段本地 Git 提交，不推送。
 
