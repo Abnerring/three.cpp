@@ -35,6 +35,15 @@ JSWeakValue& lexical() { static thread_local JSWeakValue weak; return weak; }
 
 // Forward declarations for the VSM pass graphs (defined at the bottom of this translation unit).
 JSValue makeVsmFn(bool vertical);
+JSWeakValue& quadMeshCache() { static thread_local JSWeakValue weak; return weak; }
+
+// const _quadMesh = new QuadMesh(); (module level singleton, shared by both VSM passes)
+JSValue sharedQuadMesh() {
+    if (const auto cached = quadMeshCache().lock(); cached && cached->toBoolean()) return *cached;
+    const auto mesh = nativeQuadMeshConstructor().construct({JSValue(nullptr)});
+    quadMeshCache() = JSWeakValue(mesh);
+    return mesh;
+}
 
 // const _shadowFilterLib = [ BasicShadowFilter, PCFShadowFilter, null, VSMShadowFilter ]
 JSValue shadowFilterLibrary() {
@@ -488,7 +497,7 @@ JSValue vsmPass(const JSValue& self, const Args& args, const Args&) {
     const auto setSizeHorizontal = horizontal.get("setSize");
     setSizeHorizontal.call(horizontal, {mapSize.get("width"), mapSize.get("height"), depth});
 
-    auto quadMesh = nativeQuadMeshConstructor().construct({JSValue(nullptr)});
+    auto quadMesh = sharedQuadMesh();
     const auto setRenderTarget = renderer.get("setRenderTarget");
     setRenderTarget.call(renderer, {vertical});
     quadMesh.set("material", self.get("vsmMaterialVertical"));

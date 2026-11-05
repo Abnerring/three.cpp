@@ -1,4 +1,29 @@
-# 当前接续：VSM 两图**实际执行**验证通过（带真实 TSL 节点输入），2026-11-05
+# 当前接续：`ShadowNode` `_quadMesh` 改为模块级单例（对齐上游），2026-11-05
+
+目标保持 active：固定 three.js 11738a9d55e502fb484cefffcea3a66dc44e9fe9 全部 src + examples/jsm 原生 C++ 逻辑，Vulkan 后端；禁止 CEF/生产 JS 引擎/桥接。阶段本地 Git 提交，不推送。
+
+## 本轮交付：`_quadMesh` 单例
+
+- 上游：模块级 `const _quadMesh = new QuadMesh();`，两次 VSM pass 复用同一 mesh 仅换 material；
+- 之前端口：`vsmPass` 每次调用 `nativeQuadMeshConstructor().construct(...)` 新建（r124 记录的偏差）；
+- 本轮修正：
+  - 新增 `quadMeshCache()`（`static thread_local JSWeakValue`）与 `sharedQuadMesh()`（首次创建并缓存，后续复用）；
+  - `vsmPass` 改用 `sharedQuadMesh()`；
+  - 头文件/调用面不变。
+- 现有 `vsmPass` 冒烟用例仍通过（两次 pass 复用同一 mesh 路径走通）。
+
+## 验证
+
+- 构建 exit 0；过滤 `*ShadowNode*` = **16 cases / 52 assertions** 全过；`THREECPPAddonTests` 全套 **1381 cases / 38,955 assertions** 通过。
+- 审计不变（ShadowNode 已 partial）：src 12 / 453；examples/jsm 322 / 154。
+
+**未执行验证（如实记录）**：无新用例直接断言**对象身份复用**（没有导出钩子观察 mesh；可在将来加 `nativeShadowNodeQuadMesh()` 钩子并用 `strictEquals` 断言两次相同）；`toInspector` 仍省略；段 3/4 无直接断言；`updateShadow` 无测试。
+
+## 下一步
+
+1. 可选：加 `nativeShadowNodeQuadMesh()` 测试钩子断言复用身份；
+2. `updateShadow` 真实 renderer 夹具；段 3/4 断言；
+3. 收口后推进 **`PointShadowNode`(12,693)**、`PhysicalLightingModel`(32,829)。# 当前接续：VSM 两图**实际执行**验证通过（带真实 TSL 节点输入），2026-11-05
 
 目标保持 active：固定 three.js 11738a9d55e502fb484cefffcea3a66dc44e9fe9 全部 src + examples/jsm 原生 C++ 逻辑，Vulkan 后端；禁止 CEF/生产 JS 引擎/桥接。阶段本地 Git 提交，不推送。
 
