@@ -33,6 +33,10 @@ int main() {
             placements.push_back(matrix);
         }
         const auto mesh = generator.build(placements);
+        int meshDisposeEvents = 0;
+        if (mesh) {
+            mesh->addEventListener("dispose", [&meshDisposeEvents](Event&) { ++meshDisposeEvents; });
+        }
 
         auto translations = JSValue::array();
         std::size_t index = 0;
@@ -81,6 +85,7 @@ int main() {
         output.set("factorySizeValue", JSValue(factorySizeValue));
         output.set("firstGeometryDisposeEvents", JSValue(firstGeometryDisposeEvents));
         output.set("firstMaterialDisposeEvents", JSValue(firstMaterialDisposeEvents));
+        output.set("meshDisposeEvents", JSValue(meshDisposeEvents));
         output.set("grownCapacity", JSValue(grownMesh->instanceMatrix->getCount()));
         output.set("grownCount", JSValue(static_cast<double>(grownMesh->count)));
         output.set("rebuiltCapacity", JSValue(rebuiltMesh->instanceMatrix->getCount()));

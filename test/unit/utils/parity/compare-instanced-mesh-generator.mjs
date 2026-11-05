@@ -38,6 +38,8 @@ for (let i = 0; i < 2; i += 1) {
   placements.push(matrix);
 }
 const mesh = generator.build(placements);
+let meshDisposeEvents = 0;
+mesh.addEventListener('dispose', () => { meshDisposeEvents += 1; });
 
 const translations = [];
 for (let i = 0; i < placements.length; i += 1) {
@@ -83,6 +85,7 @@ const expected = {
   factorySizeValue,
   firstGeometryDisposeEvents,
   firstMaterialDisposeEvents,
+  meshDisposeEvents,
   grownCapacity: grownMesh.instanceMatrix.count,
   grownCount: grownMesh.count,
   rebuiltCapacity: rebuiltMesh.instanceMatrix.count,

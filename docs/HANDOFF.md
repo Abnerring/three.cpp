@@ -1,4 +1,28 @@
-# 当前接续：`InstancedMeshGenerator` 差分补「参数合并语义」校验（Object.assign 等价），2026-11-05
+# 当前接续：`InstancedMeshGenerator` 差分补 mesh dispose 对照（18 项），r116 遗留收尾，2026-11-05
+
+目标保持 active：固定 three.js 11738a9d55e502fb484cefffcea3a66dc44e9fe9 全部 src + examples/jsm 原生 C++ 逻辑，Vulkan 后端；禁止 CEF/生产 JS 引擎/桥接。阶段本地 Git 提交，不推送。
+
+## 本轮内容（差分收尾）
+
+r116 记录「mesh 自身 dispose 事件未对照」且监听器时序错误。本轮把监听**移到首次构建后立即挂载**：
+
+- C++ probe：`generator.build(placements)` 之后给 `mesh->addEventListener("dispose", ...)` 计数；随后执行容量增长与参数变更两次重建 → 输出 `meshDisposeEvents`。
+- JS compare：同样在首次 `build` 后挂 `addEventListener('dispose', ...)`。
+- 结果：两侧 `meshDisposeEvents == 2`（两次重建各 dispose 一次首个 mesh）→ **Passed**，现共 **18 项比较**。
+
+## 验证
+
+- 构建 exit 0；`threecpp.threejs-instanced-mesh-generator-parity` **Passed（18 项）**。
+- `THREECPPAddonTests` 全套 **1365 cases / 38,903 assertions** 全过。
+- 审计不变：examples/jsm 322 / 154；src 13 / 452。
+
+**未执行验证（如实记录）**：`parameters` 的 `dump()` vs `JSON.stringify` 表示差异仍未验证（仅内部缓存用）；参数合并只核对 key 数与两个值（非全字段对拍）。
+
+## 下一步
+
+1. **`ShadowNode`(24,331)** —— 前置已确认齐备（r108 更正：QuadMesh/RendererUtils 早已移植），进入组装阶段；
+2. `PhysicalLightingModel`(32,829)；
+3. examples 侧可继续按 r109 清单推进（剩余小模块多为宿主/TSL 依赖）。# 当前接续：`InstancedMeshGenerator` 差分补「参数合并语义」校验（Object.assign 等价），2026-11-05
 
 目标保持 active：固定 three.js 11738a9d55e502fb484cefffcea3a66dc44e9fe9 全部 src + examples/jsm 原生 C++ 逻辑，Vulkan 后端；禁止 CEF/生产 JS 引擎/桥接。阶段本地 Git 提交，不推送。
 
