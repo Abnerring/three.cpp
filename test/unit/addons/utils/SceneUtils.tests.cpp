@@ -1,6 +1,8 @@
 #include "utils/SceneUtils.h"
 
 #include "geometries/BoxGeometry.h"
+#include "core/InstancedBufferAttribute.h"
+#include "math/Color.h"
 #include "materials/MeshBasicMaterial.h"
 #include "objects/Group.h"
 #include "objects/InstancedMesh.h"
@@ -88,4 +90,44 @@ TEST_CASE("SceneUtils sorts instanced payloads by the comparator") {
     REQUIRE(positionAt(0, instanced) == Approx(1));
     REQUIRE(positionAt(1, instanced) == Approx(2));
     REQUIRE(positionAt(2, instanced) == Approx(3));
+}
+TEST_CASE("SceneUtils sortInstancedMesh carries the instance colour and attribute payloads") {
+    auto geometry = std::make_shared<BoxGeometry>();
+    auto material = std::make_shared<MeshBasicMaterial>();
+    auto instanced = std::make_shared<InstancedMesh>(geometry, material, JSValue(3));
+    Matrix4 matrix;
+    matrix.makeTranslation(3, 0, 0);
+    instanced->setMatrixAt(0, matrix);
+    matrix.makeTranslation(1, 0, 0);
+    instanced->setMatrixAt(1, matrix);
+    matrix.makeTranslation(2, 0, 0);
+    instanced->setMatrixAt(2, matrix);
+    instanced->setColorAt(0, Color(1, 0, 0));
+    instanced->setColorAt(1, Color(0, 1, 0));
+    instanced->setColorAt(2, Color(0, 0, 1));
+    auto values = std::make_shared<InstancedBufferAttribute>(std::vector<float>{30, 10, 20}, 1);
+    instanced->geometry->setAttribute("instanceValue", values);
+
+    SceneUtils::sortInstancedMesh(instanced, [&](double a, double b) {
+        Matrix4 left;
+        Matrix4 right;
+        instanced->getMatrixAt(a, left);
+        instanced->getMatrixAt(b, right);
+        return left.elements()[12] - right.elements()[12];
+    });
+
+    // Ascending by translation x: the green instance (x = 1) comes first, then blue (2), then red (3).
+    Color first;
+    Color second;
+    Color third;
+    instanced->getColorAt(0, first);
+    instanced->getColorAt(1, second);
+    instanced->getColorAt(2, third);
+    REQUIRE(first.g == Approx(1));
+    REQUIRE(first.r == Approx(0));
+    REQUIRE(second.b == Approx(1));
+    REQUIRE(third.r == Approx(1));
+    REQUIRE(values->getX(0) == Approx(10));
+    REQUIRE(values->getX(1) == Approx(20));
+    REQUIRE(values->getX(2) == Approx(30));
 }

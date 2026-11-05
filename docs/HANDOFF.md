@@ -1,4 +1,27 @@
-# 当前接续：`sortInstancedMesh` 差分补齐 + 比较器语义修正为 Array.sort 语义（返回数值），2026-11-05
+# 当前接续：`sortInstancedMesh` 的颜色 / 实例属性分支补测（单测覆盖，无差分），2026-11-05
+
+目标保持 active：固定 three.js 11738a9d55e502fb484cefffcea3a66dc44e9fe9 全部 src + examples/jsm 原生 C++ 逻辑，Vulkan 后端；禁止 CEF/生产 JS 引擎/桥接。阶段本地 Git 提交，不推送。
+
+## 本轮内容
+
+r70 明确记录 `sortInstancedMesh` 只有矩阵分支被测；本轮补测另外两条分支，并验证**载荷随实例一起搬家**：
+
+新增用例（`test/unit/addons/utils/SceneUtils.tests.cpp`）：
+- 3 个实例平移 x = 3, 1, 2；`setColorAt` 依次红/绿/蓝；几何上挂 `InstancedBufferAttribute("instanceValue", [30,10,20])`。
+- 按 x 升序排序后断言：`getColorAt(0)=绿`、`getColorAt(1)=蓝`、`getColorAt(2)=红`；`instanceValue` 依次 10 → 20 → 30。
+- **这同时验证了 r69 实现里「颜色快照 + 属性分量快照」的正确性**（此前只有矩阵路径被测）。
+
+## 验证
+
+- 构建 exit 0；`*SceneUtils*` = **5 cases / 22 assertions** 全过（新增 7 条断言）。
+- `THREECPPAddonTests` 全套通过（1334 cases / 38,673 assertions）。
+- 审计计数不变（未新增模块头）：examples/jsm 325 / 151，src 13 / 452。
+
+**未执行验证（如实记录）**：这两条分支**仍无差分**（只有单测）；颜色比较用 `Color` 的 r/g/b 分量、属性用 `getX`，未覆盖 `itemSize > 1` 的实例属性（如 ivec2/3）；未测多实例组/重复比较器。
+
+## 下一步
+
+examples/jsm 剩余 325：`transpiler/AST.js`(8,868) 最有价值。src 剩余 13：`ShadowNode`(24,331，依赖齐备) / `PhysicalLightingModel`(32,829，解锁三材质)。# 当前接续：`sortInstancedMesh` 差分补齐 + 比较器语义修正为 Array.sort 语义（返回数值），2026-11-05
 
 目标保持 active：固定 three.js 11738a9d55e502fb484cefffcea3a66dc44e9fe9 全部 src + examples/jsm 原生 C++ 逻辑，Vulkan 后端；禁止 CEF/生产 JS 引擎/桥接。阶段本地 Git 提交，不推送。
 
