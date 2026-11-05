@@ -1,4 +1,27 @@
-# 当前接续：`generators/city/InstancedMeshGenerator` 移植完成（r110 失败后修正），examples 连续第 16 个，2026-11-05
+# 当前接续：`InstancedMeshGenerator` 容量增长分支补测（r111 遗留缺口），2026-11-05
+
+目标保持 active：固定 three.js 11738a9d55e502fb484cefffcea3a66dc44e9fe9 全部 src + examples/jsm 原生 C++ 逻辑，Vulkan 后端；禁止 CEF/生产 JS 引擎/桥接。阶段本地 Git 提交，不推送。
+
+## 本轮内容（测试补充，无实现变更）
+
+r111 记录「`outgrewCapacity` 分支未单独测」。本轮补上第 4 个用例：
+
+- 先 `build(2 placements)` → `instanceMatrix->getCount() == 2`（`ceilPowerOfTwo(2)=2`）、`count == 2`；
+- 再 `build(3 placements)`（**参数不变、数量增长**）→ 触发容量检查分支：`secondMesh != firstMesh`、**新 capacity = 4**、`count == 3`、`visible == true`。
+- 该用例验证 `placements.size() > instanceMatrix->getCount()` 条件与重建语义。
+
+## 验证
+
+- 构建 exit 0；过滤 `*outgrow*` = 1 case / 6 assertions 全过。
+- `THREECPPAddonTests` 全套 **1365 cases / 38,903 assertions** 全过（+1 例 / +6 断言）。
+- 审计不变（测试补充）：examples/jsm 322 / 154；src 13 / 452。
+
+**未执行验证（如实记录）**：该模块**仍无差分**；`parametersKey` 用 `dump()` 代替 `JSON.stringify` 的表示差异未验证；`createGeometry(parameters)` 收到的合并参数内容未断言。
+
+## 下一步
+
+1. 加 `InstancedMeshGenerator` 差分（上游无相对导入，`data:` URL 加载；比较 capacity/count/visible/instanceMatrix/name/castShadow/receiveShadow）；
+2. `ShadowNode`(24,331，前置已确认齐备) / `PhysicalLightingModel`(32,829)。# 当前接续：`generators/city/InstancedMeshGenerator` 移植完成（r110 失败后修正），examples 连续第 16 个，2026-11-05
 
 目标保持 active：固定 three.js 11738a9d55e502fb484cefffcea3a66dc44e9fe9 全部 src + examples/jsm 原生 C++ 逻辑，Vulkan 后端；禁止 CEF/生产 JS 引擎/桥接。阶段本地 Git 提交，不推送。
 

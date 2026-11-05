@@ -79,3 +79,31 @@ TEST_CASE("InstancedMeshGenerator builds once and rebuilds when the parameters c
     REQUIRE(generator.material == nullptr);
     REQUIRE(generator.mesh == nullptr);
 }
+
+TEST_CASE("InstancedMeshGenerator rebuilds when the placements outgrow the allocated capacity") {
+    auto createGeometry = [](const JsonValue&) { return std::make_shared<BoxGeometry>(); };
+    auto createMaterial = [] { return std::make_shared<MeshBasicMaterial>(); };
+    InstancedMeshGenerator generator(JsonValue(), createGeometry, createMaterial, "city");
+
+    std::vector<Matrix4> twoPlacements;
+    for (int i = 0; i < 2; ++i) {
+        Matrix4 matrix;
+        matrix.makeTranslation(i, 0, 0);
+        twoPlacements.push_back(matrix);
+    }
+    // Two placements allocate a capacity of two.
+    const auto firstMesh = generator.build(twoPlacements);
+    REQUIRE(firstMesh->instanceMatrix->getCount() == Approx(2));
+    REQUIRE(firstMesh->count == Approx(2));
+
+    // A third placement no longer fits, so the mesh is rebuilt with the next power of two.
+    std::vector<Matrix4> threePlacements = twoPlacements;
+    Matrix4 extra;
+    extra.makeTranslation(2, 0, 0);
+    threePlacements.push_back(extra);
+    const auto secondMesh = generator.build(threePlacements);
+    REQUIRE(secondMesh != firstMesh);
+    REQUIRE(secondMesh->instanceMatrix->getCount() == Approx(4));
+    REQUIRE(secondMesh->count == Approx(3));
+    REQUIRE(secondMesh->visible == true);
+}
