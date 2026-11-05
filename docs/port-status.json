@@ -201,8 +201,8 @@
     "note": "Accepted port scope is src and examples/jsm, including tracked third-party dependencies. Editor/manual web applications are excluded from native application rewrites. Native host behavior, packaging and all three platforms require separate implementation and verification evidence."
   },
   "counts": {
-    "partial-unverified": 606,
-    "missing": 335,
+    "partial-unverified": 607,
+    "missing": 334,
     "vulkan-port-pending": 290,
     "dependency-unverified": 20
   },
@@ -210,8 +210,8 @@
     "src": {
       "modules": 755,
       "counts": {
-        "partial-unverified": 452,
-        "missing": 13,
+        "partial-unverified": 453,
+        "missing": 12,
         "vulkan-port-pending": 290
       }
     },
@@ -866,7 +866,7 @@
       "path": "src/nodes/lighting",
       "upstreamFiles": 23,
       "moduleCount": 23,
-      "modulesWithCppFiles": 21,
+      "modulesWithCppFiles": 22,
       "verifiedComplete": 0
     },
     {
@@ -11878,11 +11878,11 @@
       "scope": "src",
       "kind": "core",
       "upstreamSha256": "432534f6df8f6e31d160b0277d850c8d888146d58b8168af3810ceb6b9484fcf",
-      "header": null,
-      "implementation": null,
+      "header": "src/nodes/lighting/ShadowNode.h",
+      "implementation": "src/nodes/lighting/ShadowNode.cpp",
       "expectedHeader": "src/nodes/lighting/ShadowNode.h",
       "expectedImplementation": "src/nodes/lighting/ShadowNode.cpp",
-      "status": "missing",
+      "status": "partial-unverified",
       "verifiedComplete": false,
       "apiExtraction": "static-only",
       "verification": {

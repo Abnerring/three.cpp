@@ -1,4 +1,37 @@
-# 当前接续：`InstancedMeshGenerator` 差分补 mesh dispose 对照（18 项），r116 遗留收尾，2026-11-05
+# 当前接续：`ShadowNode` A 段骨架落地（src 最大缺口开启），2026-11-05
+
+目标保持 active：固定 three.js 11738a9d55e502fb484cefffcea3a66dc44e9fe9 全部 src + examples/jsm 原生 C++ 逻辑，Vulkan 后端；禁止 CEF/生产 JS 引擎/桥接。阶段本地 Git 提交，不推送。
+
+## 本轮交付：`src/nodes/lighting/ShadowNode`（A 段）
+
+- `ShadowNode.{h,cpp}`：**JSValue 托管类**（`nativeShadowNodeModule/Constructor/Binding`），`makeClass("ShadowNode", 2, base=ShadowBaseNode, …)`，`superConstruct(target, captures, {light})` 走基类构造。
+  - **构造器**：`shadow = shadow || light.shadow`；初始化 `shadowMap` / `vsmShadowMapVertical` / `vsmShadowMapHorizontal` / `vsmMaterialVertical` / `vsmMaterialHorizontal` / `_node` / `_currentShadowType` 为 null；`_cameraFrameId = createNativeWeakMap()`；`isShadowNode = true`；`depthLayer = 0`。
+  - **`getShadowFilterFn(type)`**：返回 `_shadowFilterLib[type]`（`[BasicShadowFilter, PCFShadowFilter, null, VSMShadowFilter]`，经 `nativeShadowFilterNodeBinding`）。
+  - **`dispose()`**：先调 `_reset()`，再调用基类 prototype 的 `dispose`。
+  - **`_reset()`**：清 `_currentShadowType`、调 `disposeShadowMaterial`、逐个 `dispose` 并置空 shadowMap / VSM maps / VSM materials。
+  - **其余 9 个重方法**（`setupShadowFilter`/`setupShadowCoord`/`setupRenderTarget`/`setupShadow`/`setup`/`renderShadow`/`updateShadow`/`vsmPass`/`updateBefore`）**显式抛 `std::runtime_error("ShadowNode: <name> is not ported yet")`** —— 仿 STLExporter binary 先例，**不伪造节点图**。
+- `test/unit/addons/src/ShadowNode.tests.cpp`（4 用例 / 20 断言）：构造字段与 type；filter 库四槽（0/1 为函数、2 为 null、3 为函数）；`dispose` 在空节点上不抛且清空缓存；`setupShadow` 抛错。
+
+## 本轮踩的坑（已记录）
+
+1. JSValue 托管方法参数是 `const JSValue&`，**修改属性需 `const_cast<JSValue&>(self)`**（普通拷贝是独立值，不能靠副本写入）。
+2. `createNativeWeakMap()` 在 **`core/JSWeakMap.h`**，需 include。
+3. 各 `.cpp` 的 `lexical()` 是**文件内 static**，新模块需自带一份。
+4. 测试注册锚点必须存在（`QuadMesh.tests.cpp` 未注册过 → 改用 `NodeMaterials.tests.cpp`）。
+
+## 验证
+
+- 构建 exit 0；过滤 `*ShadowNode*` = **4 cases / 20 assertions** 全过；`THREECPPAddonTests` 全套 **1369 cases / 38,923 assertions** 通过（+4 例 / +20 断言）。
+- 审计：`ShadowNode.js -> partial-unverified`，**src missing 13→12、partial 606→607**。
+
+**未执行验证（如实记录）**：B/C/D 段（`setupShadowCoord`、`setupRenderTarget`/`renderShadow`/`vsmPass`、`setupShadow` 240 行 TSL 图与帧钩子）**均未实现**（调用即抛错）；classSource/typeSource 目前为空串（未接入 trace 生成器），**后续应补生成的真实类源**；无差分。
+
+## 下一步（按 §9 分阶段计划）
+
+1. **B 段**：实现 `setupShadowCoord`（纯数学，可数值/节点级验证）；
+2. **C 段**：`setupRenderTarget` + `renderShadow`/`vsmPass`（需渲染器接口）；
+3. **D 段**：`setupShadow`（240 行）+ 串联 `setup`/`updateShadow`/`updateBefore`；
+4. 补 classSource/typeSource 生成（`build/gen-*-trace.mjs`）。# 当前接续：`InstancedMeshGenerator` 差分补 mesh dispose 对照（18 项），r116 遗留收尾，2026-11-05
 
 目标保持 active：固定 three.js 11738a9d55e502fb484cefffcea3a66dc44e9fe9 全部 src + examples/jsm 原生 C++ 逻辑，Vulkan 后端；禁止 CEF/生产 JS 引擎/桥接。阶段本地 Git 提交，不推送。
 

@@ -824,6 +824,7 @@ if(THREECPP_BUILD_ADDONS)
         unit/addons/utils/SceneUtils.tests.cpp
         unit/addons/src/ThreeAggregators.tests.cpp
         unit/addons/src/NodeMaterials.tests.cpp
+        unit/addons/src/ShadowNode.tests.cpp
         unit/addons/loaders/materialx/MaterialXLog.tests.cpp
         unit/addons/environments/DebugEnvironment.tests.cpp
         unit/addons/objects/GroundedSkybox.tests.cpp
