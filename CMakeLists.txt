@@ -623,6 +623,7 @@ if(THREECPP_BUILD_ADDONS)
     examples/jsm/helpers/RectAreaLightHelper.cpp
     examples/jsm/exporters/STLExporter.cpp
     examples/jsm/exporters/OBJExporter.cpp
+    examples/jsm/utils/SceneUtils.cpp
         examples/jsm/lights/RectAreaLightTexturesLib.cpp
         examples/jsm/lights/RectAreaLightUniformsLib.cpp
         examples/jsm/curves/NURBSUtils.cpp

@@ -1,4 +1,35 @@
-# 当前接续：addon `OBJExporter` 移植（Mesh 路径，整份 obj 文档字节级差分），examples 连续第 14 个，2026-11-05
+# 当前接续：addon `SceneUtils` 移植（4 个可完整实现函数 + 3 项如实标注未移植），examples 连续第 15 个，2026-11-05
+
+目标保持 active：固定 three.js 11738a9d55e502fb484cefffcea3a66dc44e9fe9 全部 src + examples/jsm 原生 C++ 逻辑，Vulkan 后端；禁止 CEF/生产 JS 引擎/桥接。阶段本地 Git 提交，不推送。
+
+## 本轮交付：`examples/jsm/utils/SceneUtils`
+
+- `examples/jsm/utils/SceneUtils.{h,cpp}`，命名空间 `SceneUtils`：
+  - **`createMeshesFromInstancedMesh(instancedMesh)`**：按 `instancedMesh->count` 逐个建 `Mesh`（共享 geometry/material），`getMatrixAt(i, mesh->matrix)` 后 `matrix.decompose(position, quaternion, scale)`，加入 `Group`，再 `group->copy(*instancedMesh)` 并 `updateMatrixWorld()`。
+  - **`createMultiMaterialObject(geometry, materials)`**：每个材质一个 `Mesh`，共享几何。
+  - **`reduceVertices(object, callback, initialValue)`**：`updateWorldMatrix(true,true)` + `traverseVisible`，对每个 position 顶点：Mesh 用 `getVertexPosition`，非 Mesh 用 `fromBufferAttribute`，非 SkinnedMesh 再 `applyMatrix4(matrixWorld)`，最后折叠进 callback。
+  - `traverseGenerator` / `traverseVisibleGenerator` / `traverseAncestorsGenerator`：C++ 用 `Object3D` 既有的 `traverse`/`traverseVisible`/`traverseAncestors`（访问序一致），**不另提供生成器 API**。
+- **如实标注未移植**：`createMeshesFromMultiMaterialMesh`（需 `BufferGeometryUtils.mergeGroups`）、`sortInstancedMesh`（需 `deepCloneAttribute`）。
+- `test/unit/addons/utils/SceneUtils.tests.cpp`（3 用例 / 12 断言）：实例展开后的 children 与首实例位置 (1,2,3)；多材质组 2 个 mesh 共享几何/各自材质；`reduceVertices` 顶点计数 = position count、单位盒子的 y 之和为 0。
+- 差分 `SceneUtilsParityProbe.cpp` + `compare-scene-utils.mjs`：7 项（group children 数、`name` 复制、首实例位置、多材质数量、顶点计数、sumY、minX）。
+
+## 本轮两处 C++/ESM 适配
+
+1. **`Object3D` 不可拷贝**：测试/探针里不能 `Object3D scene;`+`make_shared<Object3D>(scene)` → 全部改为 `make_shared<Object3D>()` 并传共享指针。
+2. **ESM 相对导入**：`SceneUtils.js` 导入 `./BufferGeometryUtils.js`，data URL 方式无法解析 → 差分脚本改为把重写源码**写入 pinned checkout 的临时文件**（`__parity_scene_utils.mjs`）导入，`finally` 中 `rmSync` 删除；已确认 pinned 工作树 `dirty = 0`。
+
+## 验证
+
+- 构建 exit 0；过滤 `*SceneUtils*` = 3 cases / 12 assertions 通过。
+- 差分 `threecpp.threejs-scene-utils-parity` **Passed**。
+- 审计：**examples/jsm missing 326→325、partial-unverified 150→151**；`src` 不变（13 / 452）。
+
+**未执行验证（如实记录）**：`createMeshesFromMultiMaterialMesh` 与 `sortInstancedMesh` 未实现；`reduceVertices` 未覆盖 SkinnedMesh 与多 mesh/嵌套场景（单 mesh 场景）；`group->copy(*instancedMesh)` 只比了 name，未比全部可拷贝字段；生成器 API 未提供。
+
+## 下一步
+
+examples/jsm 剩余 325。`transpiler/AST.js`(8868) 仍是最有价值的下一项（可与 `TranspilerUtils` 联调）。已排除：`SimplifyModifier`（meshopt wasm）、`MaterialXArchive`（fflate/Blob）、`InstancedMeshGenerator`（需 JS 侧状态）。
+src 剩余 13（`ShadowNode` 24,331 依赖齐备 / `PhysicalLightingModel` 32,829 解锁三材质）。# 当前接续：addon `OBJExporter` 移植（Mesh 路径，整份 obj 文档字节级差分），examples 连续第 14 个，2026-11-05
 
 目标保持 active：固定 three.js 11738a9d55e502fb484cefffcea3a66dc44e9fe9 全部 src + examples/jsm 原生 C++ 逻辑，Vulkan 后端；禁止 CEF/生产 JS 引擎/桥接。阶段本地 Git 提交，不推送。
 

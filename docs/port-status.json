@@ -201,8 +201,8 @@
     "note": "Accepted port scope is src and examples/jsm, including tracked third-party dependencies. Editor/manual web applications are excluded from native application rewrites. Native host behavior, packaging and all three platforms require separate implementation and verification evidence."
   },
   "counts": {
-    "partial-unverified": 602,
-    "missing": 339,
+    "partial-unverified": 603,
+    "missing": 338,
     "vulkan-port-pending": 290,
     "dependency-unverified": 20
   },
@@ -218,8 +218,8 @@
     "examples/jsm": {
       "modules": 496,
       "counts": {
-        "missing": 326,
-        "partial-unverified": 150,
+        "missing": 325,
+        "partial-unverified": 151,
         "dependency-unverified": 20
       }
     }
@@ -628,7 +628,7 @@
       "path": "examples/jsm/utils",
       "upstreamFiles": 17,
       "moduleCount": 17,
-      "modulesWithCppFiles": 7,
+      "modulesWithCppFiles": 8,
       "verifiedComplete": 0
     },
     {
@@ -35408,11 +35408,11 @@
       "scope": "examples/jsm",
       "kind": "addon",
       "upstreamSha256": "ac1a8b425b258d40835ecfcdb1470552eef9356fd364b2d5dbce507154e577d1",
-      "header": null,
-      "implementation": null,
+      "header": "examples/jsm/utils/SceneUtils.h",
+      "implementation": "examples/jsm/utils/SceneUtils.cpp",
       "expectedHeader": "examples/jsm/utils/SceneUtils.h",
       "expectedImplementation": "examples/jsm/utils/SceneUtils.cpp",
-      "status": "missing",
+      "status": "partial-unverified",
       "verifiedComplete": false,
       "apiExtraction": "static-only",
       "verification": {
@@ -35421,7 +35421,9 @@
           "pointer": "/modules/1229"
         },
         "upstreamUnitTests": [],
-        "cppUnitTests": [],
+        "cppUnitTests": [
+          "test/unit/addons/utils/SceneUtils.tests.cpp"
+        ],
         "reviewedImplementation": [],
         "differentialResults": [],
         "renderingResults": [],

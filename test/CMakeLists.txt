@@ -821,6 +821,7 @@ if(THREECPP_BUILD_ADDONS)
         unit/addons/helpers/RectAreaLightHelper.tests.cpp
         unit/addons/exporters/STLExporter.tests.cpp
         unit/addons/exporters/OBJExporter.tests.cpp
+        unit/addons/utils/SceneUtils.tests.cpp
         unit/addons/src/ThreeAggregators.tests.cpp
         unit/addons/src/NodeMaterials.tests.cpp
         unit/addons/loaders/materialx/MaterialXLog.tests.cpp
@@ -1245,6 +1246,13 @@ if(THREECPP_NODE_EXECUTABLE AND THREEJS_SOURCE_DIR)
     add_test(NAME threecpp.threejs-three-legacy-parity
         COMMAND "${THREECPP_NODE_EXECUTABLE}" "${CMAKE_CURRENT_SOURCE_DIR}/unit/utils/parity/compare-three-legacy.mjs"
         "${THREEJS_SOURCE_DIR}" "$<TARGET_FILE:ThreeJsThreeLegacyParityProbe>")
+endif()
+add_executable(ThreeJsSceneUtilsParityProbe unit/utils/parity/SceneUtilsParityProbe.cpp)
+target_link_libraries(ThreeJsSceneUtilsParityProbe PRIVATE threecpp::addons)
+if(THREECPP_NODE_EXECUTABLE AND THREEJS_SOURCE_DIR)
+    add_test(NAME threecpp.threejs-scene-utils-parity
+        COMMAND "${THREECPP_NODE_EXECUTABLE}" "${CMAKE_CURRENT_SOURCE_DIR}/unit/utils/parity/compare-scene-utils.mjs"
+        "${THREEJS_SOURCE_DIR}" "$<TARGET_FILE:ThreeJsSceneUtilsParityProbe>")
 endif()
 add_executable(ThreeJsOBJExporterParityProbe unit/utils/parity/OBJExporterParityProbe.cpp)
 target_link_libraries(ThreeJsOBJExporterParityProbe PRIVATE threecpp::addons)
