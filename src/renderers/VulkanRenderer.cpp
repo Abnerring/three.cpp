@@ -1188,7 +1188,13 @@ struct VulkanRenderer::Impl {
         api.vkGetPhysicalDeviceProperties(physicalDevice, &inputProperties);
         bindingCommands = std::make_unique<VulkanBindingCommands>(attributeCommands->object(), attributeCommands->bindingInterface(),
             inputProperties.limits.maxVertexInputAttributes);
-        attributes = std::make_unique<WebGLAttributes>(bindingCommands->object());
+        // All source services capture the same context returned by getContext().
+        // Populate its device operations now; add program/texture services in place.
+        managedGL = JSValue::object();
+        for (const auto& commands : {attributeCommands->object(), bindingCommands->object()})
+            for (const auto& key : commands.ownPropertyKeys())
+                managedGL.defineProperty(key, *commands.getOwnPropertyDescriptor(key));
+        attributes = std::make_unique<WebGLAttributes>(managedGL);
     }
 
     void initializeObjectProtocols() {
@@ -1223,7 +1229,7 @@ struct VulkanRenderer::Impl {
                     return result;
                 }, {token, attributes->object(), name});
         }
-        bindingStates = std::make_unique<WebGLBindingStates>(bindingCommands->object(), managedAttributes);
+        bindingStates = std::make_unique<WebGLBindingStates>(managedGL, managedAttributes);
         for (const char* name : {"releaseStatesOfGeometry", "releaseStatesOfObject"}) {
             define(managedBindings, name, 1,
                 +[](const JSValue&, const std::vector<JSValue>& args,
@@ -1249,9 +1255,9 @@ struct VulkanRenderer::Impl {
                 }, {token, name});
         }
         // The actual binding module and command state feed Vulkan draw preparation.
-        geometries = std::make_unique<WebGLGeometries>(bindingCommands->object(), managedAttributes,
+        geometries = std::make_unique<WebGLGeometries>(managedGL, managedAttributes,
                                                       drawInfo->object(), managedBindings);
-        objects = std::make_unique<WebGLObjects>(bindingCommands->object(), geometries->object(),
+        objects = std::make_unique<WebGLObjects>(managedGL, geometries->object(),
                                                 managedAttributes, managedBindings, drawInfo->object());
     }
 
@@ -1276,6 +1282,7 @@ struct VulkanRenderer::Impl {
             try { if (objects) objects->dispose(); if (geometries) geometries->dispose(); } catch (...) {}
             try { if (bindingStates) bindingStates->dispose(); } catch (...) {}
             resetManagedProgramDraw();
+            managedIntegerInputs.clear();
             if (managedProgramCommands) managedProgramCommands->shutdown();
             if (managedTextureCommands) managedTextureCommands->shutdown();
             managedProgramCommands.reset(); managedTextureCommands.reset();
@@ -1436,8 +1443,9 @@ struct VulkanRenderer::Impl {
                       VkBufferUsageFlags usage) {
         if (!buffer)
             return;
-        if (recording && buffer->usedEpoch == recordingEpoch) {
-            // Earlier draws in this command buffer must retain their pre-update data.
+        if (values.size() > buffer->size / sizeof(T) ||
+            (recording && buffer->usedEpoch == recordingEpoch)) {
+            // Grow replaced native storage; retain earlier draws' pre-update data.
             buffer = sharedBuffer(std::max<std::size_t>(values.size(), 1) * sizeof(T), usage,
                                   values.empty() ? nullptr : values.data(), true);
             return;
@@ -2191,7 +2199,8 @@ struct VulkanRenderer::Impl {
                             const VulkanBindingCommands::Attribute& b) {
         return a.enabled == b.enabled && a.normalized == b.normalized && a.integer == b.integer &&
             a.size == b.size && a.type == b.type && a.stride == b.stride && a.offset == b.offset &&
-            a.divisor == b.divisor && a.value == b.value;
+            a.divisor == b.divisor && a.value == b.value && a.constantType == b.constantType &&
+            a.signedValue == b.signedValue && a.unsignedValue == b.unsignedValue;
     }
     std::shared_ptr<AttributeCache> boundInput(const VulkanBindingCommands::Attribute& pointer,
                                              unsigned outputSize) {
@@ -3247,6 +3256,7 @@ struct VulkanRenderer::Impl {
     }
 #include "renderers/vulkan/VulkanManagedDraw.inc"
 #include "renderers/vulkan/VulkanManagedTextures.inc"
+#include "renderers/vulkan/VulkanManagedVertexInput.inc"
 #include "renderers/vulkan/VulkanManagedProgramDraw.inc"
 #include "renderers/vulkan/VulkanManagedContext.inc"
 #include "renderers/vulkan/VulkanManagedRenderer.inc"

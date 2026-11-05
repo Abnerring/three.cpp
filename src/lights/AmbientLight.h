@@ -15,3 +15,7 @@ class AmbientLight : public Light {
   protected:
     std::optional<JsonValue> propertyValue(const std::string& property) const override;
 };
+
+JSValue nativeAmbientLightModule();
+JSValue nativeAmbientLightBinding(const std::string& name);
+JSValue nativeAmbientLightConstructor();

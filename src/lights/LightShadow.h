@@ -38,3 +38,7 @@ class LightShadow {
     virtual std::shared_ptr<LightShadow> clone() const;
     virtual JsonValue toJSON() const;
 };
+
+JSValue nativeLightShadowModule();
+JSValue nativeLightShadowBinding(const std::string& name);
+JSValue nativeLightShadowConstructor();

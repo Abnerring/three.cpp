@@ -3774,3 +3774,45 @@ if(TARGET threecpp_vulkan AND THREECPP_NATIVE_ESSL)
         set_tests_properties(threecpp.vulkan-${suffix} PROPERTIES LABELS "Vulkan;GPU" TIMEOUT 1800)
     endforeach()
 endif()
+
+if(TARGET threecpp_vulkan AND THREECPP_NATIVE_ESSL)
+    add_executable(VulkanManagedIntegerInputsTests unit/src/renderers/VulkanManagedIntegerInputs.tests.cpp)
+    target_link_libraries(VulkanManagedIntegerInputsTests PRIVATE threecpp::vulkan)
+    add_test(NAME threecpp.vulkan-managed-integer-inputs COMMAND VulkanManagedIntegerInputsTests)
+    set_tests_properties(threecpp.vulkan-managed-integer-inputs PROPERTIES LABELS "Vulkan;GPU" TIMEOUT 180)
+endif()
+
+if(TARGET threecpp_vulkan AND THREECPP_NATIVE_ESSL)
+    add_executable(VulkanManagedLightingTests unit/src/renderers/VulkanManagedLighting.tests.cpp)
+    target_link_libraries(VulkanManagedLightingTests PRIVATE threecpp::vulkan)
+    add_test(NAME threecpp.vulkan-managed-lighting COMMAND VulkanManagedLightingTests)
+    set_tests_properties(threecpp.vulkan-managed-lighting PROPERTIES LABELS "Vulkan;GPU" TIMEOUT 180)
+endif()
+
+if(TARGET threecpp_vulkan AND THREECPP_NATIVE_ESSL)
+    add_executable(VulkanManagedSamplerShapesTests unit/src/renderers/VulkanManagedSamplerShapes.tests.cpp)
+    target_link_libraries(VulkanManagedSamplerShapesTests PRIVATE threecpp::vulkan)
+    add_test(NAME threecpp.vulkan-managed-sampler-shapes COMMAND VulkanManagedSamplerShapesTests)
+    set_tests_properties(threecpp.vulkan-managed-sampler-shapes PROPERTIES LABELS "Vulkan;GPU" TIMEOUT 180)
+endif()
+
+if(TARGET threecpp_vulkan AND THREECPP_NATIVE_ESSL)
+    add_executable(VulkanManagedDeformationTests unit/src/renderers/VulkanManagedDeformation.tests.cpp)
+    target_link_libraries(VulkanManagedDeformationTests PRIVATE threecpp::vulkan)
+    add_test(NAME threecpp.vulkan-managed-deformation COMMAND VulkanManagedDeformationTests)
+    set_tests_properties(threecpp.vulkan-managed-deformation PROPERTIES LABELS "Vulkan;GPU" TIMEOUT 180)
+endif()
+
+if(TARGET VulkanManagedSamplerShapesTests AND THREECPP_NODE_EXECUTABLE AND THREEJS_SOURCE_DIR)
+    add_test(NAME threecpp.threejs-data3d-texture-native-parity
+        COMMAND "${THREECPP_NODE_EXECUTABLE}" "${CMAKE_CURRENT_SOURCE_DIR}/unit/utils/parity/compare-data3d-texture.mjs"
+            "${THREEJS_SOURCE_DIR}" "$<TARGET_FILE:VulkanManagedSamplerShapesTests>")
+endif()
+
+add_executable(NativeLightClassesParityProbe unit/utils/parity/NativeLightClassesParityProbe.cpp)
+target_link_libraries(NativeLightClassesParityProbe PRIVATE threecpp::threecpp)
+if(THREECPP_NODE_EXECUTABLE AND THREEJS_SOURCE_DIR)
+    add_test(NAME threecpp.threejs-light-classes-native-parity
+        COMMAND "${THREECPP_NODE_EXECUTABLE}" "${CMAKE_CURRENT_SOURCE_DIR}/unit/utils/parity/compare-native-light-classes.mjs"
+            "${THREEJS_SOURCE_DIR}" "$<TARGET_FILE:NativeLightClassesParityProbe>")
+endif()

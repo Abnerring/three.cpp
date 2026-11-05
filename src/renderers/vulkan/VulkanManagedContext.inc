@@ -220,7 +220,7 @@ JSValue managedNativeGL(const std::string& name,const std::vector<JSValue>& args
 void initializeManagedContext() {
     managedProgramCommands=std::make_unique<VulkanProgramCommands>();
     initializeManagedTextureCommands();
-    managedGL=JSValue::object();
+    if(managedGL.isUndefined())managedGL=JSValue::object();
     for(const auto& commands:{attributeCommands->object(),bindingCommands->object(),managedProgramCommands->object(),managedTextureCommands->object()})
         for(const auto& key:commands.ownPropertyKeys())
             managedGL.defineProperty(key,*commands.getOwnPropertyDescriptor(key));

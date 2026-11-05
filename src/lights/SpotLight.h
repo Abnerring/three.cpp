@@ -25,3 +25,7 @@ class SpotLight : public Light {
   protected:
     std::optional<JsonValue> propertyValue(const std::string& property) const override;
 };
+
+JSValue nativeSpotLightModule();
+JSValue nativeSpotLightBinding(const std::string& name);
+JSValue nativeSpotLightConstructor();

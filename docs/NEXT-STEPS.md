@@ -43,13 +43,15 @@
 
 ## 5. 首批目标（按杠杆排序）
 
-1. **传统 Vulkan 渲染路径** — Impl::Prepared、PipelineState 和 recordDraw 已拆为独立 GPU 边界。下一步让动态场景直接使用原始 object/geometry/material/group 身份，按源码执行遍历、矩阵、排序与回调，并复用 WebGLObjects/Attributes/BindingStates；禁止先快照转换成 typed Scene。随后扩展完整材质、纹理、光照、阴影、后处理、Line/Points/Sprite/SkinnedMesh、渲染目标与窗口呈现。当前实际入口仍为 typed MeshBasicMaterial 路径。
-2. **现代 Vulkan 执行链** — PhysicalLightingModel 与 Standard/Physical/SSS 节点材质已接入原生节点图；继续完整 Renderer/NodeBuilder、GLSL/WGSL 编译、GPU 绘制、计算与存储资源闭环。
-3. **已有 src 的行为与宿主连接** — ObjectLoader、NodeObjectLoader、BufferGeometryLoader 的原生动态解析，以及 Curve/CurvePath/Path/Shape 与十个曲线子类的源码算法已接入 canonical extras 目录。继续核验依赖行为（含 Earcut 动态坐标的强转顺序）、URL 图像异步宿主、旧 typed facade 及动态场景到 Vulkan 的资源连接。已有文件和选定差分不等于整个模块完成。
+1. **传统 Vulkan 渲染路径** — managed 场景已按原始遍历、矩阵、排序和回调连接 WebGLObjects/Attributes/BindingStates、源码 program/material/texture 与实际 Vulkan draw。保留 typed 兼容入口。继续完整 public WebGLRenderer、未覆盖的材质/灯光/图元、阴影、环境、渲染目标、后处理及窗口呈现。
+2. **现代 Vulkan 执行链** — 已有原生节点图及真实 GLSL 编译器；继续 Renderer/NodeBuilder/TSL 到同一 Vulkan 后端的完整绘制、计算与存储资源闭环，以及 WGSL/Tint 接入。CPU 节点图通过不代表现代 GPU 执行完成。
+3. **普通 src 的行为验收与宿主缺口** — ObjectLoader、NodeObjectLoader、BufferGeometryLoader 已有原生动态管线；canonical curves/extras 已采用源码算法。继续 URL 图像/异步、typed facade、未覆盖的 managed 资源与宿主路径验收。所有模块仍须按完整行为验收，不能以存在文件或选中测试通过宣告完成。
 4. **examples 与宿主适配** — 尚缺 322 个模块；补齐原生平台依赖并逐项差分，最后验收 Windows/Linux/macOS。AST、Linker、TranspilerUtils 已有实现，勿重复创建。
-5. **验证性能** — 本轮完整 core 1759 用例通过，用时 607.591 秒；同一 BufferAttribute GC 用例占 463.339 秒，冷跑仅 0.006 秒/562 records/4 次 stableMark。外部只读采样已定位 collect:1548 → stableMark:1478 → mark:1350 的全 records 根扫描，未修改 GC 算法。继续量测累计 roots/owners 和逐 owner 重扫成本，保留原生析构重入与复活语义。
+5. **验证与性能** — 已提交基线 a96368d2 的完整 core 1784 用例 / 219362 断言、生产 GPU 7/7 已通过。旧 full-core GC 慢路径尚未优化；局部纹理稀疏绑定优化不代表 GC 问题已解决。后续提交须记录实际测试范围、平台与验证层是否启用。
 
 ## 6. 近期已完成（避免重复劳动）
+以下为历史轮次记录，其中“下一步／尚未”以第 5 节及最新 HANDOFF/VALIDATION 为准。
+
 
 - 本轮曲线与 GPU 边界：14 个 canonical Curve 类构造器/模块导入、全部自身方法、动态长度缓存/切线/Frenet/Path 指令/Shape 洞与 JSON；移除 loader 内旧数值快照适配。新增 3 组 572 个真实源码差分通过，14 个单测/977 条断言通过；完整 core 1759/218466、addons 1441/39577 通过，24 项相关 CTest 通过。补齐 Number 的 binary64 常量及不可变描述符，修复 Frenet 初始法线选择。GPU Prepared/PipelineState/recordDraw 已解耦，原有 3 组 GPU 回归通过；尚未声称动态加载场景直接出图。
 - 上一阶段加载与几何：ObjectLoader、NodeObjectLoader、BufferGeometryLoader 原生动态管线，21 个几何导出（20 个新增源码构造实现）、曲线/Shape JSON 链、ShapeUtils，以及 Array.forEach/reverse。7 组共 403 个真实源码差分已通过；旧加载器/几何与生命周期 10 项回归已通过。旧 typed facade、URL 图像宿主和 Vulkan 连接仍有缺口；其 Curve 数值适配已由本轮源码算法替换。
@@ -248,7 +250,7 @@ static get type() { return 'ShadowNode'; }
 
 1. **`ShadowNode`(24,331)**：依赖地图见 §9，阻塞已澄清（§9 更正）；建议分 3–4 轮：先读完整 835 行并列出**方法清单与字段**，再分段实现 `setupShadowCoord` / `setupShadowFilter` / `setupRenderTarget` / VSM passes / 主 `setup`，每段配单测（TSL 图可用 `toString`/节点类型做弱差分）。
 2. **`PhysicalLightingModel`(32,829)**：单点解锁 `MeshStandard/Physical/SSSNodeMaterial`，同样建议分段。
-3. 其余 src 大项：`PassNode`/`ToonOutlinePassNode`/`ReflectorNode`/`Line2NodeMaterial`/`PointShadowNode`/`MaterialXNoise`/`NodeObjectLoader`(被 `ObjectLoader` 阻塞)。
+3. 普通 src 验收：继续未覆盖的渲染、资源及宿主行为。NodeObjectLoader 的 ObjectLoader 结构阻塞已经解除；不要再按旧阻塞清单重写这些加载器。
 4. examples 侧：剩余小模块基本都受宿主/TSL/wasm 限制（§10 表），新增大模块需先读源码评估。
 
 ### ShadowNode 方法清单（r119 提取，行号为 pinned 源）
@@ -424,12 +426,7 @@ const VSMPassHorizontal = Fn( ( { samples, radius, size, shadowPass, depthLayer 
 - `isPassNode=true`、`updateBeforeType = NodeUpdateType.FRAME`、`global=true`。
 - **静态 getter**：`PassNode.COLOR`/`PassNode.DEPTH`（值见 L1082/L1093，Stage D 时读取）。
 
-#### NodeObjectLoader 阻塞分析（r177，结论：需重构后置）
+#### NodeObjectLoader 历史阻塞分析（r177；结构阻塞已解除）
 
 - 上游 `src/loaders/nodes/NodeObjectLoader.js`（169 行，逻辑约 60 行）**继承 `ObjectLoader`**，仅重写 5 处：构造（`nodes/nodeMaterials/_nodesJSON`）、`setNodes`/`setNodeMaterials`、`parse`/`parseAsync`（暂存 `json.nodes` 后调 `super.parse`）、`parseNodes`（`NodeLoader`）、`parseMaterials`（`NodeMaterialLoader`）。
-- 本端口 `ObjectLoader` 是 **typed C++ 类**（`src/loaders/ObjectLoader.h`，当前为 first slice：`Result parse(json)` + 私有 `parseObject`，内部用 typed `MaterialLoader`，**无虚钩子**）。
-- `NodeLoader`/`NodeMaterialLoader` 是 **JSValue 托管**模块（`nativeNodeLoaderConstructor`/`nativeNodeMaterialLoaderConstructor`），其产出为 JSValue 节点/材质，**无法放入 typed `std::map<uuid, shared_ptr<Material>>`**。
-- 因此忠实移植 `NodeObjectLoader` 需要二选一：
-  1. 把 `ObjectLoader` **改为 JSValue 托管实现**（与上游一致，但需重写已有 typed 解析器与全部调用点）；
-  2. 为 typed `ObjectLoader` 增加**虚钩子 + JSValue↔typed 材质桥接层**（引入两套材质表示，复杂）。
-- **决策**：作为大重构后置，先在 `docs/NEXT-STEPS.md` 记录；当前优先推进 `ReflectorNode`/`Line2NodeMaterial`/`PhysicalLightingModel` 等无此类结构冲突的模块。
+- 当前 ObjectLoader、NodeObjectLoader、BufferGeometryLoader 已有原生动态管线与源码继承派发；typed Result 保留兼容。上述结构阻塞已解除，无需重复重写 loader 或新增 JSValue 与 typed 材质桥接。

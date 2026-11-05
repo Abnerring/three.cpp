@@ -19,3 +19,7 @@ class DirectionalLight : public Light {
   protected:
     std::optional<JsonValue> propertyValue(const std::string& property) const override;
 };
+
+JSValue nativeDirectionalLightModule();
+JSValue nativeDirectionalLightBinding(const std::string& name);
+JSValue nativeDirectionalLightConstructor();

@@ -21,3 +21,7 @@ class PointLight : public Light {
   protected:
     std::optional<JsonValue> propertyValue(const std::string& property) const override;
 };
+
+JSValue nativePointLightModule();
+JSValue nativePointLightBinding(const std::string& name);
+JSValue nativePointLightConstructor();

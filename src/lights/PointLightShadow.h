@@ -6,3 +6,7 @@ class PointLightShadow : public LightShadow {
     PointLightShadow();
     std::shared_ptr<LightShadow> clone() const override;
 };
+
+JSValue nativePointLightShadowModule();
+JSValue nativePointLightShadowBinding(const std::string& name);
+JSValue nativePointLightShadowConstructor();

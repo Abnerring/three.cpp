@@ -64,19 +64,43 @@ ManagedProgramDrawSnapshot captureManagedProgramDraw(const PipelineState& state,
         for (const auto& stage : program->result.interfaces)
             for (const auto& candidate : stage.descriptors)
                 if (candidate.set == sampler.key.set && candidate.binding == sampler.key.binding)
-                    descriptor = &candidate;
+                    {
+                        if (descriptor && (descriptor->imageDimension != candidate.imageDimension ||
+                            descriptor->imageArray != candidate.imageArray || descriptor->imageDepth != candidate.imageDepth ||
+                            descriptor->imageMultisampled != candidate.imageMultisampled || descriptor->count != candidate.count))
+                            throw std::logic_error("Native sampler image shape differs between shader stages");
+                        descriptor = &candidate;
+                    }
         if (!descriptor || descriptor->type != VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER ||
-            descriptor->imageDimension != 1 || descriptor->imageArray || descriptor->imageMultisampled ||
+            descriptor->imageMultisampled ||
             descriptor->imageDepth == 1 || descriptor->count != sampler.units.size())
-            throw std::logic_error("Managed Vulkan sampling currently requires ordinary 2D samplers");
+            throw std::logic_error("Managed Vulkan comparison, multisample and separate image samplers are not implemented");
+        // SPIR-V Dim and Arrayed describe the real image view. Original active
+        // uniform types additionally distinguish ordinary from integer samplers.
+        std::uint32_t target = 0;
+        int glType = 0;
+        if (descriptor->imageDimension == 1) {
+            target = descriptor->imageArray ? 0x8c1a : 0x0de1;
+            glType = descriptor->imageArray ? 0x8dc1 : 0x8b5e;
+        } else if (descriptor->imageDimension == 2 && !descriptor->imageArray) {
+            target = 0x806f; glType = 0x8b5f;
+        } else if (descriptor->imageDimension == 3 && !descriptor->imageArray) {
+            target = 0x8513; glType = 0x8b60;
+        } else {
+            throw std::logic_error("Managed Vulkan sampler image dimension is not implemented");
+        }
+        bool originalType = false;
         for (const auto& uniform : program->result.activeUniforms)
-            if (uniform.name == name || uniform.name.starts_with(name + "["))
-                if (uniform.glType != 0x8b5e)
+            if (uniform.name == name || uniform.name.starts_with(name + "[")) {
+                originalType = true;
+                if (uniform.glType != glType)
                     throw std::logic_error("Managed integer and comparison samplers are not implemented");
+            }
+        if (!originalType) throw std::logic_error("Native sampler lacks an original active uniform type");
         auto& textures = result.samplers[sampler.key];
         for (const auto unit : sampler.units) {
             if (unit < 0) throw std::invalid_argument("Negative native sampler texture unit");
-            auto texture = managedSampledTexture(std::uint32_t(unit), 0x0de1);
+            auto texture = managedSampledTexture(std::uint32_t(unit), target);
             if (!texture || !texture->sampler || !texture->image.view)
                 throw std::logic_error("Native texture binding has no Vulkan sampled image");
             textures.push_back(std::move(texture));
@@ -344,17 +368,11 @@ void recordManagedProgramDraw(ManagedProgramDrawSnapshot snapshot, std::uint32_t
     VkPhysicalDeviceProperties properties{}; api.vkGetPhysicalDeviceProperties(physicalDevice, &properties);
     for (const auto& attribute : snapshot.program->result.attributeMappings) {
         if (attribute.builtIn >= 0) continue;
-        if (attribute.component != 0 ||
-            attribute.numeric.scalar != VulkanShaderInterface::Numeric::Scalar::FloatingPoint || attribute.numeric.width != 32) {
-            const auto scalar = attribute.numeric.scalar == VulkanShaderInterface::Numeric::Scalar::FloatingPoint ? "float" :
-                attribute.numeric.scalar == VulkanShaderInterface::Numeric::Scalar::SignedInteger ? "signed-int" :
-                attribute.numeric.scalar == VulkanShaderInterface::Numeric::Scalar::UnsignedInteger ? "unsigned-int" :
-                attribute.numeric.scalar == VulkanShaderInterface::Numeric::Scalar::Boolean ? "bool" : "unknown";
-            throw std::logic_error("Managed original shader requires unsupported integer or packed vertex input: name=" +
-                attribute.sourceName + " scalar=" + scalar + " bitWidth=" + std::to_string(attribute.numeric.width) +
-                " location=" + std::to_string(attribute.location) + " component=" + std::to_string(attribute.component) +
-                " glType=" + std::to_string(attribute.glType));
-        }
+        const bool floating=attribute.numeric.scalar==VulkanShaderInterface::Numeric::Scalar::FloatingPoint;
+        const bool signedInteger=attribute.numeric.scalar==VulkanShaderInterface::Numeric::Scalar::SignedInteger;
+        const bool unsignedInteger=attribute.numeric.scalar==VulkanShaderInterface::Numeric::Scalar::UnsignedInteger;
+        if(attribute.component!=0||attribute.numeric.width!=32||(!floating&&!signedInteger&&!unsignedInteger))
+            throw std::logic_error("Managed shader requires an unsupported packed or non-32-bit vertex input: "+attribute.sourceName);
         const auto columns = std::max(attribute.numeric.columns, 1u);
         const auto components = attribute.numeric.columns ? attribute.numeric.rows : std::max(attribute.numeric.components, 1u);
         std::uint64_t locations = columns;
@@ -368,25 +386,44 @@ void recordManagedProgramDraw(ManagedProgramDrawSnapshot snapshot, std::uint32_t
                 vertexBindings.size() >= properties.limits.maxVertexInputBindings)
                 throw std::invalid_argument("Managed source shader exceeds native vertex input limits");
             const auto& pointer = bindings.attributes[std::size_t(location)];
-            if (pointer.enabled && (!attributeCommands->hasStorage(pointer.buffer) || pointer.integer)) { invalid(); return; }
-            const auto cache = boundInput(pointer, components);
-            const auto required = !pointer.enabled ? 1 : pointer.divisor ?
-                (std::uint64_t(instanceCount) - 1) / pointer.divisor + 1 : vertexRows;
-            if (pointer.enabled && double(required) > cache->snapshot->count) { invalid(); return; }
-            auto buffer = cache->vertices[false];
-            const auto instance = pointer.enabled && pointer.divisor != 0;
-            if (instance && pointer.divisor > 1) {
-                if (std::uint64_t(instanceCount) * components > SIZE_MAX / sizeof(float))
-                    throw std::invalid_argument("Managed instance conversion exceeds addressable memory");
-                std::vector<float> expanded(std::size_t(instanceCount) * components);
-                for (std::uint32_t row = 0; row < instanceCount; ++row)
-                    for (std::uint32_t component = 0; component < components; ++component)
-                        expanded[std::size_t(row) * components + component] = float(cache->snapshot->getComponent(row / pointer.divisor, component));
-                buffer = sharedBuffer(expanded.size() * sizeof(float), VK_BUFFER_USAGE_VERTEX_BUFFER_BIT, expanded.data(), true);
+            if(pointer.enabled&&!attributeCommands->hasStorage(pointer.buffer)){invalid();return;}
+            const auto required=!pointer.enabled?1:pointer.divisor?
+                (std::uint64_t(instanceCount)-1)/pointer.divisor+1:vertexRows;
+            BufferRef buffer;
+            VkFormat format;
+            if(floating) {
+                if((pointer.enabled&&pointer.integer)||(!pointer.enabled&&pointer.constantType!=VulkanBindingCommands::Attribute::ConstantType::FloatingPoint)){invalid();return;}
+                const auto cache=boundInput(pointer,components);
+                if(pointer.enabled&&double(required)>cache->snapshot->count){invalid();return;}
+                buffer=cache->vertices[false];format=managedFloatVertexFormat(components);
+                if(pointer.enabled&&pointer.divisor>1) {
+                    if(std::uint64_t(instanceCount)*components>SIZE_MAX/sizeof(float))throw std::overflow_error("Managed instance data is too large");
+                    std::vector<float> expanded(std::size_t(instanceCount)*components);
+                    for(std::uint32_t row=0;row<instanceCount;++row)for(std::uint32_t component=0;component<components;++component)
+                        expanded[std::size_t(row)*components+component]=float(cache->snapshot->getComponent(row/pointer.divisor,component));
+                    buffer=sharedBuffer(expanded.size()*sizeof(float),VK_BUFFER_USAGE_VERTEX_BUFFER_BIT,expanded.data());
+                }
+            } else {
+                // WebGL2 requires signedness and pointer/constant category to
+                // match the active shader input, even for disabled arrays.
+                const bool matches=pointer.enabled?pointer.integer&&(signedInteger?managedSignedPointer(pointer.type):managedUnsignedPointer(pointer.type)):
+                    pointer.constantType==(signedInteger?VulkanBindingCommands::Attribute::ConstantType::SignedInteger:VulkanBindingCommands::Attribute::ConstantType::UnsignedInteger);
+                if(!matches){invalid();return;}
+                auto& input=managedIntegerInput(pointer,components);
+                if(required>input.rows){invalid();return;}
+                buffer=input.buffer;format=managedIntegerVertexFormat(components,signedInteger);
+                if(pointer.enabled&&pointer.divisor>1) {
+                    if(std::uint64_t(instanceCount)*components>SIZE_MAX/sizeof(std::uint32_t))throw std::overflow_error("Native integer instance data is too large");
+                    std::vector<std::uint32_t> expanded(std::size_t(instanceCount)*components);
+                    for(std::uint32_t row=0;row<instanceCount;++row)for(std::uint32_t component=0;component<components;++component)
+                        expanded[std::size_t(row)*components+component]=input.values[std::size_t(row/pointer.divisor)*components+component];
+                    buffer=sharedBuffer(expanded.size()*sizeof(std::uint32_t),VK_BUFFER_USAGE_VERTEX_BUFFER_BIT,expanded.data());
+                }
             }
+            const auto instance=pointer.enabled&&pointer.divisor!=0;
             const auto binding = std::uint32_t(vertexBindings.size());
             vertexBindings.push_back({binding, pointer.enabled ? components * 4 : 0, instance ? VK_VERTEX_INPUT_RATE_INSTANCE : VK_VERTEX_INPUT_RATE_VERTEX});
-            vertexAttributes.push_back({std::uint32_t(location), binding, managedFloatVertexFormat(components), 0});
+            vertexAttributes.push_back({std::uint32_t(location), binding, format, 0});
             vertexBuffers.push_back(buffer->buffer); offsets.push_back(0); draw->buffers.push_back(std::move(buffer));
         }
     }

@@ -10,3 +10,7 @@ class SpotLightShadow : public LightShadow {
     std::shared_ptr<LightShadow> clone() const override;
     JsonValue toJSON() const override;
 };
+
+JSValue nativeSpotLightShadowModule();
+JSValue nativeSpotLightShadowBinding(const std::string& name);
+JSValue nativeSpotLightShadowConstructor();

@@ -1,6 +1,8 @@
 #include "renderers/vulkan/VulkanBindingCommands.h"
 #include "core/NativeArray.h"
+#include "core/JSIterator.h"
 #include <algorithm>
+#include <array>
 #include <bit>
 #include <cmath>
 #include <limits>
@@ -29,6 +31,34 @@ std::uint32_t uint32(const JSValue& value) {
     if(result<0)result+=4294967296.0;return static_cast<std::uint32_t>(result);
 }
 std::int32_t int32(const JSValue& value) { return std::bit_cast<std::int32_t>(uint32(value)); }
+struct AttributeList {
+    std::array<JSValue,4> values;
+    std::uint64_t length=0;
+};
+template<class TypedArray,class Convert>
+AttributeList attributeList(const JSValue& value,Convert convert) {
+    AttributeList result;
+    const auto native=NativeArray_detail::unwrap(value);
+    if(const auto array=std::get_if<TypedArray>(&native.storage())) {
+        // The matching WebIDL buffer-source union member uses its internal
+        // view, without consulting shadowed length or iteration properties.
+        result.length=array->size();
+        for(std::uint64_t i=0;i<std::min(result.length,std::uint64_t(4));++i)
+            result.values[std::size_t(i)]=double((*array)[std::size_t(i)]);
+        return result;
+    }
+    if(!value.isObject())throw JSTypeError("Vertex attribute list is not an object");
+    auto iterator=getJSIterator(value);
+    // WebIDL converts every yielded element immediately, including elements
+    // beyond the command's four components. Its sequence algorithm does not
+    // call IteratorClose when an element conversion throws.
+    while(const auto item=stepJSIterator(iterator)) {
+        const auto converted=convert(*item);
+        if(result.length<result.values.size())result.values[std::size_t(result.length)]=converted;
+        ++result.length;
+    }
+    return result;
+}
 std::int64_t intptr(const JSValue& value) {
     const auto number=value.toNumber();
     if(!std::isfinite(number) || number==0)return 0;
@@ -93,6 +123,9 @@ JSValue command(const JSValue&,const Args& args,const Args& captures) {
     if(name=="getParameter") {
         require(args,1);const auto parameter=uint32(args[0]);
         if(parameter==0x8869)return state.get("maximum");
+        if(parameter==0x8894)return state.get("array");
+        if(parameter==0x8895)return current(state).get("index");
+        if(parameter==0x85b5)return state.get("currentHandle");
         error(state,invalidEnum);return nullptr;
     }
     if(name=="getError") {
@@ -106,12 +139,14 @@ JSValue command(const JSValue&,const Args& args,const Args& captures) {
     }
     if(name=="bindVertexArray") {
         require(args,1);
-        if(args[0].isNull() || args[0].isUndefined())state.set("current",nullptr);
+        if(args[0].isNull() || args[0].isUndefined()) {
+            state.set("current",nullptr);state.set("currentHandle",nullptr);
+        }
         else {
             const auto value=handle(state,args[0]);
             if(!value){error(state,invalidOperation);return {};}
             if(!state.get("vaos").hasOwn(std::to_string(value->id))){error(state,invalidOperation);return {};}
-            state.set("current",double(value->id));
+            state.set("current",double(value->id));state.set("currentHandle",args[0]);
         }
         bridge.get("restoreElement").call(bridge,{current(state).get("indexAttachment")});return {};
     }
@@ -120,7 +155,7 @@ JSValue command(const JSValue&,const Args& args,const Args& captures) {
         const auto value=handle(state,args[0]);
         if(!value){error(state,invalidOperation);return {};}
         if(state.get("current").strictEquals(double(value->id))) {
-            state.set("current",nullptr);
+            state.set("current",nullptr);state.set("currentHandle",nullptr);
             bridge.get("restoreElement").call(bridge,{state.get("default").get("indexAttachment")});
         }
         const auto stored=state.get("vaos").get(std::to_string(value->id));
@@ -174,7 +209,7 @@ JSValue command(const JSValue&,const Args& args,const Args& captures) {
         const auto width=bytes(type);
         if(!width || (integer && (type==0x1406 || type==0x140b))){error(state,invalidEnum);return {};}
         if(size<1 || size>4 || stride<0 || stride>255 || offset<0){error(state,invalidValue);return {};}
-        if(stride%width!=0 || offset%width!=0 || state.get("array").isNull()) {
+        if(stride%width!=0 || offset%width!=0 || (state.get("array").isNull() && offset!=0)) {
             error(state,invalidOperation);return {};
         }
         auto attribute=current(state).get("attributes").get(std::to_string(location));
@@ -184,24 +219,36 @@ JSValue command(const JSValue&,const Args& args,const Args& captures) {
         bridge.get("release").call(bridge,{attribute.get("attachment")});
         attribute.set("attachment",attached);attribute.set("buffer",state.get("array"));return {};
     }
+    if(name=="vertexAttribI4i" || name=="vertexAttribI4ui" || name=="vertexAttribI4iv" || name=="vertexAttribI4uiv") {
+        const bool vector=name.ends_with("v"),unsignedValue=name.find("ui")!=std::string::npos;
+        require(args,vector?2:5);const auto location=uint32(args[0]);
+        auto components=internal();
+        std::uint64_t length=4;
+        if(vector) {
+            const auto convert=[unsignedValue](const JSValue& item) {
+                return unsignedValue?JSValue(double(uint32(item))):JSValue(double(int32(item)));
+            };
+            const auto converted=unsignedValue?attributeList<Uint32Array>(args[1],convert):attributeList<Int32Array>(args[1],convert);
+            length=converted.length;
+            for(std::uint64_t i=0;i<std::min(length,std::uint64_t(4));++i)
+                components.set(std::to_string(i),converted.values[std::size_t(i)]);
+        } else for(unsigned i=0;i<4;++i)
+            components.set(std::to_string(i),unsignedValue?JSValue(double(uint32(args[i+1]))):JSValue(double(int32(args[i+1]))));
+        if(!validLocation(state,location))return {};
+        if(length<4){error(state,invalidValue);return {};}
+        components.set("kind",unsignedValue?2:1);
+        state.get("constants").set(std::to_string(location),components);return {};
+    }
     if(name.starts_with("vertexAttrib") && name.ends_with("fv")) {
         require(args,2);const auto location=uint32(args[0]);const unsigned count=name[12]-'0';
-        const auto value=args[1];
-        auto converted=internal();
-        std::uint64_t length=0;
-        const auto native=NativeArray_detail::unwrap(value);
-        if(const auto floats=std::get_if<Float32Array>(&native.storage())) {
-            length=floats->size();
-            for(std::uint64_t i=0;i<length;++i)converted.set(std::to_string(i),double((*floats)[std::size_t(i)]));
-        } else {
-            const auto number=value.get("length").toNumber();
-            if(number>0)length=static_cast<std::uint64_t>(std::min(std::floor(number),9007199254740991.0));
-            for(std::uint64_t i=0;i<length;++i)converted.set(std::to_string(i),double(float(value.get(std::to_string(i)).toNumber())));
-        }
+        const auto converted=attributeList<Float32Array>(args[1],[](const JSValue& item) {
+            return JSValue(double(float(item.toNumber())));
+        });
         if(!validLocation(state,location))return {};
-        if(length<count){error(state,invalidValue);return {};}
+        if(converted.length<count){error(state,invalidValue);return {};}
         auto components=internal();
-        for(unsigned i=0;i<4;++i)components.set(std::to_string(i),i<count?converted.get(std::to_string(i)):JSValue(i==3?1:0));
+        for(unsigned i=0;i<4;++i)components.set(std::to_string(i),i<count?converted.values[i]:JSValue(i==3?1:0));
+        components.set("kind",0);
         state.get("constants").set(std::to_string(location),components);return {};
     }
     throw JSTypeError("Unknown vertex input command");
@@ -211,17 +258,21 @@ VulkanBindingCommands::VulkanBindingCommands(JSValue buffers,JSValue bridge,std:
     if(!maximumAttributes)throw std::invalid_argument("Vulkan requires vertex input locations");
     state_=internal();literal(state_,"buffers",buffers);literal(state_,"bridge",bridge);literal(state_,"maximum",maximumAttributes);
     literal(state_,"closed",false);literal(state_,"current",nullptr);literal(state_,"array",nullptr);
+    literal(state_,"currentHandle",nullptr);
     literal(state_,"vaos",internal());literal(state_,"default",vao(maximumAttributes));
     literal(state_,"next",1);
     auto constants=internal();
-    for(std::uint32_t i=0;i<maximumAttributes;++i){auto value=internal();for(unsigned c=0;c<4;++c)value.set(std::to_string(c),c==3?1:0);constants.set(std::to_string(i),value);}
+    for(std::uint32_t i=0;i<maximumAttributes;++i){auto value=internal();for(unsigned c=0;c<4;++c)value.set(std::to_string(c),c==3?1:0);value.set("kind",0);constants.set(std::to_string(i),value);}
     literal(state_,"constants",constants);
     object_=JSValue::object();object_.setPrototype(buffers);literal(object_,"MAX_VERTEX_ATTRIBS",0x8869);
+    literal(object_,"ARRAY_BUFFER_BINDING",0x8894);literal(object_,"ELEMENT_ARRAY_BUFFER_BINDING",0x8895);
+    literal(object_,"VERTEX_ARRAY_BINDING",0x85b5);
     for(const auto& [name,arity]:std::initializer_list<std::pair<const char*,unsigned>>{
         {"getParameter",1},{"getError",0},{"createVertexArray",0},{"bindVertexArray",1},{"deleteVertexArray",1},
         {"bindBuffer",2},{"deleteBuffer",1},{"enableVertexAttribArray",1},{"disableVertexAttribArray",1},{"vertexAttribDivisor",2},
         {"vertexAttribPointer",6},{"vertexAttribIPointer",5},{"vertexAttrib1fv",2},{"vertexAttrib2fv",2},
-        {"vertexAttrib3fv",2},{"vertexAttrib4fv",2}})
+        {"vertexAttrib3fv",2},{"vertexAttrib4fv",2},{"vertexAttribI4i",5},{"vertexAttribI4ui",5},
+        {"vertexAttribI4iv",2},{"vertexAttribI4uiv",2}})
         literal(object_,name,JSValue::function(command,{state_,name},name,arity));
 }
 JSValue VulkanBindingCommands::object() const {open(state_);return object_;}
@@ -234,7 +285,13 @@ VulkanBindingCommands::Snapshot VulkanBindingCommands::snapshot() const {
         a.integer=source.get("integer").toBoolean();a.size=uint32(source.get("size"));a.type=uint32(source.get("type"));
         a.divisor=uint32(source.get("divisor"));a.stride=static_cast<std::uint64_t>(source.get("stride").number());
         a.offset=static_cast<std::uint64_t>(source.get("offset").number());a.buffer=source.get("buffer");
-        for(unsigned c=0;c<4;++c)a.value[c]=float(constant.get(std::to_string(c)).number());result.attributes.push_back(std::move(a));
+        a.constantType=constant.get("kind").strictEquals(1)?Attribute::ConstantType::SignedInteger:
+            constant.get("kind").strictEquals(2)?Attribute::ConstantType::UnsignedInteger:Attribute::ConstantType::FloatingPoint;
+        for(unsigned c=0;c<4;++c) {
+            const auto value=constant.get(std::to_string(c));
+            a.value[c]=float(value.number());a.signedValue[c]=int32(value);a.unsignedValue[c]=uint32(value);
+        }
+        result.attributes.push_back(std::move(a));
     }
     return result;
 }
@@ -245,6 +302,7 @@ void VulkanBindingCommands::shutdown() {
     releaseVAO(state_,state_.get("default"));
     state_.get("bridge").get("restoreElement").call(state_.get("bridge"),{nullptr});
     state_.set("closed",true);state_.set("array",nullptr);state_.set("vaos",internal());
+    state_.set("current",nullptr);state_.set("currentHandle",nullptr);
     state_.set("default",vao(static_cast<std::uint32_t>(state_.get("maximum").number())));
 }
 void VulkanBindingCommands::invalidDraw() { open(state_);error(state_,invalidOperation); }

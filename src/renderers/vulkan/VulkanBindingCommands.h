@@ -14,7 +14,11 @@ class VulkanBindingCommands {
         std::uint32_t size = 4, type = 0x1406, divisor = 0;
         std::uint64_t stride = 0, offset = 0;
         JSValue buffer{nullptr};
+        enum class ConstantType { FloatingPoint, SignedInteger, UnsignedInteger };
+        ConstantType constantType = ConstantType::FloatingPoint;
         std::array<float,4> value{0,0,0,1};
+        std::array<std::int32_t,4> signedValue{0,0,0,1};
+        std::array<std::uint32_t,4> unsignedValue{0,0,0,1};
     };
     struct Snapshot {
         std::vector<Attribute> attributes;

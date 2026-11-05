@@ -15,3 +15,7 @@ class HemisphereLight : public Light {
   protected:
     std::optional<JsonValue> propertyValue(const std::string& property) const override;
 };
+
+JSValue nativeHemisphereLightModule();
+JSValue nativeHemisphereLightBinding(const std::string& name);
+JSValue nativeHemisphereLightConstructor();

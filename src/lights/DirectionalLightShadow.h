@@ -6,3 +6,7 @@ class DirectionalLightShadow : public LightShadow {
     DirectionalLightShadow();
     std::shared_ptr<LightShadow> clone() const override;
 };
+
+JSValue nativeDirectionalLightShadowModule();
+JSValue nativeDirectionalLightShadowBinding(const std::string& name);
+JSValue nativeDirectionalLightShadowConstructor();

@@ -230,19 +230,24 @@ void clearAndMetadata(bool validation){
 void capabilityErrorsAndLifetime(bool validation){
     VulkanRenderer renderer({64,64,validation});renderer.srgbOutput=false;World world;auto facade=renderer.object();
     ValidationCheck layer(renderer,validation);
-    // This is valid source geometry and GLSL300 material. Integer vertex input
-    // is an explicit remaining GPU boundary, independent of material type flags.
+    // Valid canonical Uint32 geometry and GLSL300 integer vertex inputs now
+    // execute on the production path; the sample stays inside the triangle.
     const auto integerGeometry=nativeBufferGeometryConstructor().construct();
     const auto integerPositions=nativeUint32BufferAttributeConstructor().construct({list({0,0,0,1,0,0,0,1,0}),3});
     call(integerGeometry,"setAttribute",{"position",integerPositions});
     auto parameters=JSValue::object();parameters.set("glslVersion","300 es");
     parameters.set("vertexShader","precision highp float;precision highp int;in uvec3 position;uniform mat4 projectionMatrix;uniform mat4 modelViewMatrix;void main(){gl_Position=projectionMatrix*modelViewMatrix*vec4(vec3(position)-vec3(.5,.5,0.),1.);}");
     parameters.set("fragmentShader","precision highp float;out vec4 result;void main(){result=vec4(0.,1.,0.,1.);}");
-    const auto unsupported=nativeRawShaderMaterialConstructor().construct({parameters});
-    world.mesh.set("geometry",integerGeometry);world.mesh.set("material",unsupported);bool rejected=false;
-    try{renderer.render(world.scene,world.view);}catch(const std::logic_error& error){rejected=std::string(error.what()).find("integer or packed vertex input")!=std::string::npos;}
-    require(rejected,"valid integer shader input is rejected explicitly at the remaining Vulkan input boundary");
-    world.mesh.set("geometry",world.shape);world.mesh.set("material",world.paint);renderer.render(world.scene,world.view);expectPixel(renderer,{255,0,0},"supported geometry and material recover after the native integer-input exception");
+    const auto integerMaterial=nativeRawShaderMaterialConstructor().construct({parameters});
+    world.mesh.set("geometry",integerGeometry);world.mesh.set("material",integerMaterial);renderer.render(world.scene,world.view);
+    expectPixel(renderer,{0,255,0},"canonical integer shader input executes through the native Vulkan vertex format",20,40);
+    world.mesh.set("geometry",world.shape);world.mesh.set("material",world.paint);
+    // The source renderBufferDirect requests an actual width of two for this
+    // canonical material. The Vulkan device does not enable the wideLines feature.
+    world.paint.set("wireframe",true);world.paint.set("wireframeLinewidth",2);bool rejected=false;
+    try{renderer.render(world.scene,world.view);}catch(const std::logic_error& error){rejected=std::string(error.what()).find("wideLines feature")!=std::string::npos;}
+    require(rejected,"source wireframe width reaches the explicit unsupported Vulkan wideLines boundary");
+    world.paint.set("wireframe",false);world.paint.set("wireframeLinewidth",1);renderer.render(world.scene,world.view);expectPixel(renderer,{255,0,0},"supported geometry and material recover after the native wide-line exception");
     auto target=std::make_shared<RenderTarget>(32,32);renderer.setRenderTarget(target);rejected=false;try{renderer.render(world.scene,world.view);}catch(const std::exception& error){rejected=std::string(error.what()).find("target")!=std::string::npos||std::string(error.what()).find("Target")!=std::string::npos;}
     require(rejected,"raw rendering cannot silently draw into an unrelated typed render target");renderer.setRenderTarget(nullptr);renderer.render(world.scene,world.view);expectPixel(renderer,{255,0,0},"raw screen rendering resumes after restoring the typed target");
     JSValue escaped;{VulkanRenderer temporary({16,16,validation});ValidationCheck temporaryLayer(temporary,validation);escaped=temporary.object();temporaryLayer.verify();}

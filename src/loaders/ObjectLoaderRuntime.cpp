@@ -702,29 +702,18 @@ JSValue parseObject(const JSValue& self,const Args& args,const Args&) {
 JSValue defaulted(const Args& args,std::size_t i,const JSValue& value) {
     const auto v=arg(args,i);return v.isUndefined()?value:v;
 }
-JSValue shadow(const std::string& kind) {
-    const auto camera=kind=="Directional"?nativeOrthographicCameraConstructor().construct({-5,5,5,-5,0.5,500}):nativePerspectiveCameraConstructor().construct({kind=="Point"?90:50,1,0.5,500});
-    auto result=JSValue::object();own(result,"camera",camera);own(result,"intensity",1);own(result,"bias",0);own(result,"biasNode",nullptr);
-    own(result,"normalBias",0);own(result,"radius",1);own(result,"blurSamples",8);own(result,"mapSize",nativeVector2Constructor().construct({512,512}));
-    own(result,"mapType",UnsignedByteType);own(result,"map",nullptr);own(result,"mapPass",nullptr);own(result,"matrix",nativeMatrix4Constructor().construct());
-    own(result,"autoUpdate",true);own(result,"needsUpdate",false);own(result,"_frustum",nativeFrustumConstructor().construct());own(result,"_frameExtents",nativeVector2Constructor().construct({1,1}));
-    own(result,"_viewportCount",1);auto viewports=JSValue::array();invoke(viewports,"push")({nativeVector4Constructor().construct({0,0,1,1})});own(result,"_viewports",viewports);
-    own(result,("is"+kind+"LightShadow").c_str(),true);if(kind=="Spot") {own(result,"focus",1);own(result,"aspect",1);}return result;
-}
 // Source constructors required by ObjectLoader, sharing the managed Object3D graph.
 // Independent class methods outside deserialization remain separate ports.
 JSValue objectConstructor(const char* name,unsigned arity,const JSValue& base) {
     auto holder=JSValue::object(nullptr);
     auto ctor=JSValue::builtinConstructor(+[](const JSValue& target,const Args& a,const Args& c)->JSValue {
         const auto name=c[0].string();const auto parent=c[1].get("constructor").getPrototype();Args baseArgs;
-        const auto spotAngle=name=="SpotLight" && arg(a,3).isUndefined()?JSValue(nativeGlobalBinding("Math").get("PI").toNumber()/3):arg(a,3);
         JSValue geometry,material;
         if(name=="Line" || name=="Points") {
             geometry=arg(a,0).isUndefined()?nativeBufferGeometryConstructor().construct():arg(a,0);
             material=arg(a,1).isUndefined()?MaterialLoader::createMaterialFromType(name=="Points"?"PointsMaterial":"LineBasicMaterial"):arg(a,1);
         } else if(name=="LineLoop" || name=="LineSegments")baseArgs={arg(a,0),arg(a,1)};
         else if(name=="LightProbe")baseArgs={{},defaulted(a,1,1)};
-        else if(name=="HemisphereLight")baseArgs={arg(a,0),arg(a,2)};
         else if(name!="Group" && name!="LOD" && name!="Sprite")baseArgs={arg(a,0),arg(a,1)};
         if(name=="Sprite")material=arg(a,0).isUndefined()?MaterialLoader::createMaterialFromType("SpriteMaterial"):arg(a,0);
         const auto harmonics=name=="LightProbe"?(arg(a,0).isUndefined()?imported("SphericalHarmonics3").construct():arg(a,0)):JSValue{};
@@ -751,17 +740,6 @@ JSValue objectConstructor(const char* name,unsigned arity,const JSValue& base) {
                 module.set("_spriteGeometry",geometry);
             }
             self.set("geometry",geometry);self.set("material",material);self.set("center",nativeVector2Constructor().construct({0.5,0.5}));self.set("count",1);
-        } else if(name=="DirectionalLight" || name=="SpotLight" || name=="HemisphereLight") {
-            invoke(self.get("position"),"copy")({imported("Object3D").get("DEFAULT_UP")});invoke(self,"updateMatrix")({});
-            if(name=="HemisphereLight")self.set("groundColor",imported("Color").construct({arg(a,1)}));
-            else self.set("target",imported("Object3D").construct());
-            if(name=="DirectionalLight")self.set("shadow",shadow("Directional"));
-            else if(name=="SpotLight") {
-                self.set("distance",defaulted(a,2,0));self.set("angle",spotAngle);
-                self.set("penumbra",defaulted(a,4,0));self.set("decay",defaulted(a,5,2));self.set("map",nullptr);self.set("shadow",shadow("Spot"));
-            }
-        } else if(name=="PointLight") {
-            self.set("distance",defaulted(a,2,0));self.set("decay",defaulted(a,3,2));self.set("shadow",shadow("Point"));
         } else if(name=="RectAreaLight") {self.set("width",defaulted(a,2,10));self.set("height",defaulted(a,3,10));}
         else if(name=="LightProbe")self.set("sh",harmonics);
         return self;
@@ -831,6 +809,11 @@ JSValue nativeObjectLoaderModule() {
     own(bindings,"MaterialLoader",nativeMaterialLoaderConstructor());
     own(bindings,"Object3D",nativeObject3DConstructor());own(bindings,"Scene",nativeSceneConstructor());
     own(bindings,"Light",nativeLightConstructor());
+    own(bindings,"AmbientLight",nativeAmbientLightConstructor());
+    own(bindings,"DirectionalLight",nativeDirectionalLightConstructor());
+    own(bindings,"HemisphereLight",nativeHemisphereLightConstructor());
+    own(bindings,"PointLight",nativePointLightConstructor());
+    own(bindings,"SpotLight",nativeSpotLightConstructor());
     own(bindings,"PerspectiveCamera",nativePerspectiveCameraConstructor());own(bindings,"OrthographicCamera",nativeOrthographicCameraConstructor());
     own(bindings,"Mesh",nativeMeshConstructor());own(bindings,"SkinnedMesh",nativeSkinnedMeshConstructor());
     own(bindings,"InstancedMesh",nativeInstancedMeshConstructor());own(bindings,"BatchedMesh",nativeBatchedMeshConstructor());
@@ -845,7 +828,7 @@ JSValue nativeObjectLoaderModule() {
     auto animation=JSValue::object();
     own(animation,"parse",JSValue::function(+[](const JSValue&,const Args& a,const Args&)->JSValue {return nativeAnimationClip(AnimationClip::parse(arg(a,0)));},{},"parse",1));
     own(bindings,"AnimationClip",animation);
-    for(const auto& [name,arity]:std::initializer_list<std::pair<const char*,unsigned>>{{"Group",0},{"LOD",0},{"Line",0},{"LineLoop",2},{"LineSegments",2},{"Points",0},{"Sprite",0},{"AmbientLight",2},{"DirectionalLight",2},{"PointLight",2},{"SpotLight",2},{"RectAreaLight",2},{"HemisphereLight",3},{"LightProbe",0}}) {
+    for(const auto& [name,arity]:std::initializer_list<std::pair<const char*,unsigned>>{{"Group",0},{"LOD",0},{"Line",0},{"LineLoop",2},{"LineSegments",2},{"Points",0},{"Sprite",0},{"RectAreaLight",2},{"LightProbe",0}}) {
         const std::string type=name;
         const auto base=type=="LineLoop"||type=="LineSegments"?bindings.get("Line"):
             type.ends_with("Light")||type=="LightProbe"?bindings.get("Light"):bindings.get("Object3D");
