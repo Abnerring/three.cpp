@@ -1,3 +1,30 @@
+# 当前接续：LightsNode（lighting 枢纽）已移植，缓存键与哈希双侧数值比对，2026-11-05
+
+目标保持 active：固定 three.js 11738a9d55e502fb484cefffcea3a66dc44e9fe9 全部 src + examples/jsm 原生 C++ 逻辑，Vulkan 后端；禁止 CEF/生产 JS 引擎/桥接。阶段本地 Git 提交，不推送。
+
+本轮新增 `src/nodes/lighting/LightsNode.{h,cpp}`（extends Node），**不静态依赖任何 light 节点类**（上游靠 `light._lightNode` 动态取类）。移植内容：
+
+模块级：三个**共享** `property('vec3', …)` 节点（`totalDiffuse` / `totalSpecular` / `outgoingLight`）、`sortLights`（按 `id` 升序，用 `std::stable_sort` 对齐 V8 的稳定排序）、`getLightNodeById`、`_lightsNodeRef`（WeakMap，按灯缓存 light node 实例）、`_hashData`（复用的数组，每次算完清空）。
+
+类：`setLights`（**存同一数组引用**并返回 `this`）、`getLights` / `getBuiltinLights`、`get hasLights` 访问器、`isCacheable() === false`、`customCacheKey`（`[id, castShadow?1:0]`，聚光灯再加 `map.id ?? -1` 与 `colorNode.getCacheKey() ?? -1`，再 `hashArray`）、`getHash`（`'lights-' + 各 lightNode.getHash() 逗号连接`，缓存在 `builder.getDataFromNode` 上）、`setupLightsNode`、`setupDirectLight`、`setupDirectRectAreaLight`、`setupLights`、`getLightNodes`、`setup`；以及导出 `lights( lights = [] )`。
+
+**本轮验证的是数值与缓存语义，不只是签名**：
+1. **`customCacheKey()` 的返回值与上游逐位相同**（示例两灯：`id=7 castShadow=false` 与 `id=3 castShadow=true 且 isSpotLight、map/colorNode 均为 null` → 两侧同为 **4395167147059781**，仍在 2^53 内可精确表示）。
+2. **`getHash(builder)` 与上游同为 `'lights-a,b'`**：验证了按 `id` 排序（传入顺序 2,1 → 输出 a,b）、缓存写入 `nodeData.lightNodesHash`、以及重复调用命中缓存。
+3. 三个 property 节点**跨实例同一对象**（`sameValue`）——上游把它们放在模块作用域，这是可观测的结构特征。
+4. `setLights` 存的**就是传入数组本身**（`getLights()`/`getBuiltinLights()` 与入参 `sameValue`）、返回 `this`、`hasLights` 访问器翻转、工厂 `lights()` 带参/无参两条路径。
+5. 另外比对 13 个方法的 arity、`isCacheable`、`global`、`_lights` 初始长度、以及 **class `toString` 逐字节**（差分 Passed **0.45s**）。
+
+验证：构建 exit 0。THREECPPTests **1554 cases / 214,307 assertions 全过**，较上轮 1549/214,270 增 5 例 37 断言，与 `*LightsNode*` 过滤的 5 用例/37 断言一致。
+
+**本轮三处自我更正**：① 首轮多处 `const` 句柄调 `set`/`defineProperty` 造成 11 个 C2663，批量改为**非 const 句柄拷贝**（`JSValue` 是句柄，拷贝仍作用于同一对象）；② 单测原断言实例 `node.type === "vec3"`，**实跑为假**——两侧一致为 **`"LightsNode"`**（构造器传 `'vec3'` 给基类，但实例类型经类访问器解析），期望改为 `LightsNode` 并注明来自差分对照；③ 同类错误在工厂用例里也有一处，一并改正。
+
+**未执行验证的部分（如实记录）**：`setup(builder)`（lighting model 生命周期：`addStack`/`removeStack`/`lightingModel.start|finish`/`bypass`/`assign`）**未执行**，需要完整 builder 栈与 lighting model；`setupDirectLight`、`setupDirectRectAreaLight`、`setupLights` **未执行**；`setupLightsNode` 只跑了 `light.isNode === true` 的分支，**`light._lightNode` 类构造与 `_lightsNodeRef` 复用路径未执行**（该路径需要真实光照类注册）。
+
+审计（固定 worktree，HEAD=11738a9d55）刷新后应为 **src missing 48→47、partial 417→418**；LightsNode 记 `partial-unverified` 并登记 h/cpp（若读数与预期不符，提交会被脚本拦下并在此说明）。
+
+`src/nodes/lighting` 只剩 **2 个**：**PointShadowNode**（12,693 B）与 **ShadowNode**（24,331 B）——这两个都要先补 `QuadMesh`（`src/renderers/common/QuadMesh.js`）与 `RendererUtils` 的 `resetRendererAndSceneState`/`restoreRendererAndSceneState`，下一轮先查这两个前置是否已移植，再决定做 ShadowNode 还是 PointShadowNode。
+
 # 当前接续：RectAreaLightNode 已移植，update 数值与 LTC 选取分支均双侧验证，2026-11-05
 
 目标保持 active：固定 three.js 11738a9d55e502fb484cefffcea3a66dc44e9fe9 全部 src + examples/jsm 原生 C++ 逻辑，Vulkan 后端；禁止 CEF/生产 JS 引擎/桥接。阶段本地 Git 提交，不推送。

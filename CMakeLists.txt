@@ -208,6 +208,7 @@ target_sources(threecpp PRIVATE
     src/nodes/lighting/EnvironmentNode.cpp
     src/nodes/functions/BSDF/LTC.cpp
     src/nodes/lighting/RectAreaLightNode.cpp
+    src/nodes/lighting/LightsNode.cpp
     src/nodes/lighting/BasicEnvironmentNode.cpp
     src/nodes/lighting/LightProbeNode.cpp
     src/nodes/lighting/LightingContextNode.cpp
