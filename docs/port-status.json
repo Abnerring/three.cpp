@@ -201,8 +201,8 @@
     "note": "Accepted port scope is src and examples/jsm, including tracked third-party dependencies. Editor/manual web applications are excluded from native application rewrites. Native host behavior, packaging and all three platforms require separate implementation and verification evidence."
   },
   "counts": {
-    "partial-unverified": 574,
-    "missing": 367,
+    "partial-unverified": 575,
+    "missing": 366,
     "vulkan-port-pending": 290,
     "dependency-unverified": 20
   },
@@ -210,8 +210,8 @@
     "src": {
       "modules": 755,
       "counts": {
-        "partial-unverified": 438,
-        "missing": 27,
+        "partial-unverified": 439,
+        "missing": 26,
         "vulkan-port-pending": 290
       }
     },
@@ -859,7 +859,7 @@
       "path": "src/nodes/gpgpu",
       "upstreamFiles": 6,
       "moduleCount": 6,
-      "modulesWithCppFiles": 3,
+      "modulesWithCppFiles": 4,
       "verifiedComplete": 0
     },
     {
@@ -11240,11 +11240,11 @@
       "scope": "src",
       "kind": "core",
       "upstreamSha256": "55f79a4dd1ffbd907da10536d4c53465ffc8814e41c488b8e45606eb7d918d43",
-      "header": null,
-      "implementation": null,
+      "header": "src/nodes/gpgpu/WorkgroupInfoNode.h",
+      "implementation": "src/nodes/gpgpu/WorkgroupInfoNode.cpp",
       "expectedHeader": "src/nodes/gpgpu/WorkgroupInfoNode.h",
       "expectedImplementation": "src/nodes/gpgpu/WorkgroupInfoNode.cpp",
-      "status": "missing",
+      "status": "partial-unverified",
       "verifiedComplete": false,
       "apiExtraction": "static-only",
       "verification": {
@@ -11253,7 +11253,9 @@
           "pointer": "/modules/351"
         },
         "upstreamUnitTests": [],
-        "cppUnitTests": [],
+        "cppUnitTests": [
+          "test/unit/src/nodes/gpgpu/WorkgroupInfoNode.tests.cpp"
+        ],
         "reviewedImplementation": [],
         "differentialResults": [],
         "renderingResults": [],

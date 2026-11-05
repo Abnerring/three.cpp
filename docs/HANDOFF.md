@@ -1,4 +1,24 @@
-# 当前接续：ComputeBuiltinNode 已移植（gpgpu 家族第一个，含 stub builder 的真实 generate 验证），2026-11-05
+# 当前接续：WorkgroupInfoNode 已移植（含同文件第二个类 WorkgroupInfoElementNode；两处结构偏差修正），2026-11-05
+
+目标保持 active：固定 three.js 11738a9d55e502fb484cefffcea3a66dc44e9fe9 全部 src + examples/jsm 原生 C++ 逻辑，Vulkan 后端；禁止 CEF/生产 JS 引擎/桥接。阶段本地 Git 提交，不推送。
+
+本轮新增 `src/nodes/gpgpu/WorkgroupInfoNode.{h,cpp}`（6,085 B 源）。**该模块在一个文件里声明两个类**，现有 `gen-material-traces.mjs` 只截取第一个 `class`，因此新写了 `build/gen-multi-class-sources.mjs`（按类名逐个花括号匹配提取 classSource + 指定成员源码），并重生成 `src/nodes/gpgpu/GpgpuNodeSources.inc`（现 **3 个 namespace**：ComputeBuiltinNode / WorkgroupInfoElementNode / WorkgroupInfoNode）。
+
+- **`WorkgroupInfoNode`**：`constructor( scope, bufferType, bufferCount = 0 )` → **length 2**；`super( bufferType )`；字段 `bufferType`/`bufferCount`/`isAtomic = false`/`isWorkgroupInfoNode = true`/`elementType = bufferType`/`scope`/`name = ''`。方法 arity：`isCacheable` 0、`setName` 1、`label` 1、`setScope` 1、`setAtomic` 1、`toAtomic` 0、`getElementType` 0、`getInputType` 0、`element` 1、`generate` 1。`getInputType()` = `` `${scope}Array` ``；`generate(builder)` = 非 compute 阶段先 `error(...)`（**只记录不抛**），再按 `name || `${scope}Array_${id}`` 调 `builder.getScopedArray( name, scope.toLowerCase(), bufferType, bufferCount, isAtomic )`。
+- **`WorkgroupInfoElementNode`**（同文件第二个类，extends `ArrayElementNode`）：`constructor( workgroupInfoNode, indexNode )` **length 2**，设 `isWorkgroupInfoElementNode = true`；`generate( builder, output )`：`isContextAssign = builder.isContextAssign()`，`snippet = super.generate(builder)`，非赋值上下文再 `builder.format(snippet, getNodeType(builder), output)`。
+- 模块导出 `workgroupArray = ( type, count ) => new WorkgroupInfoNode( 'Workgroup', type, count )`（**length 2**），故 `bufferCount` 省略时为 0。
+
+**本轮两处结构偏差（差分抓到，已修正）**：这两个类**都没有静态 `type` getter** —— 上游 `info.type` 继承自 Node 基类为 **`'Node'`**，`element.type` 同理继承 `ArrayElementNode`。我最初用 `makeClass`（它会**强制注册** type getter）导致 `type === 'WorkgroupInfoNode'`，差分报 `'WorkgroupInfoNode' vs 'Node'`。改为**手工建类**（`builtinConstructor` + `setPrototype` + 手工 `defineProperty` + `setFunctionSourceText`），不注册 type getter，`type` 即正确继承。相应地把单测里旧的 `type` 断言改为 `"Node"`。
+
+验证：构建 exit 0。THREECPPTests **1621 cases / 214,726 assertions 全过**，较上轮 1617/214,686 增 4 例 40 断言。差分 `threecpp.threejs-workgroup-info-node-parity` **Passed**，比较：两个类的 name/length（2/2）、工厂 length=2、`type`（继承为 `"Node"`）、`isWorkgroupInfoNode`、scope/bufferType/bufferCount/elementType/name/isAtomic 七个字段、`bufferCount` 默认 0、`isCacheable === false`、`getInputType === "WorkgroupArray"`、四个链式 setter **均返回自身**且字段生效、`label()` 的弃用路径同样返回自身并改名、`getElementType`、**`element(index)` 产出带 `isWorkgroupInfoElementNode` 的元素节点且 `indexNode` 同一**、**`generate` 五个实参的完整序列**（未命名 → `WorkgroupArray_<id>` 前缀、scope 小写 `workgroup`、bufferType、count、isAtomic）、命名覆盖与 atomic 转发、**非 compute 阶段仍返回 scoped array**、10 个方法的 arity 表、两个类 `toString` 逐字节。
+
+**未执行验证的部分（如实记录）**：`error()`/`warn()` 的实际输出文本；`WorkgroupInfoElementNode.generate` 的完整路径（需真实 ArrayElementNode 生成上下文；两侧在桩 builder 下均抛错，**只比较"是否抛错"布尔**）；真实渲染/着色器生成路径；节点图未求值。
+
+审计（固定 worktree，HEAD=11738a9d55）：**src missing 27→26、partial 438→439**，`WorkgroupInfoNode` 记 `partial-unverified`。
+
+`src/nodes/gpgpu` 还剩 2 个：`AtomicFunctionNode`(8,931)、`SubgroupFunctionNode`(16,784)。
+
+下一步：`AtomicFunctionNode`（8,931，复用本轮的多类提取脚本与差分范式）→ `SubgroupFunctionNode`；之后 `src` 剩余 24 个（含 3 个 `loaders/nodes`、`SpriteUtils`、`PassNode`、`ToonOutlinePassNode`、`RTTNode`、`ReflectorNode`、`Nodes`/`TSL` 聚合、`Three.*.js` 入口、`materialx` 两个大文件、`PhysicalLightingModel` 32,829、`ShadowNode`/`PointShadowNode`、`Line2`/`MeshStandard`/`MeshPhysical`/`MeshSSS`/`NodeMaterials`）。# 当前接续：ComputeBuiltinNode 已移植（gpgpu 家族第一个，含 stub builder 的真实 generate 验证），2026-11-05
 
 目标保持 active：固定 three.js 11738a9d55e502fb484cefffcea3a66dc44e9fe9 全部 src + examples/jsm 原生 C++ 逻辑，Vulkan 后端；禁止 CEF/生产 JS 引擎/桥接。阶段本地 Git 提交，不推送。
 
