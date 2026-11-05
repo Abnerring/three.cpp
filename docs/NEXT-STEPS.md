@@ -268,3 +268,11 @@ static get type() { return 'ShadowNode'; }
 2. **B 段**：`setupShadowCoord`（纯数学，可用数值/节点类型差分）；
 3. **C 段**：`setupRenderTarget` + `renderShadow`/`vsmPass`（需渲染器接口，做「可构建 + 状态正确」级验证）；
 4. **D 段**：`setupShadow`（240 行 TSL 图，最后做）+ `setup`/`updateShadow`/`updateBefore` 串联。
+
+#### A 段规格（r120 实测，可直接实现）
+
+- **构造器**（L143）：`super(light)` 后依次设 `shadow = shadow || light.shadow`、`shadowMap = null`、`vsmShadowMapVertical/Horizontal = null`、`vsmMaterialVertical/Horizontal = null`、`_node = null`、`_currentShadowType = null`、`_cameraFrameId = new WeakMap()`、`isShadowNode = true`、`depthLayer = 0`。
+- **`static get type()`**（L131）：返回 `'ShadowNode'`。
+- **`getShadowFilterFn(type)`**（L327）：`return _shadowFilterLib[ type ];`，其中 `_shadowFilterLib = [ BasicShadowFilter, PCFShadowFilter, null /* PCFSoftShadowMap removed */, VSMShadowFilter ]`（模块级常量，来自 `ShadowFilterNode` 的三个导出）。
+- **`dispose()`**（L737 起）与 **`_reset()`**（L750 起）：释放/清空 `shadowMap`、`vsmShadowMapVertical/Horizontal`、`vsmMaterialVertical/Horizontal`、`_node` 等缓存（具体逐行语义参见 pinned 行 737–800；A 段先落字段与空实现骨架，行为在 C/D 段补全）。
+- **实现风格**：本端口 `src/nodes/**` 一律为 **JSValue 托管类**（`native<Name>Module/Constructor/Binding` + `makeClass/builtinConstructor` + 生成的 `*Sources.inc` 类源），继承通过基类 prototype 实现；`ShadowBaseNode` 已有 `nativeShadowBaseNodeModule/Constructor/Binding` 与 C++ 包装类可参考。
