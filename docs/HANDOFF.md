@@ -1,4 +1,35 @@
-# 当前接续：SubgroupFunctionNode 已移植（gpgpu 家族清零；类型推导与 generate 三分支全部行为级验证），2026-11-05
+# 当前接续：RTTNode 已移植（渲染到纹理节点，含 setSize/缩放/clone/convert 行为级验证），2026-11-05
+
+目标保持 active：固定 three.js 11738a9d55e502fb484cefffcea3a66dc44e9fe9 全部 src + examples/jsm 原生 C++ 逻辑，Vulkan 后端；禁止 CEF/生产 JS 引擎/桥接。阶段本地 Git 提交，不推送。
+
+本轮新增 `src/nodes/utils/RTTNode.{h,cpp}`（9,941 B 源），并新建追踪文件 `src/nodes/utils/UtilNodeSources.inc`（`src/nodes/utils` 下后续节点可复用）。
+
+- **`constructor( node, width = null, height = null, options = {} )` → length 1**。先解构 `autoUpdate = true` / `resolutionScale = 1`，再建 `RenderTarget( width ?? 1, height ?? 1, { type: HalfFloatType, ...options } )`，然后 `super( renderTarget.texture, uv() )`；字段：`isRTTNode`、`node`、`width`、`height`、`renderTarget`、`textureNeedsUpdate = true`、`autoUpdate`、`_resolutionScale`、`_quadMesh = new QuadMesh(new NodeMaterial())`、`_rendererState = {}`、`updateBeforeType = NodeUpdateType.FRAME`（值即字符串 `"frame"`）。
+- **访问器**：`autoResize` = `width === null`；`value` getter = `renderTarget ? renderTarget.texture : null`，setter 在 `value !== renderTarget.texture` 时 `error('TSL: "rtt()" does not allow overwriting the value.')`（只记录不抛）。
+- `setup(builder)`：把 `_quadMesh.material` 的 `contextNode = context(builder.getSharedContext())`、`fragmentNode = this.node`、`name = 'RTT'`、`needsUpdate = true`，再走 `TextureNode` 基类 `setup`。
+- `setSize(w,h)`：`floor(w * _resolutionScale)` / `floor(h * _resolutionScale)` 后 `renderTarget.setSize(...)`，并置 `textureNeedsUpdate = true`。
+- `setResolutionScale(n)`：写 `_resolutionScale`；`autoResize === false` 时调用 `setSize(width, height)`；**返回 this**。`getResolutionScale()` 返回该值。
+- `updateBefore(frame)`：帧更新回调，自动尺寸分支用 `renderer.getDrawingBufferSize(_size)`（`_size` 为模块级共享 `Vector2`，**强引用 keeper**），并做 `resetRendererState`/`setClearColor`/`setRenderTarget`/`_quadMesh.render`/`restoreRendererState`。
+- `clone()`：新建 `TextureNode( this.value, this.uvNode, this.levelNode )` 并复制 `sampler`、设 `referenceNode = this`。
+- `dispose()`：`renderTarget.dispose()` → `_quadMesh.material.dispose()` → 基类 `dispose`。
+- 模块导出：`rtt = ( node, ...params ) => new RTTNode( nodeObject( node ), ...params )`（**length 1**）；`convertToTexture( node, ...params )`（**length 1**）：`isSampleNode`/`isTextureNode` 原样返回、`isPassNode` 返回 `node.getTextureNode()`、否则 `rtt(...)`。
+
+**本轮两处编译/接口修正**：① `nativeNodeConstantsBinding` 声明在根 `constants.h`（不是 `nodes/core/NodeConstants.h`），测试侧包含路径拿不到 → 改为**直接比较字符串 `"frame"`**（上游 `NodeUpdateType.FRAME === "frame"`），两侧一致；② `setResolutionScale`/`rtt`/`convertToTexture` 的 rest 参数转发用 `Args` 逐项展开实现，避免依赖不存在的 helper。
+
+验证：构建 exit 0（差分首次运行即通过）。THREECPPTests **1637 cases / 214,846 assertions 全过**（较上轮 1633/214,808 → +4 例 / +38 断言）。差分 `threecpp.threejs-rtt-node-parity` **Passed**，比较：
+- name/length=1/静态与实例 type、`isRTTNode`、`width/height === null`、`value === renderTarget.texture`、`textureNeedsUpdate`、`autoUpdate`、`_resolutionScale = 1`、`updateBeforeType === "frame"`、`_quadMesh.material.isNodeMaterial`、class `toString` 逐字节；
+- **autoResize**：默认 `true`、显式尺寸 `false` 且 `renderTarget.width = 4`；
+- **setSize 与缩放**：`resolutionScale = 0.5` 时 `setSize(10,5)` → 目标尺寸 **5 × 2**（`floor` 语义）；
+- **setResolutionScale**：自动尺寸节点返回自身且存值 0.25；显式 8×8 节点设 0.5 后目标变为 **4 × 4**；
+- **clone**：返回 texture node、`referenceNode` 指回原节点、`sampler` 同一；
+- **dispose** 不抛；
+- **convertToTexture 四条路径**：sample 原样、texture 原样、pass 走 `getTextureNode()`、其余包装为 `isRTTNode` 且 `node` 同一。
+
+**未执行验证的部分（如实记录）**：`setup(builder)`（需要完整 builder 的 `getSharedContext`）与 `updateBefore(frame)`（需要真实 renderer 的 `getDrawingBufferSize`/`setRenderTarget` 等）**均未执行**；`value` setter 的告警只保证"不改变值"，未比对告警文本；真实渲染未触及。
+
+审计（固定 worktree，HEAD=11738a9d55）：**src missing 23→22、partial 442→443**，`RTTNode` 记 `partial-unverified`。
+
+`src` 剩余 22 个；下一步优先级：① **`PhysicalLightingModel`(32,829)** —— 解锁 `MeshStandard`/`MeshPhysical`/`MeshSSS` → 进而 `NodeMaterials`/`NodeMaterialLoader` 链路（建议单独大轮）；② `NodeLoader`(4,052，依赖齐全) 可先做；③ `PassNode`(26,843) 解锁 `ToonOutlinePassNode`；④ `ShadowNode`(24,331)+`PointShadowNode`(12,693) lighting 收尾。# 当前接续：SubgroupFunctionNode 已移植（gpgpu 家族清零；类型推导与 generate 三分支全部行为级验证），2026-11-05
 
 目标保持 active：固定 three.js 11738a9d55e502fb484cefffcea3a66dc44e9fe9 全部 src + examples/jsm 原生 C++ 逻辑，Vulkan 后端；禁止 CEF/生产 JS 引擎/桥接。阶段本地 Git 提交，不推送。
 

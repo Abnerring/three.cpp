@@ -201,8 +201,8 @@
     "note": "Accepted port scope is src and examples/jsm, including tracked third-party dependencies. Editor/manual web applications are excluded from native application rewrites. Native host behavior, packaging and all three platforms require separate implementation and verification evidence."
   },
   "counts": {
-    "partial-unverified": 578,
-    "missing": 363,
+    "partial-unverified": 579,
+    "missing": 362,
     "vulkan-port-pending": 290,
     "dependency-unverified": 20
   },
@@ -210,8 +210,8 @@
     "src": {
       "modules": 755,
       "counts": {
-        "partial-unverified": 442,
-        "missing": 23,
+        "partial-unverified": 443,
+        "missing": 22,
         "vulkan-port-pending": 290
       }
     },
@@ -922,7 +922,7 @@
       "path": "src/nodes/utils",
       "upstreamFiles": 31,
       "moduleCount": 31,
-      "modulesWithCppFiles": 29,
+      "modulesWithCppFiles": 30,
       "verifiedComplete": 0
     },
     {
@@ -13087,11 +13087,11 @@
       "scope": "src",
       "kind": "core",
       "upstreamSha256": "39a09967be571e46c9a860ec74cf7ec246d9429a8d6741e5b91ed74205ab824c",
-      "header": null,
-      "implementation": null,
+      "header": "src/nodes/utils/RTTNode.h",
+      "implementation": "src/nodes/utils/RTTNode.cpp",
       "expectedHeader": "src/nodes/utils/RTTNode.h",
       "expectedImplementation": "src/nodes/utils/RTTNode.cpp",
-      "status": "missing",
+      "status": "partial-unverified",
       "verifiedComplete": false,
       "apiExtraction": "static-only",
       "verification": {
@@ -13100,7 +13100,9 @@
           "pointer": "/modules/416"
         },
         "upstreamUnitTests": [],
-        "cppUnitTests": [],
+        "cppUnitTests": [
+          "test/unit/src/nodes/utils/RTTNode.tests.cpp"
+        ],
         "reviewedImplementation": [],
         "differentialResults": [],
         "renderingResults": [],

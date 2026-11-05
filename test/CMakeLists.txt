@@ -124,6 +124,7 @@ add_executable(THREECPPTests
         unit/src/nodes/gpgpu/WorkgroupInfoNode.tests.cpp
         unit/src/nodes/gpgpu/AtomicFunctionNode.tests.cpp
         unit/src/nodes/gpgpu/SubgroupFunctionNode.tests.cpp
+        unit/src/nodes/utils/RTTNode.tests.cpp
         unit/src/nodes/utils/SpriteUtils.tests.cpp
         unit/src/nodes/display/ViewportSharedTextureNode.tests.cpp
         unit/src/nodes/utils/SampleNode.tests.cpp
@@ -1197,6 +1198,13 @@ if(THREECPP_NODE_EXECUTABLE AND THREEJS_SOURCE_DIR)
     add_test(NAME threecpp.threejs-subgroup-function-node-parity
         COMMAND "${THREECPP_NODE_EXECUTABLE}" "${CMAKE_CURRENT_SOURCE_DIR}/unit/utils/parity/compare-subgroup-function-node.mjs"
         "${THREEJS_SOURCE_DIR}" "$<TARGET_FILE:ThreeJsSubgroupFunctionNodeParityProbe>")
+endif()
+add_executable(ThreeJsRTTNodeParityProbe unit/utils/parity/RTTNodeParityProbe.cpp)
+target_link_libraries(ThreeJsRTTNodeParityProbe PRIVATE threecpp::threecpp)
+if(THREECPP_NODE_EXECUTABLE AND THREEJS_SOURCE_DIR)
+    add_test(NAME threecpp.threejs-rtt-node-parity
+        COMMAND "${THREECPP_NODE_EXECUTABLE}" "${CMAKE_CURRENT_SOURCE_DIR}/unit/utils/parity/compare-rtt-node.mjs"
+        "${THREEJS_SOURCE_DIR}" "$<TARGET_FILE:ThreeJsRTTNodeParityProbe>")
 endif()
 add_executable(ThreeJsMaterialXColorParityProbe unit/utils/parity/MaterialXColorParityProbe.cpp)
 target_link_libraries(ThreeJsMaterialXColorParityProbe PRIVATE threecpp::threecpp)
