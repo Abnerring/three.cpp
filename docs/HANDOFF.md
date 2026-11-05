@@ -1,4 +1,26 @@
-# 当前接续：**定位 `abrupt completion` 根因**（`coordinateSystem` 必须 2000/2001）→ `renderShadow` 冒烟测试通过，2026-11-05
+# 当前接续：`renderShadow` **六面 face 序号有断言**（PointShadowNode 8 例 / 31 断言），2026-11-05
+
+目标保持 active：固定 three.js 11738a9d55e502fb484cefffcea3a66dc44e9fe9 全部 src + examples/jsm 原生 C++ 逻辑，Vulkan 后端；禁止 CEF/生产 JS 引擎/桥接。阶段本地 Git 提交，不推送。
+
+## 本轮交付
+
+扩展 `renderShadow` 冒烟用例：
+- `renderer.setRenderTarget` 桩改为**在 receiver 上记录**：`_targetCalls` 计数 + `_faces` 数组按顺序记录第二参数（face 序号）；
+- 断言：`_targetCalls == 6`，且 `_faces[0..5]` 依次为 **0,1,2,3,4,5** —— 证明六面循环顺序与 face 参数正确（+7 断言）。
+
+## 验证
+
+- 构建 exit 0；过滤 `*PointShadowNode*` = **8 cases / 31 assertions** 全过。
+- `THREECPPAddonTests` 全套 **1399 cases / 39,014 assertions** 通过。
+- 审计不变（PointShadowNode 已 partial）：src 11 / 454；examples/jsm 322 / 154。
+
+**未执行验证（如实记录）**：未断言 `camera.lookAt` 的目标向量与六面方向表一致（可继续用 receiver 记录）；未断言 `shadowMatrix.makeTranslation` 数值；过滤图仍未做结构差分。
+
+## 下一步
+
+1. 记录 `camera.lookAt` 参数并与 `_cubeDirections*` 期望值对比（六面朝向验证）；
+2. 过滤图弱差分（节点类型）；
+3. 之后推进 `PassNode`(26,843)/`ToonOutlinePassNode`(6,868)/`PhysicalLightingModel`(32,829)。# 当前接续：**定位 `abrupt completion` 根因**（`coordinateSystem` 必须 2000/2001）→ `renderShadow` 冒烟测试通过，2026-11-05
 
 目标保持 active：固定 three.js 11738a9d55e502fb484cefffcea3a66dc44e9fe9 全部 src + examples/jsm 原生 C++ 逻辑，Vulkan 后端；禁止 CEF/生产 JS 引擎/桥接。阶段本地 Git 提交，不推送。
 

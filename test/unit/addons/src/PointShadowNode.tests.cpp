@@ -195,12 +195,26 @@ TEST_CASE("PointShadowNode renders the six cube faces") {
         +[](const JSValue&, const std::vector<JSValue>&, const std::vector<JSValue>&) {
             return JSValue(1);
         }));
-    for (const char* method : {"setClearColor", "setRenderTarget", "clear"}) {
+    for (const char* method : {"setClearColor", "clear"}) {
         renderer.set(method, JSValue::function(
             +[](const JSValue&, const std::vector<JSValue>&, const std::vector<JSValue>&) {
                 return JSValue{};
             }));
     }
+    // The target binding records the six face indices on the receiver.
+    renderer.set("_faces", JSValue::array(0));
+    renderer.set("_targetCalls", JSValue(0));
+    renderer.set("setRenderTarget", JSValue::function(
+        +[](const JSValue& receiver, const std::vector<JSValue>& args,
+            const std::vector<JSValue>&) {
+            JSValue& self = const_cast<JSValue&>(receiver);
+            const auto count = static_cast<std::size_t>(self.get("_targetCalls").toNumber());
+            self.set("_targetCalls", JSValue(static_cast<double>(count + 1)));
+            auto faces = self.get("_faces");
+            faces.set(count, args.size() > 1 ? args[1] : JSValue{});
+            self.set("_faces", faces);
+            return JSValue{};
+        }));
     renderer.set("render", JSValue::function(
         +[](const JSValue&, const std::vector<JSValue>&, const std::vector<JSValue>&) {
             return JSValue{};
@@ -219,4 +233,11 @@ TEST_CASE("PointShadowNode renders the six cube faces") {
     REQUIRE_NOTHROW(node.get("renderShadow").call(node, {frame}));
     REQUIRE(scene.get("name").toString() == "Scene");
     REQUIRE(renderer.get("autoClear").toBoolean());
+    // One target bind per cube face, in order.
+    REQUIRE(renderer.get("_targetCalls").toNumber() == Approx(6));
+    const auto recordedFaces = renderer.get("_faces");
+    for (int face = 0; face < 6; ++face) {
+        REQUIRE(recordedFaces.get(JSValue(static_cast<double>(face))).toNumber() ==
+                Approx(static_cast<double>(face)));
+    }
 }
