@@ -1,4 +1,34 @@
-# 当前接续：nodeProxy 偏差根因找到并消除——是我调用写错，不是运行时的错，2026-11-05
+# 当前接续：ProxyNodeMaterial 已移植（属性代理 + userData 克隆规则，行为级差分），2026-11-05
+
+目标保持 active：固定 three.js 11738a9d55e502fb484cefffcea3a66dc44e9fe9 全部 src + examples/jsm 原生 C++ 逻辑，Vulkan 后端；禁止 CEF/生产 JS 引擎/桥接。阶段本地 Git 提交，不推送。
+
+本轮新增 `src/materials/nodes/ProxyNodeMaterial.{h,cpp}`（4,823 B 源）。它是一个**包装器材质**（extends `Material`），与之前移植的普通材质完全不同，因此用了不同的建类方式：
+
+- **没有静态 `type` getter**（上游亦无），所以**没有用 `makeClass`**（它会强制注册一个 type getter，会让两侧 `ctor.type` 不一致）。改为手工 `builtinConstructor` + `setPrototype(base)` + 手工 `defineProperty` 注册方法，使 `ctor.type` 两侧同为 `undefined`——差分里专门比较了这一点。
+- **构造校验**：`nodeMaterial?.isNodeMaterial !== true` → 抛 `TypeError`（本端口用 `JSTypeError`）。校验在 `super()` 之后（与源码一致）。
+- **`copyProperties`**：遍历 `Object.keys(source)`，跳过 `uuid`/`version`/`_listeners`；**以 `Node` 结尾**的属性若目标自身没有该属性，则用**只读 getter 转发**到 `this.nodeMaterial[property]`（描述符缓存复用），其余属性按值复制。
+- **`cloneUserData`**：`value?.clone !== undefined && value.isTexture !== true` 才克隆，**纹理按同一性保留**。
+- `customProgramCacheKey()` = `uuid + ',' + version`；`build(builder)` 转发；**`version` 有 getter（转发）、setter 为空操作**；`copy(source)`；`clone()` → `new this.constructor(this.nodeMaterial).copy(this)`。
+
+**本轮三处实现细节修正**：① `forIn` 在本仓库不是通用助手（在别处是局部实现），`cloneUserData` 改为用 `ownPropertyNames` + 描述符 `enumerable` 过滤，等价于 `for...in` 的可枚举自有属性；② `plus()` 助手不可用，`customProgramCacheKey` 改为显式字符串拼接（与 JS `+` 对数字的行为一致）；③ **`clone()` 里 `construct` 是内部槽不是属性**，`invoke(ctor,"construct")` 会抛 `Value is not callable`，改用句柄 API `constructor.construct(...)`；同时**补设 `prototype.constructor = ctor`**（`clone()` 依赖 `this.constructor`，`builtinConstructor` 不会自动设置）。这三处都是由实跑报错/断言暴露的，不是猜的。
+
+验证：构建 exit 0，**首次修完即全绿**。THREECPPTests **1607 cases / 214,616 assertions 全过**，较上轮 1602/214,594 增 5 例 22 断言（`*ProxyNodeMaterial*` 5 用例）。差分 `threecpp.threejs-proxy-node-material-parity` **Passed**，且**全部是行为级比较**：
+- 非 NodeMaterial 参数 → **抛错**（两侧 true）；
+- `someValue` 按值复制；**以 `Node` 结尾的属性读取转发**——改 `nodeMaterial.colorNode` 后代理立即读到新值（`colorBeforeChangeShows` / `colorAfterChangeShows` 两项）；
+- **`version` getter 转发**、**setter 为空操作**（赋 99 后仍为 3）；
+- `customProgramCacheKey === "node-uuid,3"`；
+- `build` **转发调用计数 = 1**；
+- userData 克隆：可克隆对象**被克隆一次**且结果带 `copy: true`，**纹理按同一性保留**；
+- `copy` 跳过 `uuid`/`version`/`_listeners`（`copied = 5`、`uuid` 仍是代理自己的）；
+- `clone()` 返回**新实例但包同一 nodeMaterial**。
+
+**未执行验证的部分（如实记录）**：属性描述符的 `enumerable` 只通过"能否被 `Object.keys`/复制"间接体现，未逐字段比对描述符；材质真实渲染路径未触及。
+
+审计（固定 worktree，HEAD=11738a9d55）：**src missing 31→30、partial 434→435**，`ProxyNodeMaterial` 记 `partial-unverified`。
+
+`NodeMaterials.js`（1,639）**仍不能做**：它 re-export 19 个模块，其中 `MeshPhysicalNodeMaterial`、`MeshSSSNodeMaterial`、`MeshStandardNodeMaterial`、`PointsNodeMaterial`、`SpriteNodeMaterial`、`Line2NodeMaterial`（18,172）与 `NodeMaterialObserver`(manager) 仍 missing。本轮补上了其中一个（Proxy），**还剩 6 个**。剩余 missing 中体量较小者：`MeshSSSNodeMaterial`(4,726)、`SpriteNodeMaterial`(4,620)、`MeshStandardNodeMaterial`(4,817)、`PointsNodeMaterial`(4,952)。
+
+下一步：`PointsNodeMaterial`（4,952）或 `MeshSSSNodeMaterial`（4,726）——两者都是普通材质模式（`setDefaultValues` + `setupVariants` 之类），风险低于 `Line2NodeMaterial`；`ShadowNode`（24,331）+ `PointShadowNode`（12,693）仍是 lighting 最后两个缺口，需较充裕上下文。# 当前接续：nodeProxy 偏差根因找到并消除——是我调用写错，不是运行时的错，2026-11-05
 
 目标保持 active：固定 three.js 11738a9d55e502fb484cefffcea3a66dc44e9fe9 全部 src + examples/jsm 原生 C++ 逻辑，Vulkan 后端；禁止 CEF/生产 JS 引擎/桥接。阶段本地 Git 提交，不推送。
 
