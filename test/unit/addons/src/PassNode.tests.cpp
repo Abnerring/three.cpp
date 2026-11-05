@@ -334,3 +334,32 @@ TEST_CASE("PassNode updateBefore renders the scene and restores the state") {
     REQUIRE(node.get("renderTarget").get("width").toNumber() == Approx(320));
     REQUIRE(node.get("renderTarget").get("height").toNumber() == Approx(240));
 }
+TEST_CASE("PassNode wrappers clone their state") {
+    auto passNode = JSValue::object(nullptr);
+    auto texture = JSValue::object(nullptr);
+    texture.set("isTexture", true);
+    const auto passTexture = nativePassTextureNodeConstructor().construct({passNode, texture});
+    const auto clonedTexture = passTexture.get("clone").call(passTexture, {});
+    REQUIRE(clonedTexture.get("type").toString() == "PassTextureNode");
+    REQUIRE(clonedTexture.get("passNode").strictEquals(passNode));
+
+    auto multiple = nativePassMultipleTextureNodeConstructor().construct(
+        {passNode, JSValue("output")});
+    const auto uvNode = JSValue::object(nullptr);
+    multiple.set("uvNode", uvNode);
+    const auto clonedMultiple = multiple.get("clone").call(multiple, {});
+    REQUIRE(clonedMultiple.get("type").toString() == "PassMultipleTextureNode");
+    REQUIRE(clonedMultiple.get("textureName").toString() == "output");
+    REQUIRE(clonedMultiple.get("uvNode").strictEquals(uvNode));
+}
+
+TEST_CASE("PassNode resolution aliases forward to the scale accessors") {
+    auto scene = JSValue::object(nullptr);
+    auto camera = JSValue::object(nullptr);
+    const auto node = nativePassNodeConstructor().construct(
+        {JSValue("color"), scene, camera});
+    const auto returned = node.get("setResolution").call(node, {JSValue(3)});
+    REQUIRE(returned.strictEquals(node));
+    REQUIRE(node.get("getResolution").call(node, {}).toNumber() == Approx(3));
+    REQUIRE(node.get("getResolutionScale").call(node, {}).toNumber() == Approx(3));
+}

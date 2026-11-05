@@ -433,6 +433,31 @@ JSValue passUpdateBefore(const JSValue& rawSelf, const Args& args, const Args&) 
     return JSValue{};
 }
 
+// clone() { return new this.constructor( this.passNode, this.value ); }
+JSValue passTextureClone(const JSValue& self, const Args&, const Args& captures) {
+    return captures.at(0).construct({self.get("passNode"), self.get("value")});
+}
+
+// clone() { const newNode = new this.constructor( passNode, textureName, previousTexture ); ...copy nodes... }
+JSValue passMultipleClone(const JSValue& self, const Args&, const Args& captures) {
+    auto clone = captures.at(0).construct(
+        {self.get("passNode"), self.get("textureName"), self.get("previousTexture")});
+    for (const char* field : {"uvNode", "levelNode", "biasNode", "sampler", "depthNode",
+                              "compareNode", "gradNode", "gatherNode", "offsetNode"}) {
+        clone.set(field, self.get(field));
+    }
+    return clone;
+}
+
+// PassNode.setResolution( resolution ) { warn(...); return this.setResolutionScale( resolution ); }
+JSValue passSetResolution(const JSValue& rawSelf, const Args& args, const Args&) {
+    JSValue& self = const_cast<JSValue&>(rawSelf);
+    return self.get("setResolutionScale").call(self, {arg(args, 0, JSValue(1))});
+}
+JSValue passGetResolution(const JSValue& rawSelf, const Args&, const Args&) {
+    return const_cast<JSValue&>(rawSelf).get("getResolutionScale").call(rawSelf, {});
+}
+
 // constructor( scope, scene, camera, options = {} ) { super( 'vec4' ); ... }
 JSValue passNodeInitialize(const JSValue& target, const Args& args, const Args& captures) {
     auto self = superConstruct(target, captures, {JSValue("vec4")});
@@ -546,6 +571,7 @@ JSValue nativePassNodeModule() {
         auto prototype = passTextureConstructor.get("prototype");
         prototype.setPrototype(texturePrototype);
         method(prototype, "isCacheable", 0, isCacheable, {}, "");
+        method(prototype, "clone", 0, passTextureClone, {passTextureConstructor}, "");
         auto setup = JSValue::function(
             +[](const JSValue& self, const Args& args, const Args& captures) -> JSValue {
                 const auto builder = arg(args, 0);
@@ -567,6 +593,7 @@ JSValue nativePassNodeModule() {
         auto prototype = passMultipleConstructor.get("prototype");
         prototype.setPrototype(passTextureConstructor.get("prototype"));
         method(prototype, "updateTexture", 0, passMultipleTextureUpdate, {}, "");
+        method(prototype, "clone", 0, passMultipleClone, {passMultipleConstructor}, "");
         own(bindings, "PassMultipleTextureNode", passMultipleConstructor);
     }
 
@@ -610,6 +637,8 @@ JSValue nativePassNodeModule() {
         method(prototype, "setViewport", 4, passSetViewport, {}, "");
         method(prototype, "dispose", 0, passDispose, {}, "");
         method(prototype, "updateBefore", 1, passUpdateBefore, {}, "");
+        method(prototype, "setResolution", 1, passSetResolution, {}, "");
+        method(prototype, "getResolution", 0, passGetResolution, {}, "");
     }
     own(bindings, "PassNode", passNodeConstructor);
 

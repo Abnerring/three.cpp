@@ -1,4 +1,33 @@
-# 当前接续：`PassNode` **全部成员实现完毕**（`updateBefore` 落地）—— 待收口验证，2026-11-05
+# 当前接续：`PassNode` 收尾（两个 clone + 废弃别名）—— 仅剩 `compileAsync` 未实现，2026-11-05
+
+目标保持 active：固定 three.js 11738a9d55e502fb484cefffcea3a66dc44e9fe9 全部 src + examples/jsm 原生 C++ 逻辑，Vulkan 后端；禁止 CEF/生产 JS 引擎/桥接。阶段本地 Git 提交，不推送。
+
+## 本轮交付
+
+1. **`PassTextureNode.clone()`**：`new this.constructor(passNode, value)`（构造函数经 captures 传入）；
+2. **`PassMultipleTextureNode.clone()`**：`new this.constructor(passNode, textureName, previousTexture)`，并复制 `uvNode/levelNode/biasNode/sampler/depthNode/compareNode/gradNode/gatherNode/offsetNode` 9 个字段；
+3. **`PassNode.setResolution/getResolution`**（已废弃别名）：转发到 `setResolutionScale/getResolutionScale`（**未发 warn**，不同于上游的 console 告警，已记录）。
+
+## 测试（+2 例 / 8 断言）
+
+两个 wrapper 的 clone 类型/字段保留；resolution 别名往返与 `getResolutionScale` 一致。
+
+## 验证
+
+- 构建 exit 0；过滤 `*Pass*` = **26 cases / 134 assertions** 全过；`THREECPPAddonTests` 全套 **1419 cases / 39,209 assertions** 通过。
+- 审计不变（PassNode 仍 partial）：src 10 / 455；examples/jsm 322 / 154。
+
+**未执行验证（如实记录）**：`compileAsync`（异步编译辅助）**未实现** —— 唯一剩余成员；`setResolution` 缺 warn；XR/context 合并/previous 轮换分支未断言。
+
+## 决策记录
+
+- `compileAsync` 依赖 renderer 异步编译（`await renderer.compileAsync`），与端口同步 C++ 调用模型不同；**暂不实现**，在审计中保留 partial 状态并在此记录原因，待异步基础设施具备后再补。
+
+## 下一步
+
+1. 补 `overrideMaterial`/`_previousTextures`/`contextNode` 分支断言（可选）；
+2. 推进 **`ToonOutlinePassNode`(6,868)**（PassNode 下游，可直接开工）；
+3. 或转 `ReflectorNode`(17,567)/`Line2NodeMaterial`(18,172) 等。# 当前接续：`PassNode` **全部成员实现完毕**（`updateBefore` 落地）—— 待收口验证，2026-11-05
 
 目标保持 active：固定 three.js 11738a9d55e502fb484cefffcea3a66dc44e9fe9 全部 src + examples/jsm 原生 C++ 逻辑，Vulkan 后端；禁止 CEF/生产 JS 引擎/桥接。阶段本地 Git 提交，不推送。
 
