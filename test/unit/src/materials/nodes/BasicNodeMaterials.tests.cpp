@@ -60,3 +60,23 @@ TEST_CASE("MeshNormalNodeMaterial setupDiffuseColor builds the packed normal gra
     // build the node graph rather than fail.
     REQUIRE_NOTHROW(material.get("setupDiffuseColor").call(material, {}));
 }
+
+TEST_CASE("Node materials define their id with a value only descriptor, as the pinned class does") {
+    const auto line = nativeLineBasicNodeMaterialConstructor().construct();
+    // The pinned Material constructor uses Object.defineProperty with a descriptor that only carries a
+    // value, so id is an own property that Object.keys does not list and that cannot be written or
+    // reconfigured. The differential compares this descriptor against the pinned module as well.
+    const auto descriptor = line.getOwnPropertyDescriptor("id");
+    REQUIRE(descriptor.has_value());
+    REQUIRE(descriptor->writable.value_or(true) == false);
+    REQUIRE(descriptor->enumerable.value_or(true) == false);
+    REQUIRE(descriptor->configurable.value_or(true) == false);
+    REQUIRE(line.get("id").type() == JSValue::Type::Number);
+
+    // Object.keys hides it while own property names list it, which is exactly the distinction that made
+    // an earlier comparison look like a deviation.
+    const auto names = line.ownPropertyNames();
+    bool hasId = false;
+    for (const auto& name : names) { if (name == "id") hasId = true; }
+    REQUIRE(hasId);
+}

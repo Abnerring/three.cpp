@@ -9,13 +9,13 @@ assert.equal(execFileSync('git', [ '-C', upstream, 'rev-parse', 'HEAD' ], { enco
 const { default: LineBasicNodeMaterial } = await import(pathToFileURL(path.join(upstream, 'src/materials/nodes/LineBasicNodeMaterial.js')).href);
 const { default: MeshNormalNodeMaterial } = await import(pathToFileURL(path.join(upstream, 'src/materials/nodes/MeshNormalNodeMaterial.js')).href);
 
-// The same structural snapshot the probe takes: own property names, the kind of every value, and every
-// scalar. Object values are compared by structure rather than by content, which is what a material can
-// be checked on without a renderer.
+// The same structural snapshot the probe takes.
+//
+// The enumeration has to be getOwnPropertyNames rather than Object.keys. An earlier run used Object.keys
+// here while the probe used own property names, which made the material id look like a deviation: it is
+// defined with a value only descriptor, so it is an own property that Object.keys hides on both sides.
 const snapshot = (material) => {
-  // uuid is random per instance. id is excluded because this port's material base carries one while
-  // the pinned class does not, a deviation recorded in the handoff and not hidden here.
-  const names = Object.keys(material).filter((name) => name !== 'uuid' && name !== 'id').sort();
+  const names = Object.getOwnPropertyNames(material).filter((name) => name !== 'uuid').sort();
   const kinds = {};
   const scalars = {};
   for (const name of names) {
@@ -28,9 +28,21 @@ const snapshot = (material) => {
     else if (typeof value === 'function') kind = 'function';
     else if (value === undefined) kind = 'undefined';
     kinds[name] = kind;
+    // The id counter is per process, so only its name and kind are comparable.
+    if (name === 'id') continue;
     if (kind === 'number' || kind === 'boolean' || kind === 'string') scalars[name] = value;
   }
   return { names, kinds, scalars };
+};
+
+const descriptorOf = (material) => {
+  const descriptor = Object.getOwnPropertyDescriptor(material, 'id');
+  return {
+    present: descriptor !== undefined,
+    writable: descriptor ? descriptor.writable === true : false,
+    enumerable: descriptor ? descriptor.enumerable === true : false,
+    configurable: descriptor ? descriptor.configurable === true : false
+  };
 };
 
 const line = new LineBasicNodeMaterial();
@@ -43,6 +55,7 @@ const expected = {
   lineType: line.type,
   lineFlag: line.isLineBasicNodeMaterial,
   lineIsNodeMaterial: line.isNodeMaterial,
+  lineIdDescriptor: descriptorOf(line),
   lineFog: line.fog,
   lineLinewidth: line.linewidth,
   lineSnapshot: snapshot(line),
@@ -52,6 +65,7 @@ const expected = {
   normalType: normal.type,
   normalFlag: normal.isMeshNormalNodeMaterial,
   normalIsNodeMaterial: normal.isNodeMaterial,
+  normalIdDescriptor: descriptorOf(normal),
   normalFlatShading: normal.flatShading,
   normalSnapshot: snapshot(normal)
 };

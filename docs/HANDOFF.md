@@ -1,4 +1,24 @@
-# 当前接续：两个 node 材质已移植，发现 Material 基类多出 id 的真实偏差，2026-11-05
+# 当前接续：撤回上轮「Material 多出 id」的结论——是差分两侧枚举 API 不一致，2026-11-05
+
+目标保持 active：固定 three.js 11738a9d55e502fb484cefffcea3a66dc44e9fe9 全部 src + examples/jsm 原生 C++ 逻辑，Vulkan 后端；禁止 CEF/生产 JS 引擎/桥接。阶段本地 Git 提交，不推送。
+
+**本轮是纠错轮，不新增模块。** 上轮我在 HANDOFF 与提交信息里写下「上游 Material 没有 id，我们的移植多出 id，是既有移植的真实偏差」。**该结论是错的，此处正式撤回。**
+
+**事实**：上游 `src/materials/Material.js` 的构造函数里就有 `Object.defineProperty( this, 'id', { value: _materialId ++ } );` —— `id` **存在**，只是用 `defineProperty` 定义且描述符**只给了 `value`**，因此按规范 `enumerable/writable/configurable` 全为 false，即**不可枚举**。上轮我只 grep 了 `this.id`，漏掉这种写法，误判为「没有 id」。
+
+**根因在我的差分脚本，不在移植**：探针用 `material.ownPropertyNames()`（**包含不可枚举**属性），而比较脚本用 `Object.keys(material)`（**只列可枚举**）。于是上游的 `id` 在 JS 侧被 `Object.keys` 隐藏、我们的 `id` 在探针侧被列出 → 看起来像「我们多了一个属性」。**同一份数据，两侧用了不同的观察 API**，这是我上轮该发现而没发现的方法性错误。
+
+**我们的实现本来就正确**：`src/materials/MaterialRuntime.cpp:64` 的 `defineMaterialId` 已经是 `Object.defineProperty( self, "id", { value: id } )`，描述符同样只带 `value`，**与上游完全一致**。
+
+本轮修正：① 两侧统一改用 `Object.getOwnPropertyNames` 枚举，只排除 `uuid`（随机）与 `id` 的**数值**（每进程计数器不可比，但**名字与种类仍参与比较**）；② **新增 `id` 描述符比较**（`present/writable/enumerable/configurable` 四项双侧逐项比对，是"已验证"而非"声称"）；③ 新增一条单测钉住该契约：描述符四项、`id` 为 number、且 `ownPropertyNames` 能列出它而 `Object.keys` 不能。
+
+验证：构建 exit 0。THREECPPTests **1563 cases / 214,386 assertions 全过**，较上轮 1562/214,380 增 1 例 6 断言。差分 `threecpp.threejs-basic-node-materials-parity` **Passed 0.82s**：两个材质的 name/length/静态与实例 type/两个 flag/**id 描述符**/fog/linewidth/flatShading + 完整自有属性快照（排序名集、每值种类、全部标量，仅排除 uuid 名与 id 值）。
+
+**审计计数本轮未变**：`src` missing 45 / partial 420 / vulkan 290。这是**正确的**——本轮无新模块，只修差分与测试，**不声称覆盖率任何提升**。
+
+**方法论教训（写进 HANDOFF 以免重犯）**：差分两侧必须用**同一个观察 API**。`Object.keys` vs `Object.getOwnPropertyNames`、`for...in` vs `Reflect.ownKeys`、可枚举性与原型链差异，都会把「实现正确」误报成「实现偏差」。发现"偏差"时应先核对**两侧观察方式是否等价**，而不是直接下结论。
+
+下一步：① 继续小体量 node 材质（`ShadowNodeMaterial` 1,437 / `MeshMatcapNodeMaterial` 1,694 / `MeshLambertNodeMaterial` 1,861 / `MeshToonNodeMaterial` 1,269）；② `ShadowNode` + `PointShadowNode`（前置已全齐，需较充裕上下文一次做完）。`ShadowNodeMaterial` 还依赖未移植的 `ShadowMaskModel`（1,180 B），可一并做。# 当前接续：两个 node 材质已移植，发现 Material 基类多出 id 的真实偏差，2026-11-05
 
 目标保持 active：固定 three.js 11738a9d55e502fb484cefffcea3a66dc44e9fe9 全部 src + examples/jsm 原生 C++ 逻辑，Vulkan 后端；禁止 CEF/生产 JS 引擎/桥接。阶段本地 Git 提交，不推送。
 
