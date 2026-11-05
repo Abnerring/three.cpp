@@ -43,3 +43,20 @@ TEST_CASE("Linker keeps function parameters in their own block") {
     REQUIRE(inside.linker.reference == &parameter);
     REQUIRE(parameter.linker.accesses.size() == 1);
 }
+
+TEST_CASE("Linker follows loop conditions and function call arguments") {
+    Uniform uniform("float", "uValue");
+    Accessor loopCondition("uValue");
+    Accessor callArgument("uValue");
+    For loop(nullptr, &loopCondition, nullptr, {});
+    FunctionCall call("doSomething", {&callArgument});
+    Program program;
+    program.body = {&uniform, &loop, &call};
+
+    Linker linker;
+    linker.process(&program);
+    REQUIRE(loopCondition.linker.reference == &uniform);
+    REQUIRE(callArgument.linker.reference == &uniform);
+    // Each accessor records itself once on the resolved node.
+    REQUIRE(uniform.linker.accesses.size() == 2);
+}

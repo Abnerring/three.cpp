@@ -1,4 +1,29 @@
-# 当前接续：`transpiler/Linker.js` 移植落地（4 绿用例；1 处待诊断缺口 + 单条件 switch 差异），2026-11-05
+# 当前接续：Linker 被剔除用例已恢复（原失败为测试自身期望错误），2026-11-05
+
+目标保持 active：固定 three.js 11738a9d55e502fb484cefffcea3a66dc44e9fe9 全部 src + examples/jsm 原生 C++ 逻辑，Vulkan 后端；禁止 CEF/生产 JS 引擎/桥接。阶段本地 Git 提交，不推送。
+
+## 本轮内容
+
+r101 移除了 Linker 第 5 个用例（`For` 条件 + `FunctionCall` 实参），原因是有 1 条断言失败且未及抓取展开。本轮恢复并修正：
+
+- **根因（测试期望错误，非实现错误）**：原用例用**同一个** `Accessor` 节点同时放进 `For.condition` 与 `FunctionCall.params`，Linker 会把同一 accessor 处理两次并 push 两次 → `accesses.size()` 实际为 **2**，而原断言期望 1。
+- **修复**：改用**两个不同的 accessor**（`loopCondition` / `callArgument`）分别验证，断言 `accesses.size() == 2` 并各自检查 `reference == &uniform`。
+- 结果：`*Linker*` = **5 cases / 18 assertions 全绿**。
+
+**经验**：同一 AST 节点被 linker 访问两次会重复记账（上游同样如此，JavaScript 里 push 两次）——**单测断言必须先明确「节点身份 vs 访问次数」**。
+
+## 验证
+
+- 构建 exit 0；`THREECPPAddonTests` 全套 **1360 cases / 38,868 assertions** 通过（+1 例 / +3 断言）。
+- 审计不变（测试补充）：examples/jsm 323 / 153；src 13 / 452。
+
+**未执行验证（如实记录）**：Linker **仍无差分**；多条件 switch 未支持（AST 单指针差异已记录）；`Switch`/`Conditional`/`Ternary`/`AccessorElements` 分支仍无测试（实现有，覆盖不足）。
+
+## 下一步
+
+1. **Linker 差分**（`data:` URL，无相对导入）：Program+Uniform+Accessor+Operator 赋值场景，比较 `reference` 链路与 `accesses`/`assignments` 计数；
+2. 补分支测试：`Conditional`（else 链）、`Ternary`、`AccessorElements`、`Switch`（单条件）；
+3. `ShadowNode`(24,331) / `PhysicalLightingModel`(32,829)。# 当前接续：`transpiler/Linker.js` 移植落地（4 绿用例；1 处待诊断缺口 + 单条件 switch 差异），2026-11-05
 
 目标保持 active：固定 three.js 11738a9d55e502fb484cefffcea3a66dc44e9fe9 全部 src + examples/jsm 原生 C++ 逻辑，Vulkan 后端；禁止 CEF/生产 JS 引擎/桥接。阶段本地 Git 提交，不推送。
 
