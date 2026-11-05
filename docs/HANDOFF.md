@@ -1,4 +1,29 @@
-# 当前接续：addon `TranspilerUtils` 移植（正则/标志模拟，输入电池逐项差分），examples 连续第 8 个，2026-11-05
+# 当前接续：addon `GeometryUtils` 移植（Hilbert 2D/3D + Gosper 三个纯点生成器，逐点差分），examples 连续第 9 个，2026-11-05
+
+目标保持 active：固定 three.js 11738a9d55e502fb484cefffcea3a66dc44e9fe9 全部 src + examples/jsm 原生 C++ 逻辑，Vulkan 后端；禁止 CEF/生产 JS 引擎/桥接。阶段本地 Git 提交，不推送。
+
+## 本轮交付：`examples/jsm/utils/GeometryUtils`
+
+- `examples/jsm/utils/GeometryUtils.{h,cpp}`：命名空间 `GeometryUtils`，**三个纯函数**（上游该文件只导出这三个）：
+  - `hilbert2D(center = (0,0,0), size = 10, iterations = 1, v0..v3 = 0..3)` → `std::vector<Vector3>`：四角 + `if (0 <= --iterations)` 的 4 路递归，**参数顺序与重复角索引（`v0,v3,v2,v1` 等）逐字照抄**。
+  - `hilbert3D(center, size = 10, iterations = 1, v0..v7 = 0..7)` → 八角 + `if (--iterations >= 0)` 的 8 路递归，同样逐字照抄 8 组索引排列。
+  - `gosper(size = 1)` → `std::vector<double>`（扁平 xyz，起点 `(0,0,0)`）：`A`/`B` 两条重写规则迭代 **4 步**（`A→A+BF++BF-FA--FAFA-BF+`、`B→-FA+BFBF++BF+FA--FA-B`），然后按 `+/-/F` 走角，转角 `π/3`。
+- `test/unit/addons/utils/GeometryUtils.tests.cpp`（3 用例）：hilbert2D 1 层 16 点 / 2 层 64 点；**首点坐标 `(-7.5,0,-7.5)`**（我最初手算成 `(-5,0,-5)`，忘了递归后半长再减半，**差分已证实现正确、错的是断言**）；hilbert3D 1 层 64 点、首点 `(-7.5,7.5,-7.5)`；gosper 起点为原点、`size=2` 时每个坐标严格是 `size=1` 的 2 倍（逐点断言，故断言数达 7 千余）。
+- 差分 `GeometryUtilsParityProbe.cpp` + `compare-geometry-utils.mjs`：**7 组输出逐点比对**（hilbert2D 默认/2 层/自定义角序、hilbert3D 默认/自定义角序、gosper size=1/2），全部按 1e-12 容差。
+
+## 验证
+
+- 构建 exit 0。
+- `THREECPPAddonTests`：**1311 cases / 38,539 assertions 全过**（上轮 1308/31,322；断言 +7,217 来自逐点断言）。
+- 差分 `threecpp.threejs-geometry-utils-parity` **Passed**（7 组、全部点）。
+- 审计：**examples/jsm missing 332→331、partial-unverified 144→145**；`src` 不变（19 / 446）。
+
+**未执行验证（如实记录）**：未做渲染；`iterations` 只测到 2（未穷举更深层，避免指数增长）；`gosper` 只测 size 1 与 2；三角函数用 `std::cos/sin` 与 V8 的 `Math.cos/sin` 在 1e-12 内一致，**未做逐 ulp 比对**。
+
+## 下一步
+
+examples 中段候选（实测无缺失依赖、无宿主 API）：`objects/ShadowMesh`(3418)、`helpers/RectAreaLightHelper`(3089)、`modifiers/SimplifyModifier`(4569)、`exporters/OBJExporter`(6378，需注意 **JS 数字→字符串格式化** 差异)、`misc/MorphBlendMesh`(8516，与已完成的 MorphAnimMesh 同族)、`utils/SceneUtils`(8997)、`transpiler/AST.js`(8868，移植后可与上轮的 TranspilerUtils 联调)。
+src 侧仍剩 19 个（`ShadowNode` 24,331 / `PhysicalLightingModel` 32,829 为最大缺口）。# 当前接续：addon `TranspilerUtils` 移植（正则/标志模拟，输入电池逐项差分），examples 连续第 8 个，2026-11-05
 
 目标保持 active：固定 three.js 11738a9d55e502fb484cefffcea3a66dc44e9fe9 全部 src + examples/jsm 原生 C++ 逻辑，Vulkan 后端；禁止 CEF/生产 JS 引擎/桥接。阶段本地 Git 提交，不推送。
 

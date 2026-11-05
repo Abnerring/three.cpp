@@ -201,8 +201,8 @@
     "note": "Accepted port scope is src and examples/jsm, including tracked third-party dependencies. Editor/manual web applications are excluded from native application rewrites. Native host behavior, packaging and all three platforms require separate implementation and verification evidence."
   },
   "counts": {
-    "partial-unverified": 590,
-    "missing": 351,
+    "partial-unverified": 591,
+    "missing": 350,
     "vulkan-port-pending": 290,
     "dependency-unverified": 20
   },
@@ -218,8 +218,8 @@
     "examples/jsm": {
       "modules": 496,
       "counts": {
-        "missing": 332,
-        "partial-unverified": 144,
+        "missing": 331,
+        "partial-unverified": 145,
         "dependency-unverified": 20
       }
     }
@@ -628,7 +628,7 @@
       "path": "examples/jsm/utils",
       "upstreamFiles": 17,
       "moduleCount": 17,
-      "modulesWithCppFiles": 6,
+      "modulesWithCppFiles": 7,
       "verifiedComplete": 0
     },
     {
@@ -35315,11 +35315,11 @@
       "scope": "examples/jsm",
       "kind": "addon",
       "upstreamSha256": "bdece871a09c47676f83af6bf554838486b0330e9791bf7deb2c8d29902b8553",
-      "header": null,
-      "implementation": null,
+      "header": "examples/jsm/utils/GeometryUtils.h",
+      "implementation": "examples/jsm/utils/GeometryUtils.cpp",
       "expectedHeader": "examples/jsm/utils/GeometryUtils.h",
       "expectedImplementation": "examples/jsm/utils/GeometryUtils.cpp",
-      "status": "missing",
+      "status": "partial-unverified",
       "verifiedComplete": false,
       "apiExtraction": "static-only",
       "verification": {
@@ -35328,7 +35328,9 @@
           "pointer": "/modules/1226"
         },
         "upstreamUnitTests": [],
-        "cppUnitTests": [],
+        "cppUnitTests": [
+          "test/unit/addons/utils/GeometryUtils.tests.cpp"
+        ],
         "reviewedImplementation": [],
         "differentialResults": [],
         "renderingResults": [],
