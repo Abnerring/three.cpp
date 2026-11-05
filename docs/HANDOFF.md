@@ -1,4 +1,29 @@
-# 当前接续：AST 第三批（`VariableDeclaration` / `FunctionParameter` / `FunctionDeclaration`），30 类完成 10 个，2026-11-05
+# 当前接续：AST 第四批（`Operator`/`Unary`/`Number`/`String`/`Conditional`），30 类完成 15 个，2026-11-05
+
+目标保持 active：固定 three.js 11738a9d55e502fb484cefffcea3a66dc44e9fe9 全部 src + examples/jsm 原生 C++ 逻辑，Vulkan 后端；禁止 CEF/生产 JS 引擎/桥接。阶段本地 Git 提交，不推送。
+
+## 本轮交付（`examples/jsm/transpiler/AST`，8→11 用例 / 15→20 断言域外新增 3 用例 36 断言）
+
+- **`Operator`**：`type`/`left`/`right`、`isOperator`；`isAssignmentValue()` 用上游正则 `^(=|\+=|-=|\*=|\/=|%=|<<=|>>=|>>>=|&=|\^=|\|=)$`；`isNumericExpression()` = 两侧均为数值表达式；**`getType()` 用 `TranspilerUtils::toFloatType` 合成**（类型相同返回；`toFloatType` 相同返回转换值；否则 null）；`initialize()` adopt 两侧。
+- **`Unary`**：`type`/`expression`/`after`、`isUnary`；`isAssignmentValue()` = `^(\+\+|--)$`；`isNumericExpression()` = `expression->isNumberNode()`（为此在基类新增 `virtual bool isNumberNode()`，`Number` 覆盖 true）；`initialize()` adopt。
+- **`Number`**：`type`(默认 `"float"`)/`value`、`isNumber`、`isNumberNode()`/`isNumericExpression()` 均 true、`getType()` 覆盖。
+- **`String`**：`value`、`isString`。
+- **`Conditional`**：`cond`/`body`/`elseConditional`、`isConditional`；`initialize()` adopt cond、else 与 body。
+- 测试（3 用例）：运算符赋值正则（`+=`/`>>>=` 真、`<` 假）、混合 `float`+`int` 经 `toFloatType` 合成 `float`、数值表达式判定（含 `String` 参与时为假）；`Unary` 三谓词 + parent；`Number`/`String`/`Conditional` 字段与 adopt。
+
+## 验证
+
+- 构建 exit 0；过滤 `*AST*` = 36 cases / 201 assertions 全过（含既有 AST 相关用例）；`THREECPPAddonTests` 全套 **1352 cases / 38,818 assertions** 通过（+3 例 / +29 断言）。
+- 审计：`examples/jsm` 计数不变（AST 已 partial）：missing 324 / partial 152；src 13 / 452。
+
+**未执行验证（如实记录）**：30 类完成 **15 个**；**仍无差分**（仅单测）；`FunctionCall`/`Return`/`Discard`/`Continue`/`Break`/`Accessor` 系列/`For`/`While`/`Switch`/`Struct*` 未做；`Operator::getType` 的取 null 分支未断言。
+
+## 下一步
+
+1. 剩余类（`FunctionCall` 起，源码 ~430 行后）：先读再实现，保持「不写占位」；
+2. 完成 30 类后加数据级差分（构造 → 字段 → `isAssignmentValue`/`isNumericExpression`/`getType`）；
+3. 与 `TranspilerUtils::isExpression` 联调；
+4. 之后：`ShadowNode`(24,331) / `PhysicalLightingModel`(32,829)。# 当前接续：AST 第三批（`VariableDeclaration` / `FunctionParameter` / `FunctionDeclaration`），30 类完成 10 个，2026-11-05
 
 目标保持 active：固定 three.js 11738a9d55e502fb484cefffcea3a66dc44e9fe9 全部 src + examples/jsm 原生 C++ 逻辑，Vulkan 后端；禁止 CEF/生产 JS 引擎/桥接。阶段本地 Git 提交，不推送。
 

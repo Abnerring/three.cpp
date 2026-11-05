@@ -33,6 +33,8 @@ class ASTNode {
 
     virtual bool isNumericExpression() const { return false; }
     virtual bool isProgramNode() const { return false; }
+    // The pinned numeric literal classes expose an isNumber property; Unary reads it.
+    virtual bool isNumberNode() const { return false; }
     virtual std::optional<std::string> getType() const { return std::nullopt; }
 
     // get hasAssignment() { if ( this.isAssignment === true ) return true; if ( parent === null ) return false; return parent.hasAssignment; }
@@ -148,5 +150,64 @@ class FunctionDeclaration : public ASTNode {
     FunctionDeclaration(std::string type, std::string name, std::vector<ASTNode*> params = {},
                         std::vector<ASTNode*> body = {});
     std::optional<std::string> getType() const override { return type; }
+    void initialize() override;
+};
+class Operator : public ASTNode {
+  public:
+    const bool isOperator = true;
+    std::string type;
+    ASTNode* left = nullptr;
+    ASTNode* right = nullptr;
+
+    Operator(std::string type, ASTNode* left, ASTNode* right);
+    // get isAssignment() { return /^(=|\+=|-=|\*=|\/=|%=|<<=|>>=|>>>=|&=|\^=|\|=)$/.test( this.type ); }
+    bool isAssignmentValue() const override;
+    bool isNumericExpression() const override;
+    std::optional<std::string> getType() const override;
+    void initialize() override;
+};
+
+class Unary : public ASTNode {
+  public:
+    const bool isUnary = true;
+    std::string type;
+    ASTNode* expression = nullptr;
+    bool after = false;
+
+    Unary(std::string type, ASTNode* expression, bool after = false);
+    // get isAssignment() { return /^(\+\+|--)$/.test( this.type ); }
+    bool isAssignmentValue() const override;
+    bool isNumericExpression() const override;
+    void initialize() override;
+};
+
+class Number : public ASTNode {
+  public:
+    const bool isNumber = true;
+    std::string type;
+    double value = 0;
+
+    explicit Number(double value, std::string type = "float");
+    bool isNumberNode() const override { return true; }
+    bool isNumericExpression() const override { return true; }
+    std::optional<std::string> getType() const override { return type; }
+};
+
+class String : public ASTNode {
+  public:
+    const bool isString = true;
+    std::string value;
+
+    explicit String(std::string value);
+};
+
+class Conditional : public ASTNode {
+  public:
+    const bool isConditional = true;
+    ASTNode* cond = nullptr;
+    std::vector<ASTNode*> body;
+    ASTNode* elseConditional = nullptr;
+
+    explicit Conditional(ASTNode* cond = nullptr, std::vector<ASTNode*> body = {});
     void initialize() override;
 };

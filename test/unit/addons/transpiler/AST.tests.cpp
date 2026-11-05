@@ -125,3 +125,66 @@ TEST_CASE("AST function parameter and declaration keep their payloads and adopt 
     REQUIRE(firstStatement.getProgram() == nullptr);
 }
 
+
+TEST_CASE("AST operators compute the assignment, numeric and type predicates") {
+    Number leftOne(1.0);
+    Number rightTwo(2.0, "int");
+    Operator add("+", &leftOne, &rightTwo);
+    REQUIRE(add.isOperator);
+    REQUIRE_FALSE(add.isAssignmentValue());
+    REQUIRE(add.isNumericExpression());
+    // float and int unify through toFloatType.
+    REQUIRE(add.getType().has_value());
+    REQUIRE(*add.getType() == "float");
+
+    Operator assign("+=", &leftOne, &rightTwo);
+    REQUIRE(assign.isAssignmentValue());
+    Operator shift(">>>=", &leftOne, &rightTwo);
+    REQUIRE(shift.isAssignmentValue());
+    Operator plain("<", &leftOne, &rightTwo);
+    REQUIRE_FALSE(plain.isAssignmentValue());
+
+    String text("hello");
+    Operator mixed("+", &leftOne, &text);
+    REQUIRE_FALSE(mixed.isNumericExpression());
+}
+
+TEST_CASE("AST unary nodes follow the pinned predicates") {
+    Number one(1.0);
+    Unary increment("++", &one);
+    REQUIRE(increment.isUnary);
+    REQUIRE(increment.isAssignmentValue());
+    REQUIRE(increment.isNumericExpression());
+    REQUIRE(one.parent == &increment);
+
+    Unary negate("-", &one);
+    REQUIRE_FALSE(negate.isAssignmentValue());
+    REQUIRE(negate.isNumericExpression());
+    REQUIRE(negate.after == false);
+
+    String text("x");
+    Unary onString("!", &text);
+    REQUIRE_FALSE(onString.isNumericExpression());
+}
+
+TEST_CASE("AST number, string and conditional nodes keep their payloads") {
+    Number number(3.5, "int");
+    REQUIRE(number.isNumber);
+    REQUIRE(number.isNumberNode());
+    REQUIRE(number.isNumericExpression());
+    REQUIRE(number.value == Approx(3.5));
+    REQUIRE(*number.getType() == "int");
+
+    String text("value");
+    REQUIRE(text.isString);
+    REQUIRE(text.value == "value");
+
+    Uniform first("float", "uA");
+    std::vector<ASTNode*> body{&first};
+    Conditional conditional(&first, body);
+    REQUIRE(conditional.isConditional);
+    REQUIRE(conditional.cond == &first);
+    REQUIRE(conditional.body.size() == 1);
+    REQUIRE(conditional.elseConditional == nullptr);
+    REQUIRE(first.parent == &conditional);
+}

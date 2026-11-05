@@ -1,6 +1,11 @@
 #include "transpiler/AST.h"
 
+#include <regex>
+#include <string>
+
 #include <utility>
+
+#include "transpiler/TranspilerUtils.h"
 
 bool ASTNode::hasAssignment() const {
     if (isAssignmentValue()) return true;
@@ -82,5 +87,67 @@ FunctionDeclaration::FunctionDeclaration(std::string type, std::string name,
 
 void FunctionDeclaration::initialize() {
     for (auto* parameter : params) adopt(parameter);
+    for (auto* statement : body) adopt(statement);
+}
+Operator::Operator(std::string type, ASTNode* left, ASTNode* right)
+    : type(std::move(type)), left(left), right(right) {
+    initialize();
+}
+
+bool Operator::isAssignmentValue() const {
+    static const std::regex pattern("^(=|\\+=|-=|\\*=|/=|%=|<<=|>>=|>>>=|&=|\\^=|\\|=)$");
+    return std::regex_match(type, pattern);
+}
+
+bool Operator::isNumericExpression() const {
+    return left != nullptr && right != nullptr && left->isNumericExpression() &&
+           right->isNumericExpression();
+}
+
+std::optional<std::string> Operator::getType() const {
+    if (left == nullptr || right == nullptr) return std::nullopt;
+    const auto leftType = left->getType();
+    const auto rightType = right->getType();
+    if (!leftType.has_value() || !rightType.has_value()) return std::nullopt;
+    if (*leftType == *rightType) return leftType;
+    if (TranspilerUtils::toFloatType(*leftType) == TranspilerUtils::toFloatType(*rightType)) {
+        return TranspilerUtils::toFloatType(*leftType);
+    }
+    return std::nullopt;
+}
+
+void Operator::initialize() {
+    adopt(left);
+    adopt(right);
+}
+
+Unary::Unary(std::string type, ASTNode* expression, bool after)
+    : type(std::move(type)), expression(expression), after(after) {
+    initialize();
+}
+
+bool Unary::isAssignmentValue() const {
+    static const std::regex pattern("^(\\+\\+|--)$");
+    return std::regex_match(type, pattern);
+}
+
+bool Unary::isNumericExpression() const {
+    return expression != nullptr && expression->isNumberNode();
+}
+
+void Unary::initialize() { adopt(expression); }
+
+Number::Number(double value, std::string type) : type(std::move(type)), value(value) {}
+
+String::String(std::string value) : value(std::move(value)) {}
+
+Conditional::Conditional(ASTNode* cond, std::vector<ASTNode*> body)
+    : cond(cond), body(std::move(body)) {
+    initialize();
+}
+
+void Conditional::initialize() {
+    adopt(cond);
+    adopt(elseConditional);
     for (auto* statement : body) adopt(statement);
 }
