@@ -1,4 +1,29 @@
-# 当前接续：`src/nodes/Nodes.js` 聚合器做成如实标注缺口的聚合头，src 缺口 14→13，2026-11-05
+# 当前接续：addon `STLExporter` 移植（ascii 文档逐字节差分，含 JS 数字格式化验证），examples 连续第 13 个，2026-11-05
+
+目标保持 active：固定 three.js 11738a9d55e502fb484cefffcea3a66dc44e9fe9 全部 src + examples/jsm 原生 C++ 逻辑，Vulkan 后端；禁止 CEF/生产 JS 引擎/桥接。阶段本地 Git 提交，不推送。
+
+## 本轮交付：`examples/jsm/exporters/STLExporter`
+
+- `examples/jsm/exporters/STLExporter.{h,cpp}`：`class STLExporter { std::string parse(const Object3D& scene, bool binary = false) const; }`。
+  - ascii 路径逐行照抄上游：`solid exported` 头；`scene.traverse` 收集 `isMesh` 几何；有 index 就按 index 每 3 个取三角形，否则按 position 顺序每 3 个；顶点经 **`matrixWorld`** 变换；法线按上游顺序 `cb = vC - vB`、`ab = vA - vB`、`cb.cross(ab).normalize()`、`normal = cb.normalize()`；输出 `facet normal …` / `outer loop` / 三行 `vertex` / `endloop` / `endfacet`；结尾 `endsolid exported`。
+  - **数字格式化**：`JSValue(value).toString()`（本运行时的 JS Number→String 算法）——差分**整份 ascii 文档逐字节相等**，等于同时验证了 `0.5/-0.5/0/1…` 的格式化与上游字符串拼接一致。
+  - `traverse` 在 C++ 非 const → 内部 `const_cast<Object3D&>(scene)`（只读遍历，已注释）。
+- **明确未移植（partial 原因）**：`binary` 分支需要 DataView 字节布局 → 调用时**抛 `std::runtime_error`**，不静默退化；`isSkinnedMesh` 的 `applyBoneTransform` 未接（只用几何 + 世界矩阵）。
+- `test/unit/addons/exporters/STLExporter.tests.cpp`（3 用例 / 5 断言）：单三角形**精确完整字符串**、index 路径 + `matrixWorld` 平移后三个顶点、binary 抛错。
+- 差分 `STLExporterParityProbe.cpp` + `compare-stl-exporter.mjs`：`BoxGeometry` + 平移 `(1,2,3)` 场景，**整份 ascii 文档 + 行数/前后缀**逐字节比对。
+
+## 验证
+
+- 构建 exit 0；过滤 `*STLExporter*` = 3 cases / 5 assertions 通过。
+- 差分 `threecpp.threejs-stl-exporter-parity` **Passed**（字节级）。
+- 审计：**examples/jsm missing 328→327、partial-unverified 148→149**；`src` 不变（13 / 452）。
+
+**未执行验证（如实记录）**：binary STL 分支未实现（抛错）；SkinnedMesh 骨骼变换未接；只测了索引/非索引两种几何与一个平移矩阵，未测旋转缩放矩阵（矩阵变换本身有独立测试）；未做真实文件落盘。
+
+## 下一步
+
+examples/jsm 剩余 327。已排除：`SimplifyModifier`（依赖 meshopt **wasm** 库，未移植）、`MaterialXArchive`（fflate/Blob 宿主边界）、`InstancedMeshGenerator`（需 JS 侧可写状态）。可做候选：`utils/SceneUtils`(8997)、`transpiler/AST.js`(8868，可与 `TranspilerUtils` 联调)、`exporters/OBJExporter`(6378，同数字格式化范式已验证)。
+src 剩余 13（`ShadowNode` 24,331 依赖齐备 / `PhysicalLightingModel` 32,829 解锁三材质）。# 当前接续：`src/nodes/Nodes.js` 聚合器做成如实标注缺口的聚合头，src 缺口 14→13，2026-11-05
 
 目标保持 active：固定 three.js 11738a9d55e502fb484cefffcea3a66dc44e9fe9 全部 src + examples/jsm 原生 C++ 逻辑，Vulkan 后端；禁止 CEF/生产 JS 引擎/桥接。阶段本地 Git 提交，不推送。
 

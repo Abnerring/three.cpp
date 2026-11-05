@@ -201,8 +201,8 @@
     "note": "Accepted port scope is src and examples/jsm, including tracked third-party dependencies. Editor/manual web applications are excluded from native application rewrites. Native host behavior, packaging and all three platforms require separate implementation and verification evidence."
   },
   "counts": {
-    "partial-unverified": 600,
-    "missing": 341,
+    "partial-unverified": 601,
+    "missing": 340,
     "vulkan-port-pending": 290,
     "dependency-unverified": 20
   },
@@ -218,8 +218,8 @@
     "examples/jsm": {
       "modules": 496,
       "counts": {
-        "missing": 328,
-        "partial-unverified": 148,
+        "missing": 327,
+        "partial-unverified": 149,
         "dependency-unverified": 20
       }
     }
@@ -285,7 +285,7 @@
       "path": "examples/jsm/exporters",
       "upstreamFiles": 8,
       "moduleCount": 8,
-      "modulesWithCppFiles": 0,
+      "modulesWithCppFiles": 1,
       "verifiedComplete": 0
     },
     {
@@ -23442,11 +23442,11 @@
       "scope": "examples/jsm",
       "kind": "addon",
       "upstreamSha256": "06cdb21dc7b0dd29bdac2f0a335cb98a218ec745d2ce19a6f2dbe4ed7f649791",
-      "header": null,
-      "implementation": null,
+      "header": "examples/jsm/exporters/STLExporter.h",
+      "implementation": "examples/jsm/exporters/STLExporter.cpp",
       "expectedHeader": "examples/jsm/exporters/STLExporter.h",
       "expectedImplementation": "examples/jsm/exporters/STLExporter.cpp",
-      "status": "missing",
+      "status": "partial-unverified",
       "verifiedComplete": false,
       "apiExtraction": "partial-static",
       "verification": {
@@ -23455,7 +23455,9 @@
           "pointer": "/modules/793"
         },
         "upstreamUnitTests": [],
-        "cppUnitTests": [],
+        "cppUnitTests": [
+          "test/unit/addons/exporters/STLExporter.tests.cpp"
+        ],
         "reviewedImplementation": [],
         "differentialResults": [],
         "renderingResults": [],
