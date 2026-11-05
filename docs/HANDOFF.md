@@ -1,4 +1,36 @@
-# 当前接续：`setupShadow` **段 4（过滤/输出）**落地 —— `ShadowNode` 仅剩段 2（VSM 两趟），2026-11-05
+# 当前接续：VSM pass 转写首次尝试失败并回滚（两条 API 误用已定位），2026-11-05
+
+目标保持 active：固定 three.js 11738a9d55e502fb484cefffcea3a66dc44e9fe9 全部 src + examples/jsm 原生 C++ 逻辑，Vulkan 后端；禁止 CEF/生产 JS 引擎/桥接。阶段本地 Git 提交，不推送。
+
+## 本轮结果：失败轮（已回滚，无残留）
+
+尝试在 `ShadowNode.cpp` 内转写 `VSMPassVertical`/`VSMPassHorizontal`（共享 body + captured 布尔）并插入段 2。构建失败于两处 API 误用，且 horizontal 的方差项（`add(distribution.y², distribution.x²)`）尚未完成 → **按纪律 `git checkout` 回滚该文件**，`dirty = 0`，构建 exit 0、套件 **1379 cases / 38,948 assertions** 全绿。
+
+## 已定位的 API 误用（下一轮直接避免）
+
+1. **`invoke(node, "method")` 返回 `Invocation`，不是 `JSValue`**：
+   - 取属性不能用 `invoke(x, "value")`，应直接 `x.get("value")`；
+   - 调用方法必须补调用括号：`invoke(node, "mul")({other})`。
+2. **`Loop` 调用**应写 `nativeLoopNodeBinding("Loop").call({}, {config, loopBody})`，**不能** `invoke(loopNode, "call")({...})`（`call` 是 JSValue 方法不是节点方法）。
+3. **水平方差项**需构造 add 节点：`nativeOperatorNodeBinding("add").call({}, {a, b})`（不能传空参数占位）。
+
+## VSM pass 实现要点（结合 r134/r135 规格）
+
+- 共享 body + `JSValue::function(body, {JSValue(vertical), ...}, ...)` 捕获：`vertical`、`uvStride`、`uvStart`、`radius`、`size`、`shadowPass`、`mean`、`squaredMean`、`depthLayer`；
+- 循环内：`float(i)`（`nativeTSLBaseBinding("float").call({}, {i})`）→ `uvOffset = uvStart.add(float(i).mul(uvStride))` → `vec2(0, uvOffset)`（垂直）或 `vec2(uvOffset, 0)`（水平）→ `.mul(radius)` → `screenCoordinate.xy.add(...)` → `.div(size)` → `shadowPass.sample(uv)` → 数组纹理 `.depth(depthLayer)` → `.x`（水平另取 `.y`）；
+- 循环后：`mean.divAssign(samples)`、`squaredMean.divAssign(samples)`、`sqrt(squaredMean.sub(mean.mul(mean)).max(0))`、`vec2(mean, std_dev)`；
+- **建议**：先只实现 Vertical（单侧），跑通编译与一个「Fn 可调用并返回节点」的测试，再做 Horizontal 与段 2 组装。
+
+## 验证
+
+- 回滚后 `git status`：`dirty = 0`；构建 exit 0；`THREECPPAddonTests` 1379/38,948 全过。
+- 审计不变：src 12 / 453；examples/jsm 322 / 154。
+
+## 下一步
+
+1. 按上述修正实现 **VSMPassVertical**（先 Vertical）→ 测试 Fn 调用返回节点；
+2. 再 Horizontal（含 add 方差项）与段 2 组装（RT/采样/references/context/两个 NodeMaterial）；
+3. 完成后 `ShadowNode` 收口 → `PointShadowNode`、`_quadMesh` 单例、`updateShadow` 真实 renderer 夹具。# 当前接续：`setupShadow` **段 4（过滤/输出）**落地 —— `ShadowNode` 仅剩段 2（VSM 两趟），2026-11-05
 
 目标保持 active：固定 three.js 11738a9d55e502fb484cefffcea3a66dc44e9fe9 全部 src + examples/jsm 原生 C++ 逻辑，Vulkan 后端；禁止 CEF/生产 JS 引擎/桥接。阶段本地 Git 提交，不推送。
 
