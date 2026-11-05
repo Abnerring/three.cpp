@@ -1,4 +1,35 @@
-# 当前接续：addon `ColorUtils.setKelvin` 移植（12 温度点 × 3 通道数值级差分 + 精确 hex），examples 连续第 3 个，2026-11-05
+# 当前接续：addon `MorphAnimMesh` 移植（工厂构造适配 + 行为级差分），examples 连续第 4 个，2026-11-05
+
+目标保持 active：固定 three.js 11738a9d55e502fb484cefffcea3a66dc44e9fe9 全部 src + examples/jsm 原生 C++ 逻辑，Vulkan 后端；禁止 CEF/生产 JS 引擎/桥接。阶段本地 Git 提交，不推送。
+
+## 本轮交付：`examples/jsm/misc/MorphAnimMesh`
+
+- `examples/jsm/misc/MorphAnimMesh.{h,cpp}`：`class MorphAnimMesh : public Mesh`，字段 `std::shared_ptr<AnimationMixer> mixer`、`JSValue activeAction`。
+  - `setDirectionForward/Backward()`：`mixer->timeScale = ±1`。
+  - `playAnimation(label, fps)`：先 `stop()` 旧 action 并清空；`AnimationClip::findByName(*this, label)`；找不到**抛 `std::runtime_error("THREE.MorphAnimMesh: animations[<label>] undefined in .playAnimation()")`**；找到则 `clipAction` 并设 `timeScale = (clip->tracks->size() * fps) / clip->duration`，`activeAction = action.play()`。
+  - `updateAnimation(delta)`：`mixer->update(delta)`。
+  - `copy(source, recursive)`：基类拷贝后**重建 mixer**（`shared_from_this()`）。
+- **一处结构性适配（必须记录）**：上游构造器里 `new AnimationMixer( this )` 需要对象自身的 shared 句柄；C++ 构造期间 `shared_from_this()` 不可用，且 `Object3D` 是纯 C++ 类（无 JSValue 句柄访问器）。因此构造走 **`static create(geometry, material)` 工厂**：先 `make_shared` 再挂 mixer。**外部可观察行为不变**（构造完成后 mixer 就位且 root 指向自身），但 API 形态与 `new MorphAnimMesh(...)` 不同。
+- `test/unit/addons/misc/MorphAnimMesh.tests.cpp`（3 用例 / 12 断言）：type/activeAction 初始为 null/mixer root 存在；方向切换 ±1；`playAnimation` 后 action 在跑且 `timeScale = (2 轨 × 30fps)/2s = 30`，重播换 fps 得到 10；未知 label 抛 `std::runtime_error`。
+- `test/unit/utils/parity/MorphAnimMeshParityProbe.cpp` + `compare-morph-anim-mesh.mjs`：11 项比较（type、初始 activeAction 为 null、mixer 有 root、±1 方向、在播放、action timeScale=30、`isRunning`、更新不抛、未知 label 抛错、**错误消息前缀**）。
+
+## 本轮两处实现陷阱（重要）
+
+1. **`JSMember` 不能直接当值保存**：`const auto scale = mesh->mixer->timeScale;` 之后再改 `timeScale`，读到的会是**新值**（惰性引用）。差分因此报 `backwardScale: 1 vs -1`。**必须立即物化**：`const double scale = mesh->mixer->timeScale.toNumber();`。
+2. `clip->tracks` 是 `std::shared_ptr<AnimationClip::Tracks>`，取长度要 `clip->tracks->size()`；`AnimationAction::isRunning()` 非 const，需用非 const 局部变量。
+
+## 验证
+
+- 构建 exit 0。
+- `THREECPPAddonTests`：**1299 cases / 31,217 assertions 全过**（较上轮 1296/31,205 → +3 例 / +12 断言）；过滤 `*MorphAnimMesh*` = 3 cases / 12 assertions。
+- 差分 `threecpp.threejs-morph-anim-mesh-parity` **Passed**。
+- 审计：**examples/jsm missing 337→336、partial-unverified 139→140**；`src` 不变（19 / 446）。
+
+**未执行验证（如实记录）**：未做真实渲染；`copy()` 的重建 mixer 分支**未加断言**；异常类型（C++ `std::runtime_error` vs JS `Error`）不同，只比较了消息前缀；`updateAnimation` 只验证不抛，未比对变形结果。
+
+## 下一步
+
+继续 examples 小 addon，已筛选的无 DOM/canvas/TSL 依赖候选：`objects/GroundedSkybox.js`(2049)、`generators/city/InstancedMeshGenerator.js`(2230)、`environments/DebugEnvironment.js`(2723)、`helpers/OctreeHelper.js`(2913)、`loaders/materialx/MaterialXLog.js`(1361)、`materialx/MaterialXArchive.js`(2327)。其中 `InstancedMeshGenerator` 需 `InstancedMesh`+`Matrix4`，`OctreeHelper` 需先确认 `Octree` addon 已移植程度。# 当前接续：addon `ColorUtils.setKelvin` 移植（12 温度点 × 3 通道数值级差分 + 精确 hex），examples 连续第 3 个，2026-11-05
 
 目标保持 active：固定 three.js 11738a9d55e502fb484cefffcea3a66dc44e9fe9 全部 src + examples/jsm 原生 C++ 逻辑，Vulkan 后端；禁止 CEF/生产 JS 引擎/桥接。阶段本地 Git 提交，不推送。
 

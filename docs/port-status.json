@@ -201,8 +201,8 @@
     "note": "Accepted port scope is src and examples/jsm, including tracked third-party dependencies. Editor/manual web applications are excluded from native application rewrites. Native host behavior, packaging and all three platforms require separate implementation and verification evidence."
   },
   "counts": {
-    "partial-unverified": 585,
-    "missing": 356,
+    "partial-unverified": 586,
+    "missing": 355,
     "vulkan-port-pending": 290,
     "dependency-unverified": 20
   },
@@ -218,8 +218,8 @@
     "examples/jsm": {
       "modules": 496,
       "counts": {
-        "missing": 337,
-        "partial-unverified": 139,
+        "missing": 336,
+        "partial-unverified": 140,
         "dependency-unverified": 20
       }
     }
@@ -509,7 +509,7 @@
       "path": "examples/jsm/misc",
       "upstreamFiles": 19,
       "moduleCount": 18,
-      "modulesWithCppFiles": 1,
+      "modulesWithCppFiles": 2,
       "verifiedComplete": 0
     },
     {
@@ -29673,11 +29673,11 @@
       "scope": "examples/jsm",
       "kind": "addon",
       "upstreamSha256": "8a7b7c5672a2a5140f16ed4b1de1260f5a0b799276e6cd8c25197d3a1900bc8c",
-      "header": null,
-      "implementation": null,
+      "header": "examples/jsm/misc/MorphAnimMesh.h",
+      "implementation": "examples/jsm/misc/MorphAnimMesh.cpp",
       "expectedHeader": "examples/jsm/misc/MorphAnimMesh.h",
       "expectedImplementation": "examples/jsm/misc/MorphAnimMesh.cpp",
-      "status": "missing",
+      "status": "partial-unverified",
       "verifiedComplete": false,
       "apiExtraction": "static-only",
       "verification": {
@@ -29686,7 +29686,9 @@
           "pointer": "/modules/1018"
         },
         "upstreamUnitTests": [],
-        "cppUnitTests": [],
+        "cppUnitTests": [
+          "test/unit/addons/misc/MorphAnimMesh.tests.cpp"
+        ],
         "reviewedImplementation": [],
         "differentialResults": [],
         "renderingResults": [],
