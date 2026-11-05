@@ -1,4 +1,27 @@
-# 当前接续：`ShadowNode` `_quadMesh` 改为模块级单例（对齐上游），2026-11-05
+# 当前接续：`_quadMesh` 单例身份**有断言覆盖**（新增 port-only 钩子），2026-11-05
+
+目标保持 active：固定 three.js 11738a9d55e502fb484cefffcea3a66dc44e9fe9 全部 src + examples/jsm 原生 C++ 逻辑，Vulkan 后端；禁止 CEF/生产 JS 引擎/桥接。阶段本地 Git 提交，不推送。
+
+## 本轮交付
+
+- 新增 **port-only 测试钩子** `JSValue nativeShadowNodeQuadMesh()`（header 标注 port-only、不属于 pinned 导出面），返回模块级 `sharedQuadMesh()`；
+- 新增用例：
+  1. 连续两次取钩子结果 → **`strictEquals` 为真**（单例身份）；
+  2. 构造节点 + stub renderer，调用一次 `vsmPass` 后再次取钩子 → **仍是同一对象**（证明 pass 未重建 mesh）。
+
+## 验证
+
+- 构建 exit 0；过滤 `*ShadowNode*` = **17 cases / 55 assertions** 全过（+1 例 / +3 断言）。
+- `THREECPPAddonTests` 全套 **1382 cases / 38,958 assertions** 通过。
+- 审计不变（ShadowNode 已 partial）：src 12 / 453；examples/jsm 322 / 154。
+
+**未执行验证（如实记录）**：`toInspector` 调试钩子仍省略；段 3（阴影坐标）/段 4（过滤输出）无直接断言；`updateShadow` 无测试（RendererUtils 需真实 renderer）。
+
+## 下一步
+
+1. 段 4 断言：给 `setupShadow` 的过滤/输出路径加桩测试（`filterFn` 缺失时应抛 `Shadow map type not supported yet.`，可断言错误信息）；
+2. `updateShadow` 真实 renderer 夹具（或给 RendererUtils 增加可注入 stub）；
+3. 收口 `ShadowNode` 后推进 **`PointShadowNode`(12,693)**、`PhysicalLightingModel`(32,829)。# 当前接续：`ShadowNode` `_quadMesh` 改为模块级单例（对齐上游），2026-11-05
 
 目标保持 active：固定 three.js 11738a9d55e502fb484cefffcea3a66dc44e9fe9 全部 src + examples/jsm 原生 C++ 逻辑，Vulkan 后端；禁止 CEF/生产 JS 引擎/桥接。阶段本地 Git 提交，不推送。
 

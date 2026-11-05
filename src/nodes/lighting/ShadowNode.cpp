@@ -742,3 +742,4 @@ JSValue nativeShadowNodeBinding(const std::string& name) {
 JSValue nativeShadowNodeConstructor() { return nativeShadowNodeBinding("default"); }
 
 JSValue nativeShadowNodeVsmPassGraph(bool vertical) { return makeVsmFn(vertical); }
+JSValue nativeShadowNodeQuadMesh() { return sharedQuadMesh(); }

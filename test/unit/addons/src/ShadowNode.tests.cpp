@@ -424,3 +424,43 @@ TEST_CASE("ShadowNode VSM pass graphs execute with node inputs") {
         REQUIRE(result.get("isNode").toBoolean());
     }
 }
+TEST_CASE("ShadowNode VSM quad mesh is a module singleton") {
+    const auto first = nativeShadowNodeQuadMesh();
+    const auto second = nativeShadowNodeQuadMesh();
+    REQUIRE(first.toBoolean());
+    REQUIRE(first.strictEquals(second));
+
+    // Running the VSM pass keeps using the same shared mesh.
+    auto mapSize = JSValue::object(nullptr);
+    mapSize.set("width", JSValue(64));
+    mapSize.set("height", JSValue(32));
+    auto shadow = JSValue::object(nullptr);
+    shadow.set("mapSize", mapSize);
+    auto light = JSValue::object(nullptr);
+    light.set("shadow", shadow);
+    auto node = nativeShadowNodeConstructor().construct({light});
+    auto shadowMap = JSValue::object(nullptr);
+    shadowMap.set("depth", JSValue(0));
+    node.set("shadowMap", shadowMap);
+    for (const char* name : {"vsmShadowMapVertical", "vsmShadowMapHorizontal"}) {
+        auto target = JSValue::object(nullptr);
+        target.set("setSize", JSValue::function(
+            +[](const JSValue&, const std::vector<JSValue>&, const std::vector<JSValue>&) {
+                return JSValue{};
+            }));
+        node.set(name, target);
+    }
+    node.set("vsmMaterialVertical", JSValue::object(nullptr));
+    node.set("vsmMaterialHorizontal", JSValue::object(nullptr));
+    auto renderer = JSValue::object(nullptr);
+    renderer.set("setRenderTarget", JSValue::function(
+        +[](const JSValue&, const std::vector<JSValue>&, const std::vector<JSValue>&) {
+            return JSValue{};
+        }));
+    renderer.set("render", JSValue::function(
+        +[](const JSValue&, const std::vector<JSValue>&, const std::vector<JSValue>&) {
+            return JSValue{};
+        }));
+    node.get("vsmPass").call(node, {renderer});
+    REQUIRE(nativeShadowNodeQuadMesh().strictEquals(first));
+}
