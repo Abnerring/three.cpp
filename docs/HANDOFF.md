@@ -1,4 +1,33 @@
-# 当前接续：`PassNode` 收尾（两个 clone + 废弃别名）—— 仅剩 `compileAsync` 未实现，2026-11-05
+# 当前接续：`ToonOutlinePassNode` 落地（src missing 10→9），PassNode 下游完成，2026-11-05
+
+目标保持 active：固定 three.js 11738a9d55e502fb484cefffcea3a66dc44e9fe9 全部 src + examples/jsm 原生 C++ 逻辑，Vulkan 后端；禁止 CEF/生产 JS 引擎/桥接。阶段本地 Git 提交，不推送。
+
+## 本轮交付：`src/nodes/display/ToonOutlinePassNode`
+
+- `ToonOutlinePassNode.{h,cpp}`：`makeClass("ToonOutlinePassNode", 5, base=PassNode)`；`superConstruct({PassNode.COLOR='color', scene, camera})`；
+- 构造：`colorNode/thicknessNode/alphaNode`、`_outlineMaterial = _createMaterial()`、`_materialCache = createNativeMap()`、`_onMaterialDispose`（箭头函数捕获 self：移除监听 + dispose 缓存项 + delete）、`name='Outline Pass'`；
+- **`_createMaterial()`**：`NodeMaterial`；`isMeshToonOutlineMaterial=true`、`name='Toon_Outline'`、`side=BackSide`；TSL 图：`normalLocal.negate()`、`mvp = cameraProjectionMatrix.mul(modelViewMatrix)`、`pos/pos2`、`norm = normalize(pos.sub(pos2))`、`vertexNode = pos.add(norm.mul(thickness).mul(pos.w).mul(ratio))`、`colorNode = vec4(colorNode, alphaNode)`；
+- **`_getOutlineMaterial(original)`**：无 `positionNode` → 共享默认材质；否则查缓存，未命中创建 + `addEventListener('dispose', _onMaterialDispose)` + `force=true`；版本变化或 force → 同步 `positionNode` 与 `version`；
+- **`updateBefore(frame)`**：保存 `getRenderObjectFunction`，设包装函数（Toon 材质且非线框 → 先渲染 outline 材质再渲染原材质），调**基类** `updateBefore`，恢复函数；
+- **`dispose()`**：基类 dispose + `_outlineMaterial.dispose()` + 遍历缓存逐项 `removeEventListener`/dispose + `clear()`；
+- **模块导出 `toonOutlinePass(scene, camera, color, thickness, alpha)`**（默认 color=黑色、thickness=0.003、alpha=1 分别在缺失时创建）。
+
+## 测试（3 例 / 19 断言）
+
+构造字段与 outline 材质（flags/name/side=1/colorNode/vertexNode）；默认共享材质 + 自定义 positionNode 缓存与版本同步；工厂默认值。
+
+## 验证
+
+- 构建 exit 0；过滤 `*ToonOutline*` = **3 cases / 19 assertions** 全过；`THREECPPAddonTests` 全套 **1422 cases / 39,228 assertions** 通过。
+- 审计：**src missing 10→9、partial 455→456**；`ToonOutlinePassNode.js -> partial-unverified`。
+
+**未执行验证（如实记录）**：`updateBefore` 的渲染包装函数未测（需真实 renderer.renderObject）；dispose 的缓存遍历未测；TSL 图结构未断言。
+
+## 下一步
+
+1. 补 `updateBefore` 包装与 dispose 缓存测试；`PassNode.compileAsync` 决策保留；
+2. 推进剩余 src：`ReflectorNode`(17,567)、`Line2NodeMaterial`(18,172)、`MeshStandard/SSSNodeMaterial`+`PhysicalLightingModel`、`MaterialXNodes/Noise`、`NodeObjectLoader`；
+3. 或 examples 侧继续。# 当前接续：`PassNode` 收尾（两个 clone + 废弃别名）—— 仅剩 `compileAsync` 未实现，2026-11-05
 
 目标保持 active：固定 three.js 11738a9d55e502fb484cefffcea3a66dc44e9fe9 全部 src + examples/jsm 原生 C++ 逻辑，Vulkan 后端；禁止 CEF/生产 JS 引擎/桥接。阶段本地 Git 提交，不推送。
 
