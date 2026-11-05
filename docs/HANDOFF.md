@@ -1,4 +1,28 @@
-# 当前接续：**根因修复**——阴影常量改用 C++ 枚举（VSM 守卫首次真正命中）+ 分层复用断言通过，2026-11-05
+# 当前接续：VSM 层目标**命名断言** + PCF **线性过滤断言**通过（r148 枚举修复得到验证），2026-11-05
+
+目标保持 active：固定 three.js 11738a9d55e502fb484cefffcea3a66dc44e9fe9 全部 src + examples/jsm 原生 C++ 逻辑，Vulkan 后端；禁止 CEF/生产 JS 引擎/桥接。阶段本地 Git 提交，不推送。
+
+## 本轮交付（2 个新用例 / +7 断言）
+
+1. **「names the layered VSM targets when creating them」**：`shadowMap.depth = 4` 且**未**预置 `_vsmShadowMap*` → `createRenderTarget` stub 返回带 `texture` 的对象；断言：
+   - `shadowMap._vsmShadowMapVertical.texture.name == "VSMVertical"`；
+   - `shadowMap._vsmShadowMapHorizontal.texture.name == "VSMHorizontal"`；
+   - `node.vsmShadowMapVertical === shadowMap._vsmShadowMapVertical`（回存 + 节点引用一致）。
+2. **「chooses linear depth filters for PCF with compatibility」**：`type = 1`（PCF）、`hasCompatibility → true` → 断言 `depthTexture.minFilter/magFilter == 1006`（**LinearFilter**）。这正是 r148 枚举修复的直接验证（修复前这两个值会是 undefined）。
+
+## 验证
+
+- 构建 exit 0；过滤 `*ShadowNode*` = **24 cases / 73 assertions** 全过（+2 例 / +7 断言）。
+- `THREECPPAddonTests` 全套 **1389 cases / 38,976 assertions** 通过。
+- 审计不变（ShadowNode 已 partial）：src 12 / 453；examples/jsm 322 / 154。
+
+**未执行验证（如实记录）**：NearestFilter 分支（非 PCF 或 hasCompatibility=false）未断言；`toInspector` 仍省略；`updateShadow` 无测试；图结构/数值未断言。
+
+## 下一步
+
+1. NearestFilter 分支断言（`hasCompatibility=false` → 1003）；
+2. `updateShadow` 真实 renderer 夹具；
+3. 收口 `ShadowNode` 后推进 **`PointShadowNode`(12,693)**、`PhysicalLightingModel`(32,829)。# 当前接续：**根因修复**——阴影常量改用 C++ 枚举（VSM 守卫首次真正命中）+ 分层复用断言通过，2026-11-05
 
 目标保持 active：固定 three.js 11738a9d55e502fb484cefffcea3a66dc44e9fe9 全部 src + examples/jsm 原生 C++ 逻辑，Vulkan 后端；禁止 CEF/生产 JS 引擎/桥接。阶段本地 Git 提交，不推送。
 

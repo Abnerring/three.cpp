@@ -820,3 +820,126 @@ TEST_CASE("ShadowNode setupShadow reuses the layered VSM targets") {
     REQUIRE(node.get("vsmShadowMapVertical").strictEquals(preexistingVertical));
     REQUIRE(node.get("vsmShadowMapHorizontal").strictEquals(preexistingHorizontal));
 }
+TEST_CASE("ShadowNode setupShadow names the layered VSM targets when creating them") {
+    auto mapSize = JSValue::object(nullptr);
+    mapSize.set("width", JSValue(32));
+    mapSize.set("height", JSValue(32));
+    auto shadowCamera = JSValue::object(nullptr);
+    shadowCamera.set("coordinateSystem", JSValue(0));
+    shadowCamera.set("layers", JSValue::object(nullptr));
+    shadowCamera.set("updateProjectionMatrix", JSValue::function(
+        +[](const JSValue&, const std::vector<JSValue>&, const std::vector<JSValue>&) {
+            return JSValue{};
+        }));
+    auto shadow = JSValue::object(nullptr);
+    shadow.set("mapSize", mapSize);
+    shadow.set("camera", shadowCamera);
+    shadow.set("biasNode", nativeTSLBaseBinding("float").call({}, {JSValue(0.0)}));
+    shadow.set("isPointLightShadow", false);
+    auto light = JSValue::object(nullptr);
+    light.set("shadow", shadow);
+    light.set("isLight", true);
+    auto camera = JSValue::object(nullptr);
+    camera.set("coordinateSystem", JSValue(0));
+    auto rendererShadowMap = JSValue::object(nullptr);
+    rendererShadowMap.set("type", JSValue(3));
+    rendererShadowMap.set("enabled", true);
+    auto renderer = JSValue::object(nullptr);
+    renderer.set("shadowMap", rendererShadowMap);
+    renderer.set("reversedDepthBuffer", false);
+    renderer.set("highPrecision", false);
+    renderer.set("hasCompatibility", JSValue::function(
+        +[](const JSValue&, const std::vector<JSValue>&, const std::vector<JSValue>&) {
+            return JSValue(false);
+        }));
+    auto builder = JSValue::object(nullptr);
+    builder.set("renderer", renderer);
+    builder.set("camera", camera);
+    builder.set("material", JSValue::object(nullptr));
+    builder.set("context", JSValue::object(nullptr));
+    builder.set("createRenderTarget", JSValue::function(
+        +[](const JSValue&, const std::vector<JSValue>&, const std::vector<JSValue>&) {
+            auto target = JSValue::object(nullptr);
+            target.set("texture", JSValue::object(nullptr));
+            return target;
+        }));
+    builder.set("getSharedContext", JSValue::function(
+        +[](const JSValue&, const std::vector<JSValue>&, const std::vector<JSValue>&) {
+            return JSValue::object(nullptr);
+        }));
+
+    auto node = nativeShadowNodeConstructor().construct({light});
+    auto shadowMapObject = JSValue::object(nullptr);
+    shadowMapObject.set("texture", JSValue::object(nullptr));
+    shadowMapObject.set("depth", JSValue(4));
+    auto targets = JSValue::object(nullptr);
+    auto depthTexture = JSValue::object(nullptr);
+    depthTexture.set("isArrayTexture", false);
+    targets.set("depthTexture", depthTexture);
+    targets.set("shadowMap", shadowMapObject);
+    node.set("_targets", targets);
+    node.set("setupRenderTarget", JSValue::function(
+        +[](const JSValue& receiver, const std::vector<JSValue>&, const std::vector<JSValue>&) {
+            return const_cast<JSValue&>(receiver).get("_targets");
+        }));
+    node.get("setupShadow").call(node, {builder});
+    // The created targets are stored on the shadow map and named after their pass direction.
+    const auto vertical = shadowMapObject.get("_vsmShadowMapVertical");
+    const auto horizontal = shadowMapObject.get("_vsmShadowMapHorizontal");
+    REQUIRE(vertical.toBoolean());
+    REQUIRE(horizontal.toBoolean());
+    REQUIRE(vertical.get("texture").get("name").toString() == "VSMVertical");
+    REQUIRE(horizontal.get("texture").get("name").toString() == "VSMHorizontal");
+    REQUIRE(node.get("vsmShadowMapVertical").strictEquals(vertical));
+}
+TEST_CASE("ShadowNode setupShadow chooses linear depth filters for PCF with compatibility") {
+    auto depthTexture = JSValue::object(nullptr);
+    auto shadowMapObject = JSValue::object(nullptr);
+    shadowMapObject.set("texture", JSValue::object(nullptr));
+    auto targets = JSValue::object(nullptr);
+    targets.set("depthTexture", depthTexture);
+    targets.set("shadowMap", shadowMapObject);
+    auto shadowCamera = JSValue::object(nullptr);
+    shadowCamera.set("coordinateSystem", JSValue(0));
+    shadowCamera.set("updateProjectionMatrix", JSValue::function(
+        +[](const JSValue&, const std::vector<JSValue>&, const std::vector<JSValue>&) {
+            return JSValue{};
+        }));
+    auto mapSize = JSValue::object(nullptr);
+    mapSize.set("width", JSValue(32));
+    mapSize.set("height", JSValue(32));
+    auto shadow = JSValue::object(nullptr);
+    shadow.set("camera", shadowCamera);
+    shadow.set("mapSize", mapSize);
+    shadow.set("biasNode", nativeTSLBaseBinding("float").call({}, {JSValue(0.0)}));
+    shadow.set("isPointLightShadow", false);
+    auto light = JSValue::object(nullptr);
+    light.set("shadow", shadow);
+    auto camera = JSValue::object(nullptr);
+    camera.set("coordinateSystem", JSValue(0));
+    auto rendererShadowMap = JSValue::object(nullptr);
+    rendererShadowMap.set("type", JSValue(1)); // PCFShadowMap
+    rendererShadowMap.set("enabled", true);
+    auto renderer = JSValue::object(nullptr);
+    renderer.set("shadowMap", rendererShadowMap);
+    renderer.set("reversedDepthBuffer", false);
+    renderer.set("hasCompatibility", JSValue::function(
+        +[](const JSValue&, const std::vector<JSValue>&, const std::vector<JSValue>&) {
+            return JSValue(true);
+        }));
+    auto builder = JSValue::object(nullptr);
+    builder.set("renderer", renderer);
+    builder.set("camera", camera);
+    builder.set("material", JSValue::object(nullptr));
+    builder.set("context", JSValue::object(nullptr));
+    auto node = nativeShadowNodeConstructor().construct({light});
+    node.set("_targets", targets);
+    node.set("setupRenderTarget", JSValue::function(
+        +[](const JSValue& receiver, const std::vector<JSValue>&, const std::vector<JSValue>&) {
+            return const_cast<JSValue&>(receiver).get("_targets");
+        }));
+    node.get("setupShadow").call(node, {builder});
+    // LinearFilter is 1006 in the pinned constants table.
+    REQUIRE(depthTexture.get("minFilter").toNumber() == Approx(1006));
+    REQUIRE(depthTexture.get("magFilter").toNumber() == Approx(1006));
+}
