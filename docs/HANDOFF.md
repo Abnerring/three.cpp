@@ -1,4 +1,31 @@
-# 当前接续：`PointShadowNode` **Stage A** 落地（src missing 12→11），2026-11-05
+# 当前接续：`PointShadowNode` **Stage C `renderShadow`** 实现（六面渲染，测试受阻已移除），2026-11-05
+
+目标保持 active：固定 three.js 11738a9d55e502fb484cefffcea3a66dc44e9fe9 全部 src + examples/jsm 原生 C++ 逻辑，Vulkan 后端；禁止 CEF/生产 JS 引擎/桥接。阶段本地 Git 提交，不推送。
+
+## 本轮交付：`renderShadow`（照抄 L241–315）
+
+- 模块级 `_cubeDirectionsWebGPU/WebGL`、`_cubeUpsWebGPU/WebGL` 四张表（`cubeFaceTables()` 缓存，6 个 `Vector3`）；
+- `isWebGPU = renderer.coordinateSystem === WebGPUCoordinateSystem` 选表；
+- `shadowMap.setSize(width, width)`；保存 `autoClear`/`getClearColor(new Color())`/`getClearAlpha`；`autoClear=false`、`setClearColor(shadow.clearColor, shadow.clearAlpha)`；
+- **六面循环**：`setRenderTarget(shadowMap, face)` → `clear()` → `far = light.distance || camera.far`（变化则 `camera.far=far; updateProjectionMatrix()`）→ `_lightPositionWorld.setFromMatrixPosition(light.matrixWorld)` → `camera.position.copy(...)` → `lookTarget.add(cubeDirections[face])` → `camera.up.copy(cubeUps[face])` → `camera.lookAt(lookTarget)` → `updateMatrixWorld()` → `shadowMatrix.makeTranslation(-x,-y,-z)` → `_projScreenMatrix.multiplyMatrices(camera.projectionMatrix, camera.matrixWorldInverse)` → `shadow._frustum.setFromProjectionMatrix(_projScreenMatrix, camera.coordinateSystem, camera.reversedDepth)` → scene.name 改写 `Point Light Shadow [ name ] - Face N` → `renderer.render(scene, camera)` → 还原 scene.name；
+- 收尾：还原 `autoClear` 与 clearColor/alpha。
+
+## 测试尝试与结论（如实记录）
+
+写冒烟用例（真实 `Vector3/Matrix4/Color/Frustum` + stub renderer/camera 方法）→ **抛 `Native JavaScript abrupt completion`**（fixture 内部，未能定位具体步骤）；按纪律**移除该用例**，实现保留（编译通过、全套绿）。`renderShadow` 目前**无测试覆盖**，需更真实夹具（真实 `Frustum`/`PerspectiveCamera` 或逐步二分定位）。
+
+## 验证
+
+- 构建 exit 0；`THREECPPAddonTests` 全套 **1395 cases / 38,992 assertions** 通过（用例数回落）。
+- 审计不变（PointShadowNode 已 partial）：src 11 / 454；examples/jsm 322 / 154。
+
+**未执行验证（如实记录）**：`renderShadow` 无测试；`PointShadowFilter`/`pointShadowFilter` Fn 与 `setupShadowFilter`（Stage B）未实现，仍抛错；`getShadowFilterFn` 非 Basic 分支抛错。
+
+## 下一步
+
+1. **Stage B**：`BasicPointShadowFilter` 已在 Stage A 覆盖；补 `PointShadowFilter`（Vogel disk + IGN + `If`）与 `pointShadowFilter` Fn + `setupShadowFilter`；
+2. 为 `renderShadow` 定位 `Native JavaScript abrupt completion` 的触发点（建议逐段注释二分），再补测试；
+3. 之后推进 `PassNode`/`ToonOutlinePassNode`/`PhysicalLightingModel` 等。# 当前接续：`PointShadowNode` **Stage A** 落地（src missing 12→11），2026-11-05
 
 目标保持 active：固定 three.js 11738a9d55e502fb484cefffcea3a66dc44e9fe9 全部 src + examples/jsm 原生 C++ 逻辑，Vulkan 后端；禁止 CEF/生产 JS 引擎/桥接。阶段本地 Git 提交，不推送。
 

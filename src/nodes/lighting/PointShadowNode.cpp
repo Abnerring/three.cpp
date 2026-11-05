@@ -2,12 +2,18 @@
 
 #include "constants.h"
 #include "core/JSWeakMap.h"
+#include "core/JSGlobal.h"
 #include "core/NativeObject.h"
 #include "nodes/accessors/CubeTextureNode.h"
+#include "nodes/core/NodeUtils.h"
 #include "nodes/lighting/LightingNodeRuntime.h"
 #include "nodes/lighting/ShadowNode.h"
+#include "math/Color.h"
+#include "math/Matrix4.h"
+#include "math/Vector3.h"
 #include "textures/CubeDepthTexture.h"
 
+#include <array>
 #include <memory>
 #include <stdexcept>
 #include <string>
@@ -71,7 +77,121 @@ JSValue setupRenderTarget(const JSValue&, const Args& args, const Args&) {
 JSValue setupShadowFilter(const JSValue&, const Args&, const Args&) {
     return notPorted("setupShadowFilter");
 }
-JSValue renderShadow(const JSValue&, const Args&, const Args&) { return notPorted("renderShadow"); }
+// Module level cube face tables, mirroring the pinned WebGPU/WebGL direction and up arrays.
+JSWeakValue& cubeTablesCache() { static thread_local JSWeakValue weak; return weak; }
+
+JSValue vector3(double x, double y, double z) {
+    return nativeVector3Constructor().construct({JSValue(x), JSValue(y), JSValue(z)});
+}
+
+JSValue cubeFaceTables() {
+    if (const auto cached = cubeTablesCache().lock(); cached && cached->toBoolean()) return *cached;
+    auto tables = JSValue::object(nullptr);
+    auto makeList = [](std::initializer_list<std::array<double, 3>> values) {
+        auto list = JSValue::array(6);
+        std::size_t index = 0;
+        for (const auto& value : values) {
+            list.set(index++, vector3(value[0], value[1], value[2]));
+        }
+        return list;
+    };
+    tables.set("directionsWebGPU", makeList({{-1, 0, 0}, {1, 0, 0}, {0, 1, 0}, {0, -1, 0}, {0, 0, 1}, {0, 0, -1}}));
+    tables.set("upsWebGPU", makeList({{0, 1, 0}, {0, 1, 0}, {0, 0, -1}, {0, 0, 1}, {0, 1, 0}, {0, 1, 0}}));
+    tables.set("directionsWebGL", makeList({{1, 0, 0}, {-1, 0, 0}, {0, 1, 0}, {0, -1, 0}, {0, 0, 1}, {0, 0, -1}}));
+    tables.set("upsWebGL", makeList({{0, -1, 0}, {0, -1, 0}, {0, 0, 1}, {0, 0, -1}, {0, -1, 0}, {0, -1, 0}}));
+    cubeTablesCache() = JSWeakValue(tables);
+    return tables;
+}
+
+// renderShadow( frame ) { render the six cube faces of the point light shadow }
+JSValue renderShadow(const JSValue& rawSelf, const Args& args, const Args&) {
+    JSValue& self = const_cast<JSValue&>(rawSelf);
+    const auto frame = arg(args, 0);
+    const auto shadow = self.get("shadow");
+    auto shadowMap = self.get("shadowMap");
+    auto light = self.get("light");
+    auto renderer = frame.get("renderer");
+    const auto scene = frame.get("scene");
+    auto camera = shadow.get("camera");
+    auto shadowMatrix = shadow.get("matrix");
+
+    const bool isWebGPU =
+        renderer.get("coordinateSystem").toNumber() == static_cast<double>(WebGPUCoordinateSystem);
+    const auto tables = cubeFaceTables();
+    const auto cubeDirections = tables.get(isWebGPU ? "directionsWebGPU" : "directionsWebGL");
+    const auto cubeUps = tables.get(isWebGPU ? "upsWebGPU" : "upsWebGL");
+
+    const auto mapSize = shadow.get("mapSize");
+    shadowMap.get("setSize").call(shadowMap, {mapSize.get("width"), mapSize.get("width")});
+
+    auto clearColor = nativeColorConstructor().construct();
+    const auto previousAutoClear = renderer.get("autoClear");
+    const auto previousClearColor = renderer.get("getClearColor").call(renderer, {clearColor});
+    const auto previousClearAlpha = renderer.get("getClearAlpha").call(renderer, {});
+    renderer.set("autoClear", false);
+    renderer.get("setClearColor").call(renderer,
+                                      {shadow.get("clearColor"), shadow.get("clearAlpha")});
+
+    const auto lightPositionWorld = nativeVector3Constructor().construct();
+    const auto lookTarget = nativeVector3Constructor().construct();
+    const auto projectionScreenMatrix = nativeMatrix4Constructor().construct();
+    const auto cameraPosition = camera.get("position");
+    const auto cameraUp = camera.get("up");
+
+    for (int face = 0; face < 6; ++face) {
+        renderer.get("setRenderTarget").call(renderer, {shadowMap, JSValue(static_cast<double>(face))});
+        renderer.get("clear").call(renderer, {});
+
+        const auto lightDistance = light.get("distance");
+        const auto cameraFar = camera.get("far");
+        const auto far = lightDistance.toBoolean() ? lightDistance : cameraFar;
+        if (!far.strictEquals(cameraFar)) {
+            camera.set("far", far);
+            camera.get("updateProjectionMatrix").call(camera, {});
+        }
+
+        const auto lightMatrixWorld = light.get("matrixWorld");
+        lightPositionWorld.get("setFromMatrixPosition").call(lightPositionWorld, {lightMatrixWorld});
+        cameraPosition.get("copy").call(cameraPosition, {lightPositionWorld});
+        lookTarget.get("copy").call(lookTarget, {cameraPosition});
+        lookTarget.get("add").call(lookTarget, {cubeDirections.get(face)});
+        cameraUp.get("copy").call(cameraUp, {cubeUps.get(face)});
+        camera.get("lookAt").call(camera, {lookTarget});
+        camera.get("updateMatrixWorld").call(camera, {});
+
+        shadowMatrix.get("makeTranslation").call(
+            shadowMatrix, {JSValue(-lightPositionWorld.get("x").toNumber()),
+                           JSValue(-lightPositionWorld.get("y").toNumber()),
+                           JSValue(-lightPositionWorld.get("z").toNumber())});
+        projectionScreenMatrix.get("multiplyMatrices").call(
+            projectionScreenMatrix,
+            {camera.get("projectionMatrix"), camera.get("matrixWorldInverse")});
+        shadow.get("_frustum")
+            .get("setFromProjectionMatrix")
+            .call(shadow.get("_frustum"),
+                  {projectionScreenMatrix, camera.get("coordinateSystem"),
+                   camera.get("reversedDepth")});
+
+        const auto currentSceneName = scene.get("name");
+        std::string lightLabel;
+        const auto lightName = light.get("name");
+        if (lightName.toBoolean()) {
+            lightLabel = lightName.toString();
+        } else {
+            lightLabel = "ID: " + std::to_string(static_cast<long long>(light.get("id").toNumber()));
+        }
+        JSValue& sceneRef = const_cast<JSValue&>(scene);
+        sceneRef.set("name",
+                     JSValue("Point Light Shadow [ " + lightLabel + " ] - Face " +
+                             std::to_string(face + 1)));
+        renderer.get("render").call(renderer, {sceneRef, camera});
+        sceneRef.set("name", currentSceneName);
+    }
+
+    renderer.set("autoClear", previousAutoClear);
+    renderer.get("setClearColor").call(renderer, {previousClearColor, previousClearAlpha});
+    return {};
+}
 }  // namespace
 
 JSValue nativePointShadowNodeModule() {

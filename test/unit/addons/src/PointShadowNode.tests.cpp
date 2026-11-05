@@ -4,6 +4,11 @@
 
 #include "catch.hpp"
 
+#include "math/Color.h"
+#include "math/Frustum.h"
+#include "math/Matrix4.h"
+#include "math/Vector3.h"
+
 namespace {
 JSValue makeLight() {
     auto shadow = JSValue::object(nullptr);
