@@ -28,7 +28,7 @@ try {
 } finally {
   fs.rmSync(tempPath, { force: true });
 }
-const { createMeshesFromInstancedMesh, createMultiMaterialObject, reduceVertices, sortInstancedMesh } = helpers;
+const { createMeshesFromInstancedMesh, createMultiMaterialObject, createMeshesFromMultiMaterialMesh, reduceVertices, sortInstancedMesh } = helpers;
 
 const geometry = new THREE.BoxGeometry();
 const material = new THREE.MeshBasicMaterial();
@@ -86,7 +86,28 @@ for (let i = 0; i < payloads.count; i += 1) {
   payloadPositions.push(payloadCurrent.elements[12]);
 }
 
+const splitGeometry = new THREE.BufferGeometry();
+splitGeometry.setAttribute('position', new THREE.BufferAttribute(
+  new Float32Array([ 0, 0, 0, 1, 0, 0, 0, 1, 0, 2, 0, 0, 3, 0, 0, 2, 1, 0 ]), 3));
+splitGeometry.addGroup(0, 3, 0);
+splitGeometry.addGroup(3, 3, 1);
+const splitMaterialA = new THREE.MeshBasicMaterial();
+const splitMaterialB = new THREE.MeshBasicMaterial();
+const splitMesh = new THREE.Mesh(splitGeometry, [ splitMaterialA, splitMaterialB ]);
+const split = createMeshesFromMultiMaterialMesh(splitMesh);
+const multiMaterialChildCount = split.children.length;
+const multiMaterialPositions = [];
+const multiMaterialMaterials = [];
+for (const child of split.children) {
+  const position = child.geometry.getAttribute('position');
+  for (let i = 0; i < position.count; i += 1) multiMaterialPositions.push(position.getX(i));
+  multiMaterialMaterials.push(child.material === splitMaterialA ? 0 : 1);
+}
+
 const expected = {
+  multiMaterialChildCount,
+  multiMaterialPositions,
+  multiMaterialMaterials,
   payloadColours,
   payloadValues,
   payloadPositions,

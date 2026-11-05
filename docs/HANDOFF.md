@@ -1,4 +1,26 @@
-# 当前接续：`SceneUtils.createMeshesFromMultiMaterialMesh` 实现完成（多材质网格按 group 拆分），2026-11-05
+# 当前接续：`createMeshesFromMultiMaterialMesh` 差分补齐（r82 遗留「无差分」缺口），2026-11-05
+
+目标保持 active：固定 three.js 11738a9d55e502fb484cefffcea3a66dc44e9fe9 全部 src + examples/jsm 原生 C++ 逻辑，Vulkan 后端；禁止 CEF/生产 JS 引擎/桥接。阶段本地 Git 提交，不推送。
+
+## 本轮内容（差分补充，无实现变更）
+
+r82 实现了 `SceneUtils.createMeshesFromMultiMaterialMesh` 并明确记录「无差分」。本轮补上：
+
+- `SceneUtilsParityProbe.cpp` 新增场景：6 顶点 geometry（两个三角形 + `addGroup(0,3,0)` / `addGroup(3,3,1)`）+ `Mesh(geometry, {matA, matB})`（多材质）；调用 `createMeshesFromMultiMaterialMesh` 后输出**子节点数**、**每个子 geometry 的 position x 值**、**材质身份映射（0=matA / 1=matB）**。
+- `compare-scene-utils.mjs` 用上游同名函数复现同一场景并逐值比较。
+- 结果：**Passed**（子节点数 2、位置序列、材质顺序全部一致）。
+
+## 验证
+
+- 构建 exit 0；`threecpp.threejs-scene-utils-parity` **Passed**（既有 7+3 项 + 本轮 3 项）。
+- `THREECPPAddonTests` 全套 **1338 cases / 38,696 assertions** 通过。
+- 审计计数不变（差分补充）：examples/jsm 325 / 151，src 13 / 452。
+
+**未执行验证（如实记录）**：属性重建仍只覆盖 **position**（未覆盖 uv/normal/itemSize>3）；`mergeGroups` 前置的 warn 分支未在本差分中出现；单材质「原样返回 mesh」分支仍只有单测。
+
+## 下一步
+
+examples/jsm 剩余 325：`transpiler/AST.js`(8868) 最有价值。src 剩余 13：`ShadowNode`(24,331，依赖齐备) / `PhysicalLightingModel`(32,829，解锁三材质)。# 当前接续：`SceneUtils.createMeshesFromMultiMaterialMesh` 实现完成（多材质网格按 group 拆分），2026-11-05
 
 目标保持 active：固定 three.js 11738a9d55e502fb484cefffcea3a66dc44e9fe9 全部 src + examples/jsm 原生 C++ 逻辑，Vulkan 后端；禁止 CEF/生产 JS 引擎/桥接。阶段本地 Git 提交，不推送。
 

@@ -5,6 +5,8 @@
 #include "math/Color.h"
 #include "geometries/BoxGeometry.h"
 #include "materials/MeshBasicMaterial.h"
+#include "core/BufferAttribute.h"
+#include "core/BufferGeometry.h"
 #include "objects/Group.h"
 #include "objects/InstancedMesh.h"
 #include "objects/Mesh.h"
@@ -84,7 +86,46 @@ int main() {
             payloadPositions.set(JSValue(i), JSValue(current.elements()[12]));
         }
 
+        // Split a multi material mesh by its geometry groups.
+        auto splitGeometry = std::make_shared<BufferGeometry>();
+        splitGeometry->setAttribute(
+            "position", std::make_shared<BufferAttribute>(
+                            std::vector<float>{0, 0, 0, 1, 0, 0, 0, 1, 0,
+                                               2, 0, 0, 3, 0, 0, 2, 1, 0}, 3));
+        splitGeometry->addGroup(0, 3, 0);
+        splitGeometry->addGroup(3, 3, 1);
+        auto splitMaterialA = std::make_shared<MeshBasicMaterial>();
+        auto splitMaterialB = std::make_shared<MeshBasicMaterial>();
+        auto splitMesh = std::make_shared<Mesh>(
+            splitGeometry, std::vector<std::shared_ptr<Material>>{splitMaterialA, splitMaterialB});
+        const auto split = SceneUtils::createMeshesFromMultiMaterialMesh(splitMesh);
+        const auto splitGroup = std::dynamic_pointer_cast<Group>(split);
+        auto splitPositions = JSValue::array();
+        if (splitGroup) {
+            std::size_t index = 0;
+            for (const auto& child : splitGroup->children) {
+                const auto childMesh = std::dynamic_pointer_cast<Mesh>(child);
+                const auto position = childMesh->geometry->getAttribute("position");
+                for (double i = 0; i < position->getCount(); ++i) {
+                    splitPositions.set(index++, JSValue(position->getX(i)));
+                }
+            }
+        }
+        auto splitMaterials = JSValue::array();
+        if (splitGroup) {
+            std::size_t index = 0;
+            for (const auto& child : splitGroup->children) {
+                const auto childMesh = std::dynamic_pointer_cast<Mesh>(child);
+                splitMaterials.set(index++,
+                                   JSValue(childMesh->material == splitMaterialA ? 0.0 : 1.0));
+            }
+        }
+
         auto output = JSValue::object(nullptr);
+        output.set("multiMaterialChildCount",
+                   JSValue(splitGroup ? static_cast<double>(splitGroup->children.size()) : -1.0));
+        output.set("multiMaterialPositions", splitPositions);
+        output.set("multiMaterialMaterials", splitMaterials);
         output.set("payloadColours", payloadColours);
         output.set("payloadValues", payloadValues);
         output.set("payloadPositions", payloadPositions);
