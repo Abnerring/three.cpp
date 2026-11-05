@@ -4,6 +4,9 @@
 
 #include "catch.hpp"
 
+#include "math/Matrix4.h"
+#include "math/Vector3.h"
+
 TEST_CASE("ReflectorBaseNode applies the pinned options") {
     auto textureNode = JSValue::object(nullptr);
     const auto base = nativeReflectorBaseNodeConstructor().construct({textureNode});
@@ -71,4 +74,100 @@ TEST_CASE("ReflectorNode factory and resolution alias") {
     const auto node = nativeReflectorNodeBinding("reflector").call({}, {});
     REQUIRE(node.get("type").toString() == "ReflectorNode");
     REQUIRE(node.get("_reflectorBaseNode").toBoolean());
+}
+TEST_CASE("ReflectorBaseNode updateBefore renders the reflection") {
+    auto virtualCamera = JSValue::object(nullptr);
+    virtualCamera.set("position", nativeVector3Constructor().construct());
+    virtualCamera.set("up", nativeVector3Constructor().construct());
+    virtualCamera.set("projectionMatrix", nativeMatrix4Constructor().construct());
+    virtualCamera.set("matrixWorldInverse", nativeMatrix4Constructor().construct());
+    virtualCamera.set("near", JSValue(0.1));
+    virtualCamera.set("far", JSValue(100));
+    for (const char* method : {"lookAt", "updateMatrixWorld"}) {
+        virtualCamera.set(method, JSValue::function(
+            +[](const JSValue&, const std::vector<JSValue>&, const std::vector<JSValue>&) {
+                return JSValue{};
+            }));
+    }
+    auto camera = JSValue::object(nullptr);
+    camera.set("matrixWorld", nativeMatrix4Constructor().construct());
+    camera.set("projectionMatrix", nativeMatrix4Constructor().construct());
+    camera.set("near", JSValue(0.1));
+    camera.set("far", JSValue(100));
+    camera.set("coordinateSystem", JSValue(2000));
+    camera.set("clone", JSValue::function(
+        +[](const JSValue&, const std::vector<JSValue>&, const std::vector<JSValue>&) {
+            auto cloned = JSValue::object(nullptr);
+            cloned.set("position", nativeVector3Constructor().construct());
+            cloned.set("up", nativeVector3Constructor().construct());
+            cloned.set("projectionMatrix", nativeMatrix4Constructor().construct());
+            cloned.set("matrixWorldInverse", nativeMatrix4Constructor().construct());
+            cloned.set("near", JSValue(0.1));
+            cloned.set("far", JSValue(100));
+            for (const char* method : {"lookAt", "updateMatrixWorld"}) {
+                cloned.set(method, JSValue::function(
+                    +[](const JSValue&, const std::vector<JSValue>&, const std::vector<JSValue>&) {
+                        return JSValue{};
+                    }));
+            }
+            return cloned;
+        }));
+    auto scene = JSValue::object(nullptr);
+    scene.set("name", JSValue("Scene"));
+    auto material = JSValue::object(nullptr);
+    material.set("visible", true);
+    auto textureNode = JSValue::object(nullptr);
+    textureNode.set("value", JSValue(nullptr));
+    auto renderer = JSValue::object(nullptr);
+    renderer.set("_renders", JSValue(0));
+    renderer.set("_clears", JSValue(0));
+    renderer.set("autoClear", true);
+    renderer.set("coordinateSystem", JSValue(2000));
+    renderer.set("getDrawingBufferSize", JSValue::function(
+        +[](const JSValue&, const std::vector<JSValue>& args, const std::vector<JSValue>&) {
+            auto size = args.size() > 0 ? args[0] : JSValue::object(nullptr);
+            size.set("width", JSValue(64));
+            size.set("height", JSValue(64));
+            return size;
+        }));
+    renderer.set("getRenderTarget", JSValue::function(
+        +[](const JSValue&, const std::vector<JSValue>&, const std::vector<JSValue>&) {
+            return JSValue(nullptr);
+        }));
+    renderer.set("getMRT", JSValue::function(
+        +[](const JSValue&, const std::vector<JSValue>&, const std::vector<JSValue>&) {
+            return JSValue(nullptr);
+        }));
+    for (const char* method : {"setRenderTarget", "setMRT"}) {
+        renderer.set(method, JSValue::function(
+            +[](const JSValue&, const std::vector<JSValue>&, const std::vector<JSValue>&) {
+                return JSValue{};
+            }));
+    }
+    renderer.set("render", JSValue::function(
+        +[](const JSValue& receiver, const std::vector<JSValue>&, const std::vector<JSValue>&) {
+            JSValue& self = const_cast<JSValue&>(receiver);
+            self.set("_renders", JSValue(self.get("_renders").toNumber() + 1));
+            return JSValue{};
+        }));
+    renderer.set("clear", JSValue::function(
+        +[](const JSValue& receiver, const std::vector<JSValue>&, const std::vector<JSValue>&) {
+            JSValue& self = const_cast<JSValue&>(receiver);
+            self.set("_clears", JSValue(self.get("_clears").toNumber() + 1));
+            return JSValue{};
+        }));
+    auto frame = JSValue::object(nullptr);
+    frame.set("scene", scene);
+    frame.set("camera", camera);
+    frame.set("renderer", renderer);
+    frame.set("material", material);
+
+    auto base = nativeReflectorBaseNodeConstructor().construct({JSValue::object(nullptr)});
+    base.set("textureNode", textureNode);
+    REQUIRE_NOTHROW(base.get("updateBefore").call(base, {frame}));
+    REQUIRE(renderer.get("_renders").toNumber() == Approx(1));
+    REQUIRE(base.get("hasOutput").toBoolean());
+    REQUIRE(material.get("visible").toBoolean());
+    REQUIRE(scene.get("name").toString() == "Scene");
+    REQUIRE(textureNode.get("value").toBoolean());
 }

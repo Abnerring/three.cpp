@@ -1,4 +1,30 @@
-# 当前接续：`ReflectorBaseNode.updateBefore` 实现 + 工厂/别名（ReflectorNode 全成员落地，待集成测试），2026-11-05
+# 当前接续：`ReflectorBaseNode.updateBefore` **集成测试通过** —— ReflectorNode 收口，2026-11-05
+
+目标保持 active：固定 three.js 11738a9d55e502fb484cefffcea3a66dc44e9fe9 全部 src + examples/jsm 原生 C++ 逻辑，Vulkan 后端；禁止 CEF/生产 JS 引擎/桥接。阶段本地 Git 提交，不推送。
+
+## 本轮交付
+
+新用例「updateBefore renders the reflection」：
+- stub 相机（`matrixWorld/projectionMatrix/near/far/coordinateSystem/clone()`→虚拟相机 stub）；
+- 虚拟相机 stub（`position/up/projectionMatrix/matrixWorldInverse/near/far/lookAt/updateMatrixWorld`）；
+- stub renderer（drawing buffer 64×64、getRenderTarget/getMRT、setRenderTarget/setMRT、render/clear 计数、coordinateSystem=2000）；
+- scene/material/textureNode stub；
+- 断言：**`renderer.render` 调用 1 次**、`hasOutput=true`、`material.visible` 还原、`scene.name` 还原、**`textureNode.value` 已写入**（= renderTarget.texture）。
+
+## 验证
+
+- 构建 exit 0；`*Reflector*` = **6 cases / 33 assertions** 全过；`THREECPPAddonTests` 全套 **1430 cases / 39,271 assertions** 通过。
+- 审计不变：src 8 / 457（`ReflectorNode` 全成员已实现，audit 状态由启发式决定）。
+
+**未执行验证（如实记录）**：`needsClear` 分支（facingAway + 有输出）、`_inReflector` 递归保护、clipPlane 数值、depth 节点分支未单独断言。
+
+## 下一步（新模块）
+
+剩余 src 8 项择一推进：
+1. **`Line2NodeMaterial`(18,172)** —— 依赖 `Line2`/材质基础，或
+2. **`PhysicalLightingModel`(32,829)** —— 解锁 `MeshStandard/Physical/SSSNodeMaterial`（一次解锁 4 项，性价比最高），或
+3. `MaterialXNodes`(10,782)（依赖 48KB 的 `MaterialXNoise`）。
+建议先读 `PhysicalLightingModel` 结构，再决定是否分 3–4 轮。# 当前接续：`ReflectorBaseNode.updateBefore` 实现 + 工厂/别名（ReflectorNode 全成员落地，待集成测试），2026-11-05
 
 目标保持 active：固定 three.js 11738a9d55e502fb484cefffcea3a66dc44e9fe9 全部 src + examples/jsm 原生 C++ 逻辑，Vulkan 后端；禁止 CEF/生产 JS 引擎/桥接。阶段本地 Git 提交，不推送。
 
