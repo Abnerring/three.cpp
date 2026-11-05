@@ -201,6 +201,7 @@ target_sources(threecpp PRIVATE
     src/nodes/lighting/HemisphereLightNode.cpp
     src/nodes/lighting/SpotLightNode.cpp
     src/nodes/lighting/IESSpotLightNode.cpp
+    src/nodes/lighting/ProjectorLightNode.cpp
     src/nodes/lighting/BasicEnvironmentNode.cpp
     src/nodes/lighting/LightProbeNode.cpp
     src/nodes/lighting/LightingContextNode.cpp

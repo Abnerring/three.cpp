@@ -1,3 +1,23 @@
+# 当前接续：ProjectorLightNode 已移植并差分验收（update 走真实行为比对），2026-11-05
+
+目标保持 active：固定 three.js 11738a9d55e502fb484cefffcea3a66dc44e9fe9 全部 src + examples/jsm 原生 C++ 逻辑，Vulkan 后端；禁止 CEF/生产 JS 引擎/桥接。阶段本地 Git 提交，不推送。
+
+本轮新增 `src/nodes/lighting/ProjectorLightNode.{h,cpp}`（extends SpotLightNode）。`update` 通过**取 SpotLightNode 的 prototype 方法并以 `this` 为接收者调用**复现 `super.update( frame )`，随后 `penumbraCosNode.value = Math.min( Math.cos( light.angle * ( 1 - light.penumbra ) ), .99999 )`，再按 `light.aspect === null` 分两支：无 aspect 时 aspect=1、有 map 时取 `map.width / map.height`，最后写 `light.shadow.aspect`。`getSpotAttenuation( builder )` 按源码复现：`float(0)` 累加器、`lightShadowMatrix(light).mul(builder.context.positionWorld || positionWorld)`、`If( spotLightCoord.w.greaterThan(0), () => ... )` 内做 `xyz/w` → `sdBox(uv.xy - vec2(0.5), vec2(0.5))` → `div(-1, sub(1, acos(penumbraCos)).sub(1))` → `attenuation.assign( saturate( boxDist.mul(-2).mul(angleFactor) ) )`。模块级 `sdBox` 是 TSL `Fn`，本轮在模块初始化时构造并缓存。
+
+**`Math.min` 用 `std::min`**：两者对 NaN 的表现一致（首参为 NaN 时返回 NaN），且都保留 -0；余弦用 `JSNumberMath::cos`（V8 fdlibm）而非平台 libm。
+
+验证：构建 exit 0。THREECPPTests **1525 cases / 214,114 assertions 全过**，较上轮 1521/214,097 增 4 例 17 断言，与 `*ProjectorLight*` 过滤的 4 用例/17 断言一致。**八个 light 差分全过**，其中 `threecpp.threejs-projector-light-node-parity` **Passed 2.76s**，且**该差分比较的是真实行为**——同一盏合成灯下比 `coneCosNode.value`、`penumbraCosNode.value`、`color.r`（父类 update 后按 intensity 缩放的结果）、`light.shadow.aspect`，再加 name/length=0/static type/实例 type/isAnalyticLightNode/两方法 arity/class `toString` 源位置逐字节。
+
+**本轮两个自我更正**：① 单测原写 `cos(0.1) > 0.99999` 断言钳制生效，**实际 cos(0.1)≈0.995 低于上限**，钳制根本不会触发；改为 `cos(0.001)≈0.9999995` 才真正越过上限。② 差分的 JS 侧最初把 `shadow` 放进灯对象一起构造，触发上游 `AnalyticLightNode` 构造器里的 `light.addEventListener('dispose', ...)`，而桩灯没有该方法直接抛错；改为**构造后再挂 `shadow`**，C++ 侧不受影响。
+
+**未在本轮执行验证的部分（如实记录）**：`getSpotAttenuation` 整体未运行——`If` 需要 current stack 上下文（`nativeGetCurrentStack()` 返回 `state().get("currentStack")`），且函数体需要真实 builder 与 `lightShadowMatrix` 节点；故只验证了 arity 与源位置。若运行期取不到可调用的 `If`，实现会显式抛 `std::runtime_error`，不静默返回错值。
+
+审计（固定 worktree，HEAD=11738a9d55）刷新后应为 **src missing 56→55、partial 409→410**；ProjectorLightNode 记 `partial-unverified` 并登记 h/cpp（若读数与预期不符，本轮提交会被脚本拦下并在此说明）。
+
+`src/nodes/lighting` 仍缺 **8 个**：EnvironmentNode、LightsNode、PointLightNode、PointShadowNode、RectAreaLightNode、ShadowBaseNode、ShadowFilterNode、ShadowNode。其中 shadow 四件仍需先补 `src/nodes/utils/PostProcessingUtils`；`RectAreaLightNode` 需要 `src/nodes/functions/BSDF/LTC.js`。
+
+下一步：`PointLightNode`（依赖 `LightUtils.getDistanceAttenuation` 与已移植 `PointShadowNode` 之外的部分——注意 `PointShadowNode` 本身仍缺，故 PointLightNode 的构造可能只 import 而不到运行时需要）；`EnvironmentNode`（依赖均齐，但 `setup` 需要 `context.radiance`/`iblIrradiance`/`lightingModel.clearcoatRadiance`）。
+
 # 当前接续：IESSpotLightNode 已移植并差分验收，2026-11-05
 
 目标保持 active：固定 three.js 11738a9d55e502fb484cefffcea3a66dc44e9fe9 全部 src + examples/jsm 原生 C++ 逻辑，Vulkan 后端；禁止 CEF/生产 JS 引擎/桥接。阶段本地 Git 提交，不推送。
