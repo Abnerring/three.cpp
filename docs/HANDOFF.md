@@ -1,3 +1,23 @@
+# 当前接续：PointLightNode 已移植并差分验收（含模块级工厂函数），2026-11-05
+
+目标保持 active：固定 three.js 11738a9d55e502fb484cefffcea3a66dc44e9fe9 全部 src + examples/jsm 原生 C++ 逻辑，Vulkan 后端；禁止 CEF/生产 JS 引擎/桥接。阶段本地 Git 提交，不推送。
+
+本轮新增 `src/nodes/lighting/PointLightNode.{h,cpp}`（extends AnalyticLightNode），并**额外移植了该模块的具名导出 `directPointLight`**（源码里是模块级箭头函数，不在类体内，故用单成员插入器单独取源位置，binding 名 `directPointLight`）。
+
+- **构造缺省**：`cutoffDistanceNode = uniform(0)`、**`decayExponentNode = uniform(2)`**——**两个 uniform 的缺省不同**，decay 从 2 起而非 0，这一点在测试与差分里都单列。
+- **`update`**：内联父类 update（颜色按 intensity 缩放）后写 `cutoffDistanceNode.value = light.distance`、`decayExponentNode.value = light.decay`。
+- **`setupDirect( builder )`**：`color = colorNode`、`lightVector = getLightVector( builder )`（上上轮补的父类方法）、两个 uniform，交给 `directPointLight( {...} )`。
+- **`directPointLight`**：`lightVector.normalize()` 得方向、`lightVector.length()` 得距离（**两者都从同一向量来，且顺序如此**），`getDistanceAttenuation({lightDistance, cutoffDistance, decayExponent})`，返回 `{ lightDirection, lightColor: color.mul(attenuation) }`。
+- **`setupShadowNode` 显式抛错**：上游返回 `pointShadow( this.light )`，而 `src/nodes/lighting/PointShadowNode.js` **尚未移植**。按项目规则"未实现必须显式报错"，该方法抛 `std::runtime_error`，消息里点名缺的是哪个模块；测试用 `REQUIRE_THROWS_AS` 把这一契约钉住，**不返回 undefined 让调用方静默拿到空值**。
+
+验证：构建 exit 0（首轮 `factory->setFunctionSourceText` 用错运算符，`JSValue` 需 `.` 且非 const，已修）。THREECPPTests **1529 cases / 214,139 assertions 全过**，较上轮 1525/214,114 增 4 例 25 断言，与 `*PointLight*` 过滤的 4 用例/25 断言一致。**九个 light 差分全过**，`threecpp.threejs-point-light-node-parity` **Passed 1.14s**，且是**行为比对**：同参数下比 `cutoffDistanceNode.value` 与 `decayExponentNode.value` 在 update **前后**各一次（0→7、2→1.5）、`color.r/g/b`（0.5/1.0/1.5），再加 name/length=0/static type/实例 type/isAnalyticLightNode/`directPointLight` 的 name 与 length/两方法 arity/class `toString` 源位置逐字节。
+
+审计（固定 worktree，HEAD=11738a9d55）刷新后应为 **src missing 55→54、partial 410→411**；PointLightNode 记 `partial-unverified` 并登记 h/cpp（若读数与预期不符，提交会被脚本拦下并在此说明）。
+
+`src/nodes/lighting` 仍缺 **7 个**：EnvironmentNode、LightsNode、PointShadowNode、RectAreaLightNode、ShadowBaseNode、ShadowFilterNode、ShadowNode。**shadow 四件**（PointShadowNode / ShadowBaseNode / ShadowFilterNode / ShadowNode）都卡在 `src/nodes/utils/PostProcessingUtils` 未移植；`RectAreaLightNode` 卡在 `src/nodes/functions/BSDF/LTC.js`。**所以下一轮应先补 `PostProcessingUtils`**，一次性解锁四个模块，而不是继续在 lighting 里逐个绕。
+
+下一步：`src/nodes/utils/PostProcessingUtils.js`——依赖已核对齐全（`TextureSizeNode`、`TextureNode.textureLoad`、MathNode `sqrt`、TSLBase 的 `abs/cross/float/Fn/normalize/ivec2/sub/vec2/vec3/vec4/fract/dot/cos/sin`、`constants.WebGPUCoordinateSystem`）。它的 7 个导出里 `interleavedGradientNoise` 与 `vogelDiskSample` 是纯数值公式，但差分需要能**求值节点图**（当前不具备），故差分只能比较导出名/arity/源位置与节点结构，数值一致性要等求值能力具备后补——这一点必须如实记录，不能声称数值已验证。
+
 # 当前接续：ProjectorLightNode 已移植并差分验收（update 走真实行为比对），2026-11-05
 
 目标保持 active：固定 three.js 11738a9d55e502fb484cefffcea3a66dc44e9fe9 全部 src + examples/jsm 原生 C++ 逻辑，Vulkan 后端；禁止 CEF/生产 JS 引擎/桥接。阶段本地 Git 提交，不推送。
