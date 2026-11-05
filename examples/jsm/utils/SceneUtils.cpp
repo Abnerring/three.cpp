@@ -152,8 +152,10 @@ std::shared_ptr<Object3D> SceneUtils::createMeshesFromMultiMaterialMesh(
         for (const auto& [name, attribute] : geometry->attributes) {
             const double itemSize = attribute->getItemSize();
             const double newLength = group.count * itemSize;
+            // The pinned code keeps attribute.normalized on the rebuilt attribute.
             auto newAttribute = std::make_shared<BufferAttribute>(
-                std::vector<float>(static_cast<std::size_t>(newLength), 0.0f), itemSize);
+                std::vector<float>(static_cast<std::size_t>(newLength), 0.0f), itemSize,
+                attribute->getNormalized());
             for (double k = start, n = 0; k < end; k++, n++) {
                 const double ind = index->getX(k);
                 if (itemSize >= 1) newAttribute->setX(n, attribute->getX(ind));

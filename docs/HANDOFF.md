@@ -1,4 +1,26 @@
-# 当前接续：多材质拆分补齐 `itemSize = 4` 分支覆盖（r84 遗留缺口），2026-11-05
+# 当前接续：修复 `createMeshesFromMultiMaterialMesh` 丢失 `normalized` 标记（r85 发现的真实保真度缺口），2026-11-05
+
+目标保持 active：固定 three.js 11738a9d55e502fb484cefffcea3a66dc44e9fe9 全部 src + examples/jsm 原生 C++ 逻辑，Vulkan 后端；禁止 CEF/生产 JS 引擎/桥接。阶段本地 Git 提交，不推送。
+
+## 本轮修复
+
+r85 记录「拆分 helper 重建属性时 **未保留 `normalized` 标记**」。上游源码为 `new BufferAttribute( newArray, itemSize, attribute.normalized )`，本端口 r82 实现漏传第三个参数。修复：
+
+- `SceneUtils.cpp`：`std::make_shared<BufferAttribute>(std::vector<float>(len, 0), itemSize, attribute->getNormalized())`，并加注释说明对应上游 `attribute.normalized`。
+- 新增用例：geometry 带 `position` + **`skinWeight`（itemSize 4、`normalized = true`）**，两 group；断言第二子 Mesh 的 `skinWeight`：`getNormalized() == true`、`itemSize == 4`、首顶点四通道为源顶点 3 的 `[1,0,0,0]`。
+  - 期间一处自我更正：首版断言 `getY(0) == 0.5` 是错的（第二 group 从源索引 3 开始，其值为 `[1,0,0,0]`），**改断言不改代码**。
+
+## 验证
+
+- 构建 exit 0；过滤 `*SceneUtils*` = **10 cases / 55 assertions** 全过（+1 用例 / +5 断言）。
+- `THREECPPAddonTests` 全套 **1341 cases / 38,717 assertions** 通过。
+- 审计计数不变（测试/实现修补，模块状态不变）：examples/jsm 325 / 151，src 13 / 452。
+
+**未执行验证（如实记录）**：该 helper 仍无属性级差分（只有单测）；`normalized` 只在 `itemSize = 4` 的 skinWeight 上验证；多 group 同 materialIndex 在拆分 helper 中未单独覆盖。
+
+## 下一步
+
+examples/jsm 剩余 325：`transpiler/AST.js`(8868) 最有价值。src 剩余 13：`ShadowNode`(24,331，依赖齐备) / `PhysicalLightingModel`(32,829，解锁三材质)。# 当前接续：多材质拆分补齐 `itemSize = 4` 分支覆盖（r84 遗留缺口），2026-11-05
 
 目标保持 active：固定 three.js 11738a9d55e502fb484cefffcea3a66dc44e9fe9 全部 src + examples/jsm 原生 C++ 逻辑，Vulkan 后端；禁止 CEF/生产 JS 引擎/桥接。阶段本地 Git 提交，不推送。
 

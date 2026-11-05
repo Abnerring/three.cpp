@@ -233,3 +233,31 @@ TEST_CASE("SceneUtils split copies a four component attribute through its fourth
     REQUIRE(skinIndex->getZ(0) == Approx(14));
     REQUIRE(skinIndex->getW(0) == Approx(15));
 }
+TEST_CASE("SceneUtils split preserves the normalized flag of a rebuilt attribute") {
+    auto geometry = std::make_shared<BufferGeometry>();
+    geometry->setAttribute("position", std::make_shared<BufferAttribute>(
+                                           std::vector<float>{0, 0, 0, 1, 0, 0, 0, 1, 0,
+                                                              2, 0, 0, 3, 0, 0, 2, 1, 0}, 3));
+    geometry->setAttribute(
+        "skinWeight",
+        std::make_shared<BufferAttribute>(
+            std::vector<float>{0, 0, 0, 1, 0, 0, 1, 0, 0, 1, 0, 0,
+                               1, 0, 0, 0, 0.5f, 0.5f, 0, 0, 0, 1, 0, 0}, 4, true));
+    geometry->addGroup(0, 3, 0);
+    geometry->addGroup(3, 3, 1);
+    auto mesh = std::make_shared<Mesh>(geometry,
+                                       std::vector<std::shared_ptr<Material>>{
+                                           std::make_shared<MeshBasicMaterial>(),
+                                           std::make_shared<MeshBasicMaterial>()});
+
+    const auto result = SceneUtils::createMeshesFromMultiMaterialMesh(mesh);
+    const auto group = std::dynamic_pointer_cast<Group>(result);
+    REQUIRE(group != nullptr);
+    const auto second = std::dynamic_pointer_cast<Mesh>(group->children[1]);
+    const auto skinWeight = second->geometry->getAttribute("skinWeight");
+    REQUIRE(skinWeight->getNormalized() == true);
+    REQUIRE(skinWeight->getItemSize() == Approx(4));
+    // The second group starts at source vertex three, which carries [1, 0, 0, 0].
+    REQUIRE(skinWeight->getX(0) == Approx(1));
+    REQUIRE(skinWeight->getY(0) == Approx(0));
+}
