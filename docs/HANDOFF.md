@@ -1,4 +1,33 @@
-# 当前接续：addon `MaterialXLog` 移植（9 个日志码 + 严重级过滤，entries 级差分），examples 连续第 5 个，2026-11-05
+# 当前接续：addon `DebugEnvironment` 移植（5 子节点场景 + Set 去重 dispose，24 项差分），examples 连续第 6 个，2026-11-05
+
+目标保持 active：固定 three.js 11738a9d55e502fb484cefffcea3a66dc44e9fe9 全部 src + examples/jsm 原生 C++ 逻辑，Vulkan 后端；禁止 CEF/生产 JS 引擎/桥接。阶段本地 Git 提交，不推送。
+
+## 本轮交付：`examples/jsm/environments/DebugEnvironment`
+
+- `examples/jsm/environments/DebugEnvironment.{h,cpp}`：`class DebugEnvironment : public Scene`。
+  - 构造（逐行照抄上游场景搭建）：`BoxGeometry` 后 `deleteAttribute("uv")`；`MeshStandardMaterial{ metalness=0, side=BackSide }` 的房间 `Mesh`，`scale.setScalar(10)`；`PointLight(color=0xffffff, intensity=50, distance=0, decay=2)`；三个 `MeshLambertMaterial`（`color` 分别 红/绿/蓝、`emissive=0xffffff`、`emissiveIntensity=10`）的 `Mesh` —— 位置/缩放分别为 `(-5,2,0)/(0.1,1,1)`、`(0,5,0)/(1,0.1,1)`、`(2,1,5)/(1.5,2,0.1)`。
+  - `dispose() override`：`traverse` 收集 `isMesh` 对象的 **geometry/material 并按指针去重**（对应上游 `Set`），再逐个 `dispose()`；**四个 mesh 共享同一个 geometry → 只释放一次**，四个 material 各一次。
+- `test/unit/addons/environments/DebugEnvironment.tests.cpp`（2 用例 / 35 断言）：5 个 children 的顺序与类型、room 的 uv 已删、metalness/side/scale、主光三参数、三个灯箱的位置/缩放/颜色/自发光；**dispose 两次后 geometry 事件 2 次、material 事件 8 次**（去重语义）。
+- 差分 `DebugEnvironmentParityProbe.cpp` + `compare-debug-environment.mjs`：**24 项**数据级比较（children 数、room 属性、主光三参数、三灯箱的 position/scale/color、共享几何布尔、**dispose 两次后的事件计数**），上游裸 `from 'three'` 重写后导入。
+
+## 本轮两个陷阱（重要）
+
+1. **`core/Event.h` 不存在** → `struct Event` 在 `core/EventDispatcher.h`（上次弄错过一次，本轮探针又踩）。
+2. **字面量 `0` 再次命中 `set(const char*, …)` 空指针重载**：探针里 `value.set(0, JSValue(...))` 直接 SIGSEGV（第 42 轮同型问题的第三次出现）。**写成 `value.set(JSValue(0.0), …)` 并加注释**。
+
+## 验证
+
+- 构建 exit 0。
+- `THREECPPAddonTests`：**1303 cases / 31,270 assertions 全过**（较上轮 1301/31,235 → +2 例 / +35 断言）；过滤 `*DebugEnvironment*` = 2 cases / 35 assertions。
+- 差分 `threecpp.threejs-debug-environment-parity` **Passed**（24 项）。
+- 审计：**examples/jsm missing 335→334、partial-unverified 141→142**；`src` 不变（19 / 446）。
+
+**未执行验证（如实记录）**：未做真实渲染（本 addon 就是为预览环境而设，渲染路径完全未触）；`dispose()` 的 `isMesh` 过滤只覆盖了本场景自己创建的 Mesh，未验证用户往里加非 Mesh 子节点的情形；`Objects`/材质参数只比数值，未比 `toJSON()`。
+
+## 下一步
+
+examples 小 addon 继续。已筛选候选：`objects/GroundedSkybox`(2049，需 `BufferAttribute` 变形与 `geometry.scale`)、`generators/city/InstancedMeshGenerator`(2230)、`helpers/OctreeHelper`(2913)、`materialx/MaterialXArchive`(2327)、`Utils/ColorUtils` 类纯函数还有 `transpiler/TranspilerUtils`(682，AST 类型未核查)。
+src 侧仍剩 19 个（`ShadowNode` 24,331 依赖齐备为最大缺口；`PhysicalLightingModel` 32,829 解锁三材质）。# 当前接续：addon `MaterialXLog` 移植（9 个日志码 + 严重级过滤，entries 级差分），examples 连续第 5 个，2026-11-05
 
 目标保持 active：固定 three.js 11738a9d55e502fb484cefffcea3a66dc44e9fe9 全部 src + examples/jsm 原生 C++ 逻辑，Vulkan 后端；禁止 CEF/生产 JS 引擎/桥接。阶段本地 Git 提交，不推送。
 

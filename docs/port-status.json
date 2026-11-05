@@ -201,8 +201,8 @@
     "note": "Accepted port scope is src and examples/jsm, including tracked third-party dependencies. Editor/manual web applications are excluded from native application rewrites. Native host behavior, packaging and all three platforms require separate implementation and verification evidence."
   },
   "counts": {
-    "partial-unverified": 587,
-    "missing": 354,
+    "partial-unverified": 588,
+    "missing": 353,
     "vulkan-port-pending": 290,
     "dependency-unverified": 20
   },
@@ -218,8 +218,8 @@
     "examples/jsm": {
       "modules": 496,
       "counts": {
-        "missing": 335,
-        "partial-unverified": 141,
+        "missing": 334,
+        "partial-unverified": 142,
         "dependency-unverified": 20
       }
     }
@@ -278,7 +278,7 @@
       "path": "examples/jsm/environments",
       "upstreamFiles": 3,
       "moduleCount": 3,
-      "modulesWithCppFiles": 1,
+      "modulesWithCppFiles": 2,
       "verifiedComplete": 0
     },
     {
@@ -23224,11 +23224,11 @@
       "scope": "examples/jsm",
       "kind": "addon",
       "upstreamSha256": "d4f6930405d570047a505ba26f720e14d65a37548828368a113b8089bc279175",
-      "header": null,
-      "implementation": null,
+      "header": "examples/jsm/environments/DebugEnvironment.h",
+      "implementation": "examples/jsm/environments/DebugEnvironment.cpp",
       "expectedHeader": "examples/jsm/environments/DebugEnvironment.h",
       "expectedImplementation": "examples/jsm/environments/DebugEnvironment.cpp",
-      "status": "missing",
+      "status": "partial-unverified",
       "verifiedComplete": false,
       "apiExtraction": "static-only",
       "verification": {
@@ -23237,7 +23237,9 @@
           "pointer": "/modules/785"
         },
         "upstreamUnitTests": [],
-        "cppUnitTests": [],
+        "cppUnitTests": [
+          "test/unit/addons/environments/DebugEnvironment.tests.cpp"
+        ],
         "reviewedImplementation": [],
         "differentialResults": [],
         "renderingResults": [],
