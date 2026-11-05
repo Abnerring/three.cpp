@@ -39,6 +39,26 @@ try {
 }
 const atomicLoadIsNode = atomicLoadBuilt && atomicLoadResult.isNode === true;
 const atomicLoadIsStackNode = atomicLoadBuilt && atomicLoadResult.isStackNode === true;
+const makeGenerateBuilder = (parents, lines) => ({
+  shaderStage: 'compute',
+  getNodeProperties: () => ({ parents }),
+  getDataFromNode: () => ({ nodeType: 'uint' }),
+  getNodeType: () => 'uint',
+  getMethod: (method) => method,
+  getVarFromNode: () => ({}),
+  getPropertyName: () => 'v0',
+  generateLetStatement: (type, name) => `let ${type} ${name}`,
+  addLineFlowCode: (snippet) => { lines.push(snippet); }
+});
+const stackParents = [ { isStackNode: true } ];
+const voidLines = [];
+const voidAtomic = new AtomicFunctionNode('atomicStore', pointerRef, valueRef);
+const voidResult = voidAtomic.generate(makeGenerateBuilder(stackParents, voidLines));
+
+const emptyParents = [];
+const valueLines = [];
+const valueAtomic = new AtomicFunctionNode('atomicAdd', pointerRef, valueRef);
+const valueResult = valueAtomic.generate(makeGenerateBuilder(emptyParents, valueLines));
 const expected = {
   name: AtomicFunctionNode.name,
   length: AtomicFunctionNode.length,
@@ -63,6 +83,10 @@ const expected = {
   atomicLoadBuilt,
   atomicLoadIsNode,
   atomicLoadIsStackNode,
+  voidResultUndefined: voidResult === undefined,
+  voidLine: voidLines[0] ?? '',
+  valueResult,
+  valueLine: valueLines[0] ?? '',
   toStackCallable: typeof atomic.toStack === 'function',
   toStackReturnsSelf: typeof atomic.toStack === 'function' && atomic.toStack() === atomic,
   source: AtomicFunctionNode.toString()

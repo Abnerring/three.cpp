@@ -146,3 +146,31 @@ TEST_CASE("AtomicFunctionNode module factories build nodes") {
     REQUIRE(stored.get("method").strictEquals("atomicAdd"));
     REQUIRE(stored.get("valueNode").isNull() == false);
 }
+
+TEST_CASE("AtomicFunctionNode generate writes flow code for the void and value forms") {
+    const auto ctor = nativeAtomicFunctionNodeConstructor();
+    const auto pointer = pointerStub();
+    const auto value = valueStub();
+
+    // parents holds a single stack node, so the result is void and only flow code is added.
+    auto stackParents = JSValue::array();
+    auto stackNode = JSValue::object(nullptr);
+    stackNode.set("isStackNode", true);
+    // The index has to be a JSValue: a literal 0 would select the null const char* overload.
+    stackParents.set(JSValue(0.0), stackNode);
+    auto voidLines = JSValue::array();
+    const auto voidAtomic = ctor.construct({JSValue("atomicStore"), pointer, value});
+    auto voidBuilder = generateBuilder(stackParents, voidLines);
+    REQUIRE(voidAtomic.get("generate").call(voidAtomic, {voidBuilder}).isUndefined());
+    REQUIRE(voidLines.length() == Approx(1));
+    REQUIRE(voidLines.get(JSValue(0.0)).strictEquals("atomicStore( &ptr, val )"));
+
+    // Without such a parent the value form declares a let statement and answers the property name.
+    auto emptyParents = JSValue::array();
+    auto valueLines = JSValue::array();
+    const auto valueAtomic = ctor.construct({JSValue("atomicAdd"), pointer, value});
+    auto valueBuilder = generateBuilder(emptyParents, valueLines);
+    REQUIRE(valueAtomic.get("generate").call(valueAtomic, {valueBuilder}).strictEquals("v0"));
+    REQUIRE(valueLines.length() == Approx(1));
+    REQUIRE(valueLines.get(JSValue(0.0)).strictEquals("let uint v0 = atomicAdd( &ptr, val )"));
+}

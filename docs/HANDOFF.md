@@ -1,4 +1,41 @@
-# 当前接续：修掉 AtomicFunctionNode 的 nodeProxy 调用写法错误 → 模块工厂真正可用，并撤回第 40 轮的错误归因，2026-11-05
+# 当前接续：`generate` 的「SIGSEGV」其实是测试代码的重载陷阱（`array.set(0, …)` 命中 `const char*` 空指针重载）——已修并纳入行为级差分，2026-11-05
+
+目标保持 active：固定 three.js 11738a9d55e502fb484cefffcea3a66dc44e9fe9 全部 src + examples/jsm 原生 C++ 逻辑，Vulkan 后端；禁止 CEF/生产 JS 引擎/桥接。阶段本地 Git 提交，不推送。
+
+**本轮是验证补强/测试缺陷修复，不新增模块，审计计数不变（src missing 24 / partial 441）——不声称覆盖率提升。**
+
+## 结论：第 38 轮以来的「`generate` SIGSEGV」不是运行时 bug
+
+用独立临时探针（已删除）复现并逐句标记，崩溃点落在**测试/探针自己的桩构造**里，而不是 `generate` 内部：
+```cpp
+stackParents.set(0, stackNode);          // ✗ 字面量 0 命中 set(const char*, …) → 空指针 → SIGSEGV
+stackParents.set(JSValue(0.0), stackNode); // ✓
+```
+改用显式 `JSValue(0.0)` 后，**`generate` 两个分支都工作正常**：
+- parents 为单元素 stack 节点 → **void 分支**：只写 flow code，返回 `undefined`，片段 `atomicStore( &ptr, val )`；
+- parents 为空数组 → **value 分支**：`let uint v0 = atomicAdd( &ptr, val )`，返回 `"v0"`。
+
+**因此正式撤回第 38 轮「generate 在桩 builder 下触发访问违例」的表述**：源码实现自始正确，崩溃来自测试代码。
+
+## 本轮验证补强（全部行为级）
+
+- **单测**恢复并修正 `AtomicFunctionNode generate writes flow code for the void and value forms`：断言 void 分支返回 undefined、`voidLines.length()==1` 且片段逐字节 `atomicStore( &ptr, val )`；value 分支返回 `"v0"`、片段逐字节 `let uint v0 = atomicAdd( &ptr, val )`。**注释里写明「下标必须用 JSValue，字面量 0 会选到空指针重载」**，防止再次踩坑。
+- **差分**新增 `voidResultUndefined` / `voidLine` / `valueResult` / `valueLine`，两侧逐字节一致（上游同样走 void/value 分支并产出相同片段）。
+
+验证：构建 exit 0。THREECPPTests **1628 cases / 214,771 assertions 全过**（较上轮 1627 → +1 例 / +6 断言）。差分 `threecpp.threejs-atomic-function-node-parity` **Passed**。
+
+## 仍未处理（低优先）
+
+- 「Redefinition of method chaining 'toStack'」告警：TSLCore 在部分重复初始化路径上重复注册，**仅告警不影响功能**，未处理。
+
+## 方法论（第三次栽在同一类「隐式转换」上）
+
+1. `invoke(fn, "call")({x})` ≠ `fn.call({}, {x})`（第 32/41 轮）；
+2. `array.set(0, …)` 中字面量 `0` 会命中 `const char*` 重载（本轮）。
+
+**今后写测试桩时：所有数组下标、字符串键、可空指针参数一律显式构造类型（`JSValue(0.0)`、`JSValue("0")`、`nullptr`）**，不要依赖字面量隐式转换。
+
+下一步：回模块推进：`SubgroupFunctionNode`(16,784) / `SpriteUtils` 已完成 / 3 个 `loaders/nodes` / `NodeMaterials`（仍被 4 个材质阻塞：`MeshStandard`/`MeshPhysical`/`MeshSSS`/`Line2`，其中三个需要 32,829 B 的 `PhysicalLightingModel`）。# 当前接续：修掉 AtomicFunctionNode 的 nodeProxy 调用写法错误 → 模块工厂真正可用，并撤回第 40 轮的错误归因，2026-11-05
 
 目标保持 active：固定 three.js 11738a9d55e502fb484cefffcea3a66dc44e9fe9 全部 src + examples/jsm 原生 C++ 逻辑，Vulkan 后端；禁止 CEF/生产 JS 引擎/桥接。阶段本地 Git 提交，不推送。
 
