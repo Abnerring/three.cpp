@@ -224,6 +224,7 @@ target_sources(threecpp PRIVATE
     src/materials/nodes/PointsNodeMaterial.cpp
     src/nodes/gpgpu/ComputeBuiltinNode.cpp
     src/nodes/gpgpu/WorkgroupInfoNode.cpp
+    src/nodes/gpgpu/AtomicFunctionNode.cpp
     src/nodes/functions/VolumetricLightingModel.cpp
     src/nodes/display/ViewportSharedTextureNode.cpp
     src/nodes/utils/SampleNode.cpp

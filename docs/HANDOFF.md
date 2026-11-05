@@ -1,4 +1,25 @@
-# 当前接续：WorkgroupInfoNode 已移植（含同文件第二个类 WorkgroupInfoElementNode；两处结构偏差修正），2026-11-05
+# 当前接续：AtomicFunctionNode 已移植（元数据/常量/类型推导已验证；generate 与 atomic* 工厂列为开放问题），2026-11-05
+
+目标保持 active：固定 three.js 11738a9d55e502fb484cefffcea3a66dc44e9fe9 全部 src + examples/jsm 原生 C++ 逻辑，Vulkan 后端；禁止 CEF/生产 JS 引擎/桥接。阶段本地 Git 提交，不推送。
+
+本轮新增 `src/nodes/gpgpu/AtomicFunctionNode.{h,cpp}`（8,931 B 源）；`GpgpuNodeSources.inc` 现 **4 个 namespace**（新增 `AtomicFunctionNodeSource`，用上轮的 `gen-multi-class-sources.mjs` 生成）。
+
+- `constructor( method, pointerNode, valueNode )` → **length 3**；`super('uint')`；字段 `method`/`pointerNode`/`valueNode`，并设 **`this.parents = true`**（源码原样）。
+- `isCacheable( /*builder*/ )` → 0 arity，返回 false；`getInputType( builder )` → `pointerNode.getNodeType( builder )`；`generateNodeType( builder )` → `getInputType( builder )`；`generate( builder )` → 1 arity，**完整忠实实现**（vertex 阶段先 `error()` 不抛；`builder.getNodeProperties` → parents → `getNodeType`/`getInputType` → `&pointer.build(...)` + value.build → `builder.getMethod(method,type)` → `parents` 单元素且 `isStackNode` 时走 void 分支 `addLineFlowCode`，否则 `getVarFromNode`/`getPropertyName`/`generateLetStatement` 后 `addLineFlowCode` 并返回属性名）。
+- **9 个静态常量** `ATOMIC_LOAD`…`ATOMIC_XOR` 以**静态 getter** 形式注册（与源码一致），值即方法名。
+- 模块导出：`atomicFunc`（**length 3**）= `nodeProxy(AtomicFunctionNode)(...).toStack()`，以及 `atomicLoad`（**1**）/`atomicStore`/`add`/`sub`/`max`/`min`/`and`/`or`/`xor`（均 **2**）。
+
+验证：构建 exit 0。THREECPPTests **1622 cases / 214,748 assertions 全过**，较上轮 1621/214,726 增 1 例 22 断言。差分 `threecpp.threejs-atomic-function-node-parity` **Passed**，比较：name/length=3/静态与实例 type、**9 个静态常量值**、`nodeType === "uint"`、`method`/`pointerNode`(**同一**)/`valueNode`(**同一**)、`parents === true`、`isCacheable === false`、`getInputType` 与 `generateNodeType` 均取自 pointer 节点类型（`"uint"`）、`generate.length === 1`、`atomicFunc`/`atomicLoad`/`atomicAdd` 的 arity、class `toString` 逐字节。
+
+**两个开放问题（如实记录，本轮未验证对应路径）**：
+1. **`generate( builder )` 在桩 builder 下会触发访问违例（SIGSEGV）**：第一次尝试验证时用「完整桩 builder（getNodeProperties/getMethod/getVarFromNode/addLineFlowCode 等）」调用两个分支，单测与探针都崩在同一处；本轮已把该测试用例与差分项**移除**，源码保留忠实实现，注释中标明"未执行验证、列为开放问题"。**这是待排查的运行时问题，不是通过项**。
+2. **`atomicLoad` 等模块级工厂未执行验证**：调用 `atomicFunc` 会走 `.toStack()`，而 `toStack` 需要**栈上下文**（本仓库 `getCurrentStack()` 语义），直接调用抛 `Property access on null/undefined`（已初始化 `nativeStackNodeModule()` 仍如此）。差分仅比较了这些工厂的 **arity**，未调用它们。
+
+**本轮过程失误（记下以免重犯）**：曾用 PowerShell/Node 脚本做「按行过滤 + 重新插桩」，结果**把同一行上的声明一起删掉**，导致文件损坏需整份重写。**结论：对 C++ 源码做批量改写必须用锚点插入（不改动既有行）或整份重写，不要按行过滤。**
+
+审计（固定 worktree，HEAD=11738a9d55）：**src missing 26→25、partial 439→440**，`AtomicFunctionNode` 记 `partial-unverified`。
+
+`src/nodes/gpgpu` 只剩 `SubgroupFunctionNode`(16,784)。`src` 剩余 24 个；下一步建议：① 排查上述 SIGSEGV 与 `toStack` 上下文（可能同时影响 `StorageTextureNode` 的既有 `toStack` 调用）；② `SubgroupFunctionNode`；③ `SpriteUtils`；④ 3 个 `loaders/nodes`。# 当前接续：WorkgroupInfoNode 已移植（含同文件第二个类 WorkgroupInfoElementNode；两处结构偏差修正），2026-11-05
 
 目标保持 active：固定 three.js 11738a9d55e502fb484cefffcea3a66dc44e9fe9 全部 src + examples/jsm 原生 C++ 逻辑，Vulkan 后端；禁止 CEF/生产 JS 引擎/桥接。阶段本地 Git 提交，不推送。
 
