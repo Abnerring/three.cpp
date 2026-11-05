@@ -61,3 +61,14 @@ TEST_CASE("ReflectorNode dispose releases the base node") {
     REQUIRE_NOTHROW(node.get("dispose").call(node, {}));
     REQUIRE(baseNode.get("_disposes").toNumber() == Approx(1));
 }
+TEST_CASE("ReflectorNode factory and resolution alias") {
+    auto base = nativeReflectorBaseNodeConstructor().construct({JSValue::object(nullptr)});
+    base.set("resolutionScale", JSValue(2));
+    REQUIRE(base.get("resolution").toNumber() == Approx(2));
+    base.set("resolution", JSValue(3));
+    REQUIRE(base.get("resolutionScale").toNumber() == Approx(3));
+
+    const auto node = nativeReflectorNodeBinding("reflector").call({}, {});
+    REQUIRE(node.get("type").toString() == "ReflectorNode");
+    REQUIRE(node.get("_reflectorBaseNode").toBoolean());
+}

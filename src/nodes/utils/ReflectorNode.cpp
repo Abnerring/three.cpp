@@ -8,6 +8,10 @@
 #include "core/JSWeakMap.h"
 #include "core/RenderTarget.h"
 #include "math/Matrix4.h"
+#include "math/Plane.h"
+#include "math/Vector2.h"
+#include "math/Vector3.h"
+#include "math/Vector4.h"
 #include "nodes/accessors/TextureNode.h"
 #include "nodes/display/ScreenNode.h"
 #include "nodes/lighting/LightingNodeRuntime.h"
@@ -160,8 +164,181 @@ JSValue baseGetRenderTarget(const JSValue& self, const Args& args, const Args&) 
     return renderTarget;
 }
 
-JSValue baseUpdateBefore(const JSValue&, const Args&, const Args&) {
-    return notPorted("ReflectorBaseNode.updateBefore");
+// The frame hook builds the reflection plane, mirrors the virtual camera and renders the scene from it.
+// Module level temporaries mirror the pinned scratch objects.
+JSWeakValue& scratch() { static thread_local JSWeakValue weak; return weak; }
+bool& inReflector() { static thread_local bool value = false; return value; }
+
+JSValue scratchObjects() {
+    if (const auto cached = scratch().lock(); cached && cached->toBoolean()) return *cached;
+    auto objects = JSValue::object(nullptr);
+    objects.set("plane", nativePlaneConstructor().construct());
+    objects.set("normal", nativeVector3Constructor().construct());
+    objects.set("reflectorWorldPosition", nativeVector3Constructor().construct());
+    objects.set("cameraWorldPosition", nativeVector3Constructor().construct());
+    objects.set("rotationMatrix", nativeMatrix4Constructor().construct());
+    objects.set("lookAtPosition", nativeVector3Constructor().construct({JSValue(0), JSValue(0), JSValue(-1)}));
+    objects.set("clipPlane", nativeVector4Constructor().construct());
+    objects.set("view", nativeVector3Constructor().construct());
+    objects.set("target", nativeVector3Constructor().construct());
+    objects.set("q", nativeVector4Constructor().construct());
+    objects.set("size", nativeVector2Constructor().construct());
+    scratch() = JSWeakValue(objects);
+    return objects;
+}
+
+JSValue baseUpdateBefore(const JSValue& rawSelf, const Args& args, const Args&) {
+    JSValue& self = const_cast<JSValue&>(rawSelf);
+    if (!self.get("bounces").toBoolean() && inReflector()) return JSValue(false);
+
+    inReflector() = true;
+    const auto frame = arg(args, 0);
+    auto scene = frame.get("scene");
+    const auto camera = frame.get("camera");
+    auto renderer = frame.get("renderer");
+    auto material = frame.get("material");
+    const auto target = self.get("target");
+    const auto scratch = scratchObjects();
+
+    auto virtualCamera = self.get("getVirtualCamera").call(self, {camera});
+    const auto renderTarget = self.get("getRenderTarget").call(self, {virtualCamera});
+    self.get("_updateResolution").call(self, {renderTarget, renderer});
+
+    auto reflectorWorldPosition = scratch.get("reflectorWorldPosition");
+    auto cameraWorldPosition = scratch.get("cameraWorldPosition");
+    auto rotationMatrix = scratch.get("rotationMatrix");
+    auto normal = scratch.get("normal");
+    auto lookAtPosition = scratch.get("lookAtPosition");
+    auto view = scratch.get("view");
+    auto reflectTarget = scratch.get("target");
+
+    reflectorWorldPosition = reflectorWorldPosition.get("setFromMatrixPosition").call(
+        reflectorWorldPosition, {target.get("matrixWorld")});
+    cameraWorldPosition = cameraWorldPosition.get("setFromMatrixPosition").call(
+        cameraWorldPosition, {camera.get("matrixWorld")});
+    rotationMatrix = rotationMatrix.get("extractRotation").call(
+        rotationMatrix, {target.get("matrixWorld")});
+    normal = normal.get("set").call(normal, {JSValue(0), JSValue(0), JSValue(1)});
+    normal = normal.get("applyMatrix4").call(normal, {rotationMatrix});
+    view = view.get("subVectors").call(view, {reflectorWorldPosition, cameraWorldPosition});
+
+    const auto facingAway = view.get("dot").call(view, {normal}).toNumber() > 0;
+    bool needsClear = false;
+    if (facingAway && !self.get("forceUpdate").toBoolean()) {
+        if (!self.get("hasOutput").toBoolean()) {
+            inReflector() = false;
+            return JSValue{};
+        }
+        needsClear = true;
+    }
+
+    view = view.get("reflect").call(view, {normal});
+    view = view.get("negate").call(view, {});
+    view = view.get("add").call(view, {reflectorWorldPosition});
+
+    rotationMatrix = rotationMatrix.get("extractRotation").call(rotationMatrix, {camera.get("matrixWorld")});
+    lookAtPosition = lookAtPosition.get("set").call(
+        lookAtPosition, {JSValue(0), JSValue(0), JSValue(-1)});
+    lookAtPosition = lookAtPosition.get("applyMatrix4").call(lookAtPosition, {rotationMatrix});
+    lookAtPosition = lookAtPosition.get("add").call(lookAtPosition, {cameraWorldPosition});
+
+    reflectTarget = reflectTarget.get("subVectors").call(reflectTarget, {reflectorWorldPosition, lookAtPosition});
+    reflectTarget = reflectTarget.get("reflect").call(reflectTarget, {normal});
+    reflectTarget = reflectTarget.get("negate").call(reflectTarget, {});
+    reflectTarget = reflectTarget.get("add").call(reflectTarget, {reflectorWorldPosition});
+
+    virtualCamera.set("coordinateSystem", camera.get("coordinateSystem"));
+    auto virtualPosition = virtualCamera.get("position");
+    virtualPosition = virtualPosition.get("copy").call(virtualPosition, {view});
+    virtualCamera.set("position", virtualPosition);
+    auto virtualUp = virtualCamera.get("up");
+    virtualUp = virtualUp.get("set").call(virtualUp, {JSValue(0), JSValue(1), JSValue(0)});
+    virtualUp = virtualUp.get("applyMatrix4").call(virtualUp, {rotationMatrix});
+    virtualUp = virtualUp.get("reflect").call(virtualUp, {normal});
+    virtualCamera.set("up", virtualUp);
+    virtualCamera.get("lookAt").call(virtualCamera, {reflectTarget});
+    virtualCamera.set("near", camera.get("near"));
+    virtualCamera.set("far", camera.get("far"));
+    virtualCamera.get("updateMatrixWorld").call(virtualCamera, {});
+    auto virtualProjection = virtualCamera.get("projectionMatrix");
+    virtualProjection = virtualProjection.get("copy").call(virtualProjection, {camera.get("projectionMatrix")});
+    virtualCamera.set("projectionMatrix", virtualProjection);
+
+    // The mirrored projection flips the projection matrix entries for the reflection.
+    auto projectionElements = virtualProjection.get("elements");
+    projectionElements.set(JSValue(8.0), JSValue(-projectionElements.get(JSValue(8.0)).toNumber()));
+    projectionElements.set(JSValue(12.0), JSValue(-projectionElements.get(JSValue(12.0)).toNumber()));
+    virtualProjection.set("elements", projectionElements);
+    virtualCamera.set("projectionMatrix", virtualProjection);
+
+    auto reflectorPlane = scratch.get("plane");
+    reflectorPlane = reflectorPlane.get("setFromNormalAndCoplanarPoint").call(
+        reflectorPlane, {normal, reflectorWorldPosition});
+    reflectorPlane = reflectorPlane.get("applyMatrix4").call(
+        reflectorPlane, {virtualCamera.get("matrixWorldInverse")});
+    auto clipPlane = scratch.get("clipPlane");
+    clipPlane = clipPlane.get("set").call(
+        clipPlane, {reflectorPlane.get("normal").get("x"), reflectorPlane.get("normal").get("y"),
+                    reflectorPlane.get("normal").get("z"), reflectorPlane.get("constant")});
+
+    auto projection = virtualCamera.get("projectionMatrix");
+    auto elements = projection.get("elements");
+    auto q = scratch.get("q");
+    const auto signX = (clipPlane.get("x").toNumber() >= 0 ? 1.0 : -1.0);
+    const auto signY = (clipPlane.get("y").toNumber() >= 0 ? 1.0 : -1.0);
+    q = q.get("set").call(
+        q, {JSValue((signX + elements.get(JSValue(8.0)).toNumber()) / elements.get(JSValue(0.0)).toNumber()),
+            JSValue((signY + elements.get(JSValue(9.0)).toNumber()) / elements.get(JSValue(5.0)).toNumber()),
+            JSValue(-1.0),
+            JSValue((1.0 + elements.get(JSValue(10.0)).toNumber()) / elements.get(JSValue(14.0)).toNumber())});
+    const auto qDot = clipPlane.get("dot").call(clipPlane, {q}).toNumber();
+    clipPlane = clipPlane.get("multiplyScalar").call(clipPlane, {JSValue(1.0 / qDot)});
+
+    const double clipBias = 0;
+    elements.set(JSValue(2.0), clipPlane.get("x"));
+    elements.set(JSValue(6.0), clipPlane.get("y"));
+    const bool isWebGPU = renderer.get("coordinateSystem").toNumber() ==
+                          static_cast<double>(WebGPUCoordinateSystem);
+    const auto clipZ = clipPlane.get("z").toNumber();
+    elements.set(JSValue(10.0), JSValue(isWebGPU ? (clipZ - clipBias) : clipZ));
+    elements.set(JSValue(14.0), clipPlane.get("w"));
+    projection.set("elements", elements);
+    virtualCamera.set("projectionMatrix", projection);
+
+    self.get("textureNode").set("value", renderTarget.get("texture"));
+    if (self.get("depth").strictEquals(true)) {
+        auto textureNode = self.get("textureNode");
+        auto depthNode = textureNode.get("getDepthNode").call(textureNode, {});
+        depthNode.set("value", renderTarget.get("depthTexture"));
+    }
+
+    material.set("visible", false);
+    const auto currentRenderTarget = renderer.get("getRenderTarget").call(renderer, {});
+    const auto currentMRT = renderer.get("getMRT").call(renderer, {});
+    const auto currentAutoClear = renderer.get("autoClear");
+    renderer.get("setMRT").call(renderer, {JSValue(nullptr)});
+    renderer.get("setRenderTarget").call(renderer, {renderTarget});
+    renderer.set("autoClear", true);
+
+    const auto previousName = scene.get("name");
+    const auto baseName = previousName.toBoolean() ? previousName.toString() : std::string("Scene");
+    scene.set("name", JSValue(baseName + " [ Reflector ]"));
+    if (needsClear) {
+        renderer.get("clear").call(renderer, {});
+        self.set("hasOutput", false);
+    } else {
+        renderer.get("render").call(renderer, {scene, virtualCamera});
+        self.set("hasOutput", true);
+    }
+    scene.set("name", previousName);
+
+    renderer.get("setMRT").call(renderer, {currentMRT});
+    renderer.get("setRenderTarget").call(renderer, {currentRenderTarget});
+    renderer.set("autoClear", currentAutoClear);
+    material.set("visible", true);
+    inReflector() = false;
+    self.set("forceUpdate", false);
+    return JSValue{};
 }
 
 // getDepthNode() { if ( this._depthNode === null ) { ... throw when the reflector has no depth ... new ReflectorNode(...) } }
@@ -272,6 +449,29 @@ JSValue nativeReflectorNodeModule() {
         method(prototype, "clone", 0, reflectorClone, {reflectorConstructor}, "");
         method(prototype, "dispose", 0, reflectorDispose, {nativeTextureNodeConstructor().get("prototype")}, "");
     }
+    // ReflectorBaseNode accessors: the deprecated resolution alias forwards to resolutionScale.
+    {
+        const auto defineProperty = nativeGlobalBinding("Object").get("defineProperty");
+        auto descriptor = JSValue::object(nullptr);
+        descriptor.set("get", JSValue::function(
+            +[](const JSValue& self, const Args&, const Args&) -> JSValue {
+                return self.get("resolutionScale");
+            }));
+        descriptor.set("set", JSValue::function(
+            +[](const JSValue& rawSelf, const Args& args, const Args&) -> JSValue {
+                JSValue& self = const_cast<JSValue&>(rawSelf);
+                self.set("resolutionScale", arg(args, 0, JSValue(1)));
+                return JSValue{};
+            }));
+        descriptor.set("enumerable", false);
+        descriptor.set("configurable", false);
+        defineProperty.call({}, {baseConstructor.get("prototype"), JSValue("resolution"), descriptor});
+    }
+    own(bindings, "reflector", JSValue::function(
+        +[](const JSValue&, const Args& args, const Args& captures) -> JSValue {
+            return captures.at(0).construct({arg(args, 0, JSValue::object(nullptr))});
+        },
+        {reflectorConstructor}));
     own(bindings, "default", reflectorConstructor);
     own(bindings, "ReflectorBaseNode", baseConstructor);
     return publish(bindings, lexical(), weak);

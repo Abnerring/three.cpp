@@ -1,4 +1,33 @@
-# 当前接续：`ReflectorNode` **Stage B 完成**（深度节点/clone/dispose）—— 仅剩 `ReflectorBaseNode.updateBefore`，2026-11-05
+# 当前接续：`ReflectorBaseNode.updateBefore` 实现 + 工厂/别名（ReflectorNode 全成员落地，待集成测试），2026-11-05
+
+目标保持 active：固定 three.js 11738a9d55e502fb484cefffcea3a66dc44e9fe9 全部 src + examples/jsm 原生 C++ 逻辑，Vulkan 后端；禁止 CEF/生产 JS 引擎/桥接。阶段本地 Git 提交，不推送。
+
+## 本轮交付
+
+1. **`ReflectorBaseNode.updateBefore(frame)`**（照 L445–600，约 150 行）：
+   - `bounces===false && _inReflector` → 提前返回 false；进入时 `_inReflector=true`；
+   - 取 `getVirtualCamera`/`getRenderTarget` + `_updateResolution`；
+   - 模块级 scratch（`Plane/Vector3×5/Matrix4/Vector4×2/Vector2`）缓存；计算 `reflectorWorldPosition/cameraWorldPosition/rotationMatrix/normal/view`；
+   - `facingAway && !forceUpdate` 且 `hasOutput===false` → 复位并 return；否则 `needsClear=true`；
+   - `view.reflect(normal).negate().add(reflectorWorldPosition)`；`lookAtPosition`/`_target` 镜像；虚拟相机 `coordinateSystem/position/up/lookAt/near/far/updateMatrixWorld` 与 `projectionMatrix.copy` 后**翻转 elements[8]/[12]**；
+   - 反射平面 → `clipPlane`，`q` 计算后 `multiplyScalar(1/dot)`，写回 `elements[2]/[6]/[10]`（WebGPU 时减 clipBias=0）/`[14]`；
+   - `textureNode.value = renderTarget.texture`（depth 时同时设 `getDepthNode().value`）；`material.visible=false`；
+   - 保存并切换 renderer 状态（MRT/RT/autoClear），`scene.name += " [ Reflector ]"`；`needsClear` → `clear()` + `hasOutput=false`，否则 `render(scene, virtualCamera)` + `hasOutput=true`；全量恢复；
+   - `_inReflector=false`、`forceUpdate=false`。
+2. **模块导出 `reflector(parameters)`**；**`resolution` 别名**（`defineProperty` getter/setter 转发 `resolutionScale`，**未发 warn**，与上游差异记录）。
+3. 测试 +1 例：「factory 与 alias 往返」。
+
+## 验证
+
+- 构建 exit 0；`*Reflector*` = **5 cases / 27 assertions** 全过；`THREECPPAddonTests` 全套 **1429 cases / 39,265 assertions** 通过。
+- 审计不变（ReflectorNode 已 partial，`updateBefore` 虽实现但无集成测试）：src 8 / 457。
+
+**未执行验证（如实记录）**：`updateBefore` **无集成测试**（需真实 camera/虚拟相机/renderer stub 组合，尚未构建）；`_inReflector` 递归保护、`needsClear` 分支、clipPlane 数值均未断言；`resolution` 别名缺 warn。
+
+## 下一步
+
+1. `updateBefore` 集成冒烟测试（stub camera：matrixWorld/projectionMatrix/near/far/clone/coordinateSystem + stub renderer + stub material）→ 断言 render 调用与 textureNode.value 更新；
+2. 收口 `ReflectorNode` 后推进 `Line2NodeMaterial`(18,172)/`PhysicalLightingModel`(32,829)/`MaterialXNodes`(10,782)/`MaterialXNoise`(48,687)。# 当前接续：`ReflectorNode` **Stage B 完成**（深度节点/clone/dispose）—— 仅剩 `ReflectorBaseNode.updateBefore`，2026-11-05
 
 目标保持 active：固定 three.js 11738a9d55e502fb484cefffcea3a66dc44e9fe9 全部 src + examples/jsm 原生 C++ 逻辑，Vulkan 后端；禁止 CEF/生产 JS 引擎/桥接。阶段本地 Git 提交，不推送。
 
