@@ -816,6 +816,7 @@ if(THREECPP_BUILD_ADDONS)
         unit/addons/environments/ColorEnvironment.tests.cpp
         unit/addons/utils/ColorUtils.tests.cpp
         unit/addons/misc/MorphAnimMesh.tests.cpp
+        unit/addons/loaders/materialx/MaterialXLog.tests.cpp
         unit/addons/geometries/ParametricFunctions.tests.cpp
         unit/addons/geometries/ParametricGeometry.tests.cpp
         unit/addons/geometries/BoxLineGeometry.tests.cpp
@@ -1233,6 +1234,13 @@ if(THREECPP_NODE_EXECUTABLE AND THREEJS_SOURCE_DIR)
     add_test(NAME threecpp.threejs-three-legacy-parity
         COMMAND "${THREECPP_NODE_EXECUTABLE}" "${CMAKE_CURRENT_SOURCE_DIR}/unit/utils/parity/compare-three-legacy.mjs"
         "${THREEJS_SOURCE_DIR}" "$<TARGET_FILE:ThreeJsThreeLegacyParityProbe>")
+endif()
+add_executable(ThreeJsMaterialXLogParityProbe unit/utils/parity/MaterialXLogParityProbe.cpp)
+target_link_libraries(ThreeJsMaterialXLogParityProbe PRIVATE threecpp::addons)
+if(THREECPP_NODE_EXECUTABLE AND THREEJS_SOURCE_DIR)
+    add_test(NAME threecpp.threejs-materialx-log-parity
+        COMMAND "${THREECPP_NODE_EXECUTABLE}" "${CMAKE_CURRENT_SOURCE_DIR}/unit/utils/parity/compare-materialx-log.mjs"
+        "${THREEJS_SOURCE_DIR}" "$<TARGET_FILE:ThreeJsMaterialXLogParityProbe>")
 endif()
 add_executable(ThreeJsMorphAnimMeshParityProbe unit/utils/parity/MorphAnimMeshParityProbe.cpp)
 target_link_libraries(ThreeJsMorphAnimMeshParityProbe PRIVATE threecpp::addons)

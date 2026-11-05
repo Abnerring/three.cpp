@@ -1,4 +1,29 @@
-# 当前接续：addon `MorphAnimMesh` 移植（工厂构造适配 + 行为级差分），examples 连续第 4 个，2026-11-05
+# 当前接续：addon `MaterialXLog` 移植（9 个日志码 + 严重级过滤，entries 级差分），examples 连续第 5 个，2026-11-05
+
+目标保持 active：固定 three.js 11738a9d55e502fb484cefffcea3a66dc44e9fe9 全部 src + examples/jsm 原生 C++ 逻辑，Vulkan 后端；禁止 CEF/生产 JS 引擎/桥接。阶段本地 Git 提交，不推送。
+
+## 本轮交付：`examples/jsm/loaders/materialx/MaterialXLog`
+
+- `examples/jsm/loaders/materialx/MaterialXLog.{h,cpp}`：
+  - 命名空间 `MaterialXLogCodes`：**9 个 `inline constexpr Code{label, severity}`**（`unsupported-node`/`ignored-surface-input`[warning]/`missing-reference`/`missing-material`/`invalid-value`/`texture-load-failed`[warning]/`unknown-input`/`invalid-output-connection`/`type-mismatch`），label 与 severity 逐字节照抄上游。
+  - `struct MaterialXLogEntry { code, severity, message, std::optional<std::string> nodeName }`。
+  - `class MaterialXLog { std::vector<MaterialXLogEntry> entries; errors(); warnings(); add(code, message); add(code, message, nodeName); }`。
+  - **一处 API 形态适配（已记录）**：上游 `get errors()` / `get warnings()` 是 getter；C++ 无 getter，改为**普通访问器方法**，语义（按 severity 过滤）不变。
+- `test/unit/addons/loaders/materialx/MaterialXLog.tests.cpp`（2 用例 / 18 断言）：空日志三态；添加 3 条后总/error/warning 计数；**未给 nodeName 时 `nodeName` 无值、给了则保留**；抽查 3 个 code 的 label/severity 字面值。
+- `test/unit/utils/parity/MaterialXLogParityProbe.cpp` + `compare-materialx-log.mjs`：上游模块**无任何 import**，直接按路径导入；比较 12 项——空 errors/warnings、**9 个 code 的 label+severity 全表**、5 条 entries 逐条（code/severity/message/hasNodeName/nodeName）、以及 **`errors` 与 `warnings` 两个过滤数组的完整内容**。
+
+## 验证
+
+- 构建 exit 0。
+- `THREECPPAddonTests`：**1301 cases / 31,235 assertions 全过**（较上轮 1299/31,217 → +2 例 / +18 断言）；过滤 `*MaterialXLog*` = 2 cases / 18 assertions。
+- 差分 `threecpp.threejs-materialx-log-parity` **Passed**（数据级：全表 + 全条目 + 两个过滤数组）。
+- 审计：**examples/jsm missing 336→335、partial-unverified 140→141**；`src` 不变（19 / 446）。
+
+**未执行验证（如实记录）**：无渲染/无 IO；只用了 5 条记录、未穷举所有组合；`nodeName` 的 `undefined`/`null` 区分在 C++ 侧合并为 `optional` 无值（**语义等价但类型不同**，已在差分中以 `hasNodeName` 布尔对齐）。
+
+## 下一步
+
+继续 examples 小 addon。已核对 API 可用的候选：**`environments/DebugEnvironment`(2723)** —— `Scene` + `BoxGeometry`（`deleteAttribute('uv')`）+ `MeshStandardMaterial`(metalness/side) + `PointLight(intensity=50,distance=0,decay=2)` + 3 个 `MeshLambertMaterial`(color/emissive/emissiveIntensity=10)，`dispose()` 用 **Set 去重**后释放；`Object3D::traverse` 已确认存在。其余：`objects/GroundedSkybox`(2049，需 BufferAttribute 变形)、`generators/city/InstancedMeshGenerator`(2230)、`helpers/OctreeHelper`(2913)、`materialx/MaterialXArchive`(2327)。# 当前接续：addon `MorphAnimMesh` 移植（工厂构造适配 + 行为级差分），examples 连续第 4 个，2026-11-05
 
 目标保持 active：固定 three.js 11738a9d55e502fb484cefffcea3a66dc44e9fe9 全部 src + examples/jsm 原生 C++ 逻辑，Vulkan 后端；禁止 CEF/生产 JS 引擎/桥接。阶段本地 Git 提交，不推送。
 

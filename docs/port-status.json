@@ -201,8 +201,8 @@
     "note": "Accepted port scope is src and examples/jsm, including tracked third-party dependencies. Editor/manual web applications are excluded from native application rewrites. Native host behavior, packaging and all three platforms require separate implementation and verification evidence."
   },
   "counts": {
-    "partial-unverified": 586,
-    "missing": 355,
+    "partial-unverified": 587,
+    "missing": 354,
     "vulkan-port-pending": 290,
     "dependency-unverified": 20
   },
@@ -218,8 +218,8 @@
     "examples/jsm": {
       "modules": 496,
       "counts": {
-        "missing": 336,
-        "partial-unverified": 140,
+        "missing": 335,
+        "partial-unverified": 141,
         "dependency-unverified": 20
       }
     }
@@ -467,7 +467,7 @@
       "path": "examples/jsm/loaders/materialx",
       "upstreamFiles": 10,
       "moduleCount": 10,
-      "modulesWithCppFiles": 0,
+      "modulesWithCppFiles": 1,
       "verifiedComplete": 0
     },
     {
@@ -28866,11 +28866,11 @@
       "scope": "examples/jsm",
       "kind": "addon",
       "upstreamSha256": "fa9b8a55b16b6aa27f762d5232a0e67b08deb6b1898531d745d156eb9aee1c9f",
-      "header": null,
-      "implementation": null,
+      "header": "examples/jsm/loaders/materialx/MaterialXLog.h",
+      "implementation": "examples/jsm/loaders/materialx/MaterialXLog.cpp",
       "expectedHeader": "examples/jsm/loaders/materialx/MaterialXLog.h",
       "expectedImplementation": "examples/jsm/loaders/materialx/MaterialXLog.cpp",
-      "status": "missing",
+      "status": "partial-unverified",
       "verifiedComplete": false,
       "apiExtraction": "static-only",
       "verification": {
@@ -28879,7 +28879,9 @@
           "pointer": "/modules/989"
         },
         "upstreamUnitTests": [],
-        "cppUnitTests": [],
+        "cppUnitTests": [
+          "test/unit/addons/loaders/materialx/MaterialXLog.tests.cpp"
+        ],
         "reviewedImplementation": [],
         "differentialResults": [],
         "renderingResults": [],
