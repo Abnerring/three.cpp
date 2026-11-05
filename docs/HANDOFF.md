@@ -1,4 +1,29 @@
-# 当前接续：`PhysicalLightingModel` **Stage A** 落地（src missing 8→7），2026-11-05
+# 当前接续：`PhysicalLightingModel` **Stage B 首批辅助**（applyIorToRoughness/volumeAttenuation/getVolumeTransmissionRay），2026-11-05
+
+目标保持 active：固定 three.js 11738a9d55e502fb484cefffcea3a66dc44e9fe9 全部 src + examples/jsm 原生 C++ 逻辑，Vulkan 后端；禁止 CEF/生产 JS 引擎/桥接。阶段本地 Git 提交，不推送。
+
+## 本轮交付
+
+模块级辅助（port-only 钩子 `nativePhysicalLightingModelHelper(name)` 暴露，供单测构建）：
+
+1. **`applyIorToRoughness(roughness, ior)`**：`roughness.mul(clamp(ior.mul(2).sub(2), 0, 1))`；
+2. **`volumeAttenuation(transmissionDistance, attenuationColor, attenuationDistance)`**：`vec3(1).toVar()`，`If(attenuationDistance.notEqual(0))` 内 `vec3(log(color).negate().div(distance).negate().mul(transmissionDistance))` 经 `exp` 后 `assign`；
+3. **`getVolumeTransmissionRay(n, v, thickness, ior, modelMatrix)`**：`vec3(refract(v.negate(), normalize(n), 1/ior))`；`modelScale = vec3(length(modelMatrix[i].xyz))`（`element(i)`）；返回 `normalize(refractionVector).mul(thickness.mul(modelScale))`。
+
+**本轮踩坑**：PowerShell 多行 here-string 拼接把函数定义粘成单行 → 用显式多行文本修复；辅助体参数改为**位置参数**（`arg(args,i)`），与 Fn 调用约定一致。
+
+## 验证
+
+- 构建 exit 0；`*PhysicalLightingModel*` = **3 cases / 23 assertions** 全过；`THREECPPAddonTests` 全套 **1433 cases / 39,294 assertions** 通过。
+- 审计不变（PhysicalLightingModel 已 partial）：src 7 / 458。
+
+**未执行验证（如实记录）**：数值结果未断言（只验证图可构建）；`volumeAttenuation` 条件分支未单独断言；其余辅助（`getTransmissionSample`/`getIBLVolumeRefraction`/`evalIridescence`/`IBLSheenBRDF`/IOR 转换/常量）未实现。
+
+## 下一步
+
+1. 读 L170–320（IOR 转换、`XYZ_TO_REC709`、`evalSensitivity`/`evalIridescence`、`IBLSheenBRDF`、`clearcoatF0/F90`）→ Stage B 第二批；
+2. Stage C：`start()`（约 110 行）；
+3. Stage D/E/F：`direct`/`directRectArea`/`indirect*`/`ambientOcclusion`/`finish`/`computeMultiscattering`。# 当前接续：`PhysicalLightingModel` **Stage A** 落地（src missing 8→7），2026-11-05
 
 目标保持 active：固定 three.js 11738a9d55e502fb484cefffcea3a66dc44e9fe9 全部 src + examples/jsm 原生 C++ 逻辑，Vulkan 后端；禁止 CEF/生产 JS 引擎/桥接。阶段本地 Git 提交，不推送。
 

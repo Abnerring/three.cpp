@@ -2,6 +2,8 @@
 
 #include "core/JSValue.h"
 
+#include <string>
+
 // Port of src/nodes/functions/PhysicalLightingModel.js at the pinned revision (see upstream.json).
 //
 // Stage A lands the class shape: the module and the constructor with the nine feature switches and the
@@ -10,3 +12,5 @@
 JSValue nativePhysicalLightingModelModule();
 JSValue nativePhysicalLightingModelBinding(const std::string& name);
 JSValue nativePhysicalLightingModelConstructor();
+// Port only test hooks: build one module level helper graph so its construction can be covered.
+JSValue nativePhysicalLightingModelHelper(const std::string& name);
