@@ -1247,6 +1247,13 @@ if(THREECPP_NODE_EXECUTABLE AND THREEJS_SOURCE_DIR)
         COMMAND "${THREECPP_NODE_EXECUTABLE}" "${CMAKE_CURRENT_SOURCE_DIR}/unit/utils/parity/compare-three-legacy.mjs"
         "${THREEJS_SOURCE_DIR}" "$<TARGET_FILE:ThreeJsThreeLegacyParityProbe>")
 endif()
+add_executable(ThreeJsSortInstancedMeshParityProbe unit/utils/parity/SortInstancedMeshParityProbe.cpp)
+target_link_libraries(ThreeJsSortInstancedMeshParityProbe PRIVATE threecpp::addons)
+if(THREECPP_NODE_EXECUTABLE AND THREEJS_SOURCE_DIR)
+    add_test(NAME threecpp.threejs-sort-instanced-mesh-parity
+        COMMAND "${THREECPP_NODE_EXECUTABLE}" "${CMAKE_CURRENT_SOURCE_DIR}/unit/utils/parity/compare-sort-instanced-mesh.mjs"
+        "${THREEJS_SOURCE_DIR}" "$<TARGET_FILE:ThreeJsSortInstancedMeshParityProbe>")
+endif()
 add_executable(ThreeJsSceneUtilsParityProbe unit/utils/parity/SceneUtilsParityProbe.cpp)
 target_link_libraries(ThreeJsSceneUtilsParityProbe PRIVATE threecpp::addons)
 if(THREECPP_NODE_EXECUTABLE AND THREEJS_SOURCE_DIR)

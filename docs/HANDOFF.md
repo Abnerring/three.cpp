@@ -1,4 +1,29 @@
-# 当前接续：`SceneUtils::sortInstancedMesh` 补全实现（矩阵/颜色/实例属性快照排序），2026-11-05
+# 当前接续：`sortInstancedMesh` 差分补齐 + 比较器语义修正为 Array.sort 语义（返回数值），2026-11-05
+
+目标保持 active：固定 three.js 11738a9d55e502fb484cefffcea3a66dc44e9fe9 全部 src + examples/jsm 原生 C++ 逻辑，Vulkan 后端；禁止 CEF/生产 JS 引擎/桥接。阶段本地 Git 提交，不推送。
+
+## 本轮交付
+
+1. **比较器签名修正（faithful）**：r69 的 `sortInstancedMesh` 把 `compareFn` 写成 `std::function<bool(double,double)>`；但上游 `tokens.sort(compareFn)` 是 **`Array.prototype.sort` 语义——返回数值**（负数=前者在前，0=相等，正数=后者在前）。**差分立即暴露**该差异（JS 侧传布尔比较器时 V8 视 true=1/ false=0，几乎从不判负，因此数组未被重排，`after[0]=3 vs 1`）。
+   - 修正：C++ 改为 `std::function<double(double,double)>`，内部 `stable_sort(..., [&](a,b){ return compareFn(a,b) < 0; })`；单测、探针、比较脚本三处同步改为返回差值（`x(a)-x(b)`）。
+2. **新增差分**：`SortInstancedMeshParityProbe.cpp` + `compare-sort-instanced-mesh.mjs`（复用 r68 的「写临时文件 → 导入 → finally 删除」范式，pinned 工作树保持 `dirty = 0`）。比较 **排序前/排序后各 3 个实例 × 3 个平移分量**（1e-12）。
+
+## 验证
+
+- 构建 exit 0；`*SceneUtils*` = 4 cases / 15 assertions 通过。
+- 差分 `threecpp.threejs-sort-instanced-mesh-parity` **Passed**（before/after 全量）。
+- `THREECPPAddonTests` 全套通过（1333 cases / 38,666 assertions，新增差分不影响 unit 数）。
+- 审计计数不变（未新增模块头）：examples/jsm 325 / 151，src 13 / 452。
+
+**未执行验证（如实记录）**：`sortInstancedMesh` 的**实例颜色分支与几何实例属性分支**仍未被任何测试覆盖（差分只比矩阵平移分量）；`createMeshesFromMultiMaterialMesh` 仍未实现（缺 `mergeGroups`）。
+
+## 经验（重要，避免再犯）
+
+**移植「回调型 API」时必须先确认上游回调的返回语义**：`Array.prototype.sort`、`TypedArray.prototype.sort` 的回调返回**数值**，不是布尔；差分是最快暴露这类语义错位的手段（本轮即为 r69 遗漏差分的直接后果）。
+
+## 下一步
+
+examples/jsm 剩余 325：`transpiler/AST.js`(8868) 最有价值。src 剩余 13（`ShadowNode` 依赖齐备 / `PhysicalLightingModel` 解锁三材质）。# 当前接续：`SceneUtils::sortInstancedMesh` 补全实现（矩阵/颜色/实例属性快照排序），2026-11-05
 
 目标保持 active：固定 three.js 11738a9d55e502fb484cefffcea3a66dc44e9fe9 全部 src + examples/jsm 原生 C++ 逻辑，Vulkan 后端；禁止 CEF/生产 JS 引擎/桥接。阶段本地 Git 提交，不推送。
 

@@ -33,8 +33,9 @@ std::shared_ptr<Group> createMultiMaterialObject(
 double reduceVertices(const std::shared_ptr<Object3D>& object,
                       const std::function<double(double, const Vector3&)>& callback,
                       double initialValue);
-// Sorts the instance payloads by the given index comparator; the comparator receives two instance
-// indices like the pinned Array.prototype.sort callback.
+// Sorts the instance payloads by the given index comparator. Like the pinned Array.prototype.sort
+// callback the comparator receives two instance indices and answers a negative value when the first
+// sorts before the second, zero for a tie and a positive value otherwise.
 void sortInstancedMesh(const std::shared_ptr<InstancedMesh>& mesh,
-                       const std::function<bool(double, double)>& compareFn);
+                       const std::function<double(double, double)>& compareFn);
 }  // namespace SceneUtils

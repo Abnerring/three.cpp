@@ -83,7 +83,7 @@ TEST_CASE("SceneUtils sorts instanced payloads by the comparator") {
     };
     // Sort ascending by the instance translation x, which is stored in the last column.
     SceneUtils::sortInstancedMesh(instanced, [&](double a, double b) {
-        return positionAt(a, instanced) < positionAt(b, instanced);
+        return positionAt(a, instanced) - positionAt(b, instanced);
     });
     REQUIRE(positionAt(0, instanced) == Approx(1));
     REQUIRE(positionAt(1, instanced) == Approx(2));

@@ -73,7 +73,7 @@ struct AttributeSnapshot {
 }  // namespace
 
 void SceneUtils::sortInstancedMesh(const std::shared_ptr<InstancedMesh>& mesh,
-                                   const std::function<bool(double, double)>& compareFn) {
+                                   const std::function<double(double, double)>& compareFn) {
     if (!mesh || !mesh->instanceMatrix || !mesh->geometry) return;
     const double count = mesh->count;
 
@@ -114,7 +114,8 @@ void SceneUtils::sortInstancedMesh(const std::shared_ptr<InstancedMesh>& mesh,
 
     std::vector<double> tokens(static_cast<std::size_t>(count));
     for (std::size_t i = 0; i < tokens.size(); ++i) tokens[i] = static_cast<double>(i);
-    std::stable_sort(tokens.begin(), tokens.end(), compareFn);
+    std::stable_sort(tokens.begin(), tokens.end(),
+                    [&compareFn](double a, double b) { return compareFn(a, b) < 0; });
 
     for (std::size_t i = 0; i < tokens.size(); ++i) {
         const auto refIndex = static_cast<std::size_t>(tokens[i]);
