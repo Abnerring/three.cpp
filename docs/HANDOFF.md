@@ -1,4 +1,26 @@
-# 当前接续：src 三个纯聚合模块（`Three.TSL` / `Three.WebGPU` / `Three.WebGPU.Nodes`）忠实移植为聚合头，src 缺口 19→16，2026-11-05
+# 当前接续：`NodeMaterials` 聚合模块真实映射（15 个已移植 NodeMaterial 构造器），src 缺口 16→15，2026-11-05
+
+目标保持 active：固定 three.js 11738a9d55e502fb484cefffcea3a66dc44e9fe9 全部 src + examples/jsm 原生 C++ 逻辑，Vulkan 后端；禁止 CEF/生产 JS 引擎/桥接。阶段本地 Git 提交，不推送。
+
+## 本轮交付：`src/materials/nodes/NodeMaterials`
+
+- `src/materials/nodes/NodeMaterials.{h,cpp}`：`nativeNodeMaterialsModule()` / `nativeNodeMaterialsBinding(name)`。
+  - 上游 `NodeMaterials.js` 是 **19 个 node material 的 re-export 映射**；本端口按「模块对象 + 构造函数」的形式**真实构建同名映射**，包含**已移植的 15 个**：`NodeMaterialObserver`、`NodeMaterial`、`ProxyNodeMaterial`、`LineBasicNodeMaterial`、`LineDashedNodeMaterial`、`MeshNormalNodeMaterial`、`MeshBasicNodeMaterial`、`MeshLambertNodeMaterial`、`MeshPhongNodeMaterial`、`MeshToonNodeMaterial`、`MeshMatcapNodeMaterial`、`PointsNodeMaterial`、`SpriteNodeMaterial`、`ShadowNodeMaterial`、`VolumeNodeMaterial`。
+  - **明确缺 4 个**（其模块未移植，映射里不存在、binding 返回 undefined，不伪造）：`Line2NodeMaterial`、`MeshStandardNodeMaterial`、`MeshPhysicalNodeMaterial`、`MeshSSSNodeMaterial`。
+- `test/unit/addons/src/NodeMaterials.tests.cpp`（2 用例 / 19 断言）：15 个名字全部非 undefined；binding 解析到同一构造函数；**缺失的 `MeshStandardNodeMaterial` 与乱名返回 undefined**。
+- 注册：`CMakeLists.txt` 在 `src/materials/nodes/NodeMaterial.cpp` 后加入源文件；测试加入 `THREECPPAddonTests`。
+
+## 验证
+
+- 构建 exit 0；过滤 `*NodeMaterials*` = 2 cases / 19 assertions 通过。
+- 审计：**src missing 16→15、partial-unverified 449→450**；`examples/jsm` 不变（328 / 148）。
+
+**未执行验证（如实记录）**：映射只覆盖**导出表**，未实例化任何 node material（构造行为由各模块自身测试覆盖）；缺的 4 个材质仍未移植（`MeshStandard/Physical/SSS` 与 `Line2`），因此「三材质解锁」**尚未发生**。
+
+## 下一步
+
+src 剩余 15 个：`nodes/TSL.js`(7493)、`nodes/Nodes.js`(10073)、`ShadowNode`(24331，依赖齐备最大项)、`PointShadowNode`(12693)、`PhysicalLightingModel`(32829)、`PassNode`(26843)、`ToonOutlinePassNode`、`ReflectorNode`(17567)、`Line2NodeMaterial`(18172)、`MeshStandard/Physical/SSSNodeMaterial`、`MaterialXNodes`、`MaterialXNoise`、`NodeObjectLoader`（被 `ObjectLoader` 阻塞）。
+examples/jsm 剩余 328（`SimplifyModifier`、`SceneUtils`、`AST.js`、`OBJExporter`）。# 当前接续：src 三个纯聚合模块（`Three.TSL` / `Three.WebGPU` / `Three.WebGPU.Nodes`）忠实移植为聚合头，src 缺口 19→16，2026-11-05
 
 目标保持 active：固定 three.js 11738a9d55e502fb484cefffcea3a66dc44e9fe9 全部 src + examples/jsm 原生 C++ 逻辑，Vulkan 后端；禁止 CEF/生产 JS 引擎/桥接。阶段本地 Git 提交，不推送。
 

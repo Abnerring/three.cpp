@@ -512,6 +512,7 @@ target_sources(threecpp PRIVATE
 target_sources(threecpp PRIVATE
     src/materials/Materials.cpp
     src/materials/nodes/NodeMaterial.cpp
+    src/materials/nodes/NodeMaterials.cpp
     src/renderers/common/DataMap.cpp
     src/renderers/common/ChainMap.cpp
     src/renderers/common/nodes/NodeBuilderState.cpp
