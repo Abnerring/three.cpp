@@ -362,3 +362,14 @@ const VSMPassHorizontal = Fn( ( { samples, radius, size, shadowPass, depthLayer 
 **所需绑定清单**：`nativeTSLBaseBinding("float"|"int"|"vec2"|"sqrt"|"add"|"sub"|"mul"|"div")`（或对应 MathNode/OperatorNode 绑定）、`nativeLoopNodeBinding("Loop")`、`nativeScreenNodeBinding("screenCoordinate")`；节点方法：`lessThanEqual`/`select`/`toVar`/`sub`/`div`/`mul`/`add`/`addAssign`/`divAssign`/`max`/`sample`/`depth`/`value`/`x`/`y`。
 
 **段 2 其余部分**（RT 与材质，L384–448）：`compareFunction=null`；`shadowMap.depth>1` 复用 `_vsmShadowMapVertical/Horizontal` 或 `builder.createRenderTarget(w,h,{format: RGFormat, ...})`；两个 `texture()` 采样；`reference('blurSamples'|'radius'|'mapSize')`；`context(builder.getSharedContext())`；两个 `NodeMaterial` 设 `contextNode`/`fragmentNode`/`name`。
+
+**VSM pass 转写辅助（r135 确认，可直接照此写）**
+
+- **Fn 包装范式**（复制自 `ShadowFilterNode.cpp`）：
+  - `JSValue inputObject(const Args& args)`：上游 Fn 的入参是一个「单元素 iterable，元素为解构对象」→ 用 `getJSIterator(arg(args,0))`/`stepJSIterator`/`closeJSIterator`（`LightingNodeRuntime`）；
+  - `JSValue makeFn(JSValue::NativeFunction body)`：`JSValue::function(body, captures, "", 0)` → `nativeTSLCoreBinding("Fn").call({}, {callback})`（需支持 captures 版本，用于垂直/水平共用同一 body）；
+  - 节点操作统一 `invoke(node, "method")({args})`。
+- **已确认绑定**：`nativeTSLBaseBinding("float"|"int"|"vec2")`、`nativeMathNodeBinding("sqrt")`、`nativeOperatorNodeBinding("add"|"sub"|"mul"|"div")`、`nativeLoopNodeBinding("Loop")`、`nativeScreenNodeBinding("screenCoordinate")`、`nativeTextureNodeBinding("texture")`、`nativeUniformGroupNodeBinding("renderGroup")`、`nativeReferenceNodeBinding("reference")`、`nativeContextNodeBinding("context")`、`nativeNodeMaterialConstructor()`。
+- **Loop 调用**：`Loop({ start: int(0), end: int(samples), type: 'int', condition: '<' }, ( { i } ) => {...})` → `nativeLoopNodeBinding("Loop").call({}, {config, loopBody})`；`loopBody` 收到的第一个参数同样用 `inputObject` 解构出 `i`。
+- **垂直/水平差异**（用一个 body + captures 布尔区分）：`vec2(0, uvOffset)` vs `vec2(uvOffset, 0)`；均值取 `depth.x` vs `distribution.x`；方差项 `depth.mul(depth)` vs `add(distribution.y.mul(distribution.y), distribution.x.mul(distribution.x))`；变量名后缀 `Vertical`/`Horizontal`。
+- **插入位置**：`ShadowNode.cpp` 的 `setupShadow` 中，**段 1 之后、段 3 之前**（段 2 只对 `VSMShadowMap && !isPointLightShadow` 生效）。
