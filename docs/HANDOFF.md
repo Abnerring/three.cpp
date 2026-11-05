@@ -1,4 +1,34 @@
-# 当前接续：`ShadowNode` `updateBefore` + 模块级 `shadow()` 工厂完成（C 段基本收口），2026-11-05
+# 当前接续：`ShadowNode` `setup` 实现完成 —— 仅剩 `setupShadow`（240 行 TSL 图），2026-11-05
+
+目标保持 active：固定 three.js 11738a9d55e502fb484cefffcea3a66dc44e9fe9 全部 src + examples/jsm 原生 C++ 逻辑，Vulkan 后端；禁止 CEF/生产 JS 引擎/桥接。阶段本地 Git 提交，不推送。
+
+## 本轮交付：`setup(builder)`（照抄 L596–632）
+
+- `renderer.shadowMap.enabled === false` → 返回 undefined；
+- `currentShadowType = renderer.shadowMap.type`；与 `_currentShadowType` 不同 → `_reset()` 且 `_node = null`；
+- `node = _node`；调 `setupShadowPosition(builder)`；
+- `node` 为空 → `node = setupShadow(builder)`，缓存 `_node = node`、`_currentShadowType = currentShadowType`；
+- `material.receivedShadowNode` 存在 → `node = material.receivedShadowNode(node)`；
+- 返回 `node`。
+- **适配说明**：上游用 `Fn( () => { ... } )()` 包裹（立即执行）；本端口**直接执行同序语句**，可观察结果一致（`Fn` 主要影响图构建上下文），已在代码注释与 HANDOFF 记录。
+
+测试（+2 例 / +3 断言）：
+1. **缓存路径**：预置 `_node` + `_currentShadowType` 匹配 → `setup` 返回同一节点、不触碰（尚未实现的）`setupShadow`；设置 `material.receivedShadowNode` 后仍返回该节点（钩子原样返回）；
+2. **禁用路径**：`shadowMap.enabled = false` → 返回 undefined。
+
+## 验证
+
+- 构建 exit 0；过滤 `*ShadowNode*` = **12 cases / 42 assertions** 全过（+2 例 / +3 断言）。
+- `THREECPPAddonTests` 全套 **1377 cases / 38,945 assertions** 通过。
+- 审计不变（ShadowNode 已 partial）：src 12 / 453；examples/jsm 322 / 154。
+
+**未执行验证（如实记录）**：`setupShadow` **仍是唯一抛错成员**（240 行 TSL 图：setupRenderTarget 调用、PCF/VSM 过滤设置、VSM 两趟材质、shadowPosition 高精度/普通两路径、阴影强度等）；因此 `setup` 在缓存为空时仍会抛错（测试只覆盖缓存/禁用路径）；`Fn` 包裹的图上下文语义差异未验证。
+
+## 下一步（`ShadowNode` 收尾的最后一块）
+
+1. 读 `setupShadow` 剩余部分（L470–595），按其 4 大段实现：①RT+过滤设置 ②VSM 材质/两趟 ③shadowPosition 两路径 ④阴影强度合成；
+2. 完成后补 `setup` 非缓存路径测试、`_cameraFrameId`/`setupPosition` 相关回归；
+3. 之后：`_quadMesh` 单例、`updateShadow` 真实 renderer 夹具、`PointShadowNode`。# 当前接续：`ShadowNode` `updateBefore` + 模块级 `shadow()` 工厂完成（C 段基本收口），2026-11-05
 
 目标保持 active：固定 three.js 11738a9d55e502fb484cefffcea3a66dc44e9fe9 全部 src + examples/jsm 原生 C++ 逻辑，Vulkan 后端；禁止 CEF/生产 JS 引擎/桥接。阶段本地 Git 提交，不推送。
 

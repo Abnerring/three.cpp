@@ -160,7 +160,38 @@ JSValue setupRenderTarget(const JSValue&, const Args& args, const Args&) {
     return result;
 }
 JSValue setupShadow(const JSValue&, const Args&, const Args&) { return notPorted("setupShadow"); }
-JSValue setup(const JSValue&, const Args&, const Args&) { return notPorted("setup"); }
+// setup( builder ) { check the renderer shadow state, reuse the cached node and run the material hook. }
+// The pinned wrapper runs the body inside Fn(...)(); the body is executed directly here, which has the
+// same observable result because the call happens immediately. setupShadow is still a raising member.
+JSValue setup(const JSValue& rawSelf, const Args& args, const Args&) {
+    JSValue& self = const_cast<JSValue&>(rawSelf);
+    const auto builder = arg(args, 0);
+    const auto renderer = builder.get("renderer");
+    const auto shadowMap = renderer.get("shadowMap");
+    // if ( builder.renderer.shadowMap.enabled === false ) return;
+    if (shadowMap.get("enabled").strictEquals(JSValue(false))) return {};
+
+    const auto currentShadowType = shadowMap.get("type");
+    if (!self.get("_currentShadowType").strictEquals(currentShadowType)) {
+        self.get("_reset").call(self, {});
+        self.set("_node", JSValue(nullptr));
+    }
+
+    auto node = self.get("_node");
+    self.get("setupShadowPosition").call(self, {builder});
+    if (!node.toBoolean()) {
+        node = self.get("setupShadow").call(self, {builder});
+        self.set("_node", node);
+        self.set("_currentShadowType", currentShadowType);
+    }
+
+    const auto material = builder.get("material");
+    if (material.isObject()) {
+        const auto receivedShadowNode = material.get("receivedShadowNode");
+        if (receivedShadowNode.toBoolean()) node = receivedShadowNode.call(material, {node});
+    }
+    return node;
+}
 // renderShadow( frame ) { shadow.updateMatrices( light ); shadowMap.setSize(...); renderer.render( scene, shadow.camera ); }
 JSValue renderShadow(const JSValue& self, const Args& args, const Args&) {
     const auto frame = arg(args, 0);

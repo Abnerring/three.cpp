@@ -259,3 +259,55 @@ TEST_CASE("ShadowNode module exposes the shadow factory") {
     REQUIRE(node.get("type").toString() == "ShadowNode");
     REQUIRE(node.get("shadow").strictEquals(shadow));
 }
+TEST_CASE("ShadowNode setup reuses the cached node and applies the material hook") {
+    auto shadow = JSValue::object(nullptr);
+    auto light = JSValue::object(nullptr);
+    light.set("shadow", shadow);
+    auto shadowMap = JSValue::object(nullptr);
+    shadowMap.set("enabled", true);
+    shadowMap.set("type", JSValue(1));
+    auto renderer = JSValue::object(nullptr);
+    renderer.set("shadowMap", shadowMap);
+    auto material = JSValue::object(nullptr);
+    auto builder = JSValue::object(nullptr);
+    builder.set("renderer", renderer);
+    builder.set("material", material);
+
+    auto node = nativeShadowNodeConstructor().construct({light});
+    // Seed the cache so the still raising setupShadow member is not reached.
+    auto cached = JSValue::object(nullptr);
+    cached.set("isNode", true);
+    node.set("_node", cached);
+    node.set("_currentShadowType", JSValue(1));
+    node.set("setupShadowPosition", JSValue::function(
+        +[](const JSValue&, const std::vector<JSValue>&, const std::vector<JSValue>&) {
+            return JSValue{};
+        }));
+
+    const auto result = node.get("setup").call(node, {builder});
+    REQUIRE(result.strictEquals(cached));
+
+    // The material hook wraps the cached node when present.
+    auto hook = JSValue::function(
+        +[](const JSValue&, const std::vector<JSValue>& args, const std::vector<JSValue>&) {
+            return args.size() > 0 ? args[0] : JSValue{};
+        });
+    material.set("receivedShadowNode", hook);
+    const auto wrapped = node.get("setup").call(node, {builder});
+    REQUIRE(wrapped.strictEquals(cached));
+}
+
+TEST_CASE("ShadowNode setup returns early when the renderer shadow map is disabled") {
+    auto shadow = JSValue::object(nullptr);
+    auto light = JSValue::object(nullptr);
+    light.set("shadow", shadow);
+    auto shadowMap = JSValue::object(nullptr);
+    shadowMap.set("enabled", false);
+    auto renderer = JSValue::object(nullptr);
+    renderer.set("shadowMap", shadowMap);
+    auto builder = JSValue::object(nullptr);
+    builder.set("renderer", renderer);
+    auto node = nativeShadowNodeConstructor().construct({light});
+    const auto result = node.get("setup").call(node, {builder});
+    REQUIRE(result.isUndefined());
+}
