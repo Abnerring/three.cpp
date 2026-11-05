@@ -1,4 +1,26 @@
-# 当前接续：多材质拆分补齐 uv/normal 属性复制覆盖（r83 遗留「仅 position」缺口），2026-11-05
+# 当前接续：多材质拆分补齐 `itemSize = 4` 分支覆盖（r84 遗留缺口），2026-11-05
+
+目标保持 active：固定 three.js 11738a9d55e502fb484cefffcea3a66dc44e9fe9 全部 src + examples/jsm 原生 C++ 逻辑，Vulkan 后端；禁止 CEF/生产 JS 引擎/桥接。阶段本地 Git 提交，不推送。
+
+## 本轮内容（测试补充，无实现变更）
+
+r84 记录多材质拆分的 `itemSize = 4` 分支（skinIndex/skinWeight 形态）未覆盖。本轮补上：
+
+- 新增用例：6 顶点 geometry 带 position + **`skinIndex`（itemSize = 4，24 个分量，每通道值不同）**；两个 group（各 3 顶点）。
+- 断言第二个子 Mesh：`skinIndex` 的 `count == 3`、`itemSize == 4`；**第二 group 首顶点的四个通道分别为 12/13/14/15**（源顶点 3 的四分量原样搬运）。
+- 覆盖 r82 实现中的 `if (itemSize >= 4) newAttribute->setW(...)` 分支。
+
+## 验证
+
+- 构建 exit 0；过滤 `*SceneUtils*` = **9 cases / 50 assertions** 全过（+1 用例 / +7 断言）。
+- `THREECPPAddonTests` 全套通过（1340 cases / 38,712 assertions）。
+- 审计计数不变（测试补充）：examples/jsm 325 / 151，src 13 / 452。
+
+**未执行验证（如实记录）**：该 helper 仍无属性级差分（只有单测）；`normalized` 属性的复制（当前实现未保留 normalized 标记，属**已知实现差异**）未测试；多 group 相同 materialIndex 的合并路径在拆分 helper 中未单独覆盖。
+
+## 下一步
+
+examples/jsm 剩余 325：`transpiler/AST.js`(8868) 最有价值。src 剩余 13：`ShadowNode`(24,331，依赖齐备) / `PhysicalLightingModel`(32,829，解锁三材质)。# 当前接续：多材质拆分补齐 uv/normal 属性复制覆盖（r83 遗留「仅 position」缺口），2026-11-05
 
 目标保持 active：固定 three.js 11738a9d55e502fb484cefffcea3a66dc44e9fe9 全部 src + examples/jsm 原生 C++ 逻辑，Vulkan 后端；禁止 CEF/生产 JS 引擎/桥接。阶段本地 Git 提交，不推送。
 

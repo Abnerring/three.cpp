@@ -203,3 +203,33 @@ TEST_CASE("SceneUtils split copies the uv and normal attributes per group") {
     REQUIRE(second->geometry->getAttribute("uv")->getX(0) == Approx(0.5));
     REQUIRE(second->geometry->getAttribute("uv")->getY(0) == Approx(0.5));
 }
+TEST_CASE("SceneUtils split copies a four component attribute through its fourth channel") {
+    auto geometry = std::make_shared<BufferGeometry>();
+    geometry->setAttribute("position", std::make_shared<BufferAttribute>(
+                                           std::vector<float>{0, 0, 0, 1, 0, 0, 0, 1, 0,
+                                                              2, 0, 0, 3, 0, 0, 2, 1, 0}, 3));
+    // A skin index style attribute: four components per vertex, one distinct value per channel.
+    geometry->setAttribute("skinIndex", std::make_shared<BufferAttribute>(
+                                            std::vector<float>{0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11,
+                                                               12, 13, 14, 15, 16, 17, 18, 19, 20,
+                                                               21, 22, 23}, 4));
+    geometry->addGroup(0, 3, 0);
+    geometry->addGroup(3, 3, 1);
+    auto mesh = std::make_shared<Mesh>(geometry,
+                                       std::vector<std::shared_ptr<Material>>{
+                                           std::make_shared<MeshBasicMaterial>(),
+                                           std::make_shared<MeshBasicMaterial>()});
+
+    const auto result = SceneUtils::createMeshesFromMultiMaterialMesh(mesh);
+    const auto group = std::dynamic_pointer_cast<Group>(result);
+    REQUIRE(group != nullptr);
+    const auto second = std::dynamic_pointer_cast<Mesh>(group->children[1]);
+    const auto skinIndex = second->geometry->getAttribute("skinIndex");
+    REQUIRE(skinIndex->getCount() == Approx(3));
+    REQUIRE(skinIndex->getItemSize() == Approx(4));
+    // The second group starts at source vertex three, so its first four components are 12..15.
+    REQUIRE(skinIndex->getX(0) == Approx(12));
+    REQUIRE(skinIndex->getY(0) == Approx(13));
+    REQUIRE(skinIndex->getZ(0) == Approx(14));
+    REQUIRE(skinIndex->getW(0) == Approx(15));
+}
