@@ -3,6 +3,7 @@
 #include "constants.h"
 #include "core/JSGlobal.h"
 #include "core/JSMap.h"
+#include "core/JSPromise.h"
 #include "core/Object3D.h"
 #include "core/JSWeakMap.h"
 #include "core/RenderTarget.h"
@@ -163,14 +164,45 @@ JSValue baseUpdateBefore(const JSValue&, const Args&, const Args&) {
     return notPorted("ReflectorBaseNode.updateBefore");
 }
 
-JSValue reflectorGetDepthNode(const JSValue&, const Args&, const Args&) {
-    return notPorted("ReflectorNode.getDepthNode");
+// getDepthNode() { if ( this._depthNode === null ) { ... throw when the reflector has no depth ... new ReflectorNode(...) } }
+JSValue reflectorGetDepthNode(const JSValue& rawSelf, const Args&, const Args& captures) {
+    JSValue& self = const_cast<JSValue&>(rawSelf);
+    auto depthNode = self.get("_depthNode");
+    if (!depthNode.toBoolean()) {
+        const auto baseNode = self.get("_reflectorBaseNode");
+        if (!baseNode.get("depth").strictEquals(true)) {
+            throw JSThrownValue(nativeGlobalBinding("Error").construct(
+                {"THREE.ReflectorNode: Depth node can only be requested when the reflector is created with { depth: true }. "}));
+        }
+        auto parameters = JSValue::object(nullptr);
+        parameters.set("defaultTexture", defaultRenderTarget().get("depthTexture"));
+        parameters.set("reflector", baseNode);
+        depthNode = captures.at(0).construct({parameters});
+        self.set("_depthNode", depthNode);
+    }
+    return depthNode;
 }
-JSValue reflectorClone(const JSValue&, const Args&, const Args&) {
-    return notPorted("ReflectorNode.clone");
+
+// clone() { const newNode = new this.constructor( this.reflectorNode ); ... copy sampling nodes ...
+//           newNode._reflectorBaseNode = this._reflectorBaseNode; }
+JSValue reflectorClone(const JSValue& self, const Args&, const Args& captures) {
+    auto clone = captures.at(0).construct({self.get("reflectorNode")});
+    for (const char* field : {"uvNode", "levelNode", "biasNode", "sampler", "depthNode",
+                              "compareNode", "gradNode", "gatherNode", "offsetNode"}) {
+        clone.set(field, self.get(field));
+    }
+    clone.set("_reflectorBaseNode", self.get("_reflectorBaseNode"));
+    return clone;
 }
-JSValue reflectorDispose(const JSValue&, const Args&, const Args&) {
-    return notPorted("ReflectorNode.dispose");
+
+// dispose() { super.dispose(); this._reflectorBaseNode.dispose(); }
+JSValue reflectorDispose(const JSValue& rawSelf, const Args&, const Args& captures) {
+    JSValue& self = const_cast<JSValue&>(rawSelf);
+    const auto basePrototype = captures.at(0);
+    const auto baseDispose = basePrototype.get("dispose");
+    if (baseDispose.toBoolean()) baseDispose.call(self, {});
+    self.get("_reflectorBaseNode").get("dispose").call(self.get("_reflectorBaseNode"), {});
+    return JSValue{};
 }
 }  // namespace
 
@@ -235,9 +267,10 @@ JSValue nativeReflectorNodeModule() {
             descriptor.set("configurable", false);
             defineProperty.call({}, {prototype, JSValue(name), descriptor});
         }
-        method(prototype, "getDepthNode", 0, reflectorGetDepthNode, {}, "");
-        method(prototype, "clone", 0, reflectorClone, {}, "");
-        method(prototype, "dispose", 0, reflectorDispose, {}, "");
+        method(prototype, "getDepthNode", 0, reflectorGetDepthNode,
+               {reflectorConstructor}, "");
+        method(prototype, "clone", 0, reflectorClone, {reflectorConstructor}, "");
+        method(prototype, "dispose", 0, reflectorDispose, {nativeTextureNodeConstructor().get("prototype")}, "");
     }
     own(bindings, "default", reflectorConstructor);
     own(bindings, "ReflectorBaseNode", baseConstructor);

@@ -1,4 +1,30 @@
-# 当前接续：`ReflectorNode` **Stage A** 落地（src missing 9→8），2026-11-05
+# 当前接续：`ReflectorNode` **Stage B 完成**（深度节点/clone/dispose）—— 仅剩 `ReflectorBaseNode.updateBefore`，2026-11-05
+
+目标保持 active：固定 three.js 11738a9d55e502fb484cefffcea3a66dc44e9fe9 全部 src + examples/jsm 原生 C++ 逻辑，Vulkan 后端；禁止 CEF/生产 JS 引擎/桥接。阶段本地 Git 提交，不推送。
+
+## 本轮交付：`ReflectorNode` 三个方法（L126–183）
+
+1. **`getDepthNode()`**：`_depthNode` 为空时——`_reflectorBaseNode.depth !== true` → **抛 `THREE.ReflectorNode: Depth node can only be requested when the reflector is created with { depth: true }.`**；否则用 `{defaultTexture: _defaultRT.depthTexture, reflector: _reflectorBaseNode}` 新建 `ReflectorNode` 并缓存；
+2. **`clone()`**：`new this.constructor(this.reflectorNode)` + 复制 9 个采样字段 + `_reflectorBaseNode`；
+3. **`dispose()`**：基类 `TextureNode.dispose()` + `_reflectorBaseNode.dispose()`。
+- 方法通过 **captures 传入构造函数/prototype** 实现（`getDepthNode`/`clone` 捕获 `reflectorConstructor`；`dispose` 捕获 TextureNode prototype）。
+
+## 测试（+3 例 / 13 断言）
+
+构造与 `type/isPass?`、默认 `_depthNode=null` 且 depth=false 时 `getDepthNode` 抛错；`depth:true`+`resolutionScale=0.5` 时深度节点创建/缓存且与基类共享；`clone` 保留基类与 uvNode；`dispose` 调用基类 dispose 一次。
+
+## 验证
+
+- 构建 exit 0；`*Reflector*` = **4 cases / 23 assertions** 全过；`THREECPPAddonTests` 全套 **1428 cases / 39,261 assertions** 通过。
+- 审计不变（ReflectorNode 已 partial）：src 8 / 457；examples/jsm 322 / 154。
+
+**未执行验证（如实记录）**：`clone()` 传 `this.reflectorNode`（上游同样如此，该字段在 ReflectorNode 上不存在，clone 后构造参数为 undefined——**忠实复刻上游行为**，已在 HANDOFF 标注）；`ReflectorBaseNode.updateBefore`（L445–645）仍抛 notPorted。
+
+## 下一步（ReflectorNode 最后一块）
+
+1. 读 `ReflectorBaseNode.updateBefore`（约 200 行）：平面/法线/世界位置计算、虚拟相机、clipPlane、RT 渲染、`_inReflector` 保护、`hasOutput`；
+2. 实现后补集成测试（可用 stub renderer/camera/object）；
+3. 之后 `ReflectorNode` 收口 → 推进 `Line2NodeMaterial`(18,172)/`PhysicalLightingModel`(32,829)/`MaterialXNodes`(10,782)。# 当前接续：`ReflectorNode` **Stage A** 落地（src missing 9→8），2026-11-05
 
 目标保持 active：固定 three.js 11738a9d55e502fb484cefffcea3a66dc44e9fe9 全部 src + examples/jsm 原生 C++ 逻辑，Vulkan 后端；禁止 CEF/生产 JS 引擎/桥接。阶段本地 Git 提交，不推送。
 
