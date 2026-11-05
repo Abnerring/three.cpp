@@ -201,8 +201,8 @@
     "note": "Accepted port scope is src and examples/jsm, including tracked third-party dependencies. Editor/manual web applications are excluded from native application rewrites. Native host behavior, packaging and all three platforms require separate implementation and verification evidence."
   },
   "counts": {
-    "partial-unverified": 560,
-    "missing": 381,
+    "partial-unverified": 562,
+    "missing": 379,
     "vulkan-port-pending": 290,
     "dependency-unverified": 20
   },
@@ -210,8 +210,8 @@
     "src": {
       "modules": 755,
       "counts": {
-        "partial-unverified": 424,
-        "missing": 41,
+        "partial-unverified": 426,
+        "missing": 39,
         "vulkan-port-pending": 290
       }
     },
@@ -761,7 +761,7 @@
       "path": "src/materials/nodes",
       "upstreamFiles": 19,
       "moduleCount": 19,
-      "modulesWithCppFiles": 4,
+      "modulesWithCppFiles": 6,
       "verifiedComplete": 0
     },
     {
@@ -6032,11 +6032,11 @@
       "scope": "src",
       "kind": "core",
       "upstreamSha256": "cf9f03b5cc96eba6e842752ac892cba5b1920068f54f8da594995813742c9f5a",
-      "header": null,
-      "implementation": null,
+      "header": "src/materials/nodes/MeshMatcapNodeMaterial.h",
+      "implementation": "src/materials/nodes/MeshMatcapNodeMaterial.cpp",
       "expectedHeader": "src/materials/nodes/MeshMatcapNodeMaterial.h",
       "expectedImplementation": "src/materials/nodes/MeshMatcapNodeMaterial.cpp",
-      "status": "missing",
+      "status": "partial-unverified",
       "verifiedComplete": false,
       "apiExtraction": "static-only",
       "verification": {
@@ -6194,11 +6194,11 @@
       "scope": "src",
       "kind": "core",
       "upstreamSha256": "c3a3a2a3602eec63a1e705251ab97643541bc719b267e0be876ae49728c0729d",
-      "header": null,
-      "implementation": null,
+      "header": "src/materials/nodes/MeshToonNodeMaterial.h",
+      "implementation": "src/materials/nodes/MeshToonNodeMaterial.cpp",
       "expectedHeader": "src/materials/nodes/MeshToonNodeMaterial.h",
       "expectedImplementation": "src/materials/nodes/MeshToonNodeMaterial.cpp",
-      "status": "missing",
+      "status": "partial-unverified",
       "verifiedComplete": false,
       "apiExtraction": "static-only",
       "verification": {

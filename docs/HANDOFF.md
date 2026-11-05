@@ -1,4 +1,27 @@
-# 当前接续：ToonLightingModel + PhongLightingModel 已移植（行为计数差分），2026-11-05
+# 当前接续：MeshToonNodeMaterial + MeshMatcapNodeMaterial 已移植，2026-11-05
+
+目标保持 active：固定 three.js 11738a9d55e502fb484cefffcea3a66dc44e9fe9 全部 src + examples/jsm 原生 C++ 逻辑，Vulkan 后端；禁止 CEF/生产 JS 引擎/桥接。阶段本地 Git 提交，不推送。
+
+本轮新增两个材质（**每模块一套 h/cpp**——第 20 轮已确认审计按「与源文件同名的头文件」判定状态；我起初又把两者写进共享的 `ToonMatcapNodeMaterials.*`，随即拆分为独立文件并删除共享文件，共享版本从未登记或提交）：
+
+- **`src/materials/nodes/MeshToonNodeMaterial.{h,cpp}`**（1,269 B）：模块级 `_defaultValues = new MeshToonMaterial()`；构造按源码设 `isMeshToonNodeMaterial`、`lights = true`，再 `setDefaultValues` → `setValues(parameters)`；`setupLightingModel()` 返回**新的** `ToonLightingModel`（上一轮刚移植）。
+- **`src/materials/nodes/MeshMatcapNodeMaterial.{h,cpp}`**（1,694 B）：模块级 `_defaultValues = new MeshMatcapMaterial()`（**没有 `lights` 标志**，源码如此）；`setupVariants(builder)` 两分支——有 `material.matcap` 时走 `materialReference('matcap','texture').context({ getUV: () => matcapUV })`，否则 `vec3( mix( 0.2, 0.8, uv.y ) )`；两支最终都做 `diffuseColor.rgb.mulAssign( matcapColor.rgb )`。
+
+追踪：`src/materials/nodes/NodeMaterialSources.inc` 重生成，现为 **5 个 namespace**（LineBasic / MeshNormal / ShadowNode / MeshToon / MeshMatcap）。
+
+验证：构建 exit 0。THREECPPTests **1577 cases / 214,459 assertions 全过**，较上轮 1573/214,436 增 4 例 23 断言（`*ToonNodeMaterial*` 2 例/14 断言、`*MatcapNodeMaterial*` 2 例/9 断言）。差分 `threecpp.threejs-toon-matcap-node-materials-parity` **Passed 1.34s**，比较：两个材质的 name/length=1/静态与实例 type/`isXNodeMaterial`/`isNodeMaterial`/**完整自有属性快照**（`getOwnPropertyNames`，仅排除 uuid 名与 id 值）+ `MeshToon` 的 `lights`、`fog`、`gradientMap === null` + `setupLightingModel()` 返回模型的 `direct.length = 2`、`indirect.length = 1`、继承的 `start.length = 1`、**两次调用返回不同实例** + `MeshMatcap` 的 `matcap === null` 与 `setupVariants` 无异常 + 两个 class `toString` 逐字节。
+
+**未执行验证的部分（如实记录）**：① `MeshMatcap` 的 **matcap 分支未执行**（测试里 `material.matcap` 为 null，走的是默认渐变分支）；② `setupVariants` 里 `diffuseColor.rgb.mulAssign(...)` 的**效果不可观测**，只验证"图能构建且不抛异常"；③ 两个材质的真实渲染路径未触及。
+
+审计（固定 worktree，HEAD=11738a9d55）刷新后：**src missing 41→39、partial 424→426**，两个模块各记 `partial-unverified` 并登记自己的头文件。
+
+下一步（`src/materials/nodes` 剩余最小者，按体积）：
+- `VolumeNodeMaterial`（1,507）—— `VolumeMaterial` 基类是否已移植需先确认
+- `NodeMaterials.js`（1,639）—— 汇总注册表，依赖较多材质全部就位后才有意义
+- `MeshLambertNodeMaterial`（1,861）—— **注意**：其依赖 `LambertLightingModel` 在审计记录里查不到，需先确认固定版本是否真的存在该文件（若不存在则是上游已合并/移除，不能凭想象造一个）
+- `MeshBasicNodeMaterial`（3,270）、`MeshPhongNodeMaterial`（3,406，本轮 `PhongLightingModel` 已就位）
+
+`ShadowNode`（24,331）+ `PointShadowNode`（12,693）仍是 lighting 目录最后两个缺口，前置全齐，待上下文充裕时一次完成。# 当前接续：ToonLightingModel + PhongLightingModel 已移植（行为计数差分），2026-11-05
 
 目标保持 active：固定 three.js 11738a9d55e502fb484cefffcea3a66dc44e9fe9 全部 src + examples/jsm 原生 C++ 逻辑，Vulkan 后端；禁止 CEF/生产 JS 引擎/桥接。阶段本地 Git 提交，不推送。
 
