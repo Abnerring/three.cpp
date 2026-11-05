@@ -201,8 +201,8 @@
     "note": "Accepted port scope is src and examples/jsm, including tracked third-party dependencies. Editor/manual web applications are excluded from native application rewrites. Native host behavior, packaging and all three platforms require separate implementation and verification evidence."
   },
   "counts": {
-    "partial-unverified": 583,
-    "missing": 358,
+    "partial-unverified": 584,
+    "missing": 357,
     "vulkan-port-pending": 290,
     "dependency-unverified": 20
   },
@@ -218,8 +218,8 @@
     "examples/jsm": {
       "modules": 496,
       "counts": {
-        "missing": 339,
-        "partial-unverified": 137,
+        "missing": 338,
+        "partial-unverified": 138,
         "dependency-unverified": 20
       }
     }
@@ -278,7 +278,7 @@
       "path": "examples/jsm/environments",
       "upstreamFiles": 3,
       "moduleCount": 3,
-      "modulesWithCppFiles": 0,
+      "modulesWithCppFiles": 1,
       "verifiedComplete": 0
     },
     {
@@ -23195,11 +23195,11 @@
       "scope": "examples/jsm",
       "kind": "addon",
       "upstreamSha256": "08bb67d35b6cf9507b7af6fd8c2982e03b28db7ba8a84814aaa0da21b5fbe675",
-      "header": null,
-      "implementation": null,
+      "header": "examples/jsm/environments/ColorEnvironment.h",
+      "implementation": "examples/jsm/environments/ColorEnvironment.cpp",
       "expectedHeader": "examples/jsm/environments/ColorEnvironment.h",
       "expectedImplementation": "examples/jsm/environments/ColorEnvironment.cpp",
-      "status": "missing",
+      "status": "partial-unverified",
       "verifiedComplete": false,
       "apiExtraction": "static-only",
       "verification": {
@@ -23208,7 +23208,9 @@
           "pointer": "/modules/784"
         },
         "upstreamUnitTests": [],
-        "cppUnitTests": [],
+        "cppUnitTests": [
+          "test/unit/addons/environments/ColorEnvironment.tests.cpp"
+        ],
         "reviewedImplementation": [],
         "differentialResults": [],
         "renderingResults": [],

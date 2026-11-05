@@ -1,4 +1,34 @@
-# 当前接续：examples/jsm 首批 addon——Gyroscope 移植（矩阵数值级差分），examples 进入正式推进，2026-11-05
+# 当前接续：addon `ColorEnvironment` 移植（场景图结构 + dispose 事件级差分），examples 连续第 2 个，2026-11-05
+
+目标保持 active：固定 three.js 11738a9d55e502fb484cefffcea3a66dc44e9fe9 全部 src + examples/jsm 原生 C++ 逻辑，Vulkan 后端；禁止 CEF/生产 JS 引擎/桥接。阶段本地 Git 提交，不推送。
+
+## 本轮交付：`examples/jsm/environments/ColorEnvironment`
+
+按既有 addon 约定（C++ 类 + `test/unit/addons/...` + 探针链 `threecpp::addons`）：
+
+- `examples/jsm/environments/ColorEnvironment.{h,cpp}`：`class ColorEnvironment : public Scene`；`explicit ColorEnvironment(int color = 0xffffff)` 内设 `name = "ColorEnvironment"`、`SphereGeometry(1,16,16)`、`MeshBasicMaterial`（`color = Color(color)`、`side = BackSide`）、`add(Mesh(...))`；`dispose() override` 释放子网格的 geometry 与 material。
+  - **与上游的一个行为对齐点**：上游 `dispose()` 无条件读 `children[0]`，场景被清空时会抛错；本端口在 `children.empty()` 时**抛 `std::runtime_error`**（同类错误行为，消息不同，已在头/实现注释与 HANDOFF 记录）。
+- `test/unit/addons/environments/ColorEnvironment.tests.cpp`（2 用例 / 19 断言）：默认场景结构（name/children=1/Mesh/SphereGeometry 参数/material 类型/side=BackSide/默认白色 `getHex()`）、自定义颜色透传、**dispose 事件计数**（geometry 与 material 各 1 次；dispose 两次各 2 次）。
+- `test/unit/utils/parity/ColorEnvironmentParityProbe.cpp` + `compare-color-environment.mjs`：上游模块裸 `from 'three'` 重写到 `build/three.module.js` 的 data URL 后导入；比较 14 项：name、children 数、child 类型、geometry 类型与 **`parameters.radius/widthSegments/heightSegments`**、material 类型、`side`、默认色与自定义色的 `getHex()`、**geometry/material 各 dispose 两次的事件计数**、`isScene`。
+
+## 本轮两处接口修正（均由编译暴露）
+
+1. `core/Event.h` 不存在 → 事件类型定义在 **`core/EventDispatcher.h`**（`struct Event`）。
+2. `SphereGeometry` **没有 radius/widthSegments/heightSegments 成员**，参数在 **`parameters` 结构体**里（`geometry->parameters.radius` 等）。
+
+## 验证
+
+- 构建 exit 0。
+- `THREECPPAddonTests`：**1294 cases / 31,188 assertions 全过**（较上轮 1292/31,169 → +2 例 / +19 断言）；过滤 `*ColorEnvironment*` = 2 cases / 19 assertions。
+- 差分 `threecpp.threejs-color-environment-parity` **Passed**（结构 + 颜色 + dispose 事件计数，全部行为级）。
+- 审计：**examples/jsm missing 339→338、partial-unverified 137→138**；`src` 不变（19 missing / 446 partial）。
+
+**未执行验证（如实记录）**：未做真实渲染；空 children 的抛错分支**未加差分**（上游抛 TypeError、本端口抛 std::runtime_error，**异常类型不同已记录为偏差**）；`Color` 的 sRGB 往返只在 `getHex()` 层比较。
+
+## 下一步
+
+继续小 addon 批量推进。实测 ≤2.5KB 且依赖齐全的候选仍很多：`tsl/display/Sepia.js`(596)、`tsl/display/BleachBypass.js`(1020)、`tsl/display/Shape.js`(1098)、`tsl/display/MotionBlur.js`(1132)、`tsl/utils/RNoise.js`(1550)、`transpiler/TranspilerUtils.js`(682，本轮因 `JsonValue` AST API 未核查而**未做**)、`loaders/materialx/parse/MaterialXParser.js`(735)。
+**注意**：TSL 类 addon（Sepia/MotionBlur 等）需要 JSValue 运行时风格（参照 `src/nodes/utils/SpriteUtils` 的 Fn 移植方式）而不是纯 C++ 类；其差分只能做"能否构建/结果节点类型"级别的比较，或参考仓库既有 `ThreeJsJsmShadersParityProbe` 的比对方式。# 当前接续：examples/jsm 首批 addon——Gyroscope 移植（矩阵数值级差分），examples 进入正式推进，2026-11-05
 
 目标保持 active：固定 three.js 11738a9d55e502fb484cefffcea3a66dc44e9fe9 全部 src + examples/jsm 原生 C++ 逻辑，Vulkan 后端；禁止 CEF/生产 JS 引擎/桥接。阶段本地 Git 提交，不推送。
 
