@@ -120,7 +120,7 @@ JSValue nativeAtomicFunctionNodeModule() {
     }
 
     // const atomicNode = nodeProxy( AtomicFunctionNode );
-    const auto atomicNode = invoke(nativeTSLCoreBinding("nodeProxy"), "call")({ctor});
+    const auto atomicNode = nativeTSLBaseBinding("nodeProxy").call({}, {ctor});
 
     // export const atomicFunc = ( method, pointerNode, valueNode ) => atomicNode( ... ).toStack();
     const auto atomicFunc = JSValue::function(

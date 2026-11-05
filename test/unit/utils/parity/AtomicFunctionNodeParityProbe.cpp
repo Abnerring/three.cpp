@@ -57,6 +57,19 @@ int main() {
         }
 
 
+        // The module level factory builds a node through nodeProxy and calls toStack on it.
+        bool atomicLoadBuilt = true;
+        std::string atomicLoadFailure;
+        JSValue atomicLoadResult;
+        try {
+            atomicLoadResult = module.get("atomicLoad").call({}, {pointer});
+        } catch (const std::exception& error) {
+            atomicLoadBuilt = false;
+            atomicLoadFailure = error.what();
+        }
+        const bool atomicLoadIsNode = atomicLoadBuilt && atomicLoadResult.get("isNode").strictEquals(true);
+        const bool atomicLoadIsStackNode =
+            atomicLoadBuilt && atomicLoadResult.get("isStackNode").strictEquals(true);
         auto output = JSValue::object(nullptr);
         output.set("name", ctor.get("name"));
         output.set("length", ctor.get("length"));
@@ -88,6 +101,12 @@ int main() {
         if (toStackCallable) {
             toStackReturnsSelf = stackMethod.call(atomic, {}).sameValue(atomic);
         }
+
+
+        output.set("atomicLoadBuilt", atomicLoadBuilt);
+
+        output.set("atomicLoadIsNode", atomicLoadIsNode);
+        output.set("atomicLoadIsStackNode", atomicLoadIsStackNode);
         output.set("toStackCallable", toStackCallable);
         output.set("toStackReturnsSelf", toStackReturnsSelf);
         output.set("source", ctor.get("toString").call(ctor));

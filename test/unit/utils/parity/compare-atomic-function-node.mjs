@@ -29,6 +29,16 @@ for (const name of [ 'ATOMIC_LOAD', 'ATOMIC_STORE', 'ATOMIC_ADD', 'ATOMIC_SUB', 
 }
 
 
+// The module level factory builds a node through nodeProxy and calls toStack on it.
+let atomicLoadBuilt = true;
+let atomicLoadResult;
+try {
+  atomicLoadResult = mod.atomicLoad(pointerRef);
+} catch {
+  atomicLoadBuilt = false;
+}
+const atomicLoadIsNode = atomicLoadBuilt && atomicLoadResult.isNode === true;
+const atomicLoadIsStackNode = atomicLoadBuilt && atomicLoadResult.isStackNode === true;
 const expected = {
   name: AtomicFunctionNode.name,
   length: AtomicFunctionNode.length,
@@ -50,6 +60,9 @@ const expected = {
   atomicLoadLength: mod.atomicLoad.length,
   atomicAddLength: mod.atomicAdd.length,
 
+  atomicLoadBuilt,
+  atomicLoadIsNode,
+  atomicLoadIsStackNode,
   toStackCallable: typeof atomic.toStack === 'function',
   toStackReturnsSelf: typeof atomic.toStack === 'function' && atomic.toStack() === atomic,
   source: AtomicFunctionNode.toString()

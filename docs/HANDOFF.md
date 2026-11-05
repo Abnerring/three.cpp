@@ -1,4 +1,40 @@
-# 当前接续：补上缺失的 `toStack` 链式方法（运行时保真修复）；并定位 `atomic*` 工厂失败的真实位置，2026-11-05
+# 当前接续：修掉 AtomicFunctionNode 的 nodeProxy 调用写法错误 → 模块工厂真正可用，并撤回第 40 轮的错误归因，2026-11-05
+
+目标保持 active：固定 three.js 11738a9d55e502fb484cefffcea3a66dc44e9fe9 全部 src + examples/jsm 原生 C++ 逻辑，Vulkan 后端；禁止 CEF/生产 JS 引擎/桥接。阶段本地 Git 提交，不推送。
+
+**本轮是运行时/调用修正 + 验证补强，不新增模块，审计计数不变（src missing 24 / partial 441）——不声称覆盖率提升。**
+
+## 正式撤回第 40 轮的归因
+
+第 40 轮记录「`atomic*` 工厂失败是因为 `nodeProxy` 内部 `nodeArray`/`nodeObject` 对 plain-object 形参处理有差异」。**本轮实测推翻该结论**：单独调用 `nodeObject(pointer)`、`nodeArray([...])` **都正常**（探针实测 `nodeObjectBuilt=true`、`nodeArrayBuilt=true`）。
+
+**真实根因**：`AtomicFunctionNode.cpp` 里我写的是
+```cpp
+invoke(nativeTSLCoreBinding("nodeProxy"), "call")({ctor})   // ✗ 等于 nodeProxy.call(ctor)
+```
+——**与第 32 轮同一个错误**：`.call` 的 thisArg 吃掉第一个参数、参数表为空。正确写法（其他模块已用）：
+```cpp
+nativeTSLBaseBinding("nodeProxy").call({}, {ctor})
+```
+修正后 `atomicLoad`/`atomicAdd` 工厂**真正可用**。
+
+## 本轮验证补强
+
+- **单元测试**新增 `AtomicFunctionNode module factories build nodes`：`atomicLoad(pointer)` 返回 `isNode`、`nodeType === "uint"`、`method === "atomicLoad"`；`atomicAdd(pointer, value)` 带 `valueNode`。
+- **差分**恢复并比较工厂的真实行为（不再是"未执行"）：`atomicLoadBuilt`、`atomicLoadIsNode`、`atomicLoadIsStackNode`——两侧一致（上游 `isNode: true`，`isStackNode` 为 undefined→false）。
+
+验证：构建 exit 0。THREECPPTests **1627 cases / 214,765 assertions 全过**（较上轮 1626 → +1 例 / +7 断言）。差分 `threecpp.threejs-atomic-function-node-parity` **Passed**。
+
+## 仍未解决
+
+- **`generate( builder )` 的 SIGSEGV**：本轮未动，仍未验证（源码保留忠实实现，测试与差分未覆盖）。
+- 「Redefinition of method chaining 'toStack'」告警：我们的 TSLCore 在某些重复初始化路径上会重复注册 `toStack`（仅告警、不影响功能），**未处理**，记为低优先项。
+
+## 方法论（同一错误第二次）
+
+`invoke(fn, "call")({x})` 与 `fn.call({}, {x})` **不等价**：前者把 `{x}` 当 thisArg。第 32 轮已记录过一次；第 38–40 轮我又在 `AtomicFunctionNode.cpp` 用错，并据此做了两轮错误归因。**今后凡涉及 `.call` 的两参数调用，必须先对照既有正确用例**。
+
+下一步：① `generate` 的 SIGSEGV（用真实栈/builder 复现）；② 清理重复 `toStack` 注册告警；③ 回模块：`SubgroupFunctionNode`(16,784) / 3 个 `loaders/nodes` / `NodeMaterials`（仍被 4 个材质阻塞）。# 当前接续：补上缺失的 `toStack` 链式方法（运行时保真修复）；并定位 `atomic*` 工厂失败的真实位置，2026-11-05
 
 目标保持 active：固定 three.js 11738a9d55e502fb484cefffcea3a66dc44e9fe9 全部 src + examples/jsm 原生 C++ 逻辑，Vulkan 后端；禁止 CEF/生产 JS 引擎/桥接。阶段本地 Git 提交，不推送。
 

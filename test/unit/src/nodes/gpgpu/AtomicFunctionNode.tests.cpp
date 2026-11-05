@@ -130,3 +130,19 @@ TEST_CASE("AtomicFunctionNode answers the toStack chain method") {
     REQUIRE(toStack.isCallable());
     REQUIRE(toStack.call(atomic, {}).sameValue(atomic));
 }
+
+TEST_CASE("AtomicFunctionNode module factories build nodes") {
+    const auto module = nativeAtomicFunctionNodeModule();
+    const auto pointer = pointerStub();
+    // atomicLoad goes through nodeProxy and toStack, both of which work now.
+    JSValue loaded;
+    REQUIRE_NOTHROW(loaded = module.get("atomicLoad").call({}, {pointer}));
+    REQUIRE(loaded.get("isNode").strictEquals(true));
+    REQUIRE(loaded.get("nodeType").strictEquals("uint"));
+    REQUIRE(loaded.get("method").strictEquals("atomicLoad"));
+    // The value form carries the value node as well.
+    JSValue stored;
+    REQUIRE_NOTHROW(stored = module.get("atomicAdd").call({}, {pointer, valueStub()}));
+    REQUIRE(stored.get("method").strictEquals("atomicAdd"));
+    REQUIRE(stored.get("valueNode").isNull() == false);
+}
