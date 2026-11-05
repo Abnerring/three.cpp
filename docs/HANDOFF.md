@@ -1,4 +1,23 @@
-# 当前接续：撤回上轮「Material 多出 id」的结论——是差分两侧枚举 API 不一致，2026-11-05
+# 当前接续：ShadowMaskModel + ShadowNodeMaterial 已移植，顺带修正 LightingModel 基类的钩子 arity，2026-11-05
+
+目标保持 active：固定 three.js 11738a9d55e502fb484cefffcea3a66dc44e9fe9 全部 src + examples/jsm 原生 C++ 逻辑，Vulkan 后端；禁止 CEF/生产 JS 引擎/桥接。阶段本地 Git 提交，不推送。
+
+本轮新增两个模块（**各自独立 h/cpp**，因为审计按「与源文件同名的头文件」判定状态）：
+
+- **`src/nodes/functions/ShadowMaskModel.{h,cpp}`**（1,180 B）：沿用既有 `BasicLightingModel` 的移植骨架——JS 对象类 + `LightingModel` 基座（6 个钩子，`start(builder)` 负责 `lightsNode.setupLights(...)` 再调 `indirect`；其余五个是抽象扩展点）。构造设 `shadowNode = float(1).toVar('shadowMask')`；`direct( { lightNode } )` 仅在 `lightNode.shadowNode !== null` 时 `this.shadowNode.mulAssign(...)`；`finish( { context } )` 做 `diffuseColor.a.mulAssign(this.shadowNode.oneMinus())` 与 `context.outgoingLight.rgb.assign(diffuseColor.rgb)`。
+- **`src/materials/nodes/ShadowNodeMaterial.{h,cpp}`**（1,437 B）：模块级 `_defaultValues = new ShadowMaterial()`；构造按源码顺序设 `isShadowNodeMaterial`、`lights = true`、`transparent = true`，再 `setDefaultValues` → `setValues(parameters)`；`setupLightingModel()` **每次返回新的** `ShadowMaskModel`。
+
+**追踪机制扩展**：新增 `src/nodes/functions/NodeFunctionSources.inc`（ShadowMaskModel），并把 `src/materials/nodes/NodeMaterialSources.inc` 重生成为 3 个 namespace（含 ShadowNodeMaterial）。同时修了生成器的一个键名缺陷：`direct( { lightNode } )` 原来被拼成 `directlightNodeSource`，现在**按成员名截断参数表**得到 `directSource`。
+
+**顺带修掉一处既有移植的不准确（由本轮差分发现）**：`LightingModel` 基类六个钩子的 `Function.length` —— 上游只有 `start( builder )` 是 **1**，其余五个的参数在源码里是**注释掉的**（`finish( /*builder*/ )` 等）故 `length` 为 **0**。而 `BasicLightingModel.cpp` 里既有的基座把六个写成 1/1/2/2/1/3。本轮把 `ShadowMaskModel` 与 `BasicLightingModel` **两处都改正**为 1/0/0/0/0/0，并新增单测钉住。这个问题是差分跑出来的第一版差异（`hook_directRectArea` 2 vs 0、`hook_indirect` 1 vs 0、`hook_ambientOcclusion` 3 vs 0），不是猜的。
+
+验证：构建 exit 0。THREECPPTests **1569 cases / 214,416 assertions 全过**，较上轮 1563/214,386 增 6 例 30 断言（`*ShadowMask*` 3 用例/13 断言、`*ShadowNodeMaterial*` 2 用例/13 断言）。差分 `threecpp.threejs-shadow-node-material-parity` **Passed 0.75s**，比较：`ShadowMaskModel` 的构造器 name/arity、`shadowNode.type`/`isNode`、**六个钩子 length**、以及 `finish` 对 `outgoingLight.rgb.assign` 的**调用计数**（真实行为）；`ShadowNodeMaterial` 的 name/length/静态与实例 type/两个 flag/`lights`/`transparent`/**完整自有属性快照**（`getOwnPropertyNames`，仅排除 uuid 名与 id 值）；以及 `setupLightingModel()` 返回模型的 `shadowNode.type`、两钩子 arity、两次调用**返回不同实例**。
+
+**未执行验证的部分（如实记录）**：`direct` 传入真实 shadow node 时只是把一个 var 与自身相乘，**没有求值**；`finish` 里 `diffuseColor.a.mulAssign(...)` 的效果不可观测（只验证了 `outgoingLight.rgb.assign` 被调用一次）；材质真实渲染路径未触及；材质快照按既有约定排除 uuid（随机）与 id 值（每进程计数器）。
+
+审计（固定 worktree，HEAD=11738a9d55）刷新后：**src missing 45→43、partial 420→422**，两个模块各记 `partial-unverified` 并登记自己的头文件。
+
+下一步：继续小体量 node 材质（`MeshMatcapNodeMaterial` 1,694 / `MeshLambertNodeMaterial` 1,861 / `MeshToonNodeMaterial` 1,269——后两者分别需 `Lambert`/`Toon` lighting model，`ToonLightingModel` 2,276 与 `PhongLightingModel` 2,978 仍 missing，可成组做）；`ShadowNode` + `PointShadowNode` 待较充裕上下文时一次完成（前置已全齐）。# 当前接续：撤回上轮「Material 多出 id」的结论——是差分两侧枚举 API 不一致，2026-11-05
 
 目标保持 active：固定 three.js 11738a9d55e502fb484cefffcea3a66dc44e9fe9 全部 src + examples/jsm 原生 C++ 逻辑，Vulkan 后端；禁止 CEF/生产 JS 引擎/桥接。阶段本地 Git 提交，不推送。
 

@@ -99,8 +99,10 @@ JSValue makeLightingModelBase() {
     holder.set("constructor", ctor);
     auto prototype = ctor.get("prototype");
     for (const auto& [name, arity] : std::initializer_list<std::pair<const char*, unsigned>>{
-             {"start", 1}, {"finish", 1}, {"direct", 2}, {"directRectArea", 2},
-             {"indirect", 1}, {"ambientOcclusion", 3}}) {
+             // Only start takes a named parameter in the source; the other five have their parameters
+             // commented out, so their function length is zero.
+             {"start", 1}, {"finish", 0}, {"direct", 0}, {"directRectArea", 0},
+             {"indirect", 0}, {"ambientOcclusion", 0}}) {
         auto fn = JSValue::function(baseMethod, {name}, name, arity);
         JSPropertyDescriptor descriptor;
         descriptor.value = fn;

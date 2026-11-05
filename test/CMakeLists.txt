@@ -110,6 +110,8 @@ add_executable(THREECPPTests
         unit/src/nodes/lighting/LightsNode.tests.cpp
         unit/src/renderers/common/RendererUtils.tests.cpp
         unit/src/materials/nodes/BasicNodeMaterials.tests.cpp
+        unit/src/materials/nodes/ShadowNodeMaterial.tests.cpp
+        unit/src/nodes/functions/ShadowMaskModel.tests.cpp
         unit/src/nodes/utils/Oscillators.tests.cpp
         unit/src/nodes/utils/ViewportUtils.tests.cpp
         unit/src/nodes/utils/PostProcessingUtils.tests.cpp
@@ -1051,6 +1053,13 @@ if(THREECPP_NODE_EXECUTABLE AND THREEJS_SOURCE_DIR)
     add_test(NAME threecpp.threejs-basic-node-materials-parity
         COMMAND "${THREECPP_NODE_EXECUTABLE}" "${CMAKE_CURRENT_SOURCE_DIR}/unit/utils/parity/compare-basic-node-materials.mjs"
         "${THREEJS_SOURCE_DIR}" "$<TARGET_FILE:ThreeJsBasicNodeMaterialsParityProbe>")
+endif()
+add_executable(ThreeJsShadowNodeMaterialParityProbe unit/utils/parity/ShadowNodeMaterialParityProbe.cpp)
+target_link_libraries(ThreeJsShadowNodeMaterialParityProbe PRIVATE threecpp::threecpp)
+if(THREECPP_NODE_EXECUTABLE AND THREEJS_SOURCE_DIR)
+    add_test(NAME threecpp.threejs-shadow-node-material-parity
+        COMMAND "${THREECPP_NODE_EXECUTABLE}" "${CMAKE_CURRENT_SOURCE_DIR}/unit/utils/parity/compare-shadow-node-material.mjs"
+        "${THREEJS_SOURCE_DIR}" "$<TARGET_FILE:ThreeJsShadowNodeMaterialParityProbe>")
 endif()
 add_executable(ThreeJsMaterialXColorParityProbe unit/utils/parity/MaterialXColorParityProbe.cpp)
 target_link_libraries(ThreeJsMaterialXColorParityProbe PRIVATE threecpp::threecpp)

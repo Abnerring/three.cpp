@@ -201,8 +201,8 @@
     "note": "Accepted port scope is src and examples/jsm, including tracked third-party dependencies. Editor/manual web applications are excluded from native application rewrites. Native host behavior, packaging and all three platforms require separate implementation and verification evidence."
   },
   "counts": {
-    "partial-unverified": 556,
-    "missing": 385,
+    "partial-unverified": 558,
+    "missing": 383,
     "vulkan-port-pending": 290,
     "dependency-unverified": 20
   },
@@ -210,8 +210,8 @@
     "src": {
       "modules": 755,
       "counts": {
-        "partial-unverified": 420,
-        "missing": 45,
+        "partial-unverified": 422,
+        "missing": 43,
         "vulkan-port-pending": 290
       }
     },
@@ -761,7 +761,7 @@
       "path": "src/materials/nodes",
       "upstreamFiles": 19,
       "moduleCount": 19,
-      "modulesWithCppFiles": 3,
+      "modulesWithCppFiles": 4,
       "verifiedComplete": 0
     },
     {
@@ -831,7 +831,7 @@
       "path": "src/nodes/functions",
       "upstreamFiles": 6,
       "moduleCount": 6,
-      "modulesWithCppFiles": 1,
+      "modulesWithCppFiles": 2,
       "verifiedComplete": 0
     },
     {
@@ -6329,11 +6329,11 @@
       "scope": "src",
       "kind": "core",
       "upstreamSha256": "98e19a2c9d8297c2bc589d18003f9f2aeeb0cf5e5c430adcb2497f497dbe1dee",
-      "header": null,
-      "implementation": null,
+      "header": "src/materials/nodes/ShadowNodeMaterial.h",
+      "implementation": "src/materials/nodes/ShadowNodeMaterial.cpp",
       "expectedHeader": "src/materials/nodes/ShadowNodeMaterial.h",
       "expectedImplementation": "src/materials/nodes/ShadowNodeMaterial.cpp",
-      "status": "missing",
+      "status": "partial-unverified",
       "verifiedComplete": false,
       "apiExtraction": "static-only",
       "verification": {
@@ -6342,7 +6342,9 @@
           "pointer": "/modules/178"
         },
         "upstreamUnitTests": [],
-        "cppUnitTests": [],
+        "cppUnitTests": [
+          "test/unit/src/materials/nodes/ShadowNodeMaterial.tests.cpp"
+        ],
         "reviewedImplementation": [],
         "differentialResults": [],
         "renderingResults": [],
@@ -10832,11 +10834,11 @@
       "scope": "src",
       "kind": "core",
       "upstreamSha256": "ed9fb3357140a1094142b978fadd81744fe307cbfe96adca93502291052c0a67",
-      "header": null,
-      "implementation": null,
+      "header": "src/nodes/functions/ShadowMaskModel.h",
+      "implementation": "src/nodes/functions/ShadowMaskModel.cpp",
       "expectedHeader": "src/nodes/functions/ShadowMaskModel.h",
       "expectedImplementation": "src/nodes/functions/ShadowMaskModel.cpp",
-      "status": "missing",
+      "status": "partial-unverified",
       "verifiedComplete": false,
       "apiExtraction": "static-only",
       "verification": {
@@ -10845,7 +10847,9 @@
           "pointer": "/modules/337"
         },
         "upstreamUnitTests": [],
-        "cppUnitTests": [],
+        "cppUnitTests": [
+          "test/unit/src/nodes/functions/ShadowMaskModel.tests.cpp"
+        ],
         "reviewedImplementation": [],
         "differentialResults": [],
         "renderingResults": [],

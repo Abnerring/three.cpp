@@ -212,6 +212,8 @@ target_sources(threecpp PRIVATE
     src/renderers/common/RendererUtils.cpp
     src/materials/nodes/LineBasicNodeMaterial.cpp
     src/materials/nodes/MeshNormalNodeMaterial.cpp
+    src/materials/nodes/ShadowNodeMaterial.cpp
+    src/nodes/functions/ShadowMaskModel.cpp
     src/nodes/lighting/BasicEnvironmentNode.cpp
     src/nodes/lighting/LightProbeNode.cpp
     src/nodes/lighting/LightingContextNode.cpp
