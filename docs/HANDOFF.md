@@ -1,4 +1,29 @@
-# 当前接续：`PassNode` **Stage C 第一批**（纹理/toggle/resolution/layers/MRT）完成，2026-11-05
+# 当前接续：`PassNode` **Stage C 完成**（4 个节点访问器），PassNode 剩 Stage D，2026-11-05
+
+目标保持 active：固定 three.js 11738a9d55e502fb484cefffcea3a66dc44e9fe9 全部 src + examples/jsm 原生 C++ 逻辑，Vulkan 后端；禁止 CEF/生产 JS 引擎/桥接。阶段本地 Git 提交，不推送。
+
+## 本轮交付（照 L711–798）
+
+- **`getTextureNode(name='output')`**：`_textureNodes` 缓存；未命中 → `new PassMultipleTextureNode(this, name)` + `updateTexture()` + 缓存；
+- **`getPreviousTextureNode(name='output')`**：未命中时**先确保** `_textureNodes[name]` 存在（否则调 `getTextureNode`），再 `new PassMultipleTextureNode(this, name, true)` + `updateTexture()` + 缓存；
+- **`getViewZNode(name='depth')`**：`perspectiveDepthToViewZ(getTextureNode(name), _cameraNear, _cameraFar)` 并缓存；
+- **`getLinearDepthNode(name='depth')`**：`viewZToOrthographicDepth(getViewZNode(name), near, far)` 并缓存。
+
+## 测试（+1 例 / 10 断言）
+
+`getTextureNode` 类型与缓存身份（同 name 返回同一对象）；`getPreviousTextureNode` 不同于当前节点且 `previousTexture=true`；`getViewZNode`/`getLinearDepthNode` 返回 TSL 节点且缓存。
+
+## 验证
+
+- 构建 exit 0；过滤 `*Pass*` = **20 cases / 98 assertions** 全过；`THREECPPAddonTests` 全套 **1413 cases / 39,173 assertions** 通过。
+- 审计不变（PassNode 已 partial）：src 10 / 455；examples/jsm 322 / 154。
+
+**未执行验证（如实记录）**：`compileAsync` 未实现（异步）；`setup`/`updateBefore`/`setSize`/`setScissor`/`setViewport`/`dispose` 未实现；废弃别名 `setResolution/getResolution` 未实现。
+
+## 下一步（PassNode Stage D）
+
+1. `setup({renderer})`（L826）、`updateBefore(frame)`（L842–962，**最大一块**）、`setSize`（L963）、`setScissor`（L1007）、`setViewport`（L1041）、`dispose`（L1068）、`compileAsync`（可选）；
+2. 完成后 `PassNode` 收口 → `ToonOutlinePassNode`(6,868)。# 当前接续：`PassNode` **Stage C 第一批**（纹理/toggle/resolution/layers/MRT）完成，2026-11-05
 
 目标保持 active：固定 three.js 11738a9d55e502fb484cefffcea3a66dc44e9fe9 全部 src + examples/jsm 原生 C++ 逻辑，Vulkan 后端；禁止 CEF/生产 JS 引擎/桥接。阶段本地 Git 提交，不推送。
 

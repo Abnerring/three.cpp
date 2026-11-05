@@ -7,6 +7,7 @@
 #include "core/JSPromise.h"
 #include "nodes/core/Node.h"
 #include "nodes/core/UniformNode.h"
+#include "nodes/display/ViewportDepthNode.h"
 #include "nodes/lighting/LightingNodeRuntime.h"
 #include "core/RenderTarget.h"
 #include "textures/DepthTexture.h"
@@ -145,6 +146,71 @@ JSValue passToggleTexture(const JSValue& rawSelf, const Args& args, const Args&)
         if (previousNode.toBoolean()) previousNode.get("updateTexture").call(previousNode, {});
     }
     return JSValue{};
+}
+
+// getTextureNode( name = 'output' ) { ... new PassMultipleTextureNode( this, name ) ... }
+JSValue passGetTextureNode(const JSValue& rawSelf, const Args& args, const Args&) {
+    JSValue& self = const_cast<JSValue&>(rawSelf);
+    const auto name = arg(args, 0, JSValue("output"));
+    auto nodes = self.get("_textureNodes");
+    auto textureNode = nodes.get(name);
+    if (!textureNode.toBoolean()) {
+        textureNode = nativePassMultipleTextureNodeConstructor().construct({self, name});
+        textureNode.get("updateTexture").call(textureNode, {});
+        nodes.set(name, textureNode);
+        self.set("_textureNodes", nodes);
+    }
+    return textureNode;
+}
+
+// getPreviousTextureNode( name = 'output' ) { ... if ( this._textureNodes[ name ] === undefined ) this.getTextureNode( name ); ... }
+JSValue passGetPreviousTextureNode(const JSValue& rawSelf, const Args& args, const Args&) {
+    JSValue& self = const_cast<JSValue&>(rawSelf);
+    const auto name = arg(args, 0, JSValue("output"));
+    auto nodes = self.get("_previousTextureNodes");
+    auto textureNode = nodes.get(name);
+    if (!textureNode.toBoolean()) {
+        if (!self.get("_textureNodes").get(name).toBoolean()) {
+            self.get("getTextureNode").call(self, {name});
+        }
+        textureNode = nativePassMultipleTextureNodeConstructor().construct({self, name, JSValue(true)});
+        textureNode.get("updateTexture").call(textureNode, {});
+        nodes.set(name, textureNode);
+        self.set("_previousTextureNodes", nodes);
+    }
+    return textureNode;
+}
+
+// getViewZNode( name = 'depth' ) { ... perspectiveDepthToViewZ( getTextureNode( name ), near, far ) ... }
+JSValue passGetViewZNode(const JSValue& rawSelf, const Args& args, const Args&) {
+    JSValue& self = const_cast<JSValue&>(rawSelf);
+    const auto name = arg(args, 0, JSValue("depth"));
+    auto nodes = self.get("_viewZNodes");
+    auto viewZNode = nodes.get(name);
+    if (!viewZNode.toBoolean()) {
+        const auto textureNode = self.get("getTextureNode").call(self, {name});
+        viewZNode = nativeViewportDepthNodeBinding("perspectiveDepthToViewZ")
+                        .call({}, {textureNode, self.get("_cameraNear"), self.get("_cameraFar")});
+        nodes.set(name, viewZNode);
+        self.set("_viewZNodes", nodes);
+    }
+    return viewZNode;
+}
+
+// getLinearDepthNode( name = 'depth' ) { ... viewZToOrthographicDepth( getViewZNode( name ), near, far ) ... }
+JSValue passGetLinearDepthNode(const JSValue& rawSelf, const Args& args, const Args&) {
+    JSValue& self = const_cast<JSValue&>(rawSelf);
+    const auto name = arg(args, 0, JSValue("depth"));
+    auto nodes = self.get("_linearDepthNodes");
+    auto linearDepthNode = nodes.get(name);
+    if (!linearDepthNode.toBoolean()) {
+        const auto viewZNode = self.get("getViewZNode").call(self, {name});
+        linearDepthNode = nativeViewportDepthNodeBinding("viewZToOrthographicDepth")
+                              .call({}, {viewZNode, self.get("_cameraNear"), self.get("_cameraFar")});
+        nodes.set(name, linearDepthNode);
+        self.set("_linearDepthNodes", nodes);
+    }
+    return linearDepthNode;
 }
 
 // constructor( scope, scene, camera, options = {} ) { super( 'vec4' ); ... }
@@ -314,6 +380,10 @@ JSValue nativePassNodeModule() {
         method(prototype, "getTexture", 1, passGetTexture, {}, "");
         method(prototype, "getPreviousTexture", 1, passGetPreviousTexture, {}, "");
         method(prototype, "toggleTexture", 1, passToggleTexture, {}, "");
+        method(prototype, "getTextureNode", 1, passGetTextureNode, {}, "");
+        method(prototype, "getPreviousTextureNode", 1, passGetPreviousTextureNode, {}, "");
+        method(prototype, "getViewZNode", 1, passGetViewZNode, {}, "");
+        method(prototype, "getLinearDepthNode", 1, passGetLinearDepthNode, {}, "");
     }
     own(bindings, "PassNode", passNodeConstructor);
 

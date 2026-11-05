@@ -166,3 +166,27 @@ TEST_CASE("PassNode resolution layers and mrt setters round trip") {
     node.get("setMRT").call(node, {mrt});
     REQUIRE(node.get("getMRT").call(node, {}).strictEquals(mrt));
 }
+TEST_CASE("PassNode node accessors cache the texture and depth nodes") {
+    auto scene = JSValue::object(nullptr);
+    auto camera = JSValue::object(nullptr);
+    const auto node = nativePassNodeConstructor().construct(
+        {JSValue("color"), scene, camera});
+
+    const auto textureNode = node.get("getTextureNode").call(node, {});
+    REQUIRE(textureNode.get("type").toString() == "PassMultipleTextureNode");
+    REQUIRE(node.get("getTextureNode").call(node, {JSValue("output")}).strictEquals(textureNode));
+
+    const auto previousNode = node.get("getPreviousTextureNode").call(node, {});
+    REQUIRE(previousNode.toBoolean());
+    REQUIRE_FALSE(previousNode.strictEquals(textureNode));
+    REQUIRE(previousNode.get("previousTexture").toBoolean());
+
+    const auto viewZ = node.get("getViewZNode").call(node, {});
+    REQUIRE(viewZ.toBoolean());
+    REQUIRE(viewZ.get("isNode").toBoolean());
+    REQUIRE(node.get("getViewZNode").call(node, {JSValue("depth")}).strictEquals(viewZ));
+
+    const auto linearDepth = node.get("getLinearDepthNode").call(node, {});
+    REQUIRE(linearDepth.toBoolean());
+    REQUIRE(linearDepth.get("isNode").toBoolean());
+}
