@@ -389,3 +389,38 @@ TEST_CASE("ShadowNode VSM pass graphs can be built") {
     REQUIRE(horizontal.isCallable());
     REQUIRE_FALSE(vertical.strictEquals(horizontal));
 }
+TEST_CASE("ShadowNode VSM pass graphs execute with node inputs") {
+    const auto samples = nativeTSLBaseBinding("float").call({}, {JSValue(3.0)});
+    const auto radius = nativeTSLBaseBinding("float").call({}, {JSValue(1.0)});
+    const auto size = nativeTSLBaseBinding("vec2").call(
+        {}, {JSValue(1.0), JSValue(1.0)});
+    auto sampled = JSValue::object(nullptr);
+    sampled.set("x", nativeTSLBaseBinding("float").call({}, {JSValue(0.5)}));
+    sampled.set("y", nativeTSLBaseBinding("float").call({}, {JSValue(0.25)}));
+    sampled.set("depth", JSValue::function(
+        +[](const JSValue&, const std::vector<JSValue>&, const std::vector<JSValue>&) {
+            return JSValue{};
+        }));
+    auto shadowPass = JSValue::object(nullptr);
+    shadowPass.set("sample", JSValue::function(
+        +[](const JSValue&, const std::vector<JSValue>&, const std::vector<JSValue>&) {
+            auto result = JSValue::object(nullptr);
+            result.set("x", nativeTSLBaseBinding("float").call({}, {JSValue(0.5)}));
+            result.set("y", nativeTSLBaseBinding("float").call({}, {JSValue(0.25)}));
+            return result;
+        }));
+    shadowPass.set("value", JSValue::object(nullptr));
+
+    for (const bool vertical : {true, false}) {
+        auto inputs = JSValue::object(nullptr);
+        inputs.set("samples", samples);
+        inputs.set("radius", radius);
+        inputs.set("size", size);
+        inputs.set("shadowPass", shadowPass);
+        inputs.set("depthLayer", JSValue(0));
+        const auto graph = nativeShadowNodeVsmPassGraph(vertical);
+        const auto result = graph.call({}, {inputs});
+        REQUIRE(result.toBoolean());
+        REQUIRE(result.get("isNode").toBoolean());
+    }
+}

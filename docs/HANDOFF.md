@@ -1,4 +1,28 @@
-# 当前接续：VSM pass 图加移植专用测试钩子并通过（ShadowNode 15 例 / 48 断言），2026-11-05
+# 当前接续：VSM 两图**实际执行**验证通过（带真实 TSL 节点输入），2026-11-05
+
+目标保持 active：固定 three.js 11738a9d55e502fb484cefffcea3a66dc44e9fe9 全部 src + examples/jsm 原生 C++ 逻辑，Vulkan 后端；禁止 CEF/生产 JS 引擎/桥接。阶段本地 Git 提交，不推送。
+
+## 本轮交付：VSM 图执行级测试
+
+在 r138「图可构造」基础上补**执行级**用例：
+
+- 输入：`samples = float(3)`、`radius = float(1)`、`size = vec2(1,1)`、`depthLayer = 0`；
+- `shadowPass` 用 stub 对象：`sample` 为原生函数（返回含 `x`/`y` 的节点），`value` 为空对象（`isArrayTexture` 假）；
+- 对 `vertical ∈ {true,false}` 分别调用 `nativeShadowNodeVsmPassGraph(...)` 返回的 Fn，断言结果为 truthy 且 **`isNode == true`** —— 即整条链（`lessThanEqual/select` → `Loop` 逐样本 → `sample` → `addAssign` → `divAssign` → `sqrt/max` → `vec2`）在真实节点输入下可执行。
+
+## 验证
+
+- 构建 exit 0；过滤 `*ShadowNode*` = **16 cases / 52 assertions** 全过（+1 例 / +4 断言）。
+- `THREECPPAddonTests` 全套 **1381 cases / 38,955 assertions** 通过。
+- 审计不变（ShadowNode 已 partial）：src 12 / 453；examples/jsm 322 / 154。
+
+**未执行验证（如实记录）**：未断言图的**数值结果**（stub 采样值不参与求值；无 TSL 求值器）与**节点结构**（顶层节点类型可再做弱差分）；`toInspector` 仍省略；`_quadMesh` 每次新建；段 3/4 无直接断言；`updateShadow` 无测试。
+
+## 下一步
+
+1. 弱差分：对比 C++ 与上游 `VSMPassVertical` 返回节点的**类型/操作数结构**（可导出节点 `toString()`）；
+2. `_quadMesh` 模块级单例；`updateShadow` 真实 renderer 夹具；段 3/4 断言；
+3. 收口 `ShadowNode` 后推进 **`PointShadowNode`(12,693)**、`PhysicalLightingModel`(32,829)。# 当前接续：VSM pass 图加移植专用测试钩子并通过（ShadowNode 15 例 / 48 断言），2026-11-05
 
 目标保持 active：固定 three.js 11738a9d55e502fb484cefffcea3a66dc44e9fe9 全部 src + examples/jsm 原生 C++ 逻辑，Vulkan 后端；禁止 CEF/生产 JS 引擎/桥接。阶段本地 Git 提交，不推送。
 
