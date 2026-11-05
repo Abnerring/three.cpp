@@ -229,6 +229,7 @@ target_sources(threecpp PRIVATE
     src/nodes/utils/RTTNode.cpp
     src/loaders/nodes/NodeLoader.cpp
     src/loaders/nodes/NodeMaterialLoader.cpp
+    src/Three.Legacy.cpp
     src/nodes/utils/SpriteUtils.cpp
     src/nodes/functions/VolumetricLightingModel.cpp
     src/nodes/display/ViewportSharedTextureNode.cpp

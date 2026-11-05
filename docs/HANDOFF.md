@@ -1,4 +1,29 @@
-# 当前接续：NodeMaterialLoader 已移植（节点材质 JSON 解析 + inputNodes 映射 + 注册表优先，2026-11-05）
+# 当前接续：Three.Legacy 空模块移植（上游 0 字节）；确认 ObjectLoader 缺 JS 类导致 NodeObjectLoader 阻塞，2026-11-05
+
+目标保持 active：固定 three.js 11738a9d55e502fb484cefffcea3a66dc44e9fe9 全部 src + examples/jsm 原生 C++ 逻辑，Vulkan 后端；禁止 CEF/生产 JS 引擎/桥接。阶段本地 Git 提交，不推送。
+
+## 本轮交付：`Three.Legacy`（上游 0 字节）
+
+`src/Three.Legacy.js` 在固定 revision 上是**空文件（实测 0 字节）**——所有历史别名早已从公开 API 移除。忠实移植就是一个**不导出任何名字的模块**：新增 `src/Three.Legacy.{h,cpp}`（`nativeThreeLegacyModule()` 返回空模块，强弱引用缓存同其他模块）。
+
+验证：构建 exit 0。THREECPPTests **1645 cases / 214,897 assertions 全过**（较上轮 1644/214,893 → +1 例 / +4 断言）。差分 `threecpp.threejs-three-legacy-parity` **Passed**：两侧模块的**导出名集合都为空**（上游 `Object.keys(命名空间) == 0`，本端口 `ownPropertyNames().empty()`），另断言 `Object`/`BufferGeometry` 等旧别名确实不存在。
+
+## 本轮两个**阻塞性发现**（记录，供后续排期）
+
+1. **`NodeObjectLoader` 目前不可忠实移植**：它 `extends ObjectLoader`，但本端口的 `ObjectLoader` 是 **纯 C++ 类**（头文件只有 `Result parse(const JSValue&)`，**没有 `prototype()`、没有 JS 侧类**，`src/loaders/ObjectLoader.h` 注释自称 "first slice"），因此无法在 JS 类体系里继承。要移植 `NodeObjectLoader`，**前置工作是把 `ObjectLoader` 提升为 JS 类**（含 `parse(json)`/`parseAsync`），这是比本轮更大的任务。`src/loaders/nodes` 因此仍有 1 个 missing。
+2. **`Three.TSL.js` 仍阻塞**：它 `import './Three.Core.js'` + `export * from './nodes/TSL.js'`，而 `nodes/TSL.js` 依赖 7 个 missing（`ReflectorNode`/`RTTNode`(已完成)/`ToonOutlinePassNode`/`PassNode`/`ShadowNode`/`PointShadowNode`/`MaterialXNodes`）。注：`RTTNode` 已完成，故该清单现为 **6 个**。
+
+另外确认：**`ShadowNode`（24,331）依赖已全部齐备**（缺失 0），可作为 lighting 收尾的独立大轮；`Three.WebGPU.js`/`Three.WebGPU.Nodes.js` 仍各缺 5 个（含 `NodeMaterials`、`NodeObjectLoader`、`nodes/Nodes.js`、`Three.TSL`）。
+
+审计（固定 worktree，HEAD=11738a9d55）：**src missing 20→19、partial 445→446**，`Three.Legacy` 记 `partial-unverified`。
+
+`src` 剩余 19 个：`Three.TSL.js`(62)、`NodeMaterials`(1,639)、`Three.WebGPU.Nodes.js`(2,297)、`Three.WebGPU.js`(3,183)、`NodeObjectLoader`(3,695)、`MeshSSS`(4,726)、`MeshStandard`(4,817)、`ToonOutlinePassNode`(6,868)、`nodes/TSL.js`(7,493)、`nodes/Nodes.js`(10,073)、`MaterialXNodes`(10,782)、`PointShadowNode`(12,693)、`ReflectorNode`(17,567)、`Line2NodeMaterial`(18,172)、`MeshPhysical`(18,482)、`ShadowNode`(24,331)、`PassNode`(26,843)、`PhysicalLightingModel`(32,829)、`MaterialXNoise`(48,687)。
+
+下一步建议（按可完成度排序）：
+① **`ShadowNode`(24,331)** —— 依赖齐备、lighting 核心缺口（建议单独大轮，先读全文分段实现）；
+② `PointShadowNode`(12,693) —— 依赖 `ShadowNode`，二者可连做；
+③ **`PhysicalLightingModel`(32,829)** —— 解锁三材质 + `NodeMaterials` 链路；
+④ 若先想清掉目录：把 `ObjectLoader` 提升为 JS 类后可做 `NodeObjectLoader`。# 当前接续：NodeMaterialLoader 已移植（节点材质 JSON 解析 + inputNodes 映射 + 注册表优先，2026-11-05）
 
 目标保持 active：固定 three.js 11738a9d55e502fb484cefffcea3a66dc44e9fe9 全部 src + examples/jsm 原生 C++ 逻辑，Vulkan 后端；禁止 CEF/生产 JS 引擎/桥接。阶段本地 Git 提交，不推送。
 
