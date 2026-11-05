@@ -1,4 +1,33 @@
-# 当前接续：`ShadowNode` B 段 `setupShadowCoord` 实现完成（含对数深度双路径），2026-11-05
+# 当前接续：`ShadowNode` C 段第一部分 `setupRenderTarget` 实现完成，2026-11-05
+
+目标保持 active：固定 three.js 11738a9d55e502fb484cefffcea3a66dc44e9fe9 全部 src + examples/jsm 原生 C++ 逻辑，Vulkan 后端；禁止 CEF/生产 JS 引擎/桥接。阶段本地 Git 提交，不推送。
+
+## 本轮交付：C 段 `setupRenderTarget`
+
+逐行照抄上游 L334–353：
+
+1. `new DepthTexture(shadow.mapSize.width, shadow.mapSize.height)`（绑定 `nativeDepthTextureConstructor()`）；
+2. `depthTexture.name = 'ShadowDepthTexture'`；
+3. `compareFunction = builder.renderer.reversedDepthBuffer ? GreaterEqualCompare : LessEqualCompare`（`nativeNodeConstantsBinding`）；
+4. `shadowMap = builder.createRenderTarget(width, height)`；
+5. `shadowMap.texture.name = 'ShadowMap'`、`.type = shadow.mapType`、`shadowMap.depthTexture = depthTexture`；
+6. 返回 `{ shadowMap, depthTexture }`。
+
+新增用例：stub builder（`createRenderTarget` 用 **`JSValue::function(NativeFunction)`** 创建，返回带 `texture`/`width`/`height` 的对象）、`renderer.reversedDepthBuffer=false`、`shadow.mapSize=512×256`、`mapType=0`；断言 `shadowMap` 宽高、`texture.name=='ShadowMap'`、`texture.type==0`、`depthTexture.name=='ShadowDepthTexture'`。
+
+## 验证
+
+- 构建 exit 0；过滤 `*ShadowNode*` = **6 cases / 29 assertions** 全过（+1 例 / +7 断言）。
+- `THREECPPAddonTests` 全套 **1371 cases / 38,932 assertions** 通过。
+- 审计计数不变（ShadowNode 已 partial）：src 12 / 453；examples/jsm 322 / 154。
+
+**未执行验证（如实记录）**：`reversedDepthBuffer=true` 的 `GreaterEqualCompare` 分支未单独断言；`depthTexture` 的 `compareFunction` 数值未断言（只比 name）；`renderShadow`/`vsmPass`（C 段其余）与 D 段 `setupShadow` 仍未实现（抛错）。
+
+## 下一步
+
+1. C 段收尾：`renderShadow`（改渲染器/场景状态 → render → 恢复）、`vsmPass`（`_quadMesh` + VSM 材质两趟）；
+2. D 段：`setupShadow`（240 行 TSL 图）+ `setup`/`updateShadow`/`updateBefore`；
+3. 补 `reversedDepthBuffer=true` 分支断言。# 当前接续：`ShadowNode` B 段 `setupShadowCoord` 实现完成（含对数深度双路径），2026-11-05
 
 目标保持 active：固定 three.js 11738a9d55e502fb484cefffcea3a66dc44e9fe9 全部 src + examples/jsm 原生 C++ 逻辑，Vulkan 后端；禁止 CEF/生产 JS 引擎/桥接。阶段本地 Git 提交，不推送。
 

@@ -8,6 +8,7 @@
 #include "nodes/display/ViewportDepthNode.h"
 #include "nodes/lighting/ShadowFilterNode.h"
 #include "nodes/tsl/TSLBase.h"
+#include "textures/DepthTexture.h"
 
 #include <stdexcept>
 #include <string>
@@ -128,7 +129,34 @@ JSValue setupShadowCoord(const JSValue& self, const Args& args, const Args&) {
     }
     return nativeTSLBaseBinding("vec3").call({}, {x, yFlipped, z});
 }
-JSValue setupRenderTarget(const JSValue&, const Args&, const Args&) { return notPorted("setupRenderTarget"); }
+// const depthTexture = new DepthTexture( shadow.mapSize.width, shadow.mapSize.height ) ...
+JSValue setupRenderTarget(const JSValue&, const Args& args, const Args&) {
+    const auto shadow = arg(args, 0);
+    const auto builder = arg(args, 1);
+    const auto mapSize = shadow.get("mapSize");
+    const auto width = mapSize.get("width");
+    const auto height = mapSize.get("height");
+    const auto renderer = builder.get("renderer");
+
+    auto depthTexture = nativeDepthTextureConstructor().construct({width, height});
+    depthTexture.set("name", JSValue("ShadowDepthTexture"));
+    const auto compareFunction = renderer.get("reversedDepthBuffer").toBoolean()
+                                     ? nativeNodeConstantsBinding("GreaterEqualCompare")
+                                     : nativeNodeConstantsBinding("LessEqualCompare");
+    depthTexture.set("compareFunction", compareFunction);
+
+    const auto createRenderTarget = builder.get("createRenderTarget");
+    auto shadowMap = createRenderTarget.call(builder, {width, height});
+    auto texture = shadowMap.get("texture");
+    texture.set("name", JSValue("ShadowMap"));
+    texture.set("type", shadow.get("mapType"));
+    shadowMap.set("depthTexture", depthTexture);
+
+    auto result = JSValue::object(nullptr);
+    result.set("shadowMap", shadowMap);
+    result.set("depthTexture", depthTexture);
+    return result;
+}
 JSValue setupShadow(const JSValue&, const Args&, const Args&) { return notPorted("setupShadow"); }
 JSValue setup(const JSValue&, const Args&, const Args&) { return notPorted("setup"); }
 JSValue renderShadow(const JSValue&, const Args&, const Args&) { return notPorted("renderShadow"); }

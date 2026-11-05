@@ -3,6 +3,8 @@
 #include "core/JSValue.h"
 #include "nodes/tsl/TSLBase.h"
 
+#include <vector>
+
 #include "catch.hpp"
 
 #include <stdexcept>
@@ -76,4 +78,41 @@ TEST_CASE("ShadowNode setupShadowCoord returns a node for the orthographic path"
     const auto result = node.get("setupShadowCoord").call(node, {builder, shadowPosition});
     REQUIRE(result.toBoolean());
     REQUIRE(result.get("isNode").toBoolean());
+}
+TEST_CASE("ShadowNode setupRenderTarget builds the shadow map and depth texture") {
+    auto mapSize = JSValue::object(nullptr);
+    mapSize.set("width", JSValue(512));
+    mapSize.set("height", JSValue(256));
+    auto shadow = JSValue::object(nullptr);
+    shadow.set("mapSize", mapSize);
+    shadow.set("mapType", JSValue(0));
+    auto renderer = JSValue::object(nullptr);
+    renderer.set("reversedDepthBuffer", false);
+    auto createRenderTarget = JSValue::function(
+        +[](const JSValue&, const std::vector<JSValue>& targetArgs,
+            const std::vector<JSValue>&) -> JSValue {
+            auto texture = JSValue::object(nullptr);
+            auto target = JSValue::object(nullptr);
+            target.set("texture", texture);
+            if (targetArgs.size() > 0) target.set("width", targetArgs[0]);
+            if (targetArgs.size() > 1) target.set("height", targetArgs[1]);
+            return target;
+        });
+    auto builder = JSValue::object(nullptr);
+    builder.set("renderer", renderer);
+    builder.set("createRenderTarget", createRenderTarget);
+    auto light = JSValue::object(nullptr);
+    light.set("shadow", shadow);
+
+    const auto node = nativeShadowNodeConstructor().construct({light});
+    const auto result = node.get("setupRenderTarget").call(node, {shadow, builder});
+    REQUIRE(result.toBoolean());
+    const auto shadowMap = result.get("shadowMap");
+    REQUIRE(shadowMap.toBoolean());
+    REQUIRE(shadowMap.get("width").toNumber() == Approx(512));
+    REQUIRE(shadowMap.get("texture").get("name").toString() == "ShadowMap");
+    REQUIRE(shadowMap.get("texture").get("type").toNumber() == Approx(0));
+    const auto depthTexture = result.get("depthTexture");
+    REQUIRE(depthTexture.toBoolean());
+    REQUIRE(depthTexture.get("name").toString() == "ShadowDepthTexture");
 }
