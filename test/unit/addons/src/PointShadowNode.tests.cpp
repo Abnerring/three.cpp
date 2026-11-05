@@ -174,8 +174,12 @@ TEST_CASE("PointShadowNode renders the six cube faces") {
             const std::vector<JSValue>&) {
             JSValue& self = const_cast<JSValue&>(receiver);
             auto targets = self.get("_lookTargets");
-            const auto length = targets.get("length").toNumber();
-            targets.set(JSValue(length), args.size() > 0 ? args[0] : JSValue{});
+            // Snapshot the components: the argument is one mutable vector reused by the loop.
+            auto length = targets.get("length").toNumber();
+            const auto target = args.size() > 0 ? args[0] : JSValue{};
+            targets.set(JSValue(length++), target.get("x"));
+            targets.set(JSValue(length++), target.get("y"));
+            targets.set(JSValue(length++), target.get("z"));
             self.set("_lookTargets", targets);
             return JSValue{};
         }));
@@ -245,10 +249,18 @@ TEST_CASE("PointShadowNode renders the six cube faces") {
     REQUIRE_NOTHROW(node.get("renderShadow").call(node, {frame}));
     REQUIRE(scene.get("name").toString() == "Scene");
     REQUIRE(renderer.get("autoClear").toBoolean());
-    // The face directions are not asserted yet: the recorded targets all answer zero on this path even
-    // though typed vector mutation is verified separately, so the table access needs its own investigation.
+    // The WebGL cube direction table drives the look targets for the six faces.
+    const double expectedDirections[6][3] = {{1, 0, 0},  {-1, 0, 0}, {0, 1, 0},
+                                             {0, -1, 0}, {0, 0, 1},  {0, 0, -1}};
     const auto lookTargets = camera.get("_lookTargets");
-    REQUIRE(lookTargets.get("length").toNumber() == Approx(6));
+    REQUIRE(lookTargets.get("length").toNumber() == Approx(18));
+    for (int face = 0; face < 6; ++face) {
+        INFO("face " << face);
+        for (int axis = 0; axis < 3; ++axis) {
+            REQUIRE(lookTargets.get(JSValue(static_cast<double>(face * 3 + axis))).toNumber() ==
+                    Approx(expectedDirections[face][axis]));
+        }
+    }
     // One target bind per cube face, in order.
     REQUIRE(renderer.get("_targetCalls").toNumber() == Approx(6));
     const auto recordedFaces = renderer.get("_faces");
@@ -263,4 +275,24 @@ TEST_CASE("PointShadowNode diagnoses typed vector mutation semantics") {
     const auto returned = a.get("add").call(a, {b});
     REQUIRE(returned.get("x").toNumber() == Approx(2));
     REQUIRE(a.get("x").toNumber() == Approx(2));
+
+    // The render hook copies first and then adds, so mirror that sequence.
+    auto zero = nativeVector3Constructor().construct();
+    auto direction = nativeVector3Constructor().construct({JSValue(1.0), JSValue(0.0), JSValue(0.0)});
+    auto copied = zero.get("copy").call(zero, {direction});
+    REQUIRE(copied.get("x").toNumber() == Approx(1));
+    zero = copied;
+    auto added = zero.get("add").call(zero, {direction});
+    REQUIRE(added.get("x").toNumber() == Approx(2));
+    REQUIRE(zero.get("x").toNumber() == Approx(2));
+}
+TEST_CASE("PointShadowNode answers the cube direction table") {
+    const auto webgl = nativePointShadowNodeCubeTable(false);
+    REQUIRE(webgl.toBoolean());
+    REQUIRE(webgl.get("length").toNumber() == Approx(6));
+    const auto first = webgl.get(JSValue(0.0));
+    REQUIRE(first.toBoolean());
+    REQUIRE(first.get("x").toNumber() == Approx(1));
+    REQUIRE(first.get("y").toNumber() == Approx(0));
+    REQUIRE(first.get("z").toNumber() == Approx(0));
 }

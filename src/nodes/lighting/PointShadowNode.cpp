@@ -288,9 +288,17 @@ JSValue renderShadow(const JSValue& rawSelf, const Args& args, const Args&) {
 
     const bool isWebGPU =
         renderer.get("coordinateSystem").toNumber() == static_cast<double>(WebGPUCoordinateSystem);
-    const auto tables = cubeFaceTables();
-    const auto cubeDirections = tables.get(isWebGPU ? "directionsWebGPU" : "directionsWebGL");
-    const auto cubeUps = tables.get(isWebGPU ? "upsWebGPU" : "upsWebGL");
+    // The direction and up tables are kept as plain numbers and turned into vectors per face.
+    static const double webglDirections[6][3] = {{1, 0, 0},  {-1, 0, 0}, {0, 1, 0},
+                                                {0, -1, 0}, {0, 0, 1},  {0, 0, -1}};
+    static const double webglUps[6][3] = {{0, -1, 0}, {0, -1, 0}, {0, 0, 1},
+                                          {0, 0, -1}, {0, -1, 0}, {0, -1, 0}};
+    static const double webgpuDirections[6][3] = {{-1, 0, 0}, {1, 0, 0},  {0, 1, 0},
+                                                  {0, -1, 0}, {0, 0, 1},  {0, 0, -1}};
+    static const double webgpuUps[6][3] = {{0, 1, 0}, {0, 1, 0}, {0, 0, -1},
+                                           {0, 0, 1}, {0, 1, 0}, {0, 1, 0}};
+    const auto* cubeDirections = isWebGPU ? webgpuDirections : webglDirections;
+    const auto* cubeUps = isWebGPU ? webgpuUps : webglUps;
 
     const auto mapSize = shadow.get("mapSize");
     shadowMap.get("setSize").call(shadowMap, {mapSize.get("width"), mapSize.get("width")});
@@ -328,8 +336,12 @@ JSValue renderShadow(const JSValue& rawSelf, const Args& args, const Args&) {
         cameraPosition = cameraPosition.get("copy").call(cameraPosition, {lightPositionWorld});
         camera.set("position", cameraPosition);
         lookTarget = lookTarget.get("copy").call(lookTarget, {cameraPosition});
-        lookTarget = lookTarget.get("add").call(lookTarget, {cubeDirections.get(face)});
-        cameraUp = cameraUp.get("copy").call(cameraUp, {cubeUps.get(face)});
+        lookTarget = lookTarget.get("add").call(
+            lookTarget,
+                       {vector3(cubeDirections[face][0], cubeDirections[face][1], cubeDirections[face][2])});
+        cameraUp = cameraUp.get("copy").call(
+            cameraUp,
+                        {vector3(cubeUps[face][0], cubeUps[face][1], cubeUps[face][2])});
         camera.set("up", cameraUp);
         camera.get("lookAt").call(camera, {lookTarget});
         camera.get("updateMatrixWorld").call(camera, {});
@@ -408,3 +420,7 @@ JSValue nativePointShadowNodeBinding(const std::string& name) {
 }
 
 JSValue nativePointShadowNodeConstructor() { return nativePointShadowNodeBinding("default"); }
+
+JSValue nativePointShadowNodeCubeTable(bool webgpu) {
+    return cubeFaceTables().get(webgpu ? "directionsWebGPU" : "directionsWebGL");
+}

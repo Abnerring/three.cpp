@@ -10,3 +10,5 @@
 JSValue nativePointShadowNodeModule();
 JSValue nativePointShadowNodeBinding(const std::string& name);
 JSValue nativePointShadowNodeConstructor();
+// Port only test hook: answers one cube direction table so its construction can be inspected.
+JSValue nativePointShadowNodeCubeTable(bool webgpu);

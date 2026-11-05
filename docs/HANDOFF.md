@@ -1,4 +1,34 @@
-# 当前接续：`renderShadow` 六面 lookAt 记录 + 方向表待查；typed 向量语义已诊断，2026-11-05
+# 当前接续：**六面朝向断言通过**（记录需快照分量，不能存共享可变向量）；方向表改用 C++ 数值表，2026-11-05
+
+目标保持 active：固定 three.js 11738a9d55e502fb484cefffcea3a66dc44e9fe9 全部 src + examples/jsm 原生 C++ 逻辑，Vulkan 后端；禁止 CEF/生产 JS 引擎/桥接。阶段本地 Git 提交，不推送。
+
+## 根因（r161 遗留「方向全 0」）
+
+r161 的 lookAt 记录桩把**同一个可变 `Vector3` 引用**存入数组；六次循环共用一个 `lookTarget` 对象，断言时数组六项指向同一对象（最终状态 0,0,-1），故 face0 x 读到 0。
+→ 修正：记录时**快照 x/y/z 数值**（`target.get("x"/"y"/"z")`），断言 18 个分量。
+
+## 本轮交付
+
+1. **方向表改为 C++ 数值表**（`webglDirections/webglUps/webgpuDirections/webgpuUps` 4×`[6][3]`），循环内 `vector3(...)` 逐面构造 —— 去掉 JSValue 数组取值路径（更直观、无歧义）；
+2. 保留 port-only 钩子 `nativePointShadowNodeCubeTable(bool)` 与表构建测试（6 断言）；
+3. **恢复并强化方向断言**：
+   - `_lookTargets` 长度 == **18**（6 面 × 3 分量）；
+   - WebGL 表：`(1,0,0),(-1,0,0),(0,1,0),(0,-1,0),(0,0,1),(0,0,-1)` 逐面逐轴断言 —— **全部通过**；
+4. 强化诊断用例：追加「先 copy 后 add」序列（与 renderShadow 同序），验证返回与自身均为 2。
+
+## 验证
+
+- 构建 exit 0；过滤 `*PointShadowNode*` = **10 cases / 61 assertions** 全过（+1 例 / +27 断言）。
+- `THREECPPAddonTests` 全套 **1401 cases / 39,044 assertions** 通过。
+- 审计不变（PointShadowNode 已 partial）：src 11 / 454；examples/jsm 322 / 154。
+
+**未执行验证（如实记录）**：WebGPU 表（`isWebGPU=true`）路径未单独测；`camera.up` 六面 up 表未断言；`shadowMatrix` 平移数值未断言。
+
+## 下一步
+
+1. 补 WebGPU 分支（renderer.coordinateSystem=2001）与 up 表断言；
+2. `shadowMatrix` 平移数值断言（identity 光矩阵 → 应为 (0,0,0)）；
+3. 之后推进 `PassNode`(26,843)/`ToonOutlinePassNode`(6,868)/`PhysicalLightingModel`(32,829)。# 当前接续：`renderShadow` 六面 lookAt 记录 + 方向表待查；typed 向量语义已诊断，2026-11-05
 
 目标保持 active：固定 three.js 11738a9d55e502fb484cefffcea3a66dc44e9fe9 全部 src + examples/jsm 原生 C++ 逻辑，Vulkan 后端；禁止 CEF/生产 JS 引擎/桥接。阶段本地 Git 提交，不推送。
 
