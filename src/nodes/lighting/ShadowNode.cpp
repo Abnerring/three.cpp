@@ -3,8 +3,12 @@
 #include "core/JSWeakMap.h"
 #include "nodes/lighting/LightingNodeRuntime.h"
 #include "nodes/lighting/ShadowBaseNode.h"
+#include "nodes/accessors/Lights.h"
+#include "nodes/accessors/Normal.h"
+#include "nodes/accessors/Position.h"
 #include "nodes/accessors/ReferenceNode.h"
 #include "nodes/core/UniformGroupNode.h"
+#include "nodes/core/UniformNode.h"
 #include "nodes/display/ViewportDepthNode.h"
 #include "nodes/lighting/ShadowFilterNode.h"
 #include "nodes/tsl/TSLBase.h"
@@ -192,7 +196,62 @@ JSValue setupShadow(const JSValue& rawSelf, const Args& args, const Args&) {
     shadowCamera.set("_reversedDepth", renderer.get("reversedDepthBuffer"));
     shadowCamera.get("updateProjectionMatrix").call(shadowCamera, {});
 
-    return notPorted("setupShadow (segments 2-4)");
+    // Segment 3: the shadow coordinate branch (L452-L476).
+    const auto light = self.get("light");
+    const auto group = nativeUniformGroupNodeBinding("renderGroup");
+    const auto referenceFn = nativeReferenceNodeBinding("reference");
+    const auto makeReference = [&](const char* propertyName, const char* propertyType) {
+        auto referenceNode =
+            referenceFn.call({}, {JSValue(propertyName), JSValue(propertyType), shadow});
+        return referenceNode.get("setGroup").call(referenceNode, {group});
+    };
+    const auto shadowIntensity = makeReference("intensity", "float");
+    const auto normalBias = makeReference("normalBias", "float");
+    const auto shadowMatrix = nativeLightsBinding("lightShadowMatrix").call({}, {light});
+    const auto normalWorld = nativeNormalBinding("normalWorld");
+    const auto shadowNormalBias = normalWorld.get("mul").call(normalWorld, {normalBias});
+
+    const auto material = builder.get("material");
+    const auto builderContext = builder.get("context");
+    const bool receivedShadowPosition =
+        material.isObject() && material.get("receivedShadowPositionNode").toBoolean();
+    const bool contextShadowPosition =
+        builderContext.isObject() && builderContext.get("shadowPositionWorld").toBoolean();
+    auto shadowPosition = JSValue{};
+    if (!renderer.get("highPrecision").toBoolean() || receivedShadowPosition ||
+        contextShadowPosition) {
+        const auto shadowPositionWorld = nativeShadowBaseNodeBinding("shadowPositionWorld");
+        const auto biased =
+            shadowPositionWorld.get("add").call(shadowPositionWorld, {shadowNormalBias});
+        shadowPosition = shadowMatrix.get("mul").call(shadowMatrix, {biased});
+    } else {
+        const auto uniformFactory = nativeUniformFactory();
+        auto modelMatrix = uniformFactory.call({}, {JSValue("mat4")});
+        const auto onObjectUpdate = modelMatrix.get("onObjectUpdate");
+        auto updateCallback = JSValue::function(
+            +[](const JSValue&, const std::vector<JSValue>& callbackArgs,
+                const std::vector<JSValue>& captures) -> JSValue {
+                const auto configuration = callbackArgs.at(0);
+                auto selfUniform = const_cast<JSValue&>(callbackArgs.at(1));
+                const auto object = configuration.get("object");
+                const auto matrix = captures.at(0);
+                auto value = selfUniform.get("value");
+                value.get("multiplyMatrices")
+                    .call(value, {matrix.get("value"), object.get("matrixWorld")});
+                return value;
+            },
+            {shadowMatrix});
+        modelMatrix = onObjectUpdate.call(modelMatrix, {updateCallback});
+        const auto positionLocal = nativePositionBinding("positionLocal");
+        const auto localPosition = modelMatrix.get("mul").call(modelMatrix, {positionLocal});
+        const auto biasVector = nativeTSLBaseBinding("vec4").call({}, {shadowNormalBias, JSValue(0.0)});
+        const auto biasContribution = shadowMatrix.get("mul").call(shadowMatrix, {biasVector});
+        shadowPosition = localPosition.get("add").call(localPosition, {biasContribution});
+    }
+    self.set("_shadowIntensity", shadowIntensity);
+    const auto shadowCoord = self.get("setupShadowCoord").call(self, {builder, shadowPosition});
+
+    return notPorted("setupShadow (segments 2 and 4)");
 }
 // setup( builder ) { check the renderer shadow state, reuse the cached node and run the material hook. }
 // The pinned wrapper runs the body inside Fn(...)(); the body is executed directly here, which has the

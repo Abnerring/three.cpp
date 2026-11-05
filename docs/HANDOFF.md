@@ -1,4 +1,30 @@
-# 当前接续：`setupShadow` **段 1** 落地（RT/过滤/相机刷新），段 2–4 仍抛错，2026-11-05
+# 当前接续：`setupShadow` **段 3**（阴影坐标分支）落地；仅剩段 2（VSM）与段 4（过滤/输出），2026-11-05
+
+目标保持 active：固定 three.js 11738a9d55e502fb484cefffcea3a66dc44e9fe9 全部 src + examples/jsm 原生 C++ 逻辑，Vulkan 后端；禁止 CEF/生产 JS 引擎/桥接。阶段本地 Git 提交，不推送。
+
+## 本轮交付：`setupShadow` 段 3（L452–476）
+
+- `shadowIntensity = reference('intensity','float',shadow).setGroup(renderGroup)`；`normalBias` 同理；
+- `shadowMatrix = lightShadowMatrix(light)`（`nativeLightsBinding`）；
+- `shadowNormalBias = normalWorld.mul(normalBias)`（`nativeNormalBinding`）；
+- **世界坐标分支**（`!renderer.highPrecision || material.receivedShadowPositionNode || context.shadowPositionWorld`）：`shadowPosition = shadowMatrix.mul(shadowPositionWorld.add(shadowNormalBias))`；
+- **高精度分支**：`uniform('mat4')`（`nativeUniformFactory()`）→ `.onObjectUpdate(callback)`，callback 用 `JSValue::function(..., {shadowMatrix})` 捕获光矩阵，内部 `self.value.multiplyMatrices(shadowMatrix.value, object.matrixWorld)`；随后 `highpShadowModelMatrix.mul(positionLocal).add(shadowMatrix.mul(vec4(shadowNormalBias, 0)))`；
+- `shadowCoord = setupShadowCoord(builder, shadowPosition)`（B 段已实现）；
+- 之后 **仍抛 `notPorted("setupShadow (segments 2 and 4)")`**。
+- 绑定名确认：`nativeLightsBinding("lightShadowMatrix")`、`nativeNormalBinding("normalWorld")`、`nativePositionBinding("positionLocal")`、**`nativeUniformFactory()`**（不是 `nativeUniformNodeFactory`）、`nativeShadowBaseNodeBinding("shadowPositionWorld")`。
+
+## 验证
+
+- 构建 exit 0；过滤 `*ShadowNode*` = **13 cases / 43 assertions** 全过（本轮未新增测试，段 3 无直接断言）；`THREECPPAddonTests` 全套 **1378 cases / 38,946 assertions** 通过。
+- 审计不变（ShadowNode 已 partial）：src 12 / 453；examples/jsm 322 / 154。
+
+**未执行验证（如实记录）**：段 3 **无测试**（需要能观察 TSL 图结构/光矩阵的夹具）；高精度分支的 `onObjectUpdate` 回调**运行时未触发验证**；`_shadowIntensity` 暂存于节点字段（供段 4 使用）。
+
+## 下一步（`ShadowNode` 只剩两段）
+
+1. **段 2（VSM 两趟）**：需先移植上游模块级 `VSMPassVertical`/`VSMPassHorizontal` 两个 `Fn`（各约 20 行 TSL，含 `Loop`/`sample`/`sqrt`/`select`）；然后 RT 复用/新建、`texture()` 采样、`context(getSharedContext())`、两个 `NodeMaterial`。
+2. **段 4（过滤/输出）**：`filterFn = shadow.filterNode || getShadowFilterFn(type) || null`（null 抛 `Shadow map type not supported yet.`）、transmitted 取色、`mix(1, shadowNode, shadowIntensity).toVar()`、`shadow.map`、两处 `toInspector`（含透视/正交深度转换）。
+3. 完成后：`setup` 非缓存路径测试、`_quadMesh` 单例、`updateShadow` 真实 renderer 夹具、`PointShadowNode`。# 当前接续：`setupShadow` **段 1** 落地（RT/过滤/相机刷新），段 2–4 仍抛错，2026-11-05
 
 目标保持 active：固定 three.js 11738a9d55e502fb484cefffcea3a66dc44e9fe9 全部 src + examples/jsm 原生 C++ 逻辑，Vulkan 后端；禁止 CEF/生产 JS 引擎/桥接。阶段本地 Git 提交，不推送。
 
