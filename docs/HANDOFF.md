@@ -1,4 +1,25 @@
-# 当前接续：AtomicFunctionNode 已移植（元数据/常量/类型推导已验证；generate 与 atomic* 工厂列为开放问题），2026-11-05
+# 当前接续：SpriteUtils 已移植（billboarding 的矩阵索引赋值 + 四个分支构建），并解释了上一轮两处开放问题的共同原因，2026-11-05
+
+目标保持 active：固定 three.js 11738a9d55e502fb484cefffcea3a66dc44e9fe9 全部 src + examples/jsm 原生 C++ 逻辑，Vulkan 后端；禁止 CEF/生产 JS 引擎/桥接。阶段本地 Git 提交，不推送。
+
+本轮新增 `src/nodes/utils/SpriteUtils.{h,cpp}`（3,079 B 源），实现唯一的导出 `billboarding`（`Fn(...)` 包装，模块导出函数按 **arity 0** 注册，因为 Fn 返回的是 rest 参数包装器）。
+
+**实现要点**：`position` 为 null 时 `center = positionWorld.sub(modelWorldMatrix.mul(vec4(positionGeometry, 0)).xyz)`，否则 `nodeObject(position)`；`worldMatrix = modelWorldMatrix.toVar()` 后**按源码直接写矩阵元素**：`worldMatrix[3][0..2] = center.x/y/z`，`modelViewMatrix[0..2][0..2] = right/up/forward`——本端口用「索引链 getter + `set` 走描述符 setter」表达，即 `node.get(row).set(column, value)`，与 JS 的 `node[row][col] = value` 等价（**这正是本轮验证到的索引赋值语义**）。`horizontalRotation` 分支计算 `look/lookXZ/right_w` 并乘 `scaleX/Y/Z`。`defined()` 在 TSL 语义下是「非 undefined 且非 null」，C++ 里显式实现。
+
+**重要发现（解释上一轮两个开放问题）**：两侧调用 `billboarding({})` 都会打印
+`THREE.TSL: No stack defined for assign operation. Make sure the assign is inside a Fn(). [Unknown location]`
+——即**赋值（assign）需要 Fn 的栈上下文**，脱离 Fn 直接调用时上游同样告警。这解释了第 38 轮 `atomicFunc(...).toStack()` 抛 `Property access on null/undefined` 的同类根因（栈上下文），也说明第 38 轮 `generate` 的访问违例**很可能同源**（需专门轮次用真实 builder/stack 复现）。**这是本轮验证得到的事实，不是猜测结论。**
+
+验证：构建 exit 0。THREECPPTests **1625 cases / 214,756 assertions 全过**，较上轮 1622/214,748 增 3 例 8 断言。差分 `threecpp.threejs-sprite-utils-parity` **Passed**，比较：可调用性、**四个分支都真实构建且返回 `isNode` 的节点**——① 无参数（horizontal 默认开）② `{horizontal:false, vertical:true}` ③ `{horizontalRotation:true}` ④ `{position: 节点}`，以及默认分支的**结果 `type` 两侧一致**。
+
+**如实记录的偏差/限制**：
+1. **未比较 `length`**：上游 `billboarding.length` 的两次检查结果互相矛盾（一次读到 function，一次读到描述符 value 为数字 0），无法稳定建模，故差分只比可调用性与行为。**这是未解决的上游观测问题，未声称一致。**
+2. **节点图未求值**：两组都只验证"能构建 + isNode + type"，未比对生成的顶点/矩阵运算图结构。
+3. 调用时的 "No stack defined" 告警文本只作为**现象记录**，未逐字比对。
+
+审计（固定 worktree，HEAD=11738a9d55）：**src missing 25→24、partial 440→441**，`SpriteUtils` 记 `partial-unverified`。
+
+**下一步建议（按优先级）**：① 专做一轮「栈上下文」：让 `Fn` 包装器建立 StackNode 上下文，从而修复 `toStack()`/`assign` 类调用（同时验证第 38 轮两处开放问题）；② `SubgroupFunctionNode`(16,784)；③ `NodeMaterials` 仍被 4 个材质阻塞；④ 3 个 `loaders/nodes`（`NodeMaterialLoader` 依赖 `NodeMaterials`）。# 当前接续：AtomicFunctionNode 已移植（元数据/常量/类型推导已验证；generate 与 atomic* 工厂列为开放问题），2026-11-05
 
 目标保持 active：固定 three.js 11738a9d55e502fb484cefffcea3a66dc44e9fe9 全部 src + examples/jsm 原生 C++ 逻辑，Vulkan 后端；禁止 CEF/生产 JS 引擎/桥接。阶段本地 Git 提交，不推送。
 

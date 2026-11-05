@@ -123,6 +123,7 @@ add_executable(THREECPPTests
         unit/src/nodes/gpgpu/ComputeBuiltinNode.tests.cpp
         unit/src/nodes/gpgpu/WorkgroupInfoNode.tests.cpp
         unit/src/nodes/gpgpu/AtomicFunctionNode.tests.cpp
+        unit/src/nodes/utils/SpriteUtils.tests.cpp
         unit/src/nodes/display/ViewportSharedTextureNode.tests.cpp
         unit/src/nodes/utils/SampleNode.tests.cpp
         unit/src/nodes/functions/ShadowMaskModel.tests.cpp
@@ -1181,6 +1182,13 @@ if(THREECPP_NODE_EXECUTABLE AND THREEJS_SOURCE_DIR)
     add_test(NAME threecpp.threejs-atomic-function-node-parity
         COMMAND "${THREECPP_NODE_EXECUTABLE}" "${CMAKE_CURRENT_SOURCE_DIR}/unit/utils/parity/compare-atomic-function-node.mjs"
         "${THREEJS_SOURCE_DIR}" "$<TARGET_FILE:ThreeJsAtomicFunctionNodeParityProbe>")
+endif()
+add_executable(ThreeJsSpriteUtilsParityProbe unit/utils/parity/SpriteUtilsParityProbe.cpp)
+target_link_libraries(ThreeJsSpriteUtilsParityProbe PRIVATE threecpp::threecpp)
+if(THREECPP_NODE_EXECUTABLE AND THREEJS_SOURCE_DIR)
+    add_test(NAME threecpp.threejs-sprite-utils-parity
+        COMMAND "${THREECPP_NODE_EXECUTABLE}" "${CMAKE_CURRENT_SOURCE_DIR}/unit/utils/parity/compare-sprite-utils.mjs"
+        "${THREEJS_SOURCE_DIR}" "$<TARGET_FILE:ThreeJsSpriteUtilsParityProbe>")
 endif()
 add_executable(ThreeJsMaterialXColorParityProbe unit/utils/parity/MaterialXColorParityProbe.cpp)
 target_link_libraries(ThreeJsMaterialXColorParityProbe PRIVATE threecpp::threecpp)
