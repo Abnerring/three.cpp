@@ -243,3 +243,28 @@ static get type() { return 'ShadowNode'; }
 2. **`PhysicalLightingModel`(32,829)**：单点解锁 `MeshStandard/Physical/SSSNodeMaterial`，同样建议分段。
 3. 其余 src 大项：`PassNode`/`ToonOutlinePassNode`/`ReflectorNode`/`Line2NodeMaterial`/`PointShadowNode`/`MaterialXNoise`/`NodeObjectLoader`(被 `ObjectLoader` 阻塞)。
 4. examples 侧：剩余小模块基本都受宿主/TSL/wasm 限制（§10 表），新增大模块需先读源码评估。
+
+### ShadowNode 方法清单（r119 提取，行号为 pinned 源）
+
+| 行 | 方法 | 说明 |
+|---|---|---|
+| 143 | `constructor(light, shadow=null)` | 字段已确认（§9）|
+| 259 | `setupShadowFilter(builder, {filterFn, depthTexture, shadowCoord, shadow, depthLayer})` | frustum test 后 `.select(shadowNode, float(1))` |
+| 280 | `setupShadowCoord(builder, shadowPosition)` | 正交/对数深度两路径、`oneMinus` 翻转、reversedDepthBuffer 分支 |
+| 327 | `getShadowFilterFn(type)` | `_shadowFilterLib[type]` |
+| 334 | `setupRenderTarget(shadow, builder)` | 建 `DepthTexture(mapSize)` 与 RT |
+| 355–595 | **`setupShadow(builder)`（约 240 行，最重）** | 主 TSL 图：阴影坐标、PCF/VSM 分支、滤波采样、bias 等 |
+| 596 | `setup(builder)` | 调用 setupShadow 并返回节点 |
+| 642 | `renderShadow(frame)` | 渲染阴影贴图（改渲染器/场景状态 → render → 恢复）|
+| 666 | `updateShadow(frame)` | 更新 shadow matrix/RT（含 `_cameraFrameId` 缓存）|
+| 716 | `vsmPass(renderer)` | 两个 VSM 模糊 pass（用 `_quadMesh` + `vsmMaterialVertical/Horizontal`）|
+| 737 | `dispose()` | 释放 RT/材质 |
+| 750 | `_reset()` | 清理缓存状态 |
+| 790 | `updateBefore(frame)` | 帧前更新入口 |
+| 131 | `static get type()` | `'ShadowNode'` |
+
+**分段实现建议**（每段可独立提交 + 单测）：
+1. **A 段**：类骨架 + 字段 + `static type` + `getShadowFilterFn` + `dispose`/`_reset` 的空实现语义；
+2. **B 段**：`setupShadowCoord`（纯数学，可用数值/节点类型差分）；
+3. **C 段**：`setupRenderTarget` + `renderShadow`/`vsmPass`（需渲染器接口，做「可构建 + 状态正确」级验证）；
+4. **D 段**：`setupShadow`（240 行 TSL 图，最后做）+ `setup`/`updateShadow`/`updateBefore` 串联。
