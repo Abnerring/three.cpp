@@ -104,6 +104,7 @@ TEST_CASE("ToonOutlinePassNode updateBefore wraps and restores the render object
             const auto value = args.size() > 0 ? args[0] : JSValue{};
             const auto calls = self.get("_setCalls").toNumber() + 1;
             self.set("_setCalls", JSValue(calls));
+            if (calls == 1) self.set("_wrapper", value);
             if (calls == 2) self.set("_restored", JSValue(value.isCallable()));
             return JSValue{};
         }));
@@ -139,6 +140,20 @@ TEST_CASE("ToonOutlinePassNode updateBefore wraps and restores the render object
         +[](const JSValue&, const std::vector<JSValue>&, const std::vector<JSValue>&) {
             return JSValue{};
         }));
+    renderer.set("_renderObjectCount", JSValue(0));
+    renderer.set("renderObject", JSValue::function(
+        +[](const JSValue& receiver, const std::vector<JSValue>& args,
+            const std::vector<JSValue>&) {
+            JSValue& self = const_cast<JSValue&>(receiver);
+            const auto count = static_cast<double>(self.get("_renderObjectCount").toNumber());
+            self.set("_renderObjectCount", JSValue(count + 1));
+            const auto material = args.size() > 4 ? args[4] : JSValue{};
+            if (count == 0) {
+                self.set("_firstIsOutline",
+                         JSValue(material.get("isMeshToonOutlineMaterial").toBoolean()));
+            }
+            return JSValue{};
+        }));
     auto color = nativeTSLBaseBinding("vec3").call({}, {JSValue(0.0), JSValue(0.0), JSValue(0.0)});
     auto thickness = nativeTSLBaseBinding("float").call({}, {JSValue(0.003)});
     auto alpha = nativeTSLBaseBinding("float").call({}, {JSValue(1.0)});
@@ -149,7 +164,17 @@ TEST_CASE("ToonOutlinePassNode updateBefore wraps and restores the render object
     REQUIRE_NOTHROW(node.get("updateBefore").call(node, {frame}));
     REQUIRE(renderer.get("_setCalls").toNumber() == Approx(2));
     REQUIRE(renderer.get("_restored").toBoolean());
-    (void) sentinel;
+
+    // The installed wrapper draws the outline material first for a toon material without wireframe.
+    const auto wrapper = renderer.get("_wrapper");
+    REQUIRE(wrapper.isCallable());
+    auto toon = JSValue::object(nullptr);
+    toon.set("isMeshToonNodeMaterial", true);
+    toon.set("wireframe", false);
+    wrapper.call({}, {JSValue::object(nullptr), scene, camera, JSValue::object(nullptr), toon,
+                      JSValue(0), JSValue::object(nullptr), JSValue(nullptr)});
+    REQUIRE(renderer.get("_renderObjectCount").toNumber() == Approx(2));
+    REQUIRE(renderer.get("_firstIsOutline").toBoolean());
 }
 
 TEST_CASE("ToonOutlinePassNode dispose clears the material cache") {

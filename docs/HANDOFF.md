@@ -1,4 +1,27 @@
-# 当前接续：`ToonOutlinePassNode` 渲染包装与 dispose 缓存测试补齐（5 例 / 26 断言），2026-11-05
+# 当前接续：ToonOutline 包装函数**内部行为**断言通过（5 例 / 29 断言），2026-11-05
+
+目标保持 active：固定 three.js 11738a9d55e502fb484cefffcea3a66dc44e9fe9 全部 src + examples/jsm 原生 C++ 逻辑，Vulkan 后端；禁止 CEF/生产 JS 引擎/桥接。阶段本地 Git 提交，不推送。
+
+## 本轮交付
+
+扩展 `updateBefore` 用例：
+- `setRenderObjectFunction` 桩在第一次调用时把**安装的包装函数**存到 receiver `_wrapper`；
+- `renderObject` 桩记录调用次数与第一次的材质是否 `isMeshToonOutlineMaterial`；
+- 用例取出 wrapper 并用 Toon 材质（`isMeshToonNodeMaterial=true`、`wireframe=false`、无 `positionNode`）调用它；
+- **断言 `renderObject` 调用 2 次、第一次材质为 outline 材质**（+3 断言）—— 覆盖「Toon 分流 + 先 outline 后原材质」的包装逻辑。
+
+## 验证
+
+- 构建 exit 0；过滤 `*ToonOutline*` = **5 cases / 29 assertions** 全过；`THREECPPAddonTests` 全套 **1424 cases / 39,238 assertions** 通过。
+- 审计不变：src 9 / 456；examples/jsm 322 / 154。
+
+**未执行验证（如实记录）**：非 Toon 材质只渲染一次的分支未断言；`wireframe=true` 跳过 outline 分支未断言；TSL 图结构未差分。
+
+## 下一步（可选收尾 + 新模块）
+
+1. 补非 Toon / wireframe 分支断言（可合并进同一用例）；`PassNode.compileAsync` 决策保留；
+2. 推进剩余 src（9 项），建议顺序：`ReflectorNode`(17,567) → `Line2NodeMaterial`(18,172) → `PhysicalLightingModel`(32,829，解锁三材质) → `MaterialXNodes/Noise` → `NodeObjectLoader`；
+3. 或 examples 侧继续。# 当前接续：`ToonOutlinePassNode` 渲染包装与 dispose 缓存测试补齐（5 例 / 26 断言），2026-11-05
 
 目标保持 active：固定 three.js 11738a9d55e502fb484cefffcea3a66dc44e9fe9 全部 src + examples/jsm 原生 C++ 逻辑，Vulkan 后端；禁止 CEF/生产 JS 引擎/桥接。阶段本地 Git 提交，不推送。
 
