@@ -1,4 +1,28 @@
-# 当前接续：Linker 被剔除用例已恢复（原失败为测试自身期望错误），2026-11-05
+# 当前接续：Linker 差分落地（9 项引用/记账比较，首次即通过），2026-11-05
+
+目标保持 active：固定 three.js 11738a9d55e502fb484cefffcea3a66dc44e9fe9 全部 src + examples/jsm 原生 C++ 逻辑，Vulkan 后端；禁止 CEF/生产 JS 引擎/桥接。阶段本地 Git 提交，不推送。
+
+## 本轮交付：`transpiler/Linker` 差分
+
+- `LinkerParityProbe.cpp` + `compare-linker.mjs`（**首次运行即通过**）：
+  - 上游加载：`Linker.js` 无导入，但需要 `AST.js`（其顶部有相对导入 `./TranspilerUtils.js`）→ 复用「**两个文件都写成 pinned 目录临时模块 → import → finally 删除**」范式（pinned 工作树保持 `dirty = 0`）。
+  - 场景：`Program{ Uniform("uTime"), VariableDeclaration("localValue", value=Accessor), Operator("=", Accessor, Accessor) }` + 独立函数块场景（`FunctionParameter("p")` + body 内 `Accessor("p")`）。
+  - 比较 **9 项**：`uniform.accesses`=2、`uniform.assignments`=1、读/写 accessor 的 `reference == uniform`、声明本身无 reference、函数参数引用正确、参数 accesses=1、两个 Linker 处理后 `block == nullptr`（块正确弹出）。
+- 结论：C++ Linker 的**块链解析、accesses/assignments 记账、函数块隔离与弹出**与上游完全一致。
+
+## 验证
+
+- 探针构建 exit 0；`threecpp.threejs-linker-parity` **Passed**。
+- `THREECPPAddonTests` 全套 **1360 cases / 38,868 assertions** 通过（差分不改变用例数）。
+- 审计不变：examples/jsm 323 / 153；src 13 / 452。
+
+**未执行验证（如实记录）**：差分未覆盖 `Conditional`/`Ternary`/`AccessorElements`/`Switch`（这些分支实现有、无测试）；**多条件 switch 仍不支持**（AST 单指针差异已记录）；`For`/`While` 中的 `doWhile` 与 `after` 语义未单独差分。
+
+## 下一步
+
+1. 补 Linker 分支测试/差分：`Conditional`（else 链）、`Ternary`、`AccessorElements`（Static/DynamicElement）、`Switch`（单条件）；
+2. **`ShadowNode`(24,331)** —— src 剩余项中依赖最齐备的大模块；
+3. `PhysicalLightingModel`(32,829)。# 当前接续：Linker 被剔除用例已恢复（原失败为测试自身期望错误），2026-11-05
 
 目标保持 active：固定 three.js 11738a9d55e502fb484cefffcea3a66dc44e9fe9 全部 src + examples/jsm 原生 C++ 逻辑，Vulkan 后端；禁止 CEF/生产 JS 引擎/桥接。阶段本地 Git 提交，不推送。
 
