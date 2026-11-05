@@ -608,6 +608,7 @@ if(THREECPP_BUILD_ADDONS)
         examples/jsm/math/MeshSurfaceSampler.cpp
         examples/jsm/utils/CameraUtils.cpp
         examples/jsm/animation/AnimationClipCreator.cpp
+    examples/jsm/misc/Gyroscope.cpp
         examples/jsm/lights/RectAreaLightTexturesLib.cpp
         examples/jsm/lights/RectAreaLightUniformsLib.cpp
         examples/jsm/curves/NURBSUtils.cpp

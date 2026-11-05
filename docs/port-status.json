@@ -201,8 +201,8 @@
     "note": "Accepted port scope is src and examples/jsm, including tracked third-party dependencies. Editor/manual web applications are excluded from native application rewrites. Native host behavior, packaging and all three platforms require separate implementation and verification evidence."
   },
   "counts": {
-    "partial-unverified": 582,
-    "missing": 359,
+    "partial-unverified": 583,
+    "missing": 358,
     "vulkan-port-pending": 290,
     "dependency-unverified": 20
   },
@@ -218,8 +218,8 @@
     "examples/jsm": {
       "modules": 496,
       "counts": {
-        "missing": 340,
-        "partial-unverified": 136,
+        "missing": 339,
+        "partial-unverified": 137,
         "dependency-unverified": 20
       }
     }
@@ -509,7 +509,7 @@
       "path": "examples/jsm/misc",
       "upstreamFiles": 19,
       "moduleCount": 18,
-      "modulesWithCppFiles": 0,
+      "modulesWithCppFiles": 1,
       "verifiedComplete": 0
     },
     {
@@ -29588,11 +29588,11 @@
       "scope": "examples/jsm",
       "kind": "addon",
       "upstreamSha256": "da7ef854d1dc1af2b8020365a434eec9a38ff66034c02ed58e48a50d5c172301",
-      "header": null,
-      "implementation": null,
+      "header": "examples/jsm/misc/Gyroscope.h",
+      "implementation": "examples/jsm/misc/Gyroscope.cpp",
       "expectedHeader": "examples/jsm/misc/Gyroscope.h",
       "expectedImplementation": "examples/jsm/misc/Gyroscope.cpp",
-      "status": "missing",
+      "status": "partial-unverified",
       "verifiedComplete": false,
       "apiExtraction": "static-only",
       "verification": {
@@ -29601,7 +29601,9 @@
           "pointer": "/modules/1015"
         },
         "upstreamUnitTests": [],
-        "cppUnitTests": [],
+        "cppUnitTests": [
+          "test/unit/addons/misc/Gyroscope.tests.cpp"
+        ],
         "reviewedImplementation": [],
         "differentialResults": [],
         "renderingResults": [],

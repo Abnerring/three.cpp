@@ -1,4 +1,31 @@
-# 当前接续：两处运行时保真修复——Loader 缺省 manager 默认化、toStack 重复注册告警消除（均已行为级验证），2026-11-05
+# 当前接续：examples/jsm 首批 addon——Gyroscope 移植（矩阵数值级差分），examples 进入正式推进，2026-11-05
+
+目标保持 active：固定 three.js 11738a9d55e502fb484cefffcea3a66dc44e9fe9 全部 src + examples/jsm 原生 C++ 逻辑，Vulkan 后端；禁止 CEF/生产 JS 引擎/桥接。阶段本地 Git 提交，不推送。
+
+## 本轮交付：`examples/jsm/misc/Gyroscope`
+
+按仓库既有 addon 约定（`examples/jsm/<path>/*.{h,cpp}`、`test/unit/addons/...`、探针链接 **`threecpp::addons`**、手写 C++ 类而非 JSValue 镜像）新增：
+
+- `examples/jsm/misc/Gyroscope.{h,cpp}`：`class Gyroscope : public Object3D`，**override `updateMatrixWorld(bool force)`**（`Object3D` 该函数是 `virtual`）。实现与上游逐行一致：`matrixAutoUpdate` → `updateMatrix()`；`matrixWorldNeedsUpdate || force` 时若 `parent != nullptr` 则 `matrixWorld.multiplyMatrices(parent->matrixWorld, matrix)` → 世界分解 → 本地分解 → `compose(世界平移, 本地四元数, 世界缩放)`，否则 `copy(matrix)`；随后 `force = true` 并递归子节点。模块级 6 个 scratch（Vector3/Quaternion）在 C++ 里用 `thread_local` 静态。
+- `test/unit/addons/misc/Gyroscope.tests.cpp`（4 用例）：默认 type/标志；无父节点时 world 等于 local；有父节点时**独立重算期望矩阵**（乘→分解→再组合）后逐元素 1e-12 比对；子节点强制更新传播（子节点平移 (0,5,2) 的验证）。
+- `test/unit/utils/parity/GyroscopeParityProbe.cpp` + `compare-gyroscope.mjs`：上游模块用**裸导入重写**（`from 'three'` → `build/three.module.js` 的 file URL，写入 data URL 后 import）加载，三个场景共 **5 组矩阵 × 16 元素**按 **1e-12 容差逐元素比对**，另比 `child.matrixWorldNeedsUpdate`。
+
+## 验证
+
+- 构建 exit 0。
+- `THREECPPAddonTests`：**1292 cases / 31,169 assertions 全过**；过滤 `*Gyroscope*` = **4 cases / 39 assertions 全过**。
+- 差分 `threecpp.threejs-gyroscope-parity` **Passed**（数值级，非结构级）。
+- 审计：**examples/jsm missing 340→339、partial-unverified 136→137**；`src` 不变（19 missing / 446 partial）。
+
+**注意**：examples 的单元测试属于 **`THREECPPAddonTests`** 目标（`test/CMakeLists.txt:545` 起，`if(THREECPP_BUILD_ADDONS)` 内），**不是** `THREECPPTests`；只构建后者不会编译 addon 测试。addon 探针必须链接 `threecpp::addons` 才有 `examples/jsm` 的 include 路径。
+
+**未执行验证（如实记录）**：未做真实渲染；`matrixAutoUpdate=false` 分支、`matrixWorldNeedsUpdate` 单独为真的分支仅由代码覆盖、未单独断言；scratch 的 `thread_local` 与上游模块级共享语义相同但未做并发验证。
+
+## 下一步（examples 方向已打开）
+
+`examples/jsm` 仍有 339 missing，其中 **61 个 ≤2.5KB 且依赖齐全**（实测列表开头：`tsl/display/Sepia.js` 596、`transpiler/TranspilerUtils.js` 682、`tsl/display/BleachBypass.js` 1020、`tsl/display/Shape.js` 1098、`tsl/display/MotionBlur.js` 1132、`loaders/materialx/parse/MaterialXParser.js` 735、`environments/ColorEnvironment.js` 1460、`misc/Gyroscope.js` 1695 已完成 等）。建议继续成批移植这些小 addon（每轮 2–4 个，沿用本轮 `THREECPPAddonTests` + `threecpp::addons` 探针范式）。
+
+src 侧仍剩 19 个（`ShadowNode` 24,331 依赖齐备为最大缺口；`PhysicalLightingModel` 32,829 解锁三材质）。# 当前接续：两处运行时保真修复——Loader 缺省 manager 默认化、toStack 重复注册告警消除（均已行为级验证），2026-11-05
 
 目标保持 active：固定 three.js 11738a9d55e502fb484cefffcea3a66dc44e9fe9 全部 src + examples/jsm 原生 C++ 逻辑，Vulkan 后端；禁止 CEF/生产 JS 引擎/桥接。阶段本地 Git 提交，不推送。
 

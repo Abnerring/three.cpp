@@ -812,6 +812,7 @@ if(THREECPP_BUILD_ADDONS)
         unit/addons/math/MeshSurfaceSampler.tests.cpp
         unit/addons/utils/CameraUtils.tests.cpp
         unit/addons/animation/AnimationClipCreator.tests.cpp
+        unit/addons/misc/Gyroscope.tests.cpp
         unit/addons/geometries/ParametricFunctions.tests.cpp
         unit/addons/geometries/ParametricGeometry.tests.cpp
         unit/addons/geometries/BoxLineGeometry.tests.cpp
@@ -1229,6 +1230,13 @@ if(THREECPP_NODE_EXECUTABLE AND THREEJS_SOURCE_DIR)
     add_test(NAME threecpp.threejs-three-legacy-parity
         COMMAND "${THREECPP_NODE_EXECUTABLE}" "${CMAKE_CURRENT_SOURCE_DIR}/unit/utils/parity/compare-three-legacy.mjs"
         "${THREEJS_SOURCE_DIR}" "$<TARGET_FILE:ThreeJsThreeLegacyParityProbe>")
+endif()
+add_executable(ThreeJsGyroscopeParityProbe unit/utils/parity/GyroscopeParityProbe.cpp)
+target_link_libraries(ThreeJsGyroscopeParityProbe PRIVATE threecpp::addons)
+if(THREECPP_NODE_EXECUTABLE AND THREEJS_SOURCE_DIR)
+    add_test(NAME threecpp.threejs-gyroscope-parity
+        COMMAND "${THREECPP_NODE_EXECUTABLE}" "${CMAKE_CURRENT_SOURCE_DIR}/unit/utils/parity/compare-gyroscope.mjs"
+        "${THREEJS_SOURCE_DIR}" "$<TARGET_FILE:ThreeJsGyroscopeParityProbe>")
 endif()
 add_executable(ThreeJsMaterialXColorParityProbe unit/utils/parity/MaterialXColorParityProbe.cpp)
 target_link_libraries(ThreeJsMaterialXColorParityProbe PRIVATE threecpp::threecpp)
