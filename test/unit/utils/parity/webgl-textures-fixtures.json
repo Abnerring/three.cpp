@@ -1,0 +1,945 @@
+[
+  {
+    "case": "metadata",
+    "kind": "metadata"
+  },
+  {
+    "case": "units",
+    "kind": "units",
+    "maxTextures": 2
+  },
+  {
+    "case": "data:first",
+    "kind": "upload",
+    "class": "data",
+    "variant": "first"
+  },
+  {
+    "case": "data:sourceOnly",
+    "kind": "upload",
+    "class": "data",
+    "variant": "sourceOnly"
+  },
+  {
+    "case": "data:textureOnly",
+    "kind": "upload",
+    "class": "data",
+    "variant": "textureOnly"
+  },
+  {
+    "case": "data:notReady",
+    "kind": "upload",
+    "class": "data",
+    "variant": "notReady"
+  },
+  {
+    "case": "data:samplerChange",
+    "kind": "upload",
+    "class": "data",
+    "variant": "samplerChange"
+  },
+  {
+    "case": "data:ranges",
+    "kind": "upload",
+    "class": "data",
+    "variant": "ranges"
+  },
+  {
+    "case": "data:dispose",
+    "kind": "upload",
+    "class": "data",
+    "variant": "dispose"
+  },
+  {
+    "case": "data:onUpdateThrow",
+    "kind": "upload",
+    "class": "data",
+    "variant": "onUpdateThrow"
+  },
+  {
+    "case": "data:onUpdateReenter",
+    "kind": "upload",
+    "class": "data",
+    "variant": "onUpdateReenter"
+  },
+  {
+    "case": "data:glThrow",
+    "kind": "upload",
+    "class": "data",
+    "variant": "glThrow"
+  },
+  {
+    "case": "plain:first",
+    "kind": "upload",
+    "class": "plain",
+    "variant": "first"
+  },
+  {
+    "case": "plain:sourceOnly",
+    "kind": "upload",
+    "class": "plain",
+    "variant": "sourceOnly"
+  },
+  {
+    "case": "plain:textureOnly",
+    "kind": "upload",
+    "class": "plain",
+    "variant": "textureOnly"
+  },
+  {
+    "case": "plain:notReady",
+    "kind": "upload",
+    "class": "plain",
+    "variant": "notReady"
+  },
+  {
+    "case": "plain:samplerChange",
+    "kind": "upload",
+    "class": "plain",
+    "variant": "samplerChange"
+  },
+  {
+    "case": "plain:dispose",
+    "kind": "upload",
+    "class": "plain",
+    "variant": "dispose"
+  },
+  {
+    "case": "plain:onUpdateThrow",
+    "kind": "upload",
+    "class": "plain",
+    "variant": "onUpdateThrow"
+  },
+  {
+    "case": "plain:onUpdateReenter",
+    "kind": "upload",
+    "class": "plain",
+    "variant": "onUpdateReenter"
+  },
+  {
+    "case": "plain:glThrow",
+    "kind": "upload",
+    "class": "plain",
+    "variant": "glThrow"
+  },
+  {
+    "case": "cube:first",
+    "kind": "upload",
+    "class": "cube",
+    "variant": "first"
+  },
+  {
+    "case": "cube:sourceOnly",
+    "kind": "upload",
+    "class": "cube",
+    "variant": "sourceOnly"
+  },
+  {
+    "case": "cube:textureOnly",
+    "kind": "upload",
+    "class": "cube",
+    "variant": "textureOnly"
+  },
+  {
+    "case": "cube:notReady",
+    "kind": "upload",
+    "class": "cube",
+    "variant": "notReady"
+  },
+  {
+    "case": "cube:samplerChange",
+    "kind": "upload",
+    "class": "cube",
+    "variant": "samplerChange"
+  },
+  {
+    "case": "cube:dispose",
+    "kind": "upload",
+    "class": "cube",
+    "variant": "dispose"
+  },
+  {
+    "case": "cube:onUpdateThrow",
+    "kind": "upload",
+    "class": "cube",
+    "variant": "onUpdateThrow"
+  },
+  {
+    "case": "cube:onUpdateReenter",
+    "kind": "upload",
+    "class": "cube",
+    "variant": "onUpdateReenter"
+  },
+  {
+    "case": "cube:glThrow",
+    "kind": "upload",
+    "class": "cube",
+    "variant": "glThrow"
+  },
+  {
+    "case": "cubeData:first",
+    "kind": "upload",
+    "class": "cubeData",
+    "variant": "first"
+  },
+  {
+    "case": "cubeData:sourceOnly",
+    "kind": "upload",
+    "class": "cubeData",
+    "variant": "sourceOnly"
+  },
+  {
+    "case": "cubeData:textureOnly",
+    "kind": "upload",
+    "class": "cubeData",
+    "variant": "textureOnly"
+  },
+  {
+    "case": "cubeData:notReady",
+    "kind": "upload",
+    "class": "cubeData",
+    "variant": "notReady"
+  },
+  {
+    "case": "cubeData:samplerChange",
+    "kind": "upload",
+    "class": "cubeData",
+    "variant": "samplerChange"
+  },
+  {
+    "case": "cubeData:dispose",
+    "kind": "upload",
+    "class": "cubeData",
+    "variant": "dispose"
+  },
+  {
+    "case": "cubeData:onUpdateThrow",
+    "kind": "upload",
+    "class": "cubeData",
+    "variant": "onUpdateThrow"
+  },
+  {
+    "case": "cubeData:onUpdateReenter",
+    "kind": "upload",
+    "class": "cubeData",
+    "variant": "onUpdateReenter"
+  },
+  {
+    "case": "cubeData:glThrow",
+    "kind": "upload",
+    "class": "cubeData",
+    "variant": "glThrow"
+  },
+  {
+    "case": "array:first",
+    "kind": "upload",
+    "class": "array",
+    "variant": "first"
+  },
+  {
+    "case": "array:sourceOnly",
+    "kind": "upload",
+    "class": "array",
+    "variant": "sourceOnly"
+  },
+  {
+    "case": "array:textureOnly",
+    "kind": "upload",
+    "class": "array",
+    "variant": "textureOnly"
+  },
+  {
+    "case": "array:notReady",
+    "kind": "upload",
+    "class": "array",
+    "variant": "notReady"
+  },
+  {
+    "case": "array:samplerChange",
+    "kind": "upload",
+    "class": "array",
+    "variant": "samplerChange"
+  },
+  {
+    "case": "array:dispose",
+    "kind": "upload",
+    "class": "array",
+    "variant": "dispose"
+  },
+  {
+    "case": "array:onUpdateThrow",
+    "kind": "upload",
+    "class": "array",
+    "variant": "onUpdateThrow"
+  },
+  {
+    "case": "array:onUpdateReenter",
+    "kind": "upload",
+    "class": "array",
+    "variant": "onUpdateReenter"
+  },
+  {
+    "case": "array:glThrow",
+    "kind": "upload",
+    "class": "array",
+    "variant": "glThrow"
+  },
+  {
+    "case": "data3d:first",
+    "kind": "upload",
+    "class": "data3d",
+    "variant": "first"
+  },
+  {
+    "case": "data3d:sourceOnly",
+    "kind": "upload",
+    "class": "data3d",
+    "variant": "sourceOnly"
+  },
+  {
+    "case": "data3d:textureOnly",
+    "kind": "upload",
+    "class": "data3d",
+    "variant": "textureOnly"
+  },
+  {
+    "case": "data3d:notReady",
+    "kind": "upload",
+    "class": "data3d",
+    "variant": "notReady"
+  },
+  {
+    "case": "data3d:samplerChange",
+    "kind": "upload",
+    "class": "data3d",
+    "variant": "samplerChange"
+  },
+  {
+    "case": "data3d:dispose",
+    "kind": "upload",
+    "class": "data3d",
+    "variant": "dispose"
+  },
+  {
+    "case": "data3d:onUpdateThrow",
+    "kind": "upload",
+    "class": "data3d",
+    "variant": "onUpdateThrow"
+  },
+  {
+    "case": "data3d:onUpdateReenter",
+    "kind": "upload",
+    "class": "data3d",
+    "variant": "onUpdateReenter"
+  },
+  {
+    "case": "data3d:glThrow",
+    "kind": "upload",
+    "class": "data3d",
+    "variant": "glThrow"
+  },
+  {
+    "case": "compressed:first",
+    "kind": "upload",
+    "class": "compressed",
+    "variant": "first"
+  },
+  {
+    "case": "compressed:sourceOnly",
+    "kind": "upload",
+    "class": "compressed",
+    "variant": "sourceOnly"
+  },
+  {
+    "case": "compressed:textureOnly",
+    "kind": "upload",
+    "class": "compressed",
+    "variant": "textureOnly"
+  },
+  {
+    "case": "compressed:notReady",
+    "kind": "upload",
+    "class": "compressed",
+    "variant": "notReady"
+  },
+  {
+    "case": "compressed:samplerChange",
+    "kind": "upload",
+    "class": "compressed",
+    "variant": "samplerChange"
+  },
+  {
+    "case": "compressed:dispose",
+    "kind": "upload",
+    "class": "compressed",
+    "variant": "dispose"
+  },
+  {
+    "case": "compressed:onUpdateThrow",
+    "kind": "upload",
+    "class": "compressed",
+    "variant": "onUpdateThrow"
+  },
+  {
+    "case": "compressed:onUpdateReenter",
+    "kind": "upload",
+    "class": "compressed",
+    "variant": "onUpdateReenter"
+  },
+  {
+    "case": "compressed:glThrow",
+    "kind": "upload",
+    "class": "compressed",
+    "variant": "glThrow"
+  },
+  {
+    "case": "compressedArray:first",
+    "kind": "upload",
+    "class": "compressedArray",
+    "variant": "first"
+  },
+  {
+    "case": "compressedArray:sourceOnly",
+    "kind": "upload",
+    "class": "compressedArray",
+    "variant": "sourceOnly"
+  },
+  {
+    "case": "compressedArray:textureOnly",
+    "kind": "upload",
+    "class": "compressedArray",
+    "variant": "textureOnly"
+  },
+  {
+    "case": "compressedArray:notReady",
+    "kind": "upload",
+    "class": "compressedArray",
+    "variant": "notReady"
+  },
+  {
+    "case": "compressedArray:samplerChange",
+    "kind": "upload",
+    "class": "compressedArray",
+    "variant": "samplerChange"
+  },
+  {
+    "case": "compressedArray:dispose",
+    "kind": "upload",
+    "class": "compressedArray",
+    "variant": "dispose"
+  },
+  {
+    "case": "compressedArray:onUpdateThrow",
+    "kind": "upload",
+    "class": "compressedArray",
+    "variant": "onUpdateThrow"
+  },
+  {
+    "case": "compressedArray:onUpdateReenter",
+    "kind": "upload",
+    "class": "compressedArray",
+    "variant": "onUpdateReenter"
+  },
+  {
+    "case": "compressedArray:glThrow",
+    "kind": "upload",
+    "class": "compressedArray",
+    "variant": "glThrow"
+  },
+  {
+    "case": "depth:first",
+    "kind": "upload",
+    "class": "depth",
+    "variant": "first"
+  },
+  {
+    "case": "depth:sourceOnly",
+    "kind": "upload",
+    "class": "depth",
+    "variant": "sourceOnly"
+  },
+  {
+    "case": "depth:textureOnly",
+    "kind": "upload",
+    "class": "depth",
+    "variant": "textureOnly"
+  },
+  {
+    "case": "depth:notReady",
+    "kind": "upload",
+    "class": "depth",
+    "variant": "notReady"
+  },
+  {
+    "case": "depth:samplerChange",
+    "kind": "upload",
+    "class": "depth",
+    "variant": "samplerChange"
+  },
+  {
+    "case": "depth:dispose",
+    "kind": "upload",
+    "class": "depth",
+    "variant": "dispose"
+  },
+  {
+    "case": "depth:onUpdateThrow",
+    "kind": "upload",
+    "class": "depth",
+    "variant": "onUpdateThrow"
+  },
+  {
+    "case": "depth:onUpdateReenter",
+    "kind": "upload",
+    "class": "depth",
+    "variant": "onUpdateReenter"
+  },
+  {
+    "case": "depth:glThrow",
+    "kind": "upload",
+    "class": "depth",
+    "variant": "glThrow"
+  },
+  {
+    "case": "video:first",
+    "kind": "upload",
+    "class": "video",
+    "variant": "first"
+  },
+  {
+    "case": "video:sourceOnly",
+    "kind": "upload",
+    "class": "video",
+    "variant": "sourceOnly"
+  },
+  {
+    "case": "video:textureOnly",
+    "kind": "upload",
+    "class": "video",
+    "variant": "textureOnly"
+  },
+  {
+    "case": "video:notReady",
+    "kind": "upload",
+    "class": "video",
+    "variant": "notReady"
+  },
+  {
+    "case": "video:samplerChange",
+    "kind": "upload",
+    "class": "video",
+    "variant": "samplerChange"
+  },
+  {
+    "case": "video:dispose",
+    "kind": "upload",
+    "class": "video",
+    "variant": "dispose"
+  },
+  {
+    "case": "video:onUpdateThrow",
+    "kind": "upload",
+    "class": "video",
+    "variant": "onUpdateThrow"
+  },
+  {
+    "case": "video:onUpdateReenter",
+    "kind": "upload",
+    "class": "video",
+    "variant": "onUpdateReenter"
+  },
+  {
+    "case": "video:glThrow",
+    "kind": "upload",
+    "class": "video",
+    "variant": "glThrow"
+  },
+  {
+    "case": "external:first",
+    "kind": "upload",
+    "class": "external",
+    "variant": "first"
+  },
+  {
+    "case": "external:sourceOnly",
+    "kind": "upload",
+    "class": "external",
+    "variant": "sourceOnly"
+  },
+  {
+    "case": "external:textureOnly",
+    "kind": "upload",
+    "class": "external",
+    "variant": "textureOnly"
+  },
+  {
+    "case": "external:notReady",
+    "kind": "upload",
+    "class": "external",
+    "variant": "notReady"
+  },
+  {
+    "case": "external:samplerChange",
+    "kind": "upload",
+    "class": "external",
+    "variant": "samplerChange"
+  },
+  {
+    "case": "external:dispose",
+    "kind": "upload",
+    "class": "external",
+    "variant": "dispose"
+  },
+  {
+    "case": "external:onUpdateThrow",
+    "kind": "upload",
+    "class": "external",
+    "variant": "onUpdateThrow"
+  },
+  {
+    "case": "external:onUpdateReenter",
+    "kind": "upload",
+    "class": "external",
+    "variant": "onUpdateReenter"
+  },
+  {
+    "case": "external:glThrow",
+    "kind": "upload",
+    "class": "external",
+    "variant": "glThrow"
+  },
+  {
+    "case": "shared:True:same",
+    "kind": "shared",
+    "shared": true,
+    "variant": "same"
+  },
+  {
+    "case": "shared:True:cacheDiff",
+    "kind": "shared",
+    "shared": true,
+    "variant": "cacheDiff"
+  },
+  {
+    "case": "shared:True:sourceChange",
+    "kind": "shared",
+    "shared": true,
+    "variant": "sourceChange"
+  },
+  {
+    "case": "shared:True:disposeFirst",
+    "kind": "shared",
+    "shared": true,
+    "variant": "disposeFirst"
+  },
+  {
+    "case": "shared:True:disposeSecond",
+    "kind": "shared",
+    "shared": true,
+    "variant": "disposeSecond"
+  },
+  {
+    "case": "shared:True:uploadThrow",
+    "kind": "shared",
+    "shared": true,
+    "variant": "uploadThrow"
+  },
+  {
+    "case": "shared:True:onUpdateDispose",
+    "kind": "shared",
+    "shared": true,
+    "variant": "onUpdateDispose"
+  },
+  {
+    "case": "shared:False:same",
+    "kind": "shared",
+    "shared": false,
+    "variant": "same"
+  },
+  {
+    "case": "shared:False:cacheDiff",
+    "kind": "shared",
+    "shared": false,
+    "variant": "cacheDiff"
+  },
+  {
+    "case": "shared:False:sourceChange",
+    "kind": "shared",
+    "shared": false,
+    "variant": "sourceChange"
+  },
+  {
+    "case": "shared:False:disposeFirst",
+    "kind": "shared",
+    "shared": false,
+    "variant": "disposeFirst"
+  },
+  {
+    "case": "shared:False:disposeSecond",
+    "kind": "shared",
+    "shared": false,
+    "variant": "disposeSecond"
+  },
+  {
+    "case": "shared:False:uploadThrow",
+    "kind": "shared",
+    "shared": false,
+    "variant": "uploadThrow"
+  },
+  {
+    "case": "shared:False:onUpdateDispose",
+    "kind": "shared",
+    "shared": false,
+    "variant": "onUpdateDispose"
+  },
+  {
+    "case": "target:cube=False:buffer:samples=0:count=1",
+    "kind": "target",
+    "cube": false,
+    "depth": "buffer",
+    "samples": 0,
+    "count": 1
+  },
+  {
+    "case": "target:cube=False:buffer:samples=0:count=2",
+    "kind": "target",
+    "cube": false,
+    "depth": "buffer",
+    "samples": 0,
+    "count": 2
+  },
+  {
+    "case": "target:cube=False:buffer:samples=4:count=1",
+    "kind": "target",
+    "cube": false,
+    "depth": "buffer",
+    "samples": 4,
+    "count": 1
+  },
+  {
+    "case": "target:cube=False:buffer:samples=4:count=2",
+    "kind": "target",
+    "cube": false,
+    "depth": "buffer",
+    "samples": 4,
+    "count": 2
+  },
+  {
+    "case": "target:cube=False:none:samples=0:count=1",
+    "kind": "target",
+    "cube": false,
+    "depth": "none",
+    "samples": 0,
+    "count": 1
+  },
+  {
+    "case": "target:cube=False:none:samples=0:count=2",
+    "kind": "target",
+    "cube": false,
+    "depth": "none",
+    "samples": 0,
+    "count": 2
+  },
+  {
+    "case": "target:cube=False:none:samples=4:count=1",
+    "kind": "target",
+    "cube": false,
+    "depth": "none",
+    "samples": 4,
+    "count": 1
+  },
+  {
+    "case": "target:cube=False:none:samples=4:count=2",
+    "kind": "target",
+    "cube": false,
+    "depth": "none",
+    "samples": 4,
+    "count": 2
+  },
+  {
+    "case": "target:cube=False:texture:samples=0:count=1",
+    "kind": "target",
+    "cube": false,
+    "depth": "texture",
+    "samples": 0,
+    "count": 1
+  },
+  {
+    "case": "target:cube=False:texture:samples=0:count=2",
+    "kind": "target",
+    "cube": false,
+    "depth": "texture",
+    "samples": 0,
+    "count": 2
+  },
+  {
+    "case": "target:cube=False:texture:samples=4:count=1",
+    "kind": "target",
+    "cube": false,
+    "depth": "texture",
+    "samples": 4,
+    "count": 1
+  },
+  {
+    "case": "target:cube=False:texture:samples=4:count=2",
+    "kind": "target",
+    "cube": false,
+    "depth": "texture",
+    "samples": 4,
+    "count": 2
+  },
+  {
+    "case": "target:cube=True:buffer:samples=0:count=1",
+    "kind": "target",
+    "cube": true,
+    "depth": "buffer",
+    "samples": 0,
+    "count": 1
+  },
+  {
+    "case": "target:cube=True:buffer:samples=4:count=1",
+    "kind": "target",
+    "cube": true,
+    "depth": "buffer",
+    "samples": 4,
+    "count": 1
+  },
+  {
+    "case": "target:cube=True:none:samples=0:count=1",
+    "kind": "target",
+    "cube": true,
+    "depth": "none",
+    "samples": 0,
+    "count": 1
+  },
+  {
+    "case": "target:cube=True:none:samples=4:count=1",
+    "kind": "target",
+    "cube": true,
+    "depth": "none",
+    "samples": 4,
+    "count": 1
+  },
+  {
+    "case": "target:cube=True:texture:samples=0:count=1",
+    "kind": "target",
+    "cube": true,
+    "depth": "texture",
+    "samples": 0,
+    "count": 1
+  },
+  {
+    "case": "target:cube=True:texture:samples=4:count=1",
+    "kind": "target",
+    "cube": true,
+    "depth": "texture",
+    "samples": 4,
+    "count": 1
+  },
+  {
+    "case": "target:mip=True:stencil=True",
+    "kind": "target",
+    "cube": false,
+    "depth": "buffer",
+    "samples": 4,
+    "count": 1,
+    "mipmaps": true,
+    "stencil": true
+  },
+  {
+    "case": "target:mip=True:stencil=False",
+    "kind": "target",
+    "cube": false,
+    "depth": "buffer",
+    "samples": 4,
+    "count": 1,
+    "mipmaps": true,
+    "stencil": false
+  },
+  {
+    "case": "target:mip=False:stencil=True",
+    "kind": "target",
+    "cube": false,
+    "depth": "buffer",
+    "samples": 4,
+    "count": 1,
+    "mipmaps": false,
+    "stencil": true
+  },
+  {
+    "case": "target:mip=False:stencil=False",
+    "kind": "target",
+    "cube": false,
+    "depth": "buffer",
+    "samples": 4,
+    "count": 1,
+    "mipmaps": false,
+    "stencil": false
+  },
+  {
+    "case": "array:layers",
+    "kind": "upload",
+    "class": "array",
+    "variant": "layers"
+  },
+  {
+    "case": "compressedArray:layers",
+    "kind": "upload",
+    "class": "compressedArray",
+    "variant": "layers"
+  },
+  {
+    "case": "data:halfFloat",
+    "kind": "upload",
+    "class": "data",
+    "variant": "halfFloat"
+  },
+  {
+    "case": "data:srgb",
+    "kind": "upload",
+    "class": "data",
+    "variant": "srgb"
+  },
+  {
+    "case": "plain:halfFloat",
+    "kind": "upload",
+    "class": "plain",
+    "variant": "halfFloat"
+  },
+  {
+    "case": "plain:srgb",
+    "kind": "upload",
+    "class": "plain",
+    "variant": "srgb"
+  },
+  {
+    "case": "cube:halfFloat",
+    "kind": "upload",
+    "class": "cube",
+    "variant": "halfFloat"
+  },
+  {
+    "case": "cube:srgb",
+    "kind": "upload",
+    "class": "cube",
+    "variant": "srgb"
+  },
+  {
+    "case": "target:rebind:buffer",
+    "kind": "target",
+    "cube": false,
+    "depth": "buffer",
+    "samples": 0,
+    "count": 1,
+    "rebind": true
+  },
+  {
+    "case": "target:rebind:texture",
+    "kind": "target",
+    "cube": false,
+    "depth": "texture",
+    "samples": 0,
+    "count": 1,
+    "rebind": true
+  }
+]

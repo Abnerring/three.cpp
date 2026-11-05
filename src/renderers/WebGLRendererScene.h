@@ -23,6 +23,24 @@
 // renderObjects / renderObject / renderTransmissionPass expose the original
 // private functions for backend integration and CPU protocol verification.
 //
+// Program hooks use the same cells and scene stacks: getProgram,
+// getProgramVariant, getUniformList, updateCommonMaterialProperties,
+// findLightProbeGrid, setProgram, markUniformsLightsNeedsUpdate,
+// materialNeedsLights, onMaterialDispose, deallocateMaterial, and
+// releaseMaterialProgramReferences. Each is exposed through the corresponding
+// WebGLRendererScene.<name> internal slot.
+//
+// To call program hooks, supply actual backend services _gl, properties,
+// programCache, environments, materials, morphtargets, and uniformsGroups.
+// These new bindings are read only when supplied as own properties and stay
+// undefined otherwise. getDFGLUT is an immutable imported native service;
+// supply it for materials whose uniforms contain dfgLUT. WebGLUniforms uses
+// the existing real source port, not an injected replacement.
+// Source scratch vectors and _emptyScene use their original defaults;
+// _pixelRatio defaults to 1. Supply _height with the backend canvas height.
+// The set/get slots can synchronize mutable backend cells, including _height,
+// without replacing original material/program/uniform objects.
+//
 // Nested render calls share the original render-list/state stacks. Abrupt
 // completion preserves the source's unfinished stacks and temporary state;
 // this helper does not add cleanup/finally logic. GPU submission/ownership

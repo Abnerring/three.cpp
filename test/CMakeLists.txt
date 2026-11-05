@@ -3722,3 +3722,45 @@ if(TARGET threecpp_vulkan)
 endif()
 
 target_sources(THREECPPTests PRIVATE unit/src/renderers/WebGLRendererScene.tests.cpp)
+
+target_sources(THREECPPTests PRIVATE
+    unit/src/renderers/WebGLRendererProgram.tests.cpp
+    unit/src/renderers/webgl/WebGLTextures.tests.cpp)
+add_executable(ThreeJsWebGLRendererProgramParityProbe unit/utils/parity/WebGLRendererProgramProbe.cpp)
+target_link_libraries(ThreeJsWebGLRendererProgramParityProbe PRIVATE threecpp::threecpp)
+add_executable(ThreeJsWebGLTexturesParityProbe unit/utils/parity/WebGLTexturesProbe.cpp)
+target_link_libraries(ThreeJsWebGLTexturesParityProbe PRIVATE threecpp::threecpp)
+if(THREECPP_NODE_EXECUTABLE AND THREEJS_SOURCE_DIR)
+    add_test(NAME threecpp.threejs-webgl-renderer-program-parity
+        COMMAND "${THREECPP_NODE_EXECUTABLE}" "${CMAKE_CURRENT_SOURCE_DIR}/unit/utils/parity/compare-webgl-renderer-program.mjs"
+            "${THREEJS_SOURCE_DIR}" "$<TARGET_FILE:ThreeJsWebGLRendererProgramParityProbe>")
+    add_test(NAME threecpp.threejs-webgl-textures-parity
+        COMMAND "${THREECPP_NODE_EXECUTABLE}" "${CMAKE_CURRENT_SOURCE_DIR}/unit/utils/parity/compare-webgl-textures.mjs"
+            "${THREEJS_SOURCE_DIR}" "$<TARGET_FILE:ThreeJsWebGLTexturesParityProbe>")
+endif()
+if(TARGET threecpp_vulkan AND THREECPP_NATIVE_ESSL)
+    add_executable(VulkanProgramCommandsTests
+        unit/three.source.unit.cpp unit/src/renderers/vulkan/VulkanProgramCommands.tests.cpp)
+    target_include_directories(VulkanProgramCommandsTests PRIVATE "${CMAKE_CURRENT_SOURCE_DIR}/unit/utils")
+    target_link_libraries(VulkanProgramCommandsTests PRIVATE threecpp::vulkan)
+    add_test(NAME threecpp.vulkan-program-commands-unit COMMAND VulkanProgramCommandsTests)
+endif()
+
+if(TARGET threecpp_vulkan)
+    add_executable(VulkanTextureCommandsTests
+        unit/three.source.unit.cpp unit/src/renderers/vulkan/VulkanTextureCommands.tests.cpp)
+    target_include_directories(VulkanTextureCommandsTests PRIVATE "${CMAKE_CURRENT_SOURCE_DIR}/unit/utils")
+    target_link_libraries(VulkanTextureCommandsTests PRIVATE threecpp::vulkan)
+    add_test(NAME threecpp.vulkan-texture-commands-unit COMMAND VulkanTextureCommandsTests)
+    if(THREECPP_NATIVE_ESSL)
+        target_sources(VulkanProgramCommandsTests PRIVATE unit/src/renderers/vulkan/VulkanProgramSource.tests.cpp)
+        if(WIN32)
+            add_executable(VulkanProgramSourceGPU native-essl/VulkanProgramSourceGPU.cpp)
+            target_include_directories(VulkanProgramSourceGPU PRIVATE "${THREECPP_VULKAN_INCLUDE_DIR}")
+            target_link_libraries(VulkanProgramSourceGPU PRIVATE threecpp::vulkan)
+            add_test(NAME threecpp.native-essl-program-source-gpu
+                COMMAND VulkanProgramSourceGPU "${CMAKE_CURRENT_BINARY_DIR}/native-essl/program-source-$<CONFIG>")
+            set_tests_properties(threecpp.native-essl-program-source-gpu PROPERTIES LABELS "ESSL;GPU;Vulkan" TIMEOUT 120)
+        endif()
+    endif()
+endif()

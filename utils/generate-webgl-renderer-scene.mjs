@@ -16,7 +16,9 @@ const sourceHash=createHash('sha256').update(source).digest('hex');
 const ast=parse(source,{sourceType:'module',ecmaVersion:'latest'}),renderer=ast.body.find(n=>n.type==='ClassDeclaration'&&n.id.name==='WebGLRenderer');
 const body=renderer.body.body.find(n=>n.kind==='constructor').value.body.body;
 const render=body.find(n=>n.type==='ExpressionStatement'&&n.expression.type==='AssignmentExpression'&&n.expression.left.type==='MemberExpression'&&n.expression.left.object.type==='ThisExpression'&&n.expression.left.property.name==='render').expression.right;
-const selected=['projectObject','renderScene','renderTransmissionPass','renderObjects','renderObject'];
+const selected=['projectObject','renderScene','renderTransmissionPass','renderObjects','renderObject',
+    'getProgram','getProgramVariant','getUniformList','updateCommonMaterialProperties','findLightProbeGrid','setProgram',
+    'markUniformsLightsNeedsUpdate','materialNeedsLights','onMaterialDispose','deallocateMaterial','releaseMaterialProgramReferences'];
 const nodes=selected.map(name=>body.find(n=>n.type==='FunctionDeclaration'&&n.id.name===name));
 if(nodes.some(n=>!n))throw new Error('Missing renderer function');
 let serial=0; const temp=()=>`g${++serial}`;
@@ -194,11 +196,16 @@ source=targetSource;
 const targetClass=parse(source,{sourceType:'module',ecmaVersion:'latest'}).body.find(n=>n.type==='ClassDeclaration');
 const targetClassText=slice(targetClass),targetConstructor=makeFunction(targetClass.body.body.find(n=>n.kind==='constructor').value,'constructor');
 functions.find(f=>f.id===targetConstructor.id).body=functions.find(f=>f.id===targetConstructor.id).body.replace('auto home=captures[1];','auto home=read(env,"WebGLRenderTarget");');
-const includes=['renderers/WebGLRendererScene.h','geometries/GeometryRuntime.h','core/RenderTarget.h','math/Matrix4.h','math/Vector4.h','math/Frustum.h','math/FrustumArray.h','math/Color.h','math/ColorManagement.h','constants.h','utils.h'];
-const imports=[['Matrix4','nativeMatrix4Constructor()'],['Vector4','nativeVector4Constructor()'],['Frustum','nativeFrustumConstructor()'],['FrustumArray','nativeFrustumArrayConstructor()'],['Color','nativeColorConstructor()'],['ColorManagement','nativeColorManagement()'],['RenderTarget','nativeRenderTargetConstructor()'],['error','ThreeUtils::nativeErrorFunction()'],...['WebGLCoordinateSystem','DoubleSide','BackSide','FrontSide','HalfFloatType','UnsignedByteType','LinearMipmapLinearFilter','NoToneMapping'].map(x=>[x,x])];
+const includes=['renderers/WebGLRendererScene.h','geometries/GeometryRuntime.h','core/RenderTarget.h','renderers/webgl/WebGLUniforms.h','math/Matrix4.h','math/Vector3.h','math/Vector4.h','math/Frustum.h','math/FrustumArray.h','math/Color.h','math/ColorManagement.h','constants.h','utils.h'];
+const imports=[['Matrix4','nativeMatrix4Constructor()'],['Vector3','nativeVector3Constructor()'],['Vector4','nativeVector4Constructor()'],['Frustum','nativeFrustumConstructor()'],['FrustumArray','nativeFrustumArrayConstructor()'],['Color','nativeColorConstructor()'],['ColorManagement','nativeColorManagement()'],['RenderTarget','nativeRenderTargetConstructor()'],['WebGLUniforms','nativeWebGLUniformsConstructor()'],['error','ThreeUtils::nativeErrorFunction()'],...['WebGLCoordinateSystem','DoubleSide','BackSide','FrontSide','HalfFloatType','UnsignedByteType','LinearMipmapLinearFilter','NoToneMapping'].map(x=>[x,x])];
 const required=['_this','objects','renderLists','renderStates','clipping','background','shadowMap','textures','state','xr','bindingStates','extensions','capabilities'];
-const defaults=[['currentRenderList','nullptr'],['currentRenderState','nullptr'],['renderListStack','JSValue::array()',false],['renderStateStack','JSValue::array()',false],['output','nullptr'],['_isContextLost','false'],['_nodesHandler','nullptr'],['_currentActiveCubeFace','0'],['_currentActiveMipmapLevel','0'],['_currentRenderTarget','nullptr'],['_currentMaterialId','-1'],['_currentCamera','nullptr'],['_currentViewport','nativeVector4Constructor().construct()',false],['_currentClearColor','nativeColorConstructor().construct({0.0})',false],['_currentClearAlpha','0'],['_opaqueSort','nullptr'],['_transparentSort','nullptr'],['_frustum','nativeFrustumConstructor().construct()',false],['_frustumArray','nativeFrustumArrayConstructor().construct()',false],['_clippingEnabled','false'],['_localClippingEnabled','false'],['_projScreenMatrix','nativeMatrix4Constructor().construct()',false],['_vector4','nativeVector4Constructor().construct()',false],['_renderBackground','false'],['stencil','false',false]];
+// Program services remain undefined when absent. A scene-only caller never
+// reads their properties; using a program hook requires the real backend.
+const optional=['_gl','properties','programCache','environments','materials','morphtargets','uniformsGroups'];
+const defaults=[['currentRenderList','nullptr'],['currentRenderState','nullptr'],['renderListStack','JSValue::array()',false],['renderStateStack','JSValue::array()',false],['output','nullptr'],['_isContextLost','false'],['_nodesHandler','nullptr'],['_currentActiveCubeFace','0'],['_currentActiveMipmapLevel','0'],['_currentRenderTarget','nullptr'],['_currentMaterialId','-1'],['_currentCamera','nullptr'],['_currentViewport','nativeVector4Constructor().construct()',false],['_currentClearColor','nativeColorConstructor().construct({0.0})',false],['_currentClearAlpha','0'],['_opaqueSort','nullptr'],['_transparentSort','nullptr'],['_frustum','nativeFrustumConstructor().construct()',false],['_frustumArray','nativeFrustumArrayConstructor().construct()',false],['_clippingEnabled','false'],['_localClippingEnabled','false'],['_projScreenMatrix','nativeMatrix4Constructor().construct()',false],['_vector3','nativeVector3Constructor().construct()',false],['_vector4','nativeVector4Constructor().construct()',false],['objectPosition','nativeVector3Constructor().construct()',false],['_emptyScene','emptyScene',false],['_pixelRatio','1'],['_height','JSValue{}'],['_renderBackground','false'],['stencil','false',false]];
 const init=required.map(x=>`declare(env,${q(x)},${x==='_this'?'false':'true'});initialize(env,${q(x)},bindings.get(${q(x)}));`).join('\n')+
+ optional.map(x=>`declare(env,${q(x)},true);initialize(env,${q(x)},bindings.hasOwn(${q(x)})?bindings.get(${q(x)}):JSValue{});`).join('\n')+
+ `declare(env,"getDFGLUT",false);initialize(env,"getDFGLUT",bindings.hasOwn("getDFGLUT")?bindings.get("getDFGLUT"):JSValue{});\n`+
  defaults.map(([x,value,mutable=true])=>`declare(env,${q(x)},${mutable});initialize(env,${q(x)},bindings.hasOwn(${q(x)})?bindings.get(${q(x)}):JSValue(${value}));`).join('\n');
 const declarations=generated.map(([n])=>`declare(env,${q(n)},true);`).join('\n');
 const initializers=generated.map(([n,value])=>`initialize(env,${q(n)},${value});`).join('\n');
@@ -212,6 +219,9 @@ const output=`// Generated by utils/generate-webgl-renderer-scene.mjs.\n// Pinne
 using namespace WebGLRendererSceneGenerated;
 auto env=scope();JSValue home;
 ${imports.map(([n,value])=>`bindImport(env,${q(n)},${value});`).join('\n')}
+auto emptyScene=JSValue::object();
+for(const auto* name:{"background","fog","environment","overrideMaterial"})own(emptyScene,name,nullptr);
+own(emptyScene,"isScene",true);
 ${init}
 declare(env,"WebGLRenderTarget",false);
 auto targetConstructor=JSValue::builtinConstructor(${targetConstructor.id},{env},"WebGLRenderTarget",${targetConstructor.length});

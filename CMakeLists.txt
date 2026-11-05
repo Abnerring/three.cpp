@@ -480,6 +480,7 @@ target_sources(threecpp PRIVATE
     src/renderers/webgl/WebGLRenderLists.cpp
     src/renderers/WebGLRendererScene.cpp
     src/renderers/webgl/WebGLBackground.cpp
+    src/renderers/webgl/WebGLTextures.cpp
     src/renderers/webgl/WebGLUniforms.cpp
     src/renderers/webgl/WebGLUniformsGroups.cpp
     src/renderers/webgl/WebGLState.cpp
@@ -775,6 +776,8 @@ if(THREECPP_BUILD_VULKAN)
     set_target_properties(threecpp_spirv_reflect PROPERTIES POSITION_INDEPENDENT_CODE ON)
     add_library(threecpp_vulkan src/renderers/VulkanRenderer.cpp
         src/renderers/vulkan/VulkanBufferCommands.cpp src/renderers/vulkan/VulkanBindingCommands.cpp
+        src/renderers/vulkan/VulkanProgramCommands.cpp
+        src/renderers/vulkan/VulkanTextureCommands.cpp
         src/renderers/vulkan/VulkanShaderCompiler.cpp
         src/renderers/vulkan/VulkanShaderInterface.cpp src/renderers/vulkan/VulkanPipelineLayout.cpp
         src/renderers/vulkan/VulkanShaderModules.cpp src/renderers/vulkan/VulkanUniformBuffer.cpp

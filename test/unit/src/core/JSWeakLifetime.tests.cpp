@@ -3,6 +3,7 @@
 #include "core/JSFinalizationRegistry.h"
 #include "core/JSWeakMap.h"
 #include "core/JSJobs.h"
+#include "core/JSGlobal.h"
 #include <thread>
 #include <tuple>
 #include <condition_variable>
@@ -321,4 +322,28 @@ TEST_CASE("Cleanup callbacks may collect and inspect pending weak tasks during d
     witness.collectGarbage(); second = {};
     REQUIRE(drainFinalizationJobs() == 1); REQUIRE(log.length() == 1);
     REQUIRE(log.get("0").strictEquals("first")); REQUIRE_FALSE(hasPendingFinalizationJobs());
+}
+
+TEST_CASE("Native globals expose working WeakRef and FinalizationRegistry constructors", "[core][weaklife][globals]") {
+    const auto global = nativeGlobalObject();
+    for (const auto& entry : std::initializer_list<std::pair<const char*, JSValue>>{
+             {"WeakRef", nativeWeakRefConstructor()}, {"FinalizationRegistry", nativeFinalizationRegistryConstructor()}}) {
+        const auto constructor = nativeGlobalBinding(entry.first);
+        REQUIRE(constructor.sameValue(entry.second));
+        const auto descriptor = global.getOwnPropertyDescriptor(entry.first);
+        REQUIRE(descriptor.has_value());
+        REQUIRE(descriptor->writable == true);
+        REQUIRE(descriptor->enumerable == false);
+        REQUIRE(descriptor->configurable == true);
+        REQUIRE(constructor.get("length").strictEquals(1));
+        REQUIRE_THROWS_AS(constructor.call({}, {}), JSTypeError);
+    }
+    auto target = JSValue::object();
+    const auto reference = nativeGlobalBinding("WeakRef").construct({target});
+    REQUIRE(reference.get("deref").call(reference).sameValue(target));
+    const auto registry = nativeGlobalBinding("FinalizationRegistry").construct({JSValue::function(noop)});
+    REQUIRE(isNativeFinalizationRegistry(registry));
+    REQUIRE(registry.get("register").call(registry, {target, "texture-handle", target}).isUndefined());
+    REQUIRE(registry.get("unregister").call(registry, {target}).strictEquals(true));
+    REQUIRE(registry.get("unregister").call(registry, {target}).strictEquals(false));
 }

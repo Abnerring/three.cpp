@@ -984,7 +984,7 @@
       "path": "src/renderers/webgl",
       "upstreamFiles": 30,
       "moduleCount": 30,
-      "modulesWithCppFiles": 25,
+      "modulesWithCppFiles": 26,
       "verifiedComplete": 0
     },
     {
@@ -20211,8 +20211,8 @@
       "scope": "src",
       "kind": "core",
       "upstreamSha256": "d88bec317fb7d67d0764dafa6b213f9a7c4da1426b7c0166fa5de7afb91df1f4",
-      "header": null,
-      "implementation": null,
+      "header": "src/renderers/webgl/WebGLTextures.h",
+      "implementation": "src/renderers/webgl/WebGLTextures.cpp",
       "expectedHeader": "src/renderers/webgl/WebGLTextures.h",
       "expectedImplementation": "src/renderers/webgl/WebGLTextures.cpp",
       "status": "vulkan-port-pending",
@@ -20224,7 +20224,9 @@
           "pointer": "/modules/675"
         },
         "upstreamUnitTests": [],
-        "cppUnitTests": [],
+        "cppUnitTests": [
+          "test/unit/src/renderers/webgl/WebGLTextures.tests.cpp"
+        ],
         "reviewedImplementation": [],
         "differentialResults": [],
         "renderingResults": [],

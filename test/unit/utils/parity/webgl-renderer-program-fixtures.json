@@ -1,0 +1,975 @@
+[
+  {
+    "case": "metadata",
+    "op": "metadata"
+  },
+  {
+    "case": "same-material"
+  },
+  {
+    "case": "shared-material-mutation",
+    "steps": [
+      {},
+      {
+        "op": "color",
+        "value": [
+          0,
+          1,
+          0
+        ]
+      },
+      {},
+      {
+        "op": "list"
+      }
+    ]
+  },
+  {
+    "case": "different-material-refresh",
+    "steps": [
+      {},
+      {
+        "material": "material2",
+        "object": "object2"
+      },
+      {
+        "op": "color",
+        "value": [
+          0,
+          1,
+          0
+        ]
+      },
+      {}
+    ]
+  },
+  {
+    "case": "different-camera-refresh",
+    "steps": [
+      {},
+      {
+        "op": "color",
+        "value": [
+          0,
+          1,
+          0
+        ]
+      },
+      {
+        "camera": "camera2"
+      }
+    ]
+  },
+  {
+    "case": "same-key-version",
+    "steps": [
+      {},
+      {
+        "op": "needUpdate",
+        "value": true
+      },
+      {}
+    ]
+  },
+  {
+    "case": "numeric-needs-update",
+    "steps": [
+      {},
+      {
+        "op": "needUpdate",
+        "value": 1
+      },
+      {}
+    ]
+  },
+  {
+    "case": "changed-key-version",
+    "steps": [
+      {},
+      {
+        "op": "key",
+        "value": "new"
+      },
+      {
+        "op": "needUpdate",
+        "value": true
+      },
+      {}
+    ]
+  },
+  {
+    "case": "changed-key-without-version",
+    "steps": [
+      {},
+      {
+        "op": "key",
+        "value": "new"
+      },
+      {}
+    ]
+  },
+  {
+    "case": "tone-variant",
+    "steps": [
+      {},
+      {
+        "op": "set",
+        "target": "renderer",
+        "key": "toneMapping",
+        "value": 3
+      },
+      {},
+      {}
+    ]
+  },
+  {
+    "case": "color-variant",
+    "steps": [
+      {},
+      {
+        "op": "set",
+        "target": "renderer",
+        "key": "outputColorSpace",
+        "value": "srgb"
+      },
+      {},
+      {}
+    ]
+  },
+  {
+    "case": "ordinary-target",
+    "steps": [
+      {},
+      {
+        "op": "target"
+      },
+      {},
+      {}
+    ]
+  },
+  {
+    "case": "xr-target",
+    "steps": [
+      {},
+      {
+        "op": "target",
+        "xr": true
+      },
+      {},
+      {}
+    ]
+  },
+  {
+    "case": "env-change",
+    "steps": [
+      {},
+      {
+        "op": "env"
+      },
+      {}
+    ]
+  },
+  {
+    "case": "fog-change",
+    "fog": true,
+    "steps": [
+      {},
+      {
+        "op": "sceneFog"
+      },
+      {}
+    ]
+  },
+  {
+    "case": "vertex-alpha-change",
+    "steps": [
+      {},
+      {
+        "op": "geometryColor"
+      },
+      {}
+    ]
+  },
+  {
+    "case": "vertex-tangent-change",
+    "steps": [
+      {},
+      {
+        "op": "geometryTangent"
+      },
+      {}
+    ]
+  },
+  {
+    "case": "morph-position-change",
+    "steps": [
+      {},
+      {
+        "op": "morph",
+        "key": "position",
+        "count": 1
+      },
+      {}
+    ]
+  },
+  {
+    "case": "morph-normal-change",
+    "steps": [
+      {},
+      {
+        "op": "morph",
+        "key": "normal",
+        "count": 1
+      },
+      {}
+    ]
+  },
+  {
+    "case": "morph-color-change",
+    "steps": [
+      {},
+      {
+        "op": "morph",
+        "key": "color",
+        "count": 1
+      },
+      {}
+    ]
+  },
+  {
+    "case": "morph-count-change",
+    "morph": "position",
+    "steps": [
+      {},
+      {
+        "op": "morph",
+        "key": "position",
+        "count": 2
+      },
+      {}
+    ]
+  },
+  {
+    "case": "lights-version",
+    "lights": true,
+    "steps": [
+      {},
+      {
+        "op": "lightsVersion"
+      },
+      {}
+    ]
+  },
+  {
+    "case": "lights-shadows",
+    "lights": true,
+    "shadows": true
+  },
+  {
+    "case": "single-volume",
+    "lights": true,
+    "volume": 1
+  },
+  {
+    "case": "null-single-volume",
+    "lights": true,
+    "volume": 1,
+    "nullVolume": true
+  },
+  {
+    "case": "multiple-volumes",
+    "lights": true,
+    "volume": 2
+  },
+  {
+    "case": "null-multiple-volumes",
+    "lights": true,
+    "volume": 2,
+    "nullVolume": true
+  },
+  {
+    "case": "receive-shadow",
+    "steps": [
+      {},
+      {
+        "op": "set",
+        "target": "object",
+        "key": "receiveShadow",
+        "value": true
+      },
+      {}
+    ]
+  },
+  {
+    "case": "node-build",
+    "nodes": true
+  },
+  {
+    "case": "node-uniform-replacement",
+    "nodes": true,
+    "nodeUniforms": true
+  },
+  {
+    "case": "compile-uniform-replacement",
+    "replaceUniforms": true
+  },
+  {
+    "case": "uniform-needs-update-false",
+    "cleanUniform": true
+  },
+  {
+    "case": "uniform-update-filter",
+    "steps": [
+      {},
+      {
+        "op": "uniform",
+        "key": "customScalar",
+        "value": 0.5
+      },
+      {
+        "op": "set",
+        "target": "renderer",
+        "key": "toneMappingExposure",
+        "value": 2
+      },
+      {
+        "camera": "camera2"
+      }
+    ]
+  },
+  {
+    "case": "shader-forced-uniforms",
+    "shader": true,
+    "steps": [
+      {},
+      {
+        "op": "uniform",
+        "key": "customScalar",
+        "value": 0.75
+      },
+      {
+        "op": "set",
+        "key": "uniformsNeedUpdate",
+        "value": true
+      },
+      {}
+    ]
+  },
+  {
+    "case": "shader-numeric-uniforms",
+    "shader": true,
+    "steps": [
+      {},
+      {
+        "op": "set",
+        "key": "uniformsNeedUpdate",
+        "value": 1
+      },
+      {}
+    ]
+  },
+  {
+    "case": "shader-dispose",
+    "shader": true,
+    "steps": [
+      {},
+      {
+        "op": "dispose"
+      },
+      {}
+    ]
+  },
+  {
+    "case": "material-dispose",
+    "steps": [
+      {},
+      {
+        "op": "dispose"
+      },
+      {}
+    ]
+  },
+  {
+    "case": "skinning",
+    "skin": true
+  },
+  {
+    "case": "batching",
+    "objectFlags": {
+      "isBatchedMesh": true
+    }
+  },
+  {
+    "case": "instancing",
+    "objectFlags": {
+      "isInstancedMesh": true
+    }
+  },
+  {
+    "case": "ubo",
+    "groups": true
+  },
+  {
+    "case": "sprite-center",
+    "sprite": true
+  },
+  {
+    "case": "reversed-camera",
+    "reversed": true
+  },
+  {
+    "case": "log-depth",
+    "logDepth": true
+  },
+  {
+    "case": "opacity-getter",
+    "getter": true
+  },
+  {
+    "case": "compile-throw",
+    "throwAt": "material.compile",
+    "errors": 1
+  },
+  {
+    "case": "compile-throw-retry",
+    "throwAt": "material.compile",
+    "continueOnError": true,
+    "errors": 2
+  },
+  {
+    "case": "acquire-throw",
+    "throwAt": "cache.acquire",
+    "errors": 1
+  },
+  {
+    "case": "uniform-command-throw",
+    "throwAt": "gl.uniform1f",
+    "errors": 1
+  },
+  {
+    "case": "node-build-throw",
+    "nodes": true,
+    "throwAt": "nodes.build",
+    "errors": 1
+  },
+  {
+    "case": "node-update-throw",
+    "nodes": true,
+    "throwAt": "nodes.onUpdateProgram",
+    "errors": 1
+  },
+  {
+    "case": "compile-reentry",
+    "reentry": "material.compile"
+  },
+  {
+    "case": "refresh-reentry",
+    "reentry": "materials.refresh"
+  },
+  {
+    "case": "uniform-reentry",
+    "reentry": "gl.uniform1f"
+  },
+  {
+    "case": "opacity-reentry",
+    "getter": true,
+    "reentry": "get:opacity"
+  },
+  {
+    "case": "cached-list",
+    "steps": [
+      {},
+      {
+        "op": "list"
+      },
+      {},
+      {
+        "op": "list"
+      }
+    ]
+  },
+  {
+    "case": "get-program-direct",
+    "steps": [
+      {
+        "op": "directGet"
+      },
+      {
+        "op": "directGet"
+      }
+    ]
+  },
+  {
+    "case": "batched-on",
+    "steps": [
+      {},
+      {
+        "op": "set",
+        "target": "object",
+        "key": "isBatchedMesh",
+        "value": true
+      },
+      {}
+    ]
+  },
+  {
+    "case": "batched-off",
+    "objectFlags": {
+      "isBatchedMesh": true
+    },
+    "steps": [
+      {},
+      {
+        "op": "set",
+        "target": "object",
+        "key": "isBatchedMesh",
+        "value": false
+      },
+      {}
+    ]
+  },
+  {
+    "case": "batched-color-null",
+    "objectFlags": {
+      "isBatchedMesh": true
+    },
+    "steps": [
+      {},
+      {
+        "op": "props",
+        "key": "batchingColor",
+        "value": true
+      },
+      {}
+    ]
+  },
+  {
+    "case": "batched-color-present",
+    "objectFlags": {
+      "isBatchedMesh": true
+    },
+    "steps": [
+      {},
+      {
+        "op": "set",
+        "target": "object",
+        "key": "_colorsTexture",
+        "value": {}
+      },
+      {}
+    ]
+  },
+  {
+    "case": "instancing-on",
+    "steps": [
+      {},
+      {
+        "op": "set",
+        "target": "object",
+        "key": "isInstancedMesh",
+        "value": true
+      },
+      {}
+    ]
+  },
+  {
+    "case": "instancing-off",
+    "objectFlags": {
+      "isInstancedMesh": true
+    },
+    "steps": [
+      {},
+      {
+        "op": "set",
+        "target": "object",
+        "key": "isInstancedMesh",
+        "value": false
+      },
+      {}
+    ]
+  },
+  {
+    "case": "skin-on",
+    "steps": [
+      {},
+      {
+        "op": "set",
+        "target": "object",
+        "key": "isSkinnedMesh",
+        "value": true
+      },
+      {}
+    ]
+  },
+  {
+    "case": "skin-off",
+    "skin": true,
+    "steps": [
+      {},
+      {
+        "op": "set",
+        "target": "object",
+        "key": "isSkinnedMesh",
+        "value": false
+      },
+      {}
+    ]
+  },
+  {
+    "case": "instance-color-null",
+    "objectFlags": {
+      "isInstancedMesh": true
+    },
+    "steps": [
+      {},
+      {
+        "op": "props",
+        "key": "instancingColor",
+        "value": true
+      },
+      {}
+    ]
+  },
+  {
+    "case": "instance-color-present",
+    "objectFlags": {
+      "isInstancedMesh": true
+    },
+    "steps": [
+      {},
+      {
+        "op": "set",
+        "target": "object",
+        "key": "instanceColor",
+        "value": {}
+      },
+      {}
+    ]
+  },
+  {
+    "case": "instance-morph-null",
+    "objectFlags": {
+      "isInstancedMesh": true
+    },
+    "steps": [
+      {},
+      {
+        "op": "props",
+        "key": "instancingMorph",
+        "value": true
+      },
+      {}
+    ]
+  },
+  {
+    "case": "instance-morph-present",
+    "objectFlags": {
+      "isInstancedMesh": true
+    },
+    "steps": [
+      {},
+      {
+        "op": "set",
+        "target": "object",
+        "key": "morphTexture",
+        "value": {}
+      },
+      {}
+    ]
+  },
+  {
+    "case": "clipping-count",
+    "steps": [
+      {},
+      {
+        "op": "set",
+        "target": "clipping",
+        "key": "numPlanes",
+        "value": 1
+      },
+      {}
+    ]
+  },
+  {
+    "case": "clipping-intersection",
+    "steps": [
+      {},
+      {
+        "op": "set",
+        "target": "clipping",
+        "key": "numIntersection",
+        "value": 1
+      },
+      {}
+    ]
+  },
+  {
+    "case": "clipping-init",
+    "steps": [
+      {
+        "op": "cell",
+        "key": "_clippingEnabled",
+        "value": true
+      },
+      {},
+      {},
+      {
+        "camera": "camera2"
+      }
+    ]
+  },
+  {
+    "case": "local-clipping-cache",
+    "steps": [
+      {
+        "op": "cell",
+        "key": "_clippingEnabled",
+        "value": true
+      },
+      {
+        "op": "cell",
+        "key": "_localClippingEnabled",
+        "value": true
+      },
+      {},
+      {}
+    ]
+  },
+  {
+    "case": "direct-get-lights-changed",
+    "lights": true,
+    "steps": [
+      {
+        "op": "directGet"
+      },
+      {
+        "op": "lightsVersion"
+      },
+      {
+        "op": "directGet"
+      }
+    ]
+  },
+  {
+    "case": "variant-cache-hit",
+    "steps": [
+      {},
+      {
+        "op": "set",
+        "target": "renderer",
+        "key": "toneMapping",
+        "value": 3
+      },
+      {},
+      {
+        "op": "set",
+        "target": "renderer",
+        "key": "toneMapping",
+        "value": 0
+      },
+      {},
+      {
+        "op": "set",
+        "target": "renderer",
+        "key": "toneMapping",
+        "value": 3
+      },
+      {}
+    ]
+  },
+  {
+    "case": "shader-clipping",
+    "shader": true,
+    "steps": [
+      {
+        "op": "set",
+        "key": "clipping",
+        "value": true
+      },
+      {}
+    ]
+  },
+  {
+    "case": "raw-shader-no-clipping",
+    "shader": true,
+    "steps": [
+      {
+        "op": "set",
+        "key": "isRawShaderMaterial",
+        "value": true
+      },
+      {}
+    ]
+  },
+  {
+    "case": "raw-shader-clipping",
+    "shader": true,
+    "steps": [
+      {
+        "op": "set",
+        "key": "isRawShaderMaterial",
+        "value": true
+      },
+      {
+        "op": "set",
+        "key": "clipping",
+        "value": true
+      },
+      {}
+    ]
+  },
+  {
+    "case": "null-skeleton",
+    "skin": true,
+    "steps": [
+      {
+        "op": "set",
+        "target": "object",
+        "key": "skeleton",
+        "value": null
+      },
+      {}
+    ]
+  },
+  {
+    "case": "existing-bone-texture",
+    "skin": true,
+    "boneReady": true
+  },
+  {
+    "case": "probe-add",
+    "lights": true,
+    "steps": [
+      {},
+      {
+        "op": "volumeCount",
+        "value": 1
+      },
+      {}
+    ]
+  },
+  {
+    "case": "probe-remove",
+    "lights": true,
+    "volume": 1,
+    "steps": [
+      {},
+      {
+        "op": "volumeCount",
+        "value": 0
+      },
+      {}
+    ]
+  },
+  {
+    "case": "multi-probe-outside",
+    "lights": true,
+    "volume": 2,
+    "steps": [
+      {
+        "op": "translate",
+        "value": 3
+      },
+      {}
+    ]
+  },
+  {
+    "case": "non-scene-fallback",
+    "steps": [
+      {
+        "op": "set",
+        "target": "scene",
+        "key": "isScene",
+        "value": false
+      },
+      {}
+    ]
+  },
+  {
+    "case": "no-camera-position",
+    "noCamPosition": true
+  },
+  {
+    "case": "cached-list-membership",
+    "steps": [
+      {},
+      {
+        "op": "list"
+      },
+      {
+        "op": "addUniform",
+        "key": "receiveShadow",
+        "value": true
+      },
+      {
+        "op": "list"
+      },
+      {}
+    ]
+  },
+  {
+    "case": "changed-program-list-membership",
+    "steps": [
+      {},
+      {
+        "op": "addUniform",
+        "key": "receiveShadow",
+        "value": true
+      },
+      {
+        "op": "key",
+        "value": "new"
+      },
+      {
+        "op": "needUpdate",
+        "value": true
+      },
+      {},
+      {
+        "op": "list"
+      }
+    ]
+  },
+  {
+    "case": "perspective-flag",
+    "steps": [
+      {
+        "op": "set",
+        "target": "camera",
+        "key": "isOrthographicCamera",
+        "value": false
+      },
+      {}
+    ]
+  },
+  {
+    "case": "tone-mapped-false",
+    "steps": [
+      {
+        "op": "set",
+        "key": "toneMapped",
+        "value": false
+      },
+      {}
+    ]
+  },
+  {
+    "case": "truthy-light-type",
+    "steps": [
+      {
+        "op": "set",
+        "key": "isMeshLambertMaterial",
+        "value": "yes"
+      },
+      {}
+    ]
+  },
+  {
+    "case": "dispose-without-program",
+    "steps": [
+      {
+        "op": "dispose"
+      }
+    ]
+  }
+]

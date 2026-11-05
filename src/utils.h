@@ -27,3 +27,8 @@ JSValue nativeWarnFunction();
 namespace ThreeUtils { JSValue nativeArrayNeedsUint32(); }
 
 namespace ThreeUtils { JSValue nativeWarnOnceFunction(); }
+
+namespace ThreeUtils {
+JSValue nativeCreateElementNSFunction();
+JSValue createElementNS(const JSValue& name = {});
+}

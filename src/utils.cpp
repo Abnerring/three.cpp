@@ -150,3 +150,19 @@ JSValue nativeArrayNeedsUint32(){static thread_local JSWeakValue weak;if(const a
 namespace ThreeUtils {
 JSValue nativeWarnOnceFunction(){static thread_local JSWeakValue weak;if(const auto existing=weak.lock();existing&&existing->isCallable())return *existing;const auto cache=warningCache();auto function=JSValue::constructor(+[](const JSValue&,const std::vector<JSValue>& args,const std::vector<JSValue>&)->JSValue{warnOnce(args);return {};},{cache},"warnOnce",0,JSValue::ConstructorKind::Callable);function.setFunctionSourceText("function warnOnce( ...params ) {\r\n\r\n\tconst message = params.join( ' ' );\r\n\r\n\tif ( message in _cache ) return;\r\n\r\n\t_cache[ message ] = true;\r\n\r\n\twarn( ...params );\r\n\r\n}");function.retainForHeapLifetime();weak=JSWeakValue(function);return function;}
 }
+
+#include "core/JSGlobal.h"
+namespace ThreeUtils {
+JSValue nativeCreateElementNSFunction(){
+    static thread_local JSWeakValue weak;
+    if(const auto value=weak.lock();value&&value->isCallable())return *value;
+    auto function=JSValue::constructor(+[](const JSValue&,const std::vector<JSValue>& args,const std::vector<JSValue>&)->JSValue{
+        const auto global=nativeGlobalObject();if(!global.has("document"))throw JSReferenceError("document is not defined");
+        const auto document=global.get("document"),method=document.get("createElementNS");
+        return method.call(document,{"http://www.w3.org/1999/xhtml",args.empty()?JSValue{}:args[0]});
+    },{},"createElementNS",1,JSValue::ConstructorKind::Callable);
+    function.setFunctionSourceText("function createElementNS( name ) {\r\n\r\n\treturn document.createElementNS( 'http://www.w3.org/1999/xhtml', name );\r\n\r\n}");
+    function.retainForHeapLifetime();weak=JSWeakValue(function);return function;
+}
+JSValue createElementNS(const JSValue& name){return nativeCreateElementNSFunction().call({}, {name});}
+}

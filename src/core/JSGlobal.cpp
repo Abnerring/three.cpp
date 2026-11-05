@@ -14,6 +14,8 @@
 #include "core/JSIterator.h"
 #include "core/JSMap.h"
 #include "core/JSWeakMap.h"
+#include "core/JSWeakRef.h"
+#include "core/JSFinalizationRegistry.h"
 #include "core/JSSet.h"
 #include "core/JSBoolean.h"
 #include "core/JSError.h"
@@ -123,6 +125,11 @@ JSValue nativeGlobalObject(){
     JSPropertyDescriptor string;string.value=initialStringConstructor();string.writable=string.configurable=true;object.defineProperty("String",string);
     JSPropertyDescriptor array;array.value=JSValue::intrinsicArrayConstructor();array.writable=array.configurable=true;object.defineProperty("Array",array);
     JSPropertyDescriptor map;map.value=nativeMapConstructor();map.writable=map.configurable=true;object.defineProperty("Map",map);
+    for (const auto& entry : std::initializer_list<std::pair<const char*, JSValue>>{
+             {"WeakRef", nativeWeakRefConstructor()}, {"FinalizationRegistry", nativeFinalizationRegistryConstructor()}}) {
+        JSPropertyDescriptor property; property.value = entry.second;
+        property.writable = property.configurable = true; object.defineProperty(entry.first, property);
+    }
     for(const auto& entry:std::initializer_list<std::pair<const char*,JSValue>>{{"Promise",nativePromiseConstructor()},{"performance",nativeHostPerformanceObject()},{"Number",nativeNumberConstructor()},{"Symbol",nativeSymbolConstructor()},{"JSON",nativeJSONObject()},{"Function",nativeFunctionConstructor()},{"Boolean",nativeBooleanConstructor()},{"Error",nativeErrorConstructor()},{"EvalError",nativeEvalErrorConstructor()},{"RangeError",nativeRangeErrorConstructor()},{"ReferenceError",nativeReferenceErrorConstructor()},{"SyntaxError",nativeSyntaxErrorConstructor()},{"TypeError",nativeTypeErrorConstructor()},{"URIError",nativeURIErrorConstructor()},{"Object",JSValue::intrinsicObjectConstructor()},{"WeakMap",nativeWeakMapConstructor()},{"Set",nativeSetConstructor()},{"ArrayBuffer",nativeArrayBufferConstructor()}}){
         JSPropertyDescriptor property;property.value=entry.second;property.writable=property.configurable=true;object.defineProperty(entry.first,property);
     }

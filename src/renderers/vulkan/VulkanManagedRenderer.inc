@@ -40,6 +40,7 @@ void ensureManagedRecording() {
 }
 void syncManagedViewport() {
     if (managedScenePipeline.isUndefined()) return;
+    managedCell("_height", height);
     const auto value = managedCell("_currentViewport");
     managedCall(value, "set")({currentViewport.x, currentViewport.y, currentViewport.z, currentViewport.w});
     managedCall(managedViewport, "set")({viewport.x, viewport.y, viewport.z, viewport.w});
@@ -227,9 +228,7 @@ void initializeManagedRenderer() {
     managedScenePipeline = nativeWebGLRendererScenePipeline(bindings);
     managedRenderer.get("render").setFunctionSourceText(managedScenePipeline.get("render").nativeFunctionSource());
     syncManagedViewport();
-    managedEmptyScene = JSValue::object();
-    for (const char* name : {"background", "fog", "environment", "overrideMaterial"}) managedOwn(managedEmptyScene, name, nullptr);
-    managedOwn(managedEmptyScene, "isScene", true);
+    managedEmptyScene = managedCell("_emptyScene");
 }
 JSValue renderManaged(JSValue scene, JSValue camera, JSValue receiver) {
     initializeManagedRenderer();

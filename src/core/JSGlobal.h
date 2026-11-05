@@ -5,7 +5,7 @@
 // owns its bindings; this does not execute scripts or embed a browser runtime.
 // Hosts may install constructor values/accessors (for example ImageBitmap).
 // The initial realm supplies Math.sin/cos/ceil/sqrt/min/max/abs/round/random and the existing
-// Object, Boolean, Error, Array, Map, WeakMap, Set, ArrayBuffer and nine
+// Object, Boolean, Error, Array, Map, WeakMap, WeakRef, FinalizationRegistry, Set, ArrayBuffer and nine
 // typed-array constructors. Other standard globals and remaining Math API
 // are not installed.
 // Math and its methods retain native writable/configurable host semantics.
