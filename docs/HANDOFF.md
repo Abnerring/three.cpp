@@ -1,3 +1,15 @@
+# 当前接续：AmbientLightNode 已移植并差分验收，2026-11-05
+
+目标保持 active：固定 three.js 11738a9d55e502fb484cefffcea3a66dc44e9fe9 全部 src + examples/jsm 原生 C++ 逻辑，Vulkan 后端；禁止 CEF/生产 JS 引擎/桥接。阶段本地 Git 提交，不推送。
+
+本轮新增 `src/nodes/lighting/AmbientLightNode.{h,cpp}`：以 AnalyticLightNode 为基类，makeClass 记录 class/type 源位置，prototype.setup 实现 `context.irradiance.addAssign( this.colorNode )`。`LightingEventNodeSources.inc` 追加 `AmbientLightNodeSource{classSource,typeSource,setupSource}`，三条均由 `build/gen-ambient-trace.mjs` 从固定版本文件按字节提取，不手写转写。root 与 test CMakeLists 各加一行；新增 2 个单测、1 个差分探针与 compare 脚本。
+
+验证：从零 configure（Ninja + MSVC 19.51.36260）后构建 984/984 exit 0；因 `.inc` 变更按项目纪律删除 lighting 目录 9 个 `.obj`（规避 MSVC 中文界面 `/showIncludes` 乱码导致 ninja 不跟踪头依赖）。THREECPPTests **1506 cases / 213,987 assertions 全过**，较上轮 1504/213,977 增 2 例 10 断言；`*AmbientLight*` 过滤 2 用例/10 断言确认真实执行。差分 `threecpp.threejs-ambient-light-node-parity` **Passed 0.63s**，对固定 checkout 逐字段 `deepEqual` 无容差，含 class `toString` 源位置、`name`、`length=0`、static `type`、实例 `type`、`isAnalyticLightNode`、`light===null`。
+
+上游闸门：主 checkout 为 fa01dd6a 且文档禁止重置，`utils/port-audit.mjs` 会以 `Expected upstream 11738a9d..., found fa01dd6a` 拒绝，因此本轮改用**已存在**的固定 worktree `D:/Temp/surui/threejs-pinned-11738a-20261104`（HEAD=11738a9d55，detached）。审计在此真实跑通并刷新 `docs/port-status.json`：**src missing 61→60、partial 404→405**，AmbientLightNode 状态 missing→`partial-unverified` 且登记 h/cpp；examples/jsm 仍 340 missing / 136 partial / 20 dependency。注意 `D:/Temp/surui/threejs-pinned-11738a9-20261101` 已 prunable（目录不存在），不要再用。
+
+下一步：`DirectionalLightNode`（上游 766 字节，SHA 与固定版本一致；`setupDirect` 需 `../accessors/Lights.js` 的 `lightTargetDirection`，须先确认该 accessors 已移植）。`LightsNode.js` 的 SHA 与 port-status 记录**不一致**，不可直接取用，需先从固定 worktree 取字节再比对。之后按缺失清单推进 lighting 其余 12 个与 materials/nodes 18 个模块。
+
 # 当前接续：Vulkan 双面 pass / 上传回调已统一验收，2026-11-02
 
 总目标保持 active：固定 three.js 11738a9d 的全部 src + examples/jsm 原生 C++ 逻辑，Vulkan 后端；禁止 CEF/生产 JS 引擎。阶段本地 Git 提交，不推送。本阶段父 c42d13e89172d47198edb8e4dc6c603e32d63df9（上阶段 canonical BlendModes + FunctionOverloading source traces 已提交）。
