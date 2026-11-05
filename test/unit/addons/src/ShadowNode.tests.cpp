@@ -359,3 +359,26 @@ TEST_CASE("ShadowNode setupShadow configures the depth filters before the remain
     REQUIRE_THROWS(node.get("setupShadow").call(node, {builder}));
     (void) projectionUpdates;
 }
+TEST_CASE("ShadowNode setupShadowFilter builds the frustum select") {
+    const auto shadowCoord = nativeTSLBaseBinding("vec3").call(
+        {}, {JSValue(0.5), JSValue(0.5), JSValue(0.5)});
+    auto filterResult = JSValue::object(nullptr);
+    filterResult.set("isNode", true);
+    const auto filterFn = JSValue::function(
+        +[](const JSValue&, const std::vector<JSValue>&, const std::vector<JSValue>&) {
+            return JSValue::object(nullptr);
+        });
+    auto configuration = JSValue::object(nullptr);
+    configuration.set("filterFn", filterFn);
+    configuration.set("shadowCoord", shadowCoord);
+    configuration.set("depthTexture", JSValue::object(nullptr));
+    configuration.set("shadow", JSValue::object(nullptr));
+    configuration.set("depthLayer", JSValue(0));
+    auto light = JSValue::object(nullptr);
+    light.set("shadow", JSValue::object(nullptr));
+    auto node = nativeShadowNodeConstructor().construct({light});
+    auto builder = JSValue::object(nullptr);
+    const auto result = node.get("setupShadowFilter").call(node, {builder, configuration});
+    REQUIRE(result.toBoolean());
+    REQUIRE(result.get("isNode").toBoolean());
+}

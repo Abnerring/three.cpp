@@ -1,4 +1,27 @@
-# 当前接续：`setupShadow` **段 3**（阴影坐标分支）落地；仅剩段 2（VSM）与段 4（过滤/输出），2026-11-05
+# 当前接续：`ShadowNode` `setupShadowFilter` 实现完成（段 4 前置），2026-11-05
+
+目标保持 active：固定 three.js 11738a9d55e502fb484cefffcea3a66dc44e9fe9 全部 src + examples/jsm 原生 C++ 逻辑，Vulkan 后端；禁止 CEF/生产 JS 引擎/桥接。阶段本地 Git 提交，不推送。
+
+## 本轮交付：`setupShadowFilter(builder, { filterFn, depthTexture, shadowCoord, shadow, depthLayer })`（L259–279）
+
+- **frustumTest**：`x >= 0 && x <= 1 && y >= 0 && y <= 1 && z <= 1`，用 TSL 节点的 `greaterThanEqual`/`lessThanEqual`/`and` 链构建；
+- `filterFn({ depthTexture, shadowCoord, shadow, depthLayer })` （从 config 复制 4 个字段到新对象后调用）；
+- 返回 `frustumTest.select(shadowNode, float(1))`（`nativeTSLBaseBinding("float")`）。
+- 测试：真实 `vec3` shadowCoord + 桩 `filterFn` → 断言结果为 node（`isNode`）。
+
+## 验证
+
+- 构建 exit 0；过滤 `*ShadowNode*` = **14 cases / 45 assertions** 全过（+1 例 / +2 断言）。
+- `THREECPPAddonTests` 全套 **1379 cases / 38,948 assertions** 通过。
+- 审计不变（ShadowNode 已 partial）：src 12 / 453；examples/jsm 322 / 154。
+
+**未执行验证（如实记录）**：结果为 **TSL 图节点**，测试只断言 `isNode`，**未验证 frustum 表达式结构**（可通过上游节点类型对比做弱差分）；`filterFn` 内部（Basic/PCF/VSM 过滤函数）未联调。
+
+## 下一步（`ShadowNode` 剩余两段）
+
+1. **段 2（VSM 两趟）**：先移植上游模块级 `VSMPassVertical`/`VSMPassHorizontal` 两个 `Fn`（`Loop`/`sample`/`sqrt`/`select`），再做 RT 复用/新建、`texture()` 采样、`context(getSharedContext())`、两个 `NodeMaterial`；
+2. **段 4（过滤/输出）**：`filterFn = shadow.filterNode || getShadowFilterFn(type) || null`（null 抛 `Shadow map type not supported yet.`）→ `setupShadowFilter`（已就绪）→ transmitted 取色 → `mix(1, shadowNode, intensity).toVar()` → `shadow.map` → 两处 `toInspector`。
+3. 之后：`setup` 非缓存路径测试、`_quadMesh` 单例、`updateShadow` 真实 renderer 夹具、`PointShadowNode`。# 当前接续：`setupShadow` **段 3**（阴影坐标分支）落地；仅剩段 2（VSM）与段 4（过滤/输出），2026-11-05
 
 目标保持 active：固定 three.js 11738a9d55e502fb484cefffcea3a66dc44e9fe9 全部 src + examples/jsm 原生 C++ 逻辑，Vulkan 后端；禁止 CEF/生产 JS 引擎/桥接。阶段本地 Git 提交，不推送。
 

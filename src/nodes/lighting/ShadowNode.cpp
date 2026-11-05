@@ -77,7 +77,32 @@ JSValue resetMethod(const JSValue& rawSelf, const Args&, const Args&) {
     return {};
 }
 
-JSValue setupShadowFilter(const JSValue&, const Args&, const Args&) { return notPorted("setupShadowFilter"); }
+// setupShadowFilter( builder, { filterFn, depthTexture, shadowCoord, shadow, depthLayer } )
+// const frustumTest = ...; const shadowNode = filterFn( {...} ); return frustumTest.select( shadowNode, float( 1 ) )
+JSValue setupShadowFilter(const JSValue&, const Args& args, const Args&) {
+    const auto configuration = arg(args, 1);
+    const auto filterFn = configuration.get("filterFn");
+    const auto shadowCoord = configuration.get("shadowCoord");
+
+    const auto x = shadowCoord.get("x");
+    const auto y = shadowCoord.get("y");
+    const auto z = shadowCoord.get("z");
+    auto test = x.get("greaterThanEqual").call(x, {JSValue(0.0)});
+    test = test.get("and").call(test, {x.get("lessThanEqual").call(x, {JSValue(1.0)})});
+    test = test.get("and")
+               .call(test, {y.get("greaterThanEqual").call(y, {JSValue(0.0)})});
+    test = test.get("and").call(test, {y.get("lessThanEqual").call(y, {JSValue(1.0)})});
+    test = test.get("and")
+               .call(test, {z.get("lessThanEqual").call(z, {JSValue(1.0)})});
+
+    auto filterConfiguration = JSValue::object(nullptr);
+    filterConfiguration.set("depthTexture", configuration.get("depthTexture"));
+    filterConfiguration.set("shadowCoord", shadowCoord);
+    filterConfiguration.set("shadow", configuration.get("shadow"));
+    filterConfiguration.set("depthLayer", configuration.get("depthLayer"));
+    const auto shadowNode = filterFn.call({}, {filterConfiguration});
+    return test.get("select").call(test, {shadowNode, nativeTSLBaseBinding("float").call({}, {JSValue(1.0)})});
+}
 // const bias = shadow.biasNode || reference( 'bias', 'float', shadow ).setGroup( renderGroup )
 JSValue setupShadowCoord(const JSValue& self, const Args& args, const Args&) {
     const auto builder = arg(args, 0);
