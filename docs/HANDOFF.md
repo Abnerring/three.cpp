@@ -1,4 +1,35 @@
-# 当前接续：Linker 分支补测（Ternary/Conditional/AccessorElements），并确认 AST 类的花括号初始化坑，2026-11-05
+# 当前接续：`generators/city/InstancedMeshGenerator` 移植完成（r110 失败后修正），examples 连续第 16 个，2026-11-05
+
+目标保持 active：固定 three.js 11738a9d55e502fb484cefffcea3a66dc44e9fe9 全部 src + examples/jsm 原生 C++ 逻辑，Vulkan 后端；禁止 CEF/生产 JS 引擎/桥接。阶段本地 Git 提交，不推送。
+
+## 本轮交付：`examples/jsm/generators/city/InstancedMeshGenerator`（2,230B）
+
+- `InstancedMeshGenerator.{h,cpp}` + 三个导出：
+  - **`InstancedMeshGenerator`**：`parameters`(JsonValue)、`geometry`/`material`/`mesh` 缓存、`createGeometry(JsonValue)`/`createMaterial()` **std::function 回调**（对应上游工厂参数）、`name`、`receiveShadow`、`parametersKey_`。
+    - 构造：`parameters = defaults`，再按 `Object.assign` 语义用传入 parameters 覆盖（`JsonValue::get<Object>()` 遍历 + `operator[]`）。
+    - `build(placements)`：key = `parameters.dump()`（等价 `JSON.stringify`，仅内部缓存用）；key 变化**或** `placements.size() > instanceMatrix->getCount()` 时 `dispose()` 重建；懒建 geometry/material/mesh 后 `updateInstances`。
+    - `dispose()`：依次 dispose geometry/mesh/material 并置空。
+  - **`createInstances(geometry, material, count, name)`**：`capacity = MathUtils::ceilPowerOfTwo(max(1,count))`；`InstancedMesh(geometry, material, JSValue(capacity))`；`castShadow=receiveShadow=true`；`name`。
+  - **`updateInstances(mesh, placements)`**：`count = placements.size()`、`visible = !empty`、逐项 `setMatrixAt`、`instanceMatrix->needsUpdate = true`、`boundingBox = nullptr`、`computeBoundingSphere()`。
+- `test/unit/addons/generators/InstancedMeshGenerator.tests.cpp`（3 用例）：容量 `ceilPowerOfTwo(3)=4` 与 cast/receive/name；count/visible/矩阵值/`needsUpdate`/`boundingSphere` 及空 placements；generator 首次构建、**同参复用同一 mesh**、**参数变更后重建新 mesh**、dispose 清空。
+
+## 本轮修正（r110 失败原因）
+
+r110 用了**臆测的 `JsonValue` API**（`isObject/objectItems/set`）导致编译失败并回滚。本轮先读 `src/core/JsonValue.h`，确认真实 API：`isObject()`、`get<Object>()`（公开）、`operator[]`、`at`、`contains`、`size()`、`dump()`、`Object = OrderedMap<JsonValue>`，据此重写即通过。
+**再次印证 r110 的教训：新 API 先读头文件，禁止臆测。**
+
+## 验证
+
+- 构建 exit 0；过滤 `*InstancedMeshGenerator*` = 1 case / 10 assertions 全过；`THREECPPAddonTests` 全套通过。
+- 审计：`InstancedMeshGenerator.js -> partial-unverified`（examples/jsm missing 323→322、partial 153→154）。
+
+**未执行验证（如实记录）**：**无差分**（仅单测）；`parameters` 的 key 用 `dump()` 而非真正 `JSON.stringify`（仅内部缓存比较，语义等价但**字符串表示可能不同**）；`placements` 参数变化导致的**容量增长重建**（`outgrewCapacity` 分支）未单独测；`createGeometry` 收到的 parameters 是合并后的 JsonValue（已测通过构建成功，未断言其内容）。
+
+## 下一步
+
+1. 加 `InstancedMeshGenerator` 差分（上游无相对导入，可 `data:` URL；构造 params/placements 比较 mesh 的 capacity/count/visible/instanceMatrix/name/castShadow/receiveShadow 与首次构建结果）；
+2. 补 `outgrewCapacity` 分支测试；
+3. `ShadowNode`(24,331，前置已确认齐备) / `PhysicalLightingModel`(32,829)。# 当前接续：Linker 分支补测（Ternary/Conditional/AccessorElements），并确认 AST 类的花括号初始化坑，2026-11-05
 
 目标保持 active：固定 three.js 11738a9d55e502fb484cefffcea3a66dc44e9fe9 全部 src + examples/jsm 原生 C++ 逻辑，Vulkan 后端；禁止 CEF/生产 JS 引擎/桥接。阶段本地 Git 提交，不推送。
 

@@ -830,6 +830,7 @@ if(THREECPP_BUILD_ADDONS)
         unit/addons/transpiler/TranspilerUtils.tests.cpp
         unit/addons/transpiler/AST.tests.cpp
         unit/addons/transpiler/Linker.tests.cpp
+        unit/addons/generators/InstancedMeshGenerator.tests.cpp
         unit/addons/utils/GeometryUtils.tests.cpp
         unit/addons/geometries/ParametricFunctions.tests.cpp
         unit/addons/geometries/ParametricGeometry.tests.cpp

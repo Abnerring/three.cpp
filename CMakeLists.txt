@@ -619,6 +619,7 @@ if(THREECPP_BUILD_ADDONS)
     examples/jsm/transpiler/TranspilerUtils.cpp
     examples/jsm/transpiler/AST.cpp
     examples/jsm/transpiler/Linker.cpp
+    examples/jsm/generators/city/InstancedMeshGenerator.cpp
     examples/jsm/utils/GeometryUtils.cpp
     examples/jsm/misc/MorphBlendMesh.cpp
     examples/jsm/objects/ShadowMesh.cpp
