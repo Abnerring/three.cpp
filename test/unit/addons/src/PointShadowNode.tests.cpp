@@ -344,8 +344,17 @@ TEST_CASE("PointShadowNode uses the WebGPU cube tables and the light distance fa
                      JSValue(self.get("_projectionUpdates").toNumber() + 1));
             return JSValue{};
         }));
+    camera.set("_ups", JSValue::array(0));
     camera.set("updateMatrixWorld", JSValue::function(
-        +[](const JSValue&, const std::vector<JSValue>&, const std::vector<JSValue>&) {
+        +[](const JSValue& receiver, const std::vector<JSValue>&, const std::vector<JSValue>&) {
+            JSValue& self = const_cast<JSValue&>(receiver);
+            auto ups = self.get("_ups");
+            auto length = ups.get("length").toNumber();
+            const auto up = self.get("up");
+            ups.set(JSValue(length++), up.get("x"));
+            ups.set(JSValue(length++), up.get("y"));
+            ups.set(JSValue(length++), up.get("z"));
+            self.set("_ups", ups);
             return JSValue{};
         }));
     camera.set("_lookTargets", JSValue::array(0));
@@ -390,12 +399,19 @@ TEST_CASE("PointShadowNode uses the WebGPU cube tables and the light distance fa
         +[](const JSValue&, const std::vector<JSValue>&, const std::vector<JSValue>&) {
             return JSValue(1);
         }));
-    for (const char* method : {"setClearColor", "setRenderTarget", "clear", "render"}) {
+    for (const char* method : {"setClearColor", "setRenderTarget", "clear"}) {
         renderer.set(method, JSValue::function(
             +[](const JSValue&, const std::vector<JSValue>&, const std::vector<JSValue>&) {
                 return JSValue{};
             }));
     }
+    renderer.set("_renderCalls", JSValue(0));
+    renderer.set("render", JSValue::function(
+        +[](const JSValue& receiver, const std::vector<JSValue>&, const std::vector<JSValue>&) {
+            JSValue& self = const_cast<JSValue&>(receiver);
+            self.set("_renderCalls", JSValue(self.get("_renderCalls").toNumber() + 1));
+            return JSValue{};
+        }));
     auto frame = JSValue::object(nullptr);
     frame.set("renderer", renderer);
     frame.set("scene", scene);
@@ -421,6 +437,22 @@ TEST_CASE("PointShadowNode uses the WebGPU cube tables and the light distance fa
                     Approx(expectedDirections[face][axis]));
         }
     }
+
+    // The WebGPU up table drives the per face camera up vectors.
+    const double expectedUps[6][3] = {{0, 1, 0}, {0, 1, 0}, {0, 0, -1},
+                                      {0, 0, 1}, {0, 1, 0}, {0, 1, 0}};
+    const auto recordedUps = camera.get("_ups");
+    REQUIRE(recordedUps.get("length").toNumber() == Approx(18));
+    for (int face = 0; face < 6; ++face) {
+        INFO("webgpu up face " << face);
+        for (int axis = 0; axis < 3; ++axis) {
+            REQUIRE(recordedUps.get(JSValue(static_cast<double>(face * 3 + axis))).toNumber() ==
+                    Approx(expectedUps[face][axis]));
+        }
+    }
+
+    // One scene render per cube face.
+    REQUIRE(renderer.get("_renderCalls").toNumber() == Approx(6));
 
     // The first face moves the far plane to the light distance; the remaining faces compare equal and
     // skip the refresh, which matches the pinned \"if ( far !== camera.far )\" guard.

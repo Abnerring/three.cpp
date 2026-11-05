@@ -1,4 +1,28 @@
-# 当前接续：WebGPU 方向表 + `light.distance` 远平面路径测试通过（PointShadowNode 11 例 / 105 断言），2026-11-05
+# 当前接续：PointShadowNode **双坐标系统全覆盖**（WebGPU up + render 计数），11 例 / 125 断言，2026-11-05
+
+目标保持 active：固定 three.js 11738a9d55e502fb484cefffcea3a66dc44e9fe9 全部 src + examples/jsm 原生 C++ 逻辑，Vulkan 后端；禁止 CEF/生产 JS 引擎/桥接。阶段本地 Git 提交，不推送。
+
+## 本轮交付
+
+扩展 WebGPU 用例：
+1. **WebGPU up 表断言**：`updateMatrixWorld` 桩快照 `camera.up` 分量（长度 18），断言 `(0,1,0),(0,1,0),(0,0,-1),(0,0,1),(0,1,0),(0,1,0)` —— 通过（+18 断言）；
+2. **`renderer.render` 计数**：桩在 receiver 上累加 `_renderCalls`，断言 **6 次**（每面一次）—— 通过（+1 断言）。
+
+至此 PointShadowNode 的 **WebGL/WebGPU 双坐标系统** 的 lookAt 方向、up 向量、face 绑定、渲染次数、远平面更新路径均有断言。
+
+## 验证
+
+- 构建 exit 0；过滤 `*PointShadowNode*` = **11 cases / 125 assertions** 全过（+20 断言）。
+- `THREECPPAddonTests` 全套 **1402 cases / 39,108 assertions** 通过。
+- 审计不变（PointShadowNode 已 partial）：src 11 / 454；examples/jsm 322 / 154。
+
+**未执行验证（如实记录）**：`renderer.render` 的**参数**（scene/camera 身份）未断言；过滤图仍未结构差分；`ShadowNode`/`PointShadowNode` 尚无跨语言差分。
+
+## 下一步
+
+1. `renderer.render` 参数断言（scene/camera 身份、scene.name 每面文案）；
+2. 转向下一个 src 模块：**`ToonOutlinePassNode`(6,868)** 或 **`PassNode`(26,843)**（后者是基础，先做更划算）；
+3. 或补 `ShadowNode`/`PointShadowNode` 差分。# 当前接续：WebGPU 方向表 + `light.distance` 远平面路径测试通过（PointShadowNode 11 例 / 105 断言），2026-11-05
 
 目标保持 active：固定 three.js 11738a9d55e502fb484cefffcea3a66dc44e9fe9 全部 src + examples/jsm 原生 C++ 逻辑，Vulkan 后端；禁止 CEF/生产 JS 引擎/桥接。阶段本地 Git 提交，不推送。
 
