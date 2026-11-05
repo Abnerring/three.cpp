@@ -3,7 +3,11 @@
 #include "core/JSWeakMap.h"
 #include "nodes/lighting/LightingNodeRuntime.h"
 #include "nodes/lighting/ShadowBaseNode.h"
+#include "nodes/accessors/ReferenceNode.h"
+#include "nodes/core/UniformGroupNode.h"
+#include "nodes/display/ViewportDepthNode.h"
 #include "nodes/lighting/ShadowFilterNode.h"
+#include "nodes/tsl/TSLBase.h"
 
 #include <stdexcept>
 #include <string>
@@ -67,7 +71,63 @@ JSValue resetMethod(const JSValue& rawSelf, const Args&, const Args&) {
 }
 
 JSValue setupShadowFilter(const JSValue&, const Args&, const Args&) { return notPorted("setupShadowFilter"); }
-JSValue setupShadowCoord(const JSValue&, const Args&, const Args&) { return notPorted("setupShadowCoord"); }
+// const bias = shadow.biasNode || reference( 'bias', 'float', shadow ).setGroup( renderGroup )
+JSValue setupShadowCoord(const JSValue& self, const Args& args, const Args&) {
+    const auto builder = arg(args, 0);
+    const auto shadowPosition = arg(args, 1);
+    const auto shadow = self.get("shadow");
+    const auto renderer = builder.get("renderer");
+    const auto group = nativeUniformGroupNodeBinding("renderGroup");
+    const auto referenceFn = nativeReferenceNodeBinding("reference");
+
+    auto bias = shadow.get("biasNode");
+    if (!bias.toBoolean()) {
+        auto referenceNode =
+            referenceFn.call({}, {JSValue("bias"), JSValue("float"), shadow});
+        const auto setGroup = referenceNode.get("setGroup");
+        bias = setGroup.call(referenceNode, {group});
+    }
+
+    auto shadowCoord = shadowPosition;
+    JSValue coordZ;
+    const auto camera = shadow.get("camera");
+    const bool isOrthographic = camera.get("isOrthographicCamera").toBoolean();
+    const bool logarithmicDepthBuffer = renderer.get("logarithmicDepthBuffer").toBoolean();
+    if (isOrthographic || !logarithmicDepthBuffer) {
+        const auto xyz = shadowCoord.get("xyz");
+        const auto div = xyz.get("div");
+        shadowCoord = div.call(xyz, {shadowCoord.get("w")});
+        coordZ = shadowCoord.get("z");
+    } else {
+        const auto w = shadowCoord.get("w");
+        const auto xy = shadowCoord.get("xy");
+        const auto div = xy.get("div");
+        shadowCoord = div.call(xy, {w});
+        auto nearReference =
+            referenceFn.call({}, {JSValue("near"), JSValue("float"), camera});
+        nearReference = nearReference.get("setGroup").call(nearReference, {group});
+        auto farReference = referenceFn.call({}, {JSValue("far"), JSValue("float"), camera});
+        farReference = farReference.get("setGroup").call(farReference, {group});
+        const auto negate = w.get("negate");
+        const auto negatedW = negate.call(w, {});
+        coordZ = nativeViewportDepthNodeBinding("viewZToLogarithmicDepth")
+                     .call({}, {negatedW, nearReference, farReference});
+    }
+
+    const auto x = shadowCoord.get("x");
+    const auto y = shadowCoord.get("y");
+    const auto oneMinus = y.get("oneMinus");
+    const auto yFlipped = oneMinus.call(y, {});
+    JSValue z;
+    if (renderer.get("reversedDepthBuffer").toBoolean()) {
+        const auto sub = coordZ.get("sub");
+        z = sub.call(coordZ, {bias});
+    } else {
+        const auto add = coordZ.get("add");
+        z = add.call(coordZ, {bias});
+    }
+    return nativeTSLBaseBinding("vec3").call({}, {x, yFlipped, z});
+}
 JSValue setupRenderTarget(const JSValue&, const Args&, const Args&) { return notPorted("setupRenderTarget"); }
 JSValue setupShadow(const JSValue&, const Args&, const Args&) { return notPorted("setupShadow"); }
 JSValue setup(const JSValue&, const Args&, const Args&) { return notPorted("setup"); }

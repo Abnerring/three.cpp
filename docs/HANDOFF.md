@@ -1,4 +1,32 @@
-# 当前接续：`ShadowNode` A 段骨架落地（src 最大缺口开启），2026-11-05
+# 当前接续：`ShadowNode` B 段 `setupShadowCoord` 实现完成（含对数深度双路径），2026-11-05
+
+目标保持 active：固定 three.js 11738a9d55e502fb484cefffcea3a66dc44e9fe9 全部 src + examples/jsm 原生 C++ 逻辑，Vulkan 后端；禁止 CEF/生产 JS 引擎/桥接。阶段本地 Git 提交，不推送。
+
+## 本轮交付：B 段 `setupShadowCoord`
+
+替换 A 段 stub（不再抛错），逐行照抄上游 L280–319：
+
+1. `bias = shadow.biasNode || reference('bias','float',shadow).setGroup(renderGroup)`；绑定名确认：`nativeReferenceNodeBinding("reference")`、`nativeUniformGroupNodeBinding("renderGroup")`。
+2. **正交/非对数深度路径**：`shadowCoord = shadowCoord.xyz.div(shadowCoord.w)`，`coordZ = shadowCoord.z`。
+3. **对数深度路径**：`shadowCoord = shadowCoord.xy.div(w)`，`near/far` 通过 `reference('near'/'far','float',shadow.camera).setGroup(renderGroup)`，`coordZ = viewZToLogarithmicDepth(w.negate(), near, far)`（绑定 `nativeViewportDepthNodeBinding("viewZToLogarithmicDepth")`）。
+4. **组装**：`vec3(shadowCoord.x, shadowCoord.y.oneMinus(), reversedDepthBuffer ? coordZ.sub(bias) : coordZ.add(bias))`（`nativeTSLBaseBinding("vec3")`）。
+- 过程中仍需 `const_cast<JSValue&>(self)` 读取（方法参数为 const，get 只读，无需写）。
+
+新增用例：用真实 TSL 节点（`vec4` 作 shadowPosition、`float` 作 biasNode）+ 假 builder/renderer/camera 走**正交路径**，断言结果 `isNode == true`。
+
+## 验证
+
+- 构建 exit 0；过滤 `*ShadowNode*` = **5 cases / 22 assertions** 全过（+1 例 / +2 断言）。
+- `THREECPPAddonTests` 全套 **1370 cases / 38,925 assertions** 通过。
+- 审计计数不变（ShadowNode 已 partial）：src 12 / 453；examples/jsm 322 / 154。
+
+**未执行验证（如实记录）**：**对数深度路径未测**（需 renderer.logarithmicDepthBuffer=true + 相机 far/near 引用；本用例走正交分支）；结果数值未验证（只断言 `isNode`，未比对 TSL 图结构/元素值）；差分未做（TSL 图级差分成本高）。
+
+## 下一步（C/D 段）
+
+1. **C 段**：`setupRenderTarget`（`DepthTexture(mapSize)` + `builder.createRenderTarget` + compareFunction 依赖 `reversedDepthBuffer`）、`renderShadow`、`vsmPass`（需 `_quadMesh` + VSM 材质）；
+2. **D 段**：`setupShadow`（240 行 TSL 图）+ `setup`/`updateShadow`/`updateBefore` 串联；
+3. 对数深度分支补测（构造 `logarithmicDepthBuffer=true` 场景）。# 当前接续：`ShadowNode` A 段骨架落地（src 最大缺口开启），2026-11-05
 
 目标保持 active：固定 three.js 11738a9d55e502fb484cefffcea3a66dc44e9fe9 全部 src + examples/jsm 原生 C++ 逻辑，Vulkan 后端；禁止 CEF/生产 JS 引擎/桥接。阶段本地 Git 提交，不推送。
 
