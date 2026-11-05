@@ -188,3 +188,88 @@ TEST_CASE("AST number, string and conditional nodes keep their payloads") {
     REQUIRE(conditional.elseConditional == nullptr);
     REQUIRE(first.parent == &conditional);
 }
+TEST_CASE("AST function calls derive their type from builtins and linker references") {
+    Number argument(1.0);
+    FunctionCall builtin("float", {&argument});
+    REQUIRE(builtin.isFunctionCall);
+    REQUIRE(argument.parent == &builtin);
+    REQUIRE(builtin.getType().has_value());
+    REQUIRE(*builtin.getType() == "float");
+
+    FunctionCall named("myVec3");
+    REQUIRE_FALSE(named.getType().has_value());
+    Uniform referenced("vec3", "uColor");
+    named.linker.reference = &referenced;
+    REQUIRE(*named.getType() == "vec3");
+}
+
+TEST_CASE("AST statement nodes keep their flags and payloads") {
+    Number condition(1.0);
+    Return returned(&condition);
+    REQUIRE(returned.isReturn);
+    REQUIRE(returned.value == &condition);
+    REQUIRE(condition.parent == &returned);
+
+    Discard discard;
+    Continue continueStatement;
+    Break breakStatement;
+    REQUIRE(discard.isDiscard);
+    REQUIRE(continueStatement.isContinue);
+    REQUIRE(breakStatement.isBreak);
+}
+
+TEST_CASE("AST accessor nodes follow the pinned links") {
+    Accessor accessor("x");
+    REQUIRE(accessor.isAccessor);
+    REQUIRE(accessor.property == "x");
+    REQUIRE_FALSE(accessor.getType().has_value());
+    Uniform referenced("mat4", "uMatrix");
+    accessor.linker.reference = &referenced;
+    REQUIRE(*accessor.getType() == "mat4");
+
+    Number index(0.0);
+    StaticElement staticElement(&index);
+    DynamicElement dynamicElement(&index);
+    REQUIRE(staticElement.isStaticElement);
+    REQUIRE(dynamicElement.isDynamicElement);
+    REQUIRE(index.parent == &dynamicElement);
+
+    Uniform first("vec2", "uA");
+    Uniform second("vec2", "uB");
+    AccessorElements elements(&first, {&second});
+    REQUIRE(elements.isAccessorElements);
+    REQUIRE(elements.object == &first);
+    REQUIRE(elements.elements.size() == 1);
+    REQUIRE(first.parent == &elements);
+    REQUIRE(second.parent == &elements);
+}
+
+TEST_CASE("AST loop, switch and struct nodes adopt their children") {
+    Number condition(1.0);
+    Uniform statement("float", "uA");
+    For loop(&statement, &condition, &statement, {&statement});
+    REQUIRE(loop.isFor);
+    REQUIRE(loop.initialization == &statement);
+    REQUIRE(statement.parent == &loop);
+
+    While whileLoop(&condition, {&statement});
+    REQUIRE(whileLoop.isWhile);
+    REQUIRE(whileLoop.doWhile == false);
+
+    SwitchCase defaultCase({&statement});
+    REQUIRE(defaultCase.isSwitchCase);
+    REQUIRE(defaultCase.isDefault);
+    SwitchCase conditionalCase({&statement}, &condition);
+    REQUIRE_FALSE(conditionalCase.isDefault);
+
+    Switch switchStatement(&condition, {&defaultCase, &conditionalCase});
+    REQUIRE(switchStatement.isSwitch);
+    REQUIRE(switchStatement.cases.size() == 2);
+
+    StructMember member("float", "x");
+    REQUIRE(member.isStructMember);
+    StructDefinition definition("MyStruct", {&member});
+    REQUIRE(definition.isStructDefinition);
+    REQUIRE(definition.members.size() == 1);
+    REQUIRE(definition.members[0] == &member);
+}

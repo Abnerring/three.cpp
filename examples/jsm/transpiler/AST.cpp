@@ -151,3 +151,100 @@ void Conditional::initialize() {
     adopt(elseConditional);
     for (auto* statement : body) adopt(statement);
 }
+FunctionCall::FunctionCall(std::string name, std::vector<ASTNode*> params)
+    : name(std::move(name)), params(std::move(params)) {
+    initialize();
+}
+
+std::optional<std::string> FunctionCall::getType() const {
+    // if ( isBuiltinType( this.name ) ) return this.name;
+    if (TranspilerUtils::isBuiltinType(name)) return name;
+    // if ( this.linker.reference ) return this.linker.reference.getType();
+    if (linker.reference != nullptr) return linker.reference->getType();
+    return ASTNode::getType();
+}
+
+void FunctionCall::initialize() {
+    for (auto* parameter : params) adopt(parameter);
+}
+
+Return::Return(ASTNode* value) : value(value) { initialize(); }
+
+void Return::initialize() { adopt(value); }
+
+Accessor::Accessor(std::string property) : property(std::move(property)) { initialize(); }
+
+std::optional<std::string> Accessor::getType() const {
+    if (linker.reference != nullptr) return linker.reference->getType();
+    return ASTNode::getType();
+}
+
+StaticElement::StaticElement(ASTNode* value) : value(value) { initialize(); }
+
+void StaticElement::initialize() { adopt(value); }
+
+DynamicElement::DynamicElement(ASTNode* value) : value(value) { initialize(); }
+
+void DynamicElement::initialize() { adopt(value); }
+
+AccessorElements::AccessorElements(ASTNode* object, std::vector<ASTNode*> elements)
+    : object(object), elements(std::move(elements)) {
+    initialize();
+}
+
+void AccessorElements::initialize() {
+    adopt(object);
+    for (auto* element : elements) adopt(element);
+}
+
+For::For(ASTNode* initialization, ASTNode* condition, ASTNode* afterthought,
+         std::vector<ASTNode*> body)
+    : initialization(initialization),
+      condition(condition),
+      afterthought(afterthought),
+      body(std::move(body)) {
+    initialize();
+}
+
+void For::initialize() {
+    adopt(initialization);
+    adopt(condition);
+    adopt(afterthought);
+    for (auto* statement : body) adopt(statement);
+}
+
+While::While(ASTNode* condition, std::vector<ASTNode*> body, bool doWhile)
+    : condition(condition), body(std::move(body)), doWhile(doWhile) {
+    initialize();
+}
+
+void While::initialize() {
+    adopt(condition);
+    for (auto* statement : body) adopt(statement);
+}
+
+Switch::Switch(ASTNode* discriminant, std::vector<ASTNode*> cases)
+    : discriminant(discriminant), cases(std::move(cases)) {
+    initialize();
+}
+
+void Switch::initialize() {
+    adopt(discriminant);
+    for (auto* switchCase : cases) adopt(switchCase);
+}
+
+SwitchCase::SwitchCase(std::vector<ASTNode*> body, ASTNode* conditions)
+    : body(std::move(body)), conditions(conditions), isDefault(conditions == nullptr) {
+    initialize();
+}
+
+void SwitchCase::initialize() {
+    adopt(conditions);
+    for (auto* statement : body) adopt(statement);
+}
+
+StructMember::StructMember(std::string type, std::string name)
+    : type(std::move(type)), name(std::move(name)) {}
+
+StructDefinition::StructDefinition(std::string name, std::vector<StructMember*> members)
+    : name(std::move(name)), members(std::move(members)) {}

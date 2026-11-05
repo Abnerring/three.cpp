@@ -211,3 +211,139 @@ class Conditional : public ASTNode {
     explicit Conditional(ASTNode* cond = nullptr, std::vector<ASTNode*> body = {});
     void initialize() override;
 };
+class FunctionCall : public ASTNode {
+  public:
+    const bool isFunctionCall = true;
+    std::string name;
+    std::vector<ASTNode*> params;
+
+    FunctionCall(std::string name, std::vector<ASTNode*> params = {});
+    std::optional<std::string> getType() const override;
+    void initialize() override;
+};
+
+class Return : public ASTNode {
+  public:
+    const bool isReturn = true;
+    ASTNode* value = nullptr;
+    explicit Return(ASTNode* value);
+    void initialize() override;
+};
+
+class Discard : public ASTNode {
+  public:
+    const bool isDiscard = true;
+    Discard() { initialize(); }
+};
+
+class Continue : public ASTNode {
+  public:
+    const bool isContinue = true;
+    Continue() { initialize(); }
+};
+
+class Break : public ASTNode {
+  public:
+    const bool isBreak = true;
+    Break() { initialize(); }
+};
+
+class Accessor : public ASTNode {
+  public:
+    const bool isAccessor = true;
+    // The property name of the accessed member; the pinned node keeps a bare property value.
+    std::string property;
+
+    explicit Accessor(std::string property);
+    std::optional<std::string> getType() const override;
+};
+
+class StaticElement : public ASTNode {
+  public:
+    const bool isStaticElement = true;
+    ASTNode* value = nullptr;
+    explicit StaticElement(ASTNode* value);
+    void initialize() override;
+};
+
+class DynamicElement : public ASTNode {
+  public:
+    const bool isDynamicElement = true;
+    ASTNode* value = nullptr;
+    explicit DynamicElement(ASTNode* value);
+    void initialize() override;
+};
+
+class AccessorElements : public ASTNode {
+  public:
+    const bool isAccessorElements = true;
+    ASTNode* object = nullptr;
+    std::vector<ASTNode*> elements;
+
+    AccessorElements(ASTNode* object, std::vector<ASTNode*> elements = {});
+    void initialize() override;
+};
+
+class For : public ASTNode {
+  public:
+    const bool isFor = true;
+    ASTNode* initialization = nullptr;
+    ASTNode* condition = nullptr;
+    ASTNode* afterthought = nullptr;
+    std::vector<ASTNode*> body;
+
+    For(ASTNode* initialization, ASTNode* condition, ASTNode* afterthought,
+        std::vector<ASTNode*> body = {});
+    void initialize() override;
+};
+
+class While : public ASTNode {
+  public:
+    const bool isWhile = true;
+    ASTNode* condition = nullptr;
+    std::vector<ASTNode*> body;
+    bool doWhile = false;
+
+    While(ASTNode* condition, std::vector<ASTNode*> body = {}, bool doWhile = false);
+    void initialize() override;
+};
+
+class Switch : public ASTNode {
+  public:
+    const bool isSwitch = true;
+    ASTNode* discriminant = nullptr;
+    std::vector<ASTNode*> cases;
+
+    Switch(ASTNode* discriminant, std::vector<ASTNode*> cases);
+    void initialize() override;
+};
+
+class SwitchCase : public ASTNode {
+  public:
+    const bool isSwitchCase = true;
+    std::vector<ASTNode*> body;
+    ASTNode* conditions = nullptr;
+    // get isDefault() { return this.conditions === null; }
+    const bool isDefault;
+
+    SwitchCase(std::vector<ASTNode*> body, ASTNode* conditions = nullptr);
+    void initialize() override;
+};
+
+// A plain member record, not an AST node in the pinned module.
+class StructMember {
+  public:
+    const bool isStructMember = true;
+    std::string type;
+    std::string name;
+    StructMember(std::string type, std::string name);
+};
+
+class StructDefinition : public ASTNode {
+  public:
+    const bool isStructDefinition = true;
+    std::string name;
+    std::vector<StructMember*> members;
+
+    StructDefinition(std::string name, std::vector<StructMember*> members = {});
+};

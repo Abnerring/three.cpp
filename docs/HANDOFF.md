@@ -1,4 +1,35 @@
-# 当前接续：AST 第四批（`Operator`/`Unary`/`Number`/`String`/`Conditional`），30 类完成 15 个，2026-11-05
+# 当前接续：AST 第五批（剩余 15 类）——`transpiler/AST.js` 30 个类全部移植完成，2026-11-05
+
+目标保持 active：固定 three.js 11738a9d55e502fb484cefffcea3a66dc44e9fe9 全部 src + examples/jsm 原生 C++ 逻辑，Vulkan 后端；禁止 CEF/生产 JS 引擎/桥接。阶段本地 Git 提交，不推送。
+
+## 本轮交付（`examples/jsm/transpiler/AST`，30/30 类）
+
+- **`FunctionCall`**：`name`/`params`/`isFunctionCall`；`getType()` 三步照抄：`TranspilerUtils::isBuiltinType(name)` → 返回 name；`linker.reference` → 返回其 `getType()`；否则 `ASTNode::getType()`（null）。
+- **`Return`**（`value`/`isReturn`）、**`Discard`/`Continue`/`Break`**（纯标志类）。
+- **`Accessor`**：`property`、`isAccessor`；`getType()` = 有 `linker.reference` 则取其类型，否则 null。
+- **`StaticElement`/`DynamicElement`**（`value` 子节点）、**`AccessorElements`**（`object` + `elements` 全部 adopt）。
+- **`For`**（initialization/condition/afterthought/body 全 adopt）、**`While`**（condition/body/doWhile）、**`Switch`**（discriminant/cases）、**`SwitchCase`**（body/conditions；**`isDefault = conditions == nullptr`**，const 成员在构造器初始化）。
+- **`StructMember`**（**非 ASTNode** 的普通成员记录，照抄上游继承关系）、**`StructDefinition`**（name/members；members 非 AST 节点故不 adopt）。
+- 新增 4 用例：`FunctionCall` 的内建类型 / 无引用 / 有引用三路 `getType()`；`Return`/`Discard`/`Continue`/`Break` 标志与 adopt；`Accessor` 链接类型 + `StaticElement`/`DynamicElement`/`AccessorElements`；`For`/`While`/`Switch`/`SwitchCase`（isDefault 两分支）/`StructMember`/`StructDefinition`。
+
+## 需下轮核实的两处类型假设（已如实记录）
+
+1. **`Accessor::property`** 用 `std::string`（上游是裸属性值；若 parser 实际传 AST 节点需改 `ASTNode*`）。
+2. **`StaticElement::value` / `DynamicElement::value`** 用 `ASTNode*`（上游未限定；若实际传字符串/数字需调整）。
+   两处都不影响当前编译与测试，但**与 transpiler parser 联调时必须核对**。
+
+## 验证
+
+- 构建 exit 0；过滤 `*AST*` = 40 cases / 239 assertions 全过；`THREECPPAddonTests` 全套 **1356 cases / 38,856 assertions** 通过（+4 例 / +38 断言）。
+- 审计：`examples/jsm` 计数不变（AST 已 partial）：missing 324 / partial 152；src 13 / 452。
+
+**未执行验证（如实记录）**：30 类**仍无差分**（仅单测）；`initialize()` 的 JS 属性反射语义用显式 `adopt` 替代（差异已记录）；尚未与 parser/`TranspilerUtils` 联调。
+
+## 下一步
+
+1. **给 AST 加数据级差分**（覆盖 `getType`/`isAssignmentValue`/`isNumericExpression`/`getProgram` 等谓词），并核对上节两处类型假设；
+2. 与 `TranspilerUtils::isExpression` 联调；
+3. 之后：`ShadowNode`(24,331) / `PhysicalLightingModel`(32,829)。# 当前接续：AST 第四批（`Operator`/`Unary`/`Number`/`String`/`Conditional`），30 类完成 15 个，2026-11-05
 
 目标保持 active：固定 three.js 11738a9d55e502fb484cefffcea3a66dc44e9fe9 全部 src + examples/jsm 原生 C++ 逻辑，Vulkan 后端；禁止 CEF/生产 JS 引擎/桥接。阶段本地 Git 提交，不推送。
 
