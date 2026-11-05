@@ -1,0 +1,710 @@
+[
+  {
+    "case": "metadata",
+    "op": "metadata"
+  },
+  {
+    "case": "2D:getPoints:[]",
+    "op": "numeric",
+    "dim": 2,
+    "method": "getPoints",
+    "args": []
+  },
+  {
+    "case": "2D:getPoints:[0]",
+    "op": "numeric",
+    "dim": 2,
+    "method": "getPoints",
+    "args": [
+      0
+    ]
+  },
+  {
+    "case": "2D:getPoints:[2.5]",
+    "op": "numeric",
+    "dim": 2,
+    "method": "getPoints",
+    "args": [
+      2.5
+    ]
+  },
+  {
+    "case": "2D:getPoints:['2']",
+    "op": "numeric",
+    "dim": 2,
+    "method": "getPoints",
+    "args": [
+      "2"
+    ]
+  },
+  {
+    "case": "2D:getPoints:[-1]",
+    "op": "numeric",
+    "dim": 2,
+    "method": "getPoints",
+    "args": [
+      -1
+    ]
+  },
+  {
+    "case": "2D:getSpacedPoints:[3]",
+    "op": "numeric",
+    "dim": 2,
+    "method": "getSpacedPoints",
+    "args": [
+      3
+    ]
+  },
+  {
+    "case": "2D:getLength:[]",
+    "op": "numeric",
+    "dim": 2,
+    "method": "getLength",
+    "args": []
+  },
+  {
+    "case": "2D:getLengths:[]",
+    "op": "numeric",
+    "dim": 2,
+    "method": "getLengths",
+    "args": []
+  },
+  {
+    "case": "2D:getLengths:['4']",
+    "op": "numeric",
+    "dim": 2,
+    "method": "getLengths",
+    "args": [
+      "4"
+    ]
+  },
+  {
+    "case": "2D:getPointAt:[0.3]",
+    "op": "numeric",
+    "dim": 2,
+    "method": "getPointAt",
+    "args": [
+      0.3
+    ]
+  },
+  {
+    "case": "2D:getTangent:[0.4]",
+    "op": "numeric",
+    "dim": 2,
+    "method": "getTangent",
+    "args": [
+      0.4
+    ]
+  },
+  {
+    "case": "2D:getTangent:[-0.2]",
+    "op": "numeric",
+    "dim": 2,
+    "method": "getTangent",
+    "args": [
+      -0.2
+    ]
+  },
+  {
+    "case": "2D:getTangent:[1.3]",
+    "op": "numeric",
+    "dim": 2,
+    "method": "getTangent",
+    "args": [
+      1.3
+    ]
+  },
+  {
+    "case": "2D:getTangent:['0.4']",
+    "op": "numeric",
+    "dim": 2,
+    "method": "getTangent",
+    "args": [
+      "0.4"
+    ]
+  },
+  {
+    "case": "2D:getTangentAt:[0.6]",
+    "op": "numeric",
+    "dim": 2,
+    "method": "getTangentAt",
+    "args": [
+      0.6
+    ]
+  },
+  {
+    "case": "2D:getUtoTmapping:[0.35]",
+    "op": "numeric",
+    "dim": 2,
+    "method": "getUtoTmapping",
+    "args": [
+      0.35
+    ]
+  },
+  {
+    "case": "2D:getUtoTmapping:[0, 0.75]",
+    "op": "numeric",
+    "dim": 2,
+    "method": "getUtoTmapping",
+    "args": [
+      0,
+      0.75
+    ]
+  },
+  {
+    "case": "2D:getUtoTmapping:[0.5, 0]",
+    "op": "numeric",
+    "dim": 2,
+    "method": "getUtoTmapping",
+    "args": [
+      0.5,
+      0
+    ]
+  },
+  {
+    "case": "2D:getUtoTmapping:[1.2]",
+    "op": "numeric",
+    "dim": 2,
+    "method": "getUtoTmapping",
+    "args": [
+      1.2
+    ]
+  },
+  {
+    "case": "2D:getUtoTmapping:[-0.2]",
+    "op": "numeric",
+    "dim": 2,
+    "method": "getUtoTmapping",
+    "args": [
+      -0.2
+    ]
+  },
+  {
+    "case": "3D:getPoints:[]",
+    "op": "numeric",
+    "dim": 3,
+    "method": "getPoints",
+    "args": []
+  },
+  {
+    "case": "3D:getPoints:[0]",
+    "op": "numeric",
+    "dim": 3,
+    "method": "getPoints",
+    "args": [
+      0
+    ]
+  },
+  {
+    "case": "3D:getPoints:[2.5]",
+    "op": "numeric",
+    "dim": 3,
+    "method": "getPoints",
+    "args": [
+      2.5
+    ]
+  },
+  {
+    "case": "3D:getPoints:['2']",
+    "op": "numeric",
+    "dim": 3,
+    "method": "getPoints",
+    "args": [
+      "2"
+    ]
+  },
+  {
+    "case": "3D:getPoints:[-1]",
+    "op": "numeric",
+    "dim": 3,
+    "method": "getPoints",
+    "args": [
+      -1
+    ]
+  },
+  {
+    "case": "3D:getSpacedPoints:[3]",
+    "op": "numeric",
+    "dim": 3,
+    "method": "getSpacedPoints",
+    "args": [
+      3
+    ]
+  },
+  {
+    "case": "3D:getLength:[]",
+    "op": "numeric",
+    "dim": 3,
+    "method": "getLength",
+    "args": []
+  },
+  {
+    "case": "3D:getLengths:[]",
+    "op": "numeric",
+    "dim": 3,
+    "method": "getLengths",
+    "args": []
+  },
+  {
+    "case": "3D:getLengths:['4']",
+    "op": "numeric",
+    "dim": 3,
+    "method": "getLengths",
+    "args": [
+      "4"
+    ]
+  },
+  {
+    "case": "3D:getPointAt:[0.3]",
+    "op": "numeric",
+    "dim": 3,
+    "method": "getPointAt",
+    "args": [
+      0.3
+    ]
+  },
+  {
+    "case": "3D:getTangent:[0.4]",
+    "op": "numeric",
+    "dim": 3,
+    "method": "getTangent",
+    "args": [
+      0.4
+    ]
+  },
+  {
+    "case": "3D:getTangent:[-0.2]",
+    "op": "numeric",
+    "dim": 3,
+    "method": "getTangent",
+    "args": [
+      -0.2
+    ]
+  },
+  {
+    "case": "3D:getTangent:[1.3]",
+    "op": "numeric",
+    "dim": 3,
+    "method": "getTangent",
+    "args": [
+      1.3
+    ]
+  },
+  {
+    "case": "3D:getTangent:['0.4']",
+    "op": "numeric",
+    "dim": 3,
+    "method": "getTangent",
+    "args": [
+      "0.4"
+    ]
+  },
+  {
+    "case": "3D:getTangentAt:[0.6]",
+    "op": "numeric",
+    "dim": 3,
+    "method": "getTangentAt",
+    "args": [
+      0.6
+    ]
+  },
+  {
+    "case": "3D:getUtoTmapping:[0.35]",
+    "op": "numeric",
+    "dim": 3,
+    "method": "getUtoTmapping",
+    "args": [
+      0.35
+    ]
+  },
+  {
+    "case": "3D:getUtoTmapping:[0, 0.75]",
+    "op": "numeric",
+    "dim": 3,
+    "method": "getUtoTmapping",
+    "args": [
+      0,
+      0.75
+    ]
+  },
+  {
+    "case": "3D:getUtoTmapping:[0.5, 0]",
+    "op": "numeric",
+    "dim": 3,
+    "method": "getUtoTmapping",
+    "args": [
+      0.5,
+      0
+    ]
+  },
+  {
+    "case": "3D:getUtoTmapping:[1.2]",
+    "op": "numeric",
+    "dim": 3,
+    "method": "getUtoTmapping",
+    "args": [
+      1.2
+    ]
+  },
+  {
+    "case": "3D:getUtoTmapping:[-0.2]",
+    "op": "numeric",
+    "dim": 3,
+    "method": "getUtoTmapping",
+    "args": [
+      -0.2
+    ]
+  },
+  {
+    "case": "Frenet:False",
+    "op": "numeric",
+    "dim": 3,
+    "method": "computeFrenetFrames",
+    "args": [
+      4,
+      false
+    ]
+  },
+  {
+    "case": "Frenet:True",
+    "op": "numeric",
+    "dim": 3,
+    "method": "computeFrenetFrames",
+    "args": [
+      4,
+      true
+    ]
+  },
+  {
+    "case": "Frenet:1",
+    "op": "numeric",
+    "dim": 3,
+    "method": "computeFrenetFrames",
+    "args": [
+      4,
+      1
+    ]
+  },
+  {
+    "case": "Frenet:'true'",
+    "op": "numeric",
+    "dim": 3,
+    "method": "computeFrenetFrames",
+    "args": [
+      4,
+      "true"
+    ]
+  },
+  {
+    "case": "target:getPointAt",
+    "op": "numeric",
+    "dim": 3,
+    "method": "getPointAt",
+    "args": [
+      0.4
+    ],
+    "target": true
+  },
+  {
+    "case": "target:getTangent",
+    "op": "numeric",
+    "dim": 3,
+    "method": "getTangent",
+    "args": [
+      0.4
+    ],
+    "target": true
+  },
+  {
+    "case": "target:getTangentAt",
+    "op": "numeric",
+    "dim": 3,
+    "method": "getTangentAt",
+    "args": [
+      0.4
+    ],
+    "target": true
+  },
+  {
+    "case": "clone",
+    "op": "numeric",
+    "dim": 3,
+    "method": "clone",
+    "args": []
+  },
+  {
+    "case": "copy",
+    "op": "numeric",
+    "dim": 3,
+    "method": "copy",
+    "args": []
+  },
+  {
+    "case": "updateArcLengths",
+    "op": "numeric",
+    "dim": 3,
+    "method": "updateArcLengths",
+    "args": []
+  },
+  {
+    "case": "cacheHit",
+    "op": "observable",
+    "variant": "cacheHit"
+  },
+  {
+    "case": "cacheMiss",
+    "op": "observable",
+    "variant": "cacheMiss"
+  },
+  {
+    "case": "cacheShortCircuit",
+    "op": "observable",
+    "variant": "cacheShortCircuit"
+  },
+  {
+    "case": "cacheThrow",
+    "op": "observable",
+    "variant": "cacheThrow"
+  },
+  {
+    "case": "stringLengths",
+    "op": "observable",
+    "variant": "stringLengths"
+  },
+  {
+    "case": "pointGetThrow",
+    "op": "observable",
+    "variant": "pointGetThrow"
+  },
+  {
+    "case": "sampleDivisions",
+    "op": "observable",
+    "variant": "sampleDivisions"
+  },
+  {
+    "case": "sampleReenter",
+    "op": "observable",
+    "variant": "sampleReenter"
+  },
+  {
+    "case": "sampleThrow",
+    "op": "observable",
+    "variant": "sampleThrow"
+  },
+  {
+    "case": "pointAt",
+    "op": "observable",
+    "variant": "pointAt"
+  },
+  {
+    "case": "pointAtThrow",
+    "op": "observable",
+    "variant": "pointAtThrow"
+  },
+  {
+    "case": "tangentDispatch",
+    "op": "observable",
+    "variant": "tangentDispatch"
+  },
+  {
+    "case": "mappingTruthy",
+    "op": "observable",
+    "variant": "mappingTruthy"
+  },
+  {
+    "case": "mappingZero",
+    "op": "observable",
+    "variant": "mappingZero"
+  },
+  {
+    "case": "mappingStringLength",
+    "op": "observable",
+    "variant": "mappingStringLength"
+  },
+  {
+    "case": "mappingGetThrow",
+    "op": "observable",
+    "variant": "mappingGetThrow"
+  },
+  {
+    "case": "copyNull",
+    "op": "observable",
+    "variant": "copyNull"
+  },
+  {
+    "case": "cloneCustom",
+    "op": "observable",
+    "variant": "cloneCustom"
+  },
+  {
+    "case": "warn",
+    "op": "observable",
+    "variant": "warn"
+  },
+  {
+    "case": "cacheIdentity",
+    "op": "cache"
+  },
+  {
+    "case": "ctorDefault",
+    "op": "observable",
+    "variant": "ctorDefault"
+  },
+  {
+    "case": "ctorProxy",
+    "op": "observable",
+    "variant": "ctorProxy"
+  },
+  {
+    "case": "ctorPrimitive",
+    "op": "observable",
+    "variant": "ctorPrimitive"
+  },
+  {
+    "case": "ctorSetter",
+    "op": "observable",
+    "variant": "ctorSetter"
+  },
+  {
+    "case": "ctorThrow",
+    "op": "observable",
+    "variant": "ctorThrow"
+  },
+  {
+    "case": "numberConstants",
+    "op": "observable",
+    "variant": "numberConstants"
+  },
+  {
+    "case": "Frenet-edge:0:False",
+    "op": "numeric",
+    "dim": 3,
+    "method": "computeFrenetFrames",
+    "args": [
+      0,
+      false
+    ]
+  },
+  {
+    "case": "Frenet-edge:0:True",
+    "op": "numeric",
+    "dim": 3,
+    "method": "computeFrenetFrames",
+    "args": [
+      0,
+      true
+    ]
+  },
+  {
+    "case": "Frenet-edge:1:False",
+    "op": "numeric",
+    "dim": 3,
+    "method": "computeFrenetFrames",
+    "args": [
+      1,
+      false
+    ]
+  },
+  {
+    "case": "Frenet-edge:1:True",
+    "op": "numeric",
+    "dim": 3,
+    "method": "computeFrenetFrames",
+    "args": [
+      1,
+      true
+    ]
+  },
+  {
+    "case": "Frenet-edge:1.5:False",
+    "op": "numeric",
+    "dim": 3,
+    "method": "computeFrenetFrames",
+    "args": [
+      1.5,
+      false
+    ]
+  },
+  {
+    "case": "Frenet-edge:1.5:True",
+    "op": "numeric",
+    "dim": 3,
+    "method": "computeFrenetFrames",
+    "args": [
+      1.5,
+      true
+    ],
+    "expectedError": [
+      "TypeError"
+    ]
+  },
+  {
+    "case": "Frenet-edge:-1:False",
+    "op": "numeric",
+    "dim": 3,
+    "method": "computeFrenetFrames",
+    "args": [
+      -1,
+      false
+    ],
+    "expectedError": [
+      "TypeError"
+    ]
+  },
+  {
+    "case": "Frenet-edge:-1:True",
+    "op": "numeric",
+    "dim": 3,
+    "method": "computeFrenetFrames",
+    "args": [
+      -1,
+      true
+    ],
+    "expectedError": [
+      "TypeError"
+    ]
+  },
+  {
+    "case": "Frenet-edge:'3':False",
+    "op": "numeric",
+    "dim": 3,
+    "method": "computeFrenetFrames",
+    "args": [
+      "3",
+      false
+    ]
+  },
+  {
+    "case": "Frenet-edge:'3':True",
+    "op": "numeric",
+    "dim": 3,
+    "method": "computeFrenetFrames",
+    "args": [
+      "3",
+      true
+    ]
+  },
+  {
+    "case": "Frenet-edge:None:False",
+    "op": "numeric",
+    "dim": 3,
+    "method": "computeFrenetFrames",
+    "args": [
+      null,
+      false
+    ]
+  },
+  {
+    "case": "Frenet-edge:None:True",
+    "op": "numeric",
+    "dim": 3,
+    "method": "computeFrenetFrames",
+    "args": [
+      null,
+      true
+    ],
+    "expectedError": [
+      "TypeError"
+    ]
+  }
+]

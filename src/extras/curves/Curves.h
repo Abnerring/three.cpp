@@ -9,3 +9,6 @@
 #include "extras/curves/QuadraticBezierCurve.h"
 #include "extras/curves/QuadraticBezierCurve3.h"
 #include "extras/curves/SplineCurve.h"
+
+JSValue nativeCurvesModule();
+JSValue nativeCurvesBinding(const std::string& name);

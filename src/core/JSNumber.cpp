@@ -5,6 +5,7 @@
 #include <cstdint>
 #include <limits>
 #include <string>
+#include <utility>
 #include <vector>
 
 namespace {
@@ -247,7 +248,24 @@ JSValue nativeNumberConstructor(){
     },{},"isInteger",1);
     JSPropertyDescriptor property;property.value=isInteger;property.writable=property.configurable=true;constructor.defineProperty("isInteger",property);
     property.value=nativeParseIntFunction();constructor.defineProperty("parseInt",property);
-    JSPropertyDescriptor epsilon;epsilon.value=std::numeric_limits<double>::epsilon();
-    epsilon.writable=epsilon.enumerable=epsilon.configurable=false;constructor.defineProperty("EPSILON",epsilon);
+    // These Number intrinsics participate in the original numerical algorithms
+    // (for example Curve's initial Frenet normal selection). Preserve the
+    // subnormal minimum and immutable descriptors, rather than substituting
+    // constants inside individual consumers.
+    const std::pair<const char*,double> constants[] = {
+        {"MAX_VALUE",std::numeric_limits<double>::max()},
+        {"MIN_VALUE",std::numeric_limits<double>::denorm_min()},
+        {"NaN",std::numeric_limits<double>::quiet_NaN()},
+        {"NEGATIVE_INFINITY",-std::numeric_limits<double>::infinity()},
+        {"POSITIVE_INFINITY",std::numeric_limits<double>::infinity()},
+        {"MAX_SAFE_INTEGER",9007199254740991.0},
+        {"MIN_SAFE_INTEGER",-9007199254740991.0},
+        {"EPSILON",std::numeric_limits<double>::epsilon()}
+    };
+    for(const auto& [name,value]:constants) {
+        JSPropertyDescriptor constant;constant.value=value;
+        constant.writable=constant.enumerable=constant.configurable=false;
+        constructor.defineProperty(name,constant);
+    }
     constructor.retainForHeapLifetime();cached=JSWeakValue(constructor);return constructor;
 }

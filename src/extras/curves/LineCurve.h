@@ -21,3 +21,7 @@ class LineCurve : public Curve<Vector2> {
     JsonValue toJSON() const override;
     LineCurve& fromJSON(const JsonValue& json) override;
 };
+
+JSValue nativeLineCurveConstructor();
+JSValue nativeLineCurveModule();
+JSValue nativeLineCurveBinding(const std::string& name);

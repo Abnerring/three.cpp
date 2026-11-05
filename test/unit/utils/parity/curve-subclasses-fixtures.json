@@ -1,0 +1,7547 @@
+[
+  {
+    "case": "metadata",
+    "op": "metadata"
+  },
+  {
+    "case": "ArcCurve:point:-0.25:target=False",
+    "op": "sample",
+    "curve": "ArcCurve",
+    "json": {
+      "type": "ArcCurve",
+      "arcLengthDivisions": 9,
+      "aX": 2,
+      "aY": -3,
+      "xRadius": 4,
+      "yRadius": 2,
+      "aStartAngle": 0.2,
+      "aEndAngle": 5.7,
+      "aClockwise": false,
+      "aRotation": 0.3
+    },
+    "t": -0.25,
+    "target": false,
+    "method": "getPoint"
+  },
+  {
+    "case": "ArcCurve:point:-0.25:target=True",
+    "op": "sample",
+    "curve": "ArcCurve",
+    "json": {
+      "type": "ArcCurve",
+      "arcLengthDivisions": 9,
+      "aX": 2,
+      "aY": -3,
+      "xRadius": 4,
+      "yRadius": 2,
+      "aStartAngle": 0.2,
+      "aEndAngle": 5.7,
+      "aClockwise": false,
+      "aRotation": 0.3
+    },
+    "t": -0.25,
+    "target": true,
+    "method": "getPoint"
+  },
+  {
+    "case": "ArcCurve:point:0:target=False",
+    "op": "sample",
+    "curve": "ArcCurve",
+    "json": {
+      "type": "ArcCurve",
+      "arcLengthDivisions": 9,
+      "aX": 2,
+      "aY": -3,
+      "xRadius": 4,
+      "yRadius": 2,
+      "aStartAngle": 0.2,
+      "aEndAngle": 5.7,
+      "aClockwise": false,
+      "aRotation": 0.3
+    },
+    "t": 0,
+    "target": false,
+    "method": "getPoint"
+  },
+  {
+    "case": "ArcCurve:point:0:target=True",
+    "op": "sample",
+    "curve": "ArcCurve",
+    "json": {
+      "type": "ArcCurve",
+      "arcLengthDivisions": 9,
+      "aX": 2,
+      "aY": -3,
+      "xRadius": 4,
+      "yRadius": 2,
+      "aStartAngle": 0.2,
+      "aEndAngle": 5.7,
+      "aClockwise": false,
+      "aRotation": 0.3
+    },
+    "t": 0,
+    "target": true,
+    "method": "getPoint"
+  },
+  {
+    "case": "ArcCurve:point:0.125:target=False",
+    "op": "sample",
+    "curve": "ArcCurve",
+    "json": {
+      "type": "ArcCurve",
+      "arcLengthDivisions": 9,
+      "aX": 2,
+      "aY": -3,
+      "xRadius": 4,
+      "yRadius": 2,
+      "aStartAngle": 0.2,
+      "aEndAngle": 5.7,
+      "aClockwise": false,
+      "aRotation": 0.3
+    },
+    "t": 0.125,
+    "target": false,
+    "method": "getPoint"
+  },
+  {
+    "case": "ArcCurve:point:0.125:target=True",
+    "op": "sample",
+    "curve": "ArcCurve",
+    "json": {
+      "type": "ArcCurve",
+      "arcLengthDivisions": 9,
+      "aX": 2,
+      "aY": -3,
+      "xRadius": 4,
+      "yRadius": 2,
+      "aStartAngle": 0.2,
+      "aEndAngle": 5.7,
+      "aClockwise": false,
+      "aRotation": 0.3
+    },
+    "t": 0.125,
+    "target": true,
+    "method": "getPoint"
+  },
+  {
+    "case": "ArcCurve:point:0.5:target=False",
+    "op": "sample",
+    "curve": "ArcCurve",
+    "json": {
+      "type": "ArcCurve",
+      "arcLengthDivisions": 9,
+      "aX": 2,
+      "aY": -3,
+      "xRadius": 4,
+      "yRadius": 2,
+      "aStartAngle": 0.2,
+      "aEndAngle": 5.7,
+      "aClockwise": false,
+      "aRotation": 0.3
+    },
+    "t": 0.5,
+    "target": false,
+    "method": "getPoint"
+  },
+  {
+    "case": "ArcCurve:point:0.5:target=True",
+    "op": "sample",
+    "curve": "ArcCurve",
+    "json": {
+      "type": "ArcCurve",
+      "arcLengthDivisions": 9,
+      "aX": 2,
+      "aY": -3,
+      "xRadius": 4,
+      "yRadius": 2,
+      "aStartAngle": 0.2,
+      "aEndAngle": 5.7,
+      "aClockwise": false,
+      "aRotation": 0.3
+    },
+    "t": 0.5,
+    "target": true,
+    "method": "getPoint"
+  },
+  {
+    "case": "ArcCurve:point:0.875:target=False",
+    "op": "sample",
+    "curve": "ArcCurve",
+    "json": {
+      "type": "ArcCurve",
+      "arcLengthDivisions": 9,
+      "aX": 2,
+      "aY": -3,
+      "xRadius": 4,
+      "yRadius": 2,
+      "aStartAngle": 0.2,
+      "aEndAngle": 5.7,
+      "aClockwise": false,
+      "aRotation": 0.3
+    },
+    "t": 0.875,
+    "target": false,
+    "method": "getPoint"
+  },
+  {
+    "case": "ArcCurve:point:0.875:target=True",
+    "op": "sample",
+    "curve": "ArcCurve",
+    "json": {
+      "type": "ArcCurve",
+      "arcLengthDivisions": 9,
+      "aX": 2,
+      "aY": -3,
+      "xRadius": 4,
+      "yRadius": 2,
+      "aStartAngle": 0.2,
+      "aEndAngle": 5.7,
+      "aClockwise": false,
+      "aRotation": 0.3
+    },
+    "t": 0.875,
+    "target": true,
+    "method": "getPoint"
+  },
+  {
+    "case": "ArcCurve:point:1:target=False",
+    "op": "sample",
+    "curve": "ArcCurve",
+    "json": {
+      "type": "ArcCurve",
+      "arcLengthDivisions": 9,
+      "aX": 2,
+      "aY": -3,
+      "xRadius": 4,
+      "yRadius": 2,
+      "aStartAngle": 0.2,
+      "aEndAngle": 5.7,
+      "aClockwise": false,
+      "aRotation": 0.3
+    },
+    "t": 1,
+    "target": false,
+    "method": "getPoint"
+  },
+  {
+    "case": "ArcCurve:point:1:target=True",
+    "op": "sample",
+    "curve": "ArcCurve",
+    "json": {
+      "type": "ArcCurve",
+      "arcLengthDivisions": 9,
+      "aX": 2,
+      "aY": -3,
+      "xRadius": 4,
+      "yRadius": 2,
+      "aStartAngle": 0.2,
+      "aEndAngle": 5.7,
+      "aClockwise": false,
+      "aRotation": 0.3
+    },
+    "t": 1,
+    "target": true,
+    "method": "getPoint"
+  },
+  {
+    "case": "ArcCurve:point:1.25:target=False",
+    "op": "sample",
+    "curve": "ArcCurve",
+    "json": {
+      "type": "ArcCurve",
+      "arcLengthDivisions": 9,
+      "aX": 2,
+      "aY": -3,
+      "xRadius": 4,
+      "yRadius": 2,
+      "aStartAngle": 0.2,
+      "aEndAngle": 5.7,
+      "aClockwise": false,
+      "aRotation": 0.3
+    },
+    "t": 1.25,
+    "target": false,
+    "method": "getPoint"
+  },
+  {
+    "case": "ArcCurve:point:1.25:target=True",
+    "op": "sample",
+    "curve": "ArcCurve",
+    "json": {
+      "type": "ArcCurve",
+      "arcLengthDivisions": 9,
+      "aX": 2,
+      "aY": -3,
+      "xRadius": 4,
+      "yRadius": 2,
+      "aStartAngle": 0.2,
+      "aEndAngle": 5.7,
+      "aClockwise": false,
+      "aRotation": 0.3
+    },
+    "t": 1.25,
+    "target": true,
+    "method": "getPoint"
+  },
+  {
+    "case": "ArcCurve:copy",
+    "op": "copy",
+    "curve": "ArcCurve",
+    "json": {
+      "type": "ArcCurve",
+      "arcLengthDivisions": 9,
+      "aX": 2,
+      "aY": -3,
+      "xRadius": 4,
+      "yRadius": 2,
+      "aStartAngle": 0.2,
+      "aEndAngle": 5.7,
+      "aClockwise": false,
+      "aRotation": 0.3
+    }
+  },
+  {
+    "case": "CatmullRomCurve3:point:0:target=False",
+    "op": "sample",
+    "curve": "CatmullRomCurve3",
+    "json": {
+      "type": "CatmullRomCurve3",
+      "arcLengthDivisions": 9,
+      "points": [
+        [
+          0,
+          0,
+          0
+        ],
+        [
+          2,
+          3,
+          -1
+        ],
+        [
+          5,
+          -2,
+          4
+        ],
+        [
+          7,
+          1,
+          2
+        ]
+      ],
+      "closed": false,
+      "curveType": "centripetal",
+      "tension": 0.5
+    },
+    "t": 0,
+    "target": false,
+    "method": "getPoint"
+  },
+  {
+    "case": "CatmullRomCurve3:point:0:target=True",
+    "op": "sample",
+    "curve": "CatmullRomCurve3",
+    "json": {
+      "type": "CatmullRomCurve3",
+      "arcLengthDivisions": 9,
+      "points": [
+        [
+          0,
+          0,
+          0
+        ],
+        [
+          2,
+          3,
+          -1
+        ],
+        [
+          5,
+          -2,
+          4
+        ],
+        [
+          7,
+          1,
+          2
+        ]
+      ],
+      "closed": false,
+      "curveType": "centripetal",
+      "tension": 0.5
+    },
+    "t": 0,
+    "target": true,
+    "method": "getPoint"
+  },
+  {
+    "case": "CatmullRomCurve3:point:0.125:target=False",
+    "op": "sample",
+    "curve": "CatmullRomCurve3",
+    "json": {
+      "type": "CatmullRomCurve3",
+      "arcLengthDivisions": 9,
+      "points": [
+        [
+          0,
+          0,
+          0
+        ],
+        [
+          2,
+          3,
+          -1
+        ],
+        [
+          5,
+          -2,
+          4
+        ],
+        [
+          7,
+          1,
+          2
+        ]
+      ],
+      "closed": false,
+      "curveType": "centripetal",
+      "tension": 0.5
+    },
+    "t": 0.125,
+    "target": false,
+    "method": "getPoint"
+  },
+  {
+    "case": "CatmullRomCurve3:point:0.125:target=True",
+    "op": "sample",
+    "curve": "CatmullRomCurve3",
+    "json": {
+      "type": "CatmullRomCurve3",
+      "arcLengthDivisions": 9,
+      "points": [
+        [
+          0,
+          0,
+          0
+        ],
+        [
+          2,
+          3,
+          -1
+        ],
+        [
+          5,
+          -2,
+          4
+        ],
+        [
+          7,
+          1,
+          2
+        ]
+      ],
+      "closed": false,
+      "curveType": "centripetal",
+      "tension": 0.5
+    },
+    "t": 0.125,
+    "target": true,
+    "method": "getPoint"
+  },
+  {
+    "case": "CatmullRomCurve3:point:0.5:target=False",
+    "op": "sample",
+    "curve": "CatmullRomCurve3",
+    "json": {
+      "type": "CatmullRomCurve3",
+      "arcLengthDivisions": 9,
+      "points": [
+        [
+          0,
+          0,
+          0
+        ],
+        [
+          2,
+          3,
+          -1
+        ],
+        [
+          5,
+          -2,
+          4
+        ],
+        [
+          7,
+          1,
+          2
+        ]
+      ],
+      "closed": false,
+      "curveType": "centripetal",
+      "tension": 0.5
+    },
+    "t": 0.5,
+    "target": false,
+    "method": "getPoint"
+  },
+  {
+    "case": "CatmullRomCurve3:point:0.5:target=True",
+    "op": "sample",
+    "curve": "CatmullRomCurve3",
+    "json": {
+      "type": "CatmullRomCurve3",
+      "arcLengthDivisions": 9,
+      "points": [
+        [
+          0,
+          0,
+          0
+        ],
+        [
+          2,
+          3,
+          -1
+        ],
+        [
+          5,
+          -2,
+          4
+        ],
+        [
+          7,
+          1,
+          2
+        ]
+      ],
+      "closed": false,
+      "curveType": "centripetal",
+      "tension": 0.5
+    },
+    "t": 0.5,
+    "target": true,
+    "method": "getPoint"
+  },
+  {
+    "case": "CatmullRomCurve3:point:0.875:target=False",
+    "op": "sample",
+    "curve": "CatmullRomCurve3",
+    "json": {
+      "type": "CatmullRomCurve3",
+      "arcLengthDivisions": 9,
+      "points": [
+        [
+          0,
+          0,
+          0
+        ],
+        [
+          2,
+          3,
+          -1
+        ],
+        [
+          5,
+          -2,
+          4
+        ],
+        [
+          7,
+          1,
+          2
+        ]
+      ],
+      "closed": false,
+      "curveType": "centripetal",
+      "tension": 0.5
+    },
+    "t": 0.875,
+    "target": false,
+    "method": "getPoint"
+  },
+  {
+    "case": "CatmullRomCurve3:point:0.875:target=True",
+    "op": "sample",
+    "curve": "CatmullRomCurve3",
+    "json": {
+      "type": "CatmullRomCurve3",
+      "arcLengthDivisions": 9,
+      "points": [
+        [
+          0,
+          0,
+          0
+        ],
+        [
+          2,
+          3,
+          -1
+        ],
+        [
+          5,
+          -2,
+          4
+        ],
+        [
+          7,
+          1,
+          2
+        ]
+      ],
+      "closed": false,
+      "curveType": "centripetal",
+      "tension": 0.5
+    },
+    "t": 0.875,
+    "target": true,
+    "method": "getPoint"
+  },
+  {
+    "case": "CatmullRomCurve3:point:1:target=False",
+    "op": "sample",
+    "curve": "CatmullRomCurve3",
+    "json": {
+      "type": "CatmullRomCurve3",
+      "arcLengthDivisions": 9,
+      "points": [
+        [
+          0,
+          0,
+          0
+        ],
+        [
+          2,
+          3,
+          -1
+        ],
+        [
+          5,
+          -2,
+          4
+        ],
+        [
+          7,
+          1,
+          2
+        ]
+      ],
+      "closed": false,
+      "curveType": "centripetal",
+      "tension": 0.5
+    },
+    "t": 1,
+    "target": false,
+    "method": "getPoint"
+  },
+  {
+    "case": "CatmullRomCurve3:point:1:target=True",
+    "op": "sample",
+    "curve": "CatmullRomCurve3",
+    "json": {
+      "type": "CatmullRomCurve3",
+      "arcLengthDivisions": 9,
+      "points": [
+        [
+          0,
+          0,
+          0
+        ],
+        [
+          2,
+          3,
+          -1
+        ],
+        [
+          5,
+          -2,
+          4
+        ],
+        [
+          7,
+          1,
+          2
+        ]
+      ],
+      "closed": false,
+      "curveType": "centripetal",
+      "tension": 0.5
+    },
+    "t": 1,
+    "target": true,
+    "method": "getPoint"
+  },
+  {
+    "case": "CatmullRomCurve3:copy",
+    "op": "copy",
+    "curve": "CatmullRomCurve3",
+    "json": {
+      "type": "CatmullRomCurve3",
+      "arcLengthDivisions": 9,
+      "points": [
+        [
+          0,
+          0,
+          0
+        ],
+        [
+          2,
+          3,
+          -1
+        ],
+        [
+          5,
+          -2,
+          4
+        ],
+        [
+          7,
+          1,
+          2
+        ]
+      ],
+      "closed": false,
+      "curveType": "centripetal",
+      "tension": 0.5
+    }
+  },
+  {
+    "case": "CubicBezierCurve:point:-0.25:target=False",
+    "op": "sample",
+    "curve": "CubicBezierCurve",
+    "json": {
+      "type": "CubicBezierCurve",
+      "arcLengthDivisions": 9,
+      "v0": [
+        0,
+        1
+      ],
+      "v1": [
+        2,
+        4
+      ],
+      "v2": [
+        5,
+        -2
+      ],
+      "v3": [
+        7,
+        1
+      ]
+    },
+    "t": -0.25,
+    "target": false,
+    "method": "getPoint"
+  },
+  {
+    "case": "CubicBezierCurve:point:-0.25:target=True",
+    "op": "sample",
+    "curve": "CubicBezierCurve",
+    "json": {
+      "type": "CubicBezierCurve",
+      "arcLengthDivisions": 9,
+      "v0": [
+        0,
+        1
+      ],
+      "v1": [
+        2,
+        4
+      ],
+      "v2": [
+        5,
+        -2
+      ],
+      "v3": [
+        7,
+        1
+      ]
+    },
+    "t": -0.25,
+    "target": true,
+    "method": "getPoint"
+  },
+  {
+    "case": "CubicBezierCurve:point:0:target=False",
+    "op": "sample",
+    "curve": "CubicBezierCurve",
+    "json": {
+      "type": "CubicBezierCurve",
+      "arcLengthDivisions": 9,
+      "v0": [
+        0,
+        1
+      ],
+      "v1": [
+        2,
+        4
+      ],
+      "v2": [
+        5,
+        -2
+      ],
+      "v3": [
+        7,
+        1
+      ]
+    },
+    "t": 0,
+    "target": false,
+    "method": "getPoint"
+  },
+  {
+    "case": "CubicBezierCurve:point:0:target=True",
+    "op": "sample",
+    "curve": "CubicBezierCurve",
+    "json": {
+      "type": "CubicBezierCurve",
+      "arcLengthDivisions": 9,
+      "v0": [
+        0,
+        1
+      ],
+      "v1": [
+        2,
+        4
+      ],
+      "v2": [
+        5,
+        -2
+      ],
+      "v3": [
+        7,
+        1
+      ]
+    },
+    "t": 0,
+    "target": true,
+    "method": "getPoint"
+  },
+  {
+    "case": "CubicBezierCurve:point:0.125:target=False",
+    "op": "sample",
+    "curve": "CubicBezierCurve",
+    "json": {
+      "type": "CubicBezierCurve",
+      "arcLengthDivisions": 9,
+      "v0": [
+        0,
+        1
+      ],
+      "v1": [
+        2,
+        4
+      ],
+      "v2": [
+        5,
+        -2
+      ],
+      "v3": [
+        7,
+        1
+      ]
+    },
+    "t": 0.125,
+    "target": false,
+    "method": "getPoint"
+  },
+  {
+    "case": "CubicBezierCurve:point:0.125:target=True",
+    "op": "sample",
+    "curve": "CubicBezierCurve",
+    "json": {
+      "type": "CubicBezierCurve",
+      "arcLengthDivisions": 9,
+      "v0": [
+        0,
+        1
+      ],
+      "v1": [
+        2,
+        4
+      ],
+      "v2": [
+        5,
+        -2
+      ],
+      "v3": [
+        7,
+        1
+      ]
+    },
+    "t": 0.125,
+    "target": true,
+    "method": "getPoint"
+  },
+  {
+    "case": "CubicBezierCurve:point:0.5:target=False",
+    "op": "sample",
+    "curve": "CubicBezierCurve",
+    "json": {
+      "type": "CubicBezierCurve",
+      "arcLengthDivisions": 9,
+      "v0": [
+        0,
+        1
+      ],
+      "v1": [
+        2,
+        4
+      ],
+      "v2": [
+        5,
+        -2
+      ],
+      "v3": [
+        7,
+        1
+      ]
+    },
+    "t": 0.5,
+    "target": false,
+    "method": "getPoint"
+  },
+  {
+    "case": "CubicBezierCurve:point:0.5:target=True",
+    "op": "sample",
+    "curve": "CubicBezierCurve",
+    "json": {
+      "type": "CubicBezierCurve",
+      "arcLengthDivisions": 9,
+      "v0": [
+        0,
+        1
+      ],
+      "v1": [
+        2,
+        4
+      ],
+      "v2": [
+        5,
+        -2
+      ],
+      "v3": [
+        7,
+        1
+      ]
+    },
+    "t": 0.5,
+    "target": true,
+    "method": "getPoint"
+  },
+  {
+    "case": "CubicBezierCurve:point:0.875:target=False",
+    "op": "sample",
+    "curve": "CubicBezierCurve",
+    "json": {
+      "type": "CubicBezierCurve",
+      "arcLengthDivisions": 9,
+      "v0": [
+        0,
+        1
+      ],
+      "v1": [
+        2,
+        4
+      ],
+      "v2": [
+        5,
+        -2
+      ],
+      "v3": [
+        7,
+        1
+      ]
+    },
+    "t": 0.875,
+    "target": false,
+    "method": "getPoint"
+  },
+  {
+    "case": "CubicBezierCurve:point:0.875:target=True",
+    "op": "sample",
+    "curve": "CubicBezierCurve",
+    "json": {
+      "type": "CubicBezierCurve",
+      "arcLengthDivisions": 9,
+      "v0": [
+        0,
+        1
+      ],
+      "v1": [
+        2,
+        4
+      ],
+      "v2": [
+        5,
+        -2
+      ],
+      "v3": [
+        7,
+        1
+      ]
+    },
+    "t": 0.875,
+    "target": true,
+    "method": "getPoint"
+  },
+  {
+    "case": "CubicBezierCurve:point:1:target=False",
+    "op": "sample",
+    "curve": "CubicBezierCurve",
+    "json": {
+      "type": "CubicBezierCurve",
+      "arcLengthDivisions": 9,
+      "v0": [
+        0,
+        1
+      ],
+      "v1": [
+        2,
+        4
+      ],
+      "v2": [
+        5,
+        -2
+      ],
+      "v3": [
+        7,
+        1
+      ]
+    },
+    "t": 1,
+    "target": false,
+    "method": "getPoint"
+  },
+  {
+    "case": "CubicBezierCurve:point:1:target=True",
+    "op": "sample",
+    "curve": "CubicBezierCurve",
+    "json": {
+      "type": "CubicBezierCurve",
+      "arcLengthDivisions": 9,
+      "v0": [
+        0,
+        1
+      ],
+      "v1": [
+        2,
+        4
+      ],
+      "v2": [
+        5,
+        -2
+      ],
+      "v3": [
+        7,
+        1
+      ]
+    },
+    "t": 1,
+    "target": true,
+    "method": "getPoint"
+  },
+  {
+    "case": "CubicBezierCurve:point:1.25:target=False",
+    "op": "sample",
+    "curve": "CubicBezierCurve",
+    "json": {
+      "type": "CubicBezierCurve",
+      "arcLengthDivisions": 9,
+      "v0": [
+        0,
+        1
+      ],
+      "v1": [
+        2,
+        4
+      ],
+      "v2": [
+        5,
+        -2
+      ],
+      "v3": [
+        7,
+        1
+      ]
+    },
+    "t": 1.25,
+    "target": false,
+    "method": "getPoint"
+  },
+  {
+    "case": "CubicBezierCurve:point:1.25:target=True",
+    "op": "sample",
+    "curve": "CubicBezierCurve",
+    "json": {
+      "type": "CubicBezierCurve",
+      "arcLengthDivisions": 9,
+      "v0": [
+        0,
+        1
+      ],
+      "v1": [
+        2,
+        4
+      ],
+      "v2": [
+        5,
+        -2
+      ],
+      "v3": [
+        7,
+        1
+      ]
+    },
+    "t": 1.25,
+    "target": true,
+    "method": "getPoint"
+  },
+  {
+    "case": "CubicBezierCurve:copy",
+    "op": "copy",
+    "curve": "CubicBezierCurve",
+    "json": {
+      "type": "CubicBezierCurve",
+      "arcLengthDivisions": 9,
+      "v0": [
+        0,
+        1
+      ],
+      "v1": [
+        2,
+        4
+      ],
+      "v2": [
+        5,
+        -2
+      ],
+      "v3": [
+        7,
+        1
+      ]
+    }
+  },
+  {
+    "case": "CubicBezierCurve3:point:-0.25:target=False",
+    "op": "sample",
+    "curve": "CubicBezierCurve3",
+    "json": {
+      "type": "CubicBezierCurve3",
+      "arcLengthDivisions": 9,
+      "v0": [
+        0,
+        1,
+        2
+      ],
+      "v1": [
+        2,
+        4,
+        -1
+      ],
+      "v2": [
+        5,
+        -2,
+        3
+      ],
+      "v3": [
+        7,
+        1,
+        4
+      ]
+    },
+    "t": -0.25,
+    "target": false,
+    "method": "getPoint"
+  },
+  {
+    "case": "CubicBezierCurve3:point:-0.25:target=True",
+    "op": "sample",
+    "curve": "CubicBezierCurve3",
+    "json": {
+      "type": "CubicBezierCurve3",
+      "arcLengthDivisions": 9,
+      "v0": [
+        0,
+        1,
+        2
+      ],
+      "v1": [
+        2,
+        4,
+        -1
+      ],
+      "v2": [
+        5,
+        -2,
+        3
+      ],
+      "v3": [
+        7,
+        1,
+        4
+      ]
+    },
+    "t": -0.25,
+    "target": true,
+    "method": "getPoint"
+  },
+  {
+    "case": "CubicBezierCurve3:point:0:target=False",
+    "op": "sample",
+    "curve": "CubicBezierCurve3",
+    "json": {
+      "type": "CubicBezierCurve3",
+      "arcLengthDivisions": 9,
+      "v0": [
+        0,
+        1,
+        2
+      ],
+      "v1": [
+        2,
+        4,
+        -1
+      ],
+      "v2": [
+        5,
+        -2,
+        3
+      ],
+      "v3": [
+        7,
+        1,
+        4
+      ]
+    },
+    "t": 0,
+    "target": false,
+    "method": "getPoint"
+  },
+  {
+    "case": "CubicBezierCurve3:point:0:target=True",
+    "op": "sample",
+    "curve": "CubicBezierCurve3",
+    "json": {
+      "type": "CubicBezierCurve3",
+      "arcLengthDivisions": 9,
+      "v0": [
+        0,
+        1,
+        2
+      ],
+      "v1": [
+        2,
+        4,
+        -1
+      ],
+      "v2": [
+        5,
+        -2,
+        3
+      ],
+      "v3": [
+        7,
+        1,
+        4
+      ]
+    },
+    "t": 0,
+    "target": true,
+    "method": "getPoint"
+  },
+  {
+    "case": "CubicBezierCurve3:point:0.125:target=False",
+    "op": "sample",
+    "curve": "CubicBezierCurve3",
+    "json": {
+      "type": "CubicBezierCurve3",
+      "arcLengthDivisions": 9,
+      "v0": [
+        0,
+        1,
+        2
+      ],
+      "v1": [
+        2,
+        4,
+        -1
+      ],
+      "v2": [
+        5,
+        -2,
+        3
+      ],
+      "v3": [
+        7,
+        1,
+        4
+      ]
+    },
+    "t": 0.125,
+    "target": false,
+    "method": "getPoint"
+  },
+  {
+    "case": "CubicBezierCurve3:point:0.125:target=True",
+    "op": "sample",
+    "curve": "CubicBezierCurve3",
+    "json": {
+      "type": "CubicBezierCurve3",
+      "arcLengthDivisions": 9,
+      "v0": [
+        0,
+        1,
+        2
+      ],
+      "v1": [
+        2,
+        4,
+        -1
+      ],
+      "v2": [
+        5,
+        -2,
+        3
+      ],
+      "v3": [
+        7,
+        1,
+        4
+      ]
+    },
+    "t": 0.125,
+    "target": true,
+    "method": "getPoint"
+  },
+  {
+    "case": "CubicBezierCurve3:point:0.5:target=False",
+    "op": "sample",
+    "curve": "CubicBezierCurve3",
+    "json": {
+      "type": "CubicBezierCurve3",
+      "arcLengthDivisions": 9,
+      "v0": [
+        0,
+        1,
+        2
+      ],
+      "v1": [
+        2,
+        4,
+        -1
+      ],
+      "v2": [
+        5,
+        -2,
+        3
+      ],
+      "v3": [
+        7,
+        1,
+        4
+      ]
+    },
+    "t": 0.5,
+    "target": false,
+    "method": "getPoint"
+  },
+  {
+    "case": "CubicBezierCurve3:point:0.5:target=True",
+    "op": "sample",
+    "curve": "CubicBezierCurve3",
+    "json": {
+      "type": "CubicBezierCurve3",
+      "arcLengthDivisions": 9,
+      "v0": [
+        0,
+        1,
+        2
+      ],
+      "v1": [
+        2,
+        4,
+        -1
+      ],
+      "v2": [
+        5,
+        -2,
+        3
+      ],
+      "v3": [
+        7,
+        1,
+        4
+      ]
+    },
+    "t": 0.5,
+    "target": true,
+    "method": "getPoint"
+  },
+  {
+    "case": "CubicBezierCurve3:point:0.875:target=False",
+    "op": "sample",
+    "curve": "CubicBezierCurve3",
+    "json": {
+      "type": "CubicBezierCurve3",
+      "arcLengthDivisions": 9,
+      "v0": [
+        0,
+        1,
+        2
+      ],
+      "v1": [
+        2,
+        4,
+        -1
+      ],
+      "v2": [
+        5,
+        -2,
+        3
+      ],
+      "v3": [
+        7,
+        1,
+        4
+      ]
+    },
+    "t": 0.875,
+    "target": false,
+    "method": "getPoint"
+  },
+  {
+    "case": "CubicBezierCurve3:point:0.875:target=True",
+    "op": "sample",
+    "curve": "CubicBezierCurve3",
+    "json": {
+      "type": "CubicBezierCurve3",
+      "arcLengthDivisions": 9,
+      "v0": [
+        0,
+        1,
+        2
+      ],
+      "v1": [
+        2,
+        4,
+        -1
+      ],
+      "v2": [
+        5,
+        -2,
+        3
+      ],
+      "v3": [
+        7,
+        1,
+        4
+      ]
+    },
+    "t": 0.875,
+    "target": true,
+    "method": "getPoint"
+  },
+  {
+    "case": "CubicBezierCurve3:point:1:target=False",
+    "op": "sample",
+    "curve": "CubicBezierCurve3",
+    "json": {
+      "type": "CubicBezierCurve3",
+      "arcLengthDivisions": 9,
+      "v0": [
+        0,
+        1,
+        2
+      ],
+      "v1": [
+        2,
+        4,
+        -1
+      ],
+      "v2": [
+        5,
+        -2,
+        3
+      ],
+      "v3": [
+        7,
+        1,
+        4
+      ]
+    },
+    "t": 1,
+    "target": false,
+    "method": "getPoint"
+  },
+  {
+    "case": "CubicBezierCurve3:point:1:target=True",
+    "op": "sample",
+    "curve": "CubicBezierCurve3",
+    "json": {
+      "type": "CubicBezierCurve3",
+      "arcLengthDivisions": 9,
+      "v0": [
+        0,
+        1,
+        2
+      ],
+      "v1": [
+        2,
+        4,
+        -1
+      ],
+      "v2": [
+        5,
+        -2,
+        3
+      ],
+      "v3": [
+        7,
+        1,
+        4
+      ]
+    },
+    "t": 1,
+    "target": true,
+    "method": "getPoint"
+  },
+  {
+    "case": "CubicBezierCurve3:point:1.25:target=False",
+    "op": "sample",
+    "curve": "CubicBezierCurve3",
+    "json": {
+      "type": "CubicBezierCurve3",
+      "arcLengthDivisions": 9,
+      "v0": [
+        0,
+        1,
+        2
+      ],
+      "v1": [
+        2,
+        4,
+        -1
+      ],
+      "v2": [
+        5,
+        -2,
+        3
+      ],
+      "v3": [
+        7,
+        1,
+        4
+      ]
+    },
+    "t": 1.25,
+    "target": false,
+    "method": "getPoint"
+  },
+  {
+    "case": "CubicBezierCurve3:point:1.25:target=True",
+    "op": "sample",
+    "curve": "CubicBezierCurve3",
+    "json": {
+      "type": "CubicBezierCurve3",
+      "arcLengthDivisions": 9,
+      "v0": [
+        0,
+        1,
+        2
+      ],
+      "v1": [
+        2,
+        4,
+        -1
+      ],
+      "v2": [
+        5,
+        -2,
+        3
+      ],
+      "v3": [
+        7,
+        1,
+        4
+      ]
+    },
+    "t": 1.25,
+    "target": true,
+    "method": "getPoint"
+  },
+  {
+    "case": "CubicBezierCurve3:copy",
+    "op": "copy",
+    "curve": "CubicBezierCurve3",
+    "json": {
+      "type": "CubicBezierCurve3",
+      "arcLengthDivisions": 9,
+      "v0": [
+        0,
+        1,
+        2
+      ],
+      "v1": [
+        2,
+        4,
+        -1
+      ],
+      "v2": [
+        5,
+        -2,
+        3
+      ],
+      "v3": [
+        7,
+        1,
+        4
+      ]
+    }
+  },
+  {
+    "case": "EllipseCurve:point:-0.25:target=False",
+    "op": "sample",
+    "curve": "EllipseCurve",
+    "json": {
+      "type": "EllipseCurve",
+      "arcLengthDivisions": 9,
+      "aX": 2,
+      "aY": -3,
+      "xRadius": 4,
+      "yRadius": 2,
+      "aStartAngle": 0.2,
+      "aEndAngle": 5.7,
+      "aClockwise": false,
+      "aRotation": 0.3
+    },
+    "t": -0.25,
+    "target": false,
+    "method": "getPoint"
+  },
+  {
+    "case": "EllipseCurve:point:-0.25:target=True",
+    "op": "sample",
+    "curve": "EllipseCurve",
+    "json": {
+      "type": "EllipseCurve",
+      "arcLengthDivisions": 9,
+      "aX": 2,
+      "aY": -3,
+      "xRadius": 4,
+      "yRadius": 2,
+      "aStartAngle": 0.2,
+      "aEndAngle": 5.7,
+      "aClockwise": false,
+      "aRotation": 0.3
+    },
+    "t": -0.25,
+    "target": true,
+    "method": "getPoint"
+  },
+  {
+    "case": "EllipseCurve:point:0:target=False",
+    "op": "sample",
+    "curve": "EllipseCurve",
+    "json": {
+      "type": "EllipseCurve",
+      "arcLengthDivisions": 9,
+      "aX": 2,
+      "aY": -3,
+      "xRadius": 4,
+      "yRadius": 2,
+      "aStartAngle": 0.2,
+      "aEndAngle": 5.7,
+      "aClockwise": false,
+      "aRotation": 0.3
+    },
+    "t": 0,
+    "target": false,
+    "method": "getPoint"
+  },
+  {
+    "case": "EllipseCurve:point:0:target=True",
+    "op": "sample",
+    "curve": "EllipseCurve",
+    "json": {
+      "type": "EllipseCurve",
+      "arcLengthDivisions": 9,
+      "aX": 2,
+      "aY": -3,
+      "xRadius": 4,
+      "yRadius": 2,
+      "aStartAngle": 0.2,
+      "aEndAngle": 5.7,
+      "aClockwise": false,
+      "aRotation": 0.3
+    },
+    "t": 0,
+    "target": true,
+    "method": "getPoint"
+  },
+  {
+    "case": "EllipseCurve:point:0.125:target=False",
+    "op": "sample",
+    "curve": "EllipseCurve",
+    "json": {
+      "type": "EllipseCurve",
+      "arcLengthDivisions": 9,
+      "aX": 2,
+      "aY": -3,
+      "xRadius": 4,
+      "yRadius": 2,
+      "aStartAngle": 0.2,
+      "aEndAngle": 5.7,
+      "aClockwise": false,
+      "aRotation": 0.3
+    },
+    "t": 0.125,
+    "target": false,
+    "method": "getPoint"
+  },
+  {
+    "case": "EllipseCurve:point:0.125:target=True",
+    "op": "sample",
+    "curve": "EllipseCurve",
+    "json": {
+      "type": "EllipseCurve",
+      "arcLengthDivisions": 9,
+      "aX": 2,
+      "aY": -3,
+      "xRadius": 4,
+      "yRadius": 2,
+      "aStartAngle": 0.2,
+      "aEndAngle": 5.7,
+      "aClockwise": false,
+      "aRotation": 0.3
+    },
+    "t": 0.125,
+    "target": true,
+    "method": "getPoint"
+  },
+  {
+    "case": "EllipseCurve:point:0.5:target=False",
+    "op": "sample",
+    "curve": "EllipseCurve",
+    "json": {
+      "type": "EllipseCurve",
+      "arcLengthDivisions": 9,
+      "aX": 2,
+      "aY": -3,
+      "xRadius": 4,
+      "yRadius": 2,
+      "aStartAngle": 0.2,
+      "aEndAngle": 5.7,
+      "aClockwise": false,
+      "aRotation": 0.3
+    },
+    "t": 0.5,
+    "target": false,
+    "method": "getPoint"
+  },
+  {
+    "case": "EllipseCurve:point:0.5:target=True",
+    "op": "sample",
+    "curve": "EllipseCurve",
+    "json": {
+      "type": "EllipseCurve",
+      "arcLengthDivisions": 9,
+      "aX": 2,
+      "aY": -3,
+      "xRadius": 4,
+      "yRadius": 2,
+      "aStartAngle": 0.2,
+      "aEndAngle": 5.7,
+      "aClockwise": false,
+      "aRotation": 0.3
+    },
+    "t": 0.5,
+    "target": true,
+    "method": "getPoint"
+  },
+  {
+    "case": "EllipseCurve:point:0.875:target=False",
+    "op": "sample",
+    "curve": "EllipseCurve",
+    "json": {
+      "type": "EllipseCurve",
+      "arcLengthDivisions": 9,
+      "aX": 2,
+      "aY": -3,
+      "xRadius": 4,
+      "yRadius": 2,
+      "aStartAngle": 0.2,
+      "aEndAngle": 5.7,
+      "aClockwise": false,
+      "aRotation": 0.3
+    },
+    "t": 0.875,
+    "target": false,
+    "method": "getPoint"
+  },
+  {
+    "case": "EllipseCurve:point:0.875:target=True",
+    "op": "sample",
+    "curve": "EllipseCurve",
+    "json": {
+      "type": "EllipseCurve",
+      "arcLengthDivisions": 9,
+      "aX": 2,
+      "aY": -3,
+      "xRadius": 4,
+      "yRadius": 2,
+      "aStartAngle": 0.2,
+      "aEndAngle": 5.7,
+      "aClockwise": false,
+      "aRotation": 0.3
+    },
+    "t": 0.875,
+    "target": true,
+    "method": "getPoint"
+  },
+  {
+    "case": "EllipseCurve:point:1:target=False",
+    "op": "sample",
+    "curve": "EllipseCurve",
+    "json": {
+      "type": "EllipseCurve",
+      "arcLengthDivisions": 9,
+      "aX": 2,
+      "aY": -3,
+      "xRadius": 4,
+      "yRadius": 2,
+      "aStartAngle": 0.2,
+      "aEndAngle": 5.7,
+      "aClockwise": false,
+      "aRotation": 0.3
+    },
+    "t": 1,
+    "target": false,
+    "method": "getPoint"
+  },
+  {
+    "case": "EllipseCurve:point:1:target=True",
+    "op": "sample",
+    "curve": "EllipseCurve",
+    "json": {
+      "type": "EllipseCurve",
+      "arcLengthDivisions": 9,
+      "aX": 2,
+      "aY": -3,
+      "xRadius": 4,
+      "yRadius": 2,
+      "aStartAngle": 0.2,
+      "aEndAngle": 5.7,
+      "aClockwise": false,
+      "aRotation": 0.3
+    },
+    "t": 1,
+    "target": true,
+    "method": "getPoint"
+  },
+  {
+    "case": "EllipseCurve:point:1.25:target=False",
+    "op": "sample",
+    "curve": "EllipseCurve",
+    "json": {
+      "type": "EllipseCurve",
+      "arcLengthDivisions": 9,
+      "aX": 2,
+      "aY": -3,
+      "xRadius": 4,
+      "yRadius": 2,
+      "aStartAngle": 0.2,
+      "aEndAngle": 5.7,
+      "aClockwise": false,
+      "aRotation": 0.3
+    },
+    "t": 1.25,
+    "target": false,
+    "method": "getPoint"
+  },
+  {
+    "case": "EllipseCurve:point:1.25:target=True",
+    "op": "sample",
+    "curve": "EllipseCurve",
+    "json": {
+      "type": "EllipseCurve",
+      "arcLengthDivisions": 9,
+      "aX": 2,
+      "aY": -3,
+      "xRadius": 4,
+      "yRadius": 2,
+      "aStartAngle": 0.2,
+      "aEndAngle": 5.7,
+      "aClockwise": false,
+      "aRotation": 0.3
+    },
+    "t": 1.25,
+    "target": true,
+    "method": "getPoint"
+  },
+  {
+    "case": "EllipseCurve:copy",
+    "op": "copy",
+    "curve": "EllipseCurve",
+    "json": {
+      "type": "EllipseCurve",
+      "arcLengthDivisions": 9,
+      "aX": 2,
+      "aY": -3,
+      "xRadius": 4,
+      "yRadius": 2,
+      "aStartAngle": 0.2,
+      "aEndAngle": 5.7,
+      "aClockwise": false,
+      "aRotation": 0.3
+    }
+  },
+  {
+    "case": "LineCurve:point:-0.25:target=False",
+    "op": "sample",
+    "curve": "LineCurve",
+    "json": {
+      "type": "LineCurve",
+      "arcLengthDivisions": 9,
+      "v1": [
+        0,
+        1
+      ],
+      "v2": [
+        2,
+        4
+      ]
+    },
+    "t": -0.25,
+    "target": false,
+    "method": "getPoint"
+  },
+  {
+    "case": "LineCurve:point:-0.25:target=True",
+    "op": "sample",
+    "curve": "LineCurve",
+    "json": {
+      "type": "LineCurve",
+      "arcLengthDivisions": 9,
+      "v1": [
+        0,
+        1
+      ],
+      "v2": [
+        2,
+        4
+      ]
+    },
+    "t": -0.25,
+    "target": true,
+    "method": "getPoint"
+  },
+  {
+    "case": "LineCurve:point:0:target=False",
+    "op": "sample",
+    "curve": "LineCurve",
+    "json": {
+      "type": "LineCurve",
+      "arcLengthDivisions": 9,
+      "v1": [
+        0,
+        1
+      ],
+      "v2": [
+        2,
+        4
+      ]
+    },
+    "t": 0,
+    "target": false,
+    "method": "getPoint"
+  },
+  {
+    "case": "LineCurve:point:0:target=True",
+    "op": "sample",
+    "curve": "LineCurve",
+    "json": {
+      "type": "LineCurve",
+      "arcLengthDivisions": 9,
+      "v1": [
+        0,
+        1
+      ],
+      "v2": [
+        2,
+        4
+      ]
+    },
+    "t": 0,
+    "target": true,
+    "method": "getPoint"
+  },
+  {
+    "case": "LineCurve:point:0.125:target=False",
+    "op": "sample",
+    "curve": "LineCurve",
+    "json": {
+      "type": "LineCurve",
+      "arcLengthDivisions": 9,
+      "v1": [
+        0,
+        1
+      ],
+      "v2": [
+        2,
+        4
+      ]
+    },
+    "t": 0.125,
+    "target": false,
+    "method": "getPoint"
+  },
+  {
+    "case": "LineCurve:point:0.125:target=True",
+    "op": "sample",
+    "curve": "LineCurve",
+    "json": {
+      "type": "LineCurve",
+      "arcLengthDivisions": 9,
+      "v1": [
+        0,
+        1
+      ],
+      "v2": [
+        2,
+        4
+      ]
+    },
+    "t": 0.125,
+    "target": true,
+    "method": "getPoint"
+  },
+  {
+    "case": "LineCurve:point:0.5:target=False",
+    "op": "sample",
+    "curve": "LineCurve",
+    "json": {
+      "type": "LineCurve",
+      "arcLengthDivisions": 9,
+      "v1": [
+        0,
+        1
+      ],
+      "v2": [
+        2,
+        4
+      ]
+    },
+    "t": 0.5,
+    "target": false,
+    "method": "getPoint"
+  },
+  {
+    "case": "LineCurve:point:0.5:target=True",
+    "op": "sample",
+    "curve": "LineCurve",
+    "json": {
+      "type": "LineCurve",
+      "arcLengthDivisions": 9,
+      "v1": [
+        0,
+        1
+      ],
+      "v2": [
+        2,
+        4
+      ]
+    },
+    "t": 0.5,
+    "target": true,
+    "method": "getPoint"
+  },
+  {
+    "case": "LineCurve:point:0.875:target=False",
+    "op": "sample",
+    "curve": "LineCurve",
+    "json": {
+      "type": "LineCurve",
+      "arcLengthDivisions": 9,
+      "v1": [
+        0,
+        1
+      ],
+      "v2": [
+        2,
+        4
+      ]
+    },
+    "t": 0.875,
+    "target": false,
+    "method": "getPoint"
+  },
+  {
+    "case": "LineCurve:point:0.875:target=True",
+    "op": "sample",
+    "curve": "LineCurve",
+    "json": {
+      "type": "LineCurve",
+      "arcLengthDivisions": 9,
+      "v1": [
+        0,
+        1
+      ],
+      "v2": [
+        2,
+        4
+      ]
+    },
+    "t": 0.875,
+    "target": true,
+    "method": "getPoint"
+  },
+  {
+    "case": "LineCurve:point:1:target=False",
+    "op": "sample",
+    "curve": "LineCurve",
+    "json": {
+      "type": "LineCurve",
+      "arcLengthDivisions": 9,
+      "v1": [
+        0,
+        1
+      ],
+      "v2": [
+        2,
+        4
+      ]
+    },
+    "t": 1,
+    "target": false,
+    "method": "getPoint"
+  },
+  {
+    "case": "LineCurve:point:1:target=True",
+    "op": "sample",
+    "curve": "LineCurve",
+    "json": {
+      "type": "LineCurve",
+      "arcLengthDivisions": 9,
+      "v1": [
+        0,
+        1
+      ],
+      "v2": [
+        2,
+        4
+      ]
+    },
+    "t": 1,
+    "target": true,
+    "method": "getPoint"
+  },
+  {
+    "case": "LineCurve:point:1.25:target=False",
+    "op": "sample",
+    "curve": "LineCurve",
+    "json": {
+      "type": "LineCurve",
+      "arcLengthDivisions": 9,
+      "v1": [
+        0,
+        1
+      ],
+      "v2": [
+        2,
+        4
+      ]
+    },
+    "t": 1.25,
+    "target": false,
+    "method": "getPoint"
+  },
+  {
+    "case": "LineCurve:point:1.25:target=True",
+    "op": "sample",
+    "curve": "LineCurve",
+    "json": {
+      "type": "LineCurve",
+      "arcLengthDivisions": 9,
+      "v1": [
+        0,
+        1
+      ],
+      "v2": [
+        2,
+        4
+      ]
+    },
+    "t": 1.25,
+    "target": true,
+    "method": "getPoint"
+  },
+  {
+    "case": "LineCurve:getPointAt:0",
+    "op": "sample",
+    "curve": "LineCurve",
+    "json": {
+      "type": "LineCurve",
+      "arcLengthDivisions": 9,
+      "v1": [
+        0,
+        1
+      ],
+      "v2": [
+        2,
+        4
+      ]
+    },
+    "t": 0,
+    "target": true,
+    "method": "getPointAt"
+  },
+  {
+    "case": "LineCurve:getPointAt:0.4",
+    "op": "sample",
+    "curve": "LineCurve",
+    "json": {
+      "type": "LineCurve",
+      "arcLengthDivisions": 9,
+      "v1": [
+        0,
+        1
+      ],
+      "v2": [
+        2,
+        4
+      ]
+    },
+    "t": 0.4,
+    "target": true,
+    "method": "getPointAt"
+  },
+  {
+    "case": "LineCurve:getPointAt:1",
+    "op": "sample",
+    "curve": "LineCurve",
+    "json": {
+      "type": "LineCurve",
+      "arcLengthDivisions": 9,
+      "v1": [
+        0,
+        1
+      ],
+      "v2": [
+        2,
+        4
+      ]
+    },
+    "t": 1,
+    "target": true,
+    "method": "getPointAt"
+  },
+  {
+    "case": "LineCurve:getTangent:0",
+    "op": "sample",
+    "curve": "LineCurve",
+    "json": {
+      "type": "LineCurve",
+      "arcLengthDivisions": 9,
+      "v1": [
+        0,
+        1
+      ],
+      "v2": [
+        2,
+        4
+      ]
+    },
+    "t": 0,
+    "target": true,
+    "method": "getTangent"
+  },
+  {
+    "case": "LineCurve:getTangent:0.4",
+    "op": "sample",
+    "curve": "LineCurve",
+    "json": {
+      "type": "LineCurve",
+      "arcLengthDivisions": 9,
+      "v1": [
+        0,
+        1
+      ],
+      "v2": [
+        2,
+        4
+      ]
+    },
+    "t": 0.4,
+    "target": true,
+    "method": "getTangent"
+  },
+  {
+    "case": "LineCurve:getTangent:1",
+    "op": "sample",
+    "curve": "LineCurve",
+    "json": {
+      "type": "LineCurve",
+      "arcLengthDivisions": 9,
+      "v1": [
+        0,
+        1
+      ],
+      "v2": [
+        2,
+        4
+      ]
+    },
+    "t": 1,
+    "target": true,
+    "method": "getTangent"
+  },
+  {
+    "case": "LineCurve:getTangentAt:0",
+    "op": "sample",
+    "curve": "LineCurve",
+    "json": {
+      "type": "LineCurve",
+      "arcLengthDivisions": 9,
+      "v1": [
+        0,
+        1
+      ],
+      "v2": [
+        2,
+        4
+      ]
+    },
+    "t": 0,
+    "target": true,
+    "method": "getTangentAt"
+  },
+  {
+    "case": "LineCurve:getTangentAt:0.4",
+    "op": "sample",
+    "curve": "LineCurve",
+    "json": {
+      "type": "LineCurve",
+      "arcLengthDivisions": 9,
+      "v1": [
+        0,
+        1
+      ],
+      "v2": [
+        2,
+        4
+      ]
+    },
+    "t": 0.4,
+    "target": true,
+    "method": "getTangentAt"
+  },
+  {
+    "case": "LineCurve:getTangentAt:1",
+    "op": "sample",
+    "curve": "LineCurve",
+    "json": {
+      "type": "LineCurve",
+      "arcLengthDivisions": 9,
+      "v1": [
+        0,
+        1
+      ],
+      "v2": [
+        2,
+        4
+      ]
+    },
+    "t": 1,
+    "target": true,
+    "method": "getTangentAt"
+  },
+  {
+    "case": "LineCurve:copy",
+    "op": "copy",
+    "curve": "LineCurve",
+    "json": {
+      "type": "LineCurve",
+      "arcLengthDivisions": 9,
+      "v1": [
+        0,
+        1
+      ],
+      "v2": [
+        2,
+        4
+      ]
+    }
+  },
+  {
+    "case": "LineCurve3:point:-0.25:target=False",
+    "op": "sample",
+    "curve": "LineCurve3",
+    "json": {
+      "type": "LineCurve3",
+      "arcLengthDivisions": 9,
+      "v1": [
+        0,
+        1,
+        2
+      ],
+      "v2": [
+        2,
+        4,
+        -1
+      ]
+    },
+    "t": -0.25,
+    "target": false,
+    "method": "getPoint"
+  },
+  {
+    "case": "LineCurve3:point:-0.25:target=True",
+    "op": "sample",
+    "curve": "LineCurve3",
+    "json": {
+      "type": "LineCurve3",
+      "arcLengthDivisions": 9,
+      "v1": [
+        0,
+        1,
+        2
+      ],
+      "v2": [
+        2,
+        4,
+        -1
+      ]
+    },
+    "t": -0.25,
+    "target": true,
+    "method": "getPoint"
+  },
+  {
+    "case": "LineCurve3:point:0:target=False",
+    "op": "sample",
+    "curve": "LineCurve3",
+    "json": {
+      "type": "LineCurve3",
+      "arcLengthDivisions": 9,
+      "v1": [
+        0,
+        1,
+        2
+      ],
+      "v2": [
+        2,
+        4,
+        -1
+      ]
+    },
+    "t": 0,
+    "target": false,
+    "method": "getPoint"
+  },
+  {
+    "case": "LineCurve3:point:0:target=True",
+    "op": "sample",
+    "curve": "LineCurve3",
+    "json": {
+      "type": "LineCurve3",
+      "arcLengthDivisions": 9,
+      "v1": [
+        0,
+        1,
+        2
+      ],
+      "v2": [
+        2,
+        4,
+        -1
+      ]
+    },
+    "t": 0,
+    "target": true,
+    "method": "getPoint"
+  },
+  {
+    "case": "LineCurve3:point:0.125:target=False",
+    "op": "sample",
+    "curve": "LineCurve3",
+    "json": {
+      "type": "LineCurve3",
+      "arcLengthDivisions": 9,
+      "v1": [
+        0,
+        1,
+        2
+      ],
+      "v2": [
+        2,
+        4,
+        -1
+      ]
+    },
+    "t": 0.125,
+    "target": false,
+    "method": "getPoint"
+  },
+  {
+    "case": "LineCurve3:point:0.125:target=True",
+    "op": "sample",
+    "curve": "LineCurve3",
+    "json": {
+      "type": "LineCurve3",
+      "arcLengthDivisions": 9,
+      "v1": [
+        0,
+        1,
+        2
+      ],
+      "v2": [
+        2,
+        4,
+        -1
+      ]
+    },
+    "t": 0.125,
+    "target": true,
+    "method": "getPoint"
+  },
+  {
+    "case": "LineCurve3:point:0.5:target=False",
+    "op": "sample",
+    "curve": "LineCurve3",
+    "json": {
+      "type": "LineCurve3",
+      "arcLengthDivisions": 9,
+      "v1": [
+        0,
+        1,
+        2
+      ],
+      "v2": [
+        2,
+        4,
+        -1
+      ]
+    },
+    "t": 0.5,
+    "target": false,
+    "method": "getPoint"
+  },
+  {
+    "case": "LineCurve3:point:0.5:target=True",
+    "op": "sample",
+    "curve": "LineCurve3",
+    "json": {
+      "type": "LineCurve3",
+      "arcLengthDivisions": 9,
+      "v1": [
+        0,
+        1,
+        2
+      ],
+      "v2": [
+        2,
+        4,
+        -1
+      ]
+    },
+    "t": 0.5,
+    "target": true,
+    "method": "getPoint"
+  },
+  {
+    "case": "LineCurve3:point:0.875:target=False",
+    "op": "sample",
+    "curve": "LineCurve3",
+    "json": {
+      "type": "LineCurve3",
+      "arcLengthDivisions": 9,
+      "v1": [
+        0,
+        1,
+        2
+      ],
+      "v2": [
+        2,
+        4,
+        -1
+      ]
+    },
+    "t": 0.875,
+    "target": false,
+    "method": "getPoint"
+  },
+  {
+    "case": "LineCurve3:point:0.875:target=True",
+    "op": "sample",
+    "curve": "LineCurve3",
+    "json": {
+      "type": "LineCurve3",
+      "arcLengthDivisions": 9,
+      "v1": [
+        0,
+        1,
+        2
+      ],
+      "v2": [
+        2,
+        4,
+        -1
+      ]
+    },
+    "t": 0.875,
+    "target": true,
+    "method": "getPoint"
+  },
+  {
+    "case": "LineCurve3:point:1:target=False",
+    "op": "sample",
+    "curve": "LineCurve3",
+    "json": {
+      "type": "LineCurve3",
+      "arcLengthDivisions": 9,
+      "v1": [
+        0,
+        1,
+        2
+      ],
+      "v2": [
+        2,
+        4,
+        -1
+      ]
+    },
+    "t": 1,
+    "target": false,
+    "method": "getPoint"
+  },
+  {
+    "case": "LineCurve3:point:1:target=True",
+    "op": "sample",
+    "curve": "LineCurve3",
+    "json": {
+      "type": "LineCurve3",
+      "arcLengthDivisions": 9,
+      "v1": [
+        0,
+        1,
+        2
+      ],
+      "v2": [
+        2,
+        4,
+        -1
+      ]
+    },
+    "t": 1,
+    "target": true,
+    "method": "getPoint"
+  },
+  {
+    "case": "LineCurve3:point:1.25:target=False",
+    "op": "sample",
+    "curve": "LineCurve3",
+    "json": {
+      "type": "LineCurve3",
+      "arcLengthDivisions": 9,
+      "v1": [
+        0,
+        1,
+        2
+      ],
+      "v2": [
+        2,
+        4,
+        -1
+      ]
+    },
+    "t": 1.25,
+    "target": false,
+    "method": "getPoint"
+  },
+  {
+    "case": "LineCurve3:point:1.25:target=True",
+    "op": "sample",
+    "curve": "LineCurve3",
+    "json": {
+      "type": "LineCurve3",
+      "arcLengthDivisions": 9,
+      "v1": [
+        0,
+        1,
+        2
+      ],
+      "v2": [
+        2,
+        4,
+        -1
+      ]
+    },
+    "t": 1.25,
+    "target": true,
+    "method": "getPoint"
+  },
+  {
+    "case": "LineCurve3:getPointAt:0",
+    "op": "sample",
+    "curve": "LineCurve3",
+    "json": {
+      "type": "LineCurve3",
+      "arcLengthDivisions": 9,
+      "v1": [
+        0,
+        1,
+        2
+      ],
+      "v2": [
+        2,
+        4,
+        -1
+      ]
+    },
+    "t": 0,
+    "target": true,
+    "method": "getPointAt"
+  },
+  {
+    "case": "LineCurve3:getPointAt:0.4",
+    "op": "sample",
+    "curve": "LineCurve3",
+    "json": {
+      "type": "LineCurve3",
+      "arcLengthDivisions": 9,
+      "v1": [
+        0,
+        1,
+        2
+      ],
+      "v2": [
+        2,
+        4,
+        -1
+      ]
+    },
+    "t": 0.4,
+    "target": true,
+    "method": "getPointAt"
+  },
+  {
+    "case": "LineCurve3:getPointAt:1",
+    "op": "sample",
+    "curve": "LineCurve3",
+    "json": {
+      "type": "LineCurve3",
+      "arcLengthDivisions": 9,
+      "v1": [
+        0,
+        1,
+        2
+      ],
+      "v2": [
+        2,
+        4,
+        -1
+      ]
+    },
+    "t": 1,
+    "target": true,
+    "method": "getPointAt"
+  },
+  {
+    "case": "LineCurve3:getTangent:0",
+    "op": "sample",
+    "curve": "LineCurve3",
+    "json": {
+      "type": "LineCurve3",
+      "arcLengthDivisions": 9,
+      "v1": [
+        0,
+        1,
+        2
+      ],
+      "v2": [
+        2,
+        4,
+        -1
+      ]
+    },
+    "t": 0,
+    "target": true,
+    "method": "getTangent"
+  },
+  {
+    "case": "LineCurve3:getTangent:0.4",
+    "op": "sample",
+    "curve": "LineCurve3",
+    "json": {
+      "type": "LineCurve3",
+      "arcLengthDivisions": 9,
+      "v1": [
+        0,
+        1,
+        2
+      ],
+      "v2": [
+        2,
+        4,
+        -1
+      ]
+    },
+    "t": 0.4,
+    "target": true,
+    "method": "getTangent"
+  },
+  {
+    "case": "LineCurve3:getTangent:1",
+    "op": "sample",
+    "curve": "LineCurve3",
+    "json": {
+      "type": "LineCurve3",
+      "arcLengthDivisions": 9,
+      "v1": [
+        0,
+        1,
+        2
+      ],
+      "v2": [
+        2,
+        4,
+        -1
+      ]
+    },
+    "t": 1,
+    "target": true,
+    "method": "getTangent"
+  },
+  {
+    "case": "LineCurve3:getTangentAt:0",
+    "op": "sample",
+    "curve": "LineCurve3",
+    "json": {
+      "type": "LineCurve3",
+      "arcLengthDivisions": 9,
+      "v1": [
+        0,
+        1,
+        2
+      ],
+      "v2": [
+        2,
+        4,
+        -1
+      ]
+    },
+    "t": 0,
+    "target": true,
+    "method": "getTangentAt"
+  },
+  {
+    "case": "LineCurve3:getTangentAt:0.4",
+    "op": "sample",
+    "curve": "LineCurve3",
+    "json": {
+      "type": "LineCurve3",
+      "arcLengthDivisions": 9,
+      "v1": [
+        0,
+        1,
+        2
+      ],
+      "v2": [
+        2,
+        4,
+        -1
+      ]
+    },
+    "t": 0.4,
+    "target": true,
+    "method": "getTangentAt"
+  },
+  {
+    "case": "LineCurve3:getTangentAt:1",
+    "op": "sample",
+    "curve": "LineCurve3",
+    "json": {
+      "type": "LineCurve3",
+      "arcLengthDivisions": 9,
+      "v1": [
+        0,
+        1,
+        2
+      ],
+      "v2": [
+        2,
+        4,
+        -1
+      ]
+    },
+    "t": 1,
+    "target": true,
+    "method": "getTangentAt"
+  },
+  {
+    "case": "LineCurve3:copy",
+    "op": "copy",
+    "curve": "LineCurve3",
+    "json": {
+      "type": "LineCurve3",
+      "arcLengthDivisions": 9,
+      "v1": [
+        0,
+        1,
+        2
+      ],
+      "v2": [
+        2,
+        4,
+        -1
+      ]
+    }
+  },
+  {
+    "case": "QuadraticBezierCurve:point:-0.25:target=False",
+    "op": "sample",
+    "curve": "QuadraticBezierCurve",
+    "json": {
+      "type": "QuadraticBezierCurve",
+      "arcLengthDivisions": 9,
+      "v0": [
+        0,
+        1
+      ],
+      "v1": [
+        2,
+        4
+      ],
+      "v2": [
+        5,
+        -2
+      ]
+    },
+    "t": -0.25,
+    "target": false,
+    "method": "getPoint"
+  },
+  {
+    "case": "QuadraticBezierCurve:point:-0.25:target=True",
+    "op": "sample",
+    "curve": "QuadraticBezierCurve",
+    "json": {
+      "type": "QuadraticBezierCurve",
+      "arcLengthDivisions": 9,
+      "v0": [
+        0,
+        1
+      ],
+      "v1": [
+        2,
+        4
+      ],
+      "v2": [
+        5,
+        -2
+      ]
+    },
+    "t": -0.25,
+    "target": true,
+    "method": "getPoint"
+  },
+  {
+    "case": "QuadraticBezierCurve:point:0:target=False",
+    "op": "sample",
+    "curve": "QuadraticBezierCurve",
+    "json": {
+      "type": "QuadraticBezierCurve",
+      "arcLengthDivisions": 9,
+      "v0": [
+        0,
+        1
+      ],
+      "v1": [
+        2,
+        4
+      ],
+      "v2": [
+        5,
+        -2
+      ]
+    },
+    "t": 0,
+    "target": false,
+    "method": "getPoint"
+  },
+  {
+    "case": "QuadraticBezierCurve:point:0:target=True",
+    "op": "sample",
+    "curve": "QuadraticBezierCurve",
+    "json": {
+      "type": "QuadraticBezierCurve",
+      "arcLengthDivisions": 9,
+      "v0": [
+        0,
+        1
+      ],
+      "v1": [
+        2,
+        4
+      ],
+      "v2": [
+        5,
+        -2
+      ]
+    },
+    "t": 0,
+    "target": true,
+    "method": "getPoint"
+  },
+  {
+    "case": "QuadraticBezierCurve:point:0.125:target=False",
+    "op": "sample",
+    "curve": "QuadraticBezierCurve",
+    "json": {
+      "type": "QuadraticBezierCurve",
+      "arcLengthDivisions": 9,
+      "v0": [
+        0,
+        1
+      ],
+      "v1": [
+        2,
+        4
+      ],
+      "v2": [
+        5,
+        -2
+      ]
+    },
+    "t": 0.125,
+    "target": false,
+    "method": "getPoint"
+  },
+  {
+    "case": "QuadraticBezierCurve:point:0.125:target=True",
+    "op": "sample",
+    "curve": "QuadraticBezierCurve",
+    "json": {
+      "type": "QuadraticBezierCurve",
+      "arcLengthDivisions": 9,
+      "v0": [
+        0,
+        1
+      ],
+      "v1": [
+        2,
+        4
+      ],
+      "v2": [
+        5,
+        -2
+      ]
+    },
+    "t": 0.125,
+    "target": true,
+    "method": "getPoint"
+  },
+  {
+    "case": "QuadraticBezierCurve:point:0.5:target=False",
+    "op": "sample",
+    "curve": "QuadraticBezierCurve",
+    "json": {
+      "type": "QuadraticBezierCurve",
+      "arcLengthDivisions": 9,
+      "v0": [
+        0,
+        1
+      ],
+      "v1": [
+        2,
+        4
+      ],
+      "v2": [
+        5,
+        -2
+      ]
+    },
+    "t": 0.5,
+    "target": false,
+    "method": "getPoint"
+  },
+  {
+    "case": "QuadraticBezierCurve:point:0.5:target=True",
+    "op": "sample",
+    "curve": "QuadraticBezierCurve",
+    "json": {
+      "type": "QuadraticBezierCurve",
+      "arcLengthDivisions": 9,
+      "v0": [
+        0,
+        1
+      ],
+      "v1": [
+        2,
+        4
+      ],
+      "v2": [
+        5,
+        -2
+      ]
+    },
+    "t": 0.5,
+    "target": true,
+    "method": "getPoint"
+  },
+  {
+    "case": "QuadraticBezierCurve:point:0.875:target=False",
+    "op": "sample",
+    "curve": "QuadraticBezierCurve",
+    "json": {
+      "type": "QuadraticBezierCurve",
+      "arcLengthDivisions": 9,
+      "v0": [
+        0,
+        1
+      ],
+      "v1": [
+        2,
+        4
+      ],
+      "v2": [
+        5,
+        -2
+      ]
+    },
+    "t": 0.875,
+    "target": false,
+    "method": "getPoint"
+  },
+  {
+    "case": "QuadraticBezierCurve:point:0.875:target=True",
+    "op": "sample",
+    "curve": "QuadraticBezierCurve",
+    "json": {
+      "type": "QuadraticBezierCurve",
+      "arcLengthDivisions": 9,
+      "v0": [
+        0,
+        1
+      ],
+      "v1": [
+        2,
+        4
+      ],
+      "v2": [
+        5,
+        -2
+      ]
+    },
+    "t": 0.875,
+    "target": true,
+    "method": "getPoint"
+  },
+  {
+    "case": "QuadraticBezierCurve:point:1:target=False",
+    "op": "sample",
+    "curve": "QuadraticBezierCurve",
+    "json": {
+      "type": "QuadraticBezierCurve",
+      "arcLengthDivisions": 9,
+      "v0": [
+        0,
+        1
+      ],
+      "v1": [
+        2,
+        4
+      ],
+      "v2": [
+        5,
+        -2
+      ]
+    },
+    "t": 1,
+    "target": false,
+    "method": "getPoint"
+  },
+  {
+    "case": "QuadraticBezierCurve:point:1:target=True",
+    "op": "sample",
+    "curve": "QuadraticBezierCurve",
+    "json": {
+      "type": "QuadraticBezierCurve",
+      "arcLengthDivisions": 9,
+      "v0": [
+        0,
+        1
+      ],
+      "v1": [
+        2,
+        4
+      ],
+      "v2": [
+        5,
+        -2
+      ]
+    },
+    "t": 1,
+    "target": true,
+    "method": "getPoint"
+  },
+  {
+    "case": "QuadraticBezierCurve:point:1.25:target=False",
+    "op": "sample",
+    "curve": "QuadraticBezierCurve",
+    "json": {
+      "type": "QuadraticBezierCurve",
+      "arcLengthDivisions": 9,
+      "v0": [
+        0,
+        1
+      ],
+      "v1": [
+        2,
+        4
+      ],
+      "v2": [
+        5,
+        -2
+      ]
+    },
+    "t": 1.25,
+    "target": false,
+    "method": "getPoint"
+  },
+  {
+    "case": "QuadraticBezierCurve:point:1.25:target=True",
+    "op": "sample",
+    "curve": "QuadraticBezierCurve",
+    "json": {
+      "type": "QuadraticBezierCurve",
+      "arcLengthDivisions": 9,
+      "v0": [
+        0,
+        1
+      ],
+      "v1": [
+        2,
+        4
+      ],
+      "v2": [
+        5,
+        -2
+      ]
+    },
+    "t": 1.25,
+    "target": true,
+    "method": "getPoint"
+  },
+  {
+    "case": "QuadraticBezierCurve:copy",
+    "op": "copy",
+    "curve": "QuadraticBezierCurve",
+    "json": {
+      "type": "QuadraticBezierCurve",
+      "arcLengthDivisions": 9,
+      "v0": [
+        0,
+        1
+      ],
+      "v1": [
+        2,
+        4
+      ],
+      "v2": [
+        5,
+        -2
+      ]
+    }
+  },
+  {
+    "case": "QuadraticBezierCurve3:point:-0.25:target=False",
+    "op": "sample",
+    "curve": "QuadraticBezierCurve3",
+    "json": {
+      "type": "QuadraticBezierCurve3",
+      "arcLengthDivisions": 9,
+      "v0": [
+        0,
+        1,
+        2
+      ],
+      "v1": [
+        2,
+        4,
+        -1
+      ],
+      "v2": [
+        5,
+        -2,
+        3
+      ]
+    },
+    "t": -0.25,
+    "target": false,
+    "method": "getPoint"
+  },
+  {
+    "case": "QuadraticBezierCurve3:point:-0.25:target=True",
+    "op": "sample",
+    "curve": "QuadraticBezierCurve3",
+    "json": {
+      "type": "QuadraticBezierCurve3",
+      "arcLengthDivisions": 9,
+      "v0": [
+        0,
+        1,
+        2
+      ],
+      "v1": [
+        2,
+        4,
+        -1
+      ],
+      "v2": [
+        5,
+        -2,
+        3
+      ]
+    },
+    "t": -0.25,
+    "target": true,
+    "method": "getPoint"
+  },
+  {
+    "case": "QuadraticBezierCurve3:point:0:target=False",
+    "op": "sample",
+    "curve": "QuadraticBezierCurve3",
+    "json": {
+      "type": "QuadraticBezierCurve3",
+      "arcLengthDivisions": 9,
+      "v0": [
+        0,
+        1,
+        2
+      ],
+      "v1": [
+        2,
+        4,
+        -1
+      ],
+      "v2": [
+        5,
+        -2,
+        3
+      ]
+    },
+    "t": 0,
+    "target": false,
+    "method": "getPoint"
+  },
+  {
+    "case": "QuadraticBezierCurve3:point:0:target=True",
+    "op": "sample",
+    "curve": "QuadraticBezierCurve3",
+    "json": {
+      "type": "QuadraticBezierCurve3",
+      "arcLengthDivisions": 9,
+      "v0": [
+        0,
+        1,
+        2
+      ],
+      "v1": [
+        2,
+        4,
+        -1
+      ],
+      "v2": [
+        5,
+        -2,
+        3
+      ]
+    },
+    "t": 0,
+    "target": true,
+    "method": "getPoint"
+  },
+  {
+    "case": "QuadraticBezierCurve3:point:0.125:target=False",
+    "op": "sample",
+    "curve": "QuadraticBezierCurve3",
+    "json": {
+      "type": "QuadraticBezierCurve3",
+      "arcLengthDivisions": 9,
+      "v0": [
+        0,
+        1,
+        2
+      ],
+      "v1": [
+        2,
+        4,
+        -1
+      ],
+      "v2": [
+        5,
+        -2,
+        3
+      ]
+    },
+    "t": 0.125,
+    "target": false,
+    "method": "getPoint"
+  },
+  {
+    "case": "QuadraticBezierCurve3:point:0.125:target=True",
+    "op": "sample",
+    "curve": "QuadraticBezierCurve3",
+    "json": {
+      "type": "QuadraticBezierCurve3",
+      "arcLengthDivisions": 9,
+      "v0": [
+        0,
+        1,
+        2
+      ],
+      "v1": [
+        2,
+        4,
+        -1
+      ],
+      "v2": [
+        5,
+        -2,
+        3
+      ]
+    },
+    "t": 0.125,
+    "target": true,
+    "method": "getPoint"
+  },
+  {
+    "case": "QuadraticBezierCurve3:point:0.5:target=False",
+    "op": "sample",
+    "curve": "QuadraticBezierCurve3",
+    "json": {
+      "type": "QuadraticBezierCurve3",
+      "arcLengthDivisions": 9,
+      "v0": [
+        0,
+        1,
+        2
+      ],
+      "v1": [
+        2,
+        4,
+        -1
+      ],
+      "v2": [
+        5,
+        -2,
+        3
+      ]
+    },
+    "t": 0.5,
+    "target": false,
+    "method": "getPoint"
+  },
+  {
+    "case": "QuadraticBezierCurve3:point:0.5:target=True",
+    "op": "sample",
+    "curve": "QuadraticBezierCurve3",
+    "json": {
+      "type": "QuadraticBezierCurve3",
+      "arcLengthDivisions": 9,
+      "v0": [
+        0,
+        1,
+        2
+      ],
+      "v1": [
+        2,
+        4,
+        -1
+      ],
+      "v2": [
+        5,
+        -2,
+        3
+      ]
+    },
+    "t": 0.5,
+    "target": true,
+    "method": "getPoint"
+  },
+  {
+    "case": "QuadraticBezierCurve3:point:0.875:target=False",
+    "op": "sample",
+    "curve": "QuadraticBezierCurve3",
+    "json": {
+      "type": "QuadraticBezierCurve3",
+      "arcLengthDivisions": 9,
+      "v0": [
+        0,
+        1,
+        2
+      ],
+      "v1": [
+        2,
+        4,
+        -1
+      ],
+      "v2": [
+        5,
+        -2,
+        3
+      ]
+    },
+    "t": 0.875,
+    "target": false,
+    "method": "getPoint"
+  },
+  {
+    "case": "QuadraticBezierCurve3:point:0.875:target=True",
+    "op": "sample",
+    "curve": "QuadraticBezierCurve3",
+    "json": {
+      "type": "QuadraticBezierCurve3",
+      "arcLengthDivisions": 9,
+      "v0": [
+        0,
+        1,
+        2
+      ],
+      "v1": [
+        2,
+        4,
+        -1
+      ],
+      "v2": [
+        5,
+        -2,
+        3
+      ]
+    },
+    "t": 0.875,
+    "target": true,
+    "method": "getPoint"
+  },
+  {
+    "case": "QuadraticBezierCurve3:point:1:target=False",
+    "op": "sample",
+    "curve": "QuadraticBezierCurve3",
+    "json": {
+      "type": "QuadraticBezierCurve3",
+      "arcLengthDivisions": 9,
+      "v0": [
+        0,
+        1,
+        2
+      ],
+      "v1": [
+        2,
+        4,
+        -1
+      ],
+      "v2": [
+        5,
+        -2,
+        3
+      ]
+    },
+    "t": 1,
+    "target": false,
+    "method": "getPoint"
+  },
+  {
+    "case": "QuadraticBezierCurve3:point:1:target=True",
+    "op": "sample",
+    "curve": "QuadraticBezierCurve3",
+    "json": {
+      "type": "QuadraticBezierCurve3",
+      "arcLengthDivisions": 9,
+      "v0": [
+        0,
+        1,
+        2
+      ],
+      "v1": [
+        2,
+        4,
+        -1
+      ],
+      "v2": [
+        5,
+        -2,
+        3
+      ]
+    },
+    "t": 1,
+    "target": true,
+    "method": "getPoint"
+  },
+  {
+    "case": "QuadraticBezierCurve3:point:1.25:target=False",
+    "op": "sample",
+    "curve": "QuadraticBezierCurve3",
+    "json": {
+      "type": "QuadraticBezierCurve3",
+      "arcLengthDivisions": 9,
+      "v0": [
+        0,
+        1,
+        2
+      ],
+      "v1": [
+        2,
+        4,
+        -1
+      ],
+      "v2": [
+        5,
+        -2,
+        3
+      ]
+    },
+    "t": 1.25,
+    "target": false,
+    "method": "getPoint"
+  },
+  {
+    "case": "QuadraticBezierCurve3:point:1.25:target=True",
+    "op": "sample",
+    "curve": "QuadraticBezierCurve3",
+    "json": {
+      "type": "QuadraticBezierCurve3",
+      "arcLengthDivisions": 9,
+      "v0": [
+        0,
+        1,
+        2
+      ],
+      "v1": [
+        2,
+        4,
+        -1
+      ],
+      "v2": [
+        5,
+        -2,
+        3
+      ]
+    },
+    "t": 1.25,
+    "target": true,
+    "method": "getPoint"
+  },
+  {
+    "case": "QuadraticBezierCurve3:copy",
+    "op": "copy",
+    "curve": "QuadraticBezierCurve3",
+    "json": {
+      "type": "QuadraticBezierCurve3",
+      "arcLengthDivisions": 9,
+      "v0": [
+        0,
+        1,
+        2
+      ],
+      "v1": [
+        2,
+        4,
+        -1
+      ],
+      "v2": [
+        5,
+        -2,
+        3
+      ]
+    }
+  },
+  {
+    "case": "SplineCurve:point:0:target=False",
+    "op": "sample",
+    "curve": "SplineCurve",
+    "json": {
+      "type": "SplineCurve",
+      "arcLengthDivisions": 9,
+      "points": [
+        [
+          0,
+          0
+        ],
+        [
+          2,
+          3
+        ],
+        [
+          5,
+          -2
+        ],
+        [
+          7,
+          1
+        ]
+      ]
+    },
+    "t": 0,
+    "target": false,
+    "method": "getPoint"
+  },
+  {
+    "case": "SplineCurve:point:0:target=True",
+    "op": "sample",
+    "curve": "SplineCurve",
+    "json": {
+      "type": "SplineCurve",
+      "arcLengthDivisions": 9,
+      "points": [
+        [
+          0,
+          0
+        ],
+        [
+          2,
+          3
+        ],
+        [
+          5,
+          -2
+        ],
+        [
+          7,
+          1
+        ]
+      ]
+    },
+    "t": 0,
+    "target": true,
+    "method": "getPoint"
+  },
+  {
+    "case": "SplineCurve:point:0.125:target=False",
+    "op": "sample",
+    "curve": "SplineCurve",
+    "json": {
+      "type": "SplineCurve",
+      "arcLengthDivisions": 9,
+      "points": [
+        [
+          0,
+          0
+        ],
+        [
+          2,
+          3
+        ],
+        [
+          5,
+          -2
+        ],
+        [
+          7,
+          1
+        ]
+      ]
+    },
+    "t": 0.125,
+    "target": false,
+    "method": "getPoint"
+  },
+  {
+    "case": "SplineCurve:point:0.125:target=True",
+    "op": "sample",
+    "curve": "SplineCurve",
+    "json": {
+      "type": "SplineCurve",
+      "arcLengthDivisions": 9,
+      "points": [
+        [
+          0,
+          0
+        ],
+        [
+          2,
+          3
+        ],
+        [
+          5,
+          -2
+        ],
+        [
+          7,
+          1
+        ]
+      ]
+    },
+    "t": 0.125,
+    "target": true,
+    "method": "getPoint"
+  },
+  {
+    "case": "SplineCurve:point:0.5:target=False",
+    "op": "sample",
+    "curve": "SplineCurve",
+    "json": {
+      "type": "SplineCurve",
+      "arcLengthDivisions": 9,
+      "points": [
+        [
+          0,
+          0
+        ],
+        [
+          2,
+          3
+        ],
+        [
+          5,
+          -2
+        ],
+        [
+          7,
+          1
+        ]
+      ]
+    },
+    "t": 0.5,
+    "target": false,
+    "method": "getPoint"
+  },
+  {
+    "case": "SplineCurve:point:0.5:target=True",
+    "op": "sample",
+    "curve": "SplineCurve",
+    "json": {
+      "type": "SplineCurve",
+      "arcLengthDivisions": 9,
+      "points": [
+        [
+          0,
+          0
+        ],
+        [
+          2,
+          3
+        ],
+        [
+          5,
+          -2
+        ],
+        [
+          7,
+          1
+        ]
+      ]
+    },
+    "t": 0.5,
+    "target": true,
+    "method": "getPoint"
+  },
+  {
+    "case": "SplineCurve:point:0.875:target=False",
+    "op": "sample",
+    "curve": "SplineCurve",
+    "json": {
+      "type": "SplineCurve",
+      "arcLengthDivisions": 9,
+      "points": [
+        [
+          0,
+          0
+        ],
+        [
+          2,
+          3
+        ],
+        [
+          5,
+          -2
+        ],
+        [
+          7,
+          1
+        ]
+      ]
+    },
+    "t": 0.875,
+    "target": false,
+    "method": "getPoint"
+  },
+  {
+    "case": "SplineCurve:point:0.875:target=True",
+    "op": "sample",
+    "curve": "SplineCurve",
+    "json": {
+      "type": "SplineCurve",
+      "arcLengthDivisions": 9,
+      "points": [
+        [
+          0,
+          0
+        ],
+        [
+          2,
+          3
+        ],
+        [
+          5,
+          -2
+        ],
+        [
+          7,
+          1
+        ]
+      ]
+    },
+    "t": 0.875,
+    "target": true,
+    "method": "getPoint"
+  },
+  {
+    "case": "SplineCurve:point:1:target=False",
+    "op": "sample",
+    "curve": "SplineCurve",
+    "json": {
+      "type": "SplineCurve",
+      "arcLengthDivisions": 9,
+      "points": [
+        [
+          0,
+          0
+        ],
+        [
+          2,
+          3
+        ],
+        [
+          5,
+          -2
+        ],
+        [
+          7,
+          1
+        ]
+      ]
+    },
+    "t": 1,
+    "target": false,
+    "method": "getPoint"
+  },
+  {
+    "case": "SplineCurve:point:1:target=True",
+    "op": "sample",
+    "curve": "SplineCurve",
+    "json": {
+      "type": "SplineCurve",
+      "arcLengthDivisions": 9,
+      "points": [
+        [
+          0,
+          0
+        ],
+        [
+          2,
+          3
+        ],
+        [
+          5,
+          -2
+        ],
+        [
+          7,
+          1
+        ]
+      ]
+    },
+    "t": 1,
+    "target": true,
+    "method": "getPoint"
+  },
+  {
+    "case": "SplineCurve:copy",
+    "op": "copy",
+    "curve": "SplineCurve",
+    "json": {
+      "type": "SplineCurve",
+      "arcLengthDivisions": 9,
+      "points": [
+        [
+          0,
+          0
+        ],
+        [
+          2,
+          3
+        ],
+        [
+          5,
+          -2
+        ],
+        [
+          7,
+          1
+        ]
+      ]
+    }
+  },
+  {
+    "case": "ellipse:0:0:False:0",
+    "op": "sample",
+    "curve": "EllipseCurve",
+    "json": {
+      "type": "EllipseCurve",
+      "arcLengthDivisions": 9,
+      "aX": 2,
+      "aY": -3,
+      "xRadius": 4,
+      "yRadius": 2,
+      "aStartAngle": 0,
+      "aEndAngle": 0,
+      "aClockwise": false,
+      "aRotation": 0
+    },
+    "t": 0.375,
+    "target": true,
+    "method": "getPoint"
+  },
+  {
+    "case": "ellipse:0:0:True:0",
+    "op": "sample",
+    "curve": "EllipseCurve",
+    "json": {
+      "type": "EllipseCurve",
+      "arcLengthDivisions": 9,
+      "aX": 2,
+      "aY": -3,
+      "xRadius": 4,
+      "yRadius": 2,
+      "aStartAngle": 0,
+      "aEndAngle": 0,
+      "aClockwise": true,
+      "aRotation": 0
+    },
+    "t": 0.375,
+    "target": true,
+    "method": "getPoint"
+  },
+  {
+    "case": "ellipse:8:1:False:0",
+    "op": "sample",
+    "curve": "EllipseCurve",
+    "json": {
+      "type": "EllipseCurve",
+      "arcLengthDivisions": 9,
+      "aX": 2,
+      "aY": -3,
+      "xRadius": 4,
+      "yRadius": 2,
+      "aStartAngle": 8,
+      "aEndAngle": 1,
+      "aClockwise": false,
+      "aRotation": 0
+    },
+    "t": 0.375,
+    "target": true,
+    "method": "getPoint"
+  },
+  {
+    "case": "ellipse:-9:9:True:0.5",
+    "op": "sample",
+    "curve": "EllipseCurve",
+    "json": {
+      "type": "EllipseCurve",
+      "arcLengthDivisions": 9,
+      "aX": 2,
+      "aY": -3,
+      "xRadius": 4,
+      "yRadius": 2,
+      "aStartAngle": -9,
+      "aEndAngle": 9,
+      "aClockwise": true,
+      "aRotation": 0.5
+    },
+    "t": 0.375,
+    "target": true,
+    "method": "getPoint"
+  },
+  {
+    "case": "ellipse:0:6.283185307179586:True:0",
+    "op": "sample",
+    "curve": "EllipseCurve",
+    "json": {
+      "type": "EllipseCurve",
+      "arcLengthDivisions": 9,
+      "aX": 2,
+      "aY": -3,
+      "xRadius": 4,
+      "yRadius": 2,
+      "aStartAngle": 0,
+      "aEndAngle": 6.283185307179586,
+      "aClockwise": true,
+      "aRotation": 0
+    },
+    "t": 0.375,
+    "target": true,
+    "method": "getPoint"
+  },
+  {
+    "case": "ellipse:0:1e-18:True:0",
+    "op": "sample",
+    "curve": "EllipseCurve",
+    "json": {
+      "type": "EllipseCurve",
+      "arcLengthDivisions": 9,
+      "aX": 2,
+      "aY": -3,
+      "xRadius": 4,
+      "yRadius": 2,
+      "aStartAngle": 0,
+      "aEndAngle": 1e-18,
+      "aClockwise": true,
+      "aRotation": 0
+    },
+    "t": 0.375,
+    "target": true,
+    "method": "getPoint"
+  },
+  {
+    "case": "ellipse:0:12.566370614359172:False:0",
+    "op": "sample",
+    "curve": "EllipseCurve",
+    "json": {
+      "type": "EllipseCurve",
+      "arcLengthDivisions": 9,
+      "aX": 2,
+      "aY": -3,
+      "xRadius": 4,
+      "yRadius": 2,
+      "aStartAngle": 0,
+      "aEndAngle": 12.566370614359172,
+      "aClockwise": false,
+      "aRotation": 0
+    },
+    "t": 0.375,
+    "target": true,
+    "method": "getPoint"
+  },
+  {
+    "case": "ellipse:0:1:1:0",
+    "op": "sample",
+    "curve": "EllipseCurve",
+    "json": {
+      "type": "EllipseCurve",
+      "arcLengthDivisions": 9,
+      "aX": 2,
+      "aY": -3,
+      "xRadius": 4,
+      "yRadius": 2,
+      "aStartAngle": 0,
+      "aEndAngle": 1,
+      "aClockwise": 1,
+      "aRotation": 0
+    },
+    "t": 0.375,
+    "target": true,
+    "method": "getPoint"
+  },
+  {
+    "case": "ellipse:0:1:True:None",
+    "op": "sample",
+    "curve": "EllipseCurve",
+    "json": {
+      "type": "EllipseCurve",
+      "arcLengthDivisions": 9,
+      "aX": 2,
+      "aY": -3,
+      "xRadius": 4,
+      "yRadius": 2,
+      "aStartAngle": 0,
+      "aEndAngle": 1,
+      "aClockwise": true,
+      "aRotation": null
+    },
+    "t": 0.375,
+    "target": true,
+    "method": "getPoint"
+  },
+  {
+    "case": "catmull:False:centripetal:0",
+    "op": "sample",
+    "curve": "CatmullRomCurve3",
+    "json": {
+      "type": "CatmullRomCurve3",
+      "arcLengthDivisions": 9,
+      "points": [
+        [
+          0,
+          0,
+          0
+        ],
+        [
+          2,
+          3,
+          -1
+        ],
+        [
+          5,
+          -2,
+          4
+        ],
+        [
+          7,
+          1,
+          2
+        ]
+      ],
+      "closed": false,
+      "curveType": "centripetal",
+      "tension": -0.4
+    },
+    "t": 0,
+    "target": false,
+    "method": "getPoint",
+    "seed": false
+  },
+  {
+    "case": "catmull:False:centripetal:0.2",
+    "op": "sample",
+    "curve": "CatmullRomCurve3",
+    "json": {
+      "type": "CatmullRomCurve3",
+      "arcLengthDivisions": 9,
+      "points": [
+        [
+          0,
+          0,
+          0
+        ],
+        [
+          2,
+          3,
+          -1
+        ],
+        [
+          5,
+          -2,
+          4
+        ],
+        [
+          7,
+          1,
+          2
+        ]
+      ],
+      "closed": false,
+      "curveType": "centripetal",
+      "tension": -0.4
+    },
+    "t": 0.2,
+    "target": false,
+    "method": "getPoint",
+    "seed": false
+  },
+  {
+    "case": "catmull:False:centripetal:0.75",
+    "op": "sample",
+    "curve": "CatmullRomCurve3",
+    "json": {
+      "type": "CatmullRomCurve3",
+      "arcLengthDivisions": 9,
+      "points": [
+        [
+          0,
+          0,
+          0
+        ],
+        [
+          2,
+          3,
+          -1
+        ],
+        [
+          5,
+          -2,
+          4
+        ],
+        [
+          7,
+          1,
+          2
+        ]
+      ],
+      "closed": false,
+      "curveType": "centripetal",
+      "tension": -0.4
+    },
+    "t": 0.75,
+    "target": false,
+    "method": "getPoint",
+    "seed": false
+  },
+  {
+    "case": "catmull:False:centripetal:1",
+    "op": "sample",
+    "curve": "CatmullRomCurve3",
+    "json": {
+      "type": "CatmullRomCurve3",
+      "arcLengthDivisions": 9,
+      "points": [
+        [
+          0,
+          0,
+          0
+        ],
+        [
+          2,
+          3,
+          -1
+        ],
+        [
+          5,
+          -2,
+          4
+        ],
+        [
+          7,
+          1,
+          2
+        ]
+      ],
+      "closed": false,
+      "curveType": "centripetal",
+      "tension": -0.4
+    },
+    "t": 1,
+    "target": false,
+    "method": "getPoint",
+    "seed": false
+  },
+  {
+    "case": "catmull:False:chordal:0",
+    "op": "sample",
+    "curve": "CatmullRomCurve3",
+    "json": {
+      "type": "CatmullRomCurve3",
+      "arcLengthDivisions": 9,
+      "points": [
+        [
+          0,
+          0,
+          0
+        ],
+        [
+          2,
+          3,
+          -1
+        ],
+        [
+          5,
+          -2,
+          4
+        ],
+        [
+          7,
+          1,
+          2
+        ]
+      ],
+      "closed": false,
+      "curveType": "chordal",
+      "tension": -0.4
+    },
+    "t": 0,
+    "target": false,
+    "method": "getPoint",
+    "seed": false
+  },
+  {
+    "case": "catmull:False:chordal:0.2",
+    "op": "sample",
+    "curve": "CatmullRomCurve3",
+    "json": {
+      "type": "CatmullRomCurve3",
+      "arcLengthDivisions": 9,
+      "points": [
+        [
+          0,
+          0,
+          0
+        ],
+        [
+          2,
+          3,
+          -1
+        ],
+        [
+          5,
+          -2,
+          4
+        ],
+        [
+          7,
+          1,
+          2
+        ]
+      ],
+      "closed": false,
+      "curveType": "chordal",
+      "tension": -0.4
+    },
+    "t": 0.2,
+    "target": false,
+    "method": "getPoint",
+    "seed": false
+  },
+  {
+    "case": "catmull:False:chordal:0.75",
+    "op": "sample",
+    "curve": "CatmullRomCurve3",
+    "json": {
+      "type": "CatmullRomCurve3",
+      "arcLengthDivisions": 9,
+      "points": [
+        [
+          0,
+          0,
+          0
+        ],
+        [
+          2,
+          3,
+          -1
+        ],
+        [
+          5,
+          -2,
+          4
+        ],
+        [
+          7,
+          1,
+          2
+        ]
+      ],
+      "closed": false,
+      "curveType": "chordal",
+      "tension": -0.4
+    },
+    "t": 0.75,
+    "target": false,
+    "method": "getPoint",
+    "seed": false
+  },
+  {
+    "case": "catmull:False:chordal:1",
+    "op": "sample",
+    "curve": "CatmullRomCurve3",
+    "json": {
+      "type": "CatmullRomCurve3",
+      "arcLengthDivisions": 9,
+      "points": [
+        [
+          0,
+          0,
+          0
+        ],
+        [
+          2,
+          3,
+          -1
+        ],
+        [
+          5,
+          -2,
+          4
+        ],
+        [
+          7,
+          1,
+          2
+        ]
+      ],
+      "closed": false,
+      "curveType": "chordal",
+      "tension": -0.4
+    },
+    "t": 1,
+    "target": false,
+    "method": "getPoint",
+    "seed": false
+  },
+  {
+    "case": "catmull:False:catmullrom:0",
+    "op": "sample",
+    "curve": "CatmullRomCurve3",
+    "json": {
+      "type": "CatmullRomCurve3",
+      "arcLengthDivisions": 9,
+      "points": [
+        [
+          0,
+          0,
+          0
+        ],
+        [
+          2,
+          3,
+          -1
+        ],
+        [
+          5,
+          -2,
+          4
+        ],
+        [
+          7,
+          1,
+          2
+        ]
+      ],
+      "closed": false,
+      "curveType": "catmullrom",
+      "tension": -0.4
+    },
+    "t": 0,
+    "target": false,
+    "method": "getPoint",
+    "seed": false
+  },
+  {
+    "case": "catmull:False:catmullrom:0.2",
+    "op": "sample",
+    "curve": "CatmullRomCurve3",
+    "json": {
+      "type": "CatmullRomCurve3",
+      "arcLengthDivisions": 9,
+      "points": [
+        [
+          0,
+          0,
+          0
+        ],
+        [
+          2,
+          3,
+          -1
+        ],
+        [
+          5,
+          -2,
+          4
+        ],
+        [
+          7,
+          1,
+          2
+        ]
+      ],
+      "closed": false,
+      "curveType": "catmullrom",
+      "tension": -0.4
+    },
+    "t": 0.2,
+    "target": false,
+    "method": "getPoint",
+    "seed": false
+  },
+  {
+    "case": "catmull:False:catmullrom:0.75",
+    "op": "sample",
+    "curve": "CatmullRomCurve3",
+    "json": {
+      "type": "CatmullRomCurve3",
+      "arcLengthDivisions": 9,
+      "points": [
+        [
+          0,
+          0,
+          0
+        ],
+        [
+          2,
+          3,
+          -1
+        ],
+        [
+          5,
+          -2,
+          4
+        ],
+        [
+          7,
+          1,
+          2
+        ]
+      ],
+      "closed": false,
+      "curveType": "catmullrom",
+      "tension": -0.4
+    },
+    "t": 0.75,
+    "target": false,
+    "method": "getPoint",
+    "seed": false
+  },
+  {
+    "case": "catmull:False:catmullrom:1",
+    "op": "sample",
+    "curve": "CatmullRomCurve3",
+    "json": {
+      "type": "CatmullRomCurve3",
+      "arcLengthDivisions": 9,
+      "points": [
+        [
+          0,
+          0,
+          0
+        ],
+        [
+          2,
+          3,
+          -1
+        ],
+        [
+          5,
+          -2,
+          4
+        ],
+        [
+          7,
+          1,
+          2
+        ]
+      ],
+      "closed": false,
+      "curveType": "catmullrom",
+      "tension": -0.4
+    },
+    "t": 1,
+    "target": false,
+    "method": "getPoint",
+    "seed": false
+  },
+  {
+    "case": "catmull:False:unknown:0",
+    "op": "sample",
+    "curve": "CatmullRomCurve3",
+    "json": {
+      "type": "CatmullRomCurve3",
+      "arcLengthDivisions": 9,
+      "points": [
+        [
+          0,
+          0,
+          0
+        ],
+        [
+          2,
+          3,
+          -1
+        ],
+        [
+          5,
+          -2,
+          4
+        ],
+        [
+          7,
+          1,
+          2
+        ]
+      ],
+      "closed": false,
+      "curveType": "unknown",
+      "tension": -0.4
+    },
+    "t": 0,
+    "target": false,
+    "method": "getPoint",
+    "seed": true
+  },
+  {
+    "case": "catmull:False:unknown:0.2",
+    "op": "sample",
+    "curve": "CatmullRomCurve3",
+    "json": {
+      "type": "CatmullRomCurve3",
+      "arcLengthDivisions": 9,
+      "points": [
+        [
+          0,
+          0,
+          0
+        ],
+        [
+          2,
+          3,
+          -1
+        ],
+        [
+          5,
+          -2,
+          4
+        ],
+        [
+          7,
+          1,
+          2
+        ]
+      ],
+      "closed": false,
+      "curveType": "unknown",
+      "tension": -0.4
+    },
+    "t": 0.2,
+    "target": false,
+    "method": "getPoint",
+    "seed": true
+  },
+  {
+    "case": "catmull:False:unknown:0.75",
+    "op": "sample",
+    "curve": "CatmullRomCurve3",
+    "json": {
+      "type": "CatmullRomCurve3",
+      "arcLengthDivisions": 9,
+      "points": [
+        [
+          0,
+          0,
+          0
+        ],
+        [
+          2,
+          3,
+          -1
+        ],
+        [
+          5,
+          -2,
+          4
+        ],
+        [
+          7,
+          1,
+          2
+        ]
+      ],
+      "closed": false,
+      "curveType": "unknown",
+      "tension": -0.4
+    },
+    "t": 0.75,
+    "target": false,
+    "method": "getPoint",
+    "seed": true
+  },
+  {
+    "case": "catmull:False:unknown:1",
+    "op": "sample",
+    "curve": "CatmullRomCurve3",
+    "json": {
+      "type": "CatmullRomCurve3",
+      "arcLengthDivisions": 9,
+      "points": [
+        [
+          0,
+          0,
+          0
+        ],
+        [
+          2,
+          3,
+          -1
+        ],
+        [
+          5,
+          -2,
+          4
+        ],
+        [
+          7,
+          1,
+          2
+        ]
+      ],
+      "closed": false,
+      "curveType": "unknown",
+      "tension": -0.4
+    },
+    "t": 1,
+    "target": false,
+    "method": "getPoint",
+    "seed": true
+  },
+  {
+    "case": "catmull:True:centripetal:0",
+    "op": "sample",
+    "curve": "CatmullRomCurve3",
+    "json": {
+      "type": "CatmullRomCurve3",
+      "arcLengthDivisions": 9,
+      "points": [
+        [
+          0,
+          0,
+          0
+        ],
+        [
+          2,
+          3,
+          -1
+        ],
+        [
+          5,
+          -2,
+          4
+        ],
+        [
+          7,
+          1,
+          2
+        ]
+      ],
+      "closed": true,
+      "curveType": "centripetal",
+      "tension": -0.4
+    },
+    "t": 0,
+    "target": false,
+    "method": "getPoint",
+    "seed": false
+  },
+  {
+    "case": "catmull:True:centripetal:0.2",
+    "op": "sample",
+    "curve": "CatmullRomCurve3",
+    "json": {
+      "type": "CatmullRomCurve3",
+      "arcLengthDivisions": 9,
+      "points": [
+        [
+          0,
+          0,
+          0
+        ],
+        [
+          2,
+          3,
+          -1
+        ],
+        [
+          5,
+          -2,
+          4
+        ],
+        [
+          7,
+          1,
+          2
+        ]
+      ],
+      "closed": true,
+      "curveType": "centripetal",
+      "tension": -0.4
+    },
+    "t": 0.2,
+    "target": false,
+    "method": "getPoint",
+    "seed": false
+  },
+  {
+    "case": "catmull:True:centripetal:0.75",
+    "op": "sample",
+    "curve": "CatmullRomCurve3",
+    "json": {
+      "type": "CatmullRomCurve3",
+      "arcLengthDivisions": 9,
+      "points": [
+        [
+          0,
+          0,
+          0
+        ],
+        [
+          2,
+          3,
+          -1
+        ],
+        [
+          5,
+          -2,
+          4
+        ],
+        [
+          7,
+          1,
+          2
+        ]
+      ],
+      "closed": true,
+      "curveType": "centripetal",
+      "tension": -0.4
+    },
+    "t": 0.75,
+    "target": false,
+    "method": "getPoint",
+    "seed": false
+  },
+  {
+    "case": "catmull:True:centripetal:1",
+    "op": "sample",
+    "curve": "CatmullRomCurve3",
+    "json": {
+      "type": "CatmullRomCurve3",
+      "arcLengthDivisions": 9,
+      "points": [
+        [
+          0,
+          0,
+          0
+        ],
+        [
+          2,
+          3,
+          -1
+        ],
+        [
+          5,
+          -2,
+          4
+        ],
+        [
+          7,
+          1,
+          2
+        ]
+      ],
+      "closed": true,
+      "curveType": "centripetal",
+      "tension": -0.4
+    },
+    "t": 1,
+    "target": false,
+    "method": "getPoint",
+    "seed": false
+  },
+  {
+    "case": "catmull:True:chordal:0",
+    "op": "sample",
+    "curve": "CatmullRomCurve3",
+    "json": {
+      "type": "CatmullRomCurve3",
+      "arcLengthDivisions": 9,
+      "points": [
+        [
+          0,
+          0,
+          0
+        ],
+        [
+          2,
+          3,
+          -1
+        ],
+        [
+          5,
+          -2,
+          4
+        ],
+        [
+          7,
+          1,
+          2
+        ]
+      ],
+      "closed": true,
+      "curveType": "chordal",
+      "tension": -0.4
+    },
+    "t": 0,
+    "target": false,
+    "method": "getPoint",
+    "seed": false
+  },
+  {
+    "case": "catmull:True:chordal:0.2",
+    "op": "sample",
+    "curve": "CatmullRomCurve3",
+    "json": {
+      "type": "CatmullRomCurve3",
+      "arcLengthDivisions": 9,
+      "points": [
+        [
+          0,
+          0,
+          0
+        ],
+        [
+          2,
+          3,
+          -1
+        ],
+        [
+          5,
+          -2,
+          4
+        ],
+        [
+          7,
+          1,
+          2
+        ]
+      ],
+      "closed": true,
+      "curveType": "chordal",
+      "tension": -0.4
+    },
+    "t": 0.2,
+    "target": false,
+    "method": "getPoint",
+    "seed": false
+  },
+  {
+    "case": "catmull:True:chordal:0.75",
+    "op": "sample",
+    "curve": "CatmullRomCurve3",
+    "json": {
+      "type": "CatmullRomCurve3",
+      "arcLengthDivisions": 9,
+      "points": [
+        [
+          0,
+          0,
+          0
+        ],
+        [
+          2,
+          3,
+          -1
+        ],
+        [
+          5,
+          -2,
+          4
+        ],
+        [
+          7,
+          1,
+          2
+        ]
+      ],
+      "closed": true,
+      "curveType": "chordal",
+      "tension": -0.4
+    },
+    "t": 0.75,
+    "target": false,
+    "method": "getPoint",
+    "seed": false
+  },
+  {
+    "case": "catmull:True:chordal:1",
+    "op": "sample",
+    "curve": "CatmullRomCurve3",
+    "json": {
+      "type": "CatmullRomCurve3",
+      "arcLengthDivisions": 9,
+      "points": [
+        [
+          0,
+          0,
+          0
+        ],
+        [
+          2,
+          3,
+          -1
+        ],
+        [
+          5,
+          -2,
+          4
+        ],
+        [
+          7,
+          1,
+          2
+        ]
+      ],
+      "closed": true,
+      "curveType": "chordal",
+      "tension": -0.4
+    },
+    "t": 1,
+    "target": false,
+    "method": "getPoint",
+    "seed": false
+  },
+  {
+    "case": "catmull:True:catmullrom:0",
+    "op": "sample",
+    "curve": "CatmullRomCurve3",
+    "json": {
+      "type": "CatmullRomCurve3",
+      "arcLengthDivisions": 9,
+      "points": [
+        [
+          0,
+          0,
+          0
+        ],
+        [
+          2,
+          3,
+          -1
+        ],
+        [
+          5,
+          -2,
+          4
+        ],
+        [
+          7,
+          1,
+          2
+        ]
+      ],
+      "closed": true,
+      "curveType": "catmullrom",
+      "tension": -0.4
+    },
+    "t": 0,
+    "target": false,
+    "method": "getPoint",
+    "seed": false
+  },
+  {
+    "case": "catmull:True:catmullrom:0.2",
+    "op": "sample",
+    "curve": "CatmullRomCurve3",
+    "json": {
+      "type": "CatmullRomCurve3",
+      "arcLengthDivisions": 9,
+      "points": [
+        [
+          0,
+          0,
+          0
+        ],
+        [
+          2,
+          3,
+          -1
+        ],
+        [
+          5,
+          -2,
+          4
+        ],
+        [
+          7,
+          1,
+          2
+        ]
+      ],
+      "closed": true,
+      "curveType": "catmullrom",
+      "tension": -0.4
+    },
+    "t": 0.2,
+    "target": false,
+    "method": "getPoint",
+    "seed": false
+  },
+  {
+    "case": "catmull:True:catmullrom:0.75",
+    "op": "sample",
+    "curve": "CatmullRomCurve3",
+    "json": {
+      "type": "CatmullRomCurve3",
+      "arcLengthDivisions": 9,
+      "points": [
+        [
+          0,
+          0,
+          0
+        ],
+        [
+          2,
+          3,
+          -1
+        ],
+        [
+          5,
+          -2,
+          4
+        ],
+        [
+          7,
+          1,
+          2
+        ]
+      ],
+      "closed": true,
+      "curveType": "catmullrom",
+      "tension": -0.4
+    },
+    "t": 0.75,
+    "target": false,
+    "method": "getPoint",
+    "seed": false
+  },
+  {
+    "case": "catmull:True:catmullrom:1",
+    "op": "sample",
+    "curve": "CatmullRomCurve3",
+    "json": {
+      "type": "CatmullRomCurve3",
+      "arcLengthDivisions": 9,
+      "points": [
+        [
+          0,
+          0,
+          0
+        ],
+        [
+          2,
+          3,
+          -1
+        ],
+        [
+          5,
+          -2,
+          4
+        ],
+        [
+          7,
+          1,
+          2
+        ]
+      ],
+      "closed": true,
+      "curveType": "catmullrom",
+      "tension": -0.4
+    },
+    "t": 1,
+    "target": false,
+    "method": "getPoint",
+    "seed": false
+  },
+  {
+    "case": "catmull:True:unknown:0",
+    "op": "sample",
+    "curve": "CatmullRomCurve3",
+    "json": {
+      "type": "CatmullRomCurve3",
+      "arcLengthDivisions": 9,
+      "points": [
+        [
+          0,
+          0,
+          0
+        ],
+        [
+          2,
+          3,
+          -1
+        ],
+        [
+          5,
+          -2,
+          4
+        ],
+        [
+          7,
+          1,
+          2
+        ]
+      ],
+      "closed": true,
+      "curveType": "unknown",
+      "tension": -0.4
+    },
+    "t": 0,
+    "target": false,
+    "method": "getPoint",
+    "seed": true
+  },
+  {
+    "case": "catmull:True:unknown:0.2",
+    "op": "sample",
+    "curve": "CatmullRomCurve3",
+    "json": {
+      "type": "CatmullRomCurve3",
+      "arcLengthDivisions": 9,
+      "points": [
+        [
+          0,
+          0,
+          0
+        ],
+        [
+          2,
+          3,
+          -1
+        ],
+        [
+          5,
+          -2,
+          4
+        ],
+        [
+          7,
+          1,
+          2
+        ]
+      ],
+      "closed": true,
+      "curveType": "unknown",
+      "tension": -0.4
+    },
+    "t": 0.2,
+    "target": false,
+    "method": "getPoint",
+    "seed": true
+  },
+  {
+    "case": "catmull:True:unknown:0.75",
+    "op": "sample",
+    "curve": "CatmullRomCurve3",
+    "json": {
+      "type": "CatmullRomCurve3",
+      "arcLengthDivisions": 9,
+      "points": [
+        [
+          0,
+          0,
+          0
+        ],
+        [
+          2,
+          3,
+          -1
+        ],
+        [
+          5,
+          -2,
+          4
+        ],
+        [
+          7,
+          1,
+          2
+        ]
+      ],
+      "closed": true,
+      "curveType": "unknown",
+      "tension": -0.4
+    },
+    "t": 0.75,
+    "target": false,
+    "method": "getPoint",
+    "seed": true
+  },
+  {
+    "case": "catmull:True:unknown:1",
+    "op": "sample",
+    "curve": "CatmullRomCurve3",
+    "json": {
+      "type": "CatmullRomCurve3",
+      "arcLengthDivisions": 9,
+      "points": [
+        [
+          0,
+          0,
+          0
+        ],
+        [
+          2,
+          3,
+          -1
+        ],
+        [
+          5,
+          -2,
+          4
+        ],
+        [
+          7,
+          1,
+          2
+        ]
+      ],
+      "closed": true,
+      "curveType": "unknown",
+      "tension": -0.4
+    },
+    "t": 1,
+    "target": false,
+    "method": "getPoint",
+    "seed": true
+  },
+  {
+    "case": "catmull:repeat:3:centripetal",
+    "op": "sample",
+    "curve": "CatmullRomCurve3",
+    "json": {
+      "type": "CatmullRomCurve3",
+      "arcLengthDivisions": 9,
+      "points": [
+        [
+          1,
+          2,
+          3
+        ],
+        [
+          1,
+          2,
+          3
+        ],
+        [
+          1,
+          2,
+          3
+        ]
+      ],
+      "closed": false,
+      "curveType": "centripetal",
+      "tension": 0.5
+    },
+    "t": 0.4,
+    "method": "getPoint",
+    "target": true
+  },
+  {
+    "case": "catmull:repeat:3:chordal",
+    "op": "sample",
+    "curve": "CatmullRomCurve3",
+    "json": {
+      "type": "CatmullRomCurve3",
+      "arcLengthDivisions": 9,
+      "points": [
+        [
+          1,
+          2,
+          3
+        ],
+        [
+          1,
+          2,
+          3
+        ],
+        [
+          1,
+          2,
+          3
+        ]
+      ],
+      "closed": false,
+      "curveType": "chordal",
+      "tension": 0.5
+    },
+    "t": 0.4,
+    "method": "getPoint",
+    "target": true
+  },
+  {
+    "case": "catmull:repeat:3:catmullrom",
+    "op": "sample",
+    "curve": "CatmullRomCurve3",
+    "json": {
+      "type": "CatmullRomCurve3",
+      "arcLengthDivisions": 9,
+      "points": [
+        [
+          1,
+          2,
+          3
+        ],
+        [
+          1,
+          2,
+          3
+        ],
+        [
+          1,
+          2,
+          3
+        ]
+      ],
+      "closed": false,
+      "curveType": "catmullrom",
+      "tension": 0.5
+    },
+    "t": 0.4,
+    "method": "getPoint",
+    "target": true
+  },
+  {
+    "case": "catmull:repeat:4:centripetal",
+    "op": "sample",
+    "curve": "CatmullRomCurve3",
+    "json": {
+      "type": "CatmullRomCurve3",
+      "arcLengthDivisions": 9,
+      "points": [
+        [
+          0,
+          0,
+          0
+        ],
+        [
+          0,
+          0,
+          0
+        ],
+        [
+          1,
+          2,
+          3
+        ],
+        [
+          1,
+          2,
+          3
+        ]
+      ],
+      "closed": false,
+      "curveType": "centripetal",
+      "tension": 0.5
+    },
+    "t": 0.4,
+    "method": "getPoint",
+    "target": true
+  },
+  {
+    "case": "catmull:repeat:4:chordal",
+    "op": "sample",
+    "curve": "CatmullRomCurve3",
+    "json": {
+      "type": "CatmullRomCurve3",
+      "arcLengthDivisions": 9,
+      "points": [
+        [
+          0,
+          0,
+          0
+        ],
+        [
+          0,
+          0,
+          0
+        ],
+        [
+          1,
+          2,
+          3
+        ],
+        [
+          1,
+          2,
+          3
+        ]
+      ],
+      "closed": false,
+      "curveType": "chordal",
+      "tension": 0.5
+    },
+    "t": 0.4,
+    "method": "getPoint",
+    "target": true
+  },
+  {
+    "case": "catmull:repeat:4:catmullrom",
+    "op": "sample",
+    "curve": "CatmullRomCurve3",
+    "json": {
+      "type": "CatmullRomCurve3",
+      "arcLengthDivisions": 9,
+      "points": [
+        [
+          0,
+          0,
+          0
+        ],
+        [
+          0,
+          0,
+          0
+        ],
+        [
+          1,
+          2,
+          3
+        ],
+        [
+          1,
+          2,
+          3
+        ]
+      ],
+      "closed": false,
+      "curveType": "catmullrom",
+      "tension": 0.5
+    },
+    "t": 0.4,
+    "method": "getPoint",
+    "target": true
+  },
+  {
+    "case": "ArcCurve:targetSet",
+    "op": "observable",
+    "curve": "ArcCurve",
+    "json": {
+      "type": "ArcCurve",
+      "arcLengthDivisions": 9,
+      "aX": 2,
+      "aY": -3,
+      "xRadius": 4,
+      "yRadius": 2,
+      "aStartAngle": 0.2,
+      "aEndAngle": 5.7,
+      "aClockwise": false,
+      "aRotation": 0.3
+    },
+    "variant": "targetSet",
+    "t": 0.35
+  },
+  {
+    "case": "ArcCurve:targetNull",
+    "op": "observable",
+    "curve": "ArcCurve",
+    "json": {
+      "type": "ArcCurve",
+      "arcLengthDivisions": 9,
+      "aX": 2,
+      "aY": -3,
+      "xRadius": 4,
+      "yRadius": 2,
+      "aStartAngle": 0.2,
+      "aEndAngle": 5.7,
+      "aClockwise": false,
+      "aRotation": 0.3
+    },
+    "variant": "targetNull",
+    "t": 0.35,
+    "expectedError": {
+      "name": "TypeError"
+    }
+  },
+  {
+    "case": "ArcCurve:coercion",
+    "op": "observable",
+    "curve": "ArcCurve",
+    "json": {
+      "type": "ArcCurve",
+      "arcLengthDivisions": 9,
+      "aX": 2,
+      "aY": -3,
+      "xRadius": 4,
+      "yRadius": 2,
+      "aStartAngle": 0.2,
+      "aEndAngle": 5.7,
+      "aClockwise": false,
+      "aRotation": 0.3
+    },
+    "variant": "coercion",
+    "t": 0.35
+  },
+  {
+    "case": "ArcCurve:coercionThrow",
+    "op": "observable",
+    "curve": "ArcCurve",
+    "json": {
+      "type": "ArcCurve",
+      "arcLengthDivisions": 9,
+      "aX": 2,
+      "aY": -3,
+      "xRadius": 4,
+      "yRadius": 2,
+      "aStartAngle": 0.2,
+      "aEndAngle": 5.7,
+      "aClockwise": false,
+      "aRotation": 0.3
+    },
+    "variant": "coercionThrow",
+    "t": 0.35,
+    "expectedError": {
+      "name": "ThrownValue",
+      "raw": "coercion"
+    }
+  },
+  {
+    "case": "ArcCurve:getterOrder",
+    "op": "observable",
+    "curve": "ArcCurve",
+    "json": {
+      "type": "ArcCurve",
+      "arcLengthDivisions": 9,
+      "aX": 2,
+      "aY": -3,
+      "xRadius": 4,
+      "yRadius": 2,
+      "aStartAngle": 0.2,
+      "aEndAngle": 5.7,
+      "aClockwise": false,
+      "aRotation": 0.3
+    },
+    "variant": "getterOrder",
+    "t": 0.35
+  },
+  {
+    "case": "CatmullRomCurve3:targetSet",
+    "op": "observable",
+    "curve": "CatmullRomCurve3",
+    "json": {
+      "type": "CatmullRomCurve3",
+      "arcLengthDivisions": 9,
+      "points": [
+        [
+          0,
+          0,
+          0
+        ],
+        [
+          2,
+          3,
+          -1
+        ],
+        [
+          5,
+          -2,
+          4
+        ],
+        [
+          7,
+          1,
+          2
+        ]
+      ],
+      "closed": false,
+      "curveType": "centripetal",
+      "tension": 0.5
+    },
+    "variant": "targetSet",
+    "t": 0.35
+  },
+  {
+    "case": "CatmullRomCurve3:targetNull",
+    "op": "observable",
+    "curve": "CatmullRomCurve3",
+    "json": {
+      "type": "CatmullRomCurve3",
+      "arcLengthDivisions": 9,
+      "points": [
+        [
+          0,
+          0,
+          0
+        ],
+        [
+          2,
+          3,
+          -1
+        ],
+        [
+          5,
+          -2,
+          4
+        ],
+        [
+          7,
+          1,
+          2
+        ]
+      ],
+      "closed": false,
+      "curveType": "centripetal",
+      "tension": 0.5
+    },
+    "variant": "targetNull",
+    "t": 0.35,
+    "expectedError": {
+      "name": "TypeError"
+    }
+  },
+  {
+    "case": "CatmullRomCurve3:coercion",
+    "op": "observable",
+    "curve": "CatmullRomCurve3",
+    "json": {
+      "type": "CatmullRomCurve3",
+      "arcLengthDivisions": 9,
+      "points": [
+        [
+          0,
+          0,
+          0
+        ],
+        [
+          2,
+          3,
+          -1
+        ],
+        [
+          5,
+          -2,
+          4
+        ],
+        [
+          7,
+          1,
+          2
+        ]
+      ],
+      "closed": false,
+      "curveType": "centripetal",
+      "tension": 0.5
+    },
+    "variant": "coercion",
+    "t": 0.35
+  },
+  {
+    "case": "CatmullRomCurve3:coercionThrow",
+    "op": "observable",
+    "curve": "CatmullRomCurve3",
+    "json": {
+      "type": "CatmullRomCurve3",
+      "arcLengthDivisions": 9,
+      "points": [
+        [
+          0,
+          0,
+          0
+        ],
+        [
+          2,
+          3,
+          -1
+        ],
+        [
+          5,
+          -2,
+          4
+        ],
+        [
+          7,
+          1,
+          2
+        ]
+      ],
+      "closed": false,
+      "curveType": "centripetal",
+      "tension": 0.5
+    },
+    "variant": "coercionThrow",
+    "t": 0.35,
+    "expectedError": {
+      "name": "ThrownValue",
+      "raw": "coercion"
+    }
+  },
+  {
+    "case": "CatmullRomCurve3:getterOrder",
+    "op": "observable",
+    "curve": "CatmullRomCurve3",
+    "json": {
+      "type": "CatmullRomCurve3",
+      "arcLengthDivisions": 9,
+      "points": [
+        [
+          0,
+          0,
+          0
+        ],
+        [
+          2,
+          3,
+          -1
+        ],
+        [
+          5,
+          -2,
+          4
+        ],
+        [
+          7,
+          1,
+          2
+        ]
+      ],
+      "closed": false,
+      "curveType": "centripetal",
+      "tension": 0.5
+    },
+    "variant": "getterOrder",
+    "t": 0.35
+  },
+  {
+    "case": "CubicBezierCurve:targetSet",
+    "op": "observable",
+    "curve": "CubicBezierCurve",
+    "json": {
+      "type": "CubicBezierCurve",
+      "arcLengthDivisions": 9,
+      "v0": [
+        0,
+        1
+      ],
+      "v1": [
+        2,
+        4
+      ],
+      "v2": [
+        5,
+        -2
+      ],
+      "v3": [
+        7,
+        1
+      ]
+    },
+    "variant": "targetSet",
+    "t": 0.35
+  },
+  {
+    "case": "CubicBezierCurve:targetNull",
+    "op": "observable",
+    "curve": "CubicBezierCurve",
+    "json": {
+      "type": "CubicBezierCurve",
+      "arcLengthDivisions": 9,
+      "v0": [
+        0,
+        1
+      ],
+      "v1": [
+        2,
+        4
+      ],
+      "v2": [
+        5,
+        -2
+      ],
+      "v3": [
+        7,
+        1
+      ]
+    },
+    "variant": "targetNull",
+    "t": 0.35,
+    "expectedError": {
+      "name": "TypeError"
+    }
+  },
+  {
+    "case": "CubicBezierCurve:coercion",
+    "op": "observable",
+    "curve": "CubicBezierCurve",
+    "json": {
+      "type": "CubicBezierCurve",
+      "arcLengthDivisions": 9,
+      "v0": [
+        0,
+        1
+      ],
+      "v1": [
+        2,
+        4
+      ],
+      "v2": [
+        5,
+        -2
+      ],
+      "v3": [
+        7,
+        1
+      ]
+    },
+    "variant": "coercion",
+    "t": 0.35
+  },
+  {
+    "case": "CubicBezierCurve:coercionThrow",
+    "op": "observable",
+    "curve": "CubicBezierCurve",
+    "json": {
+      "type": "CubicBezierCurve",
+      "arcLengthDivisions": 9,
+      "v0": [
+        0,
+        1
+      ],
+      "v1": [
+        2,
+        4
+      ],
+      "v2": [
+        5,
+        -2
+      ],
+      "v3": [
+        7,
+        1
+      ]
+    },
+    "variant": "coercionThrow",
+    "t": 0.35,
+    "expectedError": {
+      "name": "ThrownValue",
+      "raw": "coercion"
+    }
+  },
+  {
+    "case": "CubicBezierCurve:getterOrder",
+    "op": "observable",
+    "curve": "CubicBezierCurve",
+    "json": {
+      "type": "CubicBezierCurve",
+      "arcLengthDivisions": 9,
+      "v0": [
+        0,
+        1
+      ],
+      "v1": [
+        2,
+        4
+      ],
+      "v2": [
+        5,
+        -2
+      ],
+      "v3": [
+        7,
+        1
+      ]
+    },
+    "variant": "getterOrder",
+    "t": 0.35
+  },
+  {
+    "case": "CubicBezierCurve3:targetSet",
+    "op": "observable",
+    "curve": "CubicBezierCurve3",
+    "json": {
+      "type": "CubicBezierCurve3",
+      "arcLengthDivisions": 9,
+      "v0": [
+        0,
+        1,
+        2
+      ],
+      "v1": [
+        2,
+        4,
+        -1
+      ],
+      "v2": [
+        5,
+        -2,
+        3
+      ],
+      "v3": [
+        7,
+        1,
+        4
+      ]
+    },
+    "variant": "targetSet",
+    "t": 0.35
+  },
+  {
+    "case": "CubicBezierCurve3:targetNull",
+    "op": "observable",
+    "curve": "CubicBezierCurve3",
+    "json": {
+      "type": "CubicBezierCurve3",
+      "arcLengthDivisions": 9,
+      "v0": [
+        0,
+        1,
+        2
+      ],
+      "v1": [
+        2,
+        4,
+        -1
+      ],
+      "v2": [
+        5,
+        -2,
+        3
+      ],
+      "v3": [
+        7,
+        1,
+        4
+      ]
+    },
+    "variant": "targetNull",
+    "t": 0.35,
+    "expectedError": {
+      "name": "TypeError"
+    }
+  },
+  {
+    "case": "CubicBezierCurve3:coercion",
+    "op": "observable",
+    "curve": "CubicBezierCurve3",
+    "json": {
+      "type": "CubicBezierCurve3",
+      "arcLengthDivisions": 9,
+      "v0": [
+        0,
+        1,
+        2
+      ],
+      "v1": [
+        2,
+        4,
+        -1
+      ],
+      "v2": [
+        5,
+        -2,
+        3
+      ],
+      "v3": [
+        7,
+        1,
+        4
+      ]
+    },
+    "variant": "coercion",
+    "t": 0.35
+  },
+  {
+    "case": "CubicBezierCurve3:coercionThrow",
+    "op": "observable",
+    "curve": "CubicBezierCurve3",
+    "json": {
+      "type": "CubicBezierCurve3",
+      "arcLengthDivisions": 9,
+      "v0": [
+        0,
+        1,
+        2
+      ],
+      "v1": [
+        2,
+        4,
+        -1
+      ],
+      "v2": [
+        5,
+        -2,
+        3
+      ],
+      "v3": [
+        7,
+        1,
+        4
+      ]
+    },
+    "variant": "coercionThrow",
+    "t": 0.35,
+    "expectedError": {
+      "name": "ThrownValue",
+      "raw": "coercion"
+    }
+  },
+  {
+    "case": "CubicBezierCurve3:getterOrder",
+    "op": "observable",
+    "curve": "CubicBezierCurve3",
+    "json": {
+      "type": "CubicBezierCurve3",
+      "arcLengthDivisions": 9,
+      "v0": [
+        0,
+        1,
+        2
+      ],
+      "v1": [
+        2,
+        4,
+        -1
+      ],
+      "v2": [
+        5,
+        -2,
+        3
+      ],
+      "v3": [
+        7,
+        1,
+        4
+      ]
+    },
+    "variant": "getterOrder",
+    "t": 0.35
+  },
+  {
+    "case": "EllipseCurve:targetSet",
+    "op": "observable",
+    "curve": "EllipseCurve",
+    "json": {
+      "type": "EllipseCurve",
+      "arcLengthDivisions": 9,
+      "aX": 2,
+      "aY": -3,
+      "xRadius": 4,
+      "yRadius": 2,
+      "aStartAngle": 0.2,
+      "aEndAngle": 5.7,
+      "aClockwise": false,
+      "aRotation": 0.3
+    },
+    "variant": "targetSet",
+    "t": 0.35
+  },
+  {
+    "case": "EllipseCurve:targetNull",
+    "op": "observable",
+    "curve": "EllipseCurve",
+    "json": {
+      "type": "EllipseCurve",
+      "arcLengthDivisions": 9,
+      "aX": 2,
+      "aY": -3,
+      "xRadius": 4,
+      "yRadius": 2,
+      "aStartAngle": 0.2,
+      "aEndAngle": 5.7,
+      "aClockwise": false,
+      "aRotation": 0.3
+    },
+    "variant": "targetNull",
+    "t": 0.35,
+    "expectedError": {
+      "name": "TypeError"
+    }
+  },
+  {
+    "case": "EllipseCurve:coercion",
+    "op": "observable",
+    "curve": "EllipseCurve",
+    "json": {
+      "type": "EllipseCurve",
+      "arcLengthDivisions": 9,
+      "aX": 2,
+      "aY": -3,
+      "xRadius": 4,
+      "yRadius": 2,
+      "aStartAngle": 0.2,
+      "aEndAngle": 5.7,
+      "aClockwise": false,
+      "aRotation": 0.3
+    },
+    "variant": "coercion",
+    "t": 0.35
+  },
+  {
+    "case": "EllipseCurve:coercionThrow",
+    "op": "observable",
+    "curve": "EllipseCurve",
+    "json": {
+      "type": "EllipseCurve",
+      "arcLengthDivisions": 9,
+      "aX": 2,
+      "aY": -3,
+      "xRadius": 4,
+      "yRadius": 2,
+      "aStartAngle": 0.2,
+      "aEndAngle": 5.7,
+      "aClockwise": false,
+      "aRotation": 0.3
+    },
+    "variant": "coercionThrow",
+    "t": 0.35,
+    "expectedError": {
+      "name": "ThrownValue",
+      "raw": "coercion"
+    }
+  },
+  {
+    "case": "EllipseCurve:getterOrder",
+    "op": "observable",
+    "curve": "EllipseCurve",
+    "json": {
+      "type": "EllipseCurve",
+      "arcLengthDivisions": 9,
+      "aX": 2,
+      "aY": -3,
+      "xRadius": 4,
+      "yRadius": 2,
+      "aStartAngle": 0.2,
+      "aEndAngle": 5.7,
+      "aClockwise": false,
+      "aRotation": 0.3
+    },
+    "variant": "getterOrder",
+    "t": 0.35
+  },
+  {
+    "case": "LineCurve:targetNull",
+    "op": "observable",
+    "curve": "LineCurve",
+    "json": {
+      "type": "LineCurve",
+      "arcLengthDivisions": 9,
+      "v1": [
+        0,
+        1
+      ],
+      "v2": [
+        2,
+        4
+      ]
+    },
+    "variant": "targetNull",
+    "t": 0.35,
+    "expectedError": {
+      "name": "TypeError"
+    }
+  },
+  {
+    "case": "LineCurve:coercion",
+    "op": "observable",
+    "curve": "LineCurve",
+    "json": {
+      "type": "LineCurve",
+      "arcLengthDivisions": 9,
+      "v1": [
+        0,
+        1
+      ],
+      "v2": [
+        2,
+        4
+      ]
+    },
+    "variant": "coercion",
+    "t": 0.35
+  },
+  {
+    "case": "LineCurve:coercionThrow",
+    "op": "observable",
+    "curve": "LineCurve",
+    "json": {
+      "type": "LineCurve",
+      "arcLengthDivisions": 9,
+      "v1": [
+        0,
+        1
+      ],
+      "v2": [
+        2,
+        4
+      ]
+    },
+    "variant": "coercionThrow",
+    "t": 0.35,
+    "expectedError": {
+      "name": "ThrownValue",
+      "raw": "coercion"
+    }
+  },
+  {
+    "case": "LineCurve:getterOrder",
+    "op": "observable",
+    "curve": "LineCurve",
+    "json": {
+      "type": "LineCurve",
+      "arcLengthDivisions": 9,
+      "v1": [
+        0,
+        1
+      ],
+      "v2": [
+        2,
+        4
+      ]
+    },
+    "variant": "getterOrder",
+    "t": 0.35
+  },
+  {
+    "case": "LineCurve3:targetNull",
+    "op": "observable",
+    "curve": "LineCurve3",
+    "json": {
+      "type": "LineCurve3",
+      "arcLengthDivisions": 9,
+      "v1": [
+        0,
+        1,
+        2
+      ],
+      "v2": [
+        2,
+        4,
+        -1
+      ]
+    },
+    "variant": "targetNull",
+    "t": 0.35,
+    "expectedError": {
+      "name": "TypeError"
+    }
+  },
+  {
+    "case": "LineCurve3:coercion",
+    "op": "observable",
+    "curve": "LineCurve3",
+    "json": {
+      "type": "LineCurve3",
+      "arcLengthDivisions": 9,
+      "v1": [
+        0,
+        1,
+        2
+      ],
+      "v2": [
+        2,
+        4,
+        -1
+      ]
+    },
+    "variant": "coercion",
+    "t": 0.35
+  },
+  {
+    "case": "LineCurve3:coercionThrow",
+    "op": "observable",
+    "curve": "LineCurve3",
+    "json": {
+      "type": "LineCurve3",
+      "arcLengthDivisions": 9,
+      "v1": [
+        0,
+        1,
+        2
+      ],
+      "v2": [
+        2,
+        4,
+        -1
+      ]
+    },
+    "variant": "coercionThrow",
+    "t": 0.35,
+    "expectedError": {
+      "name": "ThrownValue",
+      "raw": "coercion"
+    }
+  },
+  {
+    "case": "LineCurve3:getterOrder",
+    "op": "observable",
+    "curve": "LineCurve3",
+    "json": {
+      "type": "LineCurve3",
+      "arcLengthDivisions": 9,
+      "v1": [
+        0,
+        1,
+        2
+      ],
+      "v2": [
+        2,
+        4,
+        -1
+      ]
+    },
+    "variant": "getterOrder",
+    "t": 0.35
+  },
+  {
+    "case": "QuadraticBezierCurve:targetSet",
+    "op": "observable",
+    "curve": "QuadraticBezierCurve",
+    "json": {
+      "type": "QuadraticBezierCurve",
+      "arcLengthDivisions": 9,
+      "v0": [
+        0,
+        1
+      ],
+      "v1": [
+        2,
+        4
+      ],
+      "v2": [
+        5,
+        -2
+      ]
+    },
+    "variant": "targetSet",
+    "t": 0.35
+  },
+  {
+    "case": "QuadraticBezierCurve:targetNull",
+    "op": "observable",
+    "curve": "QuadraticBezierCurve",
+    "json": {
+      "type": "QuadraticBezierCurve",
+      "arcLengthDivisions": 9,
+      "v0": [
+        0,
+        1
+      ],
+      "v1": [
+        2,
+        4
+      ],
+      "v2": [
+        5,
+        -2
+      ]
+    },
+    "variant": "targetNull",
+    "t": 0.35,
+    "expectedError": {
+      "name": "TypeError"
+    }
+  },
+  {
+    "case": "QuadraticBezierCurve:coercion",
+    "op": "observable",
+    "curve": "QuadraticBezierCurve",
+    "json": {
+      "type": "QuadraticBezierCurve",
+      "arcLengthDivisions": 9,
+      "v0": [
+        0,
+        1
+      ],
+      "v1": [
+        2,
+        4
+      ],
+      "v2": [
+        5,
+        -2
+      ]
+    },
+    "variant": "coercion",
+    "t": 0.35
+  },
+  {
+    "case": "QuadraticBezierCurve:coercionThrow",
+    "op": "observable",
+    "curve": "QuadraticBezierCurve",
+    "json": {
+      "type": "QuadraticBezierCurve",
+      "arcLengthDivisions": 9,
+      "v0": [
+        0,
+        1
+      ],
+      "v1": [
+        2,
+        4
+      ],
+      "v2": [
+        5,
+        -2
+      ]
+    },
+    "variant": "coercionThrow",
+    "t": 0.35,
+    "expectedError": {
+      "name": "ThrownValue",
+      "raw": "coercion"
+    }
+  },
+  {
+    "case": "QuadraticBezierCurve:getterOrder",
+    "op": "observable",
+    "curve": "QuadraticBezierCurve",
+    "json": {
+      "type": "QuadraticBezierCurve",
+      "arcLengthDivisions": 9,
+      "v0": [
+        0,
+        1
+      ],
+      "v1": [
+        2,
+        4
+      ],
+      "v2": [
+        5,
+        -2
+      ]
+    },
+    "variant": "getterOrder",
+    "t": 0.35
+  },
+  {
+    "case": "QuadraticBezierCurve3:targetSet",
+    "op": "observable",
+    "curve": "QuadraticBezierCurve3",
+    "json": {
+      "type": "QuadraticBezierCurve3",
+      "arcLengthDivisions": 9,
+      "v0": [
+        0,
+        1,
+        2
+      ],
+      "v1": [
+        2,
+        4,
+        -1
+      ],
+      "v2": [
+        5,
+        -2,
+        3
+      ]
+    },
+    "variant": "targetSet",
+    "t": 0.35
+  },
+  {
+    "case": "QuadraticBezierCurve3:targetNull",
+    "op": "observable",
+    "curve": "QuadraticBezierCurve3",
+    "json": {
+      "type": "QuadraticBezierCurve3",
+      "arcLengthDivisions": 9,
+      "v0": [
+        0,
+        1,
+        2
+      ],
+      "v1": [
+        2,
+        4,
+        -1
+      ],
+      "v2": [
+        5,
+        -2,
+        3
+      ]
+    },
+    "variant": "targetNull",
+    "t": 0.35,
+    "expectedError": {
+      "name": "TypeError"
+    }
+  },
+  {
+    "case": "QuadraticBezierCurve3:coercion",
+    "op": "observable",
+    "curve": "QuadraticBezierCurve3",
+    "json": {
+      "type": "QuadraticBezierCurve3",
+      "arcLengthDivisions": 9,
+      "v0": [
+        0,
+        1,
+        2
+      ],
+      "v1": [
+        2,
+        4,
+        -1
+      ],
+      "v2": [
+        5,
+        -2,
+        3
+      ]
+    },
+    "variant": "coercion",
+    "t": 0.35
+  },
+  {
+    "case": "QuadraticBezierCurve3:coercionThrow",
+    "op": "observable",
+    "curve": "QuadraticBezierCurve3",
+    "json": {
+      "type": "QuadraticBezierCurve3",
+      "arcLengthDivisions": 9,
+      "v0": [
+        0,
+        1,
+        2
+      ],
+      "v1": [
+        2,
+        4,
+        -1
+      ],
+      "v2": [
+        5,
+        -2,
+        3
+      ]
+    },
+    "variant": "coercionThrow",
+    "t": 0.35,
+    "expectedError": {
+      "name": "ThrownValue",
+      "raw": "coercion"
+    }
+  },
+  {
+    "case": "QuadraticBezierCurve3:getterOrder",
+    "op": "observable",
+    "curve": "QuadraticBezierCurve3",
+    "json": {
+      "type": "QuadraticBezierCurve3",
+      "arcLengthDivisions": 9,
+      "v0": [
+        0,
+        1,
+        2
+      ],
+      "v1": [
+        2,
+        4,
+        -1
+      ],
+      "v2": [
+        5,
+        -2,
+        3
+      ]
+    },
+    "variant": "getterOrder",
+    "t": 0.35
+  },
+  {
+    "case": "SplineCurve:targetSet",
+    "op": "observable",
+    "curve": "SplineCurve",
+    "json": {
+      "type": "SplineCurve",
+      "arcLengthDivisions": 9,
+      "points": [
+        [
+          0,
+          0
+        ],
+        [
+          2,
+          3
+        ],
+        [
+          5,
+          -2
+        ],
+        [
+          7,
+          1
+        ]
+      ]
+    },
+    "variant": "targetSet",
+    "t": 0.35
+  },
+  {
+    "case": "SplineCurve:targetNull",
+    "op": "observable",
+    "curve": "SplineCurve",
+    "json": {
+      "type": "SplineCurve",
+      "arcLengthDivisions": 9,
+      "points": [
+        [
+          0,
+          0
+        ],
+        [
+          2,
+          3
+        ],
+        [
+          5,
+          -2
+        ],
+        [
+          7,
+          1
+        ]
+      ]
+    },
+    "variant": "targetNull",
+    "t": 0.35,
+    "expectedError": {
+      "name": "TypeError"
+    }
+  },
+  {
+    "case": "SplineCurve:coercion",
+    "op": "observable",
+    "curve": "SplineCurve",
+    "json": {
+      "type": "SplineCurve",
+      "arcLengthDivisions": 9,
+      "points": [
+        [
+          0,
+          0
+        ],
+        [
+          2,
+          3
+        ],
+        [
+          5,
+          -2
+        ],
+        [
+          7,
+          1
+        ]
+      ]
+    },
+    "variant": "coercion",
+    "t": 0.35
+  },
+  {
+    "case": "SplineCurve:coercionThrow",
+    "op": "observable",
+    "curve": "SplineCurve",
+    "json": {
+      "type": "SplineCurve",
+      "arcLengthDivisions": 9,
+      "points": [
+        [
+          0,
+          0
+        ],
+        [
+          2,
+          3
+        ],
+        [
+          5,
+          -2
+        ],
+        [
+          7,
+          1
+        ]
+      ]
+    },
+    "variant": "coercionThrow",
+    "t": 0.35,
+    "expectedError": {
+      "name": "ThrownValue",
+      "raw": "coercion"
+    }
+  },
+  {
+    "case": "SplineCurve:getterOrder",
+    "op": "observable",
+    "curve": "SplineCurve",
+    "json": {
+      "type": "SplineCurve",
+      "arcLengthDivisions": 9,
+      "points": [
+        [
+          0,
+          0
+        ],
+        [
+          2,
+          3
+        ],
+        [
+          5,
+          -2
+        ],
+        [
+          7,
+          1
+        ]
+      ]
+    },
+    "variant": "getterOrder",
+    "t": 0.35
+  },
+  {
+    "case": "lineChain:0.35",
+    "op": "observable",
+    "curve": "LineCurve",
+    "json": {
+      "type": "LineCurve",
+      "arcLengthDivisions": 9,
+      "v1": [
+        0,
+        1
+      ],
+      "v2": [
+        2,
+        4
+      ]
+    },
+    "variant": "lineChain",
+    "t": 0.35
+  },
+  {
+    "case": "lineChain:1",
+    "op": "observable",
+    "curve": "LineCurve",
+    "json": {
+      "type": "LineCurve",
+      "arcLengthDivisions": 9,
+      "v1": [
+        0,
+        1
+      ],
+      "v2": [
+        2,
+        4
+      ]
+    },
+    "variant": "lineChain",
+    "t": 1
+  },
+  {
+    "case": "CatmullRomCurve3:reentry",
+    "op": "observable",
+    "curve": "CatmullRomCurve3",
+    "json": {
+      "type": "CatmullRomCurve3",
+      "arcLengthDivisions": 9,
+      "points": [
+        [
+          0,
+          0,
+          0
+        ],
+        [
+          2,
+          3,
+          -1
+        ],
+        [
+          5,
+          -2,
+          4
+        ],
+        [
+          7,
+          1,
+          2
+        ]
+      ],
+      "closed": false,
+      "curveType": "centripetal",
+      "tension": 0.5
+    },
+    "variant": "targetReentry",
+    "t": 0.35
+  },
+  {
+    "case": "LineCurve:superCopyHome",
+    "op": "observable",
+    "curve": "LineCurve",
+    "json": {
+      "type": "LineCurve",
+      "arcLengthDivisions": 9,
+      "v1": [
+        0,
+        1
+      ],
+      "v2": [
+        2,
+        4
+      ]
+    },
+    "variant": "superCopyHome",
+    "t": 0.35
+  },
+  {
+    "case": "SplineCurve:invalid:0",
+    "op": "sample",
+    "curve": "SplineCurve",
+    "json": {
+      "type": "SplineCurve",
+      "arcLengthDivisions": 9,
+      "points": []
+    },
+    "method": "getPoint",
+    "t": 0.5,
+    "target": true,
+    "expectedError": {
+      "name": "TypeError"
+    }
+  },
+  {
+    "case": "SplineCurve:invalid:1",
+    "op": "sample",
+    "curve": "SplineCurve",
+    "json": {
+      "type": "SplineCurve",
+      "arcLengthDivisions": 9,
+      "points": [
+        [
+          0,
+          1,
+          2
+        ]
+      ]
+    },
+    "method": "getPoint",
+    "t": 0.5,
+    "target": true
+  },
+  {
+    "case": "CatmullRomCurve3:invalid:0",
+    "op": "sample",
+    "curve": "CatmullRomCurve3",
+    "json": {
+      "type": "CatmullRomCurve3",
+      "arcLengthDivisions": 9,
+      "points": [],
+      "closed": false,
+      "curveType": "centripetal",
+      "tension": 0.5
+    },
+    "method": "getPoint",
+    "t": 0.5,
+    "target": true,
+    "expectedError": {
+      "name": "TypeError"
+    }
+  },
+  {
+    "case": "CatmullRomCurve3:invalid:1",
+    "op": "sample",
+    "curve": "CatmullRomCurve3",
+    "json": {
+      "type": "CatmullRomCurve3",
+      "arcLengthDivisions": 9,
+      "points": [
+        [
+          0,
+          1,
+          2
+        ]
+      ],
+      "closed": false,
+      "curveType": "centripetal",
+      "tension": 0.5
+    },
+    "method": "getPoint",
+    "t": 0.5,
+    "target": true,
+    "expectedError": {
+      "name": "TypeError"
+    }
+  },
+  {
+    "case": "ArcCurve:construct:defaults",
+    "op": "construct",
+    "curve": "ArcCurve",
+    "variant": "defaults"
+  },
+  {
+    "case": "ArcCurve:construct:newTarget",
+    "op": "construct",
+    "curve": "ArcCurve",
+    "variant": "newTarget"
+  },
+  {
+    "case": "ArcCurve:construct:constructorIgnored",
+    "op": "construct",
+    "curve": "ArcCurve",
+    "variant": "constructorIgnored"
+  },
+  {
+    "case": "ArcCurve:construct:superObject",
+    "op": "construct",
+    "curve": "ArcCurve",
+    "variant": "superObject"
+  },
+  {
+    "case": "ArcCurve:construct:superThrow",
+    "op": "construct",
+    "curve": "ArcCurve",
+    "variant": "superThrow",
+    "expectedError": {
+      "name": "ThrownValue",
+      "raw": "super"
+    }
+  },
+  {
+    "case": "ArcCurve:construct:fieldThrow",
+    "op": "construct",
+    "curve": "ArcCurve",
+    "variant": "fieldThrow",
+    "expectedError": {
+      "name": "ThrownValue",
+      "raw": "field"
+    }
+  },
+  {
+    "case": "CatmullRomCurve3:construct:defaults",
+    "op": "construct",
+    "curve": "CatmullRomCurve3",
+    "variant": "defaults"
+  },
+  {
+    "case": "CatmullRomCurve3:construct:newTarget",
+    "op": "construct",
+    "curve": "CatmullRomCurve3",
+    "variant": "newTarget"
+  },
+  {
+    "case": "CatmullRomCurve3:construct:constructorIgnored",
+    "op": "construct",
+    "curve": "CatmullRomCurve3",
+    "variant": "constructorIgnored"
+  },
+  {
+    "case": "CatmullRomCurve3:construct:superObject",
+    "op": "construct",
+    "curve": "CatmullRomCurve3",
+    "variant": "superObject"
+  },
+  {
+    "case": "CatmullRomCurve3:construct:superThrow",
+    "op": "construct",
+    "curve": "CatmullRomCurve3",
+    "variant": "superThrow",
+    "expectedError": {
+      "name": "ThrownValue",
+      "raw": "super"
+    }
+  },
+  {
+    "case": "CatmullRomCurve3:construct:fieldThrow",
+    "op": "construct",
+    "curve": "CatmullRomCurve3",
+    "variant": "fieldThrow",
+    "expectedError": {
+      "name": "ThrownValue",
+      "raw": "field"
+    }
+  },
+  {
+    "case": "CubicBezierCurve:construct:defaults",
+    "op": "construct",
+    "curve": "CubicBezierCurve",
+    "variant": "defaults"
+  },
+  {
+    "case": "CubicBezierCurve:construct:newTarget",
+    "op": "construct",
+    "curve": "CubicBezierCurve",
+    "variant": "newTarget"
+  },
+  {
+    "case": "CubicBezierCurve:construct:constructorIgnored",
+    "op": "construct",
+    "curve": "CubicBezierCurve",
+    "variant": "constructorIgnored"
+  },
+  {
+    "case": "CubicBezierCurve:construct:superObject",
+    "op": "construct",
+    "curve": "CubicBezierCurve",
+    "variant": "superObject"
+  },
+  {
+    "case": "CubicBezierCurve:construct:superThrow",
+    "op": "construct",
+    "curve": "CubicBezierCurve",
+    "variant": "superThrow",
+    "expectedError": {
+      "name": "ThrownValue",
+      "raw": "super"
+    }
+  },
+  {
+    "case": "CubicBezierCurve:construct:fieldThrow",
+    "op": "construct",
+    "curve": "CubicBezierCurve",
+    "variant": "fieldThrow",
+    "expectedError": {
+      "name": "ThrownValue",
+      "raw": "field"
+    }
+  },
+  {
+    "case": "CubicBezierCurve3:construct:defaults",
+    "op": "construct",
+    "curve": "CubicBezierCurve3",
+    "variant": "defaults"
+  },
+  {
+    "case": "CubicBezierCurve3:construct:newTarget",
+    "op": "construct",
+    "curve": "CubicBezierCurve3",
+    "variant": "newTarget"
+  },
+  {
+    "case": "CubicBezierCurve3:construct:constructorIgnored",
+    "op": "construct",
+    "curve": "CubicBezierCurve3",
+    "variant": "constructorIgnored"
+  },
+  {
+    "case": "CubicBezierCurve3:construct:superObject",
+    "op": "construct",
+    "curve": "CubicBezierCurve3",
+    "variant": "superObject"
+  },
+  {
+    "case": "CubicBezierCurve3:construct:superThrow",
+    "op": "construct",
+    "curve": "CubicBezierCurve3",
+    "variant": "superThrow",
+    "expectedError": {
+      "name": "ThrownValue",
+      "raw": "super"
+    }
+  },
+  {
+    "case": "CubicBezierCurve3:construct:fieldThrow",
+    "op": "construct",
+    "curve": "CubicBezierCurve3",
+    "variant": "fieldThrow",
+    "expectedError": {
+      "name": "ThrownValue",
+      "raw": "field"
+    }
+  },
+  {
+    "case": "EllipseCurve:construct:defaults",
+    "op": "construct",
+    "curve": "EllipseCurve",
+    "variant": "defaults"
+  },
+  {
+    "case": "EllipseCurve:construct:newTarget",
+    "op": "construct",
+    "curve": "EllipseCurve",
+    "variant": "newTarget"
+  },
+  {
+    "case": "EllipseCurve:construct:constructorIgnored",
+    "op": "construct",
+    "curve": "EllipseCurve",
+    "variant": "constructorIgnored"
+  },
+  {
+    "case": "EllipseCurve:construct:superObject",
+    "op": "construct",
+    "curve": "EllipseCurve",
+    "variant": "superObject"
+  },
+  {
+    "case": "EllipseCurve:construct:superThrow",
+    "op": "construct",
+    "curve": "EllipseCurve",
+    "variant": "superThrow",
+    "expectedError": {
+      "name": "ThrownValue",
+      "raw": "super"
+    }
+  },
+  {
+    "case": "EllipseCurve:construct:fieldThrow",
+    "op": "construct",
+    "curve": "EllipseCurve",
+    "variant": "fieldThrow",
+    "expectedError": {
+      "name": "ThrownValue",
+      "raw": "field"
+    }
+  },
+  {
+    "case": "LineCurve:construct:defaults",
+    "op": "construct",
+    "curve": "LineCurve",
+    "variant": "defaults"
+  },
+  {
+    "case": "LineCurve:construct:newTarget",
+    "op": "construct",
+    "curve": "LineCurve",
+    "variant": "newTarget"
+  },
+  {
+    "case": "LineCurve:construct:constructorIgnored",
+    "op": "construct",
+    "curve": "LineCurve",
+    "variant": "constructorIgnored"
+  },
+  {
+    "case": "LineCurve:construct:superObject",
+    "op": "construct",
+    "curve": "LineCurve",
+    "variant": "superObject"
+  },
+  {
+    "case": "LineCurve:construct:superThrow",
+    "op": "construct",
+    "curve": "LineCurve",
+    "variant": "superThrow",
+    "expectedError": {
+      "name": "ThrownValue",
+      "raw": "super"
+    }
+  },
+  {
+    "case": "LineCurve:construct:fieldThrow",
+    "op": "construct",
+    "curve": "LineCurve",
+    "variant": "fieldThrow",
+    "expectedError": {
+      "name": "ThrownValue",
+      "raw": "field"
+    }
+  },
+  {
+    "case": "LineCurve3:construct:defaults",
+    "op": "construct",
+    "curve": "LineCurve3",
+    "variant": "defaults"
+  },
+  {
+    "case": "LineCurve3:construct:newTarget",
+    "op": "construct",
+    "curve": "LineCurve3",
+    "variant": "newTarget"
+  },
+  {
+    "case": "LineCurve3:construct:constructorIgnored",
+    "op": "construct",
+    "curve": "LineCurve3",
+    "variant": "constructorIgnored"
+  },
+  {
+    "case": "LineCurve3:construct:superObject",
+    "op": "construct",
+    "curve": "LineCurve3",
+    "variant": "superObject"
+  },
+  {
+    "case": "LineCurve3:construct:superThrow",
+    "op": "construct",
+    "curve": "LineCurve3",
+    "variant": "superThrow",
+    "expectedError": {
+      "name": "ThrownValue",
+      "raw": "super"
+    }
+  },
+  {
+    "case": "LineCurve3:construct:fieldThrow",
+    "op": "construct",
+    "curve": "LineCurve3",
+    "variant": "fieldThrow",
+    "expectedError": {
+      "name": "ThrownValue",
+      "raw": "field"
+    }
+  },
+  {
+    "case": "QuadraticBezierCurve:construct:defaults",
+    "op": "construct",
+    "curve": "QuadraticBezierCurve",
+    "variant": "defaults"
+  },
+  {
+    "case": "QuadraticBezierCurve:construct:newTarget",
+    "op": "construct",
+    "curve": "QuadraticBezierCurve",
+    "variant": "newTarget"
+  },
+  {
+    "case": "QuadraticBezierCurve:construct:constructorIgnored",
+    "op": "construct",
+    "curve": "QuadraticBezierCurve",
+    "variant": "constructorIgnored"
+  },
+  {
+    "case": "QuadraticBezierCurve:construct:superObject",
+    "op": "construct",
+    "curve": "QuadraticBezierCurve",
+    "variant": "superObject"
+  },
+  {
+    "case": "QuadraticBezierCurve:construct:superThrow",
+    "op": "construct",
+    "curve": "QuadraticBezierCurve",
+    "variant": "superThrow",
+    "expectedError": {
+      "name": "ThrownValue",
+      "raw": "super"
+    }
+  },
+  {
+    "case": "QuadraticBezierCurve:construct:fieldThrow",
+    "op": "construct",
+    "curve": "QuadraticBezierCurve",
+    "variant": "fieldThrow",
+    "expectedError": {
+      "name": "ThrownValue",
+      "raw": "field"
+    }
+  },
+  {
+    "case": "QuadraticBezierCurve3:construct:defaults",
+    "op": "construct",
+    "curve": "QuadraticBezierCurve3",
+    "variant": "defaults"
+  },
+  {
+    "case": "QuadraticBezierCurve3:construct:newTarget",
+    "op": "construct",
+    "curve": "QuadraticBezierCurve3",
+    "variant": "newTarget"
+  },
+  {
+    "case": "QuadraticBezierCurve3:construct:constructorIgnored",
+    "op": "construct",
+    "curve": "QuadraticBezierCurve3",
+    "variant": "constructorIgnored"
+  },
+  {
+    "case": "QuadraticBezierCurve3:construct:superObject",
+    "op": "construct",
+    "curve": "QuadraticBezierCurve3",
+    "variant": "superObject"
+  },
+  {
+    "case": "QuadraticBezierCurve3:construct:superThrow",
+    "op": "construct",
+    "curve": "QuadraticBezierCurve3",
+    "variant": "superThrow",
+    "expectedError": {
+      "name": "ThrownValue",
+      "raw": "super"
+    }
+  },
+  {
+    "case": "QuadraticBezierCurve3:construct:fieldThrow",
+    "op": "construct",
+    "curve": "QuadraticBezierCurve3",
+    "variant": "fieldThrow",
+    "expectedError": {
+      "name": "ThrownValue",
+      "raw": "field"
+    }
+  },
+  {
+    "case": "SplineCurve:construct:defaults",
+    "op": "construct",
+    "curve": "SplineCurve",
+    "variant": "defaults"
+  },
+  {
+    "case": "SplineCurve:construct:newTarget",
+    "op": "construct",
+    "curve": "SplineCurve",
+    "variant": "newTarget"
+  },
+  {
+    "case": "SplineCurve:construct:constructorIgnored",
+    "op": "construct",
+    "curve": "SplineCurve",
+    "variant": "constructorIgnored"
+  },
+  {
+    "case": "SplineCurve:construct:superObject",
+    "op": "construct",
+    "curve": "SplineCurve",
+    "variant": "superObject"
+  },
+  {
+    "case": "SplineCurve:construct:superThrow",
+    "op": "construct",
+    "curve": "SplineCurve",
+    "variant": "superThrow",
+    "expectedError": {
+      "name": "ThrownValue",
+      "raw": "super"
+    }
+  },
+  {
+    "case": "SplineCurve:construct:fieldThrow",
+    "op": "construct",
+    "curve": "SplineCurve",
+    "variant": "fieldThrow",
+    "expectedError": {
+      "name": "ThrownValue",
+      "raw": "field"
+    }
+  },
+  {
+    "case": "ArcCurve:rawRadiusAlias",
+    "op": "construct",
+    "curve": "ArcCurve",
+    "variant": "rawRadius"
+  },
+  {
+    "case": "ArcCurve:construct:newTargetFallback",
+    "op": "construct",
+    "curve": "ArcCurve",
+    "variant": "newTargetFallback"
+  },
+  {
+    "case": "CatmullRomCurve3:construct:newTargetFallback",
+    "op": "construct",
+    "curve": "CatmullRomCurve3",
+    "variant": "newTargetFallback"
+  },
+  {
+    "case": "CubicBezierCurve:construct:newTargetFallback",
+    "op": "construct",
+    "curve": "CubicBezierCurve",
+    "variant": "newTargetFallback"
+  },
+  {
+    "case": "CubicBezierCurve3:construct:newTargetFallback",
+    "op": "construct",
+    "curve": "CubicBezierCurve3",
+    "variant": "newTargetFallback"
+  },
+  {
+    "case": "EllipseCurve:construct:newTargetFallback",
+    "op": "construct",
+    "curve": "EllipseCurve",
+    "variant": "newTargetFallback"
+  },
+  {
+    "case": "LineCurve:construct:newTargetFallback",
+    "op": "construct",
+    "curve": "LineCurve",
+    "variant": "newTargetFallback"
+  },
+  {
+    "case": "LineCurve3:construct:newTargetFallback",
+    "op": "construct",
+    "curve": "LineCurve3",
+    "variant": "newTargetFallback"
+  },
+  {
+    "case": "QuadraticBezierCurve:construct:newTargetFallback",
+    "op": "construct",
+    "curve": "QuadraticBezierCurve",
+    "variant": "newTargetFallback"
+  },
+  {
+    "case": "QuadraticBezierCurve3:construct:newTargetFallback",
+    "op": "construct",
+    "curve": "QuadraticBezierCurve3",
+    "variant": "newTargetFallback"
+  },
+  {
+    "case": "SplineCurve:construct:newTargetFallback",
+    "op": "construct",
+    "curve": "SplineCurve",
+    "variant": "newTargetFallback"
+  }
+]

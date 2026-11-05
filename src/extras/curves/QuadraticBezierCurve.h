@@ -16,3 +16,7 @@ class QuadraticBezierCurve : public Curve<Vector2> {
     JsonValue toJSON() const override;
     QuadraticBezierCurve& fromJSON(const JsonValue& json) override;
 };
+
+JSValue nativeQuadraticBezierCurveConstructor();
+JSValue nativeQuadraticBezierCurveModule();
+JSValue nativeQuadraticBezierCurveBinding(const std::string& name);

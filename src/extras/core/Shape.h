@@ -17,3 +17,7 @@ class Shape : public Path {
     JsonValue toJSON() const override;
     Shape& fromJSON(const JsonValue& json) override;
 };
+
+JSValue nativeShapeConstructor();
+JSValue nativeShapeModule();
+JSValue nativeShapeBinding(const std::string& name);

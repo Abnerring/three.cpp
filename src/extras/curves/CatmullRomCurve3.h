@@ -20,3 +20,7 @@ class CatmullRomCurve3 : public Curve<Vector3> {
     JsonValue toJSON() const override;
     CatmullRomCurve3& fromJSON(const JsonValue& json) override;
 };
+
+JSValue nativeCatmullRomCurve3Constructor();
+JSValue nativeCatmullRomCurve3Module();
+JSValue nativeCatmullRomCurve3Binding(const std::string& name);

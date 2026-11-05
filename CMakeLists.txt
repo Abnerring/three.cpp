@@ -85,6 +85,12 @@ add_library(threecpp
     src/animation/tracks/NumberKeyframeTrack.cpp src/animation/tracks/QuaternionKeyframeTrack.cpp
     src/animation/tracks/StringKeyframeTrack.cpp src/animation/tracks/VectorKeyframeTrack.cpp
     src/extras/core/Curve.cpp
+    src/extras/core/CurveRuntime.cpp
+    src/extras/core/CurveConstructors.cpp
+    src/extras/core/CurvePathRuntime.cpp
+    src/extras/core/PathRuntime.cpp
+    src/extras/core/ShapeRuntime.cpp
+    src/extras/curves/CurvesRuntime.cpp
     src/extras/core/Interpolations.cpp src/extras/core/CurvePath.cpp
     src/extras/core/Path.cpp src/extras/core/Shape.cpp src/extras/core/ShapePath.cpp
     src/extras/ShapeUtils.cpp src/extras/DataUtils.cpp src/extras/TextureUtils.cpp src/extras/lib/earcut.cpp

@@ -1,0 +1,1283 @@
+[
+  {
+    "case": "metadata",
+    "op": "metadata"
+  },
+  {
+    "case": "CurvePath.constructor.default",
+    "op": "construct",
+    "class": "CurvePath",
+    "variant": "default"
+  },
+  {
+    "case": "CurvePath.constructor.newTarget",
+    "op": "construct",
+    "class": "CurvePath",
+    "variant": "newTarget"
+  },
+  {
+    "case": "CurvePath.constructor.constructorIgnored",
+    "op": "construct",
+    "class": "CurvePath",
+    "variant": "constructorIgnored"
+  },
+  {
+    "case": "CurvePath.constructor.superObject",
+    "op": "construct",
+    "class": "CurvePath",
+    "variant": "superObject"
+  },
+  {
+    "case": "CurvePath.constructor.superThrow",
+    "op": "construct",
+    "class": "CurvePath",
+    "variant": "superThrow",
+    "expectedError": {
+      "name": "ThrownValue",
+      "raw": "super"
+    }
+  },
+  {
+    "case": "CurvePath.constructor.fieldThrow",
+    "op": "construct",
+    "class": "CurvePath",
+    "variant": "fieldThrow",
+    "expectedError": {
+      "name": "ThrownValue",
+      "raw": "field"
+    }
+  },
+  {
+    "case": "CurvePath.constructor.points",
+    "op": "construct",
+    "class": "CurvePath",
+    "variant": "points"
+  },
+  {
+    "case": "CurvePath.constructor.emptyPoints",
+    "op": "construct",
+    "class": "CurvePath",
+    "variant": "emptyPoints"
+  },
+  {
+    "case": "CurvePath.constructor.falsePoints",
+    "op": "construct",
+    "class": "CurvePath",
+    "variant": "falsePoints"
+  },
+  {
+    "case": "CurvePath.copy",
+    "op": "copy",
+    "class": "CurvePath"
+  },
+  {
+    "case": "CurvePath.roundtrip",
+    "op": "roundtrip",
+    "class": "CurvePath"
+  },
+  {
+    "case": "Path.constructor.default",
+    "op": "construct",
+    "class": "Path",
+    "variant": "default"
+  },
+  {
+    "case": "Path.constructor.newTarget",
+    "op": "construct",
+    "class": "Path",
+    "variant": "newTarget"
+  },
+  {
+    "case": "Path.constructor.constructorIgnored",
+    "op": "construct",
+    "class": "Path",
+    "variant": "constructorIgnored"
+  },
+  {
+    "case": "Path.constructor.superObject",
+    "op": "construct",
+    "class": "Path",
+    "variant": "superObject"
+  },
+  {
+    "case": "Path.constructor.superThrow",
+    "op": "construct",
+    "class": "Path",
+    "variant": "superThrow",
+    "expectedError": {
+      "name": "ThrownValue",
+      "raw": "super"
+    }
+  },
+  {
+    "case": "Path.constructor.fieldThrow",
+    "op": "construct",
+    "class": "Path",
+    "variant": "fieldThrow",
+    "expectedError": {
+      "name": "ThrownValue",
+      "raw": "field"
+    }
+  },
+  {
+    "case": "Path.constructor.points",
+    "op": "construct",
+    "class": "Path",
+    "variant": "points"
+  },
+  {
+    "case": "Path.constructor.emptyPoints",
+    "op": "construct",
+    "class": "Path",
+    "variant": "emptyPoints",
+    "expectedError": {
+      "name": "TypeError"
+    }
+  },
+  {
+    "case": "Path.constructor.falsePoints",
+    "op": "construct",
+    "class": "Path",
+    "variant": "falsePoints"
+  },
+  {
+    "case": "Path.copy",
+    "op": "copy",
+    "class": "Path"
+  },
+  {
+    "case": "Path.roundtrip",
+    "op": "roundtrip",
+    "class": "Path"
+  },
+  {
+    "case": "Shape.constructor.default",
+    "op": "construct",
+    "class": "Shape",
+    "variant": "default"
+  },
+  {
+    "case": "Shape.constructor.newTarget",
+    "op": "construct",
+    "class": "Shape",
+    "variant": "newTarget"
+  },
+  {
+    "case": "Shape.constructor.constructorIgnored",
+    "op": "construct",
+    "class": "Shape",
+    "variant": "constructorIgnored"
+  },
+  {
+    "case": "Shape.constructor.superObject",
+    "op": "construct",
+    "class": "Shape",
+    "variant": "superObject"
+  },
+  {
+    "case": "Shape.constructor.superThrow",
+    "op": "construct",
+    "class": "Shape",
+    "variant": "superThrow",
+    "expectedError": {
+      "name": "ThrownValue",
+      "raw": "super"
+    }
+  },
+  {
+    "case": "Shape.constructor.fieldThrow",
+    "op": "construct",
+    "class": "Shape",
+    "variant": "fieldThrow",
+    "expectedError": {
+      "name": "ThrownValue",
+      "raw": "field"
+    }
+  },
+  {
+    "case": "Shape.constructor.points",
+    "op": "construct",
+    "class": "Shape",
+    "variant": "points"
+  },
+  {
+    "case": "Shape.constructor.emptyPoints",
+    "op": "construct",
+    "class": "Shape",
+    "variant": "emptyPoints",
+    "expectedError": {
+      "name": "TypeError"
+    }
+  },
+  {
+    "case": "Shape.constructor.falsePoints",
+    "op": "construct",
+    "class": "Shape",
+    "variant": "falsePoints"
+  },
+  {
+    "case": "Shape.copy",
+    "op": "copy",
+    "class": "Shape"
+  },
+  {
+    "case": "Shape.roundtrip",
+    "op": "roundtrip",
+    "class": "Shape"
+  },
+  {
+    "case": "CurvePath.2.False.getPoint.-0.2",
+    "op": "numeric",
+    "dim": 2,
+    "close": false,
+    "method": "getPoint",
+    "arg": -0.2,
+    "target": true
+  },
+  {
+    "case": "CurvePath.2.False.getPoint.0",
+    "op": "numeric",
+    "dim": 2,
+    "close": false,
+    "method": "getPoint",
+    "arg": 0,
+    "target": true
+  },
+  {
+    "case": "CurvePath.2.False.getPoint.0.3",
+    "op": "numeric",
+    "dim": 2,
+    "close": false,
+    "method": "getPoint",
+    "arg": 0.3,
+    "target": true
+  },
+  {
+    "case": "CurvePath.2.False.getPoint.1",
+    "op": "numeric",
+    "dim": 2,
+    "close": false,
+    "method": "getPoint",
+    "arg": 1,
+    "target": true
+  },
+  {
+    "case": "CurvePath.2.False.getPoint.1.2",
+    "op": "numeric",
+    "dim": 2,
+    "close": false,
+    "method": "getPoint",
+    "arg": 1.2,
+    "target": true
+  },
+  {
+    "case": "CurvePath.2.False.getLength.None",
+    "op": "numeric",
+    "dim": 2,
+    "close": false,
+    "method": "getLength"
+  },
+  {
+    "case": "CurvePath.2.False.getCurveLengths.None",
+    "op": "numeric",
+    "dim": 2,
+    "close": false,
+    "method": "getCurveLengths"
+  },
+  {
+    "case": "CurvePath.2.False.getPoints.None",
+    "op": "numeric",
+    "dim": 2,
+    "close": false,
+    "method": "getPoints"
+  },
+  {
+    "case": "CurvePath.2.False.getPoints.0",
+    "op": "numeric",
+    "dim": 2,
+    "close": false,
+    "method": "getPoints",
+    "arg": 0
+  },
+  {
+    "case": "CurvePath.2.False.getPoints.3",
+    "op": "numeric",
+    "dim": 2,
+    "close": false,
+    "method": "getPoints",
+    "arg": 3
+  },
+  {
+    "case": "CurvePath.2.False.getSpacedPoints.None",
+    "op": "numeric",
+    "dim": 2,
+    "close": false,
+    "method": "getSpacedPoints"
+  },
+  {
+    "case": "CurvePath.2.False.getSpacedPoints.0",
+    "op": "numeric",
+    "dim": 2,
+    "close": false,
+    "method": "getSpacedPoints",
+    "arg": 0
+  },
+  {
+    "case": "CurvePath.2.False.getSpacedPoints.3",
+    "op": "numeric",
+    "dim": 2,
+    "close": false,
+    "method": "getSpacedPoints",
+    "arg": 3
+  },
+  {
+    "case": "CurvePath.2.False.closePath.None",
+    "op": "numeric",
+    "dim": 2,
+    "close": false,
+    "method": "closePath"
+  },
+  {
+    "case": "CurvePath.2.True.getPoint.-0.2",
+    "op": "numeric",
+    "dim": 2,
+    "close": true,
+    "method": "getPoint",
+    "arg": -0.2,
+    "target": true
+  },
+  {
+    "case": "CurvePath.2.True.getPoint.0",
+    "op": "numeric",
+    "dim": 2,
+    "close": true,
+    "method": "getPoint",
+    "arg": 0,
+    "target": true
+  },
+  {
+    "case": "CurvePath.2.True.getPoint.0.3",
+    "op": "numeric",
+    "dim": 2,
+    "close": true,
+    "method": "getPoint",
+    "arg": 0.3,
+    "target": true
+  },
+  {
+    "case": "CurvePath.2.True.getPoint.1",
+    "op": "numeric",
+    "dim": 2,
+    "close": true,
+    "method": "getPoint",
+    "arg": 1,
+    "target": true
+  },
+  {
+    "case": "CurvePath.2.True.getPoint.1.2",
+    "op": "numeric",
+    "dim": 2,
+    "close": true,
+    "method": "getPoint",
+    "arg": 1.2,
+    "target": true
+  },
+  {
+    "case": "CurvePath.2.True.getLength.None",
+    "op": "numeric",
+    "dim": 2,
+    "close": true,
+    "method": "getLength"
+  },
+  {
+    "case": "CurvePath.2.True.getCurveLengths.None",
+    "op": "numeric",
+    "dim": 2,
+    "close": true,
+    "method": "getCurveLengths"
+  },
+  {
+    "case": "CurvePath.2.True.getPoints.None",
+    "op": "numeric",
+    "dim": 2,
+    "close": true,
+    "method": "getPoints"
+  },
+  {
+    "case": "CurvePath.2.True.getPoints.0",
+    "op": "numeric",
+    "dim": 2,
+    "close": true,
+    "method": "getPoints",
+    "arg": 0
+  },
+  {
+    "case": "CurvePath.2.True.getPoints.3",
+    "op": "numeric",
+    "dim": 2,
+    "close": true,
+    "method": "getPoints",
+    "arg": 3
+  },
+  {
+    "case": "CurvePath.2.True.getSpacedPoints.None",
+    "op": "numeric",
+    "dim": 2,
+    "close": true,
+    "method": "getSpacedPoints"
+  },
+  {
+    "case": "CurvePath.2.True.getSpacedPoints.0",
+    "op": "numeric",
+    "dim": 2,
+    "close": true,
+    "method": "getSpacedPoints",
+    "arg": 0
+  },
+  {
+    "case": "CurvePath.2.True.getSpacedPoints.3",
+    "op": "numeric",
+    "dim": 2,
+    "close": true,
+    "method": "getSpacedPoints",
+    "arg": 3
+  },
+  {
+    "case": "CurvePath.2.True.closePath.None",
+    "op": "numeric",
+    "dim": 2,
+    "close": true,
+    "method": "closePath"
+  },
+  {
+    "case": "CurvePath.3.False.getPoint.-0.2",
+    "op": "numeric",
+    "dim": 3,
+    "close": false,
+    "method": "getPoint",
+    "arg": -0.2,
+    "target": true
+  },
+  {
+    "case": "CurvePath.3.False.getPoint.0",
+    "op": "numeric",
+    "dim": 3,
+    "close": false,
+    "method": "getPoint",
+    "arg": 0,
+    "target": true
+  },
+  {
+    "case": "CurvePath.3.False.getPoint.0.3",
+    "op": "numeric",
+    "dim": 3,
+    "close": false,
+    "method": "getPoint",
+    "arg": 0.3,
+    "target": true
+  },
+  {
+    "case": "CurvePath.3.False.getPoint.1",
+    "op": "numeric",
+    "dim": 3,
+    "close": false,
+    "method": "getPoint",
+    "arg": 1,
+    "target": true
+  },
+  {
+    "case": "CurvePath.3.False.getPoint.1.2",
+    "op": "numeric",
+    "dim": 3,
+    "close": false,
+    "method": "getPoint",
+    "arg": 1.2,
+    "target": true
+  },
+  {
+    "case": "CurvePath.3.False.getLength.None",
+    "op": "numeric",
+    "dim": 3,
+    "close": false,
+    "method": "getLength"
+  },
+  {
+    "case": "CurvePath.3.False.getCurveLengths.None",
+    "op": "numeric",
+    "dim": 3,
+    "close": false,
+    "method": "getCurveLengths"
+  },
+  {
+    "case": "CurvePath.3.False.getPoints.None",
+    "op": "numeric",
+    "dim": 3,
+    "close": false,
+    "method": "getPoints"
+  },
+  {
+    "case": "CurvePath.3.False.getPoints.0",
+    "op": "numeric",
+    "dim": 3,
+    "close": false,
+    "method": "getPoints",
+    "arg": 0
+  },
+  {
+    "case": "CurvePath.3.False.getPoints.3",
+    "op": "numeric",
+    "dim": 3,
+    "close": false,
+    "method": "getPoints",
+    "arg": 3
+  },
+  {
+    "case": "CurvePath.3.False.getSpacedPoints.None",
+    "op": "numeric",
+    "dim": 3,
+    "close": false,
+    "method": "getSpacedPoints"
+  },
+  {
+    "case": "CurvePath.3.False.getSpacedPoints.0",
+    "op": "numeric",
+    "dim": 3,
+    "close": false,
+    "method": "getSpacedPoints",
+    "arg": 0
+  },
+  {
+    "case": "CurvePath.3.False.getSpacedPoints.3",
+    "op": "numeric",
+    "dim": 3,
+    "close": false,
+    "method": "getSpacedPoints",
+    "arg": 3
+  },
+  {
+    "case": "CurvePath.3.False.closePath.None",
+    "op": "numeric",
+    "dim": 3,
+    "close": false,
+    "method": "closePath"
+  },
+  {
+    "case": "CurvePath.3.True.getPoint.-0.2",
+    "op": "numeric",
+    "dim": 3,
+    "close": true,
+    "method": "getPoint",
+    "arg": -0.2,
+    "target": true
+  },
+  {
+    "case": "CurvePath.3.True.getPoint.0",
+    "op": "numeric",
+    "dim": 3,
+    "close": true,
+    "method": "getPoint",
+    "arg": 0,
+    "target": true
+  },
+  {
+    "case": "CurvePath.3.True.getPoint.0.3",
+    "op": "numeric",
+    "dim": 3,
+    "close": true,
+    "method": "getPoint",
+    "arg": 0.3,
+    "target": true
+  },
+  {
+    "case": "CurvePath.3.True.getPoint.1",
+    "op": "numeric",
+    "dim": 3,
+    "close": true,
+    "method": "getPoint",
+    "arg": 1,
+    "target": true
+  },
+  {
+    "case": "CurvePath.3.True.getPoint.1.2",
+    "op": "numeric",
+    "dim": 3,
+    "close": true,
+    "method": "getPoint",
+    "arg": 1.2,
+    "target": true
+  },
+  {
+    "case": "CurvePath.3.True.getLength.None",
+    "op": "numeric",
+    "dim": 3,
+    "close": true,
+    "method": "getLength"
+  },
+  {
+    "case": "CurvePath.3.True.getCurveLengths.None",
+    "op": "numeric",
+    "dim": 3,
+    "close": true,
+    "method": "getCurveLengths"
+  },
+  {
+    "case": "CurvePath.3.True.getPoints.None",
+    "op": "numeric",
+    "dim": 3,
+    "close": true,
+    "method": "getPoints"
+  },
+  {
+    "case": "CurvePath.3.True.getPoints.0",
+    "op": "numeric",
+    "dim": 3,
+    "close": true,
+    "method": "getPoints",
+    "arg": 0
+  },
+  {
+    "case": "CurvePath.3.True.getPoints.3",
+    "op": "numeric",
+    "dim": 3,
+    "close": true,
+    "method": "getPoints",
+    "arg": 3
+  },
+  {
+    "case": "CurvePath.3.True.getSpacedPoints.None",
+    "op": "numeric",
+    "dim": 3,
+    "close": true,
+    "method": "getSpacedPoints"
+  },
+  {
+    "case": "CurvePath.3.True.getSpacedPoints.0",
+    "op": "numeric",
+    "dim": 3,
+    "close": true,
+    "method": "getSpacedPoints",
+    "arg": 0
+  },
+  {
+    "case": "CurvePath.3.True.getSpacedPoints.3",
+    "op": "numeric",
+    "dim": 3,
+    "close": true,
+    "method": "getSpacedPoints",
+    "arg": 3
+  },
+  {
+    "case": "CurvePath.3.True.closePath.None",
+    "op": "numeric",
+    "dim": 3,
+    "close": true,
+    "method": "closePath"
+  },
+  {
+    "case": "Path.sequence.move-line",
+    "op": "sequence",
+    "actions": [
+      {
+        "method": "moveTo",
+        "args": [
+          1,
+          2
+        ]
+      },
+      {
+        "method": "lineTo",
+        "args": [
+          3,
+          4
+        ]
+      },
+      {
+        "method": "lineTo",
+        "args": [
+          -2,
+          4
+        ]
+      }
+    ]
+  },
+  {
+    "case": "Path.sequence.setFromPoints",
+    "op": "sequence",
+    "actions": [
+      {
+        "method": "setFromPoints",
+        "args": [
+          {
+            "points": [
+              [
+                1,
+                2
+              ],
+              [
+                3,
+                4
+              ],
+              [
+                -1,
+                5
+              ]
+            ]
+          }
+        ]
+      }
+    ]
+  },
+  {
+    "case": "Path.sequence.quadratic",
+    "op": "sequence",
+    "actions": [
+      {
+        "method": "moveTo",
+        "args": [
+          1,
+          2
+        ]
+      },
+      {
+        "method": "quadraticCurveTo",
+        "args": [
+          3,
+          -4,
+          5,
+          6
+        ]
+      }
+    ]
+  },
+  {
+    "case": "Path.sequence.cubic",
+    "op": "sequence",
+    "actions": [
+      {
+        "method": "moveTo",
+        "args": [
+          1,
+          2
+        ]
+      },
+      {
+        "method": "bezierCurveTo",
+        "args": [
+          3,
+          -4,
+          5,
+          6,
+          8,
+          1
+        ]
+      }
+    ]
+  },
+  {
+    "case": "Path.sequence.spline",
+    "op": "sequence",
+    "actions": [
+      {
+        "method": "moveTo",
+        "args": [
+          1,
+          2
+        ]
+      },
+      {
+        "method": "splineThru",
+        "args": [
+          {
+            "points": [
+              [
+                3,
+                5
+              ],
+              [
+                4,
+                -1
+              ],
+              [
+                9,
+                2
+              ]
+            ]
+          }
+        ]
+      }
+    ]
+  },
+  {
+    "case": "Path.sequence.arc",
+    "op": "sequence",
+    "actions": [
+      {
+        "method": "moveTo",
+        "args": [
+          1,
+          2
+        ]
+      },
+      {
+        "method": "arc",
+        "args": [
+          1,
+          -1,
+          2,
+          0.3,
+          2.2,
+          false
+        ]
+      }
+    ]
+  },
+  {
+    "case": "Path.sequence.absarc",
+    "op": "sequence",
+    "actions": [
+      {
+        "method": "moveTo",
+        "args": [
+          1,
+          2
+        ]
+      },
+      {
+        "method": "lineTo",
+        "args": [
+          4,
+          5
+        ]
+      },
+      {
+        "method": "absarc",
+        "args": [
+          0,
+          0,
+          2,
+          0,
+          3.141592653589793,
+          true
+        ]
+      }
+    ]
+  },
+  {
+    "case": "Path.sequence.ellipse",
+    "op": "sequence",
+    "actions": [
+      {
+        "method": "moveTo",
+        "args": [
+          1,
+          2
+        ]
+      },
+      {
+        "method": "ellipse",
+        "args": [
+          1,
+          -1,
+          3,
+          2,
+          0,
+          4.2,
+          false,
+          0.3
+        ]
+      }
+    ]
+  },
+  {
+    "case": "Path.sequence.absellipse",
+    "op": "sequence",
+    "actions": [
+      {
+        "method": "moveTo",
+        "args": [
+          1,
+          2
+        ]
+      },
+      {
+        "method": "lineTo",
+        "args": [
+          4,
+          5
+        ]
+      },
+      {
+        "method": "absellipse",
+        "args": [
+          1,
+          -1,
+          3,
+          2,
+          0.3,
+          4.2,
+          true,
+          0.4
+        ]
+      }
+    ]
+  },
+  {
+    "case": "Path.sequence.defaults",
+    "op": "sequence",
+    "actions": [
+      {
+        "method": "absarc",
+        "args": []
+      }
+    ]
+  },
+  {
+    "case": "Path.sequence.ellipseDefaults",
+    "op": "sequence",
+    "actions": [
+      {
+        "method": "absellipse",
+        "args": []
+      }
+    ]
+  },
+  {
+    "case": "Path.sequence.mixed",
+    "op": "sequence",
+    "actions": [
+      {
+        "method": "moveTo",
+        "args": [
+          2,
+          3
+        ]
+      },
+      {
+        "method": "lineTo",
+        "args": [
+          4,
+          5
+        ]
+      },
+      {
+        "method": "quadraticCurveTo",
+        "args": [
+          6,
+          -1,
+          7,
+          4
+        ]
+      },
+      {
+        "method": "bezierCurveTo",
+        "args": [
+          8,
+          3,
+          6,
+          5,
+          4,
+          2
+        ]
+      },
+      {
+        "method": "splineThru",
+        "args": [
+          {
+            "points": [
+              [
+                3,
+                2
+              ],
+              [
+                2,
+                3
+              ]
+            ]
+          }
+        ]
+      },
+      {
+        "method": "closePath",
+        "args": []
+      }
+    ]
+  },
+  {
+    "case": "Shape.extractPoints.None",
+    "op": "shapePoints"
+  },
+  {
+    "case": "Shape.extractPoints.0",
+    "op": "shapePoints",
+    "arg": 0
+  },
+  {
+    "case": "Shape.extractPoints.2",
+    "op": "shapePoints",
+    "arg": 2
+  },
+  {
+    "case": "Shape.extractPoints.5",
+    "op": "shapePoints",
+    "arg": 5
+  },
+  {
+    "case": "observable.addDispatch",
+    "op": "observable",
+    "variant": "addDispatch"
+  },
+  {
+    "case": "observable.cacheHit",
+    "op": "observable",
+    "variant": "cacheHit"
+  },
+  {
+    "case": "observable.cacheMiss",
+    "op": "observable",
+    "variant": "cacheMiss"
+  },
+  {
+    "case": "observable.cacheThrow",
+    "op": "observable",
+    "variant": "cacheThrow",
+    "expectedError": {
+      "name": "ThrownValue",
+      "raw": "cache"
+    }
+  },
+  {
+    "case": "observable.updateDispatch",
+    "op": "observable",
+    "variant": "updateDispatch"
+  },
+  {
+    "case": "observable.lengthDispatch",
+    "op": "observable",
+    "variant": "lengthDispatch"
+  },
+  {
+    "case": "observable.pointDispatch",
+    "op": "observable",
+    "variant": "pointDispatch"
+  },
+  {
+    "case": "observable.pointZero",
+    "op": "observable",
+    "variant": "pointZero"
+  },
+  {
+    "case": "observable.pointOutside",
+    "op": "observable",
+    "variant": "pointOutside"
+  },
+  {
+    "case": "observable.pointCoercionThrow",
+    "op": "observable",
+    "variant": "pointCoercionThrow",
+    "expectedError": {
+      "name": "ThrownValue",
+      "raw": "t"
+    }
+  },
+  {
+    "case": "observable.spacedDispatch",
+    "op": "observable",
+    "variant": "spacedDispatch"
+  },
+  {
+    "case": "observable.spacedThrow",
+    "op": "observable",
+    "variant": "spacedThrow",
+    "expectedError": {
+      "name": "ThrownValue",
+      "raw": "point"
+    }
+  },
+  {
+    "case": "observable.pointsResolution",
+    "op": "observable",
+    "variant": "pointsResolution"
+  },
+  {
+    "case": "observable.closeEmpty",
+    "op": "observable",
+    "variant": "closeEmpty",
+    "expectedError": {
+      "name": "TypeError"
+    }
+  },
+  {
+    "case": "observable.close2",
+    "op": "observable",
+    "variant": "close2"
+  },
+  {
+    "case": "observable.close3",
+    "op": "observable",
+    "variant": "close3"
+  },
+  {
+    "case": "observable.closeEqual",
+    "op": "observable",
+    "variant": "closeEqual"
+  },
+  {
+    "case": "observable.forwardArc",
+    "op": "observable",
+    "variant": "forwardArc"
+  },
+  {
+    "case": "observable.forwardEllipse",
+    "op": "observable",
+    "variant": "forwardEllipse"
+  },
+  {
+    "case": "observable.forwardAbsarc",
+    "op": "observable",
+    "variant": "forwardAbsarc"
+  },
+  {
+    "case": "observable.setFromPointsDispatch",
+    "op": "observable",
+    "variant": "setFromPointsDispatch"
+  },
+  {
+    "case": "observable.setFromPointsThrow",
+    "op": "observable",
+    "variant": "setFromPointsThrow",
+    "expectedError": {
+      "name": "ThrownValue",
+      "raw": "y"
+    }
+  },
+  {
+    "case": "observable.moveDispatch",
+    "op": "observable",
+    "variant": "moveDispatch"
+  },
+  {
+    "case": "observable.lineDispatch",
+    "op": "observable",
+    "variant": "lineDispatch"
+  },
+  {
+    "case": "observable.quadraticDispatch",
+    "op": "observable",
+    "variant": "quadraticDispatch"
+  },
+  {
+    "case": "observable.cubicDispatch",
+    "op": "observable",
+    "variant": "cubicDispatch"
+  },
+  {
+    "case": "observable.splineDispatch",
+    "op": "observable",
+    "variant": "splineDispatch"
+  },
+  {
+    "case": "observable.splineEmpty",
+    "op": "observable",
+    "variant": "splineEmpty",
+    "expectedError": {
+      "name": "ThrownValue",
+      "raw": "empty"
+    }
+  },
+  {
+    "case": "observable.absellipseJoin",
+    "op": "observable",
+    "variant": "absellipseJoin"
+  },
+  {
+    "case": "observable.absellipseNoJoin",
+    "op": "observable",
+    "variant": "absellipseNoJoin"
+  },
+  {
+    "case": "observable.absellipseEmpty",
+    "op": "observable",
+    "variant": "absellipseEmpty"
+  },
+  {
+    "case": "observable.extractDispatch",
+    "op": "observable",
+    "variant": "extractDispatch"
+  },
+  {
+    "case": "observable.extractThrow",
+    "op": "observable",
+    "variant": "extractThrow",
+    "expectedError": {
+      "name": "ThrownValue",
+      "raw": "extract"
+    }
+  },
+  {
+    "case": "observable.holesDispatch",
+    "op": "observable",
+    "variant": "holesDispatch"
+  },
+  {
+    "case": "observable.holesReenter",
+    "op": "observable",
+    "variant": "holesReenter"
+  },
+  {
+    "case": "observable.holesThrow",
+    "op": "observable",
+    "variant": "holesThrow",
+    "expectedError": {
+      "name": "ThrownValue",
+      "raw": "hole"
+    }
+  },
+  {
+    "case": "CurvePath.copySuperHome",
+    "op": "observable",
+    "variant": "copySuperHome",
+    "class": "CurvePath"
+  },
+  {
+    "case": "CurvePath.copySuperThrow",
+    "op": "observable",
+    "variant": "copySuperThrow",
+    "class": "CurvePath",
+    "expectedError": {
+      "name": "ThrownValue",
+      "raw": "supercopy"
+    }
+  },
+  {
+    "case": "Path.copySuperHome",
+    "op": "observable",
+    "variant": "copySuperHome",
+    "class": "Path"
+  },
+  {
+    "case": "Path.copySuperThrow",
+    "op": "observable",
+    "variant": "copySuperThrow",
+    "class": "Path",
+    "expectedError": {
+      "name": "ThrownValue",
+      "raw": "supercopy"
+    }
+  },
+  {
+    "case": "Shape.copySuperHome",
+    "op": "observable",
+    "variant": "copySuperHome",
+    "class": "Shape"
+  },
+  {
+    "case": "Shape.copySuperThrow",
+    "op": "observable",
+    "variant": "copySuperThrow",
+    "class": "Shape",
+    "expectedError": {
+      "name": "ThrownValue",
+      "raw": "supercopy"
+    }
+  }
+]

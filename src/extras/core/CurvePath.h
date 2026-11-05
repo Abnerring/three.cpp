@@ -36,3 +36,7 @@ template<class Vector = Vector3> class CurvePath : public Curve<Vector> {
 
 extern template class CurvePath<Vector2>;
 extern template class CurvePath<Vector3>;
+
+JSValue nativeCurvePathConstructor();
+JSValue nativeCurvePathModule();
+JSValue nativeCurvePathBinding(const std::string& name);

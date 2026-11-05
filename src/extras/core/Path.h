@@ -30,3 +30,7 @@ class Path : public CurvePath<Vector2> {
     JsonValue toJSON() const override;
     Path& fromJSON(const JsonValue& json) override;
 };
+
+JSValue nativePathConstructor();
+JSValue nativePathModule();
+JSValue nativePathBinding(const std::string& name);

@@ -748,6 +748,33 @@ struct VulkanRenderer::Impl {
         TextureConfig config;
     };
     using TextureRef = std::shared_ptr<TextureResource>;
+    // A prepared draw owns the resources until its frame has completed. Both
+    // typed and managed scene traversal can feed this GPU command boundary.
+    struct Prepared {
+        BufferRef positions, colors, fog, indices, mapUv, alphaUv, textureUniforms;
+        BufferRef instanceMatrices, instanceColors, morphPositions, clippingPlanes;
+        TextureRef map, alpha, morphWeights;
+        VkDescriptorSet descriptor = VK_NULL_HANDLE;
+        VkPipeline pipeline;
+        PushConstants constants;
+        std::uint32_t start, count;
+        double logicalCount;
+        JSValue logicalInstanceCount{1};
+        std::uint32_t instanceCount = 1;
+        bool skipInstances = false;
+        bool invalidBindings = false;
+        bool indexed, wireframe, colorWrite;
+    };
+    // Values consumed by pipeline creation, independent of any scene/material
+    // representation. Callers sample them at the pipeline selection boundary.
+    struct PipelineState {
+        bool depthTest, depthWrite, colorWrite, transparent;
+        int blending;
+        bool premultipliedAlpha;
+        int depthFunc;
+        bool wireframe, polygonOffset;
+        double polygonOffsetFactor, polygonOffsetUnits;
+    };
     struct TextureUpload {
         std::uint32_t level, width, height;
         std::vector<std::byte> pixels;
@@ -1207,11 +1234,13 @@ struct VulkanRenderer::Impl {
                     const auto bindings = lifetime->owner->bindingStates->object();
                     bindings.get(captures[1].string()).call(bindings,{value});
                     if (!lifetime->owner) return {};
-                    if (captures[1].strictEquals("releaseStatesOfGeometry")) {
+                    if (captures[1].strictEquals("releaseStatesOfGeometry") &&
+                        value.isHostObject("three.BufferGeometry")) {
                         const auto geometry = std::static_pointer_cast<BufferGeometry>(
                             value.hostPayload("three.BufferGeometry"));
                         lifetime->owner->removeGeometry(geometry->id);
-                    } else {
+                    } else if (captures[1].strictEquals("releaseStatesOfObject") &&
+                               value.isHostObject("three.Object3D")) {
                         const auto object = std::static_pointer_cast<Object3D>(value.hostPayload("three.Object3D"));
                         lifetime->owner->removeInstance(object->id);
                     }
@@ -2600,11 +2629,11 @@ struct VulkanRenderer::Impl {
         return result;
     }
 
-    VkPipeline pipeline(const MeshBasicMaterial& material, int side, bool mirrored, bool reverse,
+    VkPipeline pipeline(const PipelineState& state, int side, bool mirrored, bool reverse,
                         std::uint32_t positionStride, std::uint32_t colorSize, bool colors,
                         bool fog, std::uint32_t mapSize, std::uint32_t alphaSize, bool mapUv, bool alphaUv) {
-        if (side < 0 || side > 2 || material.blending < 0 || material.blending > 4 ||
-            material.depthFunc < 0 || material.depthFunc > 7)
+        if (side < 0 || side > 2 || state.blending < 0 || state.blending > 4 ||
+            state.depthFunc < 0 || state.depthFunc > 7)
             throw std::invalid_argument(
                 "Unsupported material side, blending mode or depth function");
         const auto colorStride = colorSize * sizeof(float);
@@ -2614,18 +2643,18 @@ struct VulkanRenderer::Impl {
             throw std::invalid_argument("Attribute itemSize exceeds Vulkan vertex binding limits");
         const std::uint64_t baseKey =
             static_cast<std::uint64_t>(side) | (std::uint64_t(mirrored) << 2) |
-            (std::uint64_t(material.depthTest) << 3) | (std::uint64_t(material.depthWrite) << 4) |
-            (std::uint64_t(material.colorWrite) << 5) | (std::uint64_t(material.transparent) << 6) |
-            (std::uint64_t(material.blending) << 7) |
-            (std::uint64_t(material.premultipliedAlpha) << 10) |
-            (std::uint64_t(material.depthFunc) << 11) | (std::uint64_t(material.wireframe) << 15) |
+            (std::uint64_t(state.depthTest) << 3) | (std::uint64_t(state.depthWrite) << 4) |
+            (std::uint64_t(state.colorWrite) << 5) | (std::uint64_t(state.transparent) << 6) |
+            (std::uint64_t(state.blending) << 7) |
+            (std::uint64_t(state.premultipliedAlpha) << 10) |
+            (std::uint64_t(state.depthFunc) << 11) | (std::uint64_t(state.wireframe) << 15) |
             (std::uint64_t(reverse) << 16) | (std::uint64_t(positionStride) << 17) |
             (std::uint64_t(colorStride) << 33) | (std::uint64_t(colors) << 49) |
             (std::uint64_t(fog) << 50) | (std::uint64_t(colorSize == 4) << 51);
         const std::string key = std::to_string(baseKey) + ":" + std::to_string(mapSize) + ":" +
             std::to_string(alphaSize) + ":" + std::to_string(mapUv) + ":" + std::to_string(alphaUv) + ":" +
-            std::to_string(active->colorFormat) + ":" + std::to_string(material.polygonOffset) + ":" +
-            std::to_string(material.polygonOffsetFactor) + ":" + std::to_string(material.polygonOffsetUnits);
+            std::to_string(active->colorFormat) + ":" + std::to_string(state.polygonOffset) + ":" +
+            std::to_string(state.polygonOffsetFactor) + ":" + std::to_string(state.polygonOffsetUnits);
         if (auto found = pipelines.find(key); found != pipelines.end())
             return found->second;
         const auto stages = shaderModules->pipelineStages();
@@ -2634,7 +2663,7 @@ struct VulkanRenderer::Impl {
         VkPipelineVertexInputStateCreateInfo vertex{VK_STRUCTURE_TYPE_PIPELINE_VERTEX_INPUT_STATE_CREATE_INFO};
         VkPipelineInputAssemblyStateCreateInfo assembly{
             VK_STRUCTURE_TYPE_PIPELINE_INPUT_ASSEMBLY_STATE_CREATE_INFO};
-        assembly.topology = material.wireframe ? VK_PRIMITIVE_TOPOLOGY_LINE_LIST
+        assembly.topology = state.wireframe ? VK_PRIMITIVE_TOPOLOGY_LINE_LIST
                                                : VK_PRIMITIVE_TOPOLOGY_TRIANGLE_LIST;
         VkPipelineViewportStateCreateInfo viewport{
             VK_STRUCTURE_TYPE_PIPELINE_VIEWPORT_STATE_CREATE_INFO};
@@ -2649,52 +2678,52 @@ struct VulkanRenderer::Impl {
         // Negating clip-space Y converts three.js' upward axis to top-down image rows.
         rasterization.frontFace =
             mirrored ? VK_FRONT_FACE_CLOCKWISE : VK_FRONT_FACE_COUNTER_CLOCKWISE;
-        rasterization.depthBiasEnable = material.polygonOffset;
-        rasterization.depthBiasConstantFactor = static_cast<float>(material.polygonOffsetUnits);
-        rasterization.depthBiasSlopeFactor = static_cast<float>(material.polygonOffsetFactor);
+        rasterization.depthBiasEnable = state.polygonOffset;
+        rasterization.depthBiasConstantFactor = static_cast<float>(state.polygonOffsetUnits);
+        rasterization.depthBiasSlopeFactor = static_cast<float>(state.polygonOffsetFactor);
         rasterization.lineWidth = 1;
         VkPipelineMultisampleStateCreateInfo multisample{
             VK_STRUCTURE_TYPE_PIPELINE_MULTISAMPLE_STATE_CREATE_INFO};
         multisample.rasterizationSamples = VK_SAMPLE_COUNT_1_BIT;
         VkPipelineDepthStencilStateCreateInfo depth{
             VK_STRUCTURE_TYPE_PIPELINE_DEPTH_STENCIL_STATE_CREATE_INFO};
-        depth.depthTestEnable = material.depthTest;
-        depth.depthWriteEnable = material.depthWrite;
-        depth.depthCompareOp = depthCompare(material.depthFunc, reverse);
+        depth.depthTestEnable = state.depthTest;
+        depth.depthWriteEnable = state.depthWrite;
+        depth.depthCompareOp = depthCompare(state.depthFunc, reverse);
         VkPipelineColorBlendAttachmentState blend{};
-        blend.colorWriteMask = material.colorWrite
+        blend.colorWriteMask = state.colorWrite
                                    ? VK_COLOR_COMPONENT_R_BIT | VK_COLOR_COMPONENT_G_BIT |
                                          VK_COLOR_COMPONENT_B_BIT | VK_COLOR_COMPONENT_A_BIT
                                    : 0;
         blend.blendEnable =
-            material.blending != 0 && !(material.blending == 1 && !material.transparent);
+            state.blending != 0 && !(state.blending == 1 && !state.transparent);
         if (blend.blendEnable) requireColorFeatures(active->colorFormat, VK_FORMAT_FEATURE_COLOR_ATTACHMENT_BLEND_BIT);
         blend.colorBlendOp = blend.alphaBlendOp = VK_BLEND_OP_ADD;
         blend.srcColorBlendFactor =
-            material.premultipliedAlpha ? VK_BLEND_FACTOR_ONE : VK_BLEND_FACTOR_SRC_ALPHA;
+            state.premultipliedAlpha ? VK_BLEND_FACTOR_ONE : VK_BLEND_FACTOR_SRC_ALPHA;
         blend.dstColorBlendFactor = VK_BLEND_FACTOR_ONE_MINUS_SRC_ALPHA;
         blend.srcAlphaBlendFactor = VK_BLEND_FACTOR_ONE;
         blend.dstAlphaBlendFactor = VK_BLEND_FACTOR_ONE_MINUS_SRC_ALPHA;
-        if (material.blending == 2) {
+        if (state.blending == 2) {
             blend.dstColorBlendFactor = VK_BLEND_FACTOR_ONE;
             blend.srcAlphaBlendFactor = VK_BLEND_FACTOR_ONE;
             blend.dstAlphaBlendFactor = VK_BLEND_FACTOR_ONE;
-        } else if (material.blending == 3) {
+        } else if (state.blending == 3) {
             blend.srcColorBlendFactor = VK_BLEND_FACTOR_ZERO;
             blend.dstColorBlendFactor = VK_BLEND_FACTOR_ONE_MINUS_SRC_COLOR;
             blend.srcAlphaBlendFactor = VK_BLEND_FACTOR_ZERO;
-            blend.dstAlphaBlendFactor = material.premultipliedAlpha
+            blend.dstAlphaBlendFactor = state.premultipliedAlpha
                                             ? VK_BLEND_FACTOR_ONE
                                             : VK_BLEND_FACTOR_ONE_MINUS_SRC_ALPHA;
-        } else if (material.blending == 4) {
+        } else if (state.blending == 4) {
             blend.srcColorBlendFactor = VK_BLEND_FACTOR_DST_COLOR;
-            blend.dstColorBlendFactor = material.premultipliedAlpha
+            blend.dstColorBlendFactor = state.premultipliedAlpha
                                             ? VK_BLEND_FACTOR_ONE_MINUS_SRC_ALPHA
                                             : VK_BLEND_FACTOR_ZERO;
             blend.srcAlphaBlendFactor =
-                material.premultipliedAlpha ? VK_BLEND_FACTOR_ZERO : VK_BLEND_FACTOR_DST_ALPHA;
+                state.premultipliedAlpha ? VK_BLEND_FACTOR_ZERO : VK_BLEND_FACTOR_DST_ALPHA;
             blend.dstAlphaBlendFactor =
-                material.premultipliedAlpha ? VK_BLEND_FACTOR_ONE : VK_BLEND_FACTOR_ZERO;
+                state.premultipliedAlpha ? VK_BLEND_FACTOR_ONE : VK_BLEND_FACTOR_ZERO;
         }
         VkPipelineColorBlendStateCreateInfo colorBlend{
             VK_STRUCTURE_TYPE_PIPELINE_COLOR_BLEND_STATE_CREATE_INFO};
@@ -2724,6 +2753,37 @@ struct VulkanRenderer::Impl {
               "vkCreateGraphicsPipelines");
         pipelines.emplace(key, result);
         return result;
+    }
+
+    void recordDraw(const Prepared& draw) {
+        if (draw.skipInstances) return;
+        if(draw.invalidBindings) {
+            drawInfo->update(draw.logicalCount,draw.wireframe?1:4,draw.logicalInstanceCount);
+            return;
+        }
+        colorWrite = draw.colorWrite;
+        api.vkCmdBindPipeline(commandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS,
+                             draw.pipeline);
+        const VkBuffer buffers[] = {draw.positions->buffer, draw.colors->buffer, draw.fog->buffer, draw.mapUv->buffer, draw.alphaUv->buffer};
+        const VkDeviceSize offsets[] = {0, 0, 0, 0, 0};
+        for (const auto& buffer : {draw.positions, draw.colors, draw.fog, draw.indices, draw.mapUv, draw.alphaUv,
+                                   draw.instanceMatrices, draw.instanceColors, draw.morphPositions, draw.clippingPlanes})
+            if (buffer)
+                buffer->usedEpoch = recordingEpoch;
+        // Vertex data is read from the prepared storage buffers using shader fetch.
+        api.vkCmdBindDescriptorSets(commandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS,
+                                  pipelineLayout, 0, 1, &draw.descriptor, 0, nullptr);
+        api.vkCmdPushConstants(commandBuffer, pipelineLayout,
+                              VK_SHADER_STAGE_VERTEX_BIT | VK_SHADER_STAGE_FRAGMENT_BIT,
+                              0, sizeof(PushConstants), &draw.constants);
+        if (draw.indexed) {
+            api.vkCmdBindIndexBuffer(commandBuffer, draw.indices->buffer, 0,
+                                   VK_INDEX_TYPE_UINT32);
+            api.vkCmdDrawIndexed(commandBuffer, draw.count, draw.instanceCount, draw.start, 0, 0);
+        } else
+            api.vkCmdDraw(commandBuffer, draw.count, draw.instanceCount, draw.start, 0);
+        drawInfo->update(draw.logicalCount, draw.wireframe ? 1 : 4,
+                         draw.logicalInstanceCount);
     }
 
     // Upstream draws a BoxGeometry(1, 1, 1) through the PMREM pass. Its twelve triangles
@@ -3717,22 +3777,7 @@ void VulkanRenderer::render(Scene& scene, Camera& camera) {
         });
     }
     // Retain uploaded buffers until every recorded draw has completed on the GPU.
-    struct Prepared {
-        Impl::BufferRef positions, colors, fog, indices, mapUv, alphaUv, textureUniforms;
-        Impl::BufferRef instanceMatrices, instanceColors, morphPositions, clippingPlanes;
-        Impl::TextureRef map, alpha, morphWeights;
-        VkDescriptorSet descriptor = VK_NULL_HANDLE;
-        VkPipeline pipeline;
-        PushConstants constants;
-        std::uint32_t start, count;
-        double logicalCount;
-        JSValue logicalInstanceCount{1};
-        std::uint32_t instanceCount = 1;
-        bool skipInstances = false;
-        bool invalidBindings = false;
-        bool indexed, wireframe, colorWrite;
-    };
-    std::vector<Prepared> prepared;
+    std::vector<Impl::Prepared> prepared;
     auto cleanup = [&]() {
         prepared.clear();
     };
@@ -3955,7 +4000,7 @@ void VulkanRenderer::render(Scene& scene, Camera& camera) {
                 throw std::invalid_argument("Geometry exceeds Vulkan draw limits");
             if ((index || material.wireframe) && std::floor(start) != start)
                 throw std::invalid_argument("Indexed draw offset must be aligned to its index elements");
-            Prepared draw{};
+            Impl::Prepared draw{};
             draw.map = mapResource; draw.alpha = alphaResource;
             draw.start = static_cast<std::uint32_t>(start);
             draw.count = static_cast<std::uint32_t>(count);
@@ -4184,8 +4229,12 @@ void VulkanRenderer::render(Scene& scene, Camera& camera) {
             if ((mapCache && mapCache->snapshot->itemSize > UINT32_MAX / sizeof(float)) ||
                 (alphaCache && alphaCache->snapshot->itemSize > UINT32_MAX / sizeof(float)))
                 throw std::invalid_argument("UV itemSize exceeds Vulkan vertex binding limits");
+            const Impl::PipelineState pipelineState{
+                material.depthTest, material.depthWrite, material.colorWrite, material.transparent,
+                material.blending, material.premultipliedAlpha, material.depthFunc, material.wireframe,
+                material.polygonOffset, material.polygonOffsetFactor, material.polygonOffsetUnits};
             draw.pipeline =
-                impl->pipeline(material, side, world.determinant() < 0, camera.reversedDepth,
+                impl->pipeline(pipelineState, side, world.determinant() < 0, camera.reversedDepth,
                                static_cast<std::uint32_t>(positionStride),
                                colorCache ? static_cast<std::uint32_t>(colorCache->snapshot->itemSize) : 4,
                 colorCache != nullptr && bindings.attributes[1].enabled, fogEnabled,
@@ -4272,36 +4321,6 @@ void VulkanRenderer::render(Scene& scene, Camera& camera) {
             draw.indices = indexBuffer;
             prepared.push_back(std::move(draw));
         };
-        auto recordDraw = [&](const Prepared& draw) {
-            if (draw.skipInstances) return;
-            if(draw.invalidBindings) {
-                impl->drawInfo->update(draw.logicalCount,draw.wireframe?1:4,draw.logicalInstanceCount);
-                return;
-            }
-            impl->colorWrite = draw.colorWrite;
-            impl->api.vkCmdBindPipeline(impl->commandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS,
-                                        draw.pipeline);
-            const VkBuffer buffers[] = {draw.positions->buffer, draw.colors->buffer, draw.fog->buffer, draw.mapUv->buffer, draw.alphaUv->buffer};
-            const VkDeviceSize offsets[] = {0, 0, 0, 0, 0};
-            for (const auto& buffer : {draw.positions, draw.colors, draw.fog, draw.indices, draw.mapUv, draw.alphaUv,
-                                       draw.instanceMatrices, draw.instanceColors, draw.morphPositions, draw.clippingPlanes})
-                if (buffer)
-                    buffer->usedEpoch = impl->recordingEpoch;
-            // Vertex data is read from the prepared storage buffers using shader fetch.
-            impl->api.vkCmdBindDescriptorSets(impl->commandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS,
-                                              impl->pipelineLayout, 0, 1, &draw.descriptor, 0, nullptr);
-            impl->api.vkCmdPushConstants(impl->commandBuffer, impl->pipelineLayout,
-                                         VK_SHADER_STAGE_VERTEX_BIT | VK_SHADER_STAGE_FRAGMENT_BIT,
-                                         0, sizeof(PushConstants), &draw.constants);
-            if (draw.indexed) {
-                impl->api.vkCmdBindIndexBuffer(impl->commandBuffer, draw.indices->buffer, 0,
-                                               VK_INDEX_TYPE_UINT32);
-                impl->api.vkCmdDrawIndexed(impl->commandBuffer, draw.count, draw.instanceCount, draw.start, 0, 0);
-            } else
-                impl->api.vkCmdDraw(impl->commandBuffer, draw.count, draw.instanceCount, draw.start, 0);
-            impl->drawInfo->update(draw.logicalCount, draw.wireframe ? 1 : 4,
-                                   draw.logicalInstanceCount);
-        };
         auto prepareList = [&](const std::vector<Item>& list) {
             const auto overrideMaterial = scene.overrideMaterial;
             for (const auto& item : list) {
@@ -4325,7 +4344,7 @@ void VulkanRenderer::render(Scene& scene, Camera& camera) {
                     const auto drawStart = prepared.size();
                     prepare(item, material, side);
                     for (std::size_t i = drawStart; i < prepared.size(); ++i)
-                        recordDraw(prepared[i]);
+                        impl->recordDraw(prepared[i]);
                 };
                 if (material->transparent && material->side == 2 && !material->forceSinglePass) {
                     material->side = BackSide;

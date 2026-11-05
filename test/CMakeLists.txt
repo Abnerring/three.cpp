@@ -1,6 +1,9 @@
 add_executable(THREECPPTests
     unit/three.source.unit.cpp
     unit/src/math/Vector2.tests.cpp
+    unit/src/extras/core/CurveRuntime.tests.cpp
+    unit/src/extras/curves/CurvesRuntime.tests.cpp
+    unit/src/extras/core/CurvePathsRuntime.tests.cpp
         unit/src/loaders/FileLoader.tests.cpp
         unit/src/loaders/AnimationLoader.tests.cpp
         unit/src/loaders/ObjectLoader.tests.cpp
@@ -3671,4 +3674,28 @@ if(THREECPP_NODE_EXECUTABLE AND THREEJS_SOURCE_DIR)
     add_test(NAME threecpp.threejs-object-loader-shapes-json-parity
         COMMAND "${THREECPP_NODE_EXECUTABLE}" "${CMAKE_CURRENT_SOURCE_DIR}/unit/utils/parity/compare-object-loader-shapes-json.mjs"
         "${THREEJS_SOURCE_DIR}" "$<TARGET_FILE:ThreeJsObjectLoaderShapeJSONParityProbe>")
+endif()
+
+add_executable(ThreeJsCurveRuntimeParityProbe unit/utils/parity/CurveRuntimeParityProbe.cpp)
+target_link_libraries(ThreeJsCurveRuntimeParityProbe PRIVATE threecpp::threecpp)
+if(THREECPP_NODE_EXECUTABLE AND THREEJS_SOURCE_DIR)
+    add_test(NAME threecpp.threejs-curve-runtime-parity
+        COMMAND "${THREECPP_NODE_EXECUTABLE}" "${CMAKE_CURRENT_SOURCE_DIR}/unit/utils/parity/compare-curve-runtime.mjs"
+        "${THREEJS_SOURCE_DIR}" "$<TARGET_FILE:ThreeJsCurveRuntimeParityProbe>")
+endif()
+
+add_executable(ThreeJsCurveSubclassesParityProbe unit/utils/parity/CurveSubclassesProbe.cpp)
+target_link_libraries(ThreeJsCurveSubclassesParityProbe PRIVATE threecpp::threecpp)
+if(THREECPP_NODE_EXECUTABLE AND THREEJS_SOURCE_DIR)
+    add_test(NAME threecpp.threejs-curve-subclasses-parity
+        COMMAND "${THREECPP_NODE_EXECUTABLE}" "${CMAKE_CURRENT_SOURCE_DIR}/unit/utils/parity/compare-curve-subclasses.mjs"
+        "${THREEJS_SOURCE_DIR}" "$<TARGET_FILE:ThreeJsCurveSubclassesParityProbe>")
+endif()
+
+add_executable(ThreeJsCurvePathsParityProbe unit/utils/parity/CurvePathsProbe.cpp)
+target_link_libraries(ThreeJsCurvePathsParityProbe PRIVATE threecpp::threecpp)
+if(THREECPP_NODE_EXECUTABLE AND THREEJS_SOURCE_DIR)
+    add_test(NAME threecpp.threejs-curve-paths-parity
+        COMMAND "${THREECPP_NODE_EXECUTABLE}" "${CMAKE_CURRENT_SOURCE_DIR}/unit/utils/parity/compare-curve-paths.mjs"
+        "${THREEJS_SOURCE_DIR}" "$<TARGET_FILE:ThreeJsCurvePathsParityProbe>")
 endif()

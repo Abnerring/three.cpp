@@ -27,8 +27,8 @@ const knownImports = {
     DEG2RAD:['math/MathUtils.h','MathUtilsModule.get("DEG2RAD")'],
     clamp:['math/MathUtils.h','MathUtilsModule.get("clamp")'],
     error:['utils.h','ThreeUtils::nativeErrorFunction()'],
-    Shape:['loaders/ObjectLoaderShapes.h','nativeObjectLoaderShapeConstructor()'],
-    Curves:['loaders/ObjectLoaderShapes.h','nativeObjectLoaderCurveConstructors()'],
+    Shape:['extras/core/Shape.h','nativeShapeConstructor()'],
+    Curves:['extras/curves/Curves.h','nativeCurvesModule()'],
     ShapeUtils:['extras/ShapeUtils.h','nativeShapeUtilsConstructor()']
 };
 

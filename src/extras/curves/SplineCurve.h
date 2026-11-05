@@ -16,3 +16,7 @@ class SplineCurve : public Curve<Vector2> {
     JsonValue toJSON() const override;
     SplineCurve& fromJSON(const JsonValue& json) override;
 };
+
+JSValue nativeSplineCurveConstructor();
+JSValue nativeSplineCurveModule();
+JSValue nativeSplineCurveBinding(const std::string& name);

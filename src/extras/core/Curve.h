@@ -239,3 +239,7 @@ template <class Vector = Vector3> class Curve {
 
 extern template class Curve<Vector2>;
 extern template class Curve<Vector3>;
+
+JSValue nativeCurveConstructor();
+JSValue nativeCurveModule();
+JSValue nativeCurveBinding(const std::string& name);

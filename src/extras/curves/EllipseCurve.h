@@ -19,3 +19,7 @@ class EllipseCurve : public Curve<Vector2> {
     JsonValue toJSON() const override;
     EllipseCurve& fromJSON(const JsonValue& json) override;
 };
+
+JSValue nativeEllipseCurveConstructor();
+JSValue nativeEllipseCurveModule();
+JSValue nativeEllipseCurveBinding(const std::string& name);

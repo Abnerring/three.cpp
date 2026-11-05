@@ -17,3 +17,7 @@ class CubicBezierCurve3 : public Curve<Vector3> {
     JsonValue toJSON() const override;
     CubicBezierCurve3& fromJSON(const JsonValue& json) override;
 };
+
+JSValue nativeCubicBezierCurve3Constructor();
+JSValue nativeCubicBezierCurve3Module();
+JSValue nativeCubicBezierCurve3Binding(const std::string& name);

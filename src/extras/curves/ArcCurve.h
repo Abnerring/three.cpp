@@ -8,3 +8,7 @@ class ArcCurve : public EllipseCurve {
                       double aEndAngle = std::numbers::pi * 2, bool aClockwise = false);
     std::shared_ptr<Curve<Vector2>> clone() const override;
 };
+
+JSValue nativeArcCurveConstructor();
+JSValue nativeArcCurveModule();
+JSValue nativeArcCurveBinding(const std::string& name);

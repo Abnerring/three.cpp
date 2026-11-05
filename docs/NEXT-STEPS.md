@@ -43,15 +43,16 @@
 
 ## 5. 首批目标（按杠杆排序）
 
-1. **传统 Vulkan 渲染路径** — 从现有 MeshBasicMaterial 绘制扩展到完整材质、纹理、光照、阴影、后处理，以及 Line/Points/Sprite/SkinnedMesh、完整渲染目标与窗口呈现。
+1. **传统 Vulkan 渲染路径** — Impl::Prepared、PipelineState 和 recordDraw 已拆为独立 GPU 边界。下一步让动态场景直接使用原始 object/geometry/material/group 身份，按源码执行遍历、矩阵、排序与回调，并复用 WebGLObjects/Attributes/BindingStates；禁止先快照转换成 typed Scene。随后扩展完整材质、纹理、光照、阴影、后处理、Line/Points/Sprite/SkinnedMesh、渲染目标与窗口呈现。当前实际入口仍为 typed MeshBasicMaterial 路径。
 2. **现代 Vulkan 执行链** — PhysicalLightingModel 与 Standard/Physical/SSS 节点材质已接入原生节点图；继续完整 Renderer/NodeBuilder、GLSL/WGSL 编译、GPU 绘制、计算与存储资源闭环。
-3. **已有 src 的行为与渲染连接** — ObjectLoader、NodeObjectLoader、BufferGeometryLoader 的原生动态路径已接通并通过本轮差分。继续完整 Curve 数值方法与 Frenet 的动态语义，将曲线桥接整合回 extras/core 与 extras/curves 对应实现，并补齐 URL 图像异步宿主、旧 typed facade 与动态场景图到 Vulkan 的资源/绘制连接。已有文件不等于完整实现；不要用数值适配或结构快照推断整个模块已完成。
+3. **已有 src 的行为与宿主连接** — ObjectLoader、NodeObjectLoader、BufferGeometryLoader 的原生动态解析，以及 Curve/CurvePath/Path/Shape 与十个曲线子类的源码算法已接入 canonical extras 目录。继续核验依赖行为（含 Earcut 动态坐标的强转顺序）、URL 图像异步宿主、旧 typed facade 及动态场景到 Vulkan 的资源连接。已有文件和选定差分不等于整个模块完成。
 4. **examples 与宿主适配** — 尚缺 322 个模块；补齐原生平台依赖并逐项差分，最后验收 Windows/Linux/macOS。AST、Linker、TranspilerUtils 已有实现，勿重复创建。
-5. **验证性能** — 本轮完整 core 1745 用例通过，用时约 650 秒，其中一个 BufferAttribute GC 用例占 499.403 秒；冷跑同例仅 0.006–0.007 秒。GC/ownership 算法本轮未改，具体累计根原因尚未确定。下一轮以 THREECPP_GC_TRACE=1 二分前序用例，量测 native owner 逐项释放与稳定标记成本。
+5. **验证性能** — 本轮完整 core 1759 用例通过，用时 607.591 秒；同一 BufferAttribute GC 用例占 463.339 秒，冷跑仅 0.006 秒/562 records/4 次 stableMark。外部只读采样已定位 collect:1548 → stableMark:1478 → mark:1350 的全 records 根扫描，未修改 GC 算法。继续量测累计 roots/owners 和逐 owner 重扫成本，保留原生析构重入与复活语义。
 
 ## 6. 近期已完成（避免重复劳动）
 
-- 本轮加载与几何：ObjectLoader、NodeObjectLoader、BufferGeometryLoader 原生动态管线，21 个几何导出（20 个新增源码构造实现）、曲线/Shape JSON 链、ShapeUtils，以及 Array.forEach/reverse。7 组共 403 个真实源码差分已通过；旧加载器/几何与生命周期 10 项回归已通过。旧 typed facade、Curve 数值适配、URL 图像宿主和 Vulkan 连接仍有缺口。
+- 本轮曲线与 GPU 边界：14 个 canonical Curve 类构造器/模块导入、全部自身方法、动态长度缓存/切线/Frenet/Path 指令/Shape 洞与 JSON；移除 loader 内旧数值快照适配。新增 3 组 572 个真实源码差分通过，14 个单测/977 条断言通过；完整 core 1759/218466、addons 1441/39577 通过，24 项相关 CTest 通过。补齐 Number 的 binary64 常量及不可变描述符，修复 Frenet 初始法线选择。GPU Prepared/PipelineState/recordDraw 已解耦，原有 3 组 GPU 回归通过；尚未声称动态加载场景直接出图。
+- 上一阶段加载与几何：ObjectLoader、NodeObjectLoader、BufferGeometryLoader 原生动态管线，21 个几何导出（20 个新增源码构造实现）、曲线/Shape JSON 链、ShapeUtils，以及 Array.forEach/reverse。7 组共 403 个真实源码差分已通过；旧加载器/几何与生命周期 10 项回归已通过。旧 typed facade、URL 图像宿主和 Vulkan 连接仍有缺口；其 Curve 数值适配已由本轮源码算法替换。
 - 此前 Vulkan/Line2/MaterialX 轮：Vulkan 直接采样 RenderTarget GPU 附件（含线性/sRGB/HalfFloat、跨目标传递、上传回调中读回/释放后的恢复）；Line2NodeMaterial 节点图通过 209 个差分场景，MaterialXNoise/MaterialXNodes 通过 233 个差分场景。MaterialX 的验证包含算法体、延迟分支/循环及 4 个 NodeBuilder 基类构建场景，尚不证明 Vulkan 噪声着色器出图。该轮普通 src 缺失只剩 NodeObjectLoader（本轮已补入对应文件），完整渲染执行链和 322 个 addons 仍待完成。
 - 此前 PBR 轮：原生 LightingModel 基类、PhysicalLightingModel 全部钩子及 helper、MeshStandard/Physical/SSSNodeMaterial 已实现并通过所选源码差分；EON、LTC、DFGLUT、EnvironmentBRDF 已修正依赖行为。此项证明节点逻辑，不代表完整 Vulkan PBR 出图。
 - `examples/jsm`（部分验证，多为 partial）：ColorEnvironment、ColorUtils、DebugEnvironment、GeometryUtils、GroundedSkybox、MaterialXLog、MorphAnimMesh、MorphBlendMesh、OBJExporter、RectAreaLightHelper、SceneUtils（全部 helper）、ShadowMesh、STLExporter（ascii+binary）、TranspilerUtils、Gyroscope。
