@@ -1,4 +1,30 @@
-# 当前接续：addon `MorphBlendMesh` 移植（手写 morph 影响权重动画，状态级差分），examples 连续第 10 个，2026-11-05
+# 当前接续：addon `ShadowMesh` 移植（平面投影矩阵 16 元素数值差分），examples 连续第 11 个，2026-11-05
+
+目标保持 active：固定 three.js 11738a9d55e502fb484cefffcea3a66dc44e9fe9 全部 src + examples/jsm 原生 C++ 逻辑，Vulkan 后端；禁止 CEF/生产 JS 引擎/桥接。阶段本地 Git 提交，不推送。
+
+## 本轮交付：`examples/jsm/objects/ShadowMesh`
+
+- `examples/jsm/objects/ShadowMesh.{h,cpp}`：`class ShadowMesh : public Mesh`。
+  - **复用源 mesh 几何**，材质为 stencil 阴影材质：`color=0x000000`、`transparent=true`、`opacity=0.6`、`depthWrite=false`、`stencilWrite=true`、`stencilFunc=EqualStencilFunc`、`stencilRef=0`、`stencilZPass=IncrementStencilOp`（常量值已由 C++ `constants.h` 提供）。
+  - `isShadowMesh=true`（**类常量成员**——本端口 `Object3D` 没有该标志位；首次编译时在构造器里给它赋值被 `const` 拦住，已改为仅声明）、`frustumCulled=false`、`matrixAutoUpdate=false`。
+  - `meshMatrix`：**指向源 mesh 的 `matrixWorld`**（上游是 `this.meshMatrix = mesh.matrixWorld` 的引用，非拷贝）→ C++ 存 `Matrix4*`，**源 mesh 必须比 ShadowMesh 活得久**（已在头注释记录）。
+  - `update(plane, lightPosition4D)`：逐字照抄 `dot` 与 16 个矩阵元素赋值（模块级 scratch 在本端口为 **`thread_local Matrix4`**），最后 `matrix.multiplyMatrices(scratch, *meshMatrix)`。
+- `test/unit/addons/objects/ShadowMesh.tests.cpp`（2 用例 / 21 断言）：几何同一性、材质 9 个字段、3 个标志、`meshMatrix == &source->matrixWorld`；投影后矩阵抽查 5 个元素（手算 `dot=7`、`[0]=7,[4]=-4,[5]=2,[12]=-8,[15]=5`）与平移后的不变列。
+- 差分 `ShadowMeshParityProbe.cpp` + `compare-shadow-mesh.mjs`：**2 组场景（源世界矩阵为单位 / 平移 (1,2,3)）× 16 个矩阵元素按 1e-12 逐值比较**，外加 15 项材质/标志/引用同一性比较。
+
+## 验证
+
+- 构建 exit 0。
+- `THREECPPAddonTests`：**1318 cases / 38,600 assertions 全过**（上轮 1316/38,579 → +2 例 / +21 断言）；过滤 `*ShadowMesh*` = 2 cases / 21 assertions。
+- 差分 `threecpp.threejs-shadow-mesh-parity` **Passed**。
+- 审计：**examples/jsm missing 330→329、partial-unverified 146→147**；`src` 不变（19 / 446）。
+
+**未执行验证（如实记录）**：未做真实渲染（stencil 缓冲行为完全未触）；`meshMatrix` 悬垂风险由调用方负责（已记录）；只测了平面 `(0,1,0)/-2` 与光点 `(4,5,6,1)` 一组参数，未穷举退化情形（`dot=0`、平面常数 0 等）。
+
+## 下一步
+
+examples 还剩 329。已筛候选：`helpers/RectAreaLightHelper`(3089)、`modifiers/SimplifyModifier`(4569)、`utils/SceneUtils`(8997)、`transpiler/AST.js`(8868，可与 `TranspilerUtils` 联调)、`exporters/OBJExporter`(6378，注意 JS 数字格式化)。
+src 侧仍剩 19 个（`ShadowNode` 24,331 / `PhysicalLightingModel` 32,829 为最大缺口）。# 当前接续：addon `MorphBlendMesh` 移植（手写 morph 影响权重动画，状态级差分），examples 连续第 10 个，2026-11-05
 
 目标保持 active：固定 three.js 11738a9d55e502fb484cefffcea3a66dc44e9fe9 全部 src + examples/jsm 原生 C++ 逻辑，Vulkan 后端；禁止 CEF/生产 JS 引擎/桥接。阶段本地 Git 提交，不推送。
 

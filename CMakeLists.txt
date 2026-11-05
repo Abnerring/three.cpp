@@ -618,6 +618,7 @@ if(THREECPP_BUILD_ADDONS)
     examples/jsm/transpiler/TranspilerUtils.cpp
     examples/jsm/utils/GeometryUtils.cpp
     examples/jsm/misc/MorphBlendMesh.cpp
+    examples/jsm/objects/ShadowMesh.cpp
         examples/jsm/lights/RectAreaLightTexturesLib.cpp
         examples/jsm/lights/RectAreaLightUniformsLib.cpp
         examples/jsm/curves/NURBSUtils.cpp

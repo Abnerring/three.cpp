@@ -201,8 +201,8 @@
     "note": "Accepted port scope is src and examples/jsm, including tracked third-party dependencies. Editor/manual web applications are excluded from native application rewrites. Native host behavior, packaging and all three platforms require separate implementation and verification evidence."
   },
   "counts": {
-    "partial-unverified": 592,
-    "missing": 349,
+    "partial-unverified": 593,
+    "missing": 348,
     "vulkan-port-pending": 290,
     "dependency-unverified": 20
   },
@@ -218,8 +218,8 @@
     "examples/jsm": {
       "modules": 496,
       "counts": {
-        "missing": 330,
-        "partial-unverified": 146,
+        "missing": 329,
+        "partial-unverified": 147,
         "dependency-unverified": 20
       }
     }
@@ -523,7 +523,7 @@
       "path": "examples/jsm/objects",
       "upstreamFiles": 15,
       "moduleCount": 15,
-      "modulesWithCppFiles": 1,
+      "modulesWithCppFiles": 2,
       "verifiedComplete": 0
     },
     {
@@ -30385,11 +30385,11 @@
       "scope": "examples/jsm",
       "kind": "addon",
       "upstreamSha256": "97a795290ee00b848e5f516bf051ccb642f05072cf339ba880e8493d79c38955",
-      "header": null,
-      "implementation": null,
+      "header": "examples/jsm/objects/ShadowMesh.h",
+      "implementation": "examples/jsm/objects/ShadowMesh.cpp",
       "expectedHeader": "examples/jsm/objects/ShadowMesh.h",
       "expectedImplementation": "examples/jsm/objects/ShadowMesh.cpp",
-      "status": "missing",
+      "status": "partial-unverified",
       "verifiedComplete": false,
       "apiExtraction": "static-only",
       "verification": {
@@ -30398,7 +30398,9 @@
           "pointer": "/modules/1044"
         },
         "upstreamUnitTests": [],
-        "cppUnitTests": [],
+        "cppUnitTests": [
+          "test/unit/addons/objects/ShadowMesh.tests.cpp"
+        ],
         "reviewedImplementation": [],
         "differentialResults": [],
         "renderingResults": [],
