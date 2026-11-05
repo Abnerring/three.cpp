@@ -172,3 +172,10 @@ static get type() { return 'ShadowNode'; }
 
 **结论**：ShadowNode 的**唯一硬阻塞**是 `QuadMesh` + `RendererUtils` 两个 renderer 模块（共约 9KB）。其余依赖已有移植骨架，但需逐个确认「partial 是否足以支撑 ShadowNode 使用」。
 **建议顺序**：① 移植 `QuadMesh`(3,230) → ② 移植 `RendererUtils`(5,802) → ③ 复核 ShadowBaseNode/ShadowFilterNode/Lights/ViewportDepthNode 是否完备 → ④ 组装 `ShadowNode` → ⑤ `PointShadowNode`。
+
+### 更正（r108 实测）：所谓两个「硬阻塞」其实都已移植
+
+- **`QuadMesh`**：仓库里 `src/renderers/common/QuadMesh.{h,cpp}` **已存在且完整**（JSValue 原生模块：`nativeQuadMeshModule()` / `nativeQuadMeshConstructor()` / `nativeQuadMeshBinding()`，内部用 `builtinConstructor` 构造 `QuadGeometry` 与 `QuadMesh`，模块持有 `Float32BufferAttribute`、`OrthographicCamera`、`_camera`、`_geometry` 等）。`RTTNode.cpp` 已在调用它。审计把它记为 `vulkan-port-pending` 属于**渲染器后端的 Vulkan 验证待办**，**不代表源码未移植**。
+- **`RendererUtils`**：见上方实测（`nativeRendererUtilsModule()` 被 `RTTNode` 引用）。
+- **结论**：r106/r107 的「ShadowNode 唯一硬阻塞是这两个 renderer 模块」**不成立**。ShadowNode 的前置基本齐备，可直接进入组装阶段（仍需确认 partial 模块的实现完备度）。
+- **教训**：判断某模块是否已移植，**必须直接看仓库是否有对应文件与导出函数**，不能仅凭 `port-status.json` 的 `vulkan-port-pending` 状态推断；审计状态与源码存在性是两件事。
