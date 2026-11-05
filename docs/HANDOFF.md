@@ -1,3 +1,21 @@
+# 当前接续：IESSpotLightNode 已移植并差分验收，2026-11-05
+
+目标保持 active：固定 three.js 11738a9d55e502fb484cefffcea3a66dc44e9fe9 全部 src + examples/jsm 原生 C++ 逻辑，Vulkan 后端；禁止 CEF/生产 JS 引擎/桥接。阶段本地 Git 提交，不推送。
+
+本轮新增 `src/nodes/lighting/IESSpotLightNode.{h,cpp}`（extends SpotLightNode）。构造期把 `_iesTextureNode` 置 null；`getSpotAttenuation( builder, angleCosine )` 按源码两分支：**有 `light.iesMap` 且 `isTexture === true`** 时 `getLightCoord(builder).sub(0.5)` → `texture(iesMap)` 存入 `_iesTextureNode` → `texelInset = float(0.5).div(vec2(textureSize(node)))` → `twistAngle = remap(atan(lightCoord.y, lightCoord.x), -PI, PI).add(texelInset.y)` → `tiltAngle = remap(angleCosine.acos(), 0, PI, texelInset.x, float(1).sub(texelInset.x))` → `.sample(vec2(tiltAngle, twistAngle)).level(0).r`；**没有 iesMap** 时调用父类同名方法（本族不做 super 分派，故从 SpotLightNode 的 prototype 取出并以 `this` 为接收者调用）。`update` 内联父类 update 后，仅当 `_iesTextureNode !== null && light.iesMap` 时写 `_iesTextureNode.value`。
+
+**本轮先解决了上轮记录的两个不确定点**：① 上轮说 `If` 未暴露是**错的**——`TSLShaderNodes.cpp` 与 `Fn`/`setCurrentStack` 同处注册 `{"If","Switch"}`（该判断本轮未用到，但已更正）；② **swizzle 可以按属性读取**——`Batch.cpp`、`CubeTextureNode.cpp`、`ClippingNode.cpp` 都用 `invoke(...).get("xyz")` / `uv.get("yz")`，故本轮 `lightCoord.get("y")`、`texelInset.get("x")`、`leveled.get("r")` 的写法有既有先例支撑。
+
+验证：构建 exit 0（首次两处 `set` 作用于 const 报错，改为句柄拷贝后通过）。THREECPPTests **1521 cases / 214,097 assertions 全过**，较上轮 1518/214,078 增 3 例 19 断言，与 `*IESSpotLight*` 过滤的 3 用例/19 断言一致。**七个 light 差分全过**：light-probe 0.62 / ambient 0.48 / directional 0.86 / hemisphere 1.15 / analytic 0.94 / spot 2.27 / **ies-spot 2.59s**；ies-spot 差分比较 name / length=0 / static type / 实例 type / isAnalyticLightNode / `_iesTextureNode === null` / 五个继承 uniform 的 type 与 group / 两方法 arity 与 `getSpotAttenuation.name` / **class `toString` 源位置逐字节**（故本轮 classSource 与上游完全一致）。
+
+**未在本轮执行验证的部分（如实记录）**：① `getSpotAttenuation` 的 **iesMap 分支**未运行——它需要 `getLightCoord`（要真实 builder 的 `getNodeProperties` 与 `context.positionWorld`）以及真实的 `iesMap` 纹理，当前环境无此构造，故只验证了 else 分支（回退到父类 smoothstep 并返回节点）与元数据；② `update` 只验证了"无 iesMap 时保持 null"，有 iesMap 时的赋值路径未跑。
+
+审计（固定 worktree，HEAD=11738a9d55）刷新后：**src missing 57→56、partial 408→409**；IESSpotLightNode 记 `partial-unverified` 并登记 h/cpp。总计 partial 545 / missing 396 / vulkan-port-pending 290 / dependency 20。
+
+`src/nodes/lighting` 仍缺 **9 个**：EnvironmentNode、LightsNode、PointLightNode、PointShadowNode、ProjectorLightNode、RectAreaLightNode、ShadowBaseNode、ShadowFilterNode、ShadowNode。
+
+下一步：`ProjectorLightNode`（`If` 已确认在 TSLCore 侧注册；其 `update` 的 aspect 逻辑可完整验证，`getSpotAttenuation` 用 `If` 需先确认调用需要 current stack 上下文）；或 `RectAreaLightNode`（依赖 `lightViewPosition`、`lightProjectionUV` 与 LTC 库，后者在 `src/nodes/functions/BSDF/LTC.js` 仍未移植）。
+
 # 当前接续：修正 49 个差分脚本的失败信息缺陷，并更正 If 可用性判断，2026-11-05
 
 目标保持 active：固定 three.js 11738a9d55e502fb484cefffcea3a66dc44e9fe9 全部 src + examples/jsm 原生 C++ 逻辑，Vulkan 后端；禁止 CEF/生产 JS 引擎/桥接。阶段本地 Git 提交，不推送。

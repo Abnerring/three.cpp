@@ -201,8 +201,8 @@
     "note": "Accepted port scope is src and examples/jsm, including tracked third-party dependencies. Editor/manual web applications are excluded from native application rewrites. Native host behavior, packaging and all three platforms require separate implementation and verification evidence."
   },
   "counts": {
-    "partial-unverified": 544,
-    "missing": 397,
+    "partial-unverified": 545,
+    "missing": 396,
     "vulkan-port-pending": 290,
     "dependency-unverified": 20
   },
@@ -210,8 +210,8 @@
     "src": {
       "modules": 755,
       "counts": {
-        "partial-unverified": 408,
-        "missing": 57,
+        "partial-unverified": 409,
+        "missing": 56,
         "vulkan-port-pending": 290
       }
     },
@@ -866,7 +866,7 @@
       "path": "src/nodes/lighting",
       "upstreamFiles": 23,
       "moduleCount": 23,
-      "modulesWithCppFiles": 13,
+      "modulesWithCppFiles": 14,
       "verifiedComplete": 0
     },
     {
@@ -11467,11 +11467,11 @@
       "scope": "src",
       "kind": "core",
       "upstreamSha256": "2460d976f486443e1d4567638b7c3efeddc05eaaf54153cd9222811ce1cc7f5b",
-      "header": null,
-      "implementation": null,
+      "header": "src/nodes/lighting/IESSpotLightNode.h",
+      "implementation": "src/nodes/lighting/IESSpotLightNode.cpp",
       "expectedHeader": "src/nodes/lighting/IESSpotLightNode.h",
       "expectedImplementation": "src/nodes/lighting/IESSpotLightNode.cpp",
-      "status": "missing",
+      "status": "partial-unverified",
       "verifiedComplete": false,
       "apiExtraction": "static-only",
       "verification": {
@@ -11480,7 +11480,9 @@
           "pointer": "/modules/360"
         },
         "upstreamUnitTests": [],
-        "cppUnitTests": [],
+        "cppUnitTests": [
+          "test/unit/src/nodes/lighting/IESSpotLightNode.tests.cpp"
+        ],
         "reviewedImplementation": [],
         "differentialResults": [],
         "renderingResults": [],
