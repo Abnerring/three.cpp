@@ -201,8 +201,8 @@
     "note": "Accepted port scope is src and examples/jsm, including tracked third-party dependencies. Editor/manual web applications are excluded from native application rewrites. Native host behavior, packaging and all three platforms require separate implementation and verification evidence."
   },
   "counts": {
-    "partial-unverified": 604,
-    "missing": 337,
+    "partial-unverified": 605,
+    "missing": 336,
     "vulkan-port-pending": 290,
     "dependency-unverified": 20
   },
@@ -218,8 +218,8 @@
     "examples/jsm": {
       "modules": 496,
       "counts": {
-        "missing": 324,
-        "partial-unverified": 152,
+        "missing": 323,
+        "partial-unverified": 153,
         "dependency-unverified": 20
       }
     }
@@ -572,7 +572,7 @@
       "path": "examples/jsm/transpiler",
       "upstreamFiles": 8,
       "moduleCount": 8,
-      "modulesWithCppFiles": 2,
+      "modulesWithCppFiles": 3,
       "verifiedComplete": 0
     },
     {
@@ -33151,11 +33151,11 @@
       "scope": "examples/jsm",
       "kind": "addon",
       "upstreamSha256": "06dd7adb577c16ad70a74df08fe84186ba3a0c66ba10759c43bf20d7e535493b",
-      "header": null,
-      "implementation": null,
+      "header": "examples/jsm/transpiler/Linker.h",
+      "implementation": "examples/jsm/transpiler/Linker.cpp",
       "expectedHeader": "examples/jsm/transpiler/Linker.h",
       "expectedImplementation": "examples/jsm/transpiler/Linker.cpp",
-      "status": "missing",
+      "status": "partial-unverified",
       "verifiedComplete": false,
       "apiExtraction": "static-only",
       "verification": {
@@ -33164,7 +33164,9 @@
           "pointer": "/modules/1146"
         },
         "upstreamUnitTests": [],
-        "cppUnitTests": [],
+        "cppUnitTests": [
+          "test/unit/addons/transpiler/Linker.tests.cpp"
+        ],
         "reviewedImplementation": [],
         "differentialResults": [],
         "renderingResults": [],
