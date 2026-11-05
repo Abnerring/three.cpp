@@ -1,4 +1,28 @@
-# 当前接续：**定位并修复早停根因**（`Compatibility` 常量取值错误）→ `setupShadow` 端到端跑通 + pinned 错误消息断言通过，2026-11-05
+# 当前接续：段 3 **高精度分支**测试通过（同时覆盖段 2 VSM 组装），2026-11-05
+
+目标保持 active：固定 three.js 11738a9d55e502fb484cefffcea3a66dc44e9fe9 全部 src + examples/jsm 原生 C++ 逻辑，Vulkan 后端；禁止 CEF/生产 JS 引擎/桥接。阶段本地 Git 提交，不推送。
+
+## 本轮交付：高精度阴影坐标分支测试
+
+用例「uses the high precision shadow position branch」：
+- `renderer.highPrecision = true`，`material.receivedShadowPositionNode` 与 `context.shadowPositionWorld` 均不存在 → 走 **`uniform('mat4').onObjectUpdate(...)` + `positionLocal`** 分支；
+- `renderer.shadowMap.type = 3`（VSM）→ 同时覆盖 **段 2（VSM 两趟材质/RT/共享 context）**：`builder.createRenderTarget`、`builder.getSharedContext` 均为 stub；
+- `builder.getSharedContext()` 返回对象、`setupRenderTarget` stub 返回 `{depthTexture, shadowMap(depth:1)}`；
+- 断言：`setupShadow` 返回 truthy 且 **`isNode == true`** —— 四段链路（含高精度 `onObjectUpdate` 与 VSM 材质组装）在节点图上完整构建。
+
+## 验证
+
+- 构建 exit 0；过滤 `*ShadowNode*` = **19 cases / 58 assertions** 全过（+1 例 / +2 断言）。
+- `THREECPPAddonTests` 全套 **1384 cases / 38,961 assertions** 通过。
+- 审计不变（ShadowNode 已 partial）：src 12 / 453；examples/jsm 322 / 154。
+
+**未执行验证（如实记录）**：未触发 `onObjectUpdate` 回调本体（需要真实对象矩阵更新时机）；未断言图结构/数值；`toInspector` 仍省略；段 4 transmitted 路径未测；`updateShadow` 无测试。
+
+## 下一步
+
+1. 段 4 **transmitted 路径**（`renderer.shadowMap.transmitted = true` + cube/normal 两种 texture）测试；
+2. `updateShadow` 真实 renderer 夹具；
+3. 收口 `ShadowNode` 后推进 **`PointShadowNode`(12,693)**、`PhysicalLightingModel`(32,829)。# 当前接续：**定位并修复早停根因**（`Compatibility` 常量取值错误）→ `setupShadow` 端到端跑通 + pinned 错误消息断言通过，2026-11-05
 
 目标保持 active：固定 three.js 11738a9d55e502fb484cefffcea3a66dc44e9fe9 全部 src + examples/jsm 原生 C++ 逻辑，Vulkan 后端；禁止 CEF/生产 JS 引擎/桥接。阶段本地 Git 提交，不推送。
 
