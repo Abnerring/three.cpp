@@ -1,4 +1,26 @@
-# 当前接续：**六面朝向断言通过**（记录需快照分量，不能存共享可变向量）；方向表改用 C++ 数值表，2026-11-05
+# 当前接续：六面 up 表 + shadowMatrix 平移断言通过（PointShadowNode 10 例 / 83 断言），2026-11-05
+
+目标保持 active：固定 three.js 11738a9d55e502fb484cefffcea3a66dc44e9fe9 全部 src + examples/jsm 原生 C++ 逻辑，Vulkan 后端；禁止 CEF/生产 JS 引擎/桥接。阶段本地 Git 提交，不推送。
+
+## 本轮交付
+
+扩展 `renderShadow` 用例：
+1. **`camera.up` 六面断言**：`updateMatrixWorld` 桩在 receiver 上快照 `camera.up` 的 x/y/z（长度 18）；断言 WebGL up 表 `(0,-1,0),(0,-1,0),(0,0,1),(0,0,-1),(0,-1,0),(0,-1,0)` —— **全部通过**（+18 断言）；
+2. **`shadowMatrix` 平移断言**：光 `matrixWorld` 为单位矩阵 → 光位置 (0,0,0) → `shadow.matrix` 平移分量 (12,13,14) 全为 **0** —— 通过（+3 断言）。
+
+## 验证
+
+- 构建 exit 0；过滤 `*PointShadowNode*` = **10 cases / 83 assertions** 全过（+22 断言）。
+- `THREECPPAddonTests` 全套 **1401 cases / 39,066 assertions** 通过。
+- 审计不变（PointShadowNode 已 partial）：src 11 / 454；examples/jsm 322 / 154。
+
+**未执行验证（如实记录）**：**WebGPU 分支**（camera/renderer `coordinateSystem=2001`）未测，其方向/up 表未断言；六面之间的 `camera.far` 更新路径（`light.distance` 非零）未测。
+
+## 下一步
+
+1. 补 WebGPU 分支测试（复用夹具，改 coordinateSystem=2001，断言 WebGPU 方向表）；
+2. 补 `light.distance` 非零时的 `camera.far` 更新路径；
+3. 之后推进 `PassNode`(26,843)/`ToonOutlinePassNode`(6,868)/`PhysicalLightingModel`(32,829)。# 当前接续：**六面朝向断言通过**（记录需快照分量，不能存共享可变向量）；方向表改用 C++ 数值表，2026-11-05
 
 目标保持 active：固定 three.js 11738a9d55e502fb484cefffcea3a66dc44e9fe9 全部 src + examples/jsm 原生 C++ 逻辑，Vulkan 后端；禁止 CEF/生产 JS 引擎/桥接。阶段本地 Git 提交，不推送。
 

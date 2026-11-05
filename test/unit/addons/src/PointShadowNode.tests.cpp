@@ -161,12 +161,23 @@ TEST_CASE("PointShadowNode renders the six cube faces") {
     // WebGLCoordinateSystem is 2000; the frustum helper validates the value.
     camera.set("coordinateSystem", JSValue(2000));
     camera.set("reversedDepth", false);
-    for (const char* method : {"updateProjectionMatrix", "updateMatrixWorld"}) {
-        camera.set(method, JSValue::function(
-            +[](const JSValue&, const std::vector<JSValue>&, const std::vector<JSValue>&) {
-                return JSValue{};
-            }));
-    }
+    camera.set("updateProjectionMatrix", JSValue::function(
+        +[](const JSValue&, const std::vector<JSValue>&, const std::vector<JSValue>&) {
+            return JSValue{};
+        }));
+    camera.set("_ups", JSValue::array(0));
+    camera.set("updateMatrixWorld", JSValue::function(
+        +[](const JSValue& receiver, const std::vector<JSValue>&, const std::vector<JSValue>&) {
+            JSValue& self = const_cast<JSValue&>(receiver);
+            auto ups = self.get("_ups");
+            auto length = ups.get("length").toNumber();
+            const auto up = self.get("up");
+            ups.set(JSValue(length++), up.get("x"));
+            ups.set(JSValue(length++), up.get("y"));
+            ups.set(JSValue(length++), up.get("z"));
+            self.set("_ups", ups);
+            return JSValue{};
+        }));
     // Record the six look targets on the camera receiver so the cube face directions can be checked.
     camera.set("_lookTargets", JSValue::array(0));
     camera.set("lookAt", JSValue::function(
@@ -261,6 +272,25 @@ TEST_CASE("PointShadowNode renders the six cube faces") {
                     Approx(expectedDirections[face][axis]));
         }
     }
+    // The WebGL up table drives the per face camera up vectors.
+    const double expectedUps[6][3] = {{0, -1, 0}, {0, -1, 0}, {0, 0, 1},
+                                      {0, 0, -1}, {0, -1, 0}, {0, -1, 0}};
+    const auto recordedUps = camera.get("_ups");
+    REQUIRE(recordedUps.get("length").toNumber() == Approx(18));
+    for (int face = 0; face < 6; ++face) {
+        INFO("up face " << face);
+        for (int axis = 0; axis < 3; ++axis) {
+            REQUIRE(recordedUps.get(JSValue(static_cast<double>(face * 3 + axis))).toNumber() ==
+                    Approx(expectedUps[face][axis]));
+        }
+    }
+
+    // The identity light world matrix puts the light at the origin, so the shadow translation is zero.
+    const auto shadowElements = node.get("shadow").get("matrix").get("elements");
+    REQUIRE(shadowElements.get(JSValue(12.0)).toNumber() == Approx(0));
+    REQUIRE(shadowElements.get(JSValue(13.0)).toNumber() == Approx(0));
+    REQUIRE(shadowElements.get(JSValue(14.0)).toNumber() == Approx(0));
+
     // One target bind per cube face, in order.
     REQUIRE(renderer.get("_targetCalls").toNumber() == Approx(6));
     const auto recordedFaces = renderer.get("_faces");
