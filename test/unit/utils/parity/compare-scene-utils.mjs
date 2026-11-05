@@ -28,7 +28,7 @@ try {
 } finally {
   fs.rmSync(tempPath, { force: true });
 }
-const { createMeshesFromInstancedMesh, createMultiMaterialObject, reduceVertices } = helpers;
+const { createMeshesFromInstancedMesh, createMultiMaterialObject, reduceVertices, sortInstancedMesh } = helpers;
 
 const geometry = new THREE.BoxGeometry();
 const material = new THREE.MeshBasicMaterial();
@@ -52,7 +52,44 @@ const minX = reduceVertices(scene, (value, vertex) => (value < vertex.x ? value 
 
 const multi = createMultiMaterialObject(geometry, [ new THREE.MeshBasicMaterial(), new THREE.MeshBasicMaterial() ]);
 
+const payloads = new THREE.InstancedMesh(geometry, material, 3);
+const payloadMatrix = new THREE.Matrix4();
+payloadMatrix.makeTranslation(3, 0, 0);
+payloads.setMatrixAt(0, payloadMatrix);
+payloadMatrix.makeTranslation(1, 0, 0);
+payloads.setMatrixAt(1, payloadMatrix);
+payloadMatrix.makeTranslation(2, 0, 0);
+payloads.setMatrixAt(2, payloadMatrix);
+payloads.setColorAt(0, new THREE.Color(1, 0, 0));
+payloads.setColorAt(1, new THREE.Color(0, 1, 0));
+payloads.setColorAt(2, new THREE.Color(0, 0, 1));
+payloads.geometry.setAttribute('instanceValue',
+  new THREE.InstancedBufferAttribute(new Float32Array([ 30, 10, 20 ]), 1));
+sortInstancedMesh(payloads, (a, b) => {
+  const left = new THREE.Matrix4();
+  const right = new THREE.Matrix4();
+  payloads.getMatrixAt(a, left);
+  payloads.getMatrixAt(b, right);
+  return left.elements[12] - right.elements[12];
+});
+const payloadColours = [];
+const payloadValues = [];
+const payloadPositions = [];
+const payloadColour = new THREE.Color();
+const payloadAttribute = payloads.geometry.getAttribute('instanceValue');
+const payloadCurrent = new THREE.Matrix4();
+for (let i = 0; i < payloads.count; i += 1) {
+  payloads.getColorAt(i, payloadColour);
+  payloadColours.push(payloadColour.r, payloadColour.g, payloadColour.b);
+  payloadValues.push(payloadAttribute.getX(i));
+  payloads.getMatrixAt(i, payloadCurrent);
+  payloadPositions.push(payloadCurrent.elements[12]);
+}
+
 const expected = {
+  payloadColours,
+  payloadValues,
+  payloadPositions,
   groupChildCount: group.children.length,
   groupName: group.name,
   firstPosition: [ group.children[0].position.x, group.children[0].position.y, group.children[0].position.z ],

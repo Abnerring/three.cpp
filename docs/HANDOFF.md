@@ -1,4 +1,27 @@
-# 当前接续：`OBJExporter` uv/normal 索引累加补测（r75 遗留缺口），2026-11-05
+# 当前接续：`sortInstancedMesh` 颜色/实例属性分支的差分补齐（r71 遗留缺口），2026-11-05
+
+目标保持 active：固定 three.js 11738a9d55e502fb484cefffcea3a66dc44e9fe9 全部 src + examples/jsm 原生 C++ 逻辑，Vulkan 后端；禁止 CEF/生产 JS 引擎/桥接。阶段本地 Git 提交，不推送。
+
+## 本轮内容（差分补充，无实现变更）
+
+r71 只给颜色/实例属性分支加了单测，明确记录「无差分」。本轮补齐：
+
+- `SceneUtilsParityProbe.cpp` 增加第二个 InstancedMesh 场景：3 个平移 x = 3,1,2；`setColorAt` 红/绿/蓝；几何挂 `InstancedBufferAttribute("instanceValue", [30,10,20])`；按 x 升序排序。
+- 输出 `payloadColours`（9 分量）/ `payloadValues`（3 值）/ `payloadPositions`（3 个 x）。
+- `compare-scene-utils.mjs` 用上游 `sortInstancedMesh` 复现同一场景并逐值比对（1e-12）。
+- 差分结果：**Passed**（颜色、实例属性、位置全部一致）。
+
+## 验证
+
+- 构建 exit 0；`threecpp.threejs-scene-utils-parity` **Passed**（7 项旧比较 + 3 组新比较）。
+- `THREECPPAddonTests` 全套 **1336 cases / 38,684 assertions** 通过。
+- 审计计数不变（差分补充）：examples/jsm 325 / 151，src 13 / 452。
+
+**未执行验证（如实记录）**：实例属性仍只测 `itemSize = 1`；未测多实例组/重复比较器；`createMeshesFromMultiMaterialMesh` 仍未实现（缺 `mergeGroups`）。
+
+## 下一步
+
+examples/jsm 剩余 325：`transpiler/AST.js`(8868) 最有价值。src 剩余 13：`ShadowNode`(24,331，依赖齐备) / `PhysicalLightingModel`(32,829，解锁三材质)。# 当前接续：`OBJExporter` uv/normal 索引累加补测（r75 遗留缺口），2026-11-05
 
 目标保持 active：固定 three.js 11738a9d55e502fb484cefffcea3a66dc44e9fe9 全部 src + examples/jsm 原生 C++ 逻辑，Vulkan 后端；禁止 CEF/生产 JS 引擎/桥接。阶段本地 Git 提交，不推送。
 

@@ -1,6 +1,8 @@
 #include "utils/SceneUtils.h"
 
+#include "core/InstancedBufferAttribute.h"
 #include "core/JSValue.h"
+#include "math/Color.h"
 #include "geometries/BoxGeometry.h"
 #include "materials/MeshBasicMaterial.h"
 #include "objects/Group.h"
@@ -45,7 +47,47 @@ int main() {
                                                         std::make_shared<MeshBasicMaterial>()};
         const auto multi = SceneUtils::createMultiMaterialObject(geometry, materials);
 
+        // Sort a second instance mesh whose colours and instanced attribute must travel with it.
+        auto payloads = std::make_shared<InstancedMesh>(geometry, material, JSValue(3));
+        Matrix4 payloadMatrix;
+        payloadMatrix.makeTranslation(3, 0, 0);
+        payloads->setMatrixAt(0, payloadMatrix);
+        payloadMatrix.makeTranslation(1, 0, 0);
+        payloads->setMatrixAt(1, payloadMatrix);
+        payloadMatrix.makeTranslation(2, 0, 0);
+        payloads->setMatrixAt(2, payloadMatrix);
+        payloads->setColorAt(0, Color(1, 0, 0));
+        payloads->setColorAt(1, Color(0, 1, 0));
+        payloads->setColorAt(2, Color(0, 0, 1));
+        auto instanceValues =
+            std::make_shared<InstancedBufferAttribute>(std::vector<float>{30, 10, 20}, 1);
+        payloads->geometry->setAttribute("instanceValue", instanceValues);
+        SceneUtils::sortInstancedMesh(payloads, [&](double a, double b) {
+            Matrix4 left;
+            Matrix4 right;
+            payloads->getMatrixAt(a, left);
+            payloads->getMatrixAt(b, right);
+            return left.elements()[12] - right.elements()[12];
+        });
+        auto payloadColours = JSValue::array();
+        auto payloadValues = JSValue::array();
+        auto payloadPositions = JSValue::array();
+        for (double i = 0; i < payloads->count; ++i) {
+            Color colour;
+            payloads->getColorAt(i, colour);
+            payloadColours.set(JSValue(i * 3), JSValue(colour.r));
+            payloadColours.set(JSValue(i * 3 + 1), JSValue(colour.g));
+            payloadColours.set(JSValue(i * 3 + 2), JSValue(colour.b));
+            payloadValues.set(JSValue(i), JSValue(instanceValues->getX(i)));
+            Matrix4 current;
+            payloads->getMatrixAt(i, current);
+            payloadPositions.set(JSValue(i), JSValue(current.elements()[12]));
+        }
+
         auto output = JSValue::object(nullptr);
+        output.set("payloadColours", payloadColours);
+        output.set("payloadValues", payloadValues);
+        output.set("payloadPositions", payloadPositions);
         output.set("groupChildCount", JSValue(static_cast<double>(group->children.size())));
         output.set("groupName", JSValue(group->name));
         output.set("firstPosition", [&] {
