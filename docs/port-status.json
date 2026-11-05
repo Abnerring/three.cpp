@@ -201,8 +201,8 @@
     "note": "Accepted port scope is src and examples/jsm, including tracked third-party dependencies. Editor/manual web applications are excluded from native application rewrites. Native host behavior, packaging and all three platforms require separate implementation and verification evidence."
   },
   "counts": {
-    "partial-unverified": 611,
-    "missing": 330,
+    "partial-unverified": 612,
+    "missing": 329,
     "vulkan-port-pending": 290,
     "dependency-unverified": 20
   },
@@ -210,8 +210,8 @@
     "src": {
       "modules": 755,
       "counts": {
-        "partial-unverified": 457,
-        "missing": 8,
+        "partial-unverified": 458,
+        "missing": 7,
         "vulkan-port-pending": 290
       }
     },
@@ -831,7 +831,7 @@
       "path": "src/nodes/functions",
       "upstreamFiles": 6,
       "moduleCount": 6,
-      "modulesWithCppFiles": 5,
+      "modulesWithCppFiles": 6,
       "verifiedComplete": 0
     },
     {
@@ -10831,11 +10831,11 @@
       "scope": "src",
       "kind": "core",
       "upstreamSha256": "dbdffb07bfe30599f4580647e84c89a9d70b2ec1468ceb01709da1aa6a824ed6",
-      "header": null,
-      "implementation": null,
+      "header": "src/nodes/functions/PhysicalLightingModel.h",
+      "implementation": "src/nodes/functions/PhysicalLightingModel.cpp",
       "expectedHeader": "src/nodes/functions/PhysicalLightingModel.h",
       "expectedImplementation": "src/nodes/functions/PhysicalLightingModel.cpp",
-      "status": "missing",
+      "status": "partial-unverified",
       "verifiedComplete": false,
       "apiExtraction": "static-only",
       "verification": {

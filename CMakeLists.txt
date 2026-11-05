@@ -209,6 +209,7 @@ target_sources(threecpp PRIVATE
     src/nodes/display/PassNode.cpp
     src/nodes/display/ToonOutlinePassNode.cpp
     src/nodes/utils/ReflectorNode.cpp
+    src/nodes/functions/PhysicalLightingModel.cpp
     src/nodes/lighting/ShadowFilterNode.cpp
     src/nodes/lighting/EnvironmentNode.cpp
     src/nodes/functions/BSDF/LTC.cpp

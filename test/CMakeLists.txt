@@ -829,6 +829,7 @@ if(THREECPP_BUILD_ADDONS)
         unit/addons/src/PassNode.tests.cpp
         unit/addons/src/ToonOutlinePassNode.tests.cpp
         unit/addons/src/ReflectorNode.tests.cpp
+        unit/addons/src/PhysicalLightingModel.tests.cpp
         unit/addons/loaders/materialx/MaterialXLog.tests.cpp
         unit/addons/environments/DebugEnvironment.tests.cpp
         unit/addons/objects/GroundedSkybox.tests.cpp

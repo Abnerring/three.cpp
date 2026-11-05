@@ -1,4 +1,34 @@
-# 当前接续：`ReflectorBaseNode.updateBefore` **集成测试通过** —— ReflectorNode 收口，2026-11-05
+# 当前接续：`PhysicalLightingModel` **Stage A** 落地（src missing 8→7），2026-11-05
+
+目标保持 active：固定 three.js 11738a9d55e502fb484cefffcea3a66dc44e9fe9 全部 src + examples/jsm 原生 C++ 逻辑，Vulkan 后端；禁止 CEF/生产 JS 引擎/桥接。阶段本地 Git 提交，不推送。
+
+## 本轮调查（可行性确认）
+
+- `PhysicalLightingModel.js` 969 行，10 个方法（`start/computeMultiscattering/direct/directRectArea/indirect/indirectDiffuse/indirectSpecular/ambientOcclusion/finish`）；
+- **依赖全部已移植**：`functions/BSDF/*`（14 个：Lambert/GGX/EON/DFGLUT/EnvironmentBRDF/F_Schlick/Schlick_to_F0/BRDF_Sheen/LTC/D_GGX/V_GGX…）、`core/LightingModel`、`Basic/Phong/Toon/VolumetricLightingModel` 参考实现；
+- 模块级辅助 Fn：`getVolumeTransmissionRay/applyIorToRoughness/getTransmissionSample/volumeAttenuation/getIBLVolumeRefraction/evalIridescence/IBLSheenBRDF` + `Fresnel0ToIor/IorToFresnel0/evalSensitivity` + `XYZ_TO_REC709/clearcoatF0/clearcoatF90` 常量（**后续阶段**）。
+
+## 本轮交付（Stage A）
+
+- `PhysicalLightingModel.{h,cpp}`：本地重建 `LightingModel` 基类（6 个空 hook，参照 `BasicLightingModel.cpp` 的 `makeLightingModelBase` 模式）；
+- `builtinConstructor`（arity 9）设置 **8 个特性开关**（`clearcoat/sheen/iridescence/anisotropy/transmission/dispersion/retroreflection/diffuseRoughness`，全部默认 false、缺省 undefined → false）与 **13 个缓存节点**（`clearcoatRadiance/clearcoatSpecularDirect/Indirect/sheenSpecularDirect/Indirect/iridescenceFresnel/iridescenceF0Dielectric/iridescenceF0Metallic/dfg/eonDirectionalAlbedo/multiScatteringCompensation/singleScatteringDielectric/multiScatteringDielectric`，初始 null）；
+- 9 个方法注册为**未移植抛错 stub**；
+- 测试 2 例 / 19 断言：默认开关与空缓存；显式传入 8 个 true 的开关。
+
+## 验证
+
+- 构建 exit 0；`*PhysicalLightingModel*` = **2 cases / 19 assertions** 全过；`THREECPPAddonTests` 全套 **1432 cases / 39,290 assertions** 通过。
+- 审计：**src missing 8→7、partial 457→458**。
+
+**未执行验证（如实记录）**：9 个方法全部抛错；模块级辅助 Fn 未实现。
+
+## 下一步（PhysicalLightingModel 分阶段）
+
+1. **Stage B**：模块级辅助（`getVolumeTransmissionRay`/`applyIorToRoughness`/`volumeAttenuation`/`getTransmissionSample`/IOR 辅助/`XYZ_TO_REC709`/`clearcoatF0/F90`）；
+2. **Stage C**：`start()`（最大，约 110 行）；
+3. **Stage D**：`direct`/`directRectArea`；
+4. **Stage E**：`indirect*`/`ambientOcclusion`/`finish` + `computeMultiscattering`；
+5. **Stage F**：`evalIridescence`/`IBLSheenBRDF`/`getIBLVolumeRefraction`。# 当前接续：`ReflectorBaseNode.updateBefore` **集成测试通过** —— ReflectorNode 收口，2026-11-05
 
 目标保持 active：固定 three.js 11738a9d55e502fb484cefffcea3a66dc44e9fe9 全部 src + examples/jsm 原生 C++ 逻辑，Vulkan 后端；禁止 CEF/生产 JS 引擎/桥接。阶段本地 Git 提交，不推送。
 
