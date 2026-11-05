@@ -220,6 +220,7 @@ target_sources(threecpp PRIVATE
     src/materials/nodes/LineDashedNodeMaterial.cpp
     src/materials/nodes/VolumeNodeMaterial.cpp
     src/materials/nodes/ProxyNodeMaterial.cpp
+    src/materials/nodes/SpriteNodeMaterial.cpp
     src/nodes/functions/VolumetricLightingModel.cpp
     src/nodes/display/ViewportSharedTextureNode.cpp
     src/nodes/utils/SampleNode.cpp

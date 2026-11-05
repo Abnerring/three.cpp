@@ -201,8 +201,8 @@
     "note": "Accepted port scope is src and examples/jsm, including tracked third-party dependencies. Editor/manual web applications are excluded from native application rewrites. Native host behavior, packaging and all three platforms require separate implementation and verification evidence."
   },
   "counts": {
-    "partial-unverified": 571,
-    "missing": 370,
+    "partial-unverified": 572,
+    "missing": 369,
     "vulkan-port-pending": 290,
     "dependency-unverified": 20
   },
@@ -210,8 +210,8 @@
     "src": {
       "modules": 755,
       "counts": {
-        "partial-unverified": 435,
-        "missing": 30,
+        "partial-unverified": 436,
+        "missing": 29,
         "vulkan-port-pending": 290
       }
     },
@@ -761,7 +761,7 @@
       "path": "src/materials/nodes",
       "upstreamFiles": 19,
       "moduleCount": 19,
-      "modulesWithCppFiles": 12,
+      "modulesWithCppFiles": 13,
       "verifiedComplete": 0
     },
     {
@@ -6368,11 +6368,11 @@
       "scope": "src",
       "kind": "core",
       "upstreamSha256": "0254834731b0275a553ba804fc377afb98b74c6951e673616313a04b00ca593d",
-      "header": null,
-      "implementation": null,
+      "header": "src/materials/nodes/SpriteNodeMaterial.h",
+      "implementation": "src/materials/nodes/SpriteNodeMaterial.cpp",
       "expectedHeader": "src/materials/nodes/SpriteNodeMaterial.h",
       "expectedImplementation": "src/materials/nodes/SpriteNodeMaterial.cpp",
-      "status": "missing",
+      "status": "partial-unverified",
       "verifiedComplete": false,
       "apiExtraction": "static-only",
       "verification": {
@@ -6381,7 +6381,9 @@
           "pointer": "/modules/179"
         },
         "upstreamUnitTests": [],
-        "cppUnitTests": [],
+        "cppUnitTests": [
+          "test/unit/src/materials/nodes/SpriteNodeMaterial.tests.cpp"
+        ],
         "reviewedImplementation": [],
         "differentialResults": [],
         "renderingResults": [],

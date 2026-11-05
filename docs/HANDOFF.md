@@ -1,4 +1,27 @@
-# 当前接续：ProxyNodeMaterial 已移植（属性代理 + userData 克隆规则，行为级差分），2026-11-05
+# 当前接续：SpriteNodeMaterial 已移植（accessor 语义 + 位置图双侧真实构建），2026-11-05
+
+目标保持 active：固定 three.js 11738a9d55e502fb484cefffcea3a66dc44e9fe9 全部 src + examples/jsm 原生 C++ 逻辑，Vulkan 后端；禁止 CEF/生产 JS 引擎/桥接。阶段本地 Git 提交，不推送。
+
+本轮新增 `src/materials/nodes/SpriteNodeMaterial.{h,cpp}`（4,620 B 源）。它是 `PointsNodeMaterial` 的父类（Points 依赖 Sprite，所以先做这个）。
+
+- 构造：`isSpriteNodeMaterial = true`、`_useSizeAttenuation = true`、`positionNode/rotationNode/scaleNode = null`、`transparent = true`，**然后**才 `setDefaultValues( new SpriteMaterial() )` → `setValues( parameters )`（顺序与源码一致：`_useSizeAttenuation` 会被 defaults 的 `sizeAttenuation` 经 setter 重新写入）。
+- `setupPositionView( builder )`：`mvPosition = modelViewMatrix.mul(vec3(positionNode || 0))`；`scale = vec2(modelWorldMatrix[0].xyz.length(), modelWorldMatrix[1].xyz.length())`，有 `scaleNode` 时再乘；**透视相机 + `sizeAttenuation === false`** 时再乘 `mvPosition.z.negate()`；`alignedPosition = positionGeometry.xy`，`object.center?.isVector2 === true` 时用 `reference('center','vec2',object)` 减 `center.sub(0.5)`；乘 `scale` 后由 `rotate(aligned, float(rotationNode || materialRotation))` 旋转；返回 `vec4(mvPosition.xy.add(rotated), mvPosition.zw)`。
+- **`sizeAttenuation` 是访问器**：getter 返回 `_useSizeAttenuation`；setter **仅在值变化时**写回并 `needsUpdate = true`。
+
+**本轮一处编译修正**：`vec2( scaleNode )` 是**单值向量转换**，不能用参数为两个标量的 `vec2Node(a,b)` 助手，改为直接走 `nativeTSLBaseBinding("vec2")` 单参调用。
+
+验证：构建 exit 0（修完即全绿）。THREECPPTests **1610 cases / 214,636 assertions 全过**，较上轮 1607/214,616 增 3 例 20 断言。差分 `threecpp.threejs-sprite-node-material-parity` **Passed**，比较：
+- name/length=1/静态与实例 type/`isSpriteNodeMaterial`/`isNodeMaterial`、`_useSizeAttenuation = true`、三个节点字段 `=== null`、`transparent = true`、`setupPositionView.length = 1`、class `toString` 逐字节；
+- **accessor 的三态行为**：赋值同值 → `version` **不变**；赋不同值 → `_useSizeAttenuation` 翻转且 `version` **增大**（即 `needsUpdate` 只在变化时触发）；
+- **`setupPositionView` 两条分支都真实构建成功**：非透视 + 无 center（主路径）返回节点；透视 + `sizeAttenuation = false`（乘 `-z` 分支）不抛。
+
+**未执行验证的部分（如实记录）**：`object.center` 的 `reference('center','vec2',object)` 分支、`rotationNode`/`scaleNode` 非空分支**未执行**；节点图未求值；材质真实渲染路径未触及。
+
+审计（固定 worktree，HEAD=11738a9d55）：**src missing 30→29、partial 435→436**，`SpriteNodeMaterial` 记 `partial-unverified`。
+
+**剩余 missing（按目录）**：`materials/nodes` 6、`nodes/gpgpu` 4、`loaders/nodes` 3、`nodes/utils` 3、`nodes/display` 2、`nodes/lighting` 2、`nodes/materialx` 2、以及 `Three.*.js` 入口若干。`PointsNodeMaterial` 现已解锁（其父类就位）。
+
+下一步：**`PointsNodeMaterial`（4,952）** —— 直接 extends 本轮刚做的 Sprite，新增 `setupVertexSprite`/`setupVertex`/`alphaToCoverage` 访问器，以及模块级 `scale` uniform（`onRenderUpdate` 用 `renderer.getSize` 计算 `0.5 * size.y`）。之后 `MeshStandardNodeMaterial`(4,817) / `MeshSSSNodeMaterial`(4,726)；`ShadowNode`(24,331) + `PointShadowNode`(12,693) 仍是 lighting 最后两个缺口。# 当前接续：ProxyNodeMaterial 已移植（属性代理 + userData 克隆规则，行为级差分），2026-11-05
 
 目标保持 active：固定 three.js 11738a9d55e502fb484cefffcea3a66dc44e9fe9 全部 src + examples/jsm 原生 C++ 逻辑，Vulkan 后端；禁止 CEF/生产 JS 引擎/桥接。阶段本地 Git 提交，不推送。
 
