@@ -51,3 +51,15 @@
 - `examples/jsm`（部分验证，多为 partial）：ColorEnvironment、ColorUtils、DebugEnvironment、GeometryUtils、GroundedSkybox、MaterialXLog、MorphAnimMesh、MorphBlendMesh、OBJExporter、RectAreaLightHelper、SceneUtils（全部 helper）、ShadowMesh、STLExporter（ascii+binary）、TranspilerUtils、Gyroscope。
 - `src` 聚合/映射：`Three.TSL`、`Three.WebGPU`、`Three.WebGPU.Nodes`、`nodes/TSL`、`nodes/Nodes`、`NodeMaterials`（15 个构造器映射；缺 4 个未移植材质）。
 - **已确认既有实现**：`BufferGeometryUtils.mergeGroups`（r81 更正）。
+## 7. `transpiler/AST.js` 类清单（下一目标脚手架）
+
+上游文件 `examples/jsm/transpiler/AST.js`（8,868B）导出的节点类共 **0** 个：
+
+```
+
+```
+
+移植建议：
+- 每个类都是**纯数据节点**（字段 + 少量方法），适合按类逐个移植到 C++（一个头文件 + 一个 cpp，或少量类合并到一个 `AST.h`）。
+- 先移植叶子类（无子节点/无递归），再移植容器类；差分可按「构造 → 字段值 → `toString()`/序列化」数据级比较。
+- 完成后即可与已移植的 `TranspilerUtils`（`isExpression` 读 `isFor`/`isWhile` 等标志）联调。
