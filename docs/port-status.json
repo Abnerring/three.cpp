@@ -201,8 +201,8 @@
     "note": "Accepted port scope is src and examples/jsm, including tracked third-party dependencies. Editor/manual web applications are excluded from native application rewrites. Native host behavior, packaging and all three platforms require separate implementation and verification evidence."
   },
   "counts": {
-    "partial-unverified": 610,
-    "missing": 331,
+    "partial-unverified": 611,
+    "missing": 330,
     "vulkan-port-pending": 290,
     "dependency-unverified": 20
   },
@@ -210,8 +210,8 @@
     "src": {
       "modules": 755,
       "counts": {
-        "partial-unverified": 456,
-        "missing": 9,
+        "partial-unverified": 457,
+        "missing": 8,
         "vulkan-port-pending": 290
       }
     },
@@ -922,7 +922,7 @@
       "path": "src/nodes/utils",
       "upstreamFiles": 31,
       "moduleCount": 31,
-      "modulesWithCppFiles": 30,
+      "modulesWithCppFiles": 31,
       "verifiedComplete": 0
     },
     {
@@ -13122,11 +13122,11 @@
       "scope": "src",
       "kind": "core",
       "upstreamSha256": "07700d6902e71029632997929f147695caeef9f099f2a0153653604b287e3a2a",
-      "header": null,
-      "implementation": null,
+      "header": "src/nodes/utils/ReflectorNode.h",
+      "implementation": "src/nodes/utils/ReflectorNode.cpp",
       "expectedHeader": "src/nodes/utils/ReflectorNode.h",
       "expectedImplementation": "src/nodes/utils/ReflectorNode.cpp",
-      "status": "missing",
+      "status": "partial-unverified",
       "verifiedComplete": false,
       "apiExtraction": "static-only",
       "verification": {

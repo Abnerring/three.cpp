@@ -1,4 +1,27 @@
-# 当前接续：ToonOutline 包装函数**内部行为**断言通过（5 例 / 29 断言），2026-11-05
+# 当前接续：`ReflectorNode` **Stage A** 落地（src missing 9→8），2026-11-05
+
+目标保持 active：固定 three.js 11738a9d55e502fb484cefffcea3a66dc44e9fe9 全部 src + examples/jsm 原生 C++ 逻辑，Vulkan 后端；禁止 CEF/生产 JS 引擎/桥接。阶段本地 Git 提交，不推送。
+
+## 本轮交付：`src/nodes/utils/ReflectorNode`（Stage A）
+
+- 模块级常量：`_defaultRT`（`RenderTarget` + `DepthTexture(1,1)`，惰性构建缓存）、`_defaultUV`（`screenUV.flipX()` 缓存）；
+- **`ReflectorBaseNode`**（`makeClass(..., base=Node)`）：
+  - 构造字段全量：`textureNode`、`target`（默认 `new Object3D()`）、`resolutionScale`（`resolution` 旧参数覆盖）、`generateMipmaps/bounces/depth/samples`、`updateBeforeType`（bounces→RENDER 否则 FRAME）、`virtualCameras=WeakMap`、`renderTargets=Map`、`forceUpdate/hasOutput=false`；
+  - `isCacheable → false`；`_updateResolution(renderTarget, renderer)`（取 drawing buffer size × resolutionScale 四舍五入 setSize）；`setup(builder)`（更新默认 RT 后调基类 setup）；`dispose()`（基类 + 遍历 RT 释放）；`getVirtualCamera(camera)`（缓存 `camera.clone()`）；`getRenderTarget(camera)`（`HalfFloatType` + samples 的 RT，`generateMipmaps` 时设 `LinearMipMapLinearFilter` 与 `generateMipmaps=true`）。
+- **`ReflectorNode`**（`makeClass(..., base=TextureNode)`）：`super(defaultTexture || _defaultRT.texture, _defaultUV)`；`_reflectorBaseNode = parameters.reflector || new ReflectorBaseNode(this, parameters)`；`_depthNode=null`；`setUpdateMatrix(false)`；`reflector`/`target` 用 `defineProperty` getter 读取基类节点。
+
+## 验证
+
+- 构建 exit 0；`*Reflector*` 用例 **1 case / 10 assertions** 全过（构造字段）；`THREECPPAddonTests` 全套 **1425 cases / 39,248 assertions** 通过。
+- 审计：**src missing 9→8、partial 456→457**（`ReflectorNode.js -> partial`，待确认）。
+
+**未执行验证（如实记录）**：`ReflectorNode` 构造本身未测（依赖默认 RT/screenUV 构建）；`getDepthNode`/`clone`/`dispose`/`ReflectorBaseNode.updateBefore` **仍抛 notPorted**（Stage B/C）。
+
+## 下一步
+
+1. 读 `ReflectorBaseNode.updateBefore`（L445–645，约 200 行：反射平面计算、虚拟相机、RT 渲染、`_inReflector` 保护）→ Stage C；
+2. 实现 `ReflectorNode.getDepthNode/clone/dispose`（Stage B）；
+3. 补 `ReflectorNode` 构造测试。# 当前接续：ToonOutline 包装函数**内部行为**断言通过（5 例 / 29 断言），2026-11-05
 
 目标保持 active：固定 three.js 11738a9d55e502fb484cefffcea3a66dc44e9fe9 全部 src + examples/jsm 原生 C++ 逻辑，Vulkan 后端；禁止 CEF/生产 JS 引擎/桥接。阶段本地 Git 提交，不推送。
 
