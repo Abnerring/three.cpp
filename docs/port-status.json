@@ -943,7 +943,7 @@
       "path": "src/renderers/common",
       "upstreamFiles": 58,
       "moduleCount": 58,
-      "modulesWithCppFiles": 19,
+      "modulesWithCppFiles": 20,
       "verifiedComplete": 0
     },
     {
@@ -15140,8 +15140,8 @@
       "scope": "src",
       "kind": "core",
       "upstreamSha256": "9063e7a0c3013d97e4b0ac81c485af78a849bc2b25c643c7a6cb10ca9ccfe419",
-      "header": null,
-      "implementation": null,
+      "header": "src/renderers/common/RendererUtils.h",
+      "implementation": "src/renderers/common/RendererUtils.cpp",
       "expectedHeader": "src/renderers/common/RendererUtils.h",
       "expectedImplementation": "src/renderers/common/RendererUtils.cpp",
       "status": "vulkan-port-pending",
@@ -15153,7 +15153,9 @@
           "pointer": "/modules/491"
         },
         "upstreamUnitTests": [],
-        "cppUnitTests": [],
+        "cppUnitTests": [
+          "test/unit/src/renderers/common/RendererUtils.tests.cpp"
+        ],
         "reviewedImplementation": [],
         "differentialResults": [],
         "renderingResults": [],

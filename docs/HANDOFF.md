@@ -1,3 +1,19 @@
+# 当前接续：RendererUtils 状态助手已移植（解锁 ShadowNode），2026-11-05
+
+目标保持 active：固定 three.js 11738a9d55e502fb484cefffcea3a66dc44e9fe9 全部 src + examples/jsm 原生 C++ 逻辑，Vulkan 后端；禁止 CEF/生产 JS 引擎/桥接。阶段本地 Git 提交，不推送。
+
+**为什么做这个模块**：`ShadowNode`（24,331 B）与 `PointShadowNode`（12,693 B）是 lighting 目录最后的两个缺口，而它们都 import `RendererUtils` 的 `resetRendererAndSceneState` / `restoreRendererAndSceneState`。查证结果：`QuadMesh.h` **已存在**、`DepthTexture` / `LoopNode` / `EquirectUV` / `ContextNode` / `ViewportDepthNode` 均已是 partial，**唯独 `src/renderers/common/RendererUtils.js` 未移植**（审计里标 `vulkan-port-pending`）。所以本轮先补它——它整个文件（5,802 B，其中大半是 JSDoc）就是 **9 个纯状态函数**，一次做完即完整覆盖该文件。
+
+新增 `src/renderers/common/RendererUtils.{h,cpp}`，9 个导出全部实现：`saveRendererState` / `resetRendererState` / `restoreRendererState`、`saveSceneState` / `resetSceneState` / `restoreSceneState`、`saveRendererAndSceneState` / `resetRendererAndSceneState` / `restoreRendererAndSceneState`。细节按源码：`state.clearColor = renderer.getClearColor( state.clearColor || new Color() )`（**传入既有颜色对象而不是新建**）、`reset` **先 save 再写默认值**（`setMRT(null)`、`setRenderObjectFunction(null)`、`setClearColor(0x000000, 1)`、`autoClear = true`；场景三项置 null）、`restore` 用 `setRenderTarget(state.renderTarget, state.activeCubeFace, state.activeMipmapLevel)` 三参形式。带默认值的形参不计入 arity，故 9 个函数的 `length` 是 1/2/2/1/2/2/2/3/3。
+
+验证：构建 exit 0（首轮探针里 `record(const JSValue& log, …)` 对 const 句柄调 `set`，改为**按值传句柄**）。THREECPPTests **1558 cases / 214,356 assertions 全过**，较上轮 1554/214,307 增 4 例 49 断言，与 `*RendererUtils*` 过滤的 4 用例/49 断言一致。
+
+**差分是完整的调用序列比对（Passed 0.30s）**：桩 renderer/scene 把每次读取与写入**按顺序记入日志**（`getClearColor`、`setMRT(null)`、`setRenderTarget(rt,1,2)`、`setClearColor(cc,0.25)` 等，参数用 tag/数值序列化），两侧比对：① 9 个 `length`；② `saveRendererAndSceneState` 之后的 **15 个 state 字段**（含 `clearColor` 的 r/g/b 与 3 个场景字段）；③ save 阶段的**完整调用日志**；④ `resetRendererAndSceneState` 之后的 state 字段、日志、以及 renderer/scene 被清空的结果；⑤ `restoreRendererAndSceneState` 的**完整调用日志**与恢复后的 renderer/scene 字段。也就是说，这一轮验证的是**每个读写都发生在同一位置、带同一参数**，而不是只看返回值。
+
+**审计计数本轮未变，必须如实说明**：`src` 仍是 missing 47 / partial 418 / vulkan-port-pending 290，总计 partial 554 / missing 387 / vulkan 290 / dependency 20。原因不是审计没跑（跑了，exit 0），而是 **`RendererUtils.js` 在审计里被归入固定的 `vulkan-port-pending` 类别**（渲染器文件留给 Vulkan 阶段统计），**该类别的模块不会因为出现 h/cpp 就移动计数**。变化是：`src/renderers/common/RendererUtils.h` 现已登记，且该文件的 9 个函数全部有实现与差分。**本轮不声称覆盖率数字有任何提升。**
+
+下一步：**`ShadowNode`**（24,331 B）—— 其全部前置现已齐备（`ShadowBaseNode` ✓、三种过滤器 ✓、`QuadMesh` ✓、`RendererUtils` ✓、`DepthTexture`/`LoopNode`/`EquirectUV`/`ContextNode`/`ViewportDepthNode` 均为 partial）。做完 `ShadowNode` 后 `src/nodes/lighting` 只剩 `PointShadowNode`，而它依赖 `ShadowNode`，可紧接完成。
+
 # 当前接续：LightsNode（lighting 枢纽）已移植，缓存键与哈希双侧数值比对，2026-11-05
 
 目标保持 active：固定 three.js 11738a9d55e502fb484cefffcea3a66dc44e9fe9 全部 src + examples/jsm 原生 C++ 逻辑，Vulkan 后端；禁止 CEF/生产 JS 引擎/桥接。阶段本地 Git 提交，不推送。
