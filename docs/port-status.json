@@ -201,8 +201,8 @@
     "note": "Accepted port scope is src and examples/jsm, including tracked third-party dependencies. Editor/manual web applications are excluded from native application rewrites. Native host behavior, packaging and all three platforms require separate implementation and verification evidence."
   },
   "counts": {
-    "partial-unverified": 562,
-    "missing": 379,
+    "partial-unverified": 563,
+    "missing": 378,
     "vulkan-port-pending": 290,
     "dependency-unverified": 20
   },
@@ -210,8 +210,8 @@
     "src": {
       "modules": 755,
       "counts": {
-        "partial-unverified": 426,
-        "missing": 39,
+        "partial-unverified": 427,
+        "missing": 38,
         "vulkan-port-pending": 290
       }
     },
@@ -761,7 +761,7 @@
       "path": "src/materials/nodes",
       "upstreamFiles": 19,
       "moduleCount": 19,
-      "modulesWithCppFiles": 6,
+      "modulesWithCppFiles": 7,
       "verifiedComplete": 0
     },
     {
@@ -6005,11 +6005,11 @@
       "scope": "src",
       "kind": "core",
       "upstreamSha256": "9c443a838042a90a2e7ad530ae31db52addf7822abe4368f90a866bd99edba68",
-      "header": null,
-      "implementation": null,
+      "header": "src/materials/nodes/MeshLambertNodeMaterial.h",
+      "implementation": "src/materials/nodes/MeshLambertNodeMaterial.cpp",
       "expectedHeader": "src/materials/nodes/MeshLambertNodeMaterial.h",
       "expectedImplementation": "src/materials/nodes/MeshLambertNodeMaterial.cpp",
-      "status": "missing",
+      "status": "partial-unverified",
       "verifiedComplete": false,
       "apiExtraction": "static-only",
       "verification": {
@@ -6018,7 +6018,9 @@
           "pointer": "/modules/166"
         },
         "upstreamUnitTests": [],
-        "cppUnitTests": [],
+        "cppUnitTests": [
+          "test/unit/src/materials/nodes/MeshLambertNodeMaterial.tests.cpp"
+        ],
         "reviewedImplementation": [],
         "differentialResults": [],
         "renderingResults": [],

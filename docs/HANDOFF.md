@@ -1,4 +1,30 @@
-# 当前接续：MeshToonNodeMaterial + MeshMatcapNodeMaterial 已移植，2026-11-05
+# 当前接续：MeshLambertNodeMaterial 已移植；澄清两个「不存在的上游文件」；记录 Phong 材质的确切阻塞，2026-11-05
+
+目标保持 active：固定 three.js 11738a9d55e502fb484cefffcea3a66dc44e9fe9 全部 src + examples/jsm 原生 C++ 逻辑，Vulkan 后端；禁止 CEF/生产 JS 引擎/桥接。阶段本地 Git 提交，不推送。
+
+本轮新增 `src/materials/nodes/MeshLambertNodeMaterial.{h,cpp}`（1,861 B）：模块级 `_defaultValues = new MeshLambertMaterial()`；构造设 `isMeshLambertNodeMaterial` + `lights = true` → defaults → parameters；**两个方法**：
+- `setupEnvironment( builder )`：取 `NodeMaterial` 原型上的 `setupEnvironment(builder)`，**结果为空则返回 `null`**，否则 `new BasicEnvironmentNode( envNode )`；
+- `setupLightingModel()`：返回 **`new PhongLightingModel( false )`** —— 源码注释写明 `( specular ) -> force lambert`，即 lambert 是通过关掉 Phong 的高光项实现的，**没有独立的 LambertLightingModel**。
+
+**本轮澄清了两个「文件不存在」的事实（此前 HANDOFF 里留的疑问）**，并核实固定版本目录：`src/nodes/functions/LambertLightingModel.js` **不存在**（`exists=False`），`src/materials/VolumeMaterial.js` **也不存在**。所以：
+- `MeshLambertNodeMaterial` 不能用「Lambert 光照模型」实现——它本来就用 `PhongLightingModel(false)`，本轮按此实现；
+- `VolumeNodeMaterial`（1,507）的基类文件不在树上，**不能凭想象造一个**，需先读它的 import 再决定是否可做。
+
+**`MeshPhongNodeMaterial`（3,406）本轮查明确切阻塞**：它的 `setupVariants()` 需要 `materialShininess` 与 `materialSpecular`，而上游定义是 `nodeImmutable( MaterialNode, MaterialNode.SHININESS / SPECULAR )`。我们的 `MaterialNode` 端口里能搜到 `SPECULAR_*` 几个生成分支，**但看不到 `SHININESS` 分支**；因此要么先补 `MaterialNode` 的 SHININESS 生成支持、要么用等价方式构造并说明。这不是本轮能顺手做掉的，留作下一轮的明确前置。
+
+验证：构建 exit 0。THREECPPTests **1580 cases / 214,474 assertions 全过**，较上轮 1577/214,459 增 3 例 15 断言。差分 `threecpp.threejs-mesh-lambert-node-material-parity` **Passed 1.58s**，比较：`name`/`length=1`/静态与实例 `type`/`isMeshLambertNodeMaterial`/`isNodeMaterial`/`lights`/**完整自有属性快照**（`getOwnPropertyNames`，排除 uuid 名与 id 值）、`setupLightingModel()` 返回模型的 **`specular === false`**（即"强制 lambert"这一关键语义）、`direct.length = 1`、`indirect.length = 1`、继承 `start.length = 1`、**两次调用返回不同实例**、`setupEnvironment` 在无环境时**返回 null**、以及 class `toString` 逐字节。
+
+**未执行验证的部分（如实记录）**：① `setupEnvironment` 只在**无环境**情况下执行（返回 null 分支已验证）；**有 envNode 时包装成 `BasicEnvironmentNode` 的分支未执行**（需要真实 environment 节点，`NodeMaterial.setupEnvironment` 实际产出依赖材质与 builder 的完整上下文）；② 材质真实渲染路径未触及。
+
+审计（固定 worktree，HEAD=11738a9d55）刷新后：**src missing 39→38、partial 426→427**，`MeshLambertNodeMaterial` 记 `partial-unverified` 并登记自己的头文件。
+
+下一步建议顺序：
+1. **补 `MaterialNode` 的 `SHININESS` 生成分支**（以及确认 `nodeImmutable` 可用），然后做 `MeshPhongNodeMaterial`（3,406）——`PhongLightingModel` 上轮已就位；
+2. 读 `VolumeNodeMaterial` 的 import 判断其基类从哪来（`VolumeMaterial.js` 不在树上），再决定是否可做；
+3. `MeshBasicNodeMaterial`（3,270）；
+4. `ShadowNode`（24,331）+ `PointShadowNode`（12,693）——lighting 最后两个缺口，前置全齐，需要较充裕上下文一次做完。
+
+另外 `src/materials/nodes/NodeMaterials.js`（1,639）是汇总注册表，依赖较多材质就位后才有意义，不宜过早做。# 当前接续：MeshToonNodeMaterial + MeshMatcapNodeMaterial 已移植，2026-11-05
 
 目标保持 active：固定 three.js 11738a9d55e502fb484cefffcea3a66dc44e9fe9 全部 src + examples/jsm 原生 C++ 逻辑，Vulkan 后端；禁止 CEF/生产 JS 引擎/桥接。阶段本地 Git 提交，不推送。
 

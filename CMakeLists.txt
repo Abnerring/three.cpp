@@ -214,6 +214,7 @@ target_sources(threecpp PRIVATE
     src/materials/nodes/MeshNormalNodeMaterial.cpp
     src/materials/nodes/ShadowNodeMaterial.cpp
     src/materials/nodes/MeshMatcapNodeMaterial.cpp
+    src/materials/nodes/MeshLambertNodeMaterial.cpp
     src/materials/nodes/MeshToonNodeMaterial.cpp
     src/nodes/functions/ShadowMaskModel.cpp
     src/nodes/functions/PhongLightingModel.cpp
