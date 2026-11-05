@@ -1,4 +1,27 @@
-# 当前接续：阻塞调研（NodeMaterial 三材质与 MaterialXNodes 的前置依赖确认），本轮无代码变更，2026-11-05
+# 当前接续：`src/nodes/TSL.js` 聚合器做成如实标注缺口的聚合头，src 缺口 15→14，2026-11-05
+
+目标保持 active：固定 three.js 11738a9d55e502fb484cefffcea3a66dc44e9fe9 全部 src + examples/jsm 原生 C++ 逻辑，Vulkan 后端；禁止 CEF/生产 JS 引擎/桥接。阶段本地 Git 提交，不推送。
+
+## 本轮交付：`src/nodes/TSL`
+
+- `src/nodes/TSL.h`：上游 `src/nodes/TSL.js`（7,493B）是**巨型 re-export 清单**（constants / core 节点族 / math / accessors / display / lighting / utils…）。本端口只 include **已真实存在且可编译**的 TSL 基座头：`nodes/tsl/TSLBase.h`、`TSLCore.h`、`TSLFunctionRuntime.h`、`TSLShaderNodes.h`；**其余导出组在头注释里逐类列出并标注未移植** → 记为 partial，不伪造聚合面。
+- `test/unit/addons/src/ThreeAggregators.tests.cpp` 增补 `#include "nodes/TSL.h"`，继续以编译级用例证明聚合头可与 core 入口共存、无重复符号。
+
+## 验证
+
+- 构建 exit 0；过滤 `*aggregator*` = 1 case / 1 assertion 通过；`THREECPPAddonTests` 全套通过。
+- 审计：**src missing 15→14、partial-unverified 450→451**；`examples/jsm` 不变（328 / 148）。
+
+**未执行验证（如实记录）**：该头**无行为测试**（聚合无行为）；`./core/*Node`、`./math/*` 等导出组仍未移植，因此它**不能**当作 TSL 完整入口使用。
+
+## 下一步（承接 r63 排序）
+
+1. **`PhysicalLightingModel`(32,829)** —— 单点解锁 `MeshStandard/Physical/SSSNodeMaterial`，需先核对 `LightingModel` 与 BSDF 节点是否齐备。
+2. **`ShadowNode`(24,331)** —— 依赖齐备，大模块轮次首选。
+3. `MaterialXNoise`(48,687) → 解锁 `MaterialXNodes`。
+4. `Line2NodeMaterial` / `ReflectorNode` / `PassNode` 依赖接近齐备。
+src 剩余 14：`Nodes.js`(10073)、`ShadowNode`、`PointShadowNode`、`PhysicalLightingModel`、`PassNode`、`ToonOutlinePassNode`、`ReflectorNode`、`Line2NodeMaterial`、`MeshStandard/Physical/SSSNodeMaterial`、`MaterialXNodes`、`MaterialXNoise`、`NodeObjectLoader`（被 `ObjectLoader` 阻塞）。
+examples/jsm 剩余 328（`SimplifyModifier`、`SceneUtils`、`AST.js`、`OBJExporter`）。# 当前接续：阻塞调研（NodeMaterial 三材质与 MaterialXNodes 的前置依赖确认），本轮无代码变更，2026-11-05
 
 目标保持 active：固定 three.js 11738a9d55e502fb484cefffcea3a66dc44e9fe9 全部 src + examples/jsm 原生 C++ 逻辑，Vulkan 后端；禁止 CEF/生产 JS 引擎/桥接。阶段本地 Git 提交，不推送。
 
