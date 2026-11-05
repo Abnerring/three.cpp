@@ -21,7 +21,7 @@ TEST_CASE("ASTNode hasAssignment walks the parent chain") {
     ASTNode child;
     child.parent = &parent;
     REQUIRE_FALSE(child.hasAssignment());
-    parent.isAssignment = true;
+    parent.isAssignmentField = true;
     REQUIRE(child.hasAssignment());
 }
 
@@ -84,3 +84,44 @@ TEST_CASE("AST container nodes adopt their children and report the program root"
     REQUIRE(first.parent == &ternary);
     REQUIRE(second.parent == &ternary);
 }
+TEST_CASE("AST variable declarations compute the assignment predicate from their value") {
+    VariableDeclaration bare("float", "x");
+    REQUIRE(bare.isVariableDeclaration);
+    REQUIRE(bare.type == "float");
+    REQUIRE(bare.name == "x");
+    REQUIRE(bare.value == nullptr);
+    REQUIRE_FALSE(bare.isAssignmentValue());
+    REQUIRE(*bare.getType() == "float");
+
+    Uniform initializer("float", "one");
+    VariableDeclaration assigned("float", "y", &initializer);
+    REQUIRE(assigned.isAssignmentValue());
+    REQUIRE(initializer.parent == &assigned);
+    // A child of an assignment-carrying declaration inherits hasAssignment through the parent chain.
+    REQUIRE(assigned.hasAssignment());
+}
+
+TEST_CASE("AST function parameter and declaration keep their payloads and adopt children") {
+    FunctionParameter parameter("vec3", "p", std::string("in"));
+    REQUIRE(parameter.isFunctionParameter);
+    REQUIRE(parameter.type == "vec3");
+    REQUIRE(parameter.name == "p");
+    REQUIRE(parameter.qualifier.has_value());
+    REQUIRE(*parameter.qualifier == "in");
+    REQUIRE(parameter.immutable == true);
+
+    Uniform firstStatement("float", "uA");
+    Uniform secondStatement("float", "uB");
+    std::vector<ASTNode*> params{&parameter};
+    std::vector<ASTNode*> body{&firstStatement, &secondStatement};
+    FunctionDeclaration function("void", "main", params, body);
+    REQUIRE(function.isFunctionDeclaration);
+    REQUIRE(function.name == "main");
+    REQUIRE(function.params.size() == 1);
+    REQUIRE(function.body.size() == 2);
+    REQUIRE(parameter.parent == &function);
+    REQUIRE(firstStatement.parent == &function);
+    REQUIRE(secondStatement.parent == &function);
+    REQUIRE(firstStatement.getProgram() == nullptr);
+}
+

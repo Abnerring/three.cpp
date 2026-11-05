@@ -24,9 +24,10 @@ class ASTNode {
     const bool isASTNode = true;
     Linker linker;
     ASTNode* parent = nullptr;
-    // Set by subclasses whose assignment semantics matter; the pinned base class has no such field
-    // but reads this.isAssignment defensively.
-    bool isAssignment = false;
+    // The pinned base class has no such field but reads this.isAssignment defensively; subclasses
+    // such as VariableDeclaration compute it from their payload, so it is an overridable predicate.
+    bool isAssignmentField = false;
+    virtual bool isAssignmentValue() const { return isAssignmentField; }
 
     virtual ~ASTNode() = default;
 
@@ -104,5 +105,48 @@ class Ternary : public ASTNode {
     ASTNode* left = nullptr;
     ASTNode* right = nullptr;
     Ternary(ASTNode* cond, ASTNode* left, ASTNode* right);
+    void initialize() override;
+};
+class VariableDeclaration : public ASTNode {
+  public:
+    const bool isVariableDeclaration = true;
+    std::string type;
+    std::string name;
+    ASTNode* value = nullptr;
+    ASTNode* next = nullptr;
+    bool immutable = false;
+
+    VariableDeclaration(std::string type, std::string name, ASTNode* value = nullptr,
+                        ASTNode* next = nullptr, bool immutable = false);
+    // get isAssignment() { return this.value !== null; }
+    bool isAssignmentValue() const override { return value != nullptr; }
+    std::optional<std::string> getType() const override { return type; }
+    void initialize() override;
+};
+
+class FunctionParameter : public ASTNode {
+  public:
+    const bool isFunctionParameter = true;
+    std::string type;
+    std::string name;
+    std::optional<std::string> qualifier;
+    bool immutable = true;
+
+    FunctionParameter(std::string type, std::string name,
+                      std::optional<std::string> qualifier = std::nullopt, bool immutable = true);
+    std::optional<std::string> getType() const override { return type; }
+};
+
+class FunctionDeclaration : public ASTNode {
+  public:
+    const bool isFunctionDeclaration = true;
+    std::string type;
+    std::string name;
+    std::vector<ASTNode*> params;
+    std::vector<ASTNode*> body;
+
+    FunctionDeclaration(std::string type, std::string name, std::vector<ASTNode*> params = {},
+                        std::vector<ASTNode*> body = {});
+    std::optional<std::string> getType() const override { return type; }
     void initialize() override;
 };

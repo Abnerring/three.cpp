@@ -1,4 +1,31 @@
-# 当前接续：AST 第二批（`Program` / `Expression` / `Ternary`），30 类完成 7 个，2026-11-05
+# 当前接续：AST 第三批（`VariableDeclaration` / `FunctionParameter` / `FunctionDeclaration`），30 类完成 10 个，2026-11-05
+
+目标保持 active：固定 three.js 11738a9d55e502fb484cefffcea3a66dc44e9fe9 全部 src + examples/jsm 原生 C++ 逻辑，Vulkan 后端；禁止 CEF/生产 JS 引擎/桥接。阶段本地 Git 提交，不推送。
+
+## 本轮交付（`examples/jsm/transpiler/AST`，15→21 断言域）
+
+- **`VariableDeclaration`**：`type`/`name`/`value`/`next`/`immutable`、`isVariableDeclaration`；**上游 computed getter `isAssignment = value !== null` → C++ 用可覆盖谓词表达**：基类把 `bool isAssignment` 改为 `isAssignmentField` + `virtual bool isAssignmentValue()`，`hasAssignment()` 改走 `isAssignmentValue()`；`VariableDeclaration` 覆盖为 `value != nullptr`；`initialize()` adopt `value`/`next`。
+- **`FunctionParameter`**：`type`/`name`/`qualifier`（`std::optional<std::string>`）/`immutable=true`/`isFunctionParameter`；`getType()` 覆盖。
+- **`FunctionDeclaration`**：`type`/`name`/`params`/`body`（vector<ASTNode*>）、`isFunctionDeclaration`；`initialize()` adopt 参数与函数体。
+- 测试：`VariableDeclaration` 无值 → `isAssignmentValue()==false`；有值 → true 且 initializer 的 parent 正确、`hasAssignment()` 经父链生效；`FunctionParameter` 字段与 qualifier；`FunctionDeclaration` 的 params/body 被 adopt 且 `getProgram()` 为 null；原 `hasAssignment` 用例改用 `isAssignmentField`。
+
+## 本轮一次编译错误（已修正）
+
+补丁里误留占位行 `Number notYetAvailable_unused(0);`（`Number` 类尚未移植）→ C2065/C2146/C3861。**删除占位行并写真实断言**后通过。教训：**批量补丁后必须检查是否残留占位文本**。
+
+## 验证
+
+- 构建 exit 0；过滤 `*ASTNode*` = 3 cases / 15 assertions 全过；`THREECPPAddonTests` 全套 **1349 cases / 38,789 assertions** 通过（+2 例 / +23 断言）。
+- 审计：`examples/jsm` 计数不变（AST 已 partial）：missing 324 / partial 152；src 13 / 452。
+
+**未执行验证（如实记录）**：30 类完成 **10 个**；**仍无差分**（仅单测）；`Operator`/`Accessor`/`Switch`/`Struct*` 等未做；`FunctionDeclaration` 的 `isNumericExpression` 覆盖语义未核对。
+
+## 下一步
+
+1. 继续补：`Operator`(274-329)、`Unary`(330+)、`Number`/`String`、`Conditional`、`FunctionCall`、`Return`/`Discard`/`Continue`/`Break`、`Accessor` 系列、`For`/`While`/`Switch`/`Struct*`；
+2. 补数据级差分（构造 → 字段 → `hasAssignment`/`getProgram`/`getType`）；
+3. 与 `TranspilerUtils::isExpression` 联调；
+4. 之后：`ShadowNode`(24,331) / `PhysicalLightingModel`(32,829)。# 当前接续：AST 第二批（`Program` / `Expression` / `Ternary`），30 类完成 7 个，2026-11-05
 
 目标保持 active：固定 three.js 11738a9d55e502fb484cefffcea3a66dc44e9fe9 全部 src + examples/jsm 原生 C++ 逻辑，Vulkan 后端；禁止 CEF/生产 JS 引擎/桥接。阶段本地 Git 提交，不推送。
 

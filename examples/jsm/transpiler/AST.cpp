@@ -3,7 +3,7 @@
 #include <utility>
 
 bool ASTNode::hasAssignment() const {
-    if (isAssignment) return true;
+    if (isAssignmentValue()) return true;
     if (parent == nullptr) return false;
     return parent->hasAssignment();
 }
@@ -54,4 +54,33 @@ void Ternary::initialize() {
     adopt(cond);
     adopt(left);
     adopt(right);
+}
+VariableDeclaration::VariableDeclaration(std::string type, std::string name, ASTNode* value,
+                                         ASTNode* next, bool immutable)
+    : type(std::move(type)), name(std::move(name)), value(value), next(next), immutable(immutable) {
+    initialize();
+}
+
+void VariableDeclaration::initialize() {
+    adopt(value);
+    adopt(next);
+}
+
+FunctionParameter::FunctionParameter(std::string type, std::string name,
+                                     std::optional<std::string> qualifier, bool immutable)
+    : type(std::move(type)),
+      name(std::move(name)),
+      qualifier(std::move(qualifier)),
+      immutable(immutable) {}
+
+FunctionDeclaration::FunctionDeclaration(std::string type, std::string name,
+                                         std::vector<ASTNode*> params,
+                                         std::vector<ASTNode*> body)
+    : type(std::move(type)), name(std::move(name)), params(std::move(params)), body(std::move(body)) {
+    initialize();
+}
+
+void FunctionDeclaration::initialize() {
+    for (auto* parameter : params) adopt(parameter);
+    for (auto* statement : body) adopt(statement);
 }
