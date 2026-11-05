@@ -229,9 +229,9 @@ JSValue setupShadow(const JSValue& rawSelf, const Args& args, const Args&) {
     const auto compatibility = nativeConstantsModule().get("Compatibility");
     const auto hasTextureCompare = renderer.get("hasCompatibility")
                                        .call(renderer, {compatibility.get("TEXTURE_COMPARE")});
-    const auto linearFilter = nativeNodeConstantsBinding("LinearFilter");
-    const auto nearestFilter = nativeNodeConstantsBinding("NearestFilter");
-    if (shadowMapType.strictEquals(nativeNodeConstantsBinding("PCFShadowMap")) &&
+    const auto linearFilter = JSValue(static_cast<double>(LinearFilter));
+    const auto nearestFilter = JSValue(static_cast<double>(NearestFilter));
+    if (shadowMapType.toNumber() == static_cast<double>(PCFShadowMap) &&
         hasTextureCompare.toBoolean()) {
         depthTexture.set("minFilter", linearFilter);
         depthTexture.set("magFilter", linearFilter);
@@ -246,7 +246,7 @@ JSValue setupShadow(const JSValue& rawSelf, const Args& args, const Args&) {
     shadowCamera.get("updateProjectionMatrix").call(shadowCamera, {});
 
     // Segment 2: the VSM blur pass materials (L384-L448).
-    if (renderer.get("shadowMap").get("type").strictEquals(nativeNodeConstantsBinding("VSMShadowMap")) &&
+    if (renderer.get("shadowMap").get("type").toNumber() == static_cast<double>(VSMShadowMap) &&
         !shadow.get("isPointLightShadow").toBoolean()) {
         depthTexture.set("compareFunction", JSValue(nullptr));
         const auto mapWidth = shadow.get("mapSize").get("width");
@@ -254,9 +254,9 @@ JSValue setupShadow(const JSValue& rawSelf, const Args& args, const Args&) {
         const auto shadowMapDepth = shadowMap.get("depth");
         const auto createRenderTarget = builder.get("createRenderTarget");
         auto formatOptions = JSValue::object(nullptr);
-        formatOptions.set("format", nativeNodeConstantsBinding("RGFormat"));
+        formatOptions.set("format", JSValue(static_cast<double>(RGFormat)));
         auto depthOptions = JSValue::object(nullptr);
-        depthOptions.set("format", nativeNodeConstantsBinding("RGFormat"));
+        depthOptions.set("format", JSValue(static_cast<double>(RGFormat)));
         depthOptions.set("depth", shadowMapDepth);
         JSValue vsmVertical;
         JSValue vsmHorizontal;
@@ -561,8 +561,8 @@ JSValue updateShadow(const JSValue& rawSelf, const Args& args, const Args&) {
     self.get("renderShadow").call(self, {frame});
     renderer.get("setRenderObjectFunction").call(renderer, {currentRenderObjectFunction});
 
-    const auto vsmType = nativeNodeConstantsBinding("VSMShadowMap");
-    if (shadowType.strictEquals(vsmType) && !shadow.get("isPointLightShadow").toBoolean()) {
+    if (shadowType.toNumber() == static_cast<double>(VSMShadowMap) &&
+        !shadow.get("isPointLightShadow").toBoolean()) {
         self.get("vsmPass").call(self, {renderer});
     }
 

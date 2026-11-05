@@ -326,8 +326,14 @@ TEST_CASE("ShadowNode setupShadow configures the depth filters before the remain
         +[](const JSValue&, const std::vector<JSValue>&, const std::vector<JSValue>&) {
             return JSValue{};
         }));
+    auto mapSize = JSValue::object(nullptr);
+    mapSize.set("width", JSValue(64));
+    mapSize.set("height", JSValue(64));
     auto shadow = JSValue::object(nullptr);
     shadow.set("camera", shadowCamera);
+    shadow.set("mapSize", mapSize);
+    shadow.set("biasNode", nativeTSLBaseBinding("float").call({}, {JSValue(0.0)}));
+    shadow.set("isPointLightShadow", false);
     auto light = JSValue::object(nullptr);
     light.set("shadow", shadow);
     auto camera = JSValue::object(nullptr);
@@ -345,17 +351,34 @@ TEST_CASE("ShadowNode setupShadow configures the depth filters before the remain
     auto builder = JSValue::object(nullptr);
     builder.set("renderer", renderer);
     builder.set("camera", camera);
+    builder.set("material", JSValue::object(nullptr));
+    builder.set("context", JSValue::object(nullptr));
 
     auto node = nativeShadowNodeConstructor().construct({light});
     node.set("setupRenderTarget", JSValue::function(
         +[](const JSValue&, const std::vector<JSValue>&, const std::vector<JSValue>&) {
             auto targets = JSValue::object(nullptr);
-            targets.set("depthTexture", JSValue::object(nullptr));
-            targets.set("shadowMap", JSValue::object(nullptr));
+            auto depthTexture = JSValue::object(nullptr);
+            depthTexture.set("isArrayTexture", false);
+            targets.set("depthTexture", depthTexture);
+            auto shadowMapObject = JSValue::object(nullptr);
+            shadowMapObject.set("texture", JSValue::object(nullptr));
+            shadowMapObject.set("depth", JSValue(1));
+            targets.set("shadowMap", shadowMapObject);
             return targets;
         }));
     // The stubbed targets plus the stub compatibility make the whole graph builder run through; the shadow
     // map is stored on the node by its last segment.
+    builder.set("createRenderTarget", JSValue::function(
+        +[](const JSValue&, const std::vector<JSValue>&, const std::vector<JSValue>&) {
+            auto target = JSValue::object(nullptr);
+            target.set("texture", JSValue::object(nullptr));
+            return target;
+        }));
+    builder.set("getSharedContext", JSValue::function(
+        +[](const JSValue&, const std::vector<JSValue>&, const std::vector<JSValue>&) {
+            return JSValue::object(nullptr);
+        }));
     REQUIRE_NOTHROW(node.get("setupShadow").call(node, {builder}));
     (void) projectionUpdates;
 }
@@ -725,4 +748,75 @@ TEST_CASE("ShadowNode setupShadow handles the array and cube texture branches") 
     auto cubeOutput = cubeNode.get("setupShadow").call(cubeNode, {cubePair.get("builder")});
     REQUIRE(cubeOutput.toBoolean());
     REQUIRE(cubeOutput.get("isNode").toBoolean());
+}
+TEST_CASE("ShadowNode setupShadow reuses the layered VSM targets") {
+    auto mapSize = JSValue::object(nullptr);
+    mapSize.set("width", JSValue(32));
+    mapSize.set("height", JSValue(32));
+    auto shadowCamera = JSValue::object(nullptr);
+    shadowCamera.set("coordinateSystem", JSValue(0));
+    shadowCamera.set("layers", JSValue::object(nullptr));
+    shadowCamera.set("updateProjectionMatrix", JSValue::function(
+        +[](const JSValue&, const std::vector<JSValue>&, const std::vector<JSValue>&) {
+            return JSValue{};
+        }));
+    auto preexistingVertical = JSValue::object(nullptr);
+    preexistingVertical.set("texture", JSValue::object(nullptr));
+    auto preexistingHorizontal = JSValue::object(nullptr);
+    preexistingHorizontal.set("texture", JSValue::object(nullptr));
+    auto shadow = JSValue::object(nullptr);
+    shadow.set("mapSize", mapSize);
+    shadow.set("camera", shadowCamera);
+    shadow.set("biasNode", nativeTSLBaseBinding("float").call({}, {JSValue(0.0)}));
+    auto light = JSValue::object(nullptr);
+    light.set("shadow", shadow);
+    light.set("isLight", true);
+    auto camera = JSValue::object(nullptr);
+    camera.set("coordinateSystem", JSValue(0));
+    auto rendererShadowMap = JSValue::object(nullptr);
+    rendererShadowMap.set("type", JSValue(3));
+    rendererShadowMap.set("enabled", true);
+    auto renderer = JSValue::object(nullptr);
+    renderer.set("shadowMap", rendererShadowMap);
+    renderer.set("reversedDepthBuffer", false);
+    renderer.set("highPrecision", false);
+    renderer.set("hasCompatibility", JSValue::function(
+        +[](const JSValue&, const std::vector<JSValue>&, const std::vector<JSValue>&) {
+            return JSValue(false);
+        }));
+    auto builder = JSValue::object(nullptr);
+    builder.set("renderer", renderer);
+    builder.set("camera", camera);
+    builder.set("material", JSValue::object(nullptr));
+    builder.set("context", JSValue::object(nullptr));
+    builder.set("createRenderTarget", JSValue::function(
+        +[](const JSValue&, const std::vector<JSValue>&, const std::vector<JSValue>&) {
+            auto target = JSValue::object(nullptr);
+            target.set("texture", JSValue::object(nullptr));
+            return target;
+        }));
+    builder.set("getSharedContext", JSValue::function(
+        +[](const JSValue&, const std::vector<JSValue>&, const std::vector<JSValue>&) {
+            return JSValue::object(nullptr);
+        }));
+
+    auto node = nativeShadowNodeConstructor().construct({light});
+    auto shadowMapObject = JSValue::object(nullptr);
+    shadowMapObject.set("texture", JSValue::object(nullptr));
+    shadowMapObject.set("depth", JSValue(4));
+    shadowMapObject.set("_vsmShadowMapVertical", preexistingVertical);
+    shadowMapObject.set("_vsmShadowMapHorizontal", preexistingHorizontal);
+    auto targets = JSValue::object(nullptr);
+    auto depthTexture = JSValue::object(nullptr);
+    depthTexture.set("isArrayTexture", false);
+    targets.set("depthTexture", depthTexture);
+    targets.set("shadowMap", shadowMapObject);
+    node.set("_targets", targets);
+    node.set("setupRenderTarget", JSValue::function(
+        +[](const JSValue& receiver, const std::vector<JSValue>&, const std::vector<JSValue>&) {
+            return const_cast<JSValue&>(receiver).get("_targets");
+        }));
+    node.get("setupShadow").call(node, {builder});
+    REQUIRE(node.get("vsmShadowMapVertical").strictEquals(preexistingVertical));
+    REQUIRE(node.get("vsmShadowMapHorizontal").strictEquals(preexistingHorizontal));
 }

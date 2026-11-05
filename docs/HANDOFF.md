@@ -1,4 +1,38 @@
-# 当前接续：VSM `shadowMap.depth > 1` **分层目标复用分支**实现（测试失败已移除，待查），2026-11-05
+# 当前接续：**根因修复**——阴影常量改用 C++ 枚举（VSM 守卫首次真正命中）+ 分层复用断言通过，2026-11-05
+
+目标保持 active：固定 three.js 11738a9d55e502fb484cefffcea3a66dc44e9fe9 全部 src + examples/jsm 原生 C++ 逻辑，Vulkan 后端；禁止 CEF/生产 JS 引擎/桥接。阶段本地 Git 提交，不推送。
+
+## 根因与修复（r147 复用断言失败、以及更早的 VSM 段从未执行）
+
+- 问题：`nativeNodeConstantsBinding("VSMShadowMap"|"PCFShadowMap"|"LinearFilter"|"NearestFilter"|"RGFormat")` 返回 **undefined**（该 binding 不包含这些名字），导致：
+  - 段 2 的 `strictEquals` 守卫**永不成立** → VSM 材质从未构建、`_vsmShadowMap*` 从未复用；
+  - 段 1 过滤设置把 `minFilter/magFilter` 设为 undefined；
+  - `updateShadow` 的 VSM 分支同样永不成立。
+- 正确范式（参照 `ShadowBaseNode.cpp:117`）：**直接用 C++ 枚举数值**
+  - `shadowMapType.toNumber() == static_cast<double>(PCFShadowMap)`
+  - `renderer.shadowMap.type.toNumber() == static_cast<double>(VSMShadowMap)`
+  - `JSValue(static_cast<double>(LinearFilter/NearestFilter))`、`JSValue(static_cast<double>(RGFormat))`
+  - `updateShadow`：`shadowType.toNumber() == static_cast<double>(VSMShadowMap)`
+- `ShadowNode.cpp` 已含 `#include "constants.h"`（r143 添加），枚举可用。
+
+## 修复后的验证（重要）
+
+1. **r147 移除的分层复用用例重新加入并通过**：`depth = 4` + 预置 `_vsmShadowMapVertical/Horizontal` → `node.vsmShadowMapVertical` **`strictEquals` 预置对象** ✓（证明复用分支真实生效）。
+2. 段 1 用例（VSM type=3）现在**真的进入段 2**，因此其夹具补上了 `createRenderTarget`／`getSharedContext` 桩与 `shadow.mapSize`/`biasNode`/`isPointShadow` 字段后通过。
+
+## 验证
+
+- 构建 exit 0；过滤 `*ShadowNode*` = **22 cases / 66 assertions** 全过（+2 例 / +2 断言）。
+- `THREECPPAddonTests` 全套 **1387 cases / 38,969 assertions** 通过。
+- 审计不变（ShadowNode 已 partial）：src 12 / 453；examples/jsm 322 / 154。
+
+**未执行验证（如实记录）**：`toInspector` 仍省略；`updateShadow` 无测试；图结构/数值未断言；VSM 文字纹理命名（`VSMVertical`/`VSMHorizontal`）未断言。
+
+## 下一步
+
+1. 断言 VSM 层目标 `texture.name`（`VSMVertical`/`VSMHorizontal`）；
+2. `updateShadow` 真实 renderer 夹具；
+3. 收口 `ShadowNode` 后推进 **`PointShadowNode`(12,693)**、`PhysicalLightingModel`(32,829)。# 当前接续：VSM `shadowMap.depth > 1` **分层目标复用分支**实现（测试失败已移除，待查），2026-11-05
 
 目标保持 active：固定 three.js 11738a9d55e502fb484cefffcea3a66dc44e9fe9 全部 src + examples/jsm 原生 C++ 逻辑，Vulkan 后端；禁止 CEF/生产 JS 引擎/桥接。阶段本地 Git 提交，不推送。
 
