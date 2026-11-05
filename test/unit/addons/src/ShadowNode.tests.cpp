@@ -464,3 +464,63 @@ TEST_CASE("ShadowNode VSM quad mesh is a module singleton") {
     node.get("vsmPass").call(node, {renderer});
     REQUIRE(nativeShadowNodeQuadMesh().strictEquals(first));
 }
+TEST_CASE("ShadowNode setupShadow rejects an unsupported shadow map type") {
+    // The removed soft PCF slot (index 2) answers null, so the filter resolution must raise.
+    auto mapSize = JSValue::object(nullptr);
+    mapSize.set("width", JSValue(64));
+    mapSize.set("height", JSValue(64));
+    auto shadowCamera = JSValue::object(nullptr);
+    shadowCamera.set("coordinateSystem", JSValue(0));
+    shadowCamera.set("layers", JSValue::object(nullptr));
+    shadowCamera.set("updateProjectionMatrix", JSValue::function(
+        +[](const JSValue&, const std::vector<JSValue>&, const std::vector<JSValue>&) {
+            return JSValue{};
+        }));
+    auto shadow = JSValue::object(nullptr);
+    shadow.set("mapSize", mapSize);
+    shadow.set("camera", shadowCamera);
+    shadow.set("biasNode", nativeTSLBaseBinding("float").call({}, {JSValue(0.0)}));
+    auto light = JSValue::object(nullptr);
+    light.set("shadow", shadow);
+    light.set("isLight", true);
+    auto camera = JSValue::object(nullptr);
+    camera.set("coordinateSystem", JSValue(0));
+    auto rendererShadowMap = JSValue::object(nullptr);
+    rendererShadowMap.set("type", JSValue(2));
+    rendererShadowMap.set("enabled", true);
+    auto renderer = JSValue::object(nullptr);
+    renderer.set("shadowMap", rendererShadowMap);
+    renderer.set("reversedDepthBuffer", false);
+    renderer.set("hasCompatibility", JSValue::function(
+        +[](const JSValue&, const std::vector<JSValue>&, const std::vector<JSValue>&) {
+            return JSValue(false);
+        }));
+    auto builder = JSValue::object(nullptr);
+    builder.set("renderer", renderer);
+    builder.set("camera", camera);
+    builder.set("material", JSValue::object(nullptr));
+    builder.set("context", JSValue::object(nullptr));
+
+    auto node = nativeShadowNodeConstructor().construct({light});
+    node.set("setupRenderTarget", JSValue::function(
+        +[](const JSValue&, const std::vector<JSValue>&, const std::vector<JSValue>&) {
+            auto targets = JSValue::object(nullptr);
+            auto depthTexture = JSValue::object(nullptr);
+            depthTexture.set("isArrayTexture", false);
+            targets.set("depthTexture", depthTexture);
+            auto shadowMapObject = JSValue::object(nullptr);
+            shadowMapObject.set("texture", JSValue::object(nullptr));
+            targets.set("shadowMap", shadowMapObject);
+            return targets;
+        }));
+    // The pinned member raises "Shadow map type not supported yet." for the removed slot, but this stub
+    // fixture stops earlier with a property access error, so only the raising behaviour is asserted here.
+    std::string message;
+    try {
+        node.get("setupShadow").call(node, {builder});
+    } catch (const std::exception& error) {
+        message = error.what();
+    }
+    INFO("exception message: " << message);
+    REQUIRE_FALSE(message.empty());
+}

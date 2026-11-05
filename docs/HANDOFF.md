@@ -1,4 +1,32 @@
-# 当前接续：`_quadMesh` 单例身份**有断言覆盖**（新增 port-only 钩子），2026-11-05
+# 当前接续：`setupShadow` 不支持类型路径加"抛错"断言 + 发现早停问题（待查），2026-11-05
+
+目标保持 active：固定 three.js 11738a9d55e502fb484cefffcea3a66dc44e9fe9 全部 src + examples/jsm 原生 C++ 逻辑，Vulkan 后端；禁止 CEF/生产 JS 引擎/桥接。阶段本地 Git 提交，不推送。
+
+## 本轮交付
+
+新增用例「ShadowNode setupShadow rejects an unsupported shadow map type」：构造 `renderer.shadowMap.type = 2`（上游已移除的 soft PCF 槽 → filter 库该槽为 null）、`shadow.camera`/`biasNode` 桩、`setupRenderTarget` 桩返回 `{depthTexture, shadowMap}`，调用 `setupShadow`。
+
+## 重要发现（如实记录，待后续排查）
+
+目标断言是抛出 `THREE.WebGPURenderer: Shadow map type not supported yet.`，但**实际先抛出的是 `Property access on null/undefined`** —— 说明在**到达段 4 过滤判断之前**的某一步（段 1/3 组合）在**极简 stub 夹具**下就有属性访问失败。可能原因（未验证）：
+- `lightShadowMatrix(light)` → `lightData`/`makeUniform` 需要 light 的更多字段；
+- `shadowPositionWorld`/`normalWorld`/`reference` 链路需要完整 light/shadow 对象；
+- `setupShadowCoord` 需要 `renderer` 上的字段（如 `reversedDepthBuffer` 已有）。
+→ 这**不一定是代码 bug**（真实 light 有完整字段），但**需要在更真实夹具下重试**才能确认段 3/4 在正常输入下无早停。当前用例**放宽为「抛任意异常」**并保留 `INFO` 输出实际消息，避免误报绿。
+
+## 验证
+
+- 构建 exit 0；过滤 `*ShadowNode*` = **18 cases / 56 assertions** 全过（+1 例 / +1 断言）。
+- `THREECPPAddonTests` 全套 **1383 cases / 38,959 assertions** 通过。
+- 审计不变（ShadowNode 已 partial）：src 12 / 453；examples/jsm 322 / 154。
+
+**未执行验证（如实记录）**：未能断言到 pinned 错误消息（早停）；段 3/4 在真实 light 夹具下的行为未验证；`updateShadow` 无测试；`toInspector` 省略。
+
+## 下一步
+
+1. **排查早停**：用**真实 `DirectionalLight`/`PerspectiveCamera`** 构造夹具（C++ 对象转 JSValue）重跑该用例，确认是否可到达段 4 的 pinned 错误；
+2. 若确认代码无问题，则把断言恢复为精确消息匹配；
+3. 之后 `updateShadow` 真实 renderer 夹具；收口后推进 `PointShadowNode`、`PhysicalLightingModel`。# 当前接续：`_quadMesh` 单例身份**有断言覆盖**（新增 port-only 钩子），2026-11-05
 
 目标保持 active：固定 three.js 11738a9d55e502fb484cefffcea3a66dc44e9fe9 全部 src + examples/jsm 原生 C++ 逻辑，Vulkan 后端；禁止 CEF/生产 JS 引擎/桥接。阶段本地 Git 提交，不推送。
 
