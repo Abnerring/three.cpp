@@ -1,4 +1,29 @@
-# 当前接续：修复 `createMeshesFromMultiMaterialMesh` 丢失 `normalized` 标记（r85 发现的真实保真度缺口），2026-11-05
+# 当前接续：拆分 helper 的「同 materialIndex 分组先合并」路径补测（r86 遗留缺口），2026-11-05
+
+目标保持 active：固定 three.js 11738a9d55e502fb484cefffcea3a66dc44e9fe9 全部 src + examples/jsm 原生 C++ 逻辑，Vulkan 后端；禁止 CEF/生产 JS 引擎/桥接。阶段本地 Git 提交，不推送。
+
+## 本轮内容（测试补充，无实现变更）
+
+r86 记录「多 group 同 materialIndex 在拆分 helper 中未单独覆盖」。本轮补上：
+
+- 新增用例：9 顶点 geometry，三个 group：`(0,3,mat0)` / `(3,3,mat1)` / `(6,3,mat0)`（材质 0 出现两次且不相邻）。
+- 拆分后断言：
+  - `mergeGroups` **先按 materialIndex 排序**（mat0 两段排到前面、再按 start），**相邻同材质归并** → 拆分结果只有 **2 个子 Mesh**；
+  - 第一个子 Mesh position **count = 6**（两段 mat0 合并），第二个 count = 3；
+  - 合并后首子 geometry 的 x(0)=0、x(3)=6（两段三角形各自的起点），证明索引重排正确。
+- 覆盖 `mergeGroups` 排序/合并 → `createMeshesFromMultiMaterialMesh` 的组合语义（此前只测同材质相邻或全部不同材质）。
+
+## 验证
+
+- 构建 exit 0；过滤 `*SceneUtils*` = **11 cases / 61 assertions** 全过（+1 用例 / +6 断言）。
+- `THREECPPAddonTests` 全套通过（1342 cases / 38,723 assertions）。
+- 审计计数不变（测试补充）：examples/jsm 325 / 151，src 13 / 452。
+
+**未执行验证（如实记录）**：该组合仍无差分（只有单测）；只测 2 种材质、3 个 group 的场景；未测同材质超 2 段、或 group 重叠/越界等异常输入。
+
+## 下一步
+
+examples/jsm 剩余 325：`transpiler/AST.js`(8868) 最有价值。src 剩余 13：`ShadowNode`(24,331，依赖齐备) / `PhysicalLightingModel`(32,829，解锁三材质）。# 当前接续：修复 `createMeshesFromMultiMaterialMesh` 丢失 `normalized` 标记（r85 发现的真实保真度缺口），2026-11-05
 
 目标保持 active：固定 three.js 11738a9d55e502fb484cefffcea3a66dc44e9fe9 全部 src + examples/jsm 原生 C++ 逻辑，Vulkan 后端；禁止 CEF/生产 JS 引擎/桥接。阶段本地 Git 提交，不推送。
 

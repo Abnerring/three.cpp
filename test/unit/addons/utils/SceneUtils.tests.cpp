@@ -261,3 +261,41 @@ TEST_CASE("SceneUtils split preserves the normalized flag of a rebuilt attribute
     REQUIRE(skinWeight->getX(0) == Approx(1));
     REQUIRE(skinWeight->getY(0) == Approx(0));
 }
+TEST_CASE("SceneUtils split merges groups that share a material index first") {
+    auto geometry = std::make_shared<BufferGeometry>();
+    // Three triangles: material zero, then one, then zero again.
+    std::vector<float> positions;
+    for (double i = 0; i < 9; i += 3) {
+        positions.push_back(static_cast<float>(i));
+        positions.push_back(0);
+        positions.push_back(0);
+        positions.push_back(static_cast<float>(i + 1));
+        positions.push_back(0);
+        positions.push_back(0);
+        positions.push_back(static_cast<float>(i));
+        positions.push_back(1);
+        positions.push_back(0);
+    }
+    geometry->setAttribute("position",
+                           std::make_shared<BufferAttribute>(positions, 3));
+    geometry->addGroup(0, 3, 0);
+    geometry->addGroup(3, 3, 1);
+    geometry->addGroup(6, 3, 0);
+    auto mesh = std::make_shared<Mesh>(geometry,
+                                       std::vector<std::shared_ptr<Material>>{
+                                           std::make_shared<MeshBasicMaterial>(),
+                                           std::make_shared<MeshBasicMaterial>()});
+
+    const auto result = SceneUtils::createMeshesFromMultiMaterialMesh(mesh);
+    const auto group = std::dynamic_pointer_cast<Group>(result);
+    REQUIRE(group != nullptr);
+    // mergeGroups sorts by material index and then start, so the two material zero groups merge.
+    REQUIRE(group->children.size() == 2);
+    const auto first = std::dynamic_pointer_cast<Mesh>(group->children[0]);
+    const auto second = std::dynamic_pointer_cast<Mesh>(group->children[1]);
+    REQUIRE(first->geometry->getAttribute("position")->getCount() == Approx(6));
+    REQUIRE(second->geometry->getAttribute("position")->getCount() == Approx(3));
+    // The merged first child holds the two material zero triangles: x of 0 and of 6 first vertices.
+    REQUIRE(first->geometry->getAttribute("position")->getX(0) == Approx(0));
+    REQUIRE(first->geometry->getAttribute("position")->getX(3) == Approx(6));
+}
