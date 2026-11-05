@@ -1,4 +1,27 @@
-# 当前接续：`sortInstancedMesh` 颜色/实例属性分支的差分补齐（r71 遗留缺口），2026-11-05
+# 当前接续：`SceneUtils.createMeshesFromMultiMaterialMesh` 前置依赖实测（mergeGroups 具体行为），2026-11-05
+
+目标保持 active：固定 three.js 11738a9d55e502fb484cefffcea3a66dc44e9fe9 全部 src + examples/jsm 原生 C++ 逻辑，Vulkan 后端；禁止 CEF/生产 JS 引擎/桥接。阶段本地 Git 提交，不推送。
+
+## 本轮为前置调研（无源码变更）
+
+`SceneUtils` 仍缺 `createMeshesFromMultiMaterialMesh`，其唯一前置是 `BufferGeometryUtils.mergeGroups`。本轮读取上游确认该函数**并非简单的 group 合并**：
+
+1. **无 group 时 warn 并原样返回**（`No groups are defined. Nothing to merge.`）。
+2. **先按 `materialIndex` 升序、再按 `start` 升序重排 groups**（Array.sort 比较器返回数值差，与 r70 记录的 `Array.sort` 语义一致）。
+3. **非索引几何要先建索引**：遍历 position 数量生成索引数组，未知属性按 materialIndex 分组重建。
+4. 之后才按相邻 materialIndex 归并、重写每个 group 的 `start/count`，并清空重建 groups。
+
+C++ 侧已确认 `BufferGeometry::groups` 为 `SharedVector<Group>`（`Group` 含 `start/count/materialIndex`），并有 `addGroup/clearGroups` —— 实现可行，但需要「排序 + 建索引 + 重建分组」三步，**单轮预算不足**，本轮不写半成品。
+
+## 结论与下一步
+
+- `createMeshesFromMultiMaterialMesh` 的**正确实现路径**：先移植 `mergeGroups`（在 `examples/jsm/utils/BufferGeometryUtils` 对应的 C++ 模块中，注意该项目前仍是 partial），再实现按 group 提取各属性 + 生成子 Mesh。
+- 建议**下一轮先做 `mergeGroups`**（含排序、非索引建索引、分组重写三个分支 + 单测/差分），它是 `createMeshesFromMultiMaterialMesh` 与 `SceneUtils` 完整化的共同前置。
+- 其余优先级不变：`transpiler/AST.js`(8868) / `ShadowNode`(24,331) / `PhysicalLightingModel`(32,829)。
+
+## 验证
+
+本轮**无构建/测试/审计变化**：未改动源码、CMake 或 `docs/port-status.json`（审计保持 src 13 missing / 452 partial，examples 325 / 151）。# 当前接续：`sortInstancedMesh` 颜色/实例属性分支的差分补齐（r71 遗留缺口），2026-11-05
 
 目标保持 active：固定 three.js 11738a9d55e502fb484cefffcea3a66dc44e9fe9 全部 src + examples/jsm 原生 C++ 逻辑，Vulkan 后端；禁止 CEF/生产 JS 引擎/桥接。阶段本地 Git 提交，不推送。
 
