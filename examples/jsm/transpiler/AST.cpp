@@ -35,3 +35,23 @@ Varying::Varying(std::string type, std::string name)
     : type(std::move(type)), name(std::move(name)) {
     initialize();
 }
+Program::Program(std::vector<ASTNode*> body) : body(std::move(body)) { initialize(); }
+
+void Program::initialize() {
+    for (auto* statement : body) adopt(statement);
+}
+
+Expression::Expression(ASTNode* expression) : expression(expression) { initialize(); }
+
+void Expression::initialize() { adopt(expression); }
+
+Ternary::Ternary(ASTNode* cond, ASTNode* left, ASTNode* right)
+    : cond(cond), left(left), right(right) {
+    initialize();
+}
+
+void Ternary::initialize() {
+    adopt(cond);
+    adopt(left);
+    adopt(right);
+}

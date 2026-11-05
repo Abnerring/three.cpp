@@ -55,3 +55,32 @@ TEST_CASE("AST leaf nodes keep their pinned fields and type") {
     REQUIRE(varying.name == "vColor");
     REQUIRE(*varying.getType() == "vec3");
 }
+TEST_CASE("AST container nodes adopt their children and report the program root") {
+    Uniform first("float", "uA");
+    Uniform second("float", "uB");
+    std::vector<ASTNode*> statements{&first, &second};
+    Program program(statements);
+
+    REQUIRE(program.isProgram);
+    REQUIRE(program.isProgramNode());
+    REQUIRE(program.body.size() == 2);
+    REQUIRE(first.parent == &program);
+    REQUIRE(second.parent == &program);
+    // A child climbs to the program root.
+    REQUIRE(first.getProgram() == &program);
+    REQUIRE(program.getProgram() == &program);
+
+    Expression expression(&first);
+    REQUIRE(expression.isExpression);
+    REQUIRE(expression.expression == &first);
+    REQUIRE(first.parent == &expression);
+    REQUIRE(expression.getProgram() == nullptr);
+
+    Ternary ternary(&first, &second, &first);
+    REQUIRE(ternary.isTernary);
+    REQUIRE(ternary.cond == &first);
+    REQUIRE(ternary.left == &second);
+    REQUIRE(ternary.right == &first);
+    REQUIRE(first.parent == &ternary);
+    REQUIRE(second.parent == &ternary);
+}

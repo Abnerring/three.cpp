@@ -1,6 +1,7 @@
 #pragma once
 
 #include <optional>
+#include <unordered_map>
 #include <string>
 #include <vector>
 
@@ -74,4 +75,34 @@ class Varying : public ASTNode {
     std::string name;
     Varying(std::string type, std::string name);
     std::optional<std::string> getType() const override { return type; }
+};
+// container and expression node slice: Program, Expression and Ternary.
+class Program : public ASTNode {
+  public:
+    const bool isProgram = true;
+    std::vector<ASTNode*> body;
+    // A map of struct name to struct definition; the definition type lands with StructDefinition.
+    std::unordered_map<std::string, ASTNode*> structTypes;
+
+    explicit Program(std::vector<ASTNode*> body = {});
+    bool isProgramNode() const override { return true; }
+    void initialize() override;
+};
+
+class Expression : public ASTNode {
+  public:
+    const bool isExpression = true;
+    ASTNode* expression = nullptr;
+    explicit Expression(ASTNode* expression);
+    void initialize() override;
+};
+
+class Ternary : public ASTNode {
+  public:
+    const bool isTernary = true;
+    ASTNode* cond = nullptr;
+    ASTNode* left = nullptr;
+    ASTNode* right = nullptr;
+    Ternary(ASTNode* cond, ASTNode* left, ASTNode* right);
+    void initialize() override;
 };

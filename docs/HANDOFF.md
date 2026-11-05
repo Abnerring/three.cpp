@@ -1,4 +1,29 @@
-# 当前接续：`transpiler/AST.js` 首个切片落地（ASTNode 基类 + Comment/Uniform/Varying），2026-11-05
+# 当前接续：AST 第二批（`Program` / `Expression` / `Ternary`），30 类完成 7 个，2026-11-05
+
+目标保持 active：固定 three.js 11738a9d55e502fb484cefffcea3a66dc44e9fe9 全部 src + examples/jsm 原生 C++ 逻辑，Vulkan 后端；禁止 CEF/生产 JS 引擎/桥接。阶段本地 Git 提交，不推送。
+
+## 本轮交付（`examples/jsm/transpiler/AST`）
+
+按上游逐行实现 3 个新类（字段/标志与 `initialize()` 语义均照抄）：
+
+- **`Program`**：`body`（`std::vector<ASTNode*>`）、`isProgram = true`、`structTypes`（上游 `Map`，C++ 暂用 `std::unordered_map<std::string, ASTNode*>`，**待 `StructDefinition` 移植后收紧类型**）；`isProgramNode()` 覆盖为 true；`initialize()` 对 `body` 逐项 `adopt`。
+- **`Expression`**：`expression`、`isExpression = true`；`initialize()` adopt 单个子节点。
+- **`Ternary`**：`cond` / `left` / `right`、`isTernary = true`；`initialize()` adopt 三个子节点。
+- 新增用例（4 用例共 17 断言）：`Program` 的两条语句被 adopt 且 `getProgram()` 从子节点上溯到 program；`Expression`/`Ternary` 的子节点 parent 正确、`getProgram()` 为非 program 时返回 null。
+
+## 验证
+
+- 构建 exit 0；过滤 `*ASTNode*` = **3 cases / 15 assertions** 全过；`THREECPPAddonTests` 全套 **1347 cases / 38,766 assertions** 通过（+1 例 / +17 断言）。
+- 审计：`examples/jsm` 计数不变（`AST.js` 已为 partial）：missing 324 / partial 152；src 13 / 452。
+
+**未执行验证（如实记录）**：30 类完成 **7 个**；**仍无差分**（仅单测）；`structTypes` 用裸指针占位（类型待收紧）；`Operator`/`Accessor`/`FunctionDeclaration`/`Switch` 等容器类未做；`isNumericExpression` 的子类覆盖值尚未逐类核对（已知 `ASTNode` 基类恒 false）。
+
+## 下一步
+
+1. 继续按 §7 清单补容器类：`FunctionParameter`、`FunctionDeclaration`、`Operator`、`Unary`、`Number`/`String`、`Conditional`、`FunctionCall`、`Accessor` 系列、`For`/`While`/`Switch`/`Struct*`；
+2. 每批补完加一个数据级差分（构造 → 字段 → `hasAssignment`/`getProgram`/`getType`）；
+3. 与 `TranspilerUtils::isExpression` 联调（读 `isFor`/`isWhile` 等标志）；
+4. 之后：`ShadowNode`(24,331) / `PhysicalLightingModel`(32,829)。# 当前接续：`transpiler/AST.js` 首个切片落地（ASTNode 基类 + Comment/Uniform/Varying），2026-11-05
 
 目标保持 active：固定 three.js 11738a9d55e502fb484cefffcea3a66dc44e9fe9 全部 src + examples/jsm 原生 C++ 逻辑，Vulkan 后端；禁止 CEF/生产 JS 引擎/桥接。阶段本地 Git 提交，不推送。
 
