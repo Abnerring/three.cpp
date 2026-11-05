@@ -1,4 +1,29 @@
-# 当前接续：MeshPhongNodeMaterial 已移植；撤回上轮「MaterialNode 缺 SHININESS」的判断，2026-11-05
+# 当前接续：MeshBasicNodeMaterial 已移植（六个方法中五个真实执行），2026-11-05
+
+目标保持 active：固定 three.js 11738a9d55e502fb484cefffcea3a66dc44e9fe9 全部 src + examples/jsm 原生 C++ 逻辑，Vulkan 后端；禁止 CEF/生产 JS 引擎/桥接。阶段本地 Git 提交，不推送。
+
+本轮新增 `src/materials/nodes/MeshBasicNodeMaterial.{h,cpp}`（3,270 B）：模块级 `_defaultValues = new MeshBasicMaterial()`；构造设 `isMeshBasicNodeMaterial` + `lights = true` → defaults → parameters；**五个方法**：
+- `setupNormal()` → `negateOnBackSide( normalViewGeometry )`（源码注释 `see #28839`）；
+- `setupEnvironment( builder )` → 基类实现，空则 `null`，否则 `new BasicEnvironmentNode( envNode )`；
+- `setupLightMap( builder )` → `builder.material.lightMap` 为真时 `new BasicLightMapNode( materialLightMap )`，否则 `null`；
+- `setupOutgoingLight()` → `diffuseColor.rgb`（**直接返回共享 property 节点的 rgb**）；
+- `setupLightingModel()` → `new BasicLightingModel()`。
+
+**本轮验证比之前几个材质更实**：`setupNormal`、`setupLightMap`（两个分支）、`setupOutgoingLight`、`setupLightingModel` 都被真实执行并断言：
+- `setupNormal` 返回的节点 **≠ `normalViewGeometry` 本身**（说明确实套了 negateOnBackSide 包装）；
+- `setupLightMap` 无 lightMap 时返回 `null`，有 lightMap 时返回**非空的 `BasicLightMapNode`**；
+- `setupOutgoingLight` 与 `diffuseColor.rgb` **同一对象**；
+- `setupLightingModel` 返回的实例 `indirect.length = 1`、`start` 可调用、两次调用不同实例。
+
+**本轮两个自我更正**：① 单测缺 `nodes/accessors/Normal.h` 与 `nodes/core/PropertyNode.h` 导致 `nativeNormalBinding`/`nativePropertyNodeBinding` 未声明；② 更重要的是 **`nativeBasicLightingModel()` 返回的是构造器（类）而不是实例** —— 我直接把它当作 model 用，探针抛 `Property access on null/undefined`、单测 `indirect.length` 断言失败，两处同时暴露；改为 `nativeBasicLightingModel().construct()` 后通过。这一条对后续任何「返回 LightingModel 的材质」都适用，写在这里避免重犯。另外探针里我临时加的诊断字段（`modelIsObject` 等）一度使差分失败，已移除。
+
+验证：构建 exit 0。THREECPPTests **1588 cases / 214,518 assertions 全过**，较上轮 1583/214,494 增 5 例 24 断言。差分 `threecpp.threejs-mesh-basic-node-material-parity` **Passed 1.61s**，比较：name/length=1/静态与实例 type/两个 flag/`lights`/`fog`/**完整自有属性快照**、`normalIsNode` + `normalDiffers`、`outgoingIsNode` + **`outgoingIsDiffuseRgb`（同一性）**、`noLightMapIsNull` + `lightMapIsNode`、`environmentIsNull`、模型 `indirect.length` 与 `start.length`、两次不同实例、**五个方法各自的 length**、class `toString` 逐字节。
+
+**未执行验证的部分（如实记录）**：① `setupEnvironment` 仅无环境路径；② 所有节点图**构建但未求值**；③ 材质真实渲染路径未触及。
+
+审计（固定 worktree，HEAD=11738a9d55）：**src missing 37→36、partial 428→429**，`MeshBasicNodeMaterial` 记 `partial-unverified`。
+
+下一步：`VolumeNodeMaterial`（1,507，需先读 import 定基类——`VolumeMaterial.js` 不在树上）；`LineDashedNodeMaterial`（3,918）；`SpriteNodeMaterial`（4,620）；`MeshSSSNodeMaterial`（4,726）；以及 lighting 最后两个缺口 `ShadowNode`（24,331）+ `PointShadowNode`（12,693），前置全齐。# 当前接续：MeshPhongNodeMaterial 已移植；撤回上轮「MaterialNode 缺 SHININESS」的判断，2026-11-05
 
 目标保持 active：固定 three.js 11738a9d55e502fb484cefffcea3a66dc44e9fe9 全部 src + examples/jsm 原生 C++ 逻辑，Vulkan 后端；禁止 CEF/生产 JS 引擎/桥接。阶段本地 Git 提交，不推送。
 
