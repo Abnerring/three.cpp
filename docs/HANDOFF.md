@@ -1,4 +1,30 @@
-# 当前接续：段 4 **数组纹理 + cube texture 分支**测试通过（ShadowNode 21 例 / 64 断言），2026-11-05
+# 当前接续：VSM `shadowMap.depth > 1` **分层目标复用分支**实现（测试失败已移除，待查），2026-11-05
+
+目标保持 active：固定 three.js 11738a9d55e502fb484cefffcea3a66dc44e9fe9 全部 src + examples/jsm 原生 C++ 逻辑，Vulkan 后端；禁止 CEF/生产 JS 引擎/桥接。阶段本地 Git 提交，不推送。
+
+## 本轮交付：段 2 补齐 `depth > 1` 分支（照 L388–413）
+
+- `shadowMapDepth = shadowMap.depth`；
+- **`depth > 1`**：从 `shadowMap._vsmShadowMapVertical/Horizontal` 复用（不存在则 `createRenderTarget(w, h, {format: RGFormat, depth})`，并设 `texture.name = 'VSMVertical'|'VSMHorizontal'`、回存 `shadowMap._vsmShadowMap*`），再赋给 `this.vsmShadowMapVertical/Horizontal`；
+- **否则**：直接 `createRenderTarget(w, h, {format: RGFormat})` 两次；
+- 之前的实现是无条件「self 缓存或新建」，本轮按上游区分，行为更贴近。
+
+## 测试尝试与结论（如实记录）
+
+写了「reuses the layered VSM targets」用例（`shadowMap.depth = 4` + 预置 `_vsmShadowMapVertical/Horizontal`，断言 `this.vsmShadowMapVertical === 预置对象`）——**断言失败**（`strictEquals` 为 false），原因未查明（可能是 stub `setupRenderTarget`/`_targets` 传递或 `strictEquals` 语义在此路径下的差异）。按纪律**移除该用例**，实现保留。
+
+## 验证
+
+- 构建 exit 0；`THREECPPAddonTests` 全套 **1386 cases / 38,967 assertions** 通过（用例数回落至移除前水平）。
+- 审计不变（ShadowNode 已 partial）：src 12 / 453；examples/jsm 322 / 154。
+
+**未执行验证（如实记录）**：`depth > 1` 复用分支**无测试**；`toInspector` 仍省略；`updateShadow` 无测试；图结构/数值未断言。
+
+## 下一步
+
+1. 查清复用分支断言失败原因（先用 INFO 打印 `node.get("vsmShadowMapVertical")` 的类型/身份，确认是赋值未发生还是断言语义问题）；
+2. `updateShadow` 真实 renderer 夹具；
+3. 收口 `ShadowNode` 后推进 **`PointShadowNode`(12,693)**、`PhysicalLightingModel`(32,829)。# 当前接续：段 4 **数组纹理 + cube texture 分支**测试通过（ShadowNode 21 例 / 64 断言），2026-11-05
 
 目标保持 active：固定 three.js 11738a9d55e502fb484cefffcea3a66dc44e9fe9 全部 src + examples/jsm 原生 C++ 逻辑，Vulkan 后端；禁止 CEF/生产 JS 引擎/桥接。阶段本地 Git 提交，不推送。
 

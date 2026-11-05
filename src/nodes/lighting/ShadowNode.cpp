@@ -249,18 +249,34 @@ JSValue setupShadow(const JSValue& rawSelf, const Args& args, const Args&) {
     if (renderer.get("shadowMap").get("type").strictEquals(nativeNodeConstantsBinding("VSMShadowMap")) &&
         !shadow.get("isPointLightShadow").toBoolean()) {
         depthTexture.set("compareFunction", JSValue(nullptr));
-        auto vsmVertical = self.get("vsmShadowMapVertical");
-        auto vsmHorizontal = self.get("vsmShadowMapHorizontal");
         const auto mapWidth = shadow.get("mapSize").get("width");
         const auto mapHeight = shadow.get("mapSize").get("height");
+        const auto shadowMapDepth = shadowMap.get("depth");
         const auto createRenderTarget = builder.get("createRenderTarget");
-        auto options = JSValue::object(nullptr);
-        options.set("format", nativeNodeConstantsBinding("RGFormat"));
-        if (!vsmVertical.toBoolean()) {
-            vsmVertical = createRenderTarget.call(builder, {mapWidth, mapHeight, options});
-        }
-        if (!vsmHorizontal.toBoolean()) {
-            vsmHorizontal = createRenderTarget.call(builder, {mapWidth, mapHeight, options});
+        auto formatOptions = JSValue::object(nullptr);
+        formatOptions.set("format", nativeNodeConstantsBinding("RGFormat"));
+        auto depthOptions = JSValue::object(nullptr);
+        depthOptions.set("format", nativeNodeConstantsBinding("RGFormat"));
+        depthOptions.set("depth", shadowMapDepth);
+        JSValue vsmVertical;
+        JSValue vsmHorizontal;
+        if (shadowMapDepth.toNumber() > 1) {
+            // Reuse the per shadow map array target so a layered shadow map shares one target.
+            vsmVertical = shadowMap.get("_vsmShadowMapVertical");
+            if (!vsmVertical.toBoolean()) {
+                vsmVertical = createRenderTarget.call(builder, {mapWidth, mapHeight, depthOptions});
+                vsmVertical.get("texture").set("name", JSValue("VSMVertical"));
+                shadowMap.set("_vsmShadowMapVertical", vsmVertical);
+            }
+            vsmHorizontal = shadowMap.get("_vsmShadowMapHorizontal");
+            if (!vsmHorizontal.toBoolean()) {
+                vsmHorizontal = createRenderTarget.call(builder, {mapWidth, mapHeight, depthOptions});
+                vsmHorizontal.get("texture").set("name", JSValue("VSMHorizontal"));
+                shadowMap.set("_vsmShadowMapHorizontal", vsmHorizontal);
+            }
+        } else {
+            vsmVertical = createRenderTarget.call(builder, {mapWidth, mapHeight, formatOptions});
+            vsmHorizontal = createRenderTarget.call(builder, {mapWidth, mapHeight, formatOptions});
         }
         self.set("vsmShadowMapVertical", vsmVertical);
         self.set("vsmShadowMapHorizontal", vsmHorizontal);
