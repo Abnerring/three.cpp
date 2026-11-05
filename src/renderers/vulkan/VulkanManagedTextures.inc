@@ -68,6 +68,9 @@ TextureRef createManagedTextureResource(const TextureConfig& config,const Manage
     const ManagedTextureSampler& settings,const TextureRef& previous,const std::vector<ManagedTexturePatch>& patches,
     const std::vector<VkImageSubresourceRange>& clears={},bool generate=false){
     validateManagedTexture(config,shape,generate);
+    // Source uploads may follow draws into the same image. Finish those writes
+    // before copying their committed contents into a replacement generation.
+    if(recording)endFrame();
     auto result=TextureRef(new TextureResource{},[this](TextureResource* texture){
         if(texture->sampler)api.vkDestroySampler(device,texture->sampler,nullptr);
         destroyImage(texture->image);delete texture;--info.textureImages;
@@ -78,6 +81,15 @@ TextureRef createManagedTextureResource(const TextureConfig& config,const Manage
     create.imageType=shape.type();create.format=config.format;create.extent={config.width,config.height,shape.mipDepth(0)};
     create.mipLevels=config.levels;create.arrayLayers=shape.layers();create.samples=VK_SAMPLE_COUNT_1_BIT;
     create.tiling=VK_IMAGE_TILING_OPTIMAL;create.usage=VK_IMAGE_USAGE_TRANSFER_DST_BIT|VK_IMAGE_USAGE_TRANSFER_SRC_BIT|VK_IMAGE_USAGE_SAMPLED_BIT;
+    VkFormatProperties attachmentProperties{};api.vkGetPhysicalDeviceFormatProperties(physicalDevice,config.format,&attachmentProperties);
+    if(attachmentProperties.optimalTilingFeatures&VK_FORMAT_FEATURE_COLOR_ATTACHMENT_BIT)
+        create.usage|=VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT;
+    VkImageFormatProperties actualLimits{};
+    const auto supported=api.vkGetPhysicalDeviceImageFormatProperties(physicalDevice,create.format,create.imageType,create.tiling,create.usage,create.flags,&actualLimits);
+    if(supported==VK_ERROR_FORMAT_NOT_SUPPORTED)throw std::invalid_argument("Native Vulkan image usage combination is not supported");
+    check(supported,"vkGetPhysicalDeviceImageFormatProperties(native usage)");
+    if(create.extent.width>actualLimits.maxExtent.width||create.extent.height>actualLimits.maxExtent.height||create.extent.depth>actualLimits.maxExtent.depth||create.arrayLayers>actualLimits.maxArrayLayers||create.mipLevels>actualLimits.maxMipLevels)
+        throw std::invalid_argument("Native Vulkan image dimensions exceed its actual usage limits");
     create.sharingMode=VK_SHARING_MODE_EXCLUSIVE;
     check(api.vkCreateImage(device,&create,nullptr,&image.image),"vkCreateImage(managed texture)");
     VkMemoryRequirements requirements{};api.vkGetImageMemoryRequirements(device,image.image,&requirements);
@@ -86,7 +98,7 @@ TextureRef createManagedTextureResource(const TextureConfig& config,const Manage
     check(api.vkAllocateMemory(device,&allocation,nullptr,&image.memory),"vkAllocateMemory(managed texture)");
     check(api.vkBindImageMemory(device,image.image,image.memory,0),"vkBindImageMemory(managed texture)");
     const auto baseLevel=std::min(settings.baseLevel,config.levels-1);
-    const auto lastLevel=std::max(baseLevel,std::min(settings.maxLevel,config.levels-1));
+    const auto lastLevel=config.mipFilter?std::max(baseLevel,std::min(settings.maxLevel,config.levels-1)):baseLevel;
     VkImageViewCreateInfo view{VK_STRUCTURE_TYPE_IMAGE_VIEW_CREATE_INFO};view.image=image.image;view.viewType=shape.view();view.format=config.format;
     view.subresourceRange={VK_IMAGE_ASPECT_COLOR_BIT,baseLevel,lastLevel-baseLevel+1,0,shape.layers()};
     check(api.vkCreateImageView(device,&view,nullptr,&image.view),"vkCreateImageView(managed texture)");
@@ -262,12 +274,17 @@ struct ManagedTextureStorage final:VulkanTextureCommands::Storage {
         for(std::uint32_t layer=0;layer<shape.layers();++layer)for(std::uint32_t level=0;level<next.config.levels;++level)next.define(layer,level);
         *this=std::move(next);
     }
+    std::pair<std::uint32_t,std::uint32_t> samplingRange()const{
+        const auto base=immutable?std::min(sampler.baseLevel,config.levels-1):sampler.baseLevel;
+        const auto maximum=immutable?std::min(std::max(base,sampler.maxLevel),config.levels-1):
+            std::min(sampler.maxLevel,std::uint32_t(std::floor(std::log2(std::max(config.width,std::max(config.height,shape.mipDepth(0)))))));
+        return {base,config.mipFilter?maximum:base};
+    }
     TextureRef sampled()const{
         static_cast<void>(owner());if(!resource)throw std::invalid_argument("Native Vulkan sampling of unallocated GL texture storage is not implemented");
-        if(sampler.baseLevel>=config.levels||sampler.maxLevel<sampler.baseLevel)throw std::invalid_argument("Native Vulkan sampling of an incomplete texture mip range is not implemented");
-        const auto last=immutable?config.levels-1:std::min(sampler.maxLevel,std::uint32_t(std::floor(std::log2(std::max(config.width,std::max(config.height,shape.mipDepth(0)))))));
-        const auto requiredLast=config.mipFilter?last:sampler.baseLevel;
-        for(std::uint32_t layer=0;layer<shape.layers();++layer)for(std::uint32_t level=sampler.baseLevel;level<=requiredLast;++level)
+        const auto [base,last]=samplingRange();
+        if(base>=config.levels||last<base||(!immutable&&sampler.maxLevel<base))throw std::invalid_argument("Native Vulkan sampling of an incomplete texture mip range is not implemented");
+        for(std::uint32_t layer=0;layer<shape.layers();++layer)for(std::uint32_t level=base;level<=last;++level)
             if(!isDefined(layer,level))throw std::invalid_argument("Native Vulkan sampling of incomplete GL texture images is not implemented");
         return resource;
     }
@@ -282,11 +299,19 @@ void initializeManagedTextureCommands(){
     limits.maxCubeMapSize=int(std::min(properties.limits.maxImageDimensionCube,std::uint32_t(INT32_MAX)));
     limits.max3DTextureSize=int(std::min(properties.limits.maxImageDimension3D,std::uint32_t(INT32_MAX)));
     limits.maxArrayLayers=int(std::min(properties.limits.maxImageArrayLayers,std::uint32_t(INT32_MAX)));limits.maxSamples=1;
+    limits.maxRenderbufferSize=int(std::min(properties.limits.maxFramebufferWidth,properties.limits.maxFramebufferHeight));
+    limits.maxColorAttachments=int(properties.limits.maxColorAttachments);limits.maxDrawBuffers=int(properties.limits.maxFragmentOutputAttachments);
     const std::weak_ptr<Lifecycle> weak=lifecycle;
     managedTextureCommands=std::make_unique<VulkanTextureCommands>([weak]()->std::shared_ptr<VulkanTextureCommands::Storage>{
         const auto token=weak.lock();if(!token||!token->owner)throw JSTypeError("Native Vulkan texture command owner has been retired");
         return std::make_shared<ManagedTextureStorage>(token);
-    },VulkanTextureCommands::FramebufferFactory{},limits);
+    },[weak]()->std::shared_ptr<VulkanTextureCommands::FramebufferStorage>{
+        const auto token=weak.lock();if(!token||!token->owner)throw JSTypeError("Native Vulkan framebuffer owner has been retired");
+        return std::make_shared<ManagedFramebufferStorage>(token);
+    },[weak]()->std::shared_ptr<VulkanTextureCommands::RenderbufferStorage>{
+        const auto token=weak.lock();if(!token||!token->owner)throw JSTypeError("Native Vulkan renderbuffer owner has been retired");
+        return std::make_shared<ManagedRenderbufferStorage>(token);
+    },limits);
 }
 TextureRef managedSampledTexture(std::uint32_t unit,std::uint32_t target){
     if(!managedTextureCommands)throw std::logic_error("Native Vulkan texture commands have not been initialized");

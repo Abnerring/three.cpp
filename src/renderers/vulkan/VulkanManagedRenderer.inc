@@ -32,14 +32,19 @@ JSValue managedService(const char* name, unsigned arity = 0) {
         return JSValue::constructor(callback, {token, name}, "", arity, JSValue::ConstructorKind::Callable);
     return JSValue::function(callback, {token, name}, name, arity);
 }
-void ensureManagedRecording() {
+bool ensureManagedRecording() {
     reversedDepth = managedReversedDepth;
+    if(!selectManagedFramebuffer())return false;
     if (!recording) beginFrame(false, false, activeClearColor, activeClearAlpha, false);
+    return true;
+}
+void syncManagedSize(std::uint32_t screenWidth,std::uint32_t screenHeight) {
+    if (managedScenePipeline.isUndefined()) return;
+    managedCell("_width",screenWidth);managedCell("_height",screenHeight);
+    managedGLCanvas.set("width",screenWidth);managedGLCanvas.set("height",screenHeight);
 }
 void syncManagedViewport() {
     if (managedScenePipeline.isUndefined()) return;
-    managedCell("_height", height);
-    managedGLCanvas.set("width",width);managedGLCanvas.set("height",height);
     const auto value = managedCell("_currentViewport");
     managedCall(value, "set")({currentViewport.x, currentViewport.y, currentViewport.z, currentViewport.w});
     managedCall(managedViewport, "set")({viewport.x, viewport.y, viewport.z, viewport.w});
@@ -71,16 +76,6 @@ JSValue managedDispatch(const std::string& name, const JSValue& receiver, const 
     if (name == "getRenderTarget") return managedCell("_currentRenderTarget");
     if (name == "getActiveCubeFace") return managedCell("_currentActiveCubeFace");
     if (name == "getActiveMipmapLevel") return managedCell("_currentActiveMipmapLevel");
-    if (name == "setRenderTarget") {
-        if (!a.isNull()) throw std::logic_error("Managed Vulkan render-target allocation is not implemented");
-        if (renderTarget) throw std::logic_error("Switching typed targets through the managed renderer is not implemented");
-        const auto face = b.isUndefined() ? JSValue(0) : b;
-        const auto mipArg = managedArg(args, 2), mip = mipArg.isUndefined() ? JSValue(0) : mipArg;
-        if (!face.strictEquals(0) || !mip.strictEquals(0)) throw std::logic_error("Managed Vulkan target face/mipmap is not implemented");
-        managedCell("_currentRenderTarget", nullptr);
-        managedCell("_currentActiveCubeFace", face); managedCell("_currentActiveMipmapLevel", mip);
-        return {};
-    }
     if (name == "clear") {
         const auto color=a.isUndefined()?JSValue(true):a;
         const auto depth=b.isUndefined()?JSValue(true):b;
@@ -172,9 +167,15 @@ void initializeManagedRenderer() {
         {"morphtargets",managedMorphtargets->object()},{"uniformsGroups",managedUniformsGroups->object()},
         {"geometries",geometries->object()},{"attributes",managedAttributes},
         {"bufferRenderer",managedBufferRenderer->object()},{"indexedBufferRenderer",managedIndexedBufferRenderer->object()},
-        {"getDFGLUT",nativeGetDFGLUTFunction()},{"_height",height},{"stencil",false}})
+        {"getDFGLUT",nativeGetDFGLUTFunction()},{"_height",height},{"_width",width},{"canvas",managedGLCanvas},{"stencil",false}})
         managedOwn(bindings, name, value);
     managedScenePipeline = nativeWebGLRendererScenePipeline(bindings);
+    managedViewport=managedCell("_viewport");
+    managedCell("_scratchFramebuffer",managedCall(managedGL,"createFramebuffer")({}));
+    for(const auto* name:{"setRenderTarget","getRenderTarget","getActiveCubeFace","getActiveMipmapLevel",
+        "setViewport","getViewport","getCurrentViewport","setScissor","getScissor","setScissorTest","getScissorTest",
+        "getPixelRatio","getSize","getDrawingBufferSize"})
+        managedOwn(managedRenderer,name,managedScenePipeline.get(name));
     managedRenderer.get("render").setFunctionSourceText(managedScenePipeline.get("render").nativeFunctionSource());
     syncManagedViewport();
     managedRenderer.get("renderBufferDirect").setFunctionSourceText(managedScenePipeline.get("renderBufferDirect").nativeFunctionSource());

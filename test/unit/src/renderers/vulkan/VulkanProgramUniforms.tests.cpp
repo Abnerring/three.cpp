@@ -97,12 +97,14 @@ TEST_CASE("Converted original signed unsigned and boolean fields retain scalar t
 }
 TEST_CASE("Private backend fields use actual draw values and reject application writes") {
     const auto result=compile();Storage s(result);
-    s.writeBackend(0x80000003u,73.0f);
-    for(const auto& b:result.backendScalars)if(b.declaredStages) {
-        if(b.value==VulkanEsslResult::BackendScalar::Value::FirstInstance)
-            REQUIRE(at<std::uint32_t>(s,b.offset)==0x80000003u);
-        else REQUIRE(at<float>(s,b.offset)==73.0f);
-        REQUIRE_THROWS_AS(write<float>(s,b.name.c_str(),{0}),std::invalid_argument);
+    for(const float height:{73.0f,-73.0f}) {
+        s.writeBackend(0x80000003u,height);
+        for(const auto& b:result.backendScalars)if(b.declaredStages) {
+            if(b.value==VulkanEsslResult::BackendScalar::Value::FirstInstance)
+                REQUIRE(at<std::uint32_t>(s,b.offset)==0x80000003u);
+            else REQUIRE(at<float>(s,b.offset)==height);
+            REQUIRE_THROWS_AS(write<float>(s,b.name.c_str(),{0}),std::invalid_argument);
+        }
     }
 }
 TEST_CASE("Sampler assignments support partial arrays and alias-safe independent copies") {

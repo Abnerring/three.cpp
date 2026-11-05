@@ -5,6 +5,7 @@
 #include <functional>
 #include <memory>
 #include <span>
+#include <vector>
 
 // Command/state boundary used by the original WebGLTextures and WebGLState.
 // Factories and resource implementations must not conceal managed JSValue roots.
@@ -37,20 +38,32 @@ class VulkanTextureCommands {
         virtual void parameter(std::uint32_t name,double value)=0;
         virtual void generateMipmap(std::uint32_t target)=0;
     };
+    struct RenderbufferStorage {
+        virtual ~RenderbufferStorage()=default;
+        virtual void allocate(std::uint32_t internalFormat,int width,int height,int samples)=0;
+    };
     struct FramebufferStorage {
         virtual ~FramebufferStorage()=default;
         virtual void texture(std::uint32_t attachment,const std::shared_ptr<Storage>& texture,
                              std::uint32_t target,int level,int layer)=0;
         virtual std::uint32_t status(std::uint32_t target)=0;
+        // The combined DEPTH_STENCIL_ATTACHMENT token is passed unchanged.
+        // Implementations replace either previous attachment kind atomically.
+        virtual void renderbuffer(std::uint32_t attachment,const std::shared_ptr<RenderbufferStorage>& renderbuffer) {
+            throw JSTypeError("Vulkan framebuffer renderbuffer attachment is not installed");
+        }
     };
     struct Limits {
         int maxTextureUnits=16,maxTextureSize=4096,maxCubeMapSize=4096;
         int max3DTextureSize=256,maxArrayLayers=256,maxSamples=1;
+        int maxRenderbufferSize=4096,maxColorAttachments=4,maxDrawBuffers=4;
     };
     using Factory=std::function<std::shared_ptr<Storage>()>;
     using FramebufferFactory=std::function<std::shared_ptr<FramebufferStorage>()>;
+    using RenderbufferFactory=std::function<std::shared_ptr<RenderbufferStorage>()>;
     explicit VulkanTextureCommands(Factory factory,FramebufferFactory framebuffers={});
     VulkanTextureCommands(Factory factory,FramebufferFactory framebuffers,Limits limits);
+    VulkanTextureCommands(Factory factory,FramebufferFactory framebuffers,RenderbufferFactory renderbuffers,Limits limits);
     JSValue object() const;
     // Sampling snapshots resolve the actual handle selected by native bindTexture,
     // independently of texture UUID/id, source objects, or uploaded pixel copies.
@@ -61,6 +74,15 @@ class VulkanTextureCommands {
     // created handles receive a distinct generation within this command owner.
     std::uint64_t generation(const JSValue& handle) const;
     bool isDeleted(const JSValue& handle) const;
+    // FRAMEBUFFER selects the draw binding. Null is the real default framebuffer.
+    // Its storage is supplied by the renderer surface, not a fabricated object.
+    JSValue boundFramebuffer(std::uint32_t target) const;
+    std::shared_ptr<FramebufferStorage> framebufferStorage(const JSValue& handle) const;
+    std::vector<std::uint32_t> framebufferDrawBuffers(const JSValue& handle) const;
+    std::uint32_t framebufferReadBuffer(const JSValue& handle) const;
+    std::uint64_t framebufferRevision(const JSValue& handle) const;
+    JSValue boundRenderbuffer() const;
+    std::shared_ptr<RenderbufferStorage> renderbufferStorage(const JSValue& handle) const;
     void shutdown();
   private:
     JSValue state_,object_;

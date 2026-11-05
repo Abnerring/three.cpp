@@ -935,7 +935,7 @@
       "path": "src/renderers",
       "upstreamFiles": 5,
       "moduleCount": 5,
-      "modulesWithCppFiles": 0,
+      "modulesWithCppFiles": 1,
       "verifiedComplete": 0
     },
     {
@@ -14009,8 +14009,8 @@
       "scope": "src",
       "kind": "core",
       "upstreamSha256": "56f8408b776bec6f3c1b6ba88599275de09d2def37ddf77f190b52d033b9986e",
-      "header": null,
-      "implementation": null,
+      "header": "src/renderers/WebGLRenderTarget.h",
+      "implementation": "src/renderers/WebGLRenderTarget.cpp",
       "expectedHeader": "src/renderers/WebGLRenderTarget.h",
       "expectedImplementation": "src/renderers/WebGLRenderTarget.cpp",
       "status": "vulkan-port-pending",

@@ -47,6 +47,8 @@ JSValue managedGLRectangle(const Vector4& value) {
 JSValue managedGLParameter(std::uint32_t name) {
     VkPhysicalDeviceProperties properties{};api.vkGetPhysicalDeviceProperties(physicalDevice,&properties);
     const auto& limits=properties.limits;
+    if(name==0x0c02||(name>=0x8825&&name<0x8825+limits.maxFragmentOutputAttachments))
+        return managedCall(managedTextureCommands->object(),"getParameter")({double(name)});
     switch(name) {
         case 0x1f02:return "WebGL 2.0 (three.cpp Vulkan)";
         case 0x8b8c:return "WebGL GLSL ES 3.00 (native ESSL to SPIR-V)";
@@ -63,8 +65,8 @@ JSValue managedGLParameter(std::uint32_t name) {
         case 0x8a30:return double(limits.maxUniformBufferRange);
         case 0x8a34:return double(limits.minUniformBufferOffsetAlignment);
         case 0x80a9:case 0x80a8:return 0; // The actual screen framebuffer is single-sampled.
-        case 0x0d57:return 0; // The actual depth image has no stencil attachment.
-        case 0x0d56:return depthFormat==VK_FORMAT_D32_SFLOAT?32:16;
+        case 0x0d57:return managedFramebufferStencilBits();
+        case 0x0d56:return managedFramebufferDepthBits();
         case 0x0b72:return managedGLFixed.depthWrite;
         case 0x0b74:return double(managedGLFixed.nativeDepthFunc);
         case 0x0b45:return double(managedGLFixed.nativeCullFace);
@@ -73,6 +75,7 @@ JSValue managedGLParameter(std::uint32_t name) {
         case 0x8894:case 0x8895:case 0x85b5:
             return managedCall(bindingCommands->object(),"getParameter")({double(name)});
         case 0x84e0:case 0x0cf5:case 0x0d05:case 0x0cf2:case 0x806e:
+        case 0x8ca7:case 0x84e8:case 0x8824:case 0x8cdf:
         case 0x0cf4:case 0x0cf3:case 0x806d:case 0x9240:case 0x9241:case 0x9243:
         case 0x0d33:case 0x851c:case 0x8073:case 0x88ff:case 0x8872:case 0x8b4d:
         case 0x8d57:case 0x8069:case 0x8514:case 0x806a:case 0x8c1d:case 0x8ca6:case 0x8caa:
@@ -85,6 +88,13 @@ JSValue managedNativeGL(const std::string& name,const std::vector<JSValue>& args
     const auto uint=[&](std::size_t i){return managedGLUint(arg(i));};
     const auto real=[&](std::size_t i){return float(arg(i).toNumber());};
     if(name=="getParameter")return managedGLParameter(uint(0));
+    if(name=="checkFramebufferStatus") {
+        if(args.empty())throw JSTypeError("checkFramebufferStatus requires a target");
+        const auto target=uint(0);
+        if((target==0x8d40||target==0x8ca9||target==0x8ca8)&&managedTextureCommands->boundFramebuffer(target).isNull())
+            return double(0x8cd5); // The renderer owns a complete native default surface.
+        return managedCall(managedTextureCommands->object(),"checkFramebufferStatus")({double(target)});
+    }
     if(name=="getError") {
         if(managedGLError){const auto error=managedGLError;managedGLError=0;return double(error);}
         for(const auto& source:{managedProgramCommands->object(),managedTextureCommands->object(),bindingCommands->object(),attributeCommands->object()}) {
@@ -182,8 +192,8 @@ JSValue managedNativeGL(const std::string& name,const std::vector<JSValue>& args
         const auto mask=uint(0);if(mask&~0x4500u){managedNativeError(0x0501);return {};}
         const auto colorMask=managedGLFixed.nativeColorMask;
         if((mask&0x4000)&&colorMask&&colorMask!=15)throw std::logic_error("Vulkan clear with a partial color mask is not implemented");
-        ensureManagedRecording();
-        clearAttachments((mask&0x4000)&&colorMask,(mask&0x0100)&&managedGLFixed.depthWrite,
+        if(!ensureManagedRecording())return {};
+        clearAttachments((mask&0x4000)&&colorMask&&managedFramebufferColorOutput,(mask&0x0100)&&managedGLFixed.depthWrite,
             activeClearColor,activeClearAlpha,false,true,managedGLClearDepth);
         if(managedRenderDepth==0){endFrame();clearManagedProgramFrame();}
         return {};
@@ -205,8 +215,10 @@ JSValue managedNativeGL(const std::string& name,const std::vector<JSValue>& args
         if(indexed&&offset%bytes!=0){managedNativeError(0x0502);return {};}
         if(!managedProgramCommands->current()){managedNativeError(0x0502);return {};}
         if(indexed&&offset/bytes>UINT32_MAX)throw std::overflow_error("Native GL index offset exceeds Vulkan draw range");
-        ensureManagedRecording();
+        if(!ensureManagedRecording())return {};
         auto snapshot=captureManagedProgramDraw(managedGLFixed,FrontSide,false,false);
+        if(snapshot.samplingFeedback){bindingCommands->invalidDraw();return {};}
+        if(!managedFramebufferColorOutput){snapshot.state.nativeColorMask=0;snapshot.state.colorWrite=false;}
         recordManagedProgramDraw(std::move(snapshot),mode,indexed?std::uint32_t(offset/bytes):std::uint32_t(first),
             std::uint32_t(count),std::uint32_t(instances),indexed,double(type));
         return {};
@@ -236,7 +248,7 @@ void initializeManagedContext() {
         {"POINTS",0},{"LINES",1},{"LINE_LOOP",2},{"LINE_STRIP",3},{"TRIANGLES",4},{"TRIANGLE_STRIP",5},{"TRIANGLE_FAN",6}})
         managedOwn(managedGL,name,double(token));
     for(const auto& [name,arity]:std::initializer_list<std::pair<const char*,unsigned>>{
-        {"getParameter",1},{"getError",0},{"getExtension",1},{"getSupportedExtensions",0},{"getContextAttributes",0},{"getShaderPrecisionFormat",2},{"isContextLost",0},
+        {"getParameter",1},{"checkFramebufferStatus",1},{"getError",0},{"getExtension",1},{"getSupportedExtensions",0},{"getContextAttributes",0},{"getShaderPrecisionFormat",2},{"isContextLost",0},
         {"enable",1},{"disable",1},{"isEnabled",1},{"depthMask",1},{"colorMask",4},{"depthFunc",1},{"frontFace",1},{"cullFace",1},
         {"blendEquation",1},{"blendEquationSeparate",2},{"blendFunc",2},{"blendFuncSeparate",4},{"blendColor",4},{"polygonOffset",2},{"lineWidth",1},
         {"clearColor",4},{"clearDepth",1},{"clearStencil",1},{"stencilMask",1},{"stencilFunc",3},{"stencilOp",3},{"viewport",4},{"scissor",4},{"clear",1},

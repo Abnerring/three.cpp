@@ -3816,3 +3816,17 @@ if(THREECPP_NODE_EXECUTABLE AND THREEJS_SOURCE_DIR)
         COMMAND "${THREECPP_NODE_EXECUTABLE}" "${CMAKE_CURRENT_SOURCE_DIR}/unit/utils/parity/compare-native-light-classes.mjs"
             "${THREEJS_SOURCE_DIR}" "$<TARGET_FILE:NativeLightClassesParityProbe>")
 endif()
+
+add_executable(WebGLRendererTargetParityProbe unit/utils/parity/WebGLRendererTargetParityProbe.cpp)
+target_link_libraries(WebGLRendererTargetParityProbe PRIVATE threecpp::threecpp)
+if(THREECPP_NODE_EXECUTABLE AND THREEJS_SOURCE_DIR)
+    add_test(NAME threecpp.threejs-webgl-renderer-target-parity
+        COMMAND "${THREECPP_NODE_EXECUTABLE}" "${CMAKE_CURRENT_SOURCE_DIR}/unit/utils/parity/compare-webgl-renderer-target.mjs"
+            "${THREEJS_SOURCE_DIR}" "$<TARGET_FILE:WebGLRendererTargetParityProbe>")
+endif()
+if(TARGET threecpp_vulkan AND THREECPP_NATIVE_ESSL)
+    add_executable(VulkanManagedRenderTargetsTests unit/src/renderers/VulkanManagedRenderTargets.tests.cpp)
+    target_link_libraries(VulkanManagedRenderTargetsTests PRIVATE threecpp::vulkan)
+    add_test(NAME threecpp.vulkan-ManagedRenderTargets COMMAND VulkanManagedRenderTargetsTests)
+    set_tests_properties(threecpp.vulkan-ManagedRenderTargets PROPERTIES LABELS "Vulkan;GPU" TIMEOUT 180)
+endif()

@@ -6,6 +6,8 @@
 
 // Canonical managed constructor. The numerical facade below remains available
 // to the existing renderer; its GPU resource bridge is separate.
+JSValue nativeRenderTargetModule();
+JSValue nativeRenderTargetBinding(const std::string& name);
 JSValue nativeRenderTargetConstructor();
 
 class RenderTarget : public EventDispatcher {

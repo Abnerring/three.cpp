@@ -43,11 +43,11 @@
 
 ## 5. 首批目标（按杠杆排序）
 
-1. **传统 Vulkan 渲染路径** — managed 场景已按原始遍历、矩阵、排序和回调连接 WebGLObjects/Attributes/BindingStates、源码 program/material/texture 与实际 Vulkan draw。保留 typed 兼容入口。继续完整 public WebGLRenderer、未覆盖的材质/灯光/图元、阴影、环境、渲染目标、后处理及窗口呈现。
+1. **传统 Vulkan 渲染路径** — managed 场景已连接源码遍历/排序/材质/纹理和实际 Vulkan draw；canonical RenderTarget/WebGLRenderTarget、源码目标切换、RGBA8/R8/RG8、深度 renderbuffer、非零 mip 和回调重入已有实际 GPU 证据。下一步先做 DepthTexture/比较采样、canonical CubeDepthTexture/WebGLCubeRenderTarget 和 WebGLShadowMap，再补完整阴影/环境/传输、MRT/MSAA/stencil、复制/读回、完整 public API、后处理及窗口呈现。
 2. **现代 Vulkan 执行链** — 已有原生节点图及真实 GLSL 编译器；继续 Renderer/NodeBuilder/TSL 到同一 Vulkan 后端的完整绘制、计算与存储资源闭环，以及 WGSL/Tint 接入。CPU 节点图通过不代表现代 GPU 执行完成。
 3. **普通 src 的行为验收与宿主缺口** — ObjectLoader、NodeObjectLoader、BufferGeometryLoader 已有原生动态管线；canonical curves/extras 已采用源码算法。继续 URL 图像/异步、typed facade、未覆盖的 managed 资源与宿主路径验收。所有模块仍须按完整行为验收，不能以存在文件或选中测试通过宣告完成。
 4. **examples 与宿主适配** — 尚缺 322 个模块；补齐原生平台依赖并逐项差分，最后验收 Windows/Linux/macOS。AST、Linker、TranspilerUtils 已有实现，勿重复创建。
-5. **验证与性能** — 已提交基线 a96368d2 的完整 core 1784 用例 / 219362 断言、生产 GPU 7/7 已通过。旧 full-core GC 慢路径尚未优化；局部纹理稀疏绑定优化不代表 GC 问题已解决。后续提交须记录实际测试范围、平台与验证层是否启用。
+5. **验证与性能** — 最新阶段完整 core 1784 用例 / 219362 断言、addons 1441 / 39577 通过；目标差分 7931 项、目标 GPU 18 组 / 285 断言 / 82 次渲染、7 组编译/命令测试和 14 组既有 GPU 回归通过。Windows 验证层未启用，其他平台仍待验收。旧 full-core GC 慢路径尚未优化。
 
 ## 6. 近期已完成（避免重复劳动）
 以下为历史轮次记录，其中“下一步／尚未”以第 5 节及最新 HANDOFF/VALIDATION 为准。

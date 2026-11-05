@@ -8,6 +8,7 @@
 #include "core/NativeArray.h"
 #include "core/JSJobs.h"
 #include "core/JSPromise.h"
+#include "core/RenderTarget.h"
 #include "constants.h"
 #include <limits>
 #include <map>
@@ -39,17 +40,38 @@ struct Memory final:VulkanTextureCommands::Storage {
 struct FramebufferMemory final:VulkanTextureCommands::FramebufferStorage {
     struct Attachment{std::shared_ptr<VulkanTextureCommands::Storage> texture;std::uint32_t target;int level,layer;};
     std::map<std::uint32_t,Attachment> attachments;
+    std::map<std::uint32_t,std::shared_ptr<VulkanTextureCommands::RenderbufferStorage>> renderbuffers;
+    bool failAttachment=false;
     void texture(std::uint32_t name,const std::shared_ptr<VulkanTextureCommands::Storage>& value,std::uint32_t target,int level,int layer)override{
-        if(value)attachments[name]={value,target,level,layer};else attachments.erase(name);
+        if(failAttachment)throw JSRangeError("attachment failed");
+        for(const auto slot:name==0x821a?std::vector<std::uint32_t>{0x8d00,0x8d20}:std::vector<std::uint32_t>{name}){
+            renderbuffers.erase(slot);if(value)attachments[slot]={value,target,level,layer};else attachments.erase(slot);
+        }
     }
-    std::uint32_t status(std::uint32_t)override{return attachments.empty()?0x8cd7:0x8cd5;}
+    void renderbuffer(std::uint32_t name,const std::shared_ptr<VulkanTextureCommands::RenderbufferStorage>& value)override{
+        if(failAttachment)throw JSRangeError("attachment failed");
+        for(const auto slot:name==0x821a?std::vector<std::uint32_t>{0x8d00,0x8d20}:std::vector<std::uint32_t>{name}){
+            attachments.erase(slot);if(value)renderbuffers[slot]=value;else renderbuffers.erase(slot);
+        }
+    }
+    std::uint32_t status(std::uint32_t)override{return attachments.empty()&&renderbuffers.empty()?0x8cd7:0x8cd5;}
+};
+struct RenderbufferMemory final:VulkanTextureCommands::RenderbufferStorage {
+    struct Allocation{std::uint32_t format;int width,height,samples;};
+    std::vector<Allocation> allocations;
+    bool failAllocation=false;
+    void allocate(std::uint32_t format,int width,int height,int samples)override{
+        if(failAllocation)throw JSRangeError("renderbuffer allocation failed");allocations.push_back({format,width,height,samples});
+    }
 };
 struct Fixture {
     std::vector<std::weak_ptr<Memory>> created;
     std::vector<std::weak_ptr<FramebufferMemory>> framebuffers;
+    std::vector<std::weak_ptr<RenderbufferMemory>> renderbuffers;
     VulkanTextureCommands commands{
         [this]{auto m=std::make_shared<Memory>();created.emplace_back(m);return m;},
-        [this]{auto m=std::make_shared<FramebufferMemory>();framebuffers.emplace_back(m);return m;}};
+        [this]{auto m=std::make_shared<FramebufferMemory>();framebuffers.emplace_back(m);return m;},
+        [this]{auto m=std::make_shared<RenderbufferMemory>();renderbuffers.emplace_back(m);return m;},{}};
     JSValue gl=commands.object();
     ~Fixture(){commands.shutdown();}
     JSValue create(std::uint32_t target=0x0de1){auto t=call(gl,"createTexture");call(gl,"bindTexture",{target,t});return t;}
@@ -172,7 +194,10 @@ TEST_CASE("Vulkan texture command API errors are sticky no-ops while unsupported
     REQUIRE(f.commands.revision(t)==revision);REQUIRE(m->uploads.empty());
     call(f.gl,"texSubImage2D",{0x0de1,0,0,0,2,2,0x1908,0x1401,NativeArray_detail::wrap(Float32Array(16))});REQUIRE(call(f.gl,"getError").strictEquals(0x0502));
     REQUIRE_THROWS_AS(call(f.gl,"texImage2D",{0x0de1,0,0x1908,0x1908,0x1401,JSValue::object()}),JSTypeError);
-    REQUIRE_THROWS_AS(call(f.gl,"compressedTexImage2D",{}),JSTypeError);REQUIRE_THROWS_AS(call(f.gl,"createRenderbuffer"),JSTypeError);
+    REQUIRE_THROWS_AS(call(f.gl,"compressedTexImage2D",{}),JSTypeError);
+    const auto renderbuffer=call(f.gl,"createRenderbuffer");REQUIRE(renderbuffer.isObject());REQUIRE(f.commands.renderbufferStorage(renderbuffer)!=nullptr);
+    VulkanTextureCommands withoutRenderbuffers([]{return std::make_shared<Memory>();});
+    REQUIRE_THROWS_AS(call(withoutRenderbuffers.object(),"createRenderbuffer"),JSTypeError);
     REQUIRE_THROWS_AS(call(f.gl,"readPixels",{}),JSTypeError);REQUIRE(call(f.gl,"getError").strictEquals(0));
 }
 TEST_CASE("Vulkan texture conversion reentry resolves binding and live bytes after WebIDL conversions","[vulkan-texture-commands]"){
@@ -244,6 +269,132 @@ TEST_CASE("Vulkan texture shutdown retires device resources and rejects escaped 
     REQUIRE(f.commands.generation(t)>oldGeneration);REQUIRE(f.created.back().expired());REQUIRE(call(f.gl,"isTexture",{t}).strictEquals(false));
     auto live=f.allocate();const auto weak=f.created.back();f.commands.shutdown();f.commands.shutdown();REQUIRE(weak.expired());
     REQUIRE_THROWS_AS(escaped.call(nullptr),JSTypeError);REQUIRE_THROWS_AS(f.commands.storage(live),JSTypeError);
+}
+TEST_CASE("Native framebuffer queries preserve separate read draw identities and per-object routing","[vulkan-texture-commands]"){
+    Fixture f;auto a=call(f.gl,"createFramebuffer"),b=call(f.gl,"createFramebuffer");
+    REQUIRE(call(f.gl,"isFramebuffer",{a}).strictEquals(false));
+    REQUIRE(f.commands.boundFramebuffer(0x8d40).isNull());REQUIRE(f.commands.framebufferStorage(nullptr)==nullptr);
+    REQUIRE(f.commands.framebufferDrawBuffers(nullptr)==std::vector<std::uint32_t>{0x0405});REQUIRE(f.commands.framebufferReadBuffer(nullptr)==0x0405);
+    call(f.gl,"bindFramebuffer",{0x8d40,a});call(f.gl,"bindFramebuffer",{0x8ca8,b});
+    REQUIRE(call(f.gl,"isFramebuffer",{a}).strictEquals(true));REQUIRE(call(f.gl,"isFramebuffer",{b}).strictEquals(true));
+    REQUIRE(f.commands.boundFramebuffer(0x8d40).sameValue(a));REQUIRE(f.commands.boundFramebuffer(0x8ca9).sameValue(a));REQUIRE(f.commands.boundFramebuffer(0x8ca8).sameValue(b));
+    REQUIRE(call(f.gl,"getParameter",{0x8ca6}).sameValue(a));REQUIRE(call(f.gl,"getParameter",{0x8caa}).sameValue(b));
+    REQUIRE(f.commands.framebufferStorage(a)==f.framebuffers[0].lock());REQUIRE(f.commands.framebufferStorage(b)==f.framebuffers[1].lock());
+    const auto ar=f.commands.framebufferRevision(a),br=f.commands.framebufferRevision(b);
+    call(f.gl,"drawBuffers",{list({0x8ce0,0,0x8ce2})});call(f.gl,"readBuffer",{0x8ce3});
+    REQUIRE(f.commands.framebufferDrawBuffers(a)==std::vector<std::uint32_t>{0x8ce0,0,0x8ce2});REQUIRE(f.commands.framebufferReadBuffer(b)==0x8ce3);
+    REQUIRE(f.commands.framebufferRevision(a)==ar+1);REQUIRE(f.commands.framebufferRevision(b)==br+1);
+    REQUIRE(call(f.gl,"getParameter",{0x8825}).strictEquals(0x8ce0));REQUIRE(call(f.gl,"getParameter",{0x8826}).strictEquals(0));REQUIRE(call(f.gl,"getParameter",{0x8827}).strictEquals(0x8ce2));REQUIRE(call(f.gl,"getParameter",{0x0c02}).strictEquals(0x8ce3));
+    call(f.gl,"bindFramebuffer",{0x8ca9,b});REQUIRE(call(f.gl,"getParameter",{0x8825}).strictEquals(0x8ce0));REQUIRE(call(f.gl,"getParameter",{0x8826}).strictEquals(0));
+    call(f.gl,"bindFramebuffer",{0x8d40,nullptr});call(f.gl,"drawBuffers",{list({0})});call(f.gl,"readBuffer",{0});
+    call(f.gl,"bindFramebuffer",{0x8d40,a});REQUIRE(f.commands.framebufferDrawBuffers(a).size()==3);REQUIRE(f.commands.framebufferReadBuffer(a)==0x8ce0);
+    REQUIRE(f.commands.framebufferDrawBuffers(nullptr)==std::vector<std::uint32_t>{0});REQUIRE(f.commands.framebufferReadBuffer(nullptr)==0);
+    call(f.gl,"deleteFramebuffer",{a});REQUIRE(f.commands.boundFramebuffer(0x8ca9).isNull());REQUIRE(f.commands.boundFramebuffer(0x8ca8).isNull());
+    REQUIRE_THROWS_AS(f.commands.framebufferStorage(a),JSTypeError);REQUIRE_THROWS_AS(f.commands.framebufferReadBuffer(a),JSTypeError);
+    REQUIRE_THROWS_AS(f.commands.boundFramebuffer(0x0de1),JSRangeError);REQUIRE(call(f.gl,"getError").strictEquals(0));
+}
+TEST_CASE("Native draw and read buffer commands validate without corrupting prior routing and convert before selecting bindings","[vulkan-texture-commands]"){
+    Fixture f;auto frame=call(f.gl,"createFramebuffer");
+    for(const auto& entry:std::initializer_list<std::pair<Args,int>>{{{},0x0502},{{0x8ce0},0x0502},{{0x0405,0},0x0502},{{0x1234},0x0500}}){
+        call(f.gl,"drawBuffers",{list(entry.first)});REQUIRE(call(f.gl,"getError").strictEquals(entry.second));
+        REQUIRE(f.commands.framebufferDrawBuffers(nullptr)==std::vector<std::uint32_t>{0x0405});
+    }
+    call(f.gl,"readBuffer",{0x8ce0});REQUIRE(call(f.gl,"getError").strictEquals(0x0502));
+    call(f.gl,"readBuffer",{0x8ce4});REQUIRE(call(f.gl,"getError").strictEquals(0x0500));
+    call(f.gl,"bindFramebuffer",{0x8d40,frame});
+    call(f.gl,"drawBuffers",{list({0x8ce1})});REQUIRE(call(f.gl,"getError").strictEquals(0x0502));
+    call(f.gl,"drawBuffers",{list({0x8ce0,0x8ce1,0x8ce2,0x8ce3,0})});REQUIRE(call(f.gl,"getError").strictEquals(0x0501));
+    call(f.gl,"readBuffer",{0x0405});REQUIRE(call(f.gl,"getError").strictEquals(0x0502));
+    REQUIRE(f.commands.framebufferDrawBuffers(frame)==std::vector<std::uint32_t>{0x8ce0});REQUIRE(f.commands.framebufferReadBuffer(frame)==0x8ce0);
+    call(f.gl,"drawBuffers",{list()});REQUIRE(f.commands.framebufferDrawBuffers(frame).empty());REQUIRE(call(f.gl,"getParameter",{0x8825}).strictEquals(0));
+    call(f.gl,"bindFramebuffer",{0x8d40,nullptr});auto token=JSValue::object();
+    token.set("valueOf",JSValue::function(+[](const JSValue&,const Args&,const Args& c)->JSValue{call(c[0],"bindFramebuffer",{0x8d40,c[1]});return 0x8ce0;},{f.gl,frame}));
+    call(f.gl,"drawBuffers",{list({token})});REQUIRE(call(f.gl,"getError").strictEquals(0));REQUIRE(f.commands.framebufferDrawBuffers(frame)==std::vector<std::uint32_t>{0x8ce0});
+    const auto revision=f.commands.framebufferRevision(frame);auto abrupt=JSValue::object();
+    abrupt.set("valueOf",JSValue::function(+[](const JSValue&,const Args&,const Args&)->JSValue{throw JSThrownValue("enum conversion");}));
+    REQUIRE_THROWS_AS(call(f.gl,"drawBuffers",{list({abrupt})}),JSThrownValue);REQUIRE(f.commands.framebufferRevision(frame)==revision);
+}
+TEST_CASE("Native renderbuffers allocate actual storage and expose original handle and committed format queries","[vulkan-texture-commands]"){
+    Fixture f;auto r=call(f.gl,"createRenderbuffer");REQUIRE(call(f.gl,"isRenderbuffer",{r}).strictEquals(false));
+    call(f.gl,"bindRenderbuffer",{0x8d41,r});REQUIRE(call(f.gl,"isRenderbuffer",{r}).strictEquals(true));
+    REQUIRE(f.commands.boundRenderbuffer().sameValue(r));REQUIRE(call(f.gl,"getParameter",{0x8ca7}).sameValue(r));
+    auto memory=std::dynamic_pointer_cast<RenderbufferMemory>(f.commands.renderbufferStorage(r));REQUIRE(memory==f.renderbuffers.back().lock());
+    REQUIRE(call(f.gl,"getRenderbufferParameter",{0x8d41,0x8d42}).strictEquals(0));REQUIRE(call(f.gl,"getRenderbufferParameter",{0x8d41,0x8d50}).strictEquals(0));
+    call(f.gl,"renderbufferStorage",{0x8d41,0x84f9,8,4});REQUIRE(memory->allocations.size()==1);
+    REQUIRE(memory->allocations[0].format==0x88f0);REQUIRE(memory->allocations[0].samples==0);
+    REQUIRE(call(f.gl,"getRenderbufferParameter",{0x8d41,0x8d44}).strictEquals(0x88f0));REQUIRE(call(f.gl,"getRenderbufferParameter",{0x8d41,0x8d54}).strictEquals(24));REQUIRE(call(f.gl,"getRenderbufferParameter",{0x8d41,0x8d55}).strictEquals(8));
+    memory->failAllocation=true;REQUIRE_THROWS_AS(call(f.gl,"renderbufferStorage",{0x8d41,0x81a6,16,16}),JSRangeError);
+    REQUIRE(call(f.gl,"getRenderbufferParameter",{0x8d41,0x8d42}).strictEquals(8));memory->failAllocation=false;
+    call(f.gl,"renderbufferStorageMultisample",{0x8d41,1,0x81a6,8,4});REQUIRE(memory->allocations.back().samples==1);REQUIRE(call(f.gl,"getRenderbufferParameter",{0x8d41,0x8cab}).strictEquals(1));
+    for(const auto& entry:std::initializer_list<std::pair<Args,int>>{{{0x8d41,2,0x81a6,8,4},0x0501},{{0x8d41,1,0x8d7c,8,4},0x0502},{{0x8d41,1,0x84f9,8,4},0x0502},{{0x8d41,0,0x1234,8,4},0x0500},{{0x8d41,0,0x81a6,-1,4},0x0501}}){
+        call(f.gl,"renderbufferStorageMultisample",entry.first);REQUIRE(call(f.gl,"getError").strictEquals(entry.second));REQUIRE(memory->allocations.size()==2);
+    }
+    auto other=call(f.gl,"createRenderbuffer"),width=JSValue::object();
+    width.set("valueOf",JSValue::function(+[](const JSValue&,const Args&,const Args& c)->JSValue{call(c[0],"bindRenderbuffer",{0x8d41,c[1]});return 3;},{f.gl,other}));
+    call(f.gl,"renderbufferStorage",{0x8d41,0x8058,width,2});REQUIRE(memory->allocations.size()==2);
+    auto next=std::dynamic_pointer_cast<RenderbufferMemory>(f.commands.renderbufferStorage(other));REQUIRE(next->allocations.size()==1);REQUIRE(next->allocations[0].width==3);
+    call(f.gl,"deleteRenderbuffer",{other});REQUIRE(f.commands.boundRenderbuffer().isNull());REQUIRE(call(f.gl,"isRenderbuffer",{other}).strictEquals(false));
+    REQUIRE_THROWS_AS(f.commands.renderbufferStorage(other),JSTypeError);REQUIRE(call(f.gl,"getError").strictEquals(0));
+}
+TEST_CASE("Framebuffer renderbuffer attachments retain detached generations and share depth stencil identity","[vulkan-texture-commands]"){
+    Fixture f;auto r=call(f.gl,"createRenderbuffer"),frame=call(f.gl,"createFramebuffer");
+    call(f.gl,"bindRenderbuffer",{0x8d41,r});call(f.gl,"renderbufferStorage",{0x8d41,0x88f0,4,4});const auto weak=f.renderbuffers.back();
+    call(f.gl,"bindFramebuffer",{0x8d40,frame});call(f.gl,"framebufferRenderbuffer",{0x8d40,0x821a,0x8d41,r});
+    REQUIRE(call(f.gl,"getFramebufferAttachmentParameter",{0x8d40,0x8d00,0x8cd1}).sameValue(r));REQUIRE(call(f.gl,"getFramebufferAttachmentParameter",{0x8d40,0x8d20,0x8cd1}).sameValue(r));
+    REQUIRE(call(f.gl,"getFramebufferAttachmentParameter",{0x8d40,0x821a,0x8cd0}).strictEquals(0x8d41));REQUIRE(call(f.gl,"getFramebufferAttachmentParameter",{0x8d40,0x821a,0x8cd1}).sameValue(r));
+    auto storage=std::dynamic_pointer_cast<FramebufferMemory>(f.commands.framebufferStorage(frame));REQUIRE(storage->renderbuffers.size()==2);
+    storage->failAttachment=true;const auto revision=f.commands.framebufferRevision(frame);
+    REQUIRE_THROWS_AS(call(f.gl,"framebufferRenderbuffer",{0x8d40,0x821a,0x8d41,nullptr}),JSRangeError);REQUIRE(f.commands.framebufferRevision(frame)==revision);
+    storage->failAttachment=false;call(f.gl,"bindFramebuffer",{0x8d40,nullptr});call(f.gl,"deleteRenderbuffer",{r});REQUIRE_FALSE(weak.expired());
+    call(f.gl,"bindFramebuffer",{0x8d40,frame});call(f.gl,"framebufferRenderbuffer",{0x8d40,0x8d00,0x8d41,nullptr});REQUIRE_FALSE(weak.expired());
+    REQUIRE(call(f.gl,"getFramebufferAttachmentParameter",{0x8d40,0x821a,0x8cd1}).isNull());REQUIRE(call(f.gl,"getError").strictEquals(0x0502));
+    call(f.gl,"framebufferRenderbuffer",{0x8d40,0x8d20,0x8d41,nullptr});REQUIRE(weak.expired());
+    auto live=call(f.gl,"createRenderbuffer");call(f.gl,"bindRenderbuffer",{0x8d41,live});call(f.gl,"framebufferRenderbuffer",{0x8d40,0x8d00,0x8d41,live});const auto liveWeak=f.renderbuffers.back();
+    call(f.gl,"deleteRenderbuffer",{live});REQUIRE(liveWeak.expired());REQUIRE(call(f.gl,"getFramebufferAttachmentParameter",{0x8d40,0x8d00,0x8cd0}).strictEquals(0));
+    REQUIRE(call(f.gl,"getError").strictEquals(0));
+}
+TEST_CASE("Framebuffer attachment queries retain real texture faces layers and reject cross-owner renderbuffers","[vulkan-texture-commands]"){
+    Fixture f,other;auto frame=call(f.gl,"createFramebuffer"),texture=f.create(0x8513);
+    call(f.gl,"texStorage2D",{0x8513,2,0x8058,2,2});call(f.gl,"bindFramebuffer",{0x8d40,frame});
+    call(f.gl,"framebufferTexture2D",{0x8d40,0x8ce0,0x851a,texture,1});
+    REQUIRE(call(f.gl,"getFramebufferAttachmentParameter",{0x8d40,0x8ce0,0x8cd0}).strictEquals(0x1702));
+    REQUIRE(call(f.gl,"getFramebufferAttachmentParameter",{0x8d40,0x8ce0,0x8cd1}).sameValue(texture));
+    REQUIRE(call(f.gl,"getFramebufferAttachmentParameter",{0x8d40,0x8ce0,0x8cd2}).strictEquals(1));
+    REQUIRE(call(f.gl,"getFramebufferAttachmentParameter",{0x8d40,0x8ce0,0x8cd3}).strictEquals(0x851a));
+    auto array=f.create(0x8c1a);call(f.gl,"texStorage3D",{0x8c1a,1,0x8058,2,2,3});call(f.gl,"framebufferTextureLayer",{0x8d40,0x8ce0,array,0,2});
+    REQUIRE(call(f.gl,"getFramebufferAttachmentParameter",{0x8d40,0x8ce0,0x8cd4}).strictEquals(2));
+    auto foreign=call(other.gl,"createRenderbuffer");call(other.gl,"bindRenderbuffer",{0x8d41,foreign});
+    call(f.gl,"bindRenderbuffer",{0x8d41,foreign});REQUIRE(call(f.gl,"getError").strictEquals(0x0502));REQUIRE(f.commands.boundRenderbuffer().isNull());
+    call(f.gl,"framebufferRenderbuffer",{0x8d40,0x8ce0,0x8d41,foreign});REQUIRE(call(f.gl,"getError").strictEquals(0x0502));
+    REQUIRE(call(f.gl,"getFramebufferAttachmentParameter",{0x8d40,0x8ce0,0x8cd1}).sameValue(array));
+    call(f.gl,"framebufferTexture2D",{0x8d40,0x8ce0,0x1234,nullptr,0});REQUIRE(call(f.gl,"getError").strictEquals(0x0500));
+    REQUIRE(call(f.gl,"getFramebufferAttachmentParameter",{0x8d40,0x8ce0,0x8cd1}).sameValue(array));
+}
+TEST_CASE("Full WebGLTextures allocates canonical render target color and depth storage and disposes each generation","[vulkan-texture-commands][webgl-textures]"){
+    SourceFixture c;auto target=nativeRenderTargetConstructor().construct({4,2});const auto texture=target.get("texture"),source=texture.get("source");
+    REQUIRE(target.get("depthBuffer").strictEquals(true));REQUIRE(texture.get("isRenderTargetTexture").strictEquals(true));
+    call(c.manager,"setupRenderTarget",{target});
+    auto properties=call(c.properties,"get",{target}),textureProperties=call(c.properties,"get",{texture});
+    auto framebuffer=properties.get("__webglFramebuffer"),depth=properties.get("__webglDepthbuffer"),color=textureProperties.get("__webglTexture");
+    REQUIRE(framebuffer.isObject());REQUIRE(depth.isObject());REQUIRE(color.isObject());
+    REQUIRE(target.get("texture").sameValue(texture));REQUIRE(texture.get("source").sameValue(source));
+    auto colorStorage=c.device.memory(color);auto depthStorage=std::dynamic_pointer_cast<RenderbufferMemory>(c.device.commands.renderbufferStorage(depth));
+    auto frameStorage=std::dynamic_pointer_cast<FramebufferMemory>(c.device.commands.framebufferStorage(framebuffer));
+    REQUIRE(colorStorage->allocations.size()==1);REQUIRE(colorStorage->allocations[0].width==4);REQUIRE(colorStorage->allocations[0].height==2);
+    REQUIRE(depthStorage->allocations.size()==1);REQUIRE(depthStorage->allocations[0].format==0x81a6);REQUIRE(depthStorage->allocations[0].width==4);REQUIRE(depthStorage->allocations[0].height==2);REQUIRE(depthStorage->allocations[0].samples==0);
+    REQUIRE(frameStorage->attachments.at(0x8ce0).texture==colorStorage);REQUIRE(frameStorage->renderbuffers.at(0x8d00)==depthStorage);
+    REQUIRE(c.device.commands.boundFramebuffer(0x8d40).isNull());REQUIRE(c.device.commands.boundRenderbuffer().isNull());
+    REQUIRE(c.info.get("memory").get("textures").strictEquals(1));
+    call(c.state,"bindFramebuffer",{0x8d40,framebuffer});call(c.state,"drawBuffers",{target,framebuffer});
+    REQUIRE(c.device.commands.boundFramebuffer(0x8d40).sameValue(framebuffer));REQUIRE(c.device.commands.framebufferDrawBuffers(framebuffer)==std::vector<std::uint32_t>{0x8ce0});
+    call(c.manager,"setTexture2D",{texture,3});REQUIRE(c.device.commands.boundTexture(3,0x0de1).sameValue(color));REQUIRE(colorStorage->allocations.size()==1);
+    call(target,"setSize",{8,4});REQUIRE(call(c.device.gl,"isFramebuffer",{framebuffer}).strictEquals(false));REQUIRE(call(c.device.gl,"isRenderbuffer",{depth}).strictEquals(false));REQUIRE(c.device.commands.isDeleted(color));
+    REQUIRE(c.info.get("memory").get("textures").strictEquals(0));
+    call(c.manager,"setupRenderTarget",{target});auto next=call(c.properties,"get",{target});
+    REQUIRE_FALSE(next.get("__webglFramebuffer").sameValue(framebuffer));REQUIRE_FALSE(next.get("__webglDepthbuffer").sameValue(depth));
+    auto newDepth=std::dynamic_pointer_cast<RenderbufferMemory>(c.device.commands.renderbufferStorage(next.get("__webglDepthbuffer")));
+    REQUIRE(newDepth->allocations[0].width==8);REQUIRE(newDepth->allocations[0].height==4);REQUIRE(target.get("texture").sameValue(texture));
+    call(target,"dispose");REQUIRE(c.info.get("memory").get("textures").strictEquals(0));REQUIRE(call(c.device.gl,"getError").strictEquals(0));
 }
 
 TEST_CASE("Full WebGLTextures and WebGLState drive canonical DataTexture revision and live native uploads","[vulkan-texture-commands][webgl-textures]"){
@@ -335,5 +486,32 @@ TEST_CASE("Sparse high texture unit bindings retain raw identity until the last 
         }
         keeper.collectGarbage();REQUIRE_FALSE(weakTexture.expired());REQUIRE_FALSE(weakStorage.expired());
         commands.shutdown();keeper.collectGarbage();REQUIRE(weakTexture.expired());REQUIRE(weakStorage.expired());
+    }catch(...){failure=std::current_exception();}});worker.join();if(failure)std::rethrow_exception(failure);
+}
+TEST_CASE("Native framebuffer renderbuffer roots retain original managed identity until detachment","[vulkan-texture-commands][gc]"){
+    std::exception_ptr failure;std::thread worker([&]{try{
+        auto keeper=JSValue::object();Fixture f;auto frame=call(f.gl,"createFramebuffer");JSWeakValue weakRenderbuffer;std::weak_ptr<VulkanTextureCommands::RenderbufferStorage> weakStorage;
+        call(f.gl,"bindFramebuffer",{0x8d40,frame});
+        {
+            auto r=call(f.gl,"createRenderbuffer");weakRenderbuffer=JSWeakValue(r);weakStorage=f.commands.renderbufferStorage(r);
+            call(f.gl,"bindRenderbuffer",{0x8d41,r});call(f.gl,"renderbufferStorage",{0x8d41,0x81a6,2,2});
+            call(f.gl,"framebufferRenderbuffer",{0x8d40,0x8d00,0x8d41,r});call(f.gl,"bindRenderbuffer",{0x8d41,nullptr});
+        }
+        call(f.gl,"bindFramebuffer",{0x8d40,nullptr});keeper.collectGarbage();REQUIRE_FALSE(weakRenderbuffer.expired());REQUIRE_FALSE(weakStorage.expired());
+        call(f.gl,"bindFramebuffer",{0x8d40,frame});REQUIRE(call(f.gl,"getFramebufferAttachmentParameter",{0x8d40,0x8d00,0x8cd1}).sameValue(*weakRenderbuffer.lock()));
+        call(f.gl,"framebufferRenderbuffer",{0x8d40,0x8d00,0x8d41,nullptr});keeper.collectGarbage();REQUIRE(weakRenderbuffer.expired());REQUIRE(weakStorage.expired());
+    }catch(...){failure=std::current_exception();}});worker.join();if(failure)std::rethrow_exception(failure);
+}
+TEST_CASE("Native framebuffer renderbuffer managed cycles release complete device ownership graphs","[vulkan-texture-commands][gc]"){
+    std::exception_ptr failure;std::thread worker([&]{try{
+        auto keeper=JSValue::object();JSWeakValue weakGl,weakFrame,weakRenderbuffer;std::weak_ptr<VulkanTextureCommands::FramebufferStorage> weakFramebufferStorage;std::weak_ptr<VulkanTextureCommands::RenderbufferStorage> weakRenderbufferStorage;
+        {
+            VulkanTextureCommands commands([]{return std::make_shared<Memory>();},[]{return std::make_shared<FramebufferMemory>();},[]{return std::make_shared<RenderbufferMemory>();},{});
+            auto gl=commands.object(),frame=call(gl,"createFramebuffer"),r=call(gl,"createRenderbuffer");
+            call(gl,"bindFramebuffer",{0x8d40,frame});call(gl,"bindRenderbuffer",{0x8d41,r});call(gl,"renderbufferStorage",{0x8d41,0x88f0,2,2});call(gl,"framebufferRenderbuffer",{0x8d40,0x821a,0x8d41,r});
+            frame.set("context",gl);r.set("framebuffer",frame);gl.set("renderbuffer",r);
+            weakGl=JSWeakValue(gl);weakFrame=JSWeakValue(frame);weakRenderbuffer=JSWeakValue(r);weakFramebufferStorage=commands.framebufferStorage(frame);weakRenderbufferStorage=commands.renderbufferStorage(r);
+        }
+        keeper.collectGarbage();REQUIRE(weakGl.expired());REQUIRE(weakFrame.expired());REQUIRE(weakRenderbuffer.expired());REQUIRE(weakFramebufferStorage.expired());REQUIRE(weakRenderbufferStorage.expired());
     }catch(...){failure=std::current_exception();}});worker.join();if(failure)std::rethrow_exception(failure);
 }

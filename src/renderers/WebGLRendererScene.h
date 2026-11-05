@@ -48,6 +48,33 @@
 // binding setup and draw dispatch. getTargetPixelRatio is compiled into the
 // same lexical scope and exposed through its corresponding internal slot.
 //
+// The returned object also exposes the complete source public target methods:
+// getActiveCubeFace/getActiveMipmapLevel/getRenderTarget/setRenderTarget,
+// setRenderTargetTextures/setRenderTargetFramebuffer. They share the cells used
+// by render/setProgram/renderTransmissionPass. WebGLRenderTarget is imported
+// from its canonical shared module, including its original inherited methods.
+// No backend target snapshot or application callback wrapper is introduced.
+//
+// Source viewport/scissor/size methods are exposed on the same object and as
+// WebGLRendererScene.<name> slots: get/setPixelRatio, get/setSize,
+// get/setDrawingBufferSize, getCurrentViewport, get/setViewport, get/setScissor,
+// get/setScissorTest, setOpaqueSort and setTransparentSort. Install these actual
+// functions on the renderer so calls through `this` use the same source cells.
+// Supply the original canvas as the optional canvas binding. Initial _width and
+// _height default to its width/height; explicit initial cells are also accepted.
+// _viewport/_scissor are const Vector4 objects, _scissorTest defaults to false;
+// _currentScissor is a const Vector4, _currentScissorTest starts null. Keep actual
+// GPU state in the supplied state.viewport/scissor/setScissorTest services.
+//
+// Target methods additionally require real state.bindFramebuffer/drawBuffers,
+// textures.setupRenderTarget/rebindTextures/setupDepthRenderbuffer/
+// useMultisampledRTT, properties.get/has and _gl.framebufferTexture2D/Layer.
+// _scratchFramebuffer is the original mutable cell, initially null; install the
+// actual backend scratch framebuffer in that cell for nonzero mip levels.
+// Unavailable backend operations must fail at their actual device boundary.
+// Target cells change before setup/binding and are not rolled back on throws
+// or callback reentry. Backend services must not reset these source cells.
+//
 // Nested render calls share the original render-list/state stacks. Abrupt
 // completion preserves the source's unfinished stacks and temporary state;
 // this helper does not add cleanup/finally logic. GPU submission/ownership

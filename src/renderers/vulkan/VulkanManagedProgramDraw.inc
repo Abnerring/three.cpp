@@ -18,6 +18,7 @@ struct ManagedProgramDrawSnapshot {
     PipelineState state;
     int side = FrontSide;
     bool frontFaceCW = false, reversed = false;
+    bool samplingFeedback = false;
     std::uint32_t firstInstance = 0;
     std::map<VulkanProgramUniforms::Key, std::vector<std::byte>> blocks;
     std::map<VulkanProgramUniforms::Key, std::vector<TextureRef>> samplers;
@@ -49,8 +50,11 @@ ManagedProgramDrawSnapshot captureManagedProgramDraw(const PipelineState& state,
     auto program = managedProgramCommands->current();
     if (!program || !program->result.linked || !program->uniforms)
         throw std::logic_error("A managed Vulkan draw requires a linked current native program");
-    ManagedProgramDrawSnapshot result{program, state, side, frontFaceCW, reversed, firstInstance};
-    program->uniforms->writeBackend(firstInstance, float(height));
+    ManagedProgramDrawSnapshot result;
+    result.program=program;result.state=state;result.side=side;
+    result.frontFaceCW=frontFaceCW;result.reversed=reversed;result.firstInstance=firstInstance;
+    // Negative height selects the GL-oriented offscreen viewport in the ESSL adapter.
+    program->uniforms->writeBackend(firstInstance, active->managedAttachment ? -float(height) : float(height));
     for (const auto& [key, block] : program->uniforms->blocks()) {
         // The native ESSL conversion owns binding zero for original standalone
         // uniforms. Explicit source UBOs require the actual bindBufferBase path.
@@ -101,6 +105,7 @@ ManagedProgramDrawSnapshot captureManagedProgramDraw(const PipelineState& state,
         for (const auto unit : sampler.units) {
             if (unit < 0) throw std::invalid_argument("Negative native sampler texture unit");
             auto texture = managedSampledTexture(std::uint32_t(unit), target);
+            result.samplingFeedback=result.samplingFeedback||managedFeedbackLoop(std::uint32_t(unit),target);
             if (!texture || !texture->sampler || !texture->image.view)
                 throw std::logic_error("Native texture binding has no Vulkan sampled image");
             textures.push_back(std::move(texture));
@@ -239,7 +244,9 @@ VkPipeline managedProgramPipeline(const ManagedProgramDrawSnapshot& draw, Manage
     if (blend.blendEnable) requireColorFeatures(active->colorFormat, VK_FORMAT_FEATURE_COLOR_ATTACHMENT_BLEND_BIT);
     std::string key;
     const auto add = [&](auto value) { key.append(reinterpret_cast<const char*>(&value), sizeof(value)); };
-    add(mode); add(active->colorFormat); add(raster.cullMode); add(raster.frontFace); add(raster.depthBiasEnable);
+    if(active->managedAttachment)
+        raster.frontFace = raster.frontFace == VK_FRONT_FACE_CLOCKWISE ? VK_FRONT_FACE_COUNTER_CLOCKWISE : VK_FRONT_FACE_CLOCKWISE;
+    add(mode); add(active->colorFormat); add(activeRenderPass()); add(raster.cullMode); add(raster.frontFace); add(raster.depthBiasEnable);
     add(raster.depthBiasConstantFactor); add(raster.depthBiasSlopeFactor); add(depth.depthTestEnable);
     add(depth.depthWriteEnable); add(depth.depthCompareOp); add(blend.colorWriteMask); add(blend.blendEnable);
     add(blend.colorBlendOp); add(blend.alphaBlendOp); add(blend.srcColorBlendFactor); add(blend.dstColorBlendFactor);
@@ -267,7 +274,7 @@ VkPipeline managedProgramPipeline(const ManagedProgramDrawSnapshot& draw, Manage
     create.pVertexInputState = &vertex; create.pInputAssemblyState = &assembly; create.pViewportState = &viewport;
     create.pRasterizationState = &raster; create.pMultisampleState = &multisample;
     create.pDepthStencilState = &depth; create.pColorBlendState = &color; create.pDynamicState = &dynamic;
-    create.layout = gpu.layout->handle(); create.renderPass = renderPassFor(active->colorFormat);
+    create.layout = gpu.layout->handle(); create.renderPass = activeRenderPass();
     VkPipeline pipeline = VK_NULL_HANDLE;
     check(api.vkCreateGraphicsPipelines(device, VK_NULL_HANDLE, 1, &create, nullptr, &pipeline), "vkCreateGraphicsPipelines(native program)");
     gpu.pipelines.emplace(std::move(key), pipeline);

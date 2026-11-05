@@ -84,7 +84,9 @@ struct VulkanEsslResult : VulkanEsslProgram {
     std::vector<AttributeMapping> attributeMappings;
     std::vector<VaryingMapping> varyingMappings;
     std::vector<BackendScalar> backendScalars;
-    // Pair compilation uses the portable wrapper. Renderer contract: positive
-    // Vulkan viewport height, top=framebufferHeight-glY-glHeight, matching front
-    // face convention, actual firstInstance and actual framebuffer height.
+    // Pair compilation uses the portable wrapper and actual firstInstance.
+    // Positive backend height selects a positive Vulkan viewport and converts
+    // fragment Y/derivatives to GL coordinates; negative backend height selects
+    // the GL-oriented negative viewport used by offscreen texture attachments.
+    // Its magnitude is the actual framebuffer height; front face must match.
 };

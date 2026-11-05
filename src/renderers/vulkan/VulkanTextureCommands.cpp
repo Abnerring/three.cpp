@@ -1,5 +1,6 @@
 #include "renderers/vulkan/VulkanTextureCommands.h"
 #include "core/NativeArray.h"
+#include "core/JSIterator.h"
 #include <algorithm>
 #include <array>
 #include <cmath>
@@ -16,14 +17,18 @@ namespace {
 using Args=std::vector<JSValue>;
 using Storage=VulkanTextureCommands::Storage;
 using FramebufferStorage=VulkanTextureCommands::FramebufferStorage;
+using RenderbufferStorage=VulkanTextureCommands::RenderbufferStorage;
 using PixelStore=VulkanTextureCommands::PixelStore;
 constexpr const char* stateTag="VulkanTextureCommands.State";
 constexpr const char* textureTag="VulkanTextureCommands.Texture";
 constexpr const char* framebufferTag="VulkanTextureCommands.Framebuffer";
+constexpr const char* renderbufferTag="VulkanTextureCommands.Renderbuffer";
 constexpr std::uint32_t texture2D=0x0de1,textureCube=0x8513,texture3D=0x806f,textureArray=0x8c1a;
 constexpr std::uint32_t firstFace=0x8515,lastFace=0x851a,texture0=0x84c0;
 constexpr std::uint32_t invalidEnum=0x0500,invalidValue=0x0501,invalidOperation=0x0502,outOfMemory=0x0505;
 constexpr std::uint32_t framebuffer=0x8d40,drawFramebuffer=0x8ca9,readFramebuffer=0x8ca8;
+constexpr std::uint32_t renderbufferTarget=0x8d41,colorAttachment0=0x8ce0,depthAttachment=0x8d00,stencilAttachment=0x8d20,depthStencilAttachment=0x821a;
+constexpr std::uint32_t backBuffer=0x0405;
 struct State;
 struct Level { int width=0,height=0,depth=1;std::uint32_t internalFormat=0; };
 struct Texture {
@@ -37,9 +42,19 @@ struct Texture {
     bool immutable=false,deleted=false;
 };
 struct TextureBinding { JSWeakValue object;std::shared_ptr<Texture> texture; };
+struct Renderbuffer {
+    std::weak_ptr<State> owner;
+    std::shared_ptr<RenderbufferStorage> storage;
+    std::uint32_t internalFormat=0x8056;
+    int width=0,height=0,samples=0;
+    std::size_t attachments=0;
+    bool bound=false,allocated=false,deleted=false;
+};
+struct RenderbufferBinding {JSWeakValue object;std::shared_ptr<Renderbuffer> renderbuffer;};
 struct Attachment {
     JSWeakValue object;
     std::shared_ptr<Texture> texture;
+    std::shared_ptr<Renderbuffer> renderbuffer;
     std::uint32_t target=0;int level=0,layer=-1;
 };
 struct Framebuffer {
@@ -47,10 +62,14 @@ struct Framebuffer {
     JSWeakValue object;
     std::shared_ptr<FramebufferStorage> storage;
     std::map<std::uint32_t,Attachment> attachments;
-    bool deleted=false;
+    std::vector<std::uint32_t> drawBuffers{colorAttachment0};
+    std::uint32_t readBuffer=colorAttachment0;
+    std::uint64_t revision=0;
+    bool bound=false,deleted=false;
     void clearAttachments() {
-        for(auto& [_,a]:attachments) if(a.texture) {
-            if(--a.texture->attachments==0 && a.texture->deleted)a.texture->storage.reset();
+        for(auto& [_,a]:attachments) {
+            if(a.texture && --a.texture->attachments==0 && a.texture->deleted)a.texture->storage.reset();
+            if(a.renderbuffer && --a.renderbuffer->attachments==0 && a.renderbuffer->deleted)a.renderbuffer->storage.reset();
         }
         attachments.clear();
     }
@@ -60,21 +79,27 @@ struct FramebufferBinding {JSWeakValue object;std::shared_ptr<Framebuffer> frame
 struct State {
     VulkanTextureCommands::Factory factory;
     VulkanTextureCommands::FramebufferFactory framebufferFactory;
+    VulkanTextureCommands::RenderbufferFactory renderbufferFactory;
     VulkanTextureCommands::Limits limits;
     // Descriptor limits can exceed a million units. Only bound units belong in
     // the ownership graph; querying or unbinding an empty unit allocates none.
     std::map<std::uint32_t,std::array<TextureBinding,4>> bindings;
     std::vector<std::weak_ptr<Texture>> textures;
     std::vector<std::weak_ptr<Framebuffer>> framebuffers;
+    std::vector<std::weak_ptr<Renderbuffer>> renderbuffers;
     FramebufferBinding draw,read;
+    RenderbufferBinding renderbuffer;
+    std::vector<std::uint32_t> defaultDrawBuffers{backBuffer};
+    std::uint32_t defaultReadBuffer=backBuffer;
+    std::uint64_t defaultFramebufferRevision=0;
     PixelStore unpack;
     int packAlignment=4;
     std::uint32_t activeUnit=0;
     std::uint64_t nextGeneration=1;
     std::array<bool,6> errors{};
     bool closed=false;
-    State(VulkanTextureCommands::Factory f,VulkanTextureCommands::FramebufferFactory fb,VulkanTextureCommands::Limits l)
-        :factory(std::move(f)),framebufferFactory(std::move(fb)),limits(l){}
+    State(VulkanTextureCommands::Factory f,VulkanTextureCommands::FramebufferFactory fb,VulkanTextureCommands::RenderbufferFactory rb,VulkanTextureCommands::Limits l)
+        :factory(std::move(f)),framebufferFactory(std::move(fb)),renderbufferFactory(std::move(rb)),limits(l){}
     void requireOpen()const {if(closed)throw JSTypeError("Vulkan texture commands are shut down");}
     void error(std::uint32_t value){errors[value-invalidEnum]=true;}
     std::uint32_t getError(){for(std::size_t i=0;i<errors.size();++i)if(errors[i]){errors[i]=false;return invalidEnum+std::uint32_t(i);}return 0;}
@@ -82,7 +107,8 @@ struct State {
         if(closed)return;closed=true;
         for(const auto& weak:framebuffers)if(auto f=weak.lock()){f->deleted=true;f->clearAttachments();f->storage.reset();}
         for(const auto& weak:textures)if(auto t=weak.lock()){t->deleted=true;t->storage.reset();}
-        bindings.clear();draw={};read={};textures.clear();framebuffers.clear();factory={};framebufferFactory={};
+        for(const auto& weak:renderbuffers)if(auto r=weak.lock()){r->deleted=true;r->storage.reset();}
+        bindings.clear();draw={};read={};renderbuffer={};textures.clear();framebuffers.clear();renderbuffers.clear();factory={};framebufferFactory={};renderbufferFactory={};
     }
     ~State(){close();}
 };
@@ -104,6 +130,11 @@ std::shared_ptr<Framebuffer> framebufferHandle(const JSValue& value,bool nullabl
     static_cast<void>(JSWeakValue(value));if(nullable&&(value.isNull()||value.isUndefined()))return {};
     if(!value.isHostObject(framebufferTag))throw JSTypeError("Expected a native Vulkan framebuffer handle");
     return std::static_pointer_cast<Framebuffer>(value.hostPayload(framebufferTag));
+}
+std::shared_ptr<Renderbuffer> renderbufferHandle(const JSValue& value,bool nullable=false){
+    static_cast<void>(JSWeakValue(value));if(nullable&&(value.isNull()||value.isUndefined()))return {};
+    if(!value.isHostObject(renderbufferTag))throw JSTypeError("Expected a native Vulkan renderbuffer handle");
+    return std::static_pointer_cast<Renderbuffer>(value.hostPayload(renderbufferTag));
 }
 std::optional<std::size_t> bindingIndex(std::uint32_t target){
     switch(target){case texture2D:return 0;case textureCube:return 1;case texture3D:return 2;case textureArray:return 3;default:return {};}
@@ -141,9 +172,15 @@ void setBinding(const JSValue& wrapper,State& c,std::size_t index,const JSValue&
 }
 JSNativeOwnerNode textureNode(const std::shared_ptr<Texture>& t){JSNativeOwnerNode n{t,{},{}};if(t->storage)n.edges.push_back({&t->storage,t->storage});return n;}
 void appendTexture(std::vector<JSNativeOwnerNode>& nodes,const std::shared_ptr<Texture>& t){nodes.push_back(textureNode(t));if(t->storage)nodes.push_back({t->storage,{},{}});}
+void appendRenderbuffer(std::vector<JSNativeOwnerNode>& nodes,const std::shared_ptr<Renderbuffer>& r){
+    JSNativeOwnerNode n{r,{},{}};if(r->storage){n.edges.push_back({&r->storage,r->storage});nodes.push_back({r->storage,{},{}});}nodes.push_back(std::move(n));
+}
 void appendFramebuffer(std::vector<JSNativeOwnerNode>& nodes,const std::shared_ptr<Framebuffer>& f){
     JSNativeOwnerNode n{f,{},{}};if(f->storage){n.edges.push_back({&f->storage,f->storage});nodes.push_back({f->storage,{},{}});}
-    for(const auto& [_,a]:f->attachments)if(a.texture){n.edges.push_back({&a.texture,a.texture});appendTexture(nodes,a.texture);}
+    for(const auto& [_,a]:f->attachments){
+        if(a.texture){n.edges.push_back({&a.texture,a.texture});appendTexture(nodes,a.texture);}
+        if(a.renderbuffer){n.edges.push_back({&a.renderbuffer,a.renderbuffer});appendRenderbuffer(nodes,a.renderbuffer);}
+    }
     nodes.push_back(std::move(n));
 }
 JSValue createTexture(const std::shared_ptr<State>& c){
@@ -163,6 +200,15 @@ JSValue createFramebuffer(const std::shared_ptr<State>& c){
     auto v=JSValue::hostObject(f,f.get(),framebufferTag);f->object=JSWeakValue(v);v.setInternalSlot("textureAttachments",JSValue::object());
     static const auto hooks=[]{auto h=std::make_shared<JSHostObjectHooks>();h->nativeOwnership=+[](const JSValue& v){std::vector<JSNativeOwnerNode> n;appendFramebuffer(n,framebufferHandle(v));return n;};return h;}();
     v.setHostHooks(hooks);if(c->framebuffers.size()%64==0)std::erase_if(c->framebuffers,[](const auto& w){return w.expired();});c->framebuffers.emplace_back(f);return v;
+}
+JSValue createRenderbuffer(const std::shared_ptr<State>& c){
+    if(!c->renderbufferFactory)throw JSTypeError("Vulkan renderbuffer storage is not installed");
+    auto r=std::make_shared<Renderbuffer>();r->owner=c;const auto factory=c->renderbufferFactory;
+    try{r->storage=factory();}catch(const std::bad_alloc&){c->requireOpen();c->error(outOfMemory);return nullptr;}
+    c->requireOpen();if(!r->storage){c->error(outOfMemory);return nullptr;}
+    auto v=JSValue::hostObject(r,r.get(),renderbufferTag);
+    static const auto hooks=[]{auto h=std::make_shared<JSHostObjectHooks>();h->nativeOwnership=+[](const JSValue& v){std::vector<JSNativeOwnerNode> n;appendRenderbuffer(n,renderbufferHandle(v));return n;};return h;}();
+    v.setHostHooks(hooks);if(c->renderbuffers.size()%64==0)std::erase_if(c->renderbuffers,[](const auto& w){return w.expired();});c->renderbuffers.emplace_back(r);return v;
 }
 struct View {InterpolantArray value;std::size_t bytes,elementSize;std::uint32_t type;};
 View view(const JSValue& v){
@@ -304,27 +350,72 @@ bool validParameter(State& c,std::uint32_t name,double value){
         default:c.error(invalidEnum);return false;
     }c.error(invalidEnum);return false;
 }
+struct FormatBits {int red=0,green=0,blue=0,alpha=0,depth=0,stencil=0;bool integer=false;};
+std::optional<FormatBits> renderbufferFormat(std::uint32_t format){
+    switch(format){
+        case 0x8229:return FormatBits{8};case 0x822b:return FormatBits{8,8};case 0x8051:return FormatBits{8,8,8};
+        case 0x8058:case 0x8c43:return FormatBits{8,8,8,8};case 0x8d62:return FormatBits{5,6,5};
+        case 0x8056:return FormatBits{4,4,4,4};case 0x8057:return FormatBits{5,5,5,1};case 0x8059:return FormatBits{10,10,10,2};
+        case 0x822d:return FormatBits{16};case 0x822f:return FormatBits{16,16};case 0x881a:return FormatBits{16,16,16,16};
+        case 0x822e:return FormatBits{32};case 0x8230:return FormatBits{32,32};case 0x8814:return FormatBits{32,32,32,32};case 0x8c3a:return FormatBits{11,11,10};
+        case 0x8231:case 0x8232:return FormatBits{8,0,0,0,0,0,true};case 0x8233:case 0x8234:return FormatBits{16,0,0,0,0,0,true};
+        case 0x8235:case 0x8236:return FormatBits{32,0,0,0,0,0,true};case 0x8237:case 0x8238:return FormatBits{8,8,0,0,0,0,true};
+        case 0x8239:case 0x823a:return FormatBits{16,16,0,0,0,0,true};case 0x823b:case 0x823c:return FormatBits{32,32,0,0,0,0,true};
+        case 0x8d8e:case 0x8d7c:return FormatBits{8,8,8,8,0,0,true};case 0x8d88:case 0x8d76:return FormatBits{16,16,16,16,0,0,true};
+        case 0x8d82:case 0x8d70:return FormatBits{32,32,32,32,0,0,true};case 0x906f:return FormatBits{10,10,10,2,0,0,true};
+        case 0x81a5:return FormatBits{0,0,0,0,16};case 0x81a6:return FormatBits{0,0,0,0,24};case 0x8cac:return FormatBits{0,0,0,0,32};
+        case 0x8d48:return FormatBits{0,0,0,0,0,8};case 0x84f9:case 0x88f0:return FormatBits{0,0,0,0,24,8};case 0x8cad:return FormatBits{0,0,0,0,32,8};
+        default:return {};
+    }
+}
+void framebufferRevisionAvailable(const Framebuffer& f){if(f.revision==std::numeric_limits<std::uint64_t>::max())throw JSRangeError("Vulkan framebuffer revision exhausted");}
+bool validFramebufferTarget(std::uint32_t target){return target==framebuffer||target==drawFramebuffer||target==readFramebuffer;}
+bool validAttachment(const State& c,std::uint32_t name){return (name>=colorAttachment0&&name-colorAttachment0<std::uint32_t(c.limits.maxColorAttachments))||name==depthAttachment||name==stencilAttachment||name==depthStencilAttachment;}
+std::vector<std::uint32_t> attachmentNames(std::uint32_t attachment){return attachment==depthStencilAttachment?std::vector<std::uint32_t>{depthAttachment,stencilAttachment}:std::vector<std::uint32_t>{attachment};}
+void clearAttachment(Framebuffer& f,std::uint32_t name){
+    const auto it=f.attachments.find(name);if(it==f.attachments.end())return;
+    auto& a=it->second;
+    if(a.texture&&--a.texture->attachments==0&&a.texture->deleted)a.texture->storage.reset();
+    if(a.renderbuffer&&--a.renderbuffer->attachments==0&&a.renderbuffer->deleted)a.renderbuffer->storage.reset();
+    f.attachments.erase(it);
+}
+void attachmentRoot(const Framebuffer& f,std::uint32_t name,const JSValue& object){
+    if(const auto wrapper=f.object.lock())wrapper->getInternalSlot("textureAttachments").set(std::to_string(name),object);
+}
+std::vector<std::uint32_t> enumSequence(const JSValue& value){
+    std::vector<std::uint32_t> result;auto iterator=getJSIterator(value);
+    while(const auto item=stepJSIterator(iterator))result.push_back(unsignedInteger(*item));
+    return result;
+}
 JSValue getParameter(State& c,std::uint32_t name){
     switch(name){case 0x84e0:return texture0+c.activeUnit;case 0x0cf5:return c.unpack.alignment;case 0x0d05:return c.packAlignment;
         case 0x0cf2:return c.unpack.rowLength;case 0x806e:return c.unpack.imageHeight;case 0x0cf4:return c.unpack.skipPixels;case 0x0cf3:return c.unpack.skipRows;case 0x806d:return c.unpack.skipImages;
         case 0x9240:return c.unpack.flipY;case 0x9241:return c.unpack.premultiplyAlpha;case 0x9243:return c.unpack.colorSpaceConversion;
         case 0x0d33:return c.limits.maxTextureSize;case 0x851c:return c.limits.maxCubeMapSize;case 0x8073:return c.limits.max3DTextureSize;case 0x88ff:return c.limits.maxArrayLayers;
         case 0x8872:case 0x8b4d:return c.limits.maxTextureUnits;case 0x8d57:return c.limits.maxSamples;
+        case 0x84e8:return c.limits.maxRenderbufferSize;case 0x8cdf:return c.limits.maxColorAttachments;case 0x8824:return c.limits.maxDrawBuffers;
         case 0x8069:return bindingObject(c,c.activeUnit,0);case 0x8514:return bindingObject(c,c.activeUnit,1);case 0x806a:return bindingObject(c,c.activeUnit,2);case 0x8c1d:return bindingObject(c,c.activeUnit,3);
-        case 0x8ca6:return weakObject(c.draw.object);case 0x8caa:return weakObject(c.read.object);default:c.error(invalidEnum);return nullptr;
+        case 0x8ca6:return weakObject(c.draw.object);case 0x8caa:return weakObject(c.read.object);case 0x8ca7:return weakObject(c.renderbuffer.object);
+        case 0x0c02:return c.read.framebuffer?c.read.framebuffer->readBuffer:c.defaultReadBuffer;
+        default:
+            if(name>=0x8825&&name-0x8825<std::uint32_t(c.limits.maxDrawBuffers)){
+                const auto& buffers=c.draw.framebuffer?c.draw.framebuffer->drawBuffers:c.defaultDrawBuffers;
+                const auto index=name-0x8825;return index<buffers.size()?buffers[index]:0;
+            }
+            c.error(invalidEnum);return nullptr;
     }
 }
 std::shared_ptr<Framebuffer> boundFramebuffer(State& c,std::uint32_t target){
     if(target!=framebuffer&&target!=drawFramebuffer&&target!=readFramebuffer){c.error(invalidEnum);return {};}
     const auto f=(target==readFramebuffer?c.read:c.draw).framebuffer;if(!f||f->deleted||!f->storage){c.error(invalidOperation);return {};}return f;
 }
-bool validAttachment(std::uint32_t name){return (name>=0x8ce0&&name<0x8d00)||name==0x8d00||name==0x8d20||name==0x821a;}
 JSValue attachTexture(const std::shared_ptr<State>& c,const Args& a,bool layered){
     requireArgs(a,5);const auto target=unsignedInteger(a[0]),attachment=unsignedInteger(a[1]);
     const auto imageTarget=layered?0u:unsignedInteger(a[2]);const auto& object=a[layered?2:3];const auto t=texture(object,true);
     const int level=integer(a[layered?3:4]),layer=layered?integer(a[4]):-1;c->requireOpen();
     const auto f=boundFramebuffer(*c,target);if(!f)return {};
-    if(!validAttachment(attachment)){c->error(invalidEnum);return {};}
+    if(!validAttachment(*c,attachment)){c->error(invalidEnum);return {};}
+    if(!layered&&!isImageTarget(imageTarget,false)){c->error(invalidEnum);return {};}
     if(level<0||(layered&&layer<0)){c->error(invalidValue);return {};}
     if(t&&(t->owner.lock()!=c||t->deleted||!t->storage)){c->error(invalidOperation);return {};}
     if(t){
@@ -333,17 +424,102 @@ JSValue attachTexture(const std::shared_ptr<State>& c,const Args& a,bool layered
         if(!layered&&(!isImageTarget(imageTarget,false)||bindingTarget(imageTarget)!=*t->target)){c->error(invalidOperation);return {};}
     }
     const auto actualTarget=t?(layered?*t->target:imageTarget):imageTarget;
-    f->storage->texture(attachment,t?t->storage:nullptr,actualTarget,level,layer);c->requireOpen();
-    if(const auto it=f->attachments.find(attachment);it!=f->attachments.end()){
-        auto old=it->second.texture;if(old&&--old->attachments==0&&old->deleted)old->storage.reset();f->attachments.erase(it);
+    framebufferRevisionAvailable(*f);f->storage->texture(attachment,t?t->storage:nullptr,actualTarget,level,layer);c->requireOpen();
+    for(const auto name:attachmentNames(attachment)){
+        clearAttachment(*f,name);attachmentRoot(*f,name,t?object:JSValue(nullptr));
+        if(t){++t->attachments;f->attachments.emplace(name,Attachment{JSWeakValue(object),t,{},actualTarget,level,layer});}
     }
-    if(const auto wrapper=f->object.lock())wrapper->getInternalSlot("textureAttachments").set(std::to_string(attachment),t?object:JSValue(nullptr));
-    if(t){++t->attachments;f->attachments.emplace(attachment,Attachment{JSWeakValue(object),t,actualTarget,level,layer});}return {};
+    ++f->revision;return {};
+}
+JSValue allocateRenderbuffer(const std::shared_ptr<State>& c,const Args& a,bool multisample){
+    requireArgs(a,multisample?5:4);const auto target=unsignedInteger(a[0]);
+    const int samples=multisample?integer(a[1]):0;const auto format=unsignedInteger(a[multisample?2:1]);
+    const int width=integer(a[multisample?3:2]),height=integer(a[multisample?4:3]);c->requireOpen();
+    if(target!=renderbufferTarget){c->error(invalidEnum);return {};}
+    const auto bits=renderbufferFormat(format);if(!bits){c->error(invalidEnum);return {};}
+    if(width<0||height<0||width>c->limits.maxRenderbufferSize||height>c->limits.maxRenderbufferSize||samples<0||samples>c->limits.maxSamples){c->error(invalidValue);return {};}
+    if(samples>0&&(bits->integer||format==0x84f9)){c->error(invalidOperation);return {};}
+    const auto r=c->renderbuffer.renderbuffer;if(!r||r->deleted||!r->storage){c->error(invalidOperation);return {};}
+    const auto actualFormat=format==0x84f9?0x88f0u:format;
+    try{r->storage->allocate(actualFormat,width,height,samples);}catch(const std::bad_alloc&){c->requireOpen();c->error(outOfMemory);return {};}
+    c->requireOpen();r->internalFormat=actualFormat;r->width=width;r->height=height;r->samples=samples;r->allocated=true;return {};
+}
+JSValue renderbufferParameter(const std::shared_ptr<State>& c,const Args& a){
+    requireArgs(a,2);const auto target=unsignedInteger(a[0]),pname=unsignedInteger(a[1]);c->requireOpen();
+    if(target!=renderbufferTarget){c->error(invalidEnum);return nullptr;}
+    const auto r=c->renderbuffer.renderbuffer;if(!r||r->deleted||!r->storage){c->error(invalidOperation);return nullptr;}
+    const auto bits=r->allocated?renderbufferFormat(r->internalFormat).value():FormatBits{};
+    switch(pname){case 0x8d42:return r->width;case 0x8d43:return r->height;case 0x8d44:return r->internalFormat;case 0x8cab:return r->samples;
+        case 0x8d50:return bits.red;case 0x8d51:return bits.green;case 0x8d52:return bits.blue;case 0x8d53:return bits.alpha;case 0x8d54:return bits.depth;case 0x8d55:return bits.stencil;
+        default:c->error(invalidEnum);return nullptr;}
+}
+JSValue attachRenderbuffer(const std::shared_ptr<State>& c,const Args& a){
+    requireArgs(a,4);const auto target=unsignedInteger(a[0]),attachment=unsignedInteger(a[1]),bufferTarget=unsignedInteger(a[2]);
+    const auto r=renderbufferHandle(a[3],true);c->requireOpen();const auto f=boundFramebuffer(*c,target);if(!f)return {};
+    if(!validAttachment(*c,attachment)||bufferTarget!=renderbufferTarget){c->error(invalidEnum);return {};}
+    if(r&&(r->owner.lock()!=c||r->deleted||!r->storage||!r->bound)){c->error(invalidOperation);return {};}
+    framebufferRevisionAvailable(*f);f->storage->renderbuffer(attachment,r?r->storage:nullptr);c->requireOpen();
+    for(const auto name:attachmentNames(attachment)){
+        clearAttachment(*f,name);attachmentRoot(*f,name,r?a[3]:JSValue(nullptr));
+        if(r){++r->attachments;f->attachments.emplace(name,Attachment{JSWeakValue(a[3]),{},r,renderbufferTarget,0,-1});}
+    }
+    ++f->revision;return {};
+}
+JSValue drawBuffers(const std::shared_ptr<State>& c,const Args& a){
+    requireArgs(a,1);auto buffers=enumSequence(a[0]);c->requireOpen();
+    if(buffers.size()>std::size_t(c->limits.maxDrawBuffers)){c->error(invalidValue);return {};}
+    for(const auto value:buffers)if(value!=0&&value!=backBuffer&&!(value>=colorAttachment0&&value-colorAttachment0<std::uint32_t(c->limits.maxColorAttachments))){c->error(invalidEnum);return {};}
+    const auto f=c->draw.framebuffer;
+    if(!f){
+        if(buffers.size()!=1||(buffers[0]!=0&&buffers[0]!=backBuffer)){c->error(invalidOperation);return {};}
+        if(c->defaultFramebufferRevision==std::numeric_limits<std::uint64_t>::max())throw JSRangeError("Vulkan framebuffer revision exhausted");
+        c->defaultDrawBuffers=std::move(buffers);++c->defaultFramebufferRevision;
+    }else{
+        for(std::size_t i=0;i<buffers.size();++i)if(buffers[i]!=0&&buffers[i]!=colorAttachment0+i){c->error(invalidOperation);return {};}
+        framebufferRevisionAvailable(*f);f->drawBuffers=std::move(buffers);++f->revision;
+    }
+    return {};
+}
+JSValue readBuffer(const std::shared_ptr<State>& c,const Args& a){
+    requireArgs(a,1);const auto value=unsignedInteger(a[0]);c->requireOpen();
+    if(value!=0&&value!=backBuffer&&!(value>=colorAttachment0&&value-colorAttachment0<std::uint32_t(c->limits.maxColorAttachments))){c->error(invalidEnum);return {};}
+    const auto f=c->read.framebuffer;
+    if(!f){
+        if(value!=0&&value!=backBuffer){c->error(invalidOperation);return {};}
+        if(c->defaultFramebufferRevision==std::numeric_limits<std::uint64_t>::max())throw JSRangeError("Vulkan framebuffer revision exhausted");
+        c->defaultReadBuffer=value;++c->defaultFramebufferRevision;
+    }else{
+        if(value==backBuffer){c->error(invalidOperation);return {};}
+        framebufferRevisionAvailable(*f);f->readBuffer=value;++f->revision;
+    }
+    return {};
+}
+JSValue attachmentParameter(const std::shared_ptr<State>& c,const Args& a){
+    requireArgs(a,3);const auto target=unsignedInteger(a[0]),attachment=unsignedInteger(a[1]),pname=unsignedInteger(a[2]);c->requireOpen();
+    if(!validFramebufferTarget(target)){c->error(invalidEnum);return nullptr;}
+    const auto f=(target==readFramebuffer?c->read:c->draw).framebuffer;
+    if(!f)throw JSTypeError("Default framebuffer attachment queries require the renderer surface boundary");
+    if(!validAttachment(*c,attachment)){c->error(invalidEnum);return nullptr;}
+    const auto it=f->attachments.find(attachment==depthStencilAttachment?depthAttachment:attachment);
+    const Attachment* image=it==f->attachments.end()?nullptr:&it->second;
+    if(attachment==depthStencilAttachment){
+        const auto stencil=f->attachments.find(stencilAttachment);const auto other=stencil==f->attachments.end()?nullptr:&stencil->second;
+        if(bool(image)!=bool(other)||(image&&(image->texture!=other->texture||image->renderbuffer!=other->renderbuffer||image->target!=other->target||image->level!=other->level||image->layer!=other->layer))){c->error(invalidOperation);return nullptr;}
+    }
+    if(pname==0x8cd0)return image?(image->texture?0x1702:renderbufferTarget):0;
+    if(pname==0x8cd1)return image?weakObject(image->object):JSValue(nullptr);
+    if(!image){c->error(invalidOperation);return nullptr;}
+    if(pname==0x8cd2||pname==0x8cd3||pname==0x8cd4){
+        if(!image->texture){c->error(invalidOperation);return nullptr;}
+        return pname==0x8cd2?image->level:pname==0x8cd3?(image->target>=firstFace&&image->target<=lastFace?image->target:0):std::max(0,image->layer);
+    }
+    c->error(invalidEnum);return nullptr;
 }
 JSValue command(const JSValue&,const Args& a,const Args& captures){
     const auto c=state(captures[0]);c->requireOpen();const auto name=captures[1].string();
     if(name=="createTexture")return createTexture(c);
     if(name=="createFramebuffer")return createFramebuffer(c);
+    if(name=="createRenderbuffer")return createRenderbuffer(c);
     if(name=="getError")return c->getError();
     if(name=="activeTexture"){requireArgs(a,1);const auto unit=unsignedInteger(a[0]);c->requireOpen();if(unit<texture0||unit-texture0>=std::uint32_t(c->limits.maxTextureUnits))c->error(invalidEnum);else c->activeUnit=unit-texture0;return {};}
     if(name=="bindTexture"){
@@ -363,11 +539,17 @@ JSValue command(const JSValue&,const Args& a,const Args& captures){
         // Deleting from the currently bound framebuffer detaches the attachment.
         // Other framebuffer attachments retain the GL object's backing storage.
         for(auto f:{c->draw.framebuffer,c->read.framebuffer})if(f){std::vector<std::uint32_t> names;for(const auto& [n,a]:f->attachments)if(a.texture==t)names.push_back(n);
-            for(const auto n:names){const auto old=f->attachments.at(n);f->storage->texture(n,nullptr,old.target,old.level,old.layer);f->attachments.erase(n);--t->attachments;if(const auto wrapper=f->object.lock())wrapper->getInternalSlot("textureAttachments").set(std::to_string(n),nullptr);}}
+            for(const auto n:names){const auto old=f->attachments.at(n);framebufferRevisionAvailable(*f);f->storage->texture(n,nullptr,old.target,old.level,old.layer);clearAttachment(*f,n);attachmentRoot(*f,n,nullptr);++f->revision;}}
         if(!t->attachments)t->storage.reset();return {};
     }
     if(name=="isTexture"){requireArgs(a,1);if(!a[0].isHostObject(textureTag))return false;const auto t=texture(a[0]);return t->owner.lock()==c&&!t->deleted&&bool(t->target);}
     if(name=="pixelStorei")return pixelStore(*c,a);
+    if(name=="renderbufferStorage"||name=="renderbufferStorageMultisample")return allocateRenderbuffer(c,a,name=="renderbufferStorageMultisample");
+    if(name=="getRenderbufferParameter")return renderbufferParameter(c,a);
+    if(name=="framebufferRenderbuffer")return attachRenderbuffer(c,a);
+    if(name=="drawBuffers")return drawBuffers(c,a);
+    if(name=="readBuffer")return readBuffer(c,a);
+    if(name=="getFramebufferAttachmentParameter")return attachmentParameter(c,a);
     if(name=="getParameter"){requireArgs(a,1);const auto pname=unsignedInteger(a[0]);c->requireOpen();return getParameter(*c,pname);}
     if(name=="texStorage2D"||name=="texStorage3D")return storageCommand(c,a,name=="texStorage3D");
     if(name=="texImage2D"||name=="texImage3D"||name=="texSubImage2D"||name=="texSubImage3D")return imageCommand(c,a,name.ends_with("3D"),name.starts_with("texSub"));
@@ -405,6 +587,7 @@ JSValue command(const JSValue&,const Args& a,const Args& captures){
         requireArgs(a,2);const auto target=unsignedInteger(a[0]);const auto f=framebufferHandle(a[1],true);c->requireOpen();
         if(target!=framebuffer&&target!=drawFramebuffer&&target!=readFramebuffer){c->error(invalidEnum);return {};}
         if(f&&(f->owner.lock()!=c||f->deleted)){c->error(invalidOperation);return {};}
+        if(f)f->bound=true;
         const auto value=f?a[1]:JSValue(nullptr);const FramebufferBinding b{JSWeakValue(value),f};
         if(target!=readFramebuffer){slot(captures[0],"drawFramebuffer",value);c->draw=b;}
         if(target!=drawFramebuffer){slot(captures[0],"readFramebuffer",value);c->read=b;}return {};
@@ -416,7 +599,25 @@ JSValue command(const JSValue&,const Args& a,const Args& captures){
         if(c->draw.framebuffer==f){slot(captures[0],"drawFramebuffer",nullptr);c->draw={};}
         if(c->read.framebuffer==f){slot(captures[0],"readFramebuffer",nullptr);c->read={};}return {};
     }
-    if(name=="isFramebuffer"){requireArgs(a,1);if(!a[0].isHostObject(framebufferTag))return false;const auto f=framebufferHandle(a[0]);return f->owner.lock()==c&&!f->deleted;}
+    if(name=="isFramebuffer"){requireArgs(a,1);if(!a[0].isHostObject(framebufferTag))return false;const auto f=framebufferHandle(a[0]);return f->owner.lock()==c&&!f->deleted&&f->bound;}
+    if(name=="bindRenderbuffer"){
+        requireArgs(a,2);const auto target=unsignedInteger(a[0]);const auto r=renderbufferHandle(a[1],true);c->requireOpen();
+        if(target!=renderbufferTarget){c->error(invalidEnum);return {};}
+        if(r&&(r->owner.lock()!=c||r->deleted)){c->error(invalidOperation);return {};}
+        if(r)r->bound=true;const auto value=r?a[1]:JSValue(nullptr);
+        slot(captures[0],"renderbuffer",value);c->renderbuffer={JSWeakValue(value),r};return {};
+    }
+    if(name=="deleteRenderbuffer"){
+        requireArgs(a,1);const auto r=renderbufferHandle(a[0],true);if(!r)return {};if(r->owner.lock()!=c){c->error(invalidOperation);return {};}
+        if(r->deleted)return {};r->deleted=true;
+        if(c->renderbuffer.renderbuffer==r){slot(captures[0],"renderbuffer",nullptr);c->renderbuffer={};}
+        for(auto f:{c->draw.framebuffer,c->read.framebuffer})if(f){
+            std::vector<std::uint32_t> names;for(const auto& [name,attachment]:f->attachments)if(attachment.renderbuffer==r)names.push_back(name);
+            for(const auto name:names){framebufferRevisionAvailable(*f);f->storage->renderbuffer(name,nullptr);clearAttachment(*f,name);attachmentRoot(*f,name,nullptr);++f->revision;}
+        }
+        if(!r->attachments)r->storage.reset();return {};
+    }
+    if(name=="isRenderbuffer"){requireArgs(a,1);if(!a[0].isHostObject(renderbufferTag))return false;const auto r=renderbufferHandle(a[0]);return r->owner.lock()==c&&!r->deleted&&r->bound;}
     if(name=="framebufferTexture2D"||name=="framebufferTextureLayer")return attachTexture(c,a,name=="framebufferTextureLayer");
     if(name=="checkFramebufferStatus"){
         requireArgs(a,1);const auto target=unsignedInteger(a[0]);c->requireOpen();
@@ -434,22 +635,26 @@ std::shared_ptr<Texture> readable(const JSValue& stateValue,const JSValue& value
 }
 VulkanTextureCommands::VulkanTextureCommands(Factory factory,FramebufferFactory framebuffers)
     :VulkanTextureCommands(std::move(factory),std::move(framebuffers),Limits{}){}
-VulkanTextureCommands::VulkanTextureCommands(Factory factory,FramebufferFactory framebuffers,Limits limits):object_(JSValue::object()){
+VulkanTextureCommands::VulkanTextureCommands(Factory factory,FramebufferFactory framebuffers,Limits limits)
+    :VulkanTextureCommands(std::move(factory),std::move(framebuffers),{},limits){}
+VulkanTextureCommands::VulkanTextureCommands(Factory factory,FramebufferFactory framebuffers,RenderbufferFactory renderbuffers,Limits limits):object_(JSValue::object()){
     if(!factory)throw std::invalid_argument("Vulkan texture storage factory is required");
-    if(limits.maxTextureUnits<=0||limits.maxTextureSize<=0||limits.maxCubeMapSize<=0||limits.max3DTextureSize<=0||limits.maxArrayLayers<=0||limits.maxSamples<0)throw std::invalid_argument("Invalid Vulkan texture limits");
-    auto c=std::make_shared<State>(std::move(factory),std::move(framebuffers),limits);state_=JSValue::hostObject(c,c.get(),stateTag);
+    if(limits.maxTextureUnits<=0||limits.maxTextureSize<=0||limits.maxCubeMapSize<=0||limits.max3DTextureSize<=0||limits.maxArrayLayers<=0||limits.maxSamples<0||limits.maxRenderbufferSize<=0||limits.maxColorAttachments<=0||limits.maxColorAttachments>32||limits.maxDrawBuffers<=0||limits.maxDrawBuffers>limits.maxColorAttachments)throw std::invalid_argument("Invalid Vulkan texture limits");
+    auto c=std::make_shared<State>(std::move(factory),std::move(framebuffers),std::move(renderbuffers),limits);state_=JSValue::hostObject(c,c.get(),stateTag);
     state_.setInternalSlot("textureBindings",JSValue::object(nullptr));state_.setInternalSlot("drawFramebuffer",nullptr);state_.setInternalSlot("readFramebuffer",nullptr);
+    state_.setInternalSlot("renderbuffer",nullptr);
     static const auto hooks=[]{auto h=std::make_shared<JSHostObjectHooks>();h->nativeOwnership=+[](const JSValue& v){
         const auto c=state(v);JSNativeOwnerNode n{c,{},{}};std::vector<JSNativeOwnerNode> nodes;
         for(const auto& [_,unit]:c->bindings)for(const auto& b:unit)if(b.texture){n.edges.push_back({&b.texture,b.texture});appendTexture(nodes,b.texture);}
         for(const auto* b:{&c->draw,&c->read})if(b->framebuffer){n.edges.push_back({&b->framebuffer,b->framebuffer});appendFramebuffer(nodes,b->framebuffer);}
+        if(c->renderbuffer.renderbuffer){n.edges.push_back({&c->renderbuffer.renderbuffer,c->renderbuffer.renderbuffer});appendRenderbuffer(nodes,c->renderbuffer.renderbuffer);}
         nodes.push_back(std::move(n));return nodes;};return h;}();state_.setHostHooks(hooks);
     for(const auto& [name,arity]:std::initializer_list<std::pair<const char*,unsigned>>{
         {"createTexture",0},{"bindTexture",2},{"deleteTexture",1},{"isTexture",1},{"activeTexture",1},{"pixelStorei",2},{"getParameter",1},{"getError",0},
         {"texStorage2D",5},{"texStorage3D",6},{"texImage2D",9},{"texImage3D",10},{"texSubImage2D",9},{"texSubImage3D",11},
         {"texParameteri",3},{"texParameterf",3},{"generateMipmap",1},
         {"createFramebuffer",0},{"bindFramebuffer",2},{"deleteFramebuffer",1},{"isFramebuffer",1},{"framebufferTexture2D",5},{"framebufferTextureLayer",5},{"checkFramebufferStatus",1},
-        {"createRenderbuffer",0},{"bindRenderbuffer",2},{"deleteRenderbuffer",1},{"renderbufferStorage",4},{"renderbufferStorageMultisample",5},{"framebufferRenderbuffer",4},
+        {"createRenderbuffer",0},{"bindRenderbuffer",2},{"deleteRenderbuffer",1},{"isRenderbuffer",1},{"renderbufferStorage",4},{"renderbufferStorageMultisample",5},{"framebufferRenderbuffer",4},{"getRenderbufferParameter",2},{"getFramebufferAttachmentParameter",3},
         {"compressedTexImage2D",7},{"compressedTexImage3D",8},{"compressedTexSubImage2D",8},{"compressedTexSubImage3D",10},
         {"copyTexSubImage2D",8},{"copyTexSubImage3D",9},{"copyTexImage2D",8},{"blitFramebuffer",10},{"invalidateFramebuffer",2},{"drawBuffers",1},{"readBuffer",1},{"readPixels",7}})
         property(object_,name,JSValue::function(command,{state_,name},name,arity));
@@ -464,10 +669,35 @@ std::shared_ptr<VulkanTextureCommands::Storage> VulkanTextureCommands::storage(c
 std::uint64_t VulkanTextureCommands::revision(const JSValue& value)const{return readable(state_,value)->revision;}
 std::uint64_t VulkanTextureCommands::generation(const JSValue& value)const{const auto c=state(state_);c->requireOpen();const auto t=texture(value);if(t->owner.lock()!=c)throw JSTypeError("Foreign Vulkan texture handle");return t->generation;}
 bool VulkanTextureCommands::isDeleted(const JSValue& value)const{const auto c=state(state_);c->requireOpen();const auto t=texture(value);if(t->owner.lock()!=c)throw JSTypeError("Foreign Vulkan texture handle");return t->deleted;}
+JSValue VulkanTextureCommands::boundFramebuffer(std::uint32_t target)const{
+    const auto c=state(state_);c->requireOpen();if(!validFramebufferTarget(target))throw JSRangeError("Invalid Vulkan framebuffer binding target");
+    return weakObject((target==readFramebuffer?c->read:c->draw).object);
+}
+std::shared_ptr<VulkanTextureCommands::FramebufferStorage> VulkanTextureCommands::framebufferStorage(const JSValue& value)const{
+    const auto c=state(state_);c->requireOpen();const auto f=framebufferHandle(value,true);if(!f)return {};
+    if(f->owner.lock()!=c||f->deleted||!f->storage)throw JSTypeError("Vulkan framebuffer is foreign, deleted, or unavailable");return f->storage;
+}
+std::vector<std::uint32_t> VulkanTextureCommands::framebufferDrawBuffers(const JSValue& value)const{
+    const auto c=state(state_);c->requireOpen();const auto f=framebufferHandle(value,true);if(!f)return c->defaultDrawBuffers;
+    if(f->owner.lock()!=c||f->deleted||!f->storage)throw JSTypeError("Vulkan framebuffer is foreign, deleted, or unavailable");return f->drawBuffers;
+}
+std::uint32_t VulkanTextureCommands::framebufferReadBuffer(const JSValue& value)const{
+    const auto c=state(state_);c->requireOpen();const auto f=framebufferHandle(value,true);if(!f)return c->defaultReadBuffer;
+    if(f->owner.lock()!=c||f->deleted||!f->storage)throw JSTypeError("Vulkan framebuffer is foreign, deleted, or unavailable");return f->readBuffer;
+}
+std::uint64_t VulkanTextureCommands::framebufferRevision(const JSValue& value)const{
+    const auto c=state(state_);c->requireOpen();const auto f=framebufferHandle(value,true);if(!f)return c->defaultFramebufferRevision;
+    if(f->owner.lock()!=c||f->deleted||!f->storage)throw JSTypeError("Vulkan framebuffer is foreign, deleted, or unavailable");return f->revision;
+}
+JSValue VulkanTextureCommands::boundRenderbuffer()const{const auto c=state(state_);c->requireOpen();return weakObject(c->renderbuffer.object);}
+std::shared_ptr<VulkanTextureCommands::RenderbufferStorage> VulkanTextureCommands::renderbufferStorage(const JSValue& value)const{
+    const auto c=state(state_);c->requireOpen();const auto r=renderbufferHandle(value);
+    if(r->owner.lock()!=c||r->deleted||!r->storage)throw JSTypeError("Vulkan renderbuffer is foreign, deleted, or unavailable");return r->storage;
+}
 void VulkanTextureCommands::shutdown(){
     const auto c=state(state_);
     for(const auto& weak:c->framebuffers)if(const auto f=weak.lock())if(const auto wrapper=f->object.lock())slot(*wrapper,"textureAttachments",nullptr);
-    c->close();state_.setInternalSlot("textureBindings",nullptr);state_.setInternalSlot("drawFramebuffer",nullptr);state_.setInternalSlot("readFramebuffer",nullptr);
+    c->close();state_.setInternalSlot("textureBindings",nullptr);state_.setInternalSlot("drawFramebuffer",nullptr);state_.setInternalSlot("readFramebuffer",nullptr);state_.setInternalSlot("renderbuffer",nullptr);
 }
 
 namespace {
@@ -504,6 +734,7 @@ void defineEnums(JSValue object){
         {"DEPTH_TEST",0x0B71},
         {"DRAW_FRAMEBUFFER",0x8CA9},
         {"DRAW_FRAMEBUFFER_BINDING",0x8CA6},
+        {"DRAW_BUFFER0",0x8825},
         {"DST_ALPHA",0x0304},
         {"DST_COLOR",0x0306},
         {"EQUAL",0x0202},
@@ -511,6 +742,15 @@ void defineEnums(JSValue object){
         {"FRAMEBUFFER",0x8D40},
         {"FRAMEBUFFER_BINDING",0x8CA6},
         {"FRAMEBUFFER_COMPLETE",0x8CD5},
+        {"FRAMEBUFFER_INCOMPLETE_ATTACHMENT",0x8CD6},
+        {"FRAMEBUFFER_INCOMPLETE_MISSING_ATTACHMENT",0x8CD7},
+        {"FRAMEBUFFER_UNSUPPORTED",0x8CDD},
+        {"FRAMEBUFFER_INCOMPLETE_MULTISAMPLE",0x8D56},
+        {"FRAMEBUFFER_ATTACHMENT_OBJECT_TYPE",0x8CD0},
+        {"FRAMEBUFFER_ATTACHMENT_OBJECT_NAME",0x8CD1},
+        {"FRAMEBUFFER_ATTACHMENT_TEXTURE_LEVEL",0x8CD2},
+        {"FRAMEBUFFER_ATTACHMENT_TEXTURE_CUBE_MAP_FACE",0x8CD3},
+        {"FRAMEBUFFER_ATTACHMENT_TEXTURE_LAYER",0x8CD4},
         {"FRONT",0x0404},
         {"FRONT_AND_BACK",0x0408},
         {"FUNC_ADD",0x8006},
@@ -533,6 +773,9 @@ void defineEnums(JSValue object){
         {"MAX_3D_TEXTURE_SIZE",0x8073},
         {"MAX_ARRAY_TEXTURE_LAYERS",0x88FF},
         {"MAX_COMBINED_TEXTURE_IMAGE_UNITS",0x8B4D},
+        {"MAX_COLOR_ATTACHMENTS",0x8CDF},
+        {"MAX_DRAW_BUFFERS",0x8824},
+        {"MAX_RENDERBUFFER_SIZE",0x84E8},
         {"MAX_CUBE_MAP_TEXTURE_SIZE",0x851C},
         {"MAX_SAMPLES",0x8D57},
         {"MAX_TEXTURE_IMAGE_UNITS",0x8872},
@@ -571,9 +814,21 @@ void defineEnums(JSValue object){
         {"R8UI",0x8232},
         {"READ_FRAMEBUFFER",0x8CA8},
         {"READ_FRAMEBUFFER_BINDING",0x8CAA},
+        {"READ_BUFFER",0x0C02},
         {"RED",0x1903},
         {"RED_INTEGER",0x8D94},
         {"RENDERBUFFER",0x8D41},
+        {"RENDERBUFFER_BINDING",0x8CA7},
+        {"RENDERBUFFER_WIDTH",0x8D42},
+        {"RENDERBUFFER_HEIGHT",0x8D43},
+        {"RENDERBUFFER_INTERNAL_FORMAT",0x8D44},
+        {"RENDERBUFFER_RED_SIZE",0x8D50},
+        {"RENDERBUFFER_GREEN_SIZE",0x8D51},
+        {"RENDERBUFFER_BLUE_SIZE",0x8D52},
+        {"RENDERBUFFER_ALPHA_SIZE",0x8D53},
+        {"RENDERBUFFER_DEPTH_SIZE",0x8D54},
+        {"RENDERBUFFER_STENCIL_SIZE",0x8D55},
+        {"RENDERBUFFER_SAMPLES",0x8CAB},
         {"REPEAT",0x2901},
         {"RG",0x8227},
         {"RG16F",0x822F},
@@ -617,6 +872,8 @@ void defineEnums(JSValue object){
         {"SRC_COLOR",0x0300},
         {"SRGB8_ALPHA8",0x8C43},
         {"STENCIL_BUFFER_BIT",0x00000400},
+        {"STENCIL_ATTACHMENT",0x8D20},
+        {"STENCIL_INDEX8",0x8D48},
         {"STENCIL_TEST",0x0B90},
         {"TEXTURE0",0x84C0},
         {"TEXTURE_2D",0x0DE1},

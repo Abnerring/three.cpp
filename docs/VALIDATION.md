@@ -1,3 +1,17 @@
+# 2026-11-06: canonical render targets and native Vulkan framebuffer execution
+
+Pinned source `11738a9d55e502fb484cefffcea3a66dc44e9fe9`; parent commit `c2c23698`.
+
+- Canonical target/class differential: 7931 comparisons, including all original metadata/defaults, shared target switching/sizing cells, dynamic super/newTarget and setter throws, copy/clone ownership and aliases, disposal/resize listener changes and callback reentry. Independent original-source recording oracle: 7 lifecycle/state scenarios / 66 assertions; this oracle does not rasterize.
+- Actual target GPU test: 18 groups / 285 assertions / 82 renders. Covers default RGBA8, R8/RG8 clear/draw/sampling and missing-channel defaults, optional real depth renderbuffer occlusion, viewport/scissor and four-quadrant orientation, nonzero mip scratch FBOs, base-vs-mip writes, per-native-image feedback intervals, framebuffer completeness/error no-ops, independent READ/DRAW and default status, drawBuffers NONE, target and screen restoration, nested callback switching, old descriptor generations through dispose/rebuild, typed/raw guards and screen-size separation.
+- Shader adapter checks: actual SPIR-V and reflected ABI for signed private height, scalar/vec2/vec3/vec4 dFdy with single operand evaluation, derivative-only UBO injection and unchanged dFdx/fwidth/textureGrad paths. Screen and offscreen raw shaders have actual coordinate/derivative pixel goldens. Native uniform storage preserves positive and negative backend heights.
+- Seven CPU CTests pass: shader compiler, program commands, texture commands, native ESSL program compiler/interface/frontend and program uniforms. Texture commands: 401 assertions / 27 cases; program commands: 370 / 15; uniforms: 54 / 7.
+- Fourteen existing actual GPU CTests pass: typed renderer/cube/target textures; managed draw, program, textures, integer inputs, lighting, sampler shapes and deformation; source program draw; native source-program GPU; OpenGL-versus-Vulkan builtin and uniform oracles. New render-target test is counted separately above. The OpenGL oracle is test-only.
+- Complete core suite: 1784 cases / 219362 assertions. Complete addon suite: 1441 / 39577. No GC/performance optimization is claimed. Source generators reproduce three identical C++ files; final selected Ninja dry run has no work.
+- Audit --check and all 5 audit tests pass. Counts: partial 619 / renderer pending 290 / missing 322 / dependency unverified 20. These are inventory classifications, not a completion percentage.
+- Windows / NVIDIA GeForce RTX 3070 Laptop GPU. Target validation_requested=0, validation_enabled=0, collected validation_messages=0; this is not a validation-layer run. Prior explicit attempts established the layer is unavailable. Other platforms, complete public renderer behavior, depth textures/shadows, MRT/MSAA/stencil, compressed/integer textures, complete readback/copy/presentation and modern GPU execution remain unfinished or unverified.
+- Logs and JSON: D:/Temp/surui/threecpp-native-target-{class-parity-final,source-trace-final,gpu-final-a,compiler-units-final-a,compiler-unit-details-final,gpu-regressions-final-a,gpu-regression-details-final,addons-all-a,core-all-a,audit-final,audit-tests-final,final-dryrun}.log; generator-final-proof.json, phase-proof.json and document-tail-proof.json. Earlier failed builds are not passing evidence.
+
 # 2026-11-06: light/material, sampler, integer vertex and deformation execution
 
 Fixed upstream `11738a9d55e502fb484cefffcea3a66dc44e9fe9`; phase parent `a96368d2`.

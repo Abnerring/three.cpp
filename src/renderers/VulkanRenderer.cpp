@@ -356,7 +356,7 @@ struct VulkanRenderer::Impl {
     VkPhysicalDeviceMemoryProperties memoryProperties{};
     VkFormat depthFormat = VK_FORMAT_UNDEFINED;
     VkRenderPass renderPass = VK_NULL_HANDLE;
-    std::unordered_map<VkFormat, VkRenderPass> targetRenderPasses;
+    std::unordered_map<std::uint64_t, VkRenderPass> targetRenderPasses;
     VkPipelineLayout pipelineLayout = VK_NULL_HANDLE;
     std::unique_ptr<VulkanShaderModules> shaderModules;
     std::unique_ptr<VulkanPipelineLayout> reflectedLayout;
@@ -405,6 +405,12 @@ struct VulkanRenderer::Impl {
     struct TextureResource;
     // A GPU target owns the images, framebuffer and readback published by actual draws.
     struct GpuTarget {
+        // Managed framebuffer images are borrowed from native texture/renderbuffer
+        // storage. The keepers retain their actual generations through submission.
+        bool managedAttachment = false;
+        VkRenderPass nativeRenderPass = VK_NULL_HANDLE;
+        std::uint32_t imageMip = 0, imageLayer = 0;
+        std::vector<std::shared_ptr<void>> attachmentOwners;
         std::weak_ptr<TextureResource> sampledTexture;
         VkSampler sampler = VK_NULL_HANDLE;
         Image color, depth;
@@ -423,6 +429,7 @@ struct VulkanRenderer::Impl {
     std::shared_ptr<GpuTarget> spareTarget;
     // Storage currently referenced by draw/clear commands.
     std::shared_ptr<GpuTarget> active;
+    std::shared_ptr<GpuTarget> managedScreenTarget;
     // Targets not currently bound keep their storage here, keyed by the render target.
     const RenderTarget* activeKey = nullptr;
     std::unordered_map<const RenderTarget*, std::shared_ptr<GpuTarget>> parkedTargets;
@@ -440,6 +447,9 @@ struct VulkanRenderer::Impl {
     bool targetSubmissionPending = false;
 
     static std::uint32_t colorPixelBytes(VkFormat format) {
+        if (format == VK_FORMAT_R8_UNORM) return 1;
+        if (format == VK_FORMAT_R8G8_UNORM) return 2;
+        if (format == VK_FORMAT_R8G8B8_UNORM) return 3;
         if (format == VK_FORMAT_R8G8B8A8_UNORM || format == VK_FORMAT_R8G8B8A8_SRGB) return 4;
         if (format == VK_FORMAT_R16G16B16A16_SFLOAT) return 8;
         throw std::logic_error("Unsupported Vulkan color target storage format");
@@ -1283,6 +1293,8 @@ struct VulkanRenderer::Impl {
             try { if (bindingStates) bindingStates->dispose(); } catch (...) {}
             resetManagedProgramDraw();
             managedIntegerInputs.clear();
+            if(active && active->managedAttachment){active.reset();active=std::move(managedScreenTarget);}
+            managedScreenTarget.reset();
             if (managedProgramCommands) managedProgramCommands->shutdown();
             if (managedTextureCommands) managedTextureCommands->shutdown();
             managedProgramCommands.reset(); managedTextureCommands.reset();
@@ -1901,7 +1913,7 @@ struct VulkanRenderer::Impl {
     }
     void resumeRenderPass() {
         VkRenderPassBeginInfo render{VK_STRUCTURE_TYPE_RENDER_PASS_BEGIN_INFO};
-        render.renderPass = renderPassFor(active->colorFormat);
+        render.renderPass = activeRenderPass();
         render.framebuffer = active->layers > 1 && active->faceFramebuffer ? active->faceFramebuffer : active->framebuffer;
         render.renderArea.extent = {active->width, active->height};
         api.vkCmdBeginRenderPass(commandBuffer, &render, VK_SUBPASS_CONTENTS_INLINE);
@@ -2596,8 +2608,13 @@ struct VulkanRenderer::Impl {
         active = std::move(replacement);
         readback = replacementReadback;
     }
-    VkRenderPass renderPassFor(VkFormat colorFormat) {
-        if (const auto found = targetRenderPasses.find(colorFormat); found != targetRenderPasses.end()) return found->second;
+    VkRenderPass activeRenderPass() {
+        return active->nativeRenderPass ? active->nativeRenderPass : renderPassFor(active->colorFormat);
+    }
+    VkRenderPass renderPassFor(VkFormat colorFormat) { return renderPassFor(colorFormat, depthFormat); }
+    VkRenderPass renderPassFor(VkFormat colorFormat, VkFormat attachmentDepth) {
+        const auto passKey = std::uint64_t(colorFormat) | (std::uint64_t(attachmentDepth) << 32);
+        if (const auto found = targetRenderPasses.find(passKey); found != targetRenderPasses.end()) return found->second;
         VkAttachmentDescription attachments[2]{};
         attachments[0].format = colorFormat;
         attachments[0].samples = VK_SAMPLE_COUNT_1_BIT;
@@ -2608,7 +2625,7 @@ struct VulkanRenderer::Impl {
         attachments[0].initialLayout = attachments[0].finalLayout =
             VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL;
         attachments[1] = attachments[0];
-        attachments[1].format = depthFormat;
+        attachments[1].format = attachmentDepth;
         attachments[1].initialLayout = attachments[1].finalLayout =
             VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL;
         VkAttachmentReference colorReference{0, VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL},
@@ -2617,7 +2634,7 @@ struct VulkanRenderer::Impl {
         subpass.pipelineBindPoint = VK_PIPELINE_BIND_POINT_GRAPHICS;
         subpass.colorAttachmentCount = 1;
         subpass.pColorAttachments = &colorReference;
-        subpass.pDepthStencilAttachment = &depthReference;
+        subpass.pDepthStencilAttachment = attachmentDepth == VK_FORMAT_UNDEFINED ? nullptr : &depthReference;
         VkSubpassDependency dependency{};
         dependency.srcSubpass = VK_SUBPASS_EXTERNAL;
         dependency.dstSubpass = 0;
@@ -2631,7 +2648,7 @@ struct VulkanRenderer::Impl {
                                    VK_ACCESS_DEPTH_STENCIL_ATTACHMENT_READ_BIT |
                                    VK_ACCESS_DEPTH_STENCIL_ATTACHMENT_WRITE_BIT;
         VkRenderPassCreateInfo create{VK_STRUCTURE_TYPE_RENDER_PASS_CREATE_INFO};
-        create.attachmentCount = 2;
+        create.attachmentCount = attachmentDepth == VK_FORMAT_UNDEFINED ? 1 : 2;
         create.pAttachments = attachments;
         create.subpassCount = 1;
         create.pSubpasses = &subpass;
@@ -2639,7 +2656,7 @@ struct VulkanRenderer::Impl {
         create.pDependencies = &dependency;
         VkRenderPass result = VK_NULL_HANDLE;
         check(api.vkCreateRenderPass(device, &create, nullptr, &result), "vkCreateRenderPass");
-        try { targetRenderPasses.emplace(colorFormat, result); }
+        try { targetRenderPasses.emplace(passKey, result); }
         catch (...) { api.vkDestroyRenderPass(device, result, nullptr); throw; }
         return result;
     }
@@ -3077,7 +3094,7 @@ struct VulkanRenderer::Impl {
         const auto bottom = std::clamp(y, 0.0, double(height));
         const auto right = std::clamp(x + w, left, double(width));
         const auto top = std::clamp(y + h, bottom, double(height));
-        return {{static_cast<std::int32_t>(left), static_cast<std::int32_t>(height - top)},
+        return {{static_cast<std::int32_t>(left), static_cast<std::int32_t>(active->managedAttachment ? bottom : height - top)},
                 {static_cast<std::uint32_t>(right - left), static_cast<std::uint32_t>(top - bottom)}};
     }
     void applyViewportAndScissor() {
@@ -3090,12 +3107,12 @@ struct VulkanRenderer::Impl {
         auto rectangle = scissorRectangle();
         VkViewport viewport{0, 0, 1, 1, 0, 1};
         if (w > 0 && h > 0) {
-            const auto y = height - bottom - h;
+            const auto y = active->managedAttachment ? bottom : height - bottom - h;
             if (x < viewportBounds[0] || y < viewportBounds[0] ||
                 x + w > viewportBounds[1] || y + h > viewportBounds[1])
                 throw std::invalid_argument("Viewport exceeds Vulkan device coordinate bounds");
-            viewport = {static_cast<float>(x), static_cast<float>(y),
-                        static_cast<float>(w), static_cast<float>(h), 0, 1};
+            viewport = {static_cast<float>(x), static_cast<float>(active->managedAttachment ? y + h : y),
+                        static_cast<float>(w), static_cast<float>(active->managedAttachment ? -h : h), 0, 1};
         } else {
             // Vulkan disallows zero viewport width. An empty draw scissor has
             // the same rasterization result while clears retain their own box.
@@ -3107,6 +3124,10 @@ struct VulkanRenderer::Impl {
     void beginFrame(bool clearColorAttachment, bool clearDepthAttachment, const Color& color,
                     HIGH_PRECISION alpha, bool srgb, GpuTarget* sampledCube = nullptr) {
         ensureBoundTarget();
+        if (active->managedAttachment) {
+            beginManagedFramebufferFrame(clearColorAttachment, clearDepthAttachment, color, alpha, srgb);
+            return;
+        }
         sampledTargets.clear();
         activeDescriptorPool = 0;
         for (const auto pool : descriptorPools)
@@ -3170,7 +3191,7 @@ struct VulkanRenderer::Impl {
             attachment.clearValue.color.float32[3] = static_cast<float>(alpha);
             attachments.push_back(attachment);
         }
-        if (clearDepthAttachment) {
+        if (clearDepthAttachment && active->depth.image) {
             VkClearAttachment attachment{};
             attachment.aspectMask = VK_IMAGE_ASPECT_DEPTH_BIT;
             attachment.clearValue.depthStencil.depth = nativeDepthClear.value_or(reversedDepth ? 0.0f : 1.0f);
@@ -3196,6 +3217,7 @@ struct VulkanRenderer::Impl {
         collectRetiredTargets();
     }
     void endFrame(GpuTarget* sampledCube = nullptr) {
+        if (active->managedAttachment) { endManagedFramebufferFrame(); return; }
         api.vkCmdEndRenderPass(commandBuffer);
         for (auto* target : sampledTargets)
             imageBarrier(target->color.image, VK_IMAGE_ASPECT_COLOR_BIT,
@@ -3256,6 +3278,7 @@ struct VulkanRenderer::Impl {
     }
 #include "renderers/vulkan/VulkanManagedDraw.inc"
 #include "renderers/vulkan/VulkanManagedTextures.inc"
+#include "renderers/vulkan/VulkanManagedFramebuffers.inc"
 #include "renderers/vulkan/VulkanManagedVertexInput.inc"
 #include "renderers/vulkan/VulkanManagedProgramDraw.inc"
 #include "renderers/vulkan/VulkanManagedContext.inc"
@@ -3299,6 +3322,7 @@ JSValue VulkanRenderer::render(JSValue scene, JSValue camera) {
     return value.get("render").call(value, {scene, camera});
 }
 void VulkanRenderer::setSize(std::uint32_t width, std::uint32_t height) {
+    impl->requireTypedFramebuffer();
     if (impl->rendering)
         throw std::logic_error("setSize inside render or upload callbacks is not supported yet");
     if (impl->renderTarget) {
@@ -3306,6 +3330,7 @@ void VulkanRenderer::setSize(std::uint32_t width, std::uint32_t height) {
         impl->savedWidth = width; impl->savedHeight = height;
         impl->ensureBoundTarget();
     } else impl->resize(width, height);
+    impl->syncManagedSize(width, height);
     setViewport(0, 0, width, height);
 }
 std::uint32_t VulkanRenderer::getWidth() const {
@@ -3355,6 +3380,7 @@ HIGH_PRECISION VulkanRenderer::getClearAlpha() const {
     return impl->clearAlpha;
 }
 void VulkanRenderer::clear(bool color, bool depth) {
+    impl->requireTypedFramebuffer();
     if (impl->renderTarget) impl->validateTarget(*impl->renderTarget, impl->activeCubeFace, impl->activeMipmapLevel);
     if (impl->recording) {
         impl->clearAttachments(color && impl->colorWrite, depth, impl->activeClearColor,
@@ -3370,6 +3396,7 @@ void VulkanRenderer::clear(bool color, bool depth) {
 void VulkanRenderer::setRenderTarget(std::shared_ptr<RenderTarget> target,
                                      std::uint32_t activeCubeFace,
                                      std::uint32_t activeMipmapLevel) {
+    impl->requireTypedFramebuffer();
     if (impl->rendering)
         throw std::logic_error("setRenderTarget inside render callbacks is not supported yet");
     if (activeMipmapLevel != 0) throw std::logic_error("render target mip levels are not implemented yet");
@@ -3628,6 +3655,7 @@ std::vector<std::string> VulkanRenderer::getValidationMessages() const {
 }
 
 void VulkanRenderer::render(Scene& scene, Camera& camera) {
+    impl->requireTypedFramebuffer();
     if (impl->rendering)
         throw std::logic_error(
             "Nested render inside render or upload callbacks is not supported yet");

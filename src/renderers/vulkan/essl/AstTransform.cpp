@@ -10,7 +10,7 @@ struct Symbols : TIntermTraverser {
     std::map<std::string, TIntermSymbol*> uniforms;
     std::map<std::string, TIntermSymbol*> samplers;
     long long maximum = 0;
-    bool instanceId = false, fragCoord = false;
+    bool instanceId = false, fragCoord = false, derivativeY = false;
     Symbols() : TIntermTraverser(true, false, false, false, true) {}
     void visitSymbol(TIntermSymbol* node) override {
         maximum = std::max(maximum, node->getId());
@@ -23,6 +23,10 @@ struct Symbols : TIntermTraverser {
             if (!node->getType().isOpaque()) throw std::runtime_error("Mixed opaque uniform structure requires flattening: " + name);
             samplers.emplace(name, node);
         } else uniforms.emplace(name, node);
+    }
+    bool visitUnary(TVisit, TIntermUnary* node) override {
+        derivativeY |= node->getOp()==EOpDPdy || node->getOp()==EOpDPdyFine || node->getOp()==EOpDPdyCoarse;
+        return true;
     }
 };
 
@@ -58,9 +62,17 @@ class UniformBlockRewrite {
         value->setRight(new TIntermConstantUnion(number,TType(EbtInt,EvqConst,EpqHigh)));
         value->setType(TType(type,EvqUniform,EpqHigh));return value;
     }
+    static TIntermTyped* floatConstant(double number) {
+        TConstUnionArray value(1);value[0].setDConst(number);
+        return new TIntermConstantUnion(value,TType(EbtFloat,EvqConst,EpqHigh));
+    }
+    TIntermTyped* renderTargetCoordinates() {
+        auto value=new TIntermBinary(EOpLessThan);value->setLeft(backendMember(framebufferHeightMember,EbtFloat));
+        value->setRight(floatConstant(0));value->setType(TType(EbtBool,EvqTemporary));return value;
+    }
 public:
     UniformBlockRewrite(EShLanguage s, const Symbols& symbols,
-                        const std::map<std::string, TIntermSymbol*>& schema, bool adapt) : stage(s), blockId(symbols.maximum + 1), glBuiltins(adapt), usesBackend(adapt && (symbols.instanceId || symbols.fragCoord)) {
+                        const std::map<std::string, TIntermSymbol*>& schema, bool adapt) : stage(s), blockId(symbols.maximum + 1), glBuiltins(adapt), usesBackend(adapt && (symbols.instanceId || symbols.fragCoord || symbols.derivativeY)) {
         auto fields = new TTypeList;
         int index = 0;
         for (const auto& [name, symbol] : schema) {
@@ -92,8 +104,13 @@ public:
             if(glBuiltins && symbol->getQualifier().builtIn==EbvFragCoord) {
                 auto y=new TIntermBinary(EOpSub);y->setLeft(backendMember(framebufferHeightMember,EbtFloat));
                 y->setRight(component(symbol,1));y->setType(TType(EbtFloat,EvqTemporary,EpqHigh));
+                // The signed private height selects the viewport convention:
+                // screen uses a positive Vulkan viewport, texture attachments
+                // use a negative viewport and already have the source GL y.
+                auto sourceY=new TIntermSelection(renderTargetCoordinates(),component(symbol,1),y,y->getType());
+                sourceY->setNoShortCircuit();sourceY->setLoc(symbol->getLoc());
                 auto result=new TIntermAggregate(EOpConstructVec4);result->setType(symbol->getType());
-                result->getSequence().push_back(component(symbol,0));result->getSequence().push_back(y);
+                result->getSequence().push_back(component(symbol,0));result->getSequence().push_back(sourceY);
                 result->getSequence().push_back(component(symbol,2));result->getSequence().push_back(component(symbol,3));return result;
             }
             auto found = members.find(symbol->getId());
@@ -110,7 +127,12 @@ public:
         } else if (auto unary = node->getAsUnaryNode()) {
             unary->setOperand(typed(unary->getOperand()));
             if(glBuiltins && (unary->getOp()==EOpDPdy || unary->getOp()==EOpDPdyFine || unary->getOp()==EOpDPdyCoarse)) {
-                auto result=new TIntermUnary(EOpNegative);result->setOperand(unary);result->setType(unary->getType());result->setLoc(unary->getLoc());return result;
+                auto sign=new TIntermSelection(renderTargetCoordinates(),floatConstant(1),floatConstant(-1),TType(EbtFloat,EvqTemporary,EpqHigh));
+                sign->setNoShortCircuit();sign->setLoc(unary->getLoc());
+                // Keep the operand and derivative outside the selection so
+                // function calls and other side effects are evaluated once.
+                auto result=new TIntermBinary(unary->getType().isVector()?EOpVectorTimesScalar:EOpMul);
+                result->setLeft(unary);result->setRight(sign);result->setType(unary->getType());result->setLoc(unary->getLoc());return result;
             }
         }
         else if (auto aggregate = node->getAsAggregate()) {
