@@ -179,3 +179,32 @@ static get type() { return 'ShadowNode'; }
 - **`RendererUtils`**：见上方实测（`nativeRendererUtilsModule()` 被 `RTTNode` 引用）。
 - **结论**：r106/r107 的「ShadowNode 唯一硬阻塞是这两个 renderer 模块」**不成立**。ShadowNode 的前置基本齐备，可直接进入组装阶段（仍需确认 partial 模块的实现完备度）。
 - **教训**：判断某模块是否已移植，**必须直接看仓库是否有对应文件与导出函数**，不能仅凭 `port-status.json` 的 `vulkan-port-pending` 状态推断；审计状态与源码存在性是两件事。
+
+## 10. examples/jsm 小模块筛选（r109 实测，≤6KB 且无缺失依赖）
+
+按体量排序（`Bad` 表示命中宿主/TSL 关键字）：
+
+| Bytes | 模块 | 判定 |
+|---|---|---|
+| 596 | `tsl/display/Sepia.js` | TSL（需 JSValue 运行时风格）|
+| 735 | `loaders/materialx/parse/MaterialXParser.js` | ❌ 依赖 **`DOMParser`**（宿主边界）|
+| 1357 | `helpers/RapierHelper.js` | ❌ 依赖 rapier 物理库（未移植）|
+| 1627 | `transpiler/Transpiler.js` | 需先做 decoder（GLSLDecoder 35KB 等）|
+| 2230 | **`generators/city/InstancedMeshGenerator.js`** | ✅ **可行**（见下）|
+| 2723 | `environments/DebugEnvironment.js` | 已完成 |
+| 3230 | `renderers/common/QuadMesh.js` | 已完成（r108 更正）|
+| 2327 | `loaders/materialx/MaterialXArchive.js` | ❌ fflate/Blob |
+| 1544 | `capabilities/WebGPU.js` | ❌ navigator |
+| 1476 | `textures/FlakesTexture.js` | ❌ canvas |
+| 1534 | `webxr/Text2D.js` | ❌ canvas |
+| 1035 | `inspector/Storage.js` | ❌ localStorage |
+| 690 | `offscreen/jank.js` | ❌ DOM |
+
+### 下一实体目标：`generators/city/InstancedMeshGenerator.js`（2,230B）
+
+可行性复核（r52 曾判定「风险高」，r109 复核**判定可行**）：
+- 依赖仅 `InstancedMesh` + `MathUtils.ceilPowerOfTwo`；
+- C++ 侧 `InstancedMesh(geometry, material, JSValue count)`、`Mesh::Count`（可赋 `count`）、`setMatrixAt`、`instanceMatrix->needsUpdate`（JSMember/BufferAttribute 可写）、`boundingBox`（可置空）、`computeBoundingSphere()` **全部存在**；
+- `parameters`（`Object.assign({}, defaults, parameters)`）→ C++ 用 `JSValue` 对象或 `JsonValue` 保存参数并序列化 key；
+- 三个导出函数 `createInstances` / `updateInstances` / 类 `InstancedMeshGenerator`（`build(placements)` / `dispose()` / `_parametersKey` 缓存 / `_createGeometry`/`_createMaterial` 回调 → `std::function`）。
+- 建议实现：C++ 类 + `std::function` 工厂回调；`placements` 为 `std::vector<Matrix4>`；差分用两个 placements 场景比较 mesh 的 capacity/count/visible/instanceMatrix/name/castShadow 与重建语义。
