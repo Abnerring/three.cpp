@@ -1,4 +1,29 @@
-# 当前接续：`ToonOutlinePassNode` 落地（src missing 10→9），PassNode 下游完成，2026-11-05
+# 当前接续：`ToonOutlinePassNode` 渲染包装与 dispose 缓存测试补齐（5 例 / 26 断言），2026-11-05
+
+目标保持 active：固定 three.js 11738a9d55e502fb484cefffcea3a66dc44e9fe9 全部 src + examples/jsm 原生 C++ 逻辑，Vulkan 后端；禁止 CEF/生产 JS 引擎/桥接。阶段本地 Git 提交，不推送。
+
+## 本轮交付（+2 例 / 7 断言）
+
+1. **`updateBefore` 包装/恢复测试**：stub renderer（`getRenderObjectFunction` 返回真实可调用值、`setRenderObjectFunction` 记录调用次数与第二次传入值是否可调用）；断言 **setter 调用 2 次**（安装包装 + 恢复）且**恢复值为可调用**；
+2. **`dispose` 缓存清理测试**：注册带 `positionNode` 的自定义材质（`addEventListener/removeEventListener` 桩、`_removes` 计数）→ `_getOutlineMaterial` 后缓存 size=1 → `dispose()` 后 **size=0** 且 **`_removes == 1`**。
+
+## 本轮测试踩的坑（已修正）
+
+- `Map.size` 是**属性**不是方法（`cache.get("size")` 直接取值，勿 `.call`）；
+- `getRenderObjectFunction` stub 必须返回**真实可调用值**（返回 `JSValue{}` 会让恢复断言失效）。
+
+## 验证
+
+- 构建 exit 0；过滤 `*ToonOutline*` = **5 cases / 26 assertions** 全过；`THREECPPAddonTests` 全套 **1424 cases / 39,235 assertions** 通过。
+- 审计不变：src 9 / 456（ToonOutlinePassNode 已 partial）；examples/jsm 322 / 154。
+
+**未执行验证（如实记录）**：包装函数内部（Toon 材质分流、`renderObject` 调用次数/参数）未断言，只验证安装/恢复；outline 材质 TSL 图结构未断言。
+
+## 下一步
+
+1. 包装函数内部断言（传 Toon 材质对象，断言 `renderObject` 调用 2 次且第一次为 outline 材质）；
+2. 推进剩余 src（9 项）：`ReflectorNode`、`Line2NodeMaterial`、`PhysicalLightingModel`、`MaterialXNodes/Noise`、`NodeObjectLoader`、三材质；
+3. 或 examples 侧继续。# 当前接续：`ToonOutlinePassNode` 落地（src missing 10→9），PassNode 下游完成，2026-11-05
 
 目标保持 active：固定 three.js 11738a9d55e502fb484cefffcea3a66dc44e9fe9 全部 src + examples/jsm 原生 C++ 逻辑，Vulkan 后端；禁止 CEF/生产 JS 引擎/桥接。阶段本地 Git 提交，不推送。
 
