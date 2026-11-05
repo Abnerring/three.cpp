@@ -201,8 +201,8 @@
     "note": "Accepted port scope is src and examples/jsm, including tracked third-party dependencies. Editor/manual web applications are excluded from native application rewrites. Native host behavior, packaging and all three platforms require separate implementation and verification evidence."
   },
   "counts": {
-    "partial-unverified": 577,
-    "missing": 364,
+    "partial-unverified": 578,
+    "missing": 363,
     "vulkan-port-pending": 290,
     "dependency-unverified": 20
   },
@@ -210,8 +210,8 @@
     "src": {
       "modules": 755,
       "counts": {
-        "partial-unverified": 441,
-        "missing": 24,
+        "partial-unverified": 442,
+        "missing": 23,
         "vulkan-port-pending": 290
       }
     },
@@ -859,7 +859,7 @@
       "path": "src/nodes/gpgpu",
       "upstreamFiles": 6,
       "moduleCount": 6,
-      "modulesWithCppFiles": 5,
+      "modulesWithCppFiles": 6,
       "verifiedComplete": 0
     },
     {
@@ -11215,11 +11215,11 @@
       "scope": "src",
       "kind": "core",
       "upstreamSha256": "89e4955c43b5467f932af0261a00b0f4222731bb4eafa73fda884e519c1ca3e5",
-      "header": null,
-      "implementation": null,
+      "header": "src/nodes/gpgpu/SubgroupFunctionNode.h",
+      "implementation": "src/nodes/gpgpu/SubgroupFunctionNode.cpp",
       "expectedHeader": "src/nodes/gpgpu/SubgroupFunctionNode.h",
       "expectedImplementation": "src/nodes/gpgpu/SubgroupFunctionNode.cpp",
-      "status": "missing",
+      "status": "partial-unverified",
       "verifiedComplete": false,
       "apiExtraction": "partial-static",
       "verification": {
@@ -11228,7 +11228,9 @@
           "pointer": "/modules/350"
         },
         "upstreamUnitTests": [],
-        "cppUnitTests": [],
+        "cppUnitTests": [
+          "test/unit/src/nodes/gpgpu/SubgroupFunctionNode.tests.cpp"
+        ],
         "reviewedImplementation": [],
         "differentialResults": [],
         "renderingResults": [],

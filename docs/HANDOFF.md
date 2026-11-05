@@ -1,4 +1,33 @@
-# 当前接续：`generate` 的「SIGSEGV」其实是测试代码的重载陷阱（`array.set(0, …)` 命中 `const char*` 空指针重载）——已修并纳入行为级差分，2026-11-05
+# 当前接续：SubgroupFunctionNode 已移植（gpgpu 家族清零；类型推导与 generate 三分支全部行为级验证），2026-11-05
+
+目标保持 active：固定 three.js 11738a9d55e502fb484cefffcea3a66dc44e9fe9 全部 src + examples/jsm 原生 C++ 逻辑，Vulkan 后端；禁止 CEF/生产 JS 引擎/桥接。阶段本地 Git 提交，不推送。
+
+本轮新增 `src/nodes/gpgpu/SubgroupFunctionNode.{h,cpp}`（16,784 B 源），`GpgpuNodeSources.inc` 现 **5 个 namespace**。**`src/nodes/gpgpu` 目录的 missing 清零。**
+
+- `constructor( method, aNode = null, bNode = null )` → **length 1**；`super()`；字段 `method`/`aNode`/`bNode`。**没有 `isCacheable`**（源码即无）。
+- **25 个静态常量**（`SUBGROUP_ELECT`…`QUAD_BROADCAST`）以**静态 getter** 注册。
+- `getInputType( builder )`：`aType/bType` 取各自 `getNodeType(builder)`；`aLen/bLen` 在 `builder.isMatrix(type)` 时为 **0**，否则 `builder.getTypeLength(type)`；**返回长度较大者的类型**（`aLen > bLen ? aType : bType`）。
+- `setup( builder )`：`builder.enableSubGroups()` 后走基类 `setup`。
+- `generateNodeType( builder )`：`SUBGROUP_ELECT → "bool"`、`SUBGROUP_BALLOT → "uvec4"`、其余 → `getInputType`。
+- `generate( builder, output )` 三分支：① `subgroupBroadcast`/`subgroupShuffle`/`quadBroadcast` → 第二操作数按 `bType === "float" ? "int" : type` 构建；② `subgroupShuffleXor/Up/Down` → 第二操作数按 **`"uint"`** 构建；③ 其余 → 两个操作数都按 `inputType` 构建。参数表为空时用 `"()"`，否则 `"( a, b )"`，最后 `builder.format( getMethod(method,type) + params, type, output )`。
+- `serialize/deserialize` 在基类调用之后读写 `data.method`。
+- **26 个模块导出**：`nodeProxyIntent( SubgroupFunctionNode, 常量 ).setParameterLength( n )`（`subgroupElect` 0 参，其余 1 或 2 参）。
+
+**本轮一处实测修正**：我原以为 `setParameterLength(1)` 会让导出函数 `length === 1`；**实测上游全部为 0**（`nodeProxy` 返回的是 rest 参数包装器，参数个数只存在 proxy state 里）。已按上游实测把单测期望改为 0。
+
+验证：构建 exit 0。THREECPPTests **1633 cases / 214,808 assertions 全过**（较上轮 1628/214,771 → +5 例 / +37 断言）。差分 `threecpp.threejs-subgroup-function-node-parity` **Passed**，比较：
+- name/length=1/静态与实例 type、`method`、`aNode === null`、**25 个常量值**、**26 个导出的 arity 表与可调用性**、class `toString` 逐字节；
+- **`getInputType`/`generateNodeType` 的类型推导**：`float` vs `vec4` → `vec4`；`mat4`（矩阵计 0）vs `float` → `float`；`subgroupElect → "bool"`、`subgroupBallot → "uvec4"`；
+- **`generate` 三条分支的真实片段**：`subgroupElect()`（零参）、`subgroupAdd( a:float )`（默认分支）、`subgroupBroadcast( a:float, b:int )`（broadcast 的 float→int 规则）、`subgroupShuffleXor( a:float, b:uint )`（shuffle 偏移的 uint 规则）；
+- `serialize`/`deserialize` 的 `method` 往返。
+
+**未执行验证的部分（如实记录）**：`setup()` 里 `enableSubGroups()` 的调用与基类 `setup` 返回值未断言（桩 builder 下只保证不抛）；`generate` 在 **vertex 阶段**的 `error()` 分支未执行；真实着色器生成未触及。
+
+审计（固定 worktree，HEAD=11738a9d55）：**src missing 24→23、partial 441→442**，`SubgroupFunctionNode` 记 `partial-unverified`。**`src/nodes/gpgpu` 已无 missing。**
+
+`src` 剩余 23 个：`Three.Legacy.js`(0)、`Three.TSL.js`(62)、`NodeMaterials`(1,639)、`NodeMaterialLoader`(2,246)、`Three.WebGPU.Nodes.js`(2,297)、`Three.WebGPU.js`(3,183)、`NodeObjectLoader`(3,695)、`NodeLoader`(4,052)、`MeshSSS`/`MeshStandard`(4,726/4,817)、`ToonOutlinePassNode`(6,868)、`nodes/TSL.js`(7,493)、`RTTNode`(9,941)、`nodes/Nodes.js`(10,073)、`MaterialXNodes`(10,782)、`PointShadowNode`(12,693)、`ReflectorNode`(17,567)、`Line2NodeMaterial`(18,172)、`MeshPhysical`(18,482)、`ShadowNode`(24,331)、`PassNode`(26,843)、`PhysicalLightingModel`(32,829)、`MaterialXNoise`(48,687)。
+
+下一步建议：① **`PhysicalLightingModel`(32,829)** —— 一举解锁 `MeshStandard`/`MeshPhysical`/`MeshSSS` 三个材质，从而解锁 `NodeMaterials` 与 `NodeMaterialLoader` 链路（建议单独一轮，先读全文再分段实现）；② `SpriteUtils` 已完成，可做 `RTTNode`(9,941) 或 `ReflectorNode`(17,567)；③ `ShadowNode`+`PointShadowNode` 仍是 lighting 最后两个缺口。# 当前接续：`generate` 的「SIGSEGV」其实是测试代码的重载陷阱（`array.set(0, …)` 命中 `const char*` 空指针重载）——已修并纳入行为级差分，2026-11-05
 
 目标保持 active：固定 three.js 11738a9d55e502fb484cefffcea3a66dc44e9fe9 全部 src + examples/jsm 原生 C++ 逻辑，Vulkan 后端；禁止 CEF/生产 JS 引擎/桥接。阶段本地 Git 提交，不推送。
 
