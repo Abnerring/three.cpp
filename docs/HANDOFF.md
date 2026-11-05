@@ -1,4 +1,27 @@
-# 当前接续：VSM 层目标**命名断言** + PCF **线性过滤断言**通过（r148 枚举修复得到验证），2026-11-05
+# 当前接续：NearestFilter 断言 + **`setup` 非缓存路径构建并缓存**测试通过（ShadowNode 26 例 / 80 断言），2026-11-05
+
+目标保持 active：固定 three.js 11738a9d55e502fb484cefffcea3a66dc44e9fe9 全部 src + examples/jsm 原生 C++ 逻辑，Vulkan 后端；禁止 CEF/生产 JS 引擎/桥接。阶段本地 Git 提交，不推送。
+
+## 本轮交付（+2 用例 / +7 断言）
+
+1. **「chooses nearest depth filters without compatibility」**：`type = 1`（PCF）+ `hasCompatibility → false` → 断言 `minFilter/magFilter == 1003`（**NearestFilter**），补全过滤分支的另一半；
+2. **「setup builds and caches the node on the uncached path」**（**生产路径**）：
+   - 首次 `setup(builder)`：缓存为空 → 调 `setupShadow` 构建节点 → 断言返回节点 `isNode`、`node._node === 返回节点`、`node._currentShadowType == 1`（PCF）；
+   - 第二次 `setup(builder)`：**命中缓存**，断言返回**同一节点对象**（`strictEquals`）。
+
+## 验证
+
+- 构建 exit 0；过滤 `*ShadowNode*` = **26 cases / 80 assertions** 全过（+2 例 / +7 断言）。
+- `THREECPPAddonTests` 全套 **1391 cases / 38,983 assertions** 通过。
+- 审计不变（ShadowNode 已 partial）：src 12 / 453；examples/jsm 322 / 154。
+
+**未执行验证（如实记录）**：`toInspector` 仍省略；`updateShadow` 无测试；图结构/数值未断言；`setup` 的 `material.receivedShadowNode` 包装路径已有单独用例（r128）但未在此组合场景重复验证。
+
+## 下一步
+
+1. `updateShadow` 真实 renderer 夹具（可尝试用 `Renderer` 真实类构造最小场景）；
+2. 图结构弱差分（导出节点 `toString()` 与上游对比）——ShadowNode 收口前的最后一块；
+3. 收口后推进 **`PointShadowNode`(12,693)**、`PhysicalLightingModel`(32,829)。# 当前接续：VSM 层目标**命名断言** + PCF **线性过滤断言**通过（r148 枚举修复得到验证），2026-11-05
 
 目标保持 active：固定 three.js 11738a9d55e502fb484cefffcea3a66dc44e9fe9 全部 src + examples/jsm 原生 C++ 逻辑，Vulkan 后端；禁止 CEF/生产 JS 引擎/桥接。阶段本地 Git 提交，不推送。
 

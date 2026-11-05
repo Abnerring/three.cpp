@@ -943,3 +943,117 @@ TEST_CASE("ShadowNode setupShadow chooses linear depth filters for PCF with comp
     REQUIRE(depthTexture.get("minFilter").toNumber() == Approx(1006));
     REQUIRE(depthTexture.get("magFilter").toNumber() == Approx(1006));
 }
+TEST_CASE("ShadowNode setupShadow chooses nearest depth filters without compatibility") {
+    auto depthTexture = JSValue::object(nullptr);
+    auto shadowMapObject = JSValue::object(nullptr);
+    shadowMapObject.set("texture", JSValue::object(nullptr));
+    auto targets = JSValue::object(nullptr);
+    targets.set("depthTexture", depthTexture);
+    targets.set("shadowMap", shadowMapObject);
+    auto shadowCamera = JSValue::object(nullptr);
+    shadowCamera.set("coordinateSystem", JSValue(0));
+    shadowCamera.set("updateProjectionMatrix", JSValue::function(
+        +[](const JSValue&, const std::vector<JSValue>&, const std::vector<JSValue>&) {
+            return JSValue{};
+        }));
+    auto mapSize = JSValue::object(nullptr);
+    mapSize.set("width", JSValue(32));
+    mapSize.set("height", JSValue(32));
+    auto shadow = JSValue::object(nullptr);
+    shadow.set("camera", shadowCamera);
+    shadow.set("mapSize", mapSize);
+    shadow.set("biasNode", nativeTSLBaseBinding("float").call({}, {JSValue(0.0)}));
+    shadow.set("isPointLightShadow", false);
+    auto light = JSValue::object(nullptr);
+    light.set("shadow", shadow);
+    auto camera = JSValue::object(nullptr);
+    camera.set("coordinateSystem", JSValue(0));
+    auto rendererShadowMap = JSValue::object(nullptr);
+    rendererShadowMap.set("type", JSValue(1)); // PCFShadowMap but no texture compare support
+    rendererShadowMap.set("enabled", true);
+    auto renderer = JSValue::object(nullptr);
+    renderer.set("shadowMap", rendererShadowMap);
+    renderer.set("reversedDepthBuffer", false);
+    renderer.set("hasCompatibility", JSValue::function(
+        +[](const JSValue&, const std::vector<JSValue>&, const std::vector<JSValue>&) {
+            return JSValue(false);
+        }));
+    auto builder = JSValue::object(nullptr);
+    builder.set("renderer", renderer);
+    builder.set("camera", camera);
+    builder.set("material", JSValue::object(nullptr));
+    builder.set("context", JSValue::object(nullptr));
+    auto node = nativeShadowNodeConstructor().construct({light});
+    node.set("_targets", targets);
+    node.set("setupRenderTarget", JSValue::function(
+        +[](const JSValue& receiver, const std::vector<JSValue>&, const std::vector<JSValue>&) {
+            return const_cast<JSValue&>(receiver).get("_targets");
+        }));
+    node.get("setupShadow").call(node, {builder});
+    // NearestFilter is 1003 in the pinned constants table.
+    REQUIRE(depthTexture.get("minFilter").toNumber() == Approx(1003));
+    REQUIRE(depthTexture.get("magFilter").toNumber() == Approx(1003));
+}
+TEST_CASE("ShadowNode setup builds and caches the node on the uncached path") {
+    auto mapSize = JSValue::object(nullptr);
+    mapSize.set("width", JSValue(32));
+    mapSize.set("height", JSValue(32));
+    auto shadowCamera = JSValue::object(nullptr);
+    shadowCamera.set("coordinateSystem", JSValue(0));
+    shadowCamera.set("layers", JSValue::object(nullptr));
+    shadowCamera.set("updateProjectionMatrix", JSValue::function(
+        +[](const JSValue&, const std::vector<JSValue>&, const std::vector<JSValue>&) {
+            return JSValue{};
+        }));
+    auto shadow = JSValue::object(nullptr);
+    shadow.set("camera", shadowCamera);
+    shadow.set("mapSize", mapSize);
+    shadow.set("biasNode", nativeTSLBaseBinding("float").call({}, {JSValue(0.0)}));
+    shadow.set("isPointLightShadow", false);
+    auto light = JSValue::object(nullptr);
+    light.set("shadow", shadow);
+    light.set("isLight", true);
+    auto camera = JSValue::object(nullptr);
+    camera.set("coordinateSystem", JSValue(0));
+    auto rendererShadowMap = JSValue::object(nullptr);
+    rendererShadowMap.set("type", JSValue(1));
+    rendererShadowMap.set("enabled", true);
+    auto renderer = JSValue::object(nullptr);
+    renderer.set("shadowMap", rendererShadowMap);
+    renderer.set("reversedDepthBuffer", false);
+    renderer.set("hasCompatibility", JSValue::function(
+        +[](const JSValue&, const std::vector<JSValue>&, const std::vector<JSValue>&) {
+            return JSValue(false);
+        }));
+    auto builder = JSValue::object(nullptr);
+    builder.set("renderer", renderer);
+    builder.set("camera", camera);
+    builder.set("material", JSValue::object(nullptr));
+    builder.set("context", JSValue::object(nullptr));
+
+    auto node = nativeShadowNodeConstructor().construct({light});
+    auto targets = JSValue::object(nullptr);
+    auto depthTexture = JSValue::object(nullptr);
+    depthTexture.set("isArrayTexture", false);
+    targets.set("depthTexture", depthTexture);
+    auto shadowMapObject = JSValue::object(nullptr);
+    shadowMapObject.set("texture", JSValue::object(nullptr));
+    shadowMapObject.set("depth", JSValue(1));
+    targets.set("shadowMap", shadowMapObject);
+    node.set("_targets", targets);
+    node.set("setupRenderTarget", JSValue::function(
+        +[](const JSValue& receiver, const std::vector<JSValue>&, const std::vector<JSValue>&) {
+            return const_cast<JSValue&>(receiver).get("_targets");
+        }));
+
+    const auto first = node.get("setup").call(node, {builder});
+    REQUIRE(first.toBoolean());
+    REQUIRE(first.get("isNode").toBoolean());
+    // The built node is cached on the shadow node together with the shadow type.
+    REQUIRE(node.get("_node").strictEquals(first));
+    REQUIRE(node.get("_currentShadowType").toNumber() == Approx(1));
+
+    // A second setup reuses the cache instead of rebuilding.
+    const auto second = node.get("setup").call(node, {builder});
+    REQUIRE(second.strictEquals(first));
+}
