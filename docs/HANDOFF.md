@@ -1,4 +1,37 @@
-# 当前接续：AST 数据级差分落地（21 项谓词/类型比较，首次即通过），2026-11-05
+# 当前接续：`transpiler/Linker.js` 首次实现失败并已回滚（根因与修复点已定位），2026-11-05
+
+目标保持 active：固定 three.js 11738a9d55e502fb484cefffcea3a66dc44e9fe9 全部 src + examples/jsm 原生 C++ 逻辑，Vulkan 后端；禁止 CEF/生产 JS 引擎/桥接。阶段本地 Git 提交，不推送。
+
+## 本轮结果：失败轮（无残留）
+
+尝试移植 `examples/jsm/transpiler/Linker.js`（327 行，依赖已全部就绪：AST 30 类 + 探针差分）。已完成并把 `SwitchCase.conditions` 从单节点改为 **`std::optional<std::vector<ASTNode*>>`**（上游 `for (const condition of switchCase.conditions)` 证明其为数组/null），同时同步了 AST 单测、AST 差分探针与 `compare-ast.mjs`。
+
+**编译失败点（唯一）**：`Linker.cpp:95` —— `AccessorElements::elements` 的元素是 `ASTNode*`，直接访问 `element->value` 报 C2039（`value` 不是 `ASTNode` 成员）。
+
+**修复点（下一轮照做）**：
+```cpp
+} else if (auto* elements = as<AccessorElements>(node)) {
+    processExpression(elements->object);
+    for (auto* element : elements->elements) {
+        if (auto* staticElement = as<StaticElement>(element)) processExpression(staticElement->value);
+        else if (auto* dynamicElement = as<DynamicElement>(element)) processExpression(dynamicElement->value);
+    }
+}
+```
+（同理核对 `processExpression` 其它分支：所有字段访问都应先 `as<T>()` 判定，再取字段。）
+
+**安全网生效**：脚本在构建失败时自动 `git checkout` 已跟踪文件（CMake 注册、AST.h/.cpp、AST 单测、AST 探针、compare-ast.mjs）并删除新文件 `Linker.h/.cpp`、`Linker.tests.cpp` → **工作树 `dirty = 0`，无半成品**。
+
+## 下一步（Linker 移植可直接重做）
+
+1. 按上文修复 `AccessorElements` 分支后重做 Linker（其余实现已在 HANDOFF 的 r97 尝试中验证过结构：`Block` 属性链/`addBlock`/`removeBlock` 抛错/`processVariables`/`processExpression` 全分支/`processBody`/`processConditional`/`processForWhile`/`processSwitch`/`processFunction`/`process`）；
+2. 加差分（上游 `Linker.js` 无相对导入，可直接 `data:` URL 加载）：构造 Program+Uniform+Accessor+Operator 赋值，比较 `linker.reference` 链路与 `accesses`/`assignments` 数量；
+3. 之后：`ShadowNode`(24,331) / `PhysicalLightingModel`(32,829)。
+
+## 验证
+
+- `dirty = 0`；`HEAD` 仍为 `a88464b`（AST 差分轮）。
+- 审计保持：examples/jsm 324 / 152；src 13 / 452。# 当前接续：AST 数据级差分落地（21 项谓词/类型比较，首次即通过），2026-11-05
 
 目标保持 active：固定 three.js 11738a9d55e502fb484cefffcea3a66dc44e9fe9 全部 src + examples/jsm 原生 C++ 逻辑，Vulkan 后端；禁止 CEF/生产 JS 引擎/桥接。阶段本地 Git 提交，不推送。
 
