@@ -51,8 +51,10 @@ JSValue nativeLightProbeNodeModule() {
     nativeNormalModule();
     auto bindings = JSValue::object(nullptr);
     const auto base = nativeAnalyticLightNodeBinding("default");
+    // constructor( light = null ) has a default parameter, so Function.length is 0. This was 1
+    // until the parity probe against the pinned module was added.
     const auto ctor = makeClass(
-        "LightProbeNode", 1, base,
+        "LightProbeNode", 0, base,
         +[](const JSValue& target, const Args& args, const Args& captures) -> JSValue {
             auto self = superConstruct(target, captures, {arg(args, 0, nullptr)});
             auto values = JSValue::array();

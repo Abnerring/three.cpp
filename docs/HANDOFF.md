@@ -1,3 +1,17 @@
+# 当前接续：修 LightProbeNode 的 Function.length，并记录探针未构建导致的假失败，2026-11-05
+
+目标保持 active：固定 three.js 11738a9d55e502fb484cefffcea3a66dc44e9fe9 全部 src + examples/jsm 原生 C++ 逻辑，Vulkan 后端；禁止 CEF/生产 JS 引擎/桥接。阶段本地 Git 提交，不推送。
+
+本轮不新增模块，修一处已记录的元数据缺陷。`LightProbeNode` 的 `makeClass(..., 1, ...)` 使 `Function.length` 为 1，而上游 `constructor( light = null )` 有默认参数、`length` 应为 **0**（已用 node 直接导入固定版本核实：`{"name":"LightProbeNode","length":0,"updateLength":1,"setupLength":1}`）。已改为 0。它的既有单测与差分只比较 `update` 行为（系数缩放），**都不断言构造器元数据**，所以这个错误才一直没被发现——因此新增 `test/unit/src/nodes/lighting/LightProbeNodeMetadata.tests.cpp` 两个用例，专测 `name`/`length=0`/`type`/`update.length=1`/`setup.length=1`/方法名，并验证无参构造（`light = null`）可正常建出 9 个 Vector3 的 uniform array。
+
+**本轮发现一个测试基础设施缺陷（已记录，未修）**：差分探针是**独立 target**，只构建 `THREECPPTests` 不会产出探针可执行文件。此时 `compare-light-probe-node.mjs` 的 `spawnSync` 因 ENOENT 返回 `status=undefined`，而脚本第 17 行 `assert.equal(result.status, 0, result.stderr)` 把 `undefined` 当 message，**Node 26 直接抛 `ERR_INVALID_ARG_TYPE` 而不是给出清晰失败**。症状是 ctest 报 Failed 且输出为类型错误，很容易误判成被测代码回归。本轮先构建 `ThreeJsLightProbeNodeParityProbe` 后再跑，差分通过 0.51s。建议后续把各 `compare-*.mjs` 的 message 参数改成 `result.stderr ?? result.error?.message ?? ''`，或在 CTest 里用 fixture 保证探针先构建；本轮未批量改脚本。
+
+验证：构建 exit 0。THREECPPTests **1518 cases / 214,078 assertions 全过**，较上轮 1516/214,067 增 2 例 11 断言，与 `*LightProbe*` 过滤的 4 用例/34 断言（含原 2 例）一致。**六个 light 相关差分全过**：light-probe 0.48s / ambient 0.39s / directional 0.80s / hemisphere 1.07s / analytic 0.87s / spot 2.00s。
+
+审计（固定 worktree，HEAD=11738a9d55）刷新后**计数未变**：src missing 57 / partial 408 / vulkan 290；总计 partial 544 / missing 397 / vulkan-port-pending 290 / dependency 20，且 `docs/port-status.json` 与上轮**逐字节相同**（本轮只改已登记模块的实现与测试）。**本轮不增加任何覆盖率数字。**
+
+下一步优先级：① 修 `LightProbeNode` 的差分探针 message 缺陷与全套 `compare-*.mjs` 的同类写法，并考虑给 CTest 加"探针必须已构建"的前置；② 继续 lighting：`ProjectorLightNode` 需要 `If`（`nativeTSLCoreBinding` 未暴露 `If`，须先补 TSLCore 的控制流导出），`IESSpotLightNode` 需要验证 `.r`/`.x`/`.y` 这类 **swizzle getter** 在 `JSValue::get` 下是否会触发 getter（本轮未验证，故未实现其 `getSpotAttenuation` 内部路径）；③ shadow 四件仍待 `src/nodes/utils/PostProcessingUtils`。
+
 # 当前接续：SpotLightNode 已移植并差分验收，2026-11-05
 
 目标保持 active：固定 three.js 11738a9d55e502fb484cefffcea3a66dc44e9fe9 全部 src + examples/jsm 原生 C++ 逻辑，Vulkan 后端；禁止 CEF/生产 JS 引擎/桥接。阶段本地 Git 提交，不推送。

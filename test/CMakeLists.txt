@@ -97,6 +97,7 @@ add_executable(THREECPPTests
         unit/src/nodes/lighting/DirectionalLightNode.tests.cpp
         unit/src/nodes/lighting/HemisphereLightNode.tests.cpp
         unit/src/nodes/lighting/AnalyticLightNode.tests.cpp
+        unit/src/nodes/lighting/LightProbeNodeMetadata.tests.cpp
         unit/src/nodes/lighting/SpotLightNode.tests.cpp
         unit/src/nodes/utils/Oscillators.tests.cpp
         unit/src/nodes/utils/ViewportUtils.tests.cpp
