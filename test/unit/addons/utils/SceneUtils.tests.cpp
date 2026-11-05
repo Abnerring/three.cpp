@@ -170,3 +170,36 @@ TEST_CASE("SceneUtils returns a single material mesh unchanged") {
     const auto result = SceneUtils::createMeshesFromMultiMaterialMesh(mesh);
     REQUIRE(result == mesh);
 }
+TEST_CASE("SceneUtils split copies the uv and normal attributes per group") {
+    auto geometry = std::make_shared<BufferGeometry>();
+    geometry->setAttribute("position", std::make_shared<BufferAttribute>(
+                                           std::vector<float>{0, 0, 0, 1, 0, 0, 0, 1, 0,
+                                                              2, 0, 0, 3, 0, 0, 2, 1, 0}, 3));
+    geometry->setAttribute("normal", std::make_shared<BufferAttribute>(
+                                         std::vector<float>{0, 0, 1, 0, 0, 1, 0, 0, 1,
+                                                            1, 0, 0, 1, 0, 0, 1, 0, 0}, 3));
+    geometry->setAttribute("uv", std::make_shared<BufferAttribute>(
+                                     std::vector<float>{0, 0, 1, 0, 0, 1, 0.5, 0.5, 1, 1, 0, 1}, 2));
+    geometry->addGroup(0, 3, 0);
+    geometry->addGroup(3, 3, 1);
+    auto mesh = std::make_shared<Mesh>(geometry,
+                                       std::vector<std::shared_ptr<Material>>{
+                                           std::make_shared<MeshBasicMaterial>(),
+                                           std::make_shared<MeshBasicMaterial>()});
+
+    const auto result = SceneUtils::createMeshesFromMultiMaterialMesh(mesh);
+    const auto group = std::dynamic_pointer_cast<Group>(result);
+    REQUIRE(group != nullptr);
+    REQUIRE(group->children.size() == 2);
+    const auto first = std::dynamic_pointer_cast<Mesh>(group->children[0]);
+    const auto second = std::dynamic_pointer_cast<Mesh>(group->children[1]);
+    // Every attribute travels with its group, keeping the group length.
+    REQUIRE(first->geometry->getAttribute("normal")->getCount() == Approx(3));
+    REQUIRE(first->geometry->getAttribute("uv")->getCount() == Approx(3));
+    REQUIRE(second->geometry->getAttribute("normal")->getCount() == Approx(3));
+    REQUIRE(second->geometry->getAttribute("uv")->getCount() == Approx(3));
+    // The second group keeps the values of its own source vertices.
+    REQUIRE(second->geometry->getAttribute("normal")->getX(0) == Approx(1));
+    REQUIRE(second->geometry->getAttribute("uv")->getX(0) == Approx(0.5));
+    REQUIRE(second->geometry->getAttribute("uv")->getY(0) == Approx(0.5));
+}

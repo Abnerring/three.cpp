@@ -1,4 +1,26 @@
-# 当前接续：`createMeshesFromMultiMaterialMesh` 差分补齐（r82 遗留「无差分」缺口），2026-11-05
+# 当前接续：多材质拆分补齐 uv/normal 属性复制覆盖（r83 遗留「仅 position」缺口），2026-11-05
+
+目标保持 active：固定 three.js 11738a9d55e502fb484cefffcea3a66dc44e9fe9 全部 src + examples/jsm 原生 C++ 逻辑，Vulkan 后端；禁止 CEF/生产 JS 引擎/桥接。阶段本地 Git 提交，不推送。
+
+## 本轮内容（测试补充，无实现变更）
+
+r83 记录 `createMeshesFromMultiMaterialMesh` 的属性重建只覆盖 position。本轮补上：
+
+- 新增用例：6 顶点 geometry 带 **position + normal + uv** 三个属性，两个 group（各 3 顶点，材质 0/1）。
+- 断言拆分后两个子 Mesh：`normal` 与 `uv` 的 count 均为 3（属性随 group 长度复制）；**第二个 group 保留其源顶点值**（`normal.getX(0) == 1`、`uv.getX(0) == 0.5`、`uv.getY(0) == 0.5`）。
+- 覆盖 r82 实现中 `itemSize >= 2 / >= 3` 两条写入分支（此前只走 `itemSize >= 1`）。
+
+## 验证
+
+- 构建 exit 0；过滤 `*SceneUtils*` = **8 cases / 43 assertions** 全过（+1 用例 / +9 断言）。
+- `THREECPPAddonTests` 全套通过（1339 cases / 38,705 assertions）。
+- 审计计数不变（测试补充）：examples/jsm 325 / 151，src 13 / 452。
+
+**未执行验证（如实记录）**：仍无该 helper 的属性级差分（差分为 r83 的子节点数/position x/材质顺序三项）；`itemSize = 4` 分支（如 skinIndex/skinWeight）未覆盖。
+
+## 下一步
+
+examples/jsm 剩余 325：`transpiler/AST.js`(8868) 最有价值。src 剩余 13：`ShadowNode`(24,331，依赖齐备) / `PhysicalLightingModel`(32,829，解锁三材质)。# 当前接续：`createMeshesFromMultiMaterialMesh` 差分补齐（r82 遗留「无差分」缺口），2026-11-05
 
 目标保持 active：固定 three.js 11738a9d55e502fb484cefffcea3a66dc44e9fe9 全部 src + examples/jsm 原生 C++ 逻辑，Vulkan 后端；禁止 CEF/生产 JS 引擎/桥接。阶段本地 Git 提交，不推送。
 
