@@ -99,10 +99,36 @@ JSValue styleExec(const JSValue& r){
         for(const auto* key:{"1","2","3","4"}){JSPropertyDescriptor item;item.configurable=true;item.getter=JSValue::function(+[](const JSValue&,const Args&,const Args& cap)->JSValue{event(cap[0],{"capture.get",cap[1]});if(cap[0].get("request").get("throwCapture").strictEquals(cap[1]))throw JSTypeError("capture");return capture(cap[0],cap[1]);},{state,key},"get",0);match.defineProperty(key,item);}return match;
     },{s},"exec",1);p.defineProperty("exec",d);auto out=JSValue::object();try{out.set("result",normal(self.get("setStyle").call(self, {"fixture"})));}catch(const std::exception& e){out.set("result",error(e));}p.defineProperty("exec",original);out.set("events",s.get("events"));ThreeUtils::setConsoleFunction({});return out;
 }
+JSValue colorMultiply(const JSValue& r) {
+    auto state = JSValue::object();
+    state.set("events", array()); state.set("request", r);
+    auto fields = JSValue::object();
+    for (const auto* key : {"r", "g", "b"})
+        fields.set(key, r.get("coerceFields").toBoolean() ? capture(state, key) : decode(r.get("values").get(key)));
+    const auto receiverKind = r.get("receiver");
+    const auto self = receiverKind.strictEquals("null") ? JSValue(nullptr)
+        : receiverKind.strictEquals("undefined") ? JSValue{} : observed(state, "color", fields);
+    const auto scalar = r.get("symbolScalar").toBoolean() ? JSValue::symbol("scalar")
+        : r.get("coerceScalar").toBoolean() ? capture(state, "s") : decode(r.get("values").get("s"));
+    const auto prototype = nativeColorConstructor().get("prototype");
+    const auto fn = prototype.get("multiplyScalar");
+    const auto descriptor = prototype.getOwnPropertyDescriptor("multiplyScalar");
+    auto out = JSValue::object();
+    out.set("metadata", array({fn.get("name"), fn.get("length"), fn.isConstructible(),
+        descriptor->writable.value_or(false), descriptor->enumerable.value_or(false), descriptor->configurable.value_or(false),
+        fn.get("toString").call(fn)}));
+    try {
+        const auto result = fn.call(self, {scalar});
+        out.set("result", result.sameValue(self) ? JSValue("@self") : normal(result));
+    } catch (const std::exception& e) { out.set("result", error(e)); }
+    out.set("fields", normal(fields));
+    out.set("events", state.get("events"));
+    return out;
+}
 JSValue colorArray(const JSValue& r){
     auto s=JSValue::object();s.set("events",array());s.set("request",r);auto fields=JSValue::object(),items=JSValue::object();fields.set("r",false);fields.set("g","raw");fields.set("b",JSValue{});for(unsigned i=0;i<5;++i){data(items,std::to_string(i),i+10);data(items,"0"+std::to_string(i),i+20);}
     const auto self=observed(s,"color",fields),input=observed(s,"array",items);auto offset=JSValue::object();offset.setPrimitiveConverter(JSValue::function(+[](const JSValue&,const Args& a,const Args& c)->JSValue{event(c[0],{"offset",arg(a,0)});if(c[0].get("request").get("throwOffset").toBoolean())throw JSTypeError("offset");return decode(c[0].get("request").get("offset"));},{s},"primitive",1));
     auto out=JSValue::object();try{const auto result=nativeColorConstructor().get("prototype").get(r.get("method")).call(self,{input,offset});out.set("result",result.sameValue(self)?JSValue("@self"):result.sameValue(input)?JSValue("@array"):normal(result));}catch(const std::exception& e){out.set("result",error(e));}out.set("fields",normal(fields));out.set("items",normal(items));out.set("events",s.get("events"));return out;
 }
 }
-int main(){std::string line;while(std::getline(std::cin,line)){try{const auto r=Animation_detail::parseJSON(line),kind=r.get("kind");JSValue out;if(kind.strictEquals("basic"))out=basic(r);else if(kind.strictEquals("newTarget"))out=newTarget(r);else if(kind.strictEquals("matrixMethod"))out=matrixMethod(r);else if(kind.strictEquals("clone"))out=clone(r);else if(kind.strictEquals("styleExec"))out=styleExec(r);else if(kind.strictEquals("colorArray"))out=colorArray(r);else out=colorMethod(r);std::cout<<out.toJSON()->dump()<<'\n';}catch(const std::exception& e){auto out=JSValue::object();out.set("probeError",e.what());std::cout<<out.toJSON()->dump()<<'\n';}}}
+int main(){std::string line;while(std::getline(std::cin,line)){try{const auto r=Animation_detail::parseJSON(line),kind=r.get("kind");JSValue out;if(kind.strictEquals("basic"))out=basic(r);else if(kind.strictEquals("newTarget"))out=newTarget(r);else if(kind.strictEquals("matrixMethod"))out=matrixMethod(r);else if(kind.strictEquals("clone"))out=clone(r);else if(kind.strictEquals("styleExec"))out=styleExec(r);else if(kind.strictEquals("colorArray"))out=colorArray(r);else if(kind.strictEquals("colorMultiply"))out=colorMultiply(r);else out=colorMethod(r);std::cout<<out.toJSON()->dump()<<'\n';}catch(const std::exception& e){auto out=JSValue::object();out.set("probeError",e.what());std::cout<<out.toJSON()->dump()<<'\n';}}}

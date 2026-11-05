@@ -7,6 +7,7 @@
 
 #include "catch.hpp"
 #include "math/Color.h"
+#include <cmath>
 #include <type_traits>
 
 TEST_CASE("Color components are native properties in the working color space", "[properties]") {
@@ -264,4 +265,107 @@ TEST_CASE("Color toVector4")
         REQUIRE(v.z == Approx(0.0).epsilon(EPSILON));
         REQUIRE(v.w == Approx(1.0).epsilon(EPSILON));
     }
+}
+
+TEST_CASE("Managed Color multiplyScalar updates RGB and returns the receiver", "[managed-color]") {
+    const auto ctor = nativeColorConstructor();
+    const auto prototype = ctor.get("prototype");
+    const auto fn = prototype.get("multiplyScalar");
+    const auto descriptor = prototype.getOwnPropertyDescriptor("multiplyScalar");
+    REQUIRE(fn.isCallable());
+    REQUIRE(fn.get("length").strictEquals(1));
+    REQUIRE(fn.get("name").strictEquals("multiplyScalar"));
+    REQUIRE_FALSE(fn.isConstructible());
+    REQUIRE(descriptor->writable.value_or(false));
+    REQUIRE(descriptor->configurable.value_or(false));
+    REQUIRE_FALSE(descriptor->enumerable.value_or(false));
+    const auto color = ctor.construct({0.25, 0.5, 0.75});
+    REQUIRE(fn.call(color, {2}).sameValue(color));
+    REQUIRE(color.get("r").strictEquals(0.5));
+    REQUIRE(color.get("g").strictEquals(1));
+    REQUIRE(color.get("b").strictEquals(1.5));
+    fn.call(color, {-0.0});
+    REQUIRE(std::signbit(color.get("r").number()));
+    REQUIRE(std::signbit(color.get("g").number()));
+    REQUIRE(std::signbit(color.get("b").number()));
+    fn.call(color);
+    REQUIRE(std::isnan(color.get("r").number()));
+    REQUIRE(std::isnan(color.get("g").number()));
+    REQUIRE(std::isnan(color.get("b").number()));
+}
+
+TEST_CASE("Managed Color multiplyScalar observes channel access and repeated scalar conversion", "[managed-color]") {
+    using Args = std::vector<JSValue>;
+    auto events = JSValue::array();
+    auto fields = JSValue::object();
+    fields.set("r", 1); fields.set("g", 2); fields.set("b", 3);
+    auto state = JSValue::object();
+    state.set("fields", fields); state.set("events", events); state.set("calls", 0);
+    auto receiver = JSValue::object();
+    for (const auto* key : {"r", "g", "b"}) {
+        JSPropertyDescriptor descriptor;
+        descriptor.getter = JSValue::function(+[](const JSValue&, const Args&, const Args& c) -> JSValue {
+            const auto log = c[0].get("events");
+            log.get("push").call(log, {"get:" + c[1].string()});
+            return c[0].get("fields").get(c[1]);
+        }, {state, key});
+        descriptor.setter = JSValue::function(+[](const JSValue&, const Args& args, const Args& c) -> JSValue {
+            const auto log = c[0].get("events");
+            log.get("push").call(log, {"set:" + c[1].string()});
+            auto fields = c[0].get("fields");
+            fields.set(c[1], args[0]);
+            return {};
+        }, {state, key});
+        receiver.defineProperty(key, descriptor);
+    }
+    auto scalar = JSValue::object();
+    scalar.setPrimitiveConverter(JSValue::function(+[](const JSValue&, const Args& args, const Args& c) -> JSValue {
+        auto state = c[0];
+        const auto calls = state.get("calls").number() + 1;
+        state.set("calls", calls);
+        const auto log = state.get("events");
+        log.get("push").call(log, {"scalar:" + args[0].string()});
+        auto fields = state.get("fields");
+        if (calls == 1) fields.set("g", 10);
+        if (calls == 2) fields.set("b", 20);
+        return calls + 1;
+    }, {state}));
+    const auto fn = nativeColorConstructor().get("prototype").get("multiplyScalar");
+    REQUIRE(fn.call(receiver, {scalar}).sameValue(receiver));
+    REQUIRE(fields.get("r").strictEquals(2));
+    REQUIRE(fields.get("g").strictEquals(30));
+    REQUIRE(fields.get("b").strictEquals(80));
+    REQUIRE(state.get("calls").strictEquals(3));
+    const std::vector<std::string> expected{
+        "get:r", "scalar:number", "set:r", "get:g", "scalar:number", "set:g", "get:b", "scalar:number", "set:b"};
+    REQUIRE(events.length() == expected.size());
+    for (unsigned i = 0; i < expected.size(); ++i) REQUIRE(events.get(JSValue(i)).strictEquals(expected[i]));
+}
+
+TEST_CASE("Managed Color multiplyScalar preserves earlier writes on abrupt completion", "[managed-color]") {
+    using Args = std::vector<JSValue>;
+    const auto fn = nativeColorConstructor().get("prototype").get("multiplyScalar");
+    auto receiver = JSValue::object();
+    receiver.set("r", 1); receiver.set("g", 2); receiver.set("b", 3);
+    SECTION("A nonwritable channel stops subsequent channels") {
+        JSPropertyDescriptor descriptor; descriptor.writable = false;
+        receiver.defineProperty("g", descriptor);
+        REQUIRE_THROWS_AS(fn.call(receiver, {3}), JSTypeError);
+    }
+    SECTION("Scalar coercion is repeated and may throw before the second write") {
+        auto state = JSValue::object(); state.set("calls", 0);
+        auto scalar = JSValue::object();
+        scalar.setPrimitiveConverter(JSValue::function(+[](const JSValue&, const Args&, const Args& c) -> JSValue {
+            auto state = c[0];
+            const auto calls = state.get("calls").number() + 1;
+            state.set("calls", calls);
+            if (calls == 2) throw JSTypeError("scalar conversion");
+            return 3;
+        }, {state}));
+        REQUIRE_THROWS_AS(fn.call(receiver, {scalar}), JSTypeError);
+        REQUIRE(state.get("calls").strictEquals(2));
+    }
+    REQUIRE(receiver.get("r").strictEquals(3));
+    REQUIRE(receiver.get("g").strictEquals(2));
+    REQUIRE(receiver.get("b").strictEquals(3));
 }

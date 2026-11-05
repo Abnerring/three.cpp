@@ -11,16 +11,58 @@ function clone(r){const C=classes[r.class],events=[],self={},returned={fixtureTa
 function colorMethod(r){const events=[],value=new classes.Color(),out={};setConsoleFunction((...a)=>events.push(['console',...a.map(v=>normal(v))]));try{const result=Reflect.apply(value[r.method],value,r.args.map(decode));out.identity=result===value;out.result=normal(result)}catch(e){out.result='#'+e.name}out.remaining=normal(value);out.events=events;setConsoleFunction(null);return out;}
 function styleExec(r){const events=[],self=new classes.Color(),original=Object.getOwnPropertyDescriptor(RegExp.prototype,'exec');let i=0;setConsoleFunction((...a)=>events.push(['console',...a.map(v=>normal(v))]));function capture(key){return {[Symbol.toPrimitive](hint){events.push(['primitive',key,hint]);if(r.throwPrimitive===key)throw new TypeError('primitive');return decode(r.values[key]);}};}for(const key of ['setRGB','setHSL','setHex'])Object.defineProperty(self,key,{configurable:true,get(){events.push(['method.get',key]);return function(...a){events.push(['method.call',key,normal(a)]);return {fixtureTag:'methodResult'};};}});Object.defineProperty(RegExp.prototype,'exec',{...original,value:function(input){const n=i++;events.push(['exec',n,normal(input)]);if(n===0){if(r.mode==='hex3'||r.mode==='hex6')return null;return {1:r.mode==='hsl'?'hsl':'rgb',2:'components'};}if(n===1&&r.mode==='percent')return null;const match={};if(r.mode==='hex3'||r.mode==='hex6'){const hex=capture('0');hex.length=r.mode==='hex3'?3:6;Object.defineProperty(hex,'charAt',{configurable:true,get(){events.push(['charAt.get']);return function(index){events.push(['charAt.call',index]);return capture(String(index));};}});match[1]=hex;return match;}for(const key of ['1','2','3','4'])Object.defineProperty(match,key,{configurable:true,get(){events.push(['capture.get',key]);if(r.throwCapture===key)throw new TypeError('capture');return capture(key);}});return match;}});const out={};try{out.result=normal(self.setStyle('fixture'))}catch(e){out.result='#'+e.name}finally{Object.defineProperty(RegExp.prototype,'exec',original);setConsoleFunction(null);}out.events=events;return out;}
 function colorArray(r){const events=[],fields={r:false,g:'raw',b:undefined},items={};for(let i=0;i<5;i++){items[i]=i+10;items['0'+i]=i+20;}function observed(label,storage){return new Proxy(storage,{get(target,key){events.push([label+'.get',normal(key)]);if(r.throwRead===key)throw new TypeError('read');return target[key];},set(target,key,value){events.push([label+'.set',normal(key),normal(value)]);if(r.throwWrite===key)throw new TypeError('write');target[key]=value;return true;}});}const self=observed('color',fields),input=observed('array',items),offset={[Symbol.toPrimitive](hint){events.push(['offset',hint]);if(r.throwOffset)throw new TypeError('offset');return decode(r.offset);}},out={};try{const result=Reflect.apply(classes.Color.prototype[r.method],self,[input,offset]);out.result=result===self?'@self':result===input?'@array':normal(result)}catch(e){out.result='#'+e.name}out.fields=normal(fields);out.items=normal(items);out.events=events;return out;}
+function colorMultiply(r) {
+    const events = [], fields = {};
+    const capture = key => ({ [Symbol.toPrimitive](hint) {
+        events.push(['primitive', key, hint]);
+        if (r.throwPrimitive === key) throw new TypeError('primitive');
+        return decode(r.values[key]);
+    } });
+    for (const key of ['r', 'g', 'b']) fields[key] = r.coerceFields ? capture(key) : decode(r.values[key]);
+    const self = r.receiver === 'null' ? null : r.receiver === 'undefined' ? undefined : new Proxy(fields, {
+        get(target, key) {
+            events.push(['color.get', normal(key)]);
+            if (r.throwRead === key) throw new TypeError('read');
+            return target[key];
+        },
+        set(target, key, value) {
+            events.push(['color.set', normal(key), normal(value)]);
+            if (r.throwWrite === key) throw new TypeError('write');
+            target[key] = value;
+            return true;
+        }
+    });
+    const scalar = r.symbolScalar ? Symbol('scalar') : r.coerceScalar ? capture('s') : decode(r.values.s);
+    const fn = classes.Color.prototype.multiplyScalar;
+    const descriptor = Object.getOwnPropertyDescriptor(classes.Color.prototype, 'multiplyScalar');
+    const out = { metadata: [fn.name, fn.length, false, descriptor.writable, descriptor.enumerable, descriptor.configurable, fn.toString()] };
+    try {
+        const result = Reflect.apply(fn, self, [scalar]);
+        out.result = result === self ? '@self' : normal(result);
+    } catch (error) { out.result = '#' + error.name; }
+    out.fields = normal(fields);
+    out.events = events;
+    return out;
+}
 const cases=[],U={tag:'undefined'},nan={tag:'NaN'},inf={tag:'Infinity'},ninf={tag:'-Infinity'},negzero={tag:'-0'};
 for(const name of Object.keys(classes))for(const args of [[],[U],[null],[true],[false],['2'],[negzero],[nan],[inf],[ninf],[1],[1,2,3],[U,1],[false,'2',U],[1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16]])cases.push({kind:'basic',class:name,args});
 for(const name of ['Matrix3','Matrix4','Color'])for(const args of [[],[U,2],[0],[false,'x',U]])for(const trigger of ['ok','getter','call','write','replacement'])cases.push({kind:'newTarget',class:name,args,...trigger==='getter'?{throwGet:true}:trigger==='call'?{throwCall:true}:trigger==='write'?{throwWrite:name==='Color'?'g':'elements'}:trigger==='replacement'?{replacement:true}:{}});
 for(const name of ['Matrix3','Matrix4'])for(const method of ['set','copy','equals','fromArray','toArray'])for(const offset of [0,'0',null])for(const trigger of ['ok','read','write'])cases.push({kind:'matrixMethod',class:name,method,offset,...trigger==='read'?{throwRead:'2'}:trigger==='write'?{throwWrite:'3'}:{}});
 for(const name of ['Matrix3','Matrix4'])for(const different of ['0','3','8'])cases.push({kind:'matrixMethod',class:name,method:'equals',offset:0,different});
 for(const name of ['Matrix3','Matrix4','Color'])cases.push({kind:'clone',class:name});
-for(const method of ['set','setHex','setRGB','setHSL','setScalar','setStyle','setColorName','fromArray','toArray'])for(const args of [[],[U],[null],[true],[false],[negzero],[nan],[inf],['2'],[1,2,3],[true,'2',U]])cases.push({kind:'colorMethod',method,args});
+for(const method of ['set','setHex','setRGB','setHSL','setScalar','multiplyScalar','setStyle','setColorName','fromArray','toArray'])for(const args of [[],[U],[null],[true],[false],[negzero],[nan],[inf],['2'],[1,2,3],[true,'2',U]])cases.push({kind:'colorMethod',method,args});
 for(const style of ['red','RED','transparent','','#ff0','#ffffff','#ff','#abcd','#ff000000','#xyz','rgb(256,0,1)','rgba(255,0,0,.5)','rgb(50.5%,100%,0%)','rgba(0%,0%,0%,0.1)','hsl(-120,50%,50%)','hsla(120,50%,50%,.1)','rgb(-1,0,0)','unknown(1,2,3)','rgb(1,2)','hsl(1,2,3)','rgb(1,2,3)tail'])cases.push({kind:'colorMethod',method:'setStyle',args:[style]});
 for(const mode of ['integer','percent','hsl','hex3','hex6'])for(const values of [['12x','1x','2x','3x','0.5tail'],['-0q','-0x',null,true,'1e-1q'],['-fftail','Infinityx','1e2tail','.5x','junk']])for(const trigger of ['ok','capture','primitive'])cases.push({kind:'styleExec',mode,values,...trigger==='capture'?{throwCapture:'2'}:trigger==='primitive'?{throwPrimitive:'1'}:{}});
 for(const method of ['fromArray','toArray'])for(const offset of [0,'0',null])for(const trigger of ['ok','offset','read','write'])cases.push({kind:'colorArray',method,offset,...trigger==='offset'?{throwOffset:true}:trigger==='read'?{throwRead:method==='toArray'?'g':'1'}:trigger==='write'?{throwWrite:method==='toArray'?'1':'g'}:{}});
-const run=r=>r.kind==='basic'?basic(r):r.kind==='newTarget'?newTarget(r):r.kind==='matrixMethod'?matrixMethod(r):r.kind==='clone'?clone(r):r.kind==='styleExec'?styleExec(r):r.kind==='colorArray'?colorArray(r):colorMethod(r),expected=cases.map(run);
+for (const coerceFields of [false, true]) for (const coerceScalar of [false, true]) {
+    for (const trigger of [{}, {throwRead:'g'}, {throwWrite:'g'}, ...(coerceFields ? [{throwPrimitive:'g'}] : []), ...(coerceScalar ? [{throwPrimitive:'s'}] : [])])
+        cases.push({kind:'colorMultiply', values:{r:'2',g:3,b:false,s:2}, coerceFields, coerceScalar, ...trigger});
+}
+for (const scalar of [U, null, negzero, nan, inf, ninf, '2'])
+    cases.push({kind:'colorMultiply', values:{r:negzero,g:'2',b:0,s:scalar}});
+for (const receiver of ['null', 'undefined'])
+    cases.push({kind:'colorMultiply', values:{r:1,g:2,b:3,s:2}, receiver});
+cases.push({kind:'colorMultiply', values:{r:1,g:2,b:3,s:2}, symbolScalar:true});
+const run=r=>r.kind==='basic'?basic(r):r.kind==='newTarget'?newTarget(r):r.kind==='matrixMethod'?matrixMethod(r):r.kind==='clone'?clone(r):r.kind==='styleExec'?styleExec(r):r.kind==='colorArray'?colorArray(r):r.kind==='colorMultiply'?colorMultiply(r):colorMethod(r),expected=cases.map(run);
 if(directory){fs.mkdirSync(directory,{recursive:true});fs.writeFileSync(path.join(directory,'input.jsonl'),cases.map(r=>JSON.stringify(r)).join('\n')+'\n');fs.writeFileSync(path.join(directory,'expected.json'),JSON.stringify(expected,null,2));}
 if(!binary){console.log(JSON.stringify({oracle:cases.length}));process.exit(0);}const actual=execFileSync(binary,[],{input:cases.map(r=>JSON.stringify(r)).join('\n')+'\n',encoding:'utf8',maxBuffer:128*1024*1024}).trimEnd().split(/\r?\n/).map(JSON.parse);assert.equal(actual.length,cases.length);const differences=[];for(let i=0;i<cases.length;i++)try{assert.deepEqual(actual[i],expected[i]);}catch{differences.push({index:i,case:cases[i],expected:expected[i],actual:actual[i]});}if(directory){fs.writeFileSync(path.join(directory,'actual.json'),JSON.stringify(actual,null,2));fs.writeFileSync(path.join(directory,'differences.json'),JSON.stringify(differences,null,2));}assert.equal(differences.length,0,JSON.stringify(differences.slice(0,3),null,2));console.log(`Managed math constructors: ${cases.length} direct pinned-upstream cases passed`);

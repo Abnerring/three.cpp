@@ -109,6 +109,10 @@ JSValue method(const JSValue& receiver, const Args& args, const Args& captures) 
         for (const auto* field : {"r", "g", "b"}) self.set(field, name == "copy" ? first.get(field) : first);
         return self;
     }
+    if (name == "multiplyScalar") {
+        for (const auto* field : {"r", "g", "b"}) self.set(field, product(self.get(field), first));
+        return self;
+    }
     if (name == "clone") {
         const auto ctor = self.get("constructor"); const auto r = self.get("r"), g = self.get("g"), b = self.get("b");
         return ctor.construct({r, g, b});
@@ -228,8 +232,10 @@ JSValue nativeColorConstructor() {
     auto prototype = ctor.get("prototype"); const auto names = keywords();
     for (const auto& [key, arity] : std::initializer_list<std::pair<const char*, unsigned>>{
         {"set",3},{"setScalar",1},{"setHex",1},{"setRGB",3},{"setHSL",3},{"setStyle",1},{"setColorName",1},
-        {"clone",0},{"copy",1},{"getHex",0},{"applyMatrix3",1},{"equals",1},{"fromArray",1},{"toArray",0},{"toJSON",0}}) {
+        {"clone",0},{"copy",1},{"multiplyScalar",1},{"getHex",0},{"applyMatrix3",1},{"equals",1},{"fromArray",1},{"toArray",0},{"toJSON",0}}) {
         JSPropertyDescriptor d; d.value = JSValue::function(method, {key, names}, key, arity);
+        if (std::string(key) == "multiplyScalar") d.value->setFunctionSourceText(
+            "multiplyScalar( s ) {\r\n\r\n\t\tthis.r *= s;\r\n\t\tthis.g *= s;\r\n\t\tthis.b *= s;\r\n\r\n\t\treturn this;\r\n\r\n\t}");
         d.writable = d.configurable = true; prototype.defineProperty(key, d);
     }
     ctor.set("NAMES", names); ctor.retainForHeapLifetime(); weak = JSWeakValue(ctor);
