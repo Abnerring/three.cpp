@@ -201,8 +201,8 @@
     "note": "Accepted port scope is src and examples/jsm, including tracked third-party dependencies. Editor/manual web applications are excluded from native application rewrites. Native host behavior, packaging and all three platforms require separate implementation and verification evidence."
   },
   "counts": {
-    "partial-unverified": 612,
-    "missing": 329,
+    "partial-unverified": 615,
+    "missing": 326,
     "vulkan-port-pending": 290,
     "dependency-unverified": 20
   },
@@ -210,8 +210,8 @@
     "src": {
       "modules": 755,
       "counts": {
-        "partial-unverified": 458,
-        "missing": 7,
+        "partial-unverified": 461,
+        "missing": 4,
         "vulkan-port-pending": 290
       }
     },
@@ -761,7 +761,7 @@
       "path": "src/materials/nodes",
       "upstreamFiles": 19,
       "moduleCount": 19,
-      "modulesWithCppFiles": 15,
+      "modulesWithCppFiles": 18,
       "verifiedComplete": 0
     },
     {
@@ -6127,11 +6127,11 @@
       "scope": "src",
       "kind": "core",
       "upstreamSha256": "f95b1323c2d525d49ec59329af39efa3276a344f3edbf94f6e00c87131ca2943",
-      "header": null,
-      "implementation": null,
+      "header": "src/materials/nodes/MeshPhysicalNodeMaterial.h",
+      "implementation": "src/materials/nodes/MeshPhysicalNodeMaterial.cpp",
       "expectedHeader": "src/materials/nodes/MeshPhysicalNodeMaterial.h",
       "expectedImplementation": "src/materials/nodes/MeshPhysicalNodeMaterial.cpp",
-      "status": "missing",
+      "status": "partial-unverified",
       "verifiedComplete": false,
       "apiExtraction": "static-only",
       "verification": {
@@ -6140,7 +6140,9 @@
           "pointer": "/modules/170"
         },
         "upstreamUnitTests": [],
-        "cppUnitTests": [],
+        "cppUnitTests": [
+          "test/unit/src/materials/nodes/MeshPhysicalNodeMaterial.tests.cpp"
+        ],
         "reviewedImplementation": [],
         "differentialResults": [],
         "renderingResults": [],
@@ -6154,11 +6156,11 @@
       "scope": "src",
       "kind": "core",
       "upstreamSha256": "6643359c9b95efa0ec8641fe5cb905646d030041876a4d5cf72067f649c563fb",
-      "header": null,
-      "implementation": null,
+      "header": "src/materials/nodes/MeshSSSNodeMaterial.h",
+      "implementation": "src/materials/nodes/MeshSSSNodeMaterial.cpp",
       "expectedHeader": "src/materials/nodes/MeshSSSNodeMaterial.h",
       "expectedImplementation": "src/materials/nodes/MeshSSSNodeMaterial.cpp",
-      "status": "missing",
+      "status": "partial-unverified",
       "verifiedComplete": false,
       "apiExtraction": "static-only",
       "verification": {
@@ -6167,7 +6169,9 @@
           "pointer": "/modules/171"
         },
         "upstreamUnitTests": [],
-        "cppUnitTests": [],
+        "cppUnitTests": [
+          "test/unit/src/materials/nodes/MeshSSSNodeMaterial.tests.cpp"
+        ],
         "reviewedImplementation": [],
         "differentialResults": [],
         "renderingResults": [],
@@ -6181,11 +6185,11 @@
       "scope": "src",
       "kind": "core",
       "upstreamSha256": "e88407c70a60ed1e56467da591ae3f2287437b3e46858082cf5925335e9a7de4",
-      "header": null,
-      "implementation": null,
+      "header": "src/materials/nodes/MeshStandardNodeMaterial.h",
+      "implementation": "src/materials/nodes/MeshStandardNodeMaterial.cpp",
       "expectedHeader": "src/materials/nodes/MeshStandardNodeMaterial.h",
       "expectedImplementation": "src/materials/nodes/MeshStandardNodeMaterial.cpp",
-      "status": "missing",
+      "status": "partial-unverified",
       "verifiedComplete": false,
       "apiExtraction": "static-only",
       "verification": {
@@ -6194,7 +6198,9 @@
           "pointer": "/modules/172"
         },
         "upstreamUnitTests": [],
-        "cppUnitTests": [],
+        "cppUnitTests": [
+          "test/unit/src/materials/nodes/MeshStandardNodeMaterial.tests.cpp"
+        ],
         "reviewedImplementation": [],
         "differentialResults": [],
         "renderingResults": [],

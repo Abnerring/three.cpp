@@ -2,6 +2,7 @@
 
 #include "nodes/core/Node.h"
 #include "nodes/tsl/TSLBase.h"
+#include "../../../../utils/parity/LTCFixtures.h"
 
 #include "catch.hpp"
 
@@ -31,4 +32,50 @@ TEST_CASE("LTC_Uv builds the lookup coordinate from the roughness and the view d
     // var typed node. The differential runs the same call against the pinned module and compares this
     // type, so the expectation here is not a guess.
     REQUIRE(uv.get("type").strictEquals("VarNode"));
+}
+
+TEST_CASE("LTC exports preserve the pinned typed inputs and return types") {
+    const auto shapes = LTCFixtures::snapshot().get("shapes");
+    const auto check = [&](const char* name, const char* type,
+                           std::initializer_list<std::pair<const char*, const char*>> inputs) {
+        const auto shape = shapes.get(name);
+        REQUIRE(shape.get("callbackLength").strictEquals(1));
+        REQUIRE(shape.get("nodeType").strictEquals(type));
+        REQUIRE(shape.get("layoutType").strictEquals(type));
+        REQUIRE(shape.get("inputs").length() == inputs.size());
+        std::size_t i = 0;
+        for (const auto& [input, inputType] : inputs) {
+            const auto actual = shape.get("inputs").get(std::to_string(i++));
+            REQUIRE(actual.get("name").strictEquals(input));
+            REQUIRE(actual.get("type").strictEquals(inputType));
+        }
+    };
+    check("LTC_Uv", "vec2", {{"N", "vec3"}, {"V", "vec3"}, {"roughness", "float"}});
+    check("LTC_Evaluate", "vec3", {{"N", "vec3"}, {"V", "vec3"}, {"P", "vec3"}, {"mInv", "mat3"},
+                                    {"p0", "vec3"}, {"p1", "vec3"}, {"p2", "vec3"}, {"p3", "vec3"}});
+    check("LTC_Evaluate_Volume", "vec3", {{"P", "vec3"}, {"p0", "vec3"}, {"p1", "vec3"}, {"p2", "vec3"}, {"p3", "vec3"}});
+}
+
+TEST_CASE("LTC bodies consume named inputs and retain typed internal helper calls") {
+    const auto uv = LTCFixtures::uvBody();
+    REQUIRE(uv.get("isNode").strictEquals(true));
+    REQUIRE(uv.get("assignments").toNumber() > 0);
+    const auto internal = LTCFixtures::internalShapes();
+    REQUIRE(internal.keys().size() == 2);
+    const auto clipped = internal.get("LTC_ClippedSphereFormFactor");
+    REQUIRE(clipped.get("callbackLength").strictEquals(1));
+    REQUIRE(clipped.get("nodeType").strictEquals("float"));
+    REQUIRE(clipped.get("layoutType").strictEquals("float"));
+    REQUIRE(clipped.get("inputs").length() == 1);
+    REQUIRE(clipped.get("inputs").get("0").get("name").strictEquals("f"));
+    REQUIRE(clipped.get("inputs").get("0").get("type").strictEquals("vec3"));
+    const auto edge = internal.get("LTC_EdgeVectorFormFactor");
+    REQUIRE(edge.get("callbackLength").strictEquals(1));
+    REQUIRE(edge.get("nodeType").strictEquals("vec3"));
+    REQUIRE(edge.get("layoutType").strictEquals("vec3"));
+    REQUIRE(edge.get("inputs").length() == 2);
+    REQUIRE(edge.get("inputs").get("0").get("name").strictEquals("v1"));
+    REQUIRE(edge.get("inputs").get("1").get("name").strictEquals("v2"));
+    REQUIRE(edge.get("inputs").get("0").get("type").strictEquals("vec3"));
+    REQUIRE(edge.get("inputs").get("1").get("type").strictEquals("vec3"));
 }

@@ -3,6 +3,9 @@
 #include "materials/nodes/LineBasicNodeMaterial.h"
 #include "materials/nodes/LineDashedNodeMaterial.h"
 #include "materials/nodes/MeshBasicNodeMaterial.h"
+#include "materials/nodes/MeshStandardNodeMaterial.h"
+#include "materials/nodes/MeshPhysicalNodeMaterial.h"
+#include "materials/nodes/MeshSSSNodeMaterial.h"
 #include "materials/nodes/MeshLambertNodeMaterial.h"
 #include "materials/nodes/MeshMatcapNodeMaterial.h"
 #include "materials/nodes/MeshNormalNodeMaterial.h"
@@ -28,6 +31,9 @@ JSValue nativeNodeMaterialsModule() {
     module.set("MeshBasicNodeMaterial", nativeMeshBasicNodeMaterialConstructor());
     module.set("MeshLambertNodeMaterial", nativeMeshLambertNodeMaterialConstructor());
     module.set("MeshPhongNodeMaterial", nativeMeshPhongNodeMaterialConstructor());
+    module.set("MeshStandardNodeMaterial", nativeMeshStandardNodeMaterialConstructor());
+    module.set("MeshPhysicalNodeMaterial", nativeMeshPhysicalNodeMaterialConstructor());
+    module.set("MeshSSSNodeMaterial", nativeMeshSSSNodeMaterialConstructor());
     module.set("MeshToonNodeMaterial", nativeMeshToonNodeMaterialConstructor());
     module.set("MeshMatcapNodeMaterial", nativeMeshMatcapNodeMaterialConstructor());
     module.set("PointsNodeMaterial", nativePointsNodeMaterialConstructor());

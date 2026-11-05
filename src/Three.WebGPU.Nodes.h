@@ -1,6 +1,7 @@
 #pragma once
 
 #include "Three.Core.h"
+#include "materials/nodes/NodeMaterials.h"
 
 // Aggregator port of src/Three.WebGPU.Nodes.js from the pinned three.js revision (see upstream.json).
 //
@@ -9,7 +10,7 @@
 // is explicit instead of silently missing:
 //
 //   export * from './Three.Core.js';                        -> #include "Three.Core.h"
-//   export * from './materials/nodes/NodeMaterials.js';     -> not ported yet
+//   export * from './materials/nodes/NodeMaterials.js';     -> NodeMaterials.h (Line2 remains pending)
 //   WebGPURenderer           -> not ported yet (renderer side is Vulkan here)
 //   WebGPUBackend            -> not ported yet
 //   WebGLBackend             -> not ported yet

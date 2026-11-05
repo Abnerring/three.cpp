@@ -14,15 +14,17 @@ JSWeakValue& lexical() {
 
 JSValue body(const JSValue&, const Args& args, const Args&) {
     const auto inputs = arg(args, 0);
-    auto dfgInputs = JSValue::object();
-    dfgInputs.set("dotNV", inputs.get("dotNV"));
-    dfgInputs.set("roughness", inputs.get("roughness"));
-    const auto fab = nativeDFGLUT().call({}, {dfgInputs});
+    const auto dotNV = inputs.get("dotNV");
     const auto specularColor = inputs.get("specularColor");
     const auto specularF90 = inputs.get("specularF90");
+    const auto roughness = inputs.get("roughness");
+    auto dfgInputs = JSValue::object();
+    dfgInputs.set("dotNV", dotNV);
+    dfgInputs.set("roughness", roughness);
+    const auto fab = nativeDFGLUT().call({}, {dfgInputs});
     const auto left = invoke(specularColor, "mul")({fab.get("x")});
-    const auto right = invoke(specularF90, "mul")({fab.get("y")});
-    return invoke(left, "add")({right});
+    const auto add = invoke(left, "add");
+    return add({invoke(specularF90, "mul")({fab.get("y")})});
 }
 } // namespace
 
@@ -37,13 +39,7 @@ JSValue nativeEnvironmentBRDFModule() {
     (void)dfg;
     auto callback = JSValue::function(body, {}, "", 1);
     callback.setFunctionSourceText("( inputs ) => {\r\n\r\n\tconst { dotNV, specularColor, specularF90, roughness } = inputs;\r\n\r\n\tconst fab = DFGLUT( { dotNV, roughness } );\r\n\treturn specularColor.mul( fab.x ).add( specularF90.mul( fab.y ) );\r\n\r\n}");
-    auto layout = JSValue::object();
-    own(layout, "dotNV", "float");
-    own(layout, "specularColor", "vec3");
-    own(layout, "specularF90", "float");
-    own(layout, "roughness", "float");
-    own(layout, "return", "vec3");
-    const auto value = nativeTSLBaseBinding("Fn").call({}, {callback, layout});
+    const auto value = nativeTSLBaseBinding("Fn").call({}, {callback});
 
     auto bindings = JSValue::object(nullptr);
     own(bindings, "default", value);

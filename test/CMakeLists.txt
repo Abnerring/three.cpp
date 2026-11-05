@@ -115,6 +115,9 @@ add_executable(THREECPPTests
         unit/src/materials/nodes/MeshLambertNodeMaterial.tests.cpp
         unit/src/materials/nodes/MeshPhongNodeMaterial.tests.cpp
         unit/src/materials/nodes/MeshBasicNodeMaterial.tests.cpp
+        unit/src/materials/nodes/MeshStandardNodeMaterial.tests.cpp
+        unit/src/materials/nodes/MeshPhysicalNodeMaterial.tests.cpp
+        unit/src/materials/nodes/MeshSSSNodeMaterial.tests.cpp
         unit/src/materials/nodes/LineDashedNodeMaterial.tests.cpp
         unit/src/materials/nodes/VolumeNodeMaterial.tests.cpp
         unit/src/materials/nodes/ProxyNodeMaterial.tests.cpp
@@ -1143,6 +1146,35 @@ if(THREECPP_NODE_EXECUTABLE AND THREEJS_SOURCE_DIR)
     add_test(NAME threecpp.threejs-mesh-basic-node-material-parity
         COMMAND "${THREECPP_NODE_EXECUTABLE}" "${CMAKE_CURRENT_SOURCE_DIR}/unit/utils/parity/compare-mesh-basic-node-material.mjs"
         "${THREEJS_SOURCE_DIR}" "$<TARGET_FILE:ThreeJsMeshBasicNodeMaterialParityProbe>")
+endif()
+foreach(_threecpp_pbr_material IN ITEMS Standard Physical SSS)
+    if(_threecpp_pbr_material STREQUAL "SSS")
+        set(_threecpp_pbr_slug "sss")
+    else()
+        string(TOLOWER "${_threecpp_pbr_material}" _threecpp_pbr_slug)
+    endif()
+    add_executable(ThreeJsMesh${_threecpp_pbr_material}NodeMaterialParityProbe
+        unit/utils/parity/Mesh${_threecpp_pbr_material}NodeMaterialParityProbe.cpp)
+    target_link_libraries(ThreeJsMesh${_threecpp_pbr_material}NodeMaterialParityProbe PRIVATE threecpp::threecpp)
+    if(THREECPP_NODE_EXECUTABLE AND THREEJS_SOURCE_DIR)
+        add_test(NAME threecpp.threejs-mesh-${_threecpp_pbr_slug}-node-material-parity
+            COMMAND "${THREECPP_NODE_EXECUTABLE}" "${CMAKE_CURRENT_SOURCE_DIR}/unit/utils/parity/compare-mesh-${_threecpp_pbr_slug}-node-material.mjs"
+            "${THREEJS_SOURCE_DIR}" "$<TARGET_FILE:ThreeJsMesh${_threecpp_pbr_material}NodeMaterialParityProbe>")
+    endif()
+endforeach()
+add_executable(ThreeJsPhysicalLightingModelParityProbe unit/utils/parity/PhysicalLightingModelParityProbe.cpp)
+target_link_libraries(ThreeJsPhysicalLightingModelParityProbe PRIVATE threecpp::threecpp)
+if(THREECPP_NODE_EXECUTABLE AND THREEJS_SOURCE_DIR)
+    add_test(NAME threecpp.threejs-physical-lighting-model-parity
+        COMMAND "${THREECPP_NODE_EXECUTABLE}" "${CMAKE_CURRENT_SOURCE_DIR}/unit/utils/parity/compare-physical-lighting-model.mjs"
+        "${THREEJS_SOURCE_DIR}" "$<TARGET_FILE:ThreeJsPhysicalLightingModelParityProbe>")
+endif()
+add_executable(ThreeJsLightingModelParityProbe unit/utils/parity/LightingModelParityProbe.cpp)
+target_link_libraries(ThreeJsLightingModelParityProbe PRIVATE threecpp::threecpp)
+if(THREECPP_NODE_EXECUTABLE AND THREEJS_SOURCE_DIR)
+    add_test(NAME threecpp.threejs-lighting-model-parity
+        COMMAND "${THREECPP_NODE_EXECUTABLE}" "${CMAKE_CURRENT_SOURCE_DIR}/unit/utils/parity/compare-lighting-model.mjs"
+        "${THREEJS_SOURCE_DIR}" "$<TARGET_FILE:ThreeJsLightingModelParityProbe>")
 endif()
 add_executable(ThreeJsLineDashedNodeMaterialParityProbe unit/utils/parity/LineDashedNodeMaterialParityProbe.cpp)
 target_link_libraries(ThreeJsLineDashedNodeMaterialParityProbe PRIVATE threecpp::threecpp)

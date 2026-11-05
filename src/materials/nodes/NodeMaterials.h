@@ -12,12 +12,13 @@
 //
 //   NodeMaterialObserver, NodeMaterial, ProxyNodeMaterial, LineBasicNodeMaterial,
 //   LineDashedNodeMaterial, MeshNormalNodeMaterial, MeshBasicNodeMaterial,
-//   MeshLambertNodeMaterial, MeshPhongNodeMaterial, MeshToonNodeMaterial,
+//   MeshLambertNodeMaterial, MeshPhongNodeMaterial, MeshStandardNodeMaterial,
+//   MeshPhysicalNodeMaterial, MeshSSSNodeMaterial, MeshToonNodeMaterial,
 //   MeshMatcapNodeMaterial, PointsNodeMaterial, SpriteNodeMaterial, ShadowNodeMaterial,
 //   VolumeNodeMaterial
 //
 // Still missing from the map (their modules are not ported yet):
 //
-//   Line2NodeMaterial, MeshStandardNodeMaterial, MeshPhysicalNodeMaterial, MeshSSSNodeMaterial
+//   Line2NodeMaterial
 JSValue nativeNodeMaterialsModule();
 JSValue nativeNodeMaterialsBinding(const std::string& name);

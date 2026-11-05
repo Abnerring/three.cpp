@@ -8,6 +8,7 @@ TEST_CASE("NodeMaterials re-exports every ported node material") {
     for (const char* name : {"NodeMaterialObserver", "NodeMaterial", "ProxyNodeMaterial",
                              "LineBasicNodeMaterial", "LineDashedNodeMaterial",
                              "MeshNormalNodeMaterial", "MeshBasicNodeMaterial",
+                             "MeshStandardNodeMaterial", "MeshPhysicalNodeMaterial", "MeshSSSNodeMaterial",
                              "MeshLambertNodeMaterial", "MeshPhongNodeMaterial",
                              "MeshToonNodeMaterial", "MeshMatcapNodeMaterial", "PointsNodeMaterial",
                              "SpriteNodeMaterial", "ShadowNodeMaterial", "VolumeNodeMaterial"}) {
@@ -19,7 +20,8 @@ TEST_CASE("NodeMaterials binding resolves the exported constructors") {
     const auto basic = nativeNodeMaterialsBinding("MeshBasicNodeMaterial");
     REQUIRE_FALSE(basic.isUndefined());
     REQUIRE(basic.strictEquals(nativeNodeMaterialsModule().get("MeshBasicNodeMaterial")));
-    // A class that is still missing from the map answers undefined instead of pretending to exist.
-    REQUIRE(nativeNodeMaterialsBinding("MeshStandardNodeMaterial").isUndefined());
+    REQUIRE_FALSE(nativeNodeMaterialsBinding("MeshStandardNodeMaterial").isUndefined());
+    REQUIRE_FALSE(nativeNodeMaterialsBinding("MeshPhysicalNodeMaterial").isUndefined());
+    REQUIRE_FALSE(nativeNodeMaterialsBinding("MeshSSSNodeMaterial").isUndefined());
     REQUIRE(nativeNodeMaterialsBinding("notANodeMaterial").isUndefined());
 }

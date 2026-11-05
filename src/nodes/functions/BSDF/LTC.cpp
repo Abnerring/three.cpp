@@ -27,21 +27,17 @@ JSValue makeInput(const char* key, const JSValue& value) {
     return inputs;
 }
 
-// The Fn convention: the inputs arrive as one iterable whose single entry is the destructured object.
+// The callbacks destructure the named inputs object supplied by TSL.
 JSValue inputObject(const Args& args) {
-    auto iterator = getJSIterator(arg(args, 0));
-    JSValue inputs;
-    if (!iterator.done) {
-        const auto value = stepJSIterator(iterator);
-        if (value) inputs = *value;
-    }
-    if (!iterator.done) closeJSIterator(iterator);
-    return inputs;
+    return arg(args, 0);
 }
 
-JSValue makeFn(JSValue::NativeFunction body) {
-    auto callback = JSValue::function(body, {}, "", 0);
-    return nativeTSLCoreBinding("Fn").call({}, {callback});
+JSValue makeFn(JSValue::NativeFunction body,
+               std::initializer_list<std::pair<const char*, const char*>> fields) {
+    auto callback = JSValue::function(body, {}, "", 1);
+    auto layout = JSValue::object();
+    for (const auto& [name, type] : fields) own(layout, name, type);
+    return nativeTSLCoreBinding("Fn").call({}, {callback, layout});
 }
 
 // LTC_ClippedSphereFormFactor = Fn( ( { f } ) => { const l = f.length(); return max( l.mul( l ).add( f.z ).div( l.add( 1.0 ) ), 0 ); } )
@@ -55,7 +51,7 @@ JSValue clippedSphereFormFactorBody(const JSValue&, const Args& args, const Args
 
 JSValue clippedSphereFormFactor() {
     if (const auto cached = clippedSphereCache().lock(); cached && cached->isCallable()) return *cached;
-    const auto fn = makeFn(clippedSphereFormFactorBody);
+    const auto fn = makeFn(clippedSphereFormFactorBody, {{"f", "vec3"}, {"return", "float"}});
     clippedSphereCache() = JSWeakValue(fn);
     return fn;
 }
@@ -93,7 +89,7 @@ JSValue edgeVectorFormFactorBody(const JSValue&, const Args& args, const Args&) 
 
 JSValue edgeVectorFormFactor() {
     if (const auto cached = edgeVectorCache().lock(); cached && cached->isCallable()) return *cached;
-    const auto fn = makeFn(edgeVectorFormFactorBody);
+    const auto fn = makeFn(edgeVectorFormFactorBody, {{"v1", "vec3"}, {"v2", "vec3"}, {"return", "vec3"}});
     edgeVectorCache() = JSWeakValue(fn);
     return fn;
 }
@@ -266,9 +262,9 @@ JSValue nativeLTCModule() {
     nativeMathNodeModule();
 
     auto bindings = JSValue::object(nullptr);
-    own(bindings, "LTC_Uv", makeFn(ltcUvBody));
-    own(bindings, "LTC_Evaluate", makeFn(ltcEvaluateBody));
-    own(bindings, "LTC_Evaluate_Volume", makeFn(ltcEvaluateVolumeBody));
+    own(bindings, "LTC_Uv", makeFn(ltcUvBody, {{"N", "vec3"}, {"V", "vec3"}, {"roughness", "float"}, {"return", "vec2"}}));
+    own(bindings, "LTC_Evaluate", makeFn(ltcEvaluateBody, {{"N", "vec3"}, {"V", "vec3"}, {"P", "vec3"}, {"mInv", "mat3"}, {"p0", "vec3"}, {"p1", "vec3"}, {"p2", "vec3"}, {"p3", "vec3"}, {"return", "vec3"}}));
+    own(bindings, "LTC_Evaluate_Volume", makeFn(ltcEvaluateVolumeBody, {{"P", "vec3"}, {"p0", "vec3"}, {"p1", "vec3"}, {"p2", "vec3"}, {"p3", "vec3"}, {"return", "vec3"}}));
 
     auto module = JSValue::object(nullptr);
     for (const auto& key : bindings.ownPropertyNames()) own(module, key.c_str(), bindings.get(key));

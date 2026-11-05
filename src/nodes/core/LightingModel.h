@@ -1,6 +1,11 @@
 ﻿#pragma once
+#include "core/JSValue.h"
 #include <string>
 #include <vector>
+
+JSValue nativeLightingModelModule();
+JSValue nativeLightingModelBinding(const std::string& name);
+JSValue nativeLightingModelConstructor();
 
 // Port of the structure of src/nodes/core/LightingModel.js at the pinned revision. The class is a
 // set of hooks a concrete lighting model fills in, and the shape of that set is what is taken

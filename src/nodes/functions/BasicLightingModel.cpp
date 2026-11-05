@@ -2,6 +2,7 @@
 
 #include "constants.h"
 #include "nodes/accessors/MaterialNode.h"
+#include "nodes/core/LightingModel.h"
 #include "nodes/core/PropertyNode.h"
 #include "nodes/math/MathNode.h"
 #include "nodes/tsl/TSLBase.h"
@@ -20,28 +21,6 @@ using namespace UtilityNodeRuntime;
 JSWeakValue& lexical() {
     static thread_local JSWeakValue value;
     return value;
-}
-
-JSValue& baseKeeper() {
-    static thread_local JSValue value;
-    return value;
-}
-
-JSValue baseInitialize(const JSValue& newTarget, const Args&, const Args&) {
-    return JSValue::object(newTarget.get("prototype"));
-}
-
-JSValue baseMethod(const JSValue& receiver, const Args& args, const Args& captures) {
-    const auto name = captures[0].toString();
-    if (name == "start") {
-        const auto builder = arg(args, 0);
-        const auto lights = builder.get("lightsNode");
-        invoke(lights, "setupLights")({builder, invoke(lights, "getLightNodes")({builder})});
-        invoke(receiver, "indirect")({builder});
-    }
-    // finish, direct, directRectArea, indirect and ambientOcclusion are abstract
-    // extension points in LightingModel and intentionally return undefined here.
-    return {};
 }
 
 JSValue indirect(const JSValue&, const Args& args, const Args&) {
@@ -93,26 +72,6 @@ JSValue finish(const JSValue&, const Args& args, const Args&) {
     return {};
 }
 
-JSValue makeLightingModelBase() {
-    auto holder = JSValue::object(nullptr);
-    auto ctor = JSValue::builtinConstructor(baseInitialize, {holder}, "LightingModel", 0);
-    holder.set("constructor", ctor);
-    auto prototype = ctor.get("prototype");
-    for (const auto& [name, arity] : std::initializer_list<std::pair<const char*, unsigned>>{
-             // Only start takes a named parameter in the source; the other five have their parameters
-             // commented out, so their function length is zero.
-             {"start", 1}, {"finish", 0}, {"direct", 0}, {"directRectArea", 0},
-             {"indirect", 0}, {"ambientOcclusion", 0}}) {
-        auto fn = JSValue::function(baseMethod, {name}, name, arity);
-        JSPropertyDescriptor descriptor;
-        descriptor.value = fn;
-        descriptor.writable = descriptor.configurable = true;
-        prototype.defineProperty(name, descriptor);
-    }
-    baseKeeper() = ctor;
-    return ctor;
-}
-
 } // namespace
 
 JSValue nativeBasicLightingModelModule() {
@@ -129,7 +88,7 @@ JSValue nativeBasicLightingModelModule() {
     nativeMathNodeModule();
     nativeTSLBase();
 
-    const auto base = makeLightingModelBase();
+    const auto base = nativeLightingModelConstructor();
     auto holder = JSValue::object(nullptr);
     auto ctor = JSValue::builtinConstructor(
         +[](const JSValue& target, const Args&, const Args& captures) -> JSValue {

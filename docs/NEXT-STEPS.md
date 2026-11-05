@@ -7,10 +7,12 @@
 
 | 范围 | missing | partial-unverified | 其他 |
 |---|---|---|---|
-| `src` | **13** | 452 | vulkan-port-pending 290 |
-| `examples/jsm` | **325** | 151 | dependency-unverified 20 |
+| `src` | **4** | 461 | vulkan-port-pending 290 |
+| `examples/jsm` | **322** | 154 | dependency-unverified 20 |
 
 上游固定为 `11738a9d55e502fb484cefffcea3a66dc44e9fe9`（`upstream.json`）；审计脚本**拒绝其他 commit**。
+
+四类合计 1,251 个模块；`partial-unverified` 表示已有对应代码，`vulkan-port-pending` 也可能已有部分实现。二者均不代表全功能通过，文件覆盖率不能换算成完成率。剩余普通 src 的 4 项不包含 Vulkan 分类内的渲染器主执行链。
 
 ## 2. 一轮标准工作流
 
@@ -41,15 +43,16 @@
 
 ## 5. 首批目标（按杠杆排序）
 
-1. **`examples/jsm/transpiler/AST.js`**(8,868) — 纯 AST 类；完成后可与已完成 `TranspilerUtils` 联调。
-2. **`src/nodes/lighting/ShadowNode.js`**(24,331) — 依赖齐备（上轮已确认），845 行左右。
-3. **`src/nodes/functions/PhysicalLightingModel.js`**(32,829) — 单点解锁 `MeshStandard/Physical/SSSNodeMaterial`。
-4. 其余 examples 小项：多数依赖 wasm/host（meshopt、fflate、canvas、navigator），已在 HANDOFF 中逐条排除原因。
+1. **传统 Vulkan 渲染路径** — 从现有 MeshBasicMaterial 绘制扩展到完整材质、纹理、光照、阴影、后处理，以及 Line/Points/Sprite/SkinnedMesh、完整渲染目标与窗口呈现。
+2. **现代 Vulkan 执行链** — PhysicalLightingModel 与 Standard/Physical/SSS 节点材质已接入原生节点图；继续完整 Renderer/NodeBuilder、GLSL/WGSL 编译、GPU 绘制、计算与存储资源闭环。
+3. **剩余普通 src 模块** — NodeObjectLoader（先补齐 ObjectLoader 的原生 runtime/async 管线）、Line2NodeMaterial、MaterialXNoise、MaterialXNodes。
+4. **examples 与宿主适配** — 尚缺 322 个模块；补齐原生平台依赖并逐项差分，最后验收 Windows/Linux/macOS。AST、Linker、TranspilerUtils 已有实现，勿重复创建。
 
 ## 6. 近期已完成（避免重复劳动）
 
+- 本轮 PBR：原生 LightingModel 基类、PhysicalLightingModel 全部钩子及 helper、MeshStandard/Physical/SSSNodeMaterial 已实现并通过所选源码差分；EON、LTC、DFGLUT、EnvironmentBRDF 已修正依赖行为。此项证明节点逻辑，不代表完整 Vulkan PBR 出图。
 - `examples/jsm`（部分验证，多为 partial）：ColorEnvironment、ColorUtils、DebugEnvironment、GeometryUtils、GroundedSkybox、MaterialXLog、MorphAnimMesh、MorphBlendMesh、OBJExporter、RectAreaLightHelper、SceneUtils（全部 helper）、ShadowMesh、STLExporter（ascii+binary）、TranspilerUtils、Gyroscope。
-- `src` 聚合/映射：`Three.TSL`、`Three.WebGPU`、`Three.WebGPU.Nodes`、`nodes/TSL`、`nodes/Nodes`、`NodeMaterials`（15 个构造器映射；缺 4 个未移植材质）。
+- `src` 聚合/映射：`Three.TSL`、`Three.WebGPU`、`Three.WebGPU.Nodes`、`nodes/TSL`、`nodes/Nodes`、`NodeMaterials`（18 个构造器映射；仍缺 Line2NodeMaterial）。
 - **已确认既有实现**：`BufferGeometryUtils.mergeGroups`（r81 更正）。
 
 ## 7. `transpiler/AST.js` 类清单（下一目标脚手架）

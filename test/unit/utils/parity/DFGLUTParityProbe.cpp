@@ -1,34 +1,3 @@
-#include "nodes/functions/BSDF/DFGLUT.h"
-#include "nodes/tsl/TSLBase.h"
-
+#include "BSDFLookupFixtures.h"
 #include <iostream>
-
-namespace {
-void own(JSValue object, const char* key, const JSValue& value) {
-    JSPropertyDescriptor descriptor;
-    descriptor.value = value;
-    descriptor.writable = descriptor.enumerable = descriptor.configurable = true;
-    object.defineProperty(key, descriptor);
-}
-}
-
-int main() {
-    try {
-        auto inputs = JSValue::object();
-        inputs.set("roughness", nativeTSLBaseBinding("float").call({}, {0.35}));
-        inputs.set("dotNV", nativeTSLBaseBinding("float").call({}, {0.8}));
-        const auto function = nativeDFGLUT();
-        const auto result = function.call({}, {inputs});
-        auto output = JSValue::object();
-        own(output, "name", function.get("name"));
-        own(output, "isFn", function.get("isFn"));
-        own(output, "source", function.get("shaderNode").get("jsFunc").get("toString").call(function.get("shaderNode").get("jsFunc")));
-        own(output, "type", result.get("type"));
-        own(output, "nodeType", result.get("node").get("type"));
-        std::cout << output.toJSON()->dump();
-        return 0;
-    } catch (const std::exception& error) {
-        std::cerr << error.what() << '\n';
-        return 1;
-    }
-}
+int main(){try{std::cout<<BSDFLookupFixtures::all(false).toJSON()->dump()<<'\n';return 0;}catch(const std::exception& e){std::cerr<<e.what()<<'\n';return 1;}}
