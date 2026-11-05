@@ -1,4 +1,29 @@
-# 当前接续：`PointShadowNode` **Stage B 完成** —— 两个点光过滤图 + `setupShadowFilter`，2026-11-05
+# 当前接续：`PointShadowNode` 测试升级为真实 `CubeDepthTexture` + **`If` 包裹恢复上游结构**，2026-11-05
+
+目标保持 active：固定 three.js 11738a9d55e502fb484cefffcea3a66dc44e9fe9 全部 src + examples/jsm 原生 C++ 逻辑，Vulkan 后端；禁止 CEF/生产 JS 引擎/桥接。阶段本地 Git 提交，不推送。
+
+## 本轮交付（2 项）
+
+1. **`setupShadowFilter` 测试升级**：用 `nativeTexture(std::make_shared<CubeDepthTexture>(64.0))` 构造**真实立方体深度纹理**替换 stub，去掉 try/catch→`SUCCEED` 弱断言，改为断言 `result.isNode == true`（图真实构建成功）；断言数 10→11。
+2. **`pointShadowFilter` 恢复 `If` 范围测试结构**（对齐上游 L111–138）：
+   - `upperBound = viewZ.sub(far).lessThanEqual(0)`；`lowerBound = viewZ.sub(near).greaterThanEqual(0)`；`inRange = upperBound.and(lowerBound)`；
+   - `If(inRange)(body)` —— body 用 `JSValue::function(..., {result, depthTexture, bd3D, dp, shadow, filterFn})` 捕获，内部构造 `{depthTexture, bd3D, dp, shadow}` 调 `filterFn` 并 `result.assign(filtered)`；
+   - 返回值仍为 `result`（默认 `float(1)`）。
+   - 之前的简化（先算后 assign）已消除。
+
+## 验证
+
+- 构建 exit 0；过滤 `*PointShadowNode*` = **5 cases / 11 assertions** 全过（+1 断言）。
+- `THREECPPAddonTests` 全套 **1396 cases / 38,994 assertions** 通过。
+- 审计不变（PointShadowNode 已 partial）：src 11 / 454；examples/jsm 322 / 154。
+
+**未执行验证（如实记录）**：两图数值/结构仍未断言；`renderShadow` 仍无测试（`abrupt completion` 未定位）；`logarithmicDepthBuffer`/`reversedDepthBuffer` 分支在图内未分别触发测试。
+
+## 下一步
+
+1. 为 `pointShadowFilter` 的 reversed/log 分支构造 builder 桩并各跑一次图构建（应可覆盖两分支）；
+2. `renderShadow` 二分定位 `abrupt completion`；
+3. 之后推进 `PassNode`(26,843)/`ToonOutlinePassNode`(6,868)/`PhysicalLightingModel`(32,829)。# 当前接续：`PointShadowNode` **Stage B 完成** —— 两个点光过滤图 + `setupShadowFilter`，2026-11-05
 
 目标保持 active：固定 three.js 11738a9d55e502fb484cefffcea3a66dc44e9fe9 全部 src + examples/jsm 原生 C++ 逻辑，Vulkan 后端；禁止 CEF/生产 JS 引擎/桥接。阶段本地 Git 提交，不推送。
 

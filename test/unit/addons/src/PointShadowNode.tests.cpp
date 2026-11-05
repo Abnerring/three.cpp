@@ -4,7 +4,11 @@
 
 #include "catch.hpp"
 
+#include "core/NativeObject.h"
 #include "nodes/tsl/TSLBase.h"
+#include "textures/CubeDepthTexture.h"
+
+#include <memory>
 
 #include "math/Color.h"
 #include "math/Frustum.h"
@@ -81,9 +85,7 @@ TEST_CASE("PointShadowNode setupShadowFilter builds the point filter graph") {
     shadow.set("camera", JSValue::object(nullptr));
     shadow.set("radius", JSValue(1.0));
     shadow.set("mapSize", JSValue::object(nullptr));
-    auto depthTexture = JSValue::object(nullptr);
-    depthTexture.set("isDepthTexture", true);
-    depthTexture.set("isCubeTexture", true);
+    auto depthTexture = nativeTexture(std::make_shared<CubeDepthTexture>(64.0));
     auto light = JSValue::object(nullptr);
     light.set("shadow", shadow);
     const auto node = nativePointShadowNodeConstructor().construct({light});
@@ -93,16 +95,11 @@ TEST_CASE("PointShadowNode setupShadowFilter builds the point filter graph") {
     configuration.set("depthTexture", depthTexture);
     configuration.set("shadowCoord", shadowCoord);
     configuration.set("shadow", shadow);
+    auto renderer = JSValue::object(nullptr);
+    renderer.set("reversedDepthBuffer", false);
     auto builder = JSValue::object(nullptr);
-    builder.set("renderer", JSValue::object(nullptr));
-    auto result = JSValue{};
-    try {
-        result = node.get("setupShadowFilter").call(node, {builder, configuration});
-    } catch (const std::exception&) {
-        // The stub cube texture is not a real texture; the graph construction may raise inside the
-        // texture node. The raising behaviour is recorded as the asserted outcome here.
-        SUCCEED();
-        return;
-    }
+    builder.set("renderer", renderer);
+    const auto result = node.get("setupShadowFilter").call(node, {builder, configuration});
     REQUIRE(result.toBoolean());
+    REQUIRE(result.get("isNode").toBoolean());
 }

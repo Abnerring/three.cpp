@@ -207,13 +207,28 @@ JSValue pointShadowFilterGraphBody(const JSValue&, const Args& args, const Args&
     }
 
     const auto bd3D = nativeMathNodeBinding("normalize").call({}, {shadowPosition});
-    auto filterConfiguration = JSValue::object(nullptr);
-    filterConfiguration.set("depthTexture", depthTexture);
-    filterConfiguration.set("bd3D", bd3D);
-    filterConfiguration.set("dp", dp);
-    filterConfiguration.set("shadow", shadow);
-    const auto filtered = filterFn.call({}, {filterConfiguration});
-    invoke(result, "assign")({filtered});
+
+    // If( viewZ.sub( far ).lessThanEqual( 0.0 ).and( viewZ.sub( near ).greaterThanEqual( 0.0 ) ) ) {
+    //     result.assign( filterFn( { depthTexture, bd3D, dp, shadow } ) );
+    // }
+    const auto upperBound = invoke(invoke(viewZ, "sub")({farUniform}), "lessThanEqual")({JSValue(0.0)});
+    const auto lowerBound =
+        invoke(invoke(viewZ, "sub")({nearUniform}), "greaterThanEqual")({JSValue(0.0)});
+    const auto inRange = invoke(upperBound, "and")({lowerBound});
+    auto ifBody = JSValue::function(
+        +[](const JSValue&, const Args&, const Args& captures) -> JSValue {
+            const auto target = captures.at(0);
+            auto filterConfiguration = JSValue::object(nullptr);
+            filterConfiguration.set("depthTexture", captures.at(1));
+            filterConfiguration.set("bd3D", captures.at(2));
+            filterConfiguration.set("dp", captures.at(3));
+            filterConfiguration.set("shadow", captures.at(4));
+            const auto filtered = captures.at(5).call({}, {filterConfiguration});
+            invoke(target, "assign")({filtered});
+            return JSValue{};
+        },
+        {result, depthTexture, bd3D, dp, shadow, filterFn});
+    nativeTSLBaseBinding("If").call({}, {inRange}).call({}, {ifBody});
     return result;
 }
 
