@@ -1,4 +1,26 @@
-# 当前接续：`NodeMaterials` 聚合模块真实映射（15 个已移植 NodeMaterial 构造器），src 缺口 16→15，2026-11-05
+# 当前接续：阻塞调研（NodeMaterial 三材质与 MaterialXNodes 的前置依赖确认），本轮无代码变更，2026-11-05
+
+目标保持 active：固定 three.js 11738a9d55e502fb484cefffcea3a66dc44e9fe9 全部 src + examples/jsm 原生 C++ 逻辑，Vulkan 后端；禁止 CEF/生产 JS 引擎/桥接。阶段本地 Git 提交，不推送。
+
+## 本轮结论（如实记录，未产生实现）
+
+上一轮后 src 剩 15 个模块。本轮想推进「解锁三材质」，读取上游后确认**两条硬阻塞**，因此没有写任何代码（避免造空壳/伪实现）：
+
+1. **`MeshStandardNodeMaterial`(4817) 无法先做**：其 `setupLightingModel()` 返回 `new PhysicalLightingModel()`，而 **`PhysicalLightingModel.js`(32,829) 尚未移植**；`setupVariants()` 还依赖 `getRoughness`、`materialMetalness/materialRoughness`、`diffuseContribution/specularColorBlended` 等节点，`setupSpecular()` 依赖 `mix/vec3` 与 `EnvironmentNode`。→ **必须先移植 `PhysicalLightingModel`**，它是 `MeshStandard/Physical/SSSNodeMaterial` 三个模块的共同前置。
+2. **`MaterialXNodes`(10,782) 也无法先做**：它是**功能性 TSL 模块**（约 70 个 `mx_*` 函数），依赖 `./MaterialXNoise.js`(48,687，missing)、`MaterialXCore/Color/ColorTransform`（已移植）、`FunctionOverloadingNode`、`Timer(frameId/time)`、`UV` 等。→ **必须先移植 `MaterialXNoise`**。
+
+## 对下一步的排序建议（基于本轮实测依赖）
+
+1. **`PhysicalLightingModel`(32,829)** —— 单点解锁三个 node material + `MeshStandardMaterial` 的节点化路径，是当前 src 剩余项里**杠杆最大**的一个。移植前应先核对其依赖（`LightingModel`、`BSDF` 相关节点是否已移植）。
+2. **`ShadowNode`(24,331)** —— 依赖齐备（上轮已确认），无需前置，适合作为「大模块」轮次首选。
+3. **`MaterialXNoise`(48,687)** —— 解锁 `MaterialXNodes`；纯数学噪声节点，差分以「节点图可构建 + 采样数值」为主，工作量大但边界清晰。
+4. `Line2NodeMaterial`(18,172) / `ReflectorNode`(17,567) / `PassNode`(26,843) 均依赖已齐备或接近齐备，可并行排期。
+
+examples/jsm 剩余 328 不受本轮影响（候选：`modifiers/SimplifyModifier`、`utils/SceneUtils`、`transpiler/AST.js`、`exporters/OBJExporter`）。
+
+## 验证
+
+本轮**无构建/测试/审计变化**：未改动任何源码、CMake 或 `docs/port-status.json`（审计计数保持 src 15 missing / 450 partial，examples 328 / 148）。# 当前接续：`NodeMaterials` 聚合模块真实映射（15 个已移植 NodeMaterial 构造器），src 缺口 16→15，2026-11-05
 
 目标保持 active：固定 three.js 11738a9d55e502fb484cefffcea3a66dc44e9fe9 全部 src + examples/jsm 原生 C++ 逻辑，Vulkan 后端；禁止 CEF/生产 JS 引擎/桥接。阶段本地 Git 提交，不推送。
 
