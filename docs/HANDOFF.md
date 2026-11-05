@@ -1,4 +1,38 @@
-# 当前接续：VSM pass 转写首次尝试失败并回滚（两条 API 误用已定位），2026-11-05
+# 当前接续：`setupShadow` **段 2（VSM 两趟）落地 —— ShadowNode 全部成员已实现，无抛错 stub**，2026-11-05
+
+目标保持 active：固定 three.js 11738a9d55e502fb484cefffcea3a66dc44e9fe9 全部 src + examples/jsm 原生 C++ 逻辑，Vulkan 后端；禁止 CEF/生产 JS 引擎/桥接。阶段本地 Git 提交，不推送。
+
+## 本轮交付
+
+1. **`VSMPassVertical` / `VSMPassHorizontal` 两个 Fn 图**（共享 body + captured 布尔）：
+   - 辅助：`inputObject`（Fn 入参 iterable 解构）、`floatNode`/`intNode`/`vec2Node`、`makeVsmFn(bool)`（`nativeTSLCoreBinding("Fn")`）；
+   - `uvStride = samples.lessThanEqual(1).select(0, 2.div(samples.sub(1)))`；`uvStart` 同理取 `-1`；
+   - `mean`/`squaredMean` 以 `float(0).toVar(name)` 初始化；
+   - `Loop({start:int(0), end:int(samples), type:'int', condition:'<'}, body)` → `nativeLoopNodeBinding("Loop").call({}, {config, body})`；
+   - 每次迭代：`uvOffset = uvStart.add(float(i).mul(uvStride))` → `vec2(0,uvOffset)`/`vec2(uvOffset,0)` → `.mul(radius)` → `screenCoordinate.xy.add(...)` → `.div(size)` → `shadowPass.sample(uv)` → 数组纹理 `.depth(depthLayer)` → `.x`（水平另取 `.y` 参与 `add(y², x²)`）；
+   - 归约：`divAssign(samples)`×2 → `sqrt(squaredMean.sub(mean.mul(mean)).max(0))` → `vec2(mean, std_dev)`。
+2. **段 2 组装**（`setupShadow` 内，段 1 与段 3 之间）：
+   - `depthTexture.compareFunction = null`；
+   - VSM 且非点光：复用 `vsmShadowMapVertical/Horizontal` 或 `builder.createRenderTarget(w,h,{format: RGFormat})`；
+   - 两个 `texture()` 采样（数组纹理 `.depth(depthLayer)`）；
+   - `reference('blurSamples'|'radius'|'mapSize')` + `context(builder.getSharedContext())`；
+   - 两个 `NodeMaterial`（`contextNode`/`fragmentNode=makeVsmFn(...)`/`name='VSMVertical'|'VSMHorizontal'`）。
+
+**本轮踩的坑（重要）**：前一次多行字符串 `Replace` 因 **CRLF 换行**静默失配（`\n` 不匹配）→ 改为**按行插入**（`ReadAllBytes` → 按 `\r?\n` 拆行 → 在匿名 namespace 收尾行前插入 → 用原换行符写回）。此坑已在 HANDOFF 记录。
+
+## 验证
+
+- 构建 exit 0；`THREECPPAddonTests` 全套 **1379 cases / 38,948 assertions** 全绿。
+- `ShadowNode` 现**没有任何 `notPorted` 成员**（`setupShadow` 四段全部实现，其余 12 个方法均已实现）。
+- 审计不变（已 partial）：src 12 / 453；examples/jsm 322 / 154。
+
+**未执行验证（如实记录）**：VSM 两个 pass 图与段 2 组装**无直接测试**（Fn 图未导出，需内部钩子或集成测试）；`toInspector` 调试钩子仍省略；`_quadMesh` 仍每次新建；`renderShadow`/`vsmPass` 仅冒烟；`updateShadow` 无测试（RendererUtils 依赖真实 renderer）。
+
+## 下一步（ShadowNode 收口）
+
+1. **验证补齐**：导出一个测试专用钩子（或经 `setupShadow` VSM 路径集成测试）验证两个 pass 返回节点；给段 3/4 增加可观察断言；
+2. `_quadMesh` 模块级单例；`updateShadow` 真实 renderer 夹具；
+3. `ShadowNode` 收口后推进 **`PointShadowNode`(12,693)** 与 `PhysicalLightingModel`(32,829)。# 当前接续：VSM pass 转写首次尝试失败并回滚（两条 API 误用已定位），2026-11-05
 
 目标保持 active：固定 three.js 11738a9d55e502fb484cefffcea3a66dc44e9fe9 全部 src + examples/jsm 原生 C++ 逻辑，Vulkan 后端；禁止 CEF/生产 JS 引擎/桥接。阶段本地 Git 提交，不推送。
 

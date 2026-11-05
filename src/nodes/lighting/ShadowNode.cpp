@@ -3,11 +3,13 @@
 #include "core/JSWeakMap.h"
 #include "nodes/lighting/LightingNodeRuntime.h"
 #include "nodes/lighting/ShadowBaseNode.h"
+#include "materials/nodes/NodeMaterial.h"
 #include "nodes/accessors/Lights.h"
 #include "nodes/accessors/Normal.h"
 #include "nodes/accessors/Position.h"
 #include "nodes/accessors/ReferenceNode.h"
 #include "nodes/core/UniformGroupNode.h"
+#include "nodes/core/ContextNode.h"
 #include "nodes/core/UniformNode.h"
 #include "nodes/display/ViewportDepthNode.h"
 #include "nodes/lighting/ShadowFilterNode.h"
@@ -16,8 +18,12 @@
 #include "renderers/common/RendererUtils.h"
 #include "nodes/accessors/CubeTextureNode.h"
 #include "nodes/accessors/TextureNode.h"
+#include "nodes/display/ScreenNode.h"
 #include "nodes/math/MathNode.h"
+#include "nodes/math/OperatorNode.h"
+#include "nodes/tsl/TSLCore.h"
 #include "nodes/utils/EquirectUV.h"
+#include "nodes/utils/LoopNode.h"
 #include "textures/DepthTexture.h"
 
 #include <stdexcept>
@@ -26,6 +32,9 @@
 namespace {
 using namespace LightingNodeRuntime;
 JSWeakValue& lexical() { static thread_local JSWeakValue weak; return weak; }
+
+// Forward declarations for the VSM pass graphs (defined at the bottom of this translation unit).
+JSValue makeVsmFn(bool vertical);
 
 // const _shadowFilterLib = [ BasicShadowFilter, PCFShadowFilter, null, VSMShadowFilter ]
 JSValue shadowFilterLibrary() {
@@ -226,6 +235,67 @@ JSValue setupShadow(const JSValue& rawSelf, const Args& args, const Args&) {
     shadowCamera.set("_reversedDepth", renderer.get("reversedDepthBuffer"));
     shadowCamera.get("updateProjectionMatrix").call(shadowCamera, {});
 
+    // Segment 2: the VSM blur pass materials (L384-L448).
+    if (renderer.get("shadowMap").get("type").strictEquals(nativeNodeConstantsBinding("VSMShadowMap")) &&
+        !shadow.get("isPointLightShadow").toBoolean()) {
+        depthTexture.set("compareFunction", JSValue(nullptr));
+        auto vsmVertical = self.get("vsmShadowMapVertical");
+        auto vsmHorizontal = self.get("vsmShadowMapHorizontal");
+        const auto mapWidth = shadow.get("mapSize").get("width");
+        const auto mapHeight = shadow.get("mapSize").get("height");
+        const auto createRenderTarget = builder.get("createRenderTarget");
+        auto options = JSValue::object(nullptr);
+        options.set("format", nativeNodeConstantsBinding("RGFormat"));
+        if (!vsmVertical.toBoolean()) {
+            vsmVertical = createRenderTarget.call(builder, {mapWidth, mapHeight, options});
+        }
+        if (!vsmHorizontal.toBoolean()) {
+            vsmHorizontal = createRenderTarget.call(builder, {mapWidth, mapHeight, options});
+        }
+        self.set("vsmShadowMapVertical", vsmVertical);
+        self.set("vsmShadowMapHorizontal", vsmHorizontal);
+
+        auto shadowPassVertical = nativeTextureNodeBinding("texture").call({}, {depthTexture});
+        auto shadowPassHorizontal =
+            nativeTextureNodeBinding("texture").call({}, {vsmVertical.get("texture")});
+        if (depthTexture.get("isArrayTexture").toBoolean()) {
+            shadowPassVertical =
+                invoke(shadowPassVertical, "depth")({self.get("depthLayer")});
+            shadowPassHorizontal =
+                invoke(shadowPassHorizontal, "depth")({self.get("depthLayer")});
+        }
+
+        const auto group = nativeUniformGroupNodeBinding("renderGroup");
+        const auto referenceFn = nativeReferenceNodeBinding("reference");
+        const auto makeReference = [&](const char* propertyName, const char* propertyType) {
+            auto referenceNode =
+                referenceFn.call({}, {JSValue(propertyName), JSValue(propertyType), shadow});
+            return invoke(referenceNode, "setGroup")({group});
+        };
+        const auto samples = makeReference("blurSamples", "float");
+        const auto radius = makeReference("radius", "float");
+        const auto size = makeReference("mapSize", "vec2");
+        const auto sharedContext =
+            nativeContextNodeBinding("context").call({}, {builder.get("getSharedContext").call(builder, {})});
+
+        auto materialVertical = self.get("vsmMaterialVertical");
+        if (!materialVertical.toBoolean()) {
+            materialVertical = nativeNodeMaterialConstructor().construct();
+            self.set("vsmMaterialVertical", materialVertical);
+        }
+        materialVertical.set("contextNode", sharedContext);
+        materialVertical.set("fragmentNode", makeVsmFn(true));
+        materialVertical.set("name", JSValue("VSMVertical"));
+
+        auto materialHorizontal = self.get("vsmMaterialHorizontal");
+        if (!materialHorizontal.toBoolean()) {
+            materialHorizontal = nativeNodeMaterialConstructor().construct();
+            self.set("vsmMaterialHorizontal", materialHorizontal);
+        }
+        materialHorizontal.set("contextNode", sharedContext);
+        materialHorizontal.set("fragmentNode", makeVsmFn(false));
+        materialHorizontal.set("name", JSValue("VSMHorizontal"));
+    }
     // Segment 3: the shadow coordinate branch (L452-L476).
     const auto light = self.get("light");
     const auto group = nativeUniformGroupNodeBinding("renderGroup");
@@ -499,6 +569,101 @@ JSValue updateBefore(const JSValue& rawSelf, const Args& args, const Args&) {
         const_cast<JSValue&>(shadow).set("needsUpdate", false);
     }
     return {};
+}
+// The Fn convention: the inputs arrive as one iterable whose single entry is the destructured object.
+JSValue inputObject(const Args& args) {
+    auto iterator = getJSIterator(arg(args, 0));
+    JSValue inputs;
+    if (!iterator.done) {
+        const auto value = stepJSIterator(iterator);
+        if (value) inputs = *value;
+    }
+    if (!iterator.done) closeJSIterator(iterator);
+    return inputs;
+}
+
+JSValue floatNode(double value) { return nativeTSLBaseBinding("float").call({}, {JSValue(value)}); }
+JSValue intNode(const JSValue& value) { return nativeTSLBaseBinding("int").call({}, {value}); }
+JSValue vec2Node(const JSValue& x, const JSValue& y) { return nativeTSLBaseBinding("vec2").call({}, {x, y}); }
+
+// Shared body for VSMPassVertical / VSMPassHorizontal: the captured boolean selects the swizzled offset and
+// the sampled channel/variance terms, everything else is identical.
+JSValue vsmPassBody(bool vertical, const JSValue& samples, const JSValue& radius, const JSValue& size,
+                    const JSValue& shadowPass, const JSValue& depthLayer) {
+    const auto one = floatNode(1);
+    const auto condition = invoke(samples, "lessThanEqual")({one});
+    const auto stride = invoke(floatNode(2), "div")({invoke(samples, "sub")({one})});
+    const auto uvStride = invoke(condition, "select")({floatNode(0), stride});
+    const auto uvStart = invoke(condition, "select")({floatNode(0), floatNode(-1)});
+    auto mean = invoke(floatNode(0), "toVar")({JSValue(vertical ? "meanVertical" : "meanHorizontal")});
+    auto squaredMean = invoke(floatNode(0), "toVar")(
+        {JSValue(vertical ? "squareMeanVertical" : "squareMeanHorizontal")});
+
+    auto loopConfiguration = JSValue::object(nullptr);
+    loopConfiguration.set("start", intNode(JSValue(0.0)));
+    loopConfiguration.set("end", intNode(samples));
+    loopConfiguration.set("type", JSValue("int"));
+    loopConfiguration.set("condition", JSValue("<"));
+
+    auto loopBody = JSValue::function(
+        +[](const JSValue&, const Args& loopArgs, const Args& captures) -> JSValue {
+            const auto loopInputs = inputObject(loopArgs);
+            const auto i = loopInputs.get("i");
+            const bool isVertical = captures.at(0).toBoolean();
+            const auto uvStride = captures.at(1);
+            const auto uvStart = captures.at(2);
+            const auto radius = captures.at(3);
+            const auto size = captures.at(4);
+            const auto shadowPass = captures.at(5);
+            const auto mean = captures.at(6);
+            const auto squaredMean = captures.at(7);
+            const auto depthLayer = captures.at(8);
+
+            const auto indexNode = nativeTSLBaseBinding("float").call({}, {i});
+            const auto uvOffset = invoke(uvStart, "add")({invoke(indexNode, "mul")({uvStride})});
+            const auto offset = vec2Node(isVertical ? JSValue(0.0) : uvOffset,
+                                         isVertical ? uvOffset : JSValue(0.0));
+            const auto scaled = invoke(offset, "mul")({radius});
+            const auto screen = nativeScreenNodeBinding("screenCoordinate").get("xy");
+            const auto uv = invoke(invoke(screen, "add")({scaled}), "div")({size});
+            auto sampled = invoke(shadowPass, "sample")({uv});
+            if (shadowPass.get("value").get("isArrayTexture").toBoolean()) {
+                sampled = invoke(sampled, "depth")({depthLayer});
+            }
+            const auto sampledX = sampled.get("x");
+            invoke(mean, "addAssign")({sampledX});
+            if (isVertical) {
+                invoke(squaredMean, "addAssign")({invoke(sampledX, "mul")({sampledX})});
+            } else {
+                const auto sampledY = sampled.get("y");
+                const auto ySquared = invoke(sampledY, "mul")({sampledY});
+                const auto xSquared = invoke(sampledX, "mul")({sampledX});
+                invoke(squaredMean, "addAssign")(
+                    {nativeOperatorNodeBinding("add").call({}, {ySquared, xSquared})});
+            }
+            return JSValue{};
+        },
+        {JSValue(vertical), uvStride, uvStart, radius, size, shadowPass, mean, squaredMean, depthLayer});
+    nativeLoopNodeBinding("Loop").call({}, {loopConfiguration, loopBody});
+
+    invoke(mean, "divAssign")({samples});
+    invoke(squaredMean, "divAssign")({samples});
+    const auto variance = invoke(squaredMean, "sub")({invoke(mean, "mul")({mean})});
+    const auto deviation =
+        nativeMathNodeBinding("sqrt").call({}, {invoke(variance, "max")({JSValue(0.0)})});
+    return vec2Node(mean, deviation);
+}
+
+JSValue makeVsmFn(bool vertical) {
+    auto callback = JSValue::function(
+        +[](const JSValue&, const Args& args, const Args& captures) -> JSValue {
+            const auto inputs = inputObject(args);
+            return vsmPassBody(captures.at(0).toBoolean(), inputs.get("samples"),
+                               inputs.get("radius"), inputs.get("size"),
+                               inputs.get("shadowPass"), inputs.get("depthLayer"));
+        },
+        {JSValue(vertical)});
+    return nativeTSLCoreBinding("Fn").call({}, {callback});
 }
 }  // namespace
 
