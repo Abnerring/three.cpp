@@ -8,8 +8,10 @@
 #include "nodes/core/Node.h"
 #include "nodes/core/UniformNode.h"
 #include "nodes/display/ViewportDepthNode.h"
+#include "nodes/tsl/TSLBase.h"
 #include "nodes/lighting/LightingNodeRuntime.h"
 #include "core/RenderTarget.h"
+#include "math/Vector2.h"
 #include "math/Vector4.h"
 #include "textures/DepthTexture.h"
 
@@ -319,6 +321,118 @@ JSValue passDispose(const JSValue& rawSelf, const Args&, const Args&) {
     return JSValue{};
 }
 
+// updateBefore( frame ) { save the renderer and scene state, render the scene into the pass target, restore. }
+JSValue passUpdateBefore(const JSValue& rawSelf, const Args& args, const Args&) {
+    JSValue& self = const_cast<JSValue&>(rawSelf);
+    const auto frame = arg(args, 0);
+    auto renderer = frame.get("renderer");
+    auto scene = self.get("scene");
+
+    auto camera = JSValue{};
+    auto size = nativeVector2Constructor().construct();
+    const auto outputRenderTarget = renderer.get("getOutputRenderTarget").call(renderer, {});
+    if (outputRenderTarget.toBoolean() &&
+        outputRenderTarget.get("isXRRenderTarget").strictEquals(true)) {
+        const auto xr = renderer.get("xr");
+        camera = xr.get("getCamera").call(xr, {});
+        xr.get("updateCamera").call(xr, {camera});
+        size.get("set").call(size, {outputRenderTarget.get("width"), outputRenderTarget.get("height")});
+    } else {
+        camera = self.get("camera");
+        size = renderer.get("getDrawingBufferSize").call(renderer, {size});
+    }
+    self.get("setSize").call(self, {size.get("width"), size.get("height")});
+
+    const auto currentRenderTarget = renderer.get("getRenderTarget").call(renderer, {});
+    const auto currentMRT = renderer.get("getMRT").call(renderer, {});
+    const auto currentAutoClear = renderer.get("autoClear");
+    const auto currentAutoClearColor = renderer.get("autoClearColor");
+    const auto currentAutoClearDepth = renderer.get("autoClearDepth");
+    const auto currentAutoClearStencil = renderer.get("autoClearStencil");
+    const auto currentTransparent = renderer.get("transparent");
+    const auto currentOpaque = renderer.get("opaque");
+    const auto currentLighting = renderer.get("lighting");
+    auto cameraLayers = camera.get("layers");
+    const auto currentMask = cameraLayers.get("mask");
+    const auto currentContextNode = renderer.get("contextNode");
+    const auto currentOverrideMaterial = scene.get("overrideMaterial");
+
+    auto nearUniform = self.get("_cameraNear");
+    nearUniform.set("value", camera.get("near"));
+    auto farUniform = self.get("_cameraFar");
+    farUniform.set("value", camera.get("far"));
+
+    const auto layers = self.get("_layers");
+    if (layers.toBoolean()) {
+        cameraLayers.set("mask", layers.get("mask"));
+        camera.set("layers", cameraLayers);
+    }
+
+    auto previousTextures = self.get("_previousTextures");
+    const auto keys = nativeGlobalBinding("Object").get("keys").call({}, {previousTextures});
+    const auto keysLength = keys.get("length").toNumber();
+    for (double index = 0; index < keysLength; ++index) {
+        self.get("toggleTexture").call(self, {keys.get(JSValue(index))});
+    }
+
+    const auto overrideMaterial = self.get("overrideMaterial");
+    if (overrideMaterial.toBoolean()) scene.set("overrideMaterial", overrideMaterial);
+
+    renderer.get("setRenderTarget").call(renderer, {self.get("renderTarget")});
+    renderer.get("setMRT").call(renderer, {self.get("_mrt")});
+    renderer.set("autoClear", self.get("autoClear"));
+    renderer.set("autoClearColor", self.get("autoClearColor"));
+    renderer.set("autoClearDepth", self.get("autoClearDepth"));
+    renderer.set("autoClearStencil", self.get("autoClearStencil"));
+    renderer.set("transparent", self.get("transparent"));
+    renderer.set("opaque", self.get("opaque"));
+    const auto lighting = self.get("lighting");
+    if (lighting.toBoolean()) renderer.set("lighting", lighting);
+
+    const auto contextNode = self.get("contextNode");
+    if (contextNode.toBoolean()) {
+        auto cache = self.get("_contextNodeCache");
+        const auto version = self.get("version");
+        if (!cache.toBoolean() || !cache.get("version").strictEquals(version)) {
+            const auto rendererContext = renderer.get("contextNode");
+            auto flowData = JSValue::object(nullptr);
+            if (rendererContext.toBoolean()) {
+                flowData = nativeGlobalBinding("Object").get("assign").call(
+                    {}, {flowData, rendererContext.get("getFlowContextData").call(rendererContext, {})});
+            }
+            flowData = nativeGlobalBinding("Object").get("assign").call(
+                {}, {flowData, contextNode.get("getFlowContextData").call(contextNode, {})});
+            cache = JSValue::object(nullptr);
+            cache.set("version", version);
+            cache.set("context", nativeTSLBaseBinding("context").call({}, {flowData}));
+            self.set("_contextNodeCache", cache);
+        }
+        renderer.set("contextNode", cache.get("context"));
+    }
+
+    const auto currentSceneName = scene.get("name");
+    const auto passName = self.get("name");
+    scene.set("name", passName.toBoolean() ? passName : currentSceneName);
+    renderer.get("render").call(renderer, {scene, camera});
+    scene.set("name", currentSceneName);
+    scene.set("overrideMaterial", currentOverrideMaterial);
+
+    renderer.get("setRenderTarget").call(renderer, {currentRenderTarget});
+    renderer.get("setMRT").call(renderer, {currentMRT});
+    renderer.set("autoClear", currentAutoClear);
+    renderer.set("autoClearColor", currentAutoClearColor);
+    renderer.set("autoClearDepth", currentAutoClearDepth);
+    renderer.set("autoClearStencil", currentAutoClearStencil);
+    renderer.set("transparent", currentTransparent);
+    renderer.set("opaque", currentOpaque);
+    renderer.set("contextNode", currentContextNode);
+    renderer.set("lighting", currentLighting);
+
+    cameraLayers.set("mask", currentMask);
+    camera.set("layers", cameraLayers);
+    return JSValue{};
+}
+
 // constructor( scope, scene, camera, options = {} ) { super( 'vec4' ); ... }
 JSValue passNodeInitialize(const JSValue& target, const Args& args, const Args& captures) {
     auto self = superConstruct(target, captures, {JSValue("vec4")});
@@ -495,6 +609,7 @@ JSValue nativePassNodeModule() {
         method(prototype, "setScissor", 4, passSetScissor, {}, "");
         method(prototype, "setViewport", 4, passSetViewport, {}, "");
         method(prototype, "dispose", 0, passDispose, {}, "");
+        method(prototype, "updateBefore", 1, passUpdateBefore, {}, "");
     }
     own(bindings, "PassNode", passNodeConstructor);
 

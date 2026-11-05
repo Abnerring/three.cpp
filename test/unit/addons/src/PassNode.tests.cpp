@@ -263,3 +263,74 @@ TEST_CASE("PassNode dispose disposes the render target") {
     REQUIRE_NOTHROW(node.get("dispose").call(node, {}));
     REQUIRE(target.get("_disposes").toNumber() == Approx(1));
 }
+TEST_CASE("PassNode updateBefore renders the scene and restores the state") {
+    auto scene = JSValue::object(nullptr);
+    scene.set("name", JSValue("Scene"));
+    scene.set("overrideMaterial", JSValue(nullptr));
+    auto cameraLayers = JSValue::object(nullptr);
+    cameraLayers.set("mask", JSValue(7));
+    auto camera = JSValue::object(nullptr);
+    camera.set("near", JSValue(0.5));
+    camera.set("far", JSValue(80));
+    camera.set("layers", cameraLayers);
+    auto renderer = JSValue::object(nullptr);
+    renderer.set("_renderCalls", JSValue(0));
+    renderer.set("_targets", JSValue::array(0));
+    renderer.set("autoClear", true);
+    renderer.set("autoClearColor", true);
+    renderer.set("autoClearDepth", true);
+    renderer.set("autoClearStencil", true);
+    renderer.set("transparent", true);
+    renderer.set("opaque", true);
+    renderer.set("lighting", JSValue(nullptr));
+    renderer.set("contextNode", JSValue(nullptr));
+    renderer.set("getOutputRenderTarget", JSValue::function(
+        +[](const JSValue&, const std::vector<JSValue>&, const std::vector<JSValue>&) {
+            return JSValue(nullptr);
+        }));
+    renderer.set("getDrawingBufferSize", JSValue::function(
+        +[](const JSValue&, const std::vector<JSValue>& args, const std::vector<JSValue>&) {
+            auto size = args.size() > 0 ? args[0] : JSValue::object(nullptr);
+            size.set("width", JSValue(320));
+            size.set("height", JSValue(240));
+            return size;
+        }));
+    renderer.set("getRenderTarget", JSValue::function(
+        +[](const JSValue&, const std::vector<JSValue>&, const std::vector<JSValue>&) {
+            return JSValue(nullptr);
+        }));
+    renderer.set("getMRT", JSValue::function(
+        +[](const JSValue&, const std::vector<JSValue>&, const std::vector<JSValue>&) {
+            return JSValue(nullptr);
+        }));
+    for (const char* method : {"setRenderTarget", "setMRT"}) {
+        renderer.set(method, JSValue::function(
+            +[](const JSValue&, const std::vector<JSValue>&, const std::vector<JSValue>&) {
+                return JSValue{};
+            }));
+    }
+    renderer.set("render", JSValue::function(
+        +[](const JSValue& receiver, const std::vector<JSValue>&, const std::vector<JSValue>&) {
+            JSValue& self = const_cast<JSValue&>(receiver);
+            self.set("_renderCalls", JSValue(self.get("_renderCalls").toNumber() + 1));
+            return JSValue{};
+        }));
+
+    const auto node = nativePassNodeConstructor().construct(
+        {JSValue("color"), scene, camera});
+    auto frame = JSValue::object(nullptr);
+    frame.set("renderer", renderer);
+    REQUIRE_NOTHROW(node.get("updateBefore").call(node, {frame}));
+
+    // The scene is rendered once and the saved renderer and scene state is restored.
+    REQUIRE(renderer.get("_renderCalls").toNumber() == Approx(1));
+    REQUIRE(scene.get("name").toString() == "Scene");
+    REQUIRE(camera.get("layers").get("mask").toNumber() == Approx(7));
+    REQUIRE(renderer.get("autoClear").toBoolean());
+    // The camera near and far uniforms carry the camera values.
+    REQUIRE(node.get("_cameraNear").get("value").toNumber() == Approx(0.5));
+    REQUIRE(node.get("_cameraFar").get("value").toNumber() == Approx(80));
+    // The drawing buffer size reached the render target.
+    REQUIRE(node.get("renderTarget").get("width").toNumber() == Approx(320));
+    REQUIRE(node.get("renderTarget").get("height").toNumber() == Approx(240));
+}

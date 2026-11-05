@@ -1,4 +1,37 @@
-# 当前接续：`PassNode` Stage D 小方法完成（setup/setSize/setScissor/setViewport/dispose），仅剩 `updateBefore`，2026-11-05
+# 当前接续：`PassNode` **全部成员实现完毕**（`updateBefore` 落地）—— 待收口验证，2026-11-05
+
+目标保持 active：固定 three.js 11738a9d55e502fb484cefffcea3a66dc44e9fe9 全部 src + examples/jsm 原生 C++ 逻辑，Vulkan 后端；禁止 CEF/生产 JS 引擎/桥接。阶段本地 Git 提交，不推送。
+
+## 本轮交付：`updateBefore(frame)`（L842–962，PassNode 最后一块）
+
+- 相机选择：`renderer.getOutputRenderTarget()` 且 `isXRRenderTarget` → `renderer.xr.getCamera()` + `xr.updateCamera` + size 取 RT 宽高；否则 `this.camera` + `renderer.getDrawingBufferSize(size)`；
+- `this.setSize(size.width, size.height)`；
+- 保存：`getRenderTarget/getMRT`、`autoClear*` 4 项、`transparent/opaque/lighting`、`camera.layers.mask`、`renderer.contextNode`、`scene.overrideMaterial`；
+- `_cameraNear.value = camera.near`、`_cameraFar.value = camera.far`；
+- `_layers` 非空 → 临时替换 `camera.layers.mask`；
+- **`_previousTextures` 全部 `toggleTexture(name)`**（`Object.keys` 遍历）；
+- `overrideMaterial` 非空 → 设到 scene；
+- 应用本节点状态：`setRenderTarget(renderTarget)`/`setMRT(_mrt)`/autoClear×4/transparent/opaque/lighting；
+- `contextNode` 非空：版本不变则复用 `_contextNodeCache`，否则 `context({...renderer.contextNode.flow, ...this.contextNode.flow})` 重新缓存（`this.version` 判定）；
+- `scene.name = this.name ?? scene.name` → `renderer.render(scene, camera)` → 还原；
+- 全量恢复（renderTarget/MRT/autoClear/transparent/opaque/contextNode/lighting/layers.mask/overrideMaterial）。
+
+## 测试（+1 例 / 9 断言）
+
+stub renderer（drawing buffer 320×240、输出 RT null、render 计数）+ scene/camera：断言 **render 调用 1 次**、`scene.name` 还原、`camera.layers.mask` 还原、`autoClear` 还原、`_cameraNear/Far` uniform 值（0.5/80）、`renderTarget` 尺寸 320×240。
+
+## 验证
+
+- 构建 exit 0；过滤 `*Pass*` = **24 cases / 126 assertions** 全过；`THREECPPAddonTests` 全套 **1417 cases / 39,201 assertions** 通过。
+- 审计不变（PassNode 已 partial）：src 10 / 455；examples/jsm 322 / 154。
+
+**未执行验证（如实记录）**：XR 分支未测；`contextNode` 合并/缓存分支未测；`overrideMaterial` 与 `_previousTextures` 轮换未断言；`compileAsync`、废弃别名 `setResolution/getResolution`、`clone()` 未实现。
+
+## 下一步（PassNode 收口 + 后续）
+
+1. 补 `overrideMaterial`/`_previousTextures`/`contextNode` 分支断言；决定 `compileAsync`/废弃别名是否实现（记录决策）；
+2. 审计把 `PassNode.js` 置为**已实现**（若判定无阻塞项）→ src missing 10 中扣除；
+3. 之后推进 **`ToonOutlinePassNode`(6,868)**（PassNode 下游）。# 当前接续：`PassNode` Stage D 小方法完成（setup/setSize/setScissor/setViewport/dispose），仅剩 `updateBefore`，2026-11-05
 
 目标保持 active：固定 three.js 11738a9d55e502fb484cefffcea3a66dc44e9fe9 全部 src + examples/jsm 原生 C++ 逻辑，Vulkan 后端；禁止 CEF/生产 JS 引擎/桥接。阶段本地 Git 提交，不推送。
 
