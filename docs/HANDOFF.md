@@ -1,4 +1,32 @@
-# 当前接续：addon `ShadowMesh` 移植（平面投影矩阵 16 元素数值差分），examples 连续第 11 个，2026-11-05
+# 当前接续：addon `RectAreaLightHelper` 移植（几何/颜色/world 矩阵差分），examples 连续第 12 个，2026-11-05
+
+目标保持 active：固定 three.js 11738a9d55e502fb484cefffcea3a66dc44e9fe9 全部 src + examples/jsm 原生 C++ 逻辑，Vulkan 后端；禁止 CEF/生产 JS 引擎/桥接。阶段本地 Git 提交，不推送。
+
+## 本轮交付：`examples/jsm/helpers/RectAreaLightHelper`
+
+- `examples/jsm/helpers/RectAreaLightHelper.{h,cpp}`：`class RectAreaLightHelper : public Line`。
+  - 构造：轮廓 `BufferGeometry`（5 点闭环 `[1,1,0, -1,1,0, -1,-1,0, 1,-1,0, 1,1,0]`）+ `LineBasicMaterial{fog=false}`；`type="RectAreaLightHelper"`；子节点 `Mesh` 用第二个几何（6 点两个三角形 `[...]` 18 个分量）+ `MeshBasicMaterial{side=BackSide, fog=false}`。
+  - `updateMatrixWorld(force) override`：`scale = (width/2, height/2, 1)`；有显式颜色则两个材质都 `set`；否则 `color = light.color * intensity`，**若最大通道 >1 则整体归一化**，再拷贝给填充材质；随后 `matrixWorld.extractRotation(light.matrixWorld).scale(scale).copyPosition(light.matrixWorld)` 并 `children[0].matrixWorld.copy(matrixWorld)`。
+  - **关键行为点**：上游该 override **不调用基类 `updateMatrixWorld`**（首版多调了一次基类，把刚算好的 matrixWorld 覆盖回单位矩阵，差分与单测同时报 `[12]=0 vs 1`，已修正并加注释）。
+  - `dispose()`：释放轮廓 geometry/material 与填充 geometry/material。
+  - 无 `Float32BufferAttribute` 类 → 用 `BufferAttribute(std::vector<float>{...}, 3)`。
+- `test/unit/addons/helpers/RectAreaLightHelper.tests.cpp`（3 用例 / 21 断言）：结构（type/轮廓 5 点/填充 6 点/两侧材质 side 与 fog）、缩放 (2,3,1)、**light 红色 intensity=2 归一化回 `0xff0000`**、光源世界矩阵为平移 (1,2,3) 时 `matrixWorld[12..14]=(1,2,3)` 且填充矩阵与之一致（`Matrix4` 无 `operator==`，用 `std::equal(elements().begin()…)` 比较）、显式颜色 `0x00ff00` 优先。
+- 差分 `RectAreaLightHelperParityProbe.cpp` + `compare-rect-area-light-helper.mjs`：14 项（type、两组 position 数组逐值、两侧 fog/side、scale、两种取色路径的 hex、helper matrixWorld 16 元素、填充矩阵一致性）。
+- `Matrix4` 无 `operator==`、且 `elements()` 返回 16 元素 `std::span` —— **用 `std::equal` 比较**。
+
+## 验证
+
+- 构建 exit 0。
+- `THREECPPAddonTests`：**1321 cases / 38,621 assertions 全过**（上轮 1318/38,600 → +3 例 / +21 断言）；过滤 `*RectAreaLightHelper*` = 3 cases / 21 assertions。
+- 差分 `threecpp.threejs-rect-area-light-helper-parity` **Passed**。
+- 审计：**examples/jsm missing 329→328、partial-unverified 147→148**；`src` 不变（19 / 446）。
+
+**未执行验证（如实记录）**：未做渲染；只测了一个光源尺寸/强度组合；`light` 为 null 的分支（C++ 允许默认构造）未做差分；`updateMatrixWorld` 不再递归更新任意额外子节点（与上游一致，但本端口的其他子节点因此不会更新——上游同样如此）。
+
+## 下一步
+
+examples 还剩 328。已筛候选：`modifiers/SimplifyModifier`(4569)、`utils/SceneUtils`(8997)、`transpiler/AST.js`(8868，可与 `TranspilerUtils` 联调)、`exporters/OBJExporter`(6378，注意 JS 数字格式化)、`objects/ShadowMesh` 已完成。
+src 侧仍剩 19 个（`ShadowNode` 24,331 / `PhysicalLightingModel` 32,829 为最大缺口）。# 当前接续：addon `ShadowMesh` 移植（平面投影矩阵 16 元素数值差分），examples 连续第 11 个，2026-11-05
 
 目标保持 active：固定 three.js 11738a9d55e502fb484cefffcea3a66dc44e9fe9 全部 src + examples/jsm 原生 C++ 逻辑，Vulkan 后端；禁止 CEF/生产 JS 引擎/桥接。阶段本地 Git 提交，不推送。
 

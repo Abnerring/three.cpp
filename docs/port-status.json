@@ -201,8 +201,8 @@
     "note": "Accepted port scope is src and examples/jsm, including tracked third-party dependencies. Editor/manual web applications are excluded from native application rewrites. Native host behavior, packaging and all three platforms require separate implementation and verification evidence."
   },
   "counts": {
-    "partial-unverified": 593,
-    "missing": 348,
+    "partial-unverified": 594,
+    "missing": 347,
     "vulkan-port-pending": 290,
     "dependency-unverified": 20
   },
@@ -218,8 +218,8 @@
     "examples/jsm": {
       "modules": 496,
       "counts": {
-        "missing": 329,
-        "partial-unverified": 147,
+        "missing": 328,
+        "partial-unverified": 148,
         "dependency-unverified": 20
       }
     }
@@ -320,7 +320,7 @@
       "path": "examples/jsm/helpers",
       "upstreamFiles": 14,
       "moduleCount": 14,
-      "modulesWithCppFiles": 2,
+      "modulesWithCppFiles": 3,
       "verifiedComplete": 0
     },
     {
@@ -24459,11 +24459,11 @@
       "scope": "examples/jsm",
       "kind": "addon",
       "upstreamSha256": "11f4d5a970320fced4ba1b3d2dd50a8170839246365c9fbdd9f18e51497cd438",
-      "header": null,
-      "implementation": null,
+      "header": "examples/jsm/helpers/RectAreaLightHelper.h",
+      "implementation": "examples/jsm/helpers/RectAreaLightHelper.cpp",
       "expectedHeader": "examples/jsm/helpers/RectAreaLightHelper.h",
       "expectedImplementation": "examples/jsm/helpers/RectAreaLightHelper.cpp",
-      "status": "missing",
+      "status": "partial-unverified",
       "verifiedComplete": false,
       "apiExtraction": "static-only",
       "verification": {
@@ -24472,7 +24472,9 @@
           "pointer": "/modules/830"
         },
         "upstreamUnitTests": [],
-        "cppUnitTests": [],
+        "cppUnitTests": [
+          "test/unit/addons/helpers/RectAreaLightHelper.tests.cpp"
+        ],
         "reviewedImplementation": [],
         "differentialResults": [],
         "renderingResults": [],
