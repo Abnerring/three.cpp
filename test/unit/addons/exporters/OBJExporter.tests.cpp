@@ -52,3 +52,27 @@ TEST_CASE("OBJExporter walks the index and applies the world matrix") {
     REQUIRE(obj.find("\nf ") != std::string::npos);
     REQUIRE(obj.find("/") != std::string::npos);
 }
+
+TEST_CASE("OBJExporter accumulates the vertex index across meshes") {
+    auto firstGeometry = std::make_shared<BufferGeometry>();
+    firstGeometry->setAttribute("position", std::make_shared<BufferAttribute>(
+                                                std::vector<float>{0, 0, 0, 1, 0, 0, 0, 1, 0}, 3));
+    auto first = std::make_shared<Mesh>(firstGeometry, std::make_shared<MeshBasicMaterial>());
+    first->name = "first";
+
+    auto secondGeometry = std::make_shared<BufferGeometry>();
+    secondGeometry->setAttribute("position", std::make_shared<BufferAttribute>(
+                                                 std::vector<float>{2, 0, 0, 3, 0, 0, 2, 1, 0}, 3));
+    auto second = std::make_shared<Mesh>(secondGeometry, std::make_shared<MeshBasicMaterial>());
+    second->name = "second";
+
+    Object3D scene;
+    scene.add(first);
+    scene.add(second);
+
+    // The second mesh has no index of its own, so its face indices must be offset by the three
+    // vertices written for the first mesh.
+    const std::string obj = OBJExporter().parse(scene);
+    REQUIRE(obj.find("o first\nv 0 0 0\nv 1 0 0\nv 0 1 0\nf 1 2 3\n") == 0);
+    REQUIRE(obj.find("o second\nv 2 0 0\nv 3 0 0\nv 2 1 0\nf 4 5 6\n") != std::string::npos);
+}

@@ -1,4 +1,26 @@
-# 当前接续：`STLExporter` binary 分支实现 + 字节级差分（ascii/binary 双路径均已验证），2026-11-05
+# 当前接续：`OBJExporter` 多 mesh 索引累加补测（r67 遗留缺口），2026-11-05
+
+目标保持 active：固定 three.js 11738a9d55e502fb484cefffcea3a66dc44e9fe9 全部 src + examples/jsm 原生 C++ 逻辑，Vulkan 后端；禁止 CEF/生产 JS 引擎/桥接。阶段本地 Git 提交，不推送。
+
+## 本轮内容（测试补充，无源码变更）
+
+r67 明确记录：`OBJExporter` 的 `indexVertex` 累加器**只有单 mesh 场景被测**。本轮补测：
+
+- 新增用例（`test/unit/addons/exporters/OBJExporter.tests.cpp`）：场景放两个三角形 mesh（`first` / `second`，各 3 顶点、无 index、无 normal/uv）。
+- 断言：第一 mesh 输出 `o first\nv …3 行…\nf 1 2 3\n`；**第二 mesh 的顶点索引必须累加为 `f 4 5 6`**（前三个顶点已被第一 mesh 占用）。
+- 这验证了 r67 实现中的 `indexVertex += nbVertex`（以及 `indexVertexUvs/indexNormals` 同类累加）语义。
+
+## 验证
+
+- 构建 exit 0；过滤 `*OBJExporter*` = **3 cases / 7 assertions** 全过（新增 2 条断言）。
+- `THREECPPAddonTests` 全套通过（1335 cases / 38,682 assertions）。
+- 审计计数不变（测试补充，无模块头新增）：examples/jsm 325 / 151，src 13 / 452。
+
+**未执行验证（如实记录）**：多 mesh 的 **uv/normal 索引累加**未单独覆盖（本轮两 mesh 均无这些属性）；无差分扩展（既有 OBJ 差分仍为单 mesh BoxGeometry）。
+
+## 下一步
+
+examples/jsm 剩余 325：`transpiler/AST.js`(8868) 最有价值。src 剩余 13：`ShadowNode`(24,331，依赖齐备) / `PhysicalLightingModel`(32,829，解锁三材质)。# 当前接续：`STLExporter` binary 分支实现 + 字节级差分（ascii/binary 双路径均已验证），2026-11-05
 
 目标保持 active：固定 three.js 11738a9d55e502fb484cefffcea3a66dc44e9fe9 全部 src + examples/jsm 原生 C++ 逻辑，Vulkan 后端；禁止 CEF/生产 JS 引擎/桥接。阶段本地 Git 提交，不推送。
 
