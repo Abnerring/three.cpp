@@ -1,5 +1,9 @@
 #include "utils/SceneUtils.h"
 
+#include "utils/BufferGeometryUtils.h"
+
+#include <iostream>
+
 #include "core/BufferGeometry.h"
 #include "core/VertexAttribute.h"
 #include "math/Matrix4.h"
@@ -128,4 +132,40 @@ void SceneUtils::sortInstancedMesh(const std::shared_ptr<InstancedMesh>& mesh,
             if (snapshot.itemSize > 3) snapshot.attribute->setW(static_cast<double>(i), snapshot.w[refIndex]);
         }
     }
+}
+std::shared_ptr<Object3D> SceneUtils::createMeshesFromMultiMaterialMesh(
+    const std::shared_ptr<Mesh>& mesh) {
+    if (!mesh || !mesh->materialIsArray) {
+        std::cerr << "THREE.SceneUtils.createMeshesFromMultiMaterialMesh(): The given mesh has no "
+                     "multiple materials.\n";
+        return mesh;
+    }
+    auto object = std::make_shared<Group>();
+    object->copy(*mesh);
+    const auto geometry = BufferGeometryUtils::mergeGroups(mesh->geometry);
+    const auto index = geometry->getIndex();
+    for (std::size_t g = 0; g < geometry->groups.size(); ++g) {
+        const auto& group = geometry->groups[g];
+        const double start = group.start;
+        const double end = start + group.count;
+        auto newGeometry = std::make_shared<BufferGeometry>();
+        for (const auto& [name, attribute] : geometry->attributes) {
+            const double itemSize = attribute->getItemSize();
+            const double newLength = group.count * itemSize;
+            auto newAttribute = std::make_shared<BufferAttribute>(
+                std::vector<float>(static_cast<std::size_t>(newLength), 0.0f), itemSize);
+            for (double k = start, n = 0; k < end; k++, n++) {
+                const double ind = index->getX(k);
+                if (itemSize >= 1) newAttribute->setX(n, attribute->getX(ind));
+                if (itemSize >= 2) newAttribute->setY(n, attribute->getY(ind));
+                if (itemSize >= 3) newAttribute->setZ(n, attribute->getZ(ind));
+                if (itemSize >= 4) newAttribute->setW(n, attribute->getW(ind));
+            }
+            newGeometry->setAttribute(name, newAttribute);
+        }
+        const auto materialIndex = static_cast<std::size_t>(group.materialIndex);
+        auto material = mesh->materials[materialIndex];
+        object->add(std::make_shared<Mesh>(newGeometry, material));
+    }
+    return object;
 }

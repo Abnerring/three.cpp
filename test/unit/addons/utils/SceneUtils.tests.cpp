@@ -4,6 +4,8 @@
 #include "core/InstancedBufferAttribute.h"
 #include "math/Color.h"
 #include "materials/MeshBasicMaterial.h"
+#include "core/BufferAttribute.h"
+#include "core/BufferGeometry.h"
 #include "objects/Group.h"
 #include "objects/InstancedMesh.h"
 #include "objects/Mesh.h"
@@ -130,4 +132,41 @@ TEST_CASE("SceneUtils sortInstancedMesh carries the instance colour and attribut
     REQUIRE(values->getX(0) == Approx(10));
     REQUIRE(values->getX(1) == Approx(20));
     REQUIRE(values->getX(2) == Approx(30));
+}
+TEST_CASE("SceneUtils splits a multi material mesh by geometry group") {
+    auto geometry = std::make_shared<BufferGeometry>();
+    geometry->setAttribute("position", std::make_shared<BufferAttribute>(
+                                           std::vector<float>{0, 0, 0, 1, 0, 0, 0, 1, 0,
+                                                              2, 0, 0, 3, 0, 0, 2, 1, 0}, 3));
+    geometry->addGroup(0, 3, 0);
+    geometry->addGroup(3, 3, 1);
+    auto firstMaterial = std::make_shared<MeshBasicMaterial>();
+    auto secondMaterial = std::make_shared<MeshBasicMaterial>();
+    auto mesh = std::make_shared<Mesh>(geometry,
+                                       std::vector<std::shared_ptr<Material>>{firstMaterial,
+                                                                              secondMaterial});
+    REQUIRE(mesh->materialIsArray);
+
+    const auto result = SceneUtils::createMeshesFromMultiMaterialMesh(mesh);
+    const auto group = std::dynamic_pointer_cast<Group>(result);
+    REQUIRE(group != nullptr);
+    REQUIRE(group->children.size() == 2);
+    const auto first = std::dynamic_pointer_cast<Mesh>(group->children[0]);
+    const auto second = std::dynamic_pointer_cast<Mesh>(group->children[1]);
+    REQUIRE(first != nullptr);
+    REQUIRE(second != nullptr);
+    REQUIRE(first->material == firstMaterial);
+    REQUIRE(second->material == secondMaterial);
+    // Each group becomes its own three vertex geometry.
+    REQUIRE(first->geometry->getAttribute("position")->getCount() == Approx(3));
+    REQUIRE(second->geometry->getAttribute("position")->getCount() == Approx(3));
+    REQUIRE(first->geometry->getAttribute("position")->getX(0) == Approx(0));
+    REQUIRE(second->geometry->getAttribute("position")->getX(0) == Approx(2));
+}
+
+TEST_CASE("SceneUtils returns a single material mesh unchanged") {
+    auto mesh = std::make_shared<Mesh>(std::make_shared<BoxGeometry>(),
+                                       std::make_shared<MeshBasicMaterial>());
+    const auto result = SceneUtils::createMeshesFromMultiMaterialMesh(mesh);
+    REQUIRE(result == mesh);
 }

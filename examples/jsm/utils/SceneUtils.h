@@ -9,6 +9,7 @@
 
 class BufferGeometry;
 class Group;
+class Mesh;
 class InstancedMesh;
 class Material;
 
@@ -21,8 +22,7 @@ class Material;
 //   reduceVertices                 - fold every visible vertex through a callback
 //   traverse / traverseVisible / traverseAncestors equivalents already exist on Object3D
 //
-// Not ported yet (documented instead of approximated):
-//   createMeshesFromMultiMaterialMesh - needs mergeGroups from BufferGeometryUtils
+
 //   traverseGenerator and the two sibling generators - C++ uses the Object3D traversal methods,
 //   which have the same visit order, so generators are not offered as a separate API.
 namespace SceneUtils {
@@ -30,6 +30,9 @@ std::shared_ptr<Group> createMeshesFromInstancedMesh(const std::shared_ptr<Insta
 std::shared_ptr<Group> createMultiMaterialObject(
     const std::shared_ptr<BufferGeometry>& geometry,
     const std::vector<std::shared_ptr<Material>>& materials);
+// The pinned helper returns the input mesh unchanged when it has a single material, so the result is
+// an Object3D that is either the input mesh or a new Group.
+std::shared_ptr<Object3D> createMeshesFromMultiMaterialMesh(const std::shared_ptr<Mesh>& mesh);
 double reduceVertices(const std::shared_ptr<Object3D>& object,
                       const std::function<double(double, const Vector3&)>& callback,
                       double initialValue);

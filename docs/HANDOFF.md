@@ -1,4 +1,26 @@
-# 当前接续：更正 r79/r80 前提——`mergeGroups` 其实已实现；`SceneUtils` 下一步可直接做 multi-material mesh，2026-11-05
+# 当前接续：`SceneUtils.createMeshesFromMultiMaterialMesh` 实现完成（多材质网格按 group 拆分），2026-11-05
+
+目标保持 active：固定 three.js 11738a9d55e502fb484cefffcea3a66dc44e9fe9 全部 src + examples/jsm 原生 C++ 逻辑，Vulkan 后端；禁止 CEF/生产 JS 引擎/桥接。阶段本地 Git 提交，不推送。
+
+## 本轮交付：`SceneUtils` 最后一个未移植 helper 完成
+
+- `examples/jsm/utils/SceneUtils.{h,cpp}` 新增 `std::shared_ptr<Object3D> createMeshesFromMultiMaterialMesh(const std::shared_ptr<Mesh>& mesh)`：
+  - **单材质分支**：`materialIsArray == false` → 打印上游同文 `THREE.SceneUtils.createMeshesFromMultiMaterialMesh(): The given mesh has no multiple materials.` 并**原样返回 mesh**（因此返回类型为 `Object3D`，可指向 mesh 或 Group，已在头注释说明）。
+  - **多材质分支**：`Group` + `copy(*mesh)` → `BufferGeometryUtils::mergeGroups(mesh->geometry)`（**既有实现，r81 已确认**）→ 遍历 `geometry->groups`：每个 group 新建 `BufferGeometry`，对其 `attributes` 逐属性按 `group.count * itemSize` 建 `BufferAttribute(std::vector<float>(len), itemSize)`，用 `index->getX(k)` 取源顶点并 `setX/setY/setZ/setW` 写回（对应上游 `setX..setW` 分支）→ 材质取 `mesh->materials[group.materialIndex]` → `object->add(Mesh(...))`。
+  - 头注释同步更新：`createMeshesFromMultiMaterialMesh` 从「未移植」改为已移植（含单材质返回语义），并前向声明 `class Mesh;`。
+- **单测**（`test/unit/addons/utils/SceneUtils.tests.cpp` +2 用例）：6 顶点两 group 的多材质 Mesh → 返回 Group 含 2 个 Mesh，材质分别对应 `materials[0]/[1]`，各自 geometry 顶点数为 3 且首顶点 x 分别为 0 与 2；单材质 Mesh → **返回原 mesh 指针**。
+
+## 验证
+
+- 构建 exit 0；过滤 `*SceneUtils*` = **7 cases / 34 assertions** 全过（新增 2 用例 / 12 断言）。
+- `THREECPPAddonTests` 全套通过（1338 cases / 38,696 assertions）。
+- 审计计数不变（`SceneUtils` 早已 partial）：examples/jsm 325 / 151，src 13 / 452。
+
+**未执行验证（如实记录）**：**无差分**（仅单测；对比只覆盖 position 属性，未覆盖 uv/normal/itemSize>3 的属性复制）；`mergeGroups` 的既有实现与差分未在本轮重跑（但构建/全套测试均通过）。
+
+## 下一步
+
+examples/jsm 剩余 325：`transpiler/AST.js`(8868) 最有价值。src 剩余 13：`ShadowNode`(24,331，依赖齐备) / `PhysicalLightingModel`(32,829，解锁三材质)。# 当前接续：更正 r79/r80 前提——`mergeGroups` 其实已实现；`SceneUtils` 下一步可直接做 multi-material mesh，2026-11-05
 
 目标保持 active：固定 three.js 11738a9d55e502fb484cefffcea3a66dc44e9fe9 全部 src + examples/jsm 原生 C++ 逻辑，Vulkan 后端；禁止 CEF/生产 JS 引擎/桥接。阶段本地 Git 提交，不推送。
 
