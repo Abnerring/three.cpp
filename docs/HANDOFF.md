@@ -1,4 +1,36 @@
-# 当前接续：补齐 `toInspector` 调试钩子（关闭 r133 记录的省略偏差），2026-11-05
+# 当前接续：`PointShadowNode` **Stage A** 落地（src missing 12→11），2026-11-05
+
+目标保持 active：固定 three.js 11738a9d55e502fb484cefffcea3a66dc44e9fe9 全部 src + examples/jsm 原生 C++ 逻辑，Vulkan 后端；禁止 CEF/生产 JS 引擎/桥接。阶段本地 Git 提交，不推送。
+
+## 本轮交付：`src/nodes/lighting/PointShadowNode`（Stage A）
+
+- `PointShadowNode.{h,cpp}`：JSValue 托管类，`makeClass("PointShadowNode", 2, base=ShadowNode, ...)`，`superConstruct(target, captures, {light, shadow})` 走基类构造；构造后设 `isPointShadowNode = true`。
+- 已实现：
+  - **`static type`**（通过基类 classSource 继承，实例 `type == "PointShadowNode"`）；
+  - **`getShadowFilterFn(type)`**：`type === BasicShadowMap`（0）→ 返回 `BasicPointShadowFilter` 等价回调（`cubeTexture(depthTexture, bd3D).compare(dp)`）；其他类型**抛未移植错误**；
+  - **`setupShadowCoord(builder, shadowPosition)`**：原样返回 `shadowPosition`（点光不需要坐标变换）；
+  - **`setupRenderTarget(shadow, builder)`**：`nativeTexture(std::make_shared<CubeDepthTexture>(width))`（**typed 类转 JSValue 的正确方式**），`name='PointShadowDepthTexture'`、`compareFunction = reversedDepthBuffer ? GreaterEqualCompare : LessEqualCompare`；`builder.createCubeRenderTarget(width)`，`texture.name='PointShadowMap'`、挂 `depthTexture`，返回 `{shadowMap, depthTexture}`。
+- 仍抛错：`setupShadowFilter`、`renderShadow`（Stage B/C）。
+- `test/unit/addons/src/PointShadowNode.tests.cpp`（4 例 / 9 断言）：继承与 type；`setupShadowCoord` 原样返回；`setupRenderTarget` 名字与结构；基础过滤回调可用。
+
+## 本轮踩坑（已解决）
+
+1. `CubeDepthTexture` **不是** JSValue 托管类而是 **typed C++ 类** → 需 `nativeTexture(std::make_shared<CubeDepthTexture>(size))`（参考 `WebGLUniforms.cpp:466`）；
+2. 首次构建因误用 `nativeCubeDepthTextureConstructor` 失败 → 已回滚重写，`dirty = 0`；
+3. 基础过滤回调在 stub 输入下**不抛错**（返回节点），断言改为 truthy。
+
+## 验证
+
+- 构建 exit 0；过滤 `*PointShadowNode*` = **4 cases / 9 assertions** 全过；`THREECPPAddonTests` 全套 **1395 cases / 38,992 assertions** 通过。
+- 审计：**src missing 12→11、partial 453→454**；`PointShadowNode.js -> partial-unverified`。
+
+**未执行验证（如实记录）**：`PointShadowFilter`（Vogel disk 采样）与 `pointShadowFilter` Fn 未实现；`renderShadow` 六面渲染未实现；`getShadowFilterFn` 非 Basic 分支抛错。
+
+## 下一步（Stage B/C）
+
+1. **Stage B**：`PointShadowFilter` Fn（Vogel disk + IGN + `If`）+ `pointShadowFilter` Fn + `setupShadowFilter`；
+2. **Stage C**：`renderShadow`（六面 `_cubeDirections*`/`_cubeUps*`、逐面 `setRenderTarget(shadowMap, face)`、`clear()`、相机 `lookAt`、`shadowMatrix.makeTranslation`、`_frustum.setFromProjectionMatrix`）；
+3. 之后收口 `ShadowNode`/`PointShadowNode` 相关差分，推进其余 src 大项。# 当前接续：补齐 `toInspector` 调试钩子（关闭 r133 记录的省略偏差），2026-11-05
 
 目标保持 active：固定 three.js 11738a9d55e502fb484cefffcea3a66dc44e9fe9 全部 src + examples/jsm 原生 C++ 逻辑，Vulkan 后端；禁止 CEF/生产 JS 引擎/桥接。阶段本地 Git 提交，不推送。
 

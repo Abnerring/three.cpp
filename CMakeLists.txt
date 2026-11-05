@@ -205,6 +205,7 @@ target_sources(threecpp PRIVATE
     src/nodes/lighting/PointLightNode.cpp
     src/nodes/lighting/ShadowBaseNode.cpp
     src/nodes/lighting/ShadowNode.cpp
+    src/nodes/lighting/PointShadowNode.cpp
     src/nodes/lighting/ShadowFilterNode.cpp
     src/nodes/lighting/EnvironmentNode.cpp
     src/nodes/functions/BSDF/LTC.cpp

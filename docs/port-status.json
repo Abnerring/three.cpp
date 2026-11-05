@@ -201,8 +201,8 @@
     "note": "Accepted port scope is src and examples/jsm, including tracked third-party dependencies. Editor/manual web applications are excluded from native application rewrites. Native host behavior, packaging and all three platforms require separate implementation and verification evidence."
   },
   "counts": {
-    "partial-unverified": 607,
-    "missing": 334,
+    "partial-unverified": 608,
+    "missing": 333,
     "vulkan-port-pending": 290,
     "dependency-unverified": 20
   },
@@ -210,8 +210,8 @@
     "src": {
       "modules": 755,
       "counts": {
-        "partial-unverified": 453,
-        "missing": 12,
+        "partial-unverified": 454,
+        "missing": 11,
         "vulkan-port-pending": 290
       }
     },
@@ -866,7 +866,7 @@
       "path": "src/nodes/lighting",
       "upstreamFiles": 23,
       "moduleCount": 23,
-      "modulesWithCppFiles": 22,
+      "modulesWithCppFiles": 23,
       "verifiedComplete": 0
     },
     {
@@ -11735,11 +11735,11 @@
       "scope": "src",
       "kind": "core",
       "upstreamSha256": "dc49828e9ad23e9b5d58e1d19e84cb5d79ba9f8632046c6d25acf56aded3ef6a",
-      "header": null,
-      "implementation": null,
+      "header": "src/nodes/lighting/PointShadowNode.h",
+      "implementation": "src/nodes/lighting/PointShadowNode.cpp",
       "expectedHeader": "src/nodes/lighting/PointShadowNode.h",
       "expectedImplementation": "src/nodes/lighting/PointShadowNode.cpp",
-      "status": "missing",
+      "status": "partial-unverified",
       "verifiedComplete": false,
       "apiExtraction": "partial-static",
       "verification": {
