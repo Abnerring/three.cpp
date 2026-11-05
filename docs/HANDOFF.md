@@ -1,3 +1,21 @@
+# 当前接续：EnvironmentNode 已移植，setup 端到端跑通并差分验收，2026-11-05
+
+目标保持 active：固定 three.js 11738a9d55e502fb484cefffcea3a66dc44e9fe9 全部 src + examples/jsm 原生 C++ 逻辑，Vulkan 后端；禁止 CEF/生产 JS 引擎/桥接。阶段本地 Git 提交，不推送。
+
+本轮新增 `src/nodes/lighting/EnvironmentNode.{h,cpp}`（extends LightingNode）。除类本身（`setup`、`_getPMREMNodeCache`）外，**三个模块级 context 工厂也一并移植**：`createRadianceContext`（惰性构建 `positionViewDirection.negate().reflect(normal)` → `pow4(roughness).mix(...)` → `normalize` → `transformDirection(cameraWorldMatrix)`，**构建一次后缓存**）、`createRetroRadianceContext`（`pow4(roughness).mix(positionViewDirection, normal)` 链）、`createIrradianceContext`（`getUV` 直接给 `normalWorld`，`getTextureLevel` 给 `float(1)`）。`_rendererCache` 是模块级 WeakMap，`_getPMREMNodeCache(renderer)` 按渲染器缓存一个 WeakMap。
+
+**本轮的关键不同：`setup` 是端到端真实执行的**——单测与差分都构造了桩 builder（`envNode` 是真的 TSL 节点，只把它的 `context` 方法换成记录型桩；`radiance`/`iblIrradiance` 用计数型 `addAssign`），因此验证到的是行为而非签名：`radiance.addAssign` 与 `iblIrradiance.addAssign` 各 1 次、无 retro / 无 clearcoat 时恰好收到 2 个 context、`getUV()` 两次返回**同一个节点**（惰性构建只做一次）、`getTextureLevel()` 返回节点、`_getPMREMNodeCache` 同渲染器同一 WeakMap / 异渲染器不同。retro 与 clearcoat 两条分支在单测里也各跑了一遍（context 数变 3、对应 `addAssign` 计数为 1）。
+
+验证：构建 exit 0（首轮两处 C++ 陷阱：探针里 `Args` 在 `LightingNodeRuntime` 命名空间内不可见被当成 `int`——改用显式 `std::vector<JSValue>`；测试里 `const auto list = store.get(...)` 又对其调 `set`——改非 const 句柄）。THREECPPTests **1544 cases / 214,228 assertions 全过**，较上轮 1539/214,199 增 5 例 29 断言，与 `*EnvironmentNode*` 过滤的 7 用例/40 断言一致（其中 2 例来自既有的 basic-environment-node 测试）。差分 `threecpp.threejs-environment-node-parity` **Passed 1.68s**，两侧跑同一套桩 builder 后逐字段比对：`radianceAssigns`、`irradianceAssigns`、`contextCount`、`getUvIsNode`、`getUvStable`、`radianceLevelIsNode`、`irradianceLevelIsNode`、`cacheStable`、`cachePerRenderer`、四个方法/构造器 arity、以及 **class `toString` 逐字节**。
+
+**顺带确认一件基础设施的事**：跑测试时既有 `threecpp.threejs-basic-environment-node-parity` 报失败，查明是**它的探针二进制在本 build 目录里从未构建**（`spawnSync … ENOENT`），**不是回归**；而且这正是第 8 轮修的那条失败信息——现在给的是干净的 `ENOENT`，不再是 `ERR_INVALID_ARG_TYPE`，说明那次修复确实有用。构建该探针后通过。
+
+**未执行验证的部分（如实记录）**：① `envNode.isTextureNode || isMaterialReferenceNode` 的 **PMREM 分支未执行**——需要真实纹理与 `pmremTexture` 节点；② **anisotropy 分支未执行**（`material.useAnisotropy`/`anisotropy` 在测试里都是关的，故 `bentNormalView` 未被选中）；③ 差分只覆盖**基础路径**（无 retro、无 clearcoat），retro/clearcoat 仅在单测侧验证。
+
+审计（固定 worktree，HEAD=11738a9d55）刷新后应为 **src missing 51→50、partial 414→415**；EnvironmentNode 记 `partial-unverified` 并登记 h/cpp（若读数与预期不符，提交会被脚本拦下并在此说明）。
+
+`src/nodes/lighting` 仍缺 **4 个**：LightsNode、PointShadowNode、RectAreaLightNode、ShadowNode。下一步仍是 `ShadowNode`（24,331 B，`ShadowBaseNode` 与三种过滤器已齐备）→ `PointShadowNode`；`RectAreaLightNode`（3,107 B）卡 `src/nodes/functions/BSDF/LTC.js`。`LightsNode`（10,518 B）是 lighting 的枢纽，依赖面较大。
+
 # 当前接续：ShadowFilterNode 已移植（三个过滤器，两个已真实构建节点图），2026-11-05
 
 目标保持 active：固定 three.js 11738a9d55e502fb484cefffcea3a66dc44e9fe9 全部 src + examples/jsm 原生 C++ 逻辑，Vulkan 后端；禁止 CEF/生产 JS 引擎/桥接。阶段本地 Git 提交，不推送。
