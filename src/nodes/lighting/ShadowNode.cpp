@@ -436,6 +436,74 @@ JSValue setupShadow(const JSValue& rawSelf, const Args& args, const Args&) {
 
     self.set("shadowMap", shadowMap);
     const_cast<JSValue&>(shadow).set("map", shadowMap);
+
+    // Inspector hooks: Color and Depth entries, as in the pinned tail of the builder.
+    const auto lightType = light.get("type");
+    std::string inspectName;
+    {
+        std::string lightLabel;
+        const auto lightName = light.get("name");
+        if (lightName.toBoolean()) {
+            lightLabel = lightName.toString();
+        } else {
+            lightLabel = "ID: " + std::to_string(static_cast<long long>(light.get("id").toNumber()));
+        }
+        std::string typeLabel = lightType.toBoolean() ? lightType.toString() : std::string();
+        inspectName = typeLabel + " Shadow [ " + lightLabel + " ]";
+    }
+    const auto toInspector = shadowOutput.get("toInspector");
+    if (toInspector.toBoolean()) {
+        if (shadowColor.toBoolean()) {
+            auto colorCallback = JSValue::function(
+                +[](const JSValue& receiver, const Args&, const Args&) -> JSValue {
+                    const auto textureValue = const_cast<JSValue&>(receiver).get("shadowMap").get("texture");
+                    if (textureValue.get("isCubeTexture").toBoolean()) {
+                        return nativeCubeTextureNodeBinding("cubeTexture")
+                            .call({}, {textureValue,
+                                       nativeEquirectUVBinding("equirectDirection").call({}, {})});
+                    }
+                    return nativeTextureNodeBinding("texture").call({}, {textureValue});
+                },
+                {self});
+            shadowOutput.get("toInspector")
+                .call(shadowOutput, {JSValue(inspectName + " / Color"), colorCallback});
+        }
+        auto depthCallback = JSValue::function(
+            +[](const JSValue& receiver, const Args&, const Args&) -> JSValue {
+                auto selfValue = const_cast<JSValue&>(receiver);
+                const auto shadowValue = selfValue.get("shadow");
+                const auto shadowCamera = shadowValue.get("camera");
+                auto nearReference = nativeReferenceNodeBinding("reference")
+                                         .call({}, {JSValue("near"), JSValue("float"), shadowCamera});
+                auto farReference = nativeReferenceNodeBinding("reference")
+                                        .call({}, {JSValue("far"), JSValue("float"), shadowCamera});
+                JSValue depthNode;
+                if (selfValue.get("shadowMap").get("texture").get("isCubeTexture").toBoolean()) {
+                    const auto sampled = nativeCubeTextureNodeBinding("cubeTexture")
+                                             .call({}, {selfValue.get("shadowMap").get("depthTexture"),
+                                                        nativeEquirectUVBinding("equirectDirection").call({}, {})});
+                    depthNode = sampled.get("r");
+                } else {
+                    const auto sampled = nativeTextureNodeBinding("texture")
+                                             .call({}, {selfValue.get("shadowMap").get("depthTexture")});
+                    depthNode = sampled.get("r");
+                }
+                JSValue linearDepth;
+                if (shadowCamera.get("isPerspectiveCamera").toBoolean()) {
+                    linearDepth = nativeViewportDepthNodeBinding("perspectiveDepthToViewZ")
+                                      .call({}, {depthNode, nearReference, farReference});
+                } else {
+                    linearDepth = nativeViewportDepthNodeBinding("orthographicDepthToViewZ")
+                                      .call({}, {depthNode, nearReference, farReference});
+                }
+                linearDepth = nativeViewportDepthNodeBinding("viewZToOrthographicDepth")
+                                  .call({}, {linearDepth, nearReference, farReference});
+                return invoke(linearDepth, "oneMinus")({});
+            },
+            {self});
+        return shadowOutput.get("toInspector")
+            .call(shadowOutput, {JSValue(inspectName + " / Depth"), depthCallback});
+    }
     return shadowOutput;
 }
 // setup( builder ) { check the renderer shadow state, reuse the cached node and run the material hook. }

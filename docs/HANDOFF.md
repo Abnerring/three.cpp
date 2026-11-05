@@ -1,4 +1,28 @@
-# 当前接续：NearestFilter 断言 + **`setup` 非缓存路径构建并缓存**测试通过（ShadowNode 26 例 / 80 断言），2026-11-05
+# 当前接续：补齐 `toInspector` 调试钩子（关闭 r133 记录的省略偏差），2026-11-05
+
+目标保持 active：固定 three.js 11738a9d55e502fb484cefffcea3a66dc44e9fe9 全部 src + examples/jsm 原生 C++ 逻辑，Vulkan 后端；禁止 CEF/生产 JS 引擎/桥接。阶段本地 Git 提交，不推送。
+
+## 本轮交付：`toInspector` 两处调用（L534–585）
+
+在段 4 返回前补齐上游的两处 inspector 注册：
+
+1. **Color**（仅 `shadowColor` 存在时）：`shadowOutput.toInspector("<light.type> Shadow [ <name|ID: id> ] / Color", callback)`，回调内按 `shadowMap.texture.isCubeTexture` 选择 `cubeTexture(texture, equirectDirection())` 或 `texture(texture)`；
+2. **Depth**：`toInspector("... / Depth", callback)`，回调内取 `shadowMap.depthTexture` 的 `.r`（cube → `cubeTexture(..., equirectDirection()).r`），再按相机类型走 `perspectiveDepthToViewZ` / `orthographicDepthToViewZ`，接着 `viewZToOrthographicDepth`，最后 `.oneMinus()`；
+3. 返回值改为 **`toInspector(...)` 的返回值**（与上游 `return shadowOutput.toInspector(...)` 一致）。
+
+## 验证
+
+- 构建 exit 0；过滤 `*ShadowNode*` = **26 cases / 80 assertions** 全过（所有 `setupShadow` 用例都会经过新增代码路径）。
+- `THREECPPAddonTests` 全套 **1391 cases / 38,983 assertions** 通过。
+- 审计不变（ShadowNode 已 partial）：src 12 / 453；examples/jsm 322 / 154。
+
+**未执行验证（如实记录）**：inspector 回调**本体未被调用**（需 inspector 环境）；颜色/深度回调内部的节点类型未断言；`updateShadow` 仍无测试；图结构未差分。
+
+## 下一步
+
+1. `updateShadow` 真实 renderer 夹具；
+2. 图结构弱差分（节点 `toString()`）；
+3. 收口后推进 **`PointShadowNode`(12,693)**、`PhysicalLightingModel`(32,829)。# 当前接续：NearestFilter 断言 + **`setup` 非缓存路径构建并缓存**测试通过（ShadowNode 26 例 / 80 断言），2026-11-05
 
 目标保持 active：固定 three.js 11738a9d55e502fb484cefffcea3a66dc44e9fe9 全部 src + examples/jsm 原生 C++ 逻辑，Vulkan 后端；禁止 CEF/生产 JS 引擎/桥接。阶段本地 Git 提交，不推送。
 
