@@ -14,10 +14,78 @@ using namespace LightingNodeRuntime;
 JSWeakValue& lexical() { static thread_local JSWeakValue weak; return weak; }
 JSWeakValue& baseKeeper() { static thread_local JSWeakValue weak; return weak; }
 
+// Forward declarations for the shared helpers defined further down.
+JSValue floatNode(double value);
+JSValue vec3Node(const JSValue& x, const JSValue& y, const JSValue& z);
+JSValue inputObject(const Args& args);
+
 [[noreturn]] JSValue notPorted(const char* name) {
     throw std::runtime_error(std::string("PhysicalLightingModel: ") + name + " is not ported yet");
 }
 
+JSWeakValue& constantsCache() { static thread_local JSWeakValue weak; return weak; }
+
+JSValue oneVec3() { return vec3Node(JSValue(1.0), JSValue(1.0), JSValue(1.0)); }
+
+// const XYZ_TO_REC709 = mat3( ... ); const clearcoatF0 = vec3( 0.04 ); const clearcoatF90 = float( 1 );
+JSValue constants() {
+    if (const auto cached = constantsCache().lock(); cached && cached->toBoolean()) return *cached;
+    auto values = JSValue::object(nullptr);
+    auto mat = JSValue::array(9);
+    const double xyzToRec709[9] = {3.2404542, -1.5371385, -0.4985314,
+                                   -0.9692660, 1.8760108, 0.0415560,
+                                   0.0556434, -0.2040259, 1.0572252};
+    for (std::size_t index = 0; index < 9; ++index) {
+        mat.set(index, JSValue(xyzToRec709[index]));
+    }
+    values.set("XYZ_TO_REC709", nativeTSLBaseBinding("mat3").call({}, {mat}));
+    values.set("clearcoatF0", vec3Node(JSValue(0.04), JSValue(0.04), JSValue(0.04)));
+    values.set("clearcoatF90", floatNode(1.0));
+    constantsCache() = JSWeakValue(values);
+    return values;
+}
+
+// Fresnel0ToIor( fresnel0 ) { const sqrtF0 = fresnel0.sqrt(); return vec3(1).add(sqrtF0).div(vec3(1).sub(sqrtF0)); }
+JSValue fresnel0ToIor(const JSValue& fresnel0) {
+    const auto sqrtF0 = invoke(fresnel0, "sqrt")();
+    const auto numerator = invoke(oneVec3(), "add")({sqrtF0});
+    const auto denominator = invoke(oneVec3(), "sub")({sqrtF0});
+    return invoke(numerator, "div")({denominator});
+}
+
+// IorToFresnel0( transmittedIor, incidentIor ) { return ( t - i ) / ( t + i ); } squared
+JSValue iorToFresnel0(const JSValue& transmittedIor, const JSValue& incidentIor) {
+    const auto numerator = invoke(transmittedIor, "sub")({incidentIor});
+    const auto denominator = invoke(transmittedIor, "add")({incidentIor});
+    return invoke(invoke(numerator, "div")({denominator}), "pow2")();
+}
+
+// IBLSheenBRDF = Fn( ( { normal, viewDir, roughness } ) => { ... } )
+JSValue iblSheenBrdfBody(const JSValue&, const Args& args, const Args&) {
+    const auto inputs = inputObject(args);
+    const auto normal = inputs.get("normal");
+    const auto viewDir = inputs.get("viewDir");
+    const auto roughness = inputs.get("roughness");
+
+    const auto dotNV = nativeMathNodeBinding("saturate").call({}, {invoke(normal, "dot")({viewDir})});
+    const auto r2 = invoke(roughness, "mul")({roughness});
+    const auto rInv = nativeMathNodeBinding("reciprocal").call(
+        {}, {invoke(roughness, "add")({JSValue(0.1)})});
+
+    JSValue a = floatNode(-1.9362);
+    a = invoke(a, "add")({invoke(roughness, "mul")({JSValue(1.0678)})});
+    a = invoke(a, "add")({invoke(r2, "mul")({JSValue(0.4573)})});
+    a = invoke(a, "sub")({invoke(rInv, "mul")({JSValue(0.8469)})});
+
+    JSValue b = floatNode(-0.6014);
+    b = invoke(b, "add")({invoke(roughness, "mul")({JSValue(0.5538)})});
+    b = invoke(b, "sub")({invoke(r2, "mul")({JSValue(0.4670)})});
+    b = invoke(b, "sub")({invoke(rInv, "mul")({JSValue(0.1255)})});
+
+    auto exponent = invoke(a, "mul")({dotNV});
+    exponent = invoke(exponent, "add")({b});
+    return nativeMathNodeBinding("saturate").call({}, {nativeMathNodeBinding("exp").call({}, {exponent})});
+}
 JSWeakValue& helperCache() { static thread_local JSWeakValue weak; return weak; }
 
 JSValue floatNode(double value) { return nativeTSLBaseBinding("float").call({}, {JSValue(value)}); }
@@ -231,5 +299,21 @@ JSValue nativePhysicalLightingModelHelper(const std::string& name) {
     if (name == "applyIorToRoughness") return makeFn(applyIorToRoughnessBody);
     if (name == "volumeAttenuation") return makeFn(volumeAttenuationBody);
     if (name == "getVolumeTransmissionRay") return makeFn(getVolumeTransmissionRayBody);
+    if (name == "IBLSheenBRDF") return makeFn(iblSheenBrdfBody);
+    if (name == "XYZ_TO_REC709") return constants().get("XYZ_TO_REC709");
+    if (name == "clearcoatF0") return constants().get("clearcoatF0");
+    if (name == "clearcoatF90") return constants().get("clearcoatF90");
+    if (name == "Fresnel0ToIor") {
+        return JSValue::function(
+            +[](const JSValue&, const Args& args, const Args&) -> JSValue {
+                return fresnel0ToIor(arg(args, 0));
+            });
+    }
+    if (name == "IorToFresnel0") {
+        return JSValue::function(
+            +[](const JSValue&, const Args& args, const Args&) -> JSValue {
+                return iorToFresnel0(arg(args, 0), arg(args, 1));
+            });
+    }
     return JSValue{};
 }

@@ -56,3 +56,31 @@ TEST_CASE("PhysicalLightingModel module helpers build graphs") {
         {}, {normal, view, thickness, ior, matrix});
     REQUIRE(ray.get("isNode").toBoolean());
 }
+TEST_CASE("PhysicalLightingModel constant and BRDF helpers") {
+    const auto matrix = nativePhysicalLightingModelHelper("XYZ_TO_REC709");
+    REQUIRE(matrix.toBoolean());
+    REQUIRE(matrix.get("isNode").toBoolean());
+    const auto clearcoatF0 = nativePhysicalLightingModelHelper("clearcoatF0");
+    REQUIRE(clearcoatF0.toBoolean());
+    REQUIRE(clearcoatF0.get("isNode").toBoolean());
+    const auto clearcoatF90 = nativePhysicalLightingModelHelper("clearcoatF90");
+    REQUIRE(clearcoatF90.toBoolean());
+
+    const auto normal = nativeTSLBaseBinding("vec3").call({}, {JSValue(0.0), JSValue(0.0), JSValue(1.0)});
+    const auto viewDir = nativeTSLBaseBinding("vec3").call({}, {JSValue(0.0), JSValue(0.0), JSValue(1.0)});
+    const auto roughness = nativeTSLBaseBinding("float").call({}, {JSValue(0.5)});
+    auto inputs = JSValue::object(nullptr);
+    inputs.set("normal", normal);
+    inputs.set("viewDir", viewDir);
+    inputs.set("roughness", roughness);
+    const auto sheen = nativePhysicalLightingModelHelper("IBLSheenBRDF").call({}, {inputs});
+    REQUIRE(sheen.get("isNode").toBoolean());
+
+    const auto fresnel0 = nativeTSLBaseBinding("vec3").call({}, {JSValue(0.04), JSValue(0.04), JSValue(0.04)});
+    const auto ior = nativePhysicalLightingModelHelper("Fresnel0ToIor").call({}, {fresnel0});
+    REQUIRE(ior.get("isNode").toBoolean());
+    const auto transmitted = nativeTSLBaseBinding("float").call({}, {JSValue(1.5)});
+    const auto incident = nativeTSLBaseBinding("float").call({}, {JSValue(1.0)});
+    const auto fresnel = nativePhysicalLightingModelHelper("IorToFresnel0").call({}, {transmitted, incident});
+    REQUIRE(fresnel.get("isNode").toBoolean());
+}

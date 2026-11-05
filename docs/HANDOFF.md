@@ -1,4 +1,32 @@
-# 当前接续：`PhysicalLightingModel` **Stage B 首批辅助**（applyIorToRoughness/volumeAttenuation/getVolumeTransmissionRay），2026-11-05
+# 当前接续：`PhysicalLightingModel` **Stage B 第二批**（常量/IOR 转换/IBLSheenBRDF），2026-11-05
+
+目标保持 active：固定 three.js 11738a9d55e502fb484cefffcea3a66dc44e9fe9 全部 src + examples/jsm 原生 C++ 逻辑，Vulkan 后端；禁止 CEF/生产 JS 引擎/桥接。阶段本地 Git 提交，不推送。
+
+## 本轮交付
+
+1. **`XYZ_TO_REC709`**（`mat3(3.2404542, -1.5371385, -0.4985314, -0.9692660, 1.8760108, 0.0415560, 0.0556434, -0.2040259, 1.0572252)`，缓存）；
+2. **`clearcoatF0 = vec3(0.04)`**、**`clearcoatF90 = float(1)`**（缓存）；
+3. **`Fresnel0ToIor(fresnel0)`**：`vec3(1).add(sqrt(f0)).div(vec3(1).sub(sqrt(f0)))`；
+4. **`IorToFresnel0(t, i)`**：`((t-i)/(t+i))²`；
+5. **`IBLSheenBRDF({normal, viewDir, roughness})`**：`dotNV = saturate(n·v)`；`r2`/`rInv = 1/(r+0.1)`；`a`/`b` 多项式；`DG = exp(a·dotNV + b)`；返回 `saturate(DG)`。
+- 钩子扩展：`nativePhysicalLightingModelHelper` 支持上述名称（含两个 IOR 转换的 `JSValue::function` 包装）。
+
+## 测试（+1 例 / 8 断言）
+
+`XYZ_TO_REC709`/`clearcoatF0/F90` 存在且为节点；`IBLSheenBRDF` 用真实 vec3/float 输入构建为节点；两种 IOR 转换均为节点。
+
+## 验证
+
+- 构建 exit 0；`*PhysicalLightingModel*` = **4 cases / 31 assertions** 全过；`THREECPPAddonTests` 全套 **1434 cases / 39,302 assertions** 通过。
+- 审计不变（已 partial）：src 7 / 458。
+
+**未执行验证（如实记录）**：`evalSensitivity`/`evalIridescence`/`getTransmissionSample`/`getIBLVolumeRefraction` 未实现；数值未断言；9 个 lighting hook 仍抛错。
+
+## 下一步
+
+1. **Stage B 收尾**：`evalSensitivity`（JS 纯函数）+ `evalIridescence`（Fn，含 Loop/If/F_Schlick）+ `getTransmissionSample`（依赖 viewport 纹理）；
+2. **Stage C**：`start()`；
+3. **Stage D/E/F**：`direct`/`directRectArea`/`indirect*`/`ambientOcclusion`/`finish`/`computeMultiscattering` + `getIBLVolumeRefraction`。# 当前接续：`PhysicalLightingModel` **Stage B 首批辅助**（applyIorToRoughness/volumeAttenuation/getVolumeTransmissionRay），2026-11-05
 
 目标保持 active：固定 three.js 11738a9d55e502fb484cefffcea3a66dc44e9fe9 全部 src + examples/jsm 原生 C++ 逻辑，Vulkan 后端；禁止 CEF/生产 JS 引擎/桥接。阶段本地 Git 提交，不推送。
 
