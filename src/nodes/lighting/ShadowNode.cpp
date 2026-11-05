@@ -8,6 +8,7 @@
 #include "nodes/display/ViewportDepthNode.h"
 #include "nodes/lighting/ShadowFilterNode.h"
 #include "nodes/tsl/TSLBase.h"
+#include "renderers/common/QuadMesh.h"
 #include "textures/DepthTexture.h"
 
 #include <stdexcept>
@@ -159,9 +160,61 @@ JSValue setupRenderTarget(const JSValue&, const Args& args, const Args&) {
 }
 JSValue setupShadow(const JSValue&, const Args&, const Args&) { return notPorted("setupShadow"); }
 JSValue setup(const JSValue&, const Args&, const Args&) { return notPorted("setup"); }
-JSValue renderShadow(const JSValue&, const Args&, const Args&) { return notPorted("renderShadow"); }
+// renderShadow( frame ) { shadow.updateMatrices( light ); shadowMap.setSize(...); renderer.render( scene, shadow.camera ); }
+JSValue renderShadow(const JSValue& self, const Args& args, const Args&) {
+    const auto frame = arg(args, 0);
+    const auto shadow = self.get("shadow");
+    const auto shadowMap = self.get("shadowMap");
+    const auto light = self.get("light");
+    const auto renderer = frame.get("renderer");
+    const auto scene = frame.get("scene");
+
+    const auto updateMatrices = shadow.get("updateMatrices");
+    updateMatrices.call(shadow, {light});
+    const auto mapSize = shadow.get("mapSize");
+    const auto setSize = shadowMap.get("setSize");
+    setSize.call(shadowMap, {mapSize.get("width"), mapSize.get("height"), shadowMap.get("depth")});
+
+    const auto currentSceneName = scene.get("name");
+    const auto lightName = light.get("name");
+    std::string lightLabel;
+    if (lightName.toBoolean()) {
+        lightLabel = lightName.toString();
+    } else {
+        lightLabel = "ID: " + std::to_string(static_cast<long long>(light.get("id").toNumber()));
+    }
+    JSValue& sceneRef = const_cast<JSValue&>(scene);
+    sceneRef.set("name", JSValue("Shadow Map [ " + lightLabel + " ]"));
+    renderer.get("render").call(renderer, {sceneRef, shadow.get("camera")});
+    sceneRef.set("name", currentSceneName);
+    return {};
+}
+
+// vsmPass( renderer ) { set the two VSM targets and render the shared quad mesh with each material. }
+JSValue vsmPass(const JSValue& self, const Args& args, const Args&) {
+    const auto renderer = arg(args, 0);
+    const auto shadow = self.get("shadow");
+    const auto shadowMap = self.get("shadowMap");
+    const auto depth = shadowMap.get("depth");
+    const auto mapSize = shadow.get("mapSize");
+    const auto vertical = self.get("vsmShadowMapVertical");
+    const auto horizontal = self.get("vsmShadowMapHorizontal");
+    const auto setSizeVertical = vertical.get("setSize");
+    setSizeVertical.call(vertical, {mapSize.get("width"), mapSize.get("height"), depth});
+    const auto setSizeHorizontal = horizontal.get("setSize");
+    setSizeHorizontal.call(horizontal, {mapSize.get("width"), mapSize.get("height"), depth});
+
+    auto quadMesh = nativeQuadMeshConstructor().construct({JSValue(nullptr)});
+    const auto setRenderTarget = renderer.get("setRenderTarget");
+    setRenderTarget.call(renderer, {vertical});
+    quadMesh.set("material", self.get("vsmMaterialVertical"));
+    quadMesh.get("render").call(quadMesh, {renderer});
+    setRenderTarget.call(renderer, {horizontal});
+    quadMesh.set("material", self.get("vsmMaterialHorizontal"));
+    quadMesh.get("render").call(quadMesh, {renderer});
+    return {};
+}
 JSValue updateShadow(const JSValue&, const Args&, const Args&) { return notPorted("updateShadow"); }
-JSValue vsmPass(const JSValue&, const Args&, const Args&) { return notPorted("vsmPass"); }
 JSValue updateBefore(const JSValue&, const Args&, const Args&) { return notPorted("updateBefore"); }
 }  // namespace
 

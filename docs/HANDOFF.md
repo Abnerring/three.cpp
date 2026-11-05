@@ -1,4 +1,30 @@
-# 当前接续：`ShadowNode` C 段第一部分 `setupRenderTarget` 实现完成，2026-11-05
+# 当前接续：`ShadowNode` C 段 `renderShadow` + `vsmPass` 实现（未加新测试，如实标注），2026-11-05
+
+目标保持 active：固定 three.js 11738a9d55e502fb484cefffcea3a66dc44e9fe9 全部 src + examples/jsm 原生 C++ 逻辑，Vulkan 后端；禁止 CEF/生产 JS 引擎/桥接。阶段本地 Git 提交，不推送。
+
+## 本轮交付：C 段其余两个方法
+
+- **`renderShadow(frame)`**（照抄 L642-659）：`shadow.updateMatrices(light)` → `shadowMap.setSize(mapSize.width, mapSize.height, shadowMap.depth)` → 暂存/改写/还原 `scene.name`（`Shadow Map [ <light.name 或 "ID: <id>"> ]`）→ `renderer.render(scene, shadow.camera)`。
+- **`vsmPass(renderer)`**（照抄 L716-732）：对 `vsmShadowMapVertical/Horizontal` 各 `setSize(mapSize.w, mapSize.h, shadowMap.depth)`；模块级 `_quadMesh` 用 `nativeQuadMeshConstructor().construct({nullptr})` 创建；依次 `setRenderTarget(vertical)` → material=vsmMaterialVertical → quadMesh.render(renderer) → `setRenderTarget(horizontal)` → material=vsmMaterialHorizontal → render。
+
+## 本轮编译问题（已修）
+
+1. 字符串拼接：**`JSValue` 没有 `concatenate`/`add`** → 用 `std::string` 组装后再 `JSValue(label)`。
+2. `scene`/`quadMesh` 来自 `get()` 的 const 值：**`set` 需要 `const_cast<JSValue&>`**（或改为非 const 局部）。
+3. 新实现与旧 stub **重复定义** `vsmPass` → 删除旧 stub。
+
+## 验证
+
+- 构建 exit 0；过滤 `*ShadowNode*` = **6 cases / 29 assertions** 全过（**本轮未新增测试**）；`THREECPPAddonTests` 全套 **1371 cases / 38,932 assertions** 通过。
+- 审计计数不变（ShadowNode 已 partial）：src 12 / 453；examples/jsm 322 / 154。
+
+**未执行验证（如实记录）**：`renderShadow` 与 `vsmPass` **本轮无测试覆盖**（仅编译与既有测试通过）；`_quadMesh` 为每次调用新建（上游是模块级单例，**行为差异已记录**：性能/身份不同，语义等价）；`updateShadow`、`setupShadow`、`setup`、`updateBefore` 仍为抛错 stub。
+
+## 下一步
+
+1. 给 `renderShadow`/`vsmPass` 补 stub-builder 测试（断言 `setSize`/`setRenderTarget`/`render` 调用与 scene.name 还原）；
+2. **D 段** `setupShadow`（240 行）+ `setup`/`updateShadow`/`updateBefore` 串联；
+3. 把 `_quadMesh` 改为模块级单例。# 当前接续：`ShadowNode` C 段第一部分 `setupRenderTarget` 实现完成，2026-11-05
 
 目标保持 active：固定 three.js 11738a9d55e502fb484cefffcea3a66dc44e9fe9 全部 src + examples/jsm 原生 C++ 逻辑，Vulkan 后端；禁止 CEF/生产 JS 引擎/桥接。阶段本地 Git 提交，不推送。
 
