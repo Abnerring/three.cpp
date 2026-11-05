@@ -828,6 +828,7 @@ if(THREECPP_BUILD_ADDONS)
         unit/addons/environments/DebugEnvironment.tests.cpp
         unit/addons/objects/GroundedSkybox.tests.cpp
         unit/addons/transpiler/TranspilerUtils.tests.cpp
+        unit/addons/transpiler/AST.tests.cpp
         unit/addons/utils/GeometryUtils.tests.cpp
         unit/addons/geometries/ParametricFunctions.tests.cpp
         unit/addons/geometries/ParametricGeometry.tests.cpp

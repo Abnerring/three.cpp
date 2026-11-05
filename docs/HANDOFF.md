@@ -1,4 +1,34 @@
-# 当前接续：拆分 helper 的「同 materialIndex 分组先合并」路径补测（r86 遗留缺口），2026-11-05
+# 当前接续：`transpiler/AST.js` 首个切片落地（ASTNode 基类 + Comment/Uniform/Varying），2026-11-05
+
+目标保持 active：固定 three.js 11738a9d55e502fb484cefffcea3a66dc44e9fe9 全部 src + examples/jsm 原生 C++ 逻辑，Vulkan 后端；禁止 CEF/生产 JS 引擎/桥接。阶段本地 Git 提交，不推送。
+
+## 本轮交付：`examples/jsm/transpiler/AST`（30 类中的 4 个）
+
+- `examples/jsm/transpiler/AST.{h,cpp}`，命名空间外置类：
+  - **`ASTNode`**：`isASTNode`、`linker {reference, accesses, assignments}`、`parent`、`isAssignment`；方法 `isNumericExpression()`（基类 false）、`hasAssignment()`（自身/沿父链，对应上游 getter）、`getProgram()`（上溯到根，仅 `isProgramNode()` 为真时返回）、`getParent(parents)`（近→远收集祖先）、`initialize()`（C++ 侧显式登记子节点的钩子）、**`protected adopt(child)`**（等价上游 initialize 里给子节点设 parent）。
+  - **`Comment`**（`comment`、`isComment`）、**`Uniform`**（`type`、`name`、`isUniform`、`getType()` 覆盖）、**`Varying`**（`type`、`name`、`isVarying`、`getType()` 覆盖）。
+- `test/unit/addons/transpiler/AST.tests.cpp`（4 用例 / 26 断言）：基类标志/linker/空祖先/无 assignment/无 type/非 program；`hasAssignment` 沿父链；`getParent` 近→远；三叶子类字段与 `getType()`。
+- 注册：`CMakeLists.txt` 在 `TranspilerUtils.cpp` 后加入 `AST.cpp`；测试加入 `THREECPPAddonTests`。
+
+## 本轮一次失败与回滚（如实记录）
+
+首版在**测试**里直接调用 `adopt`（protected）→ 编译失败（C2248）。因脚本内置安全网：**构建失败会自动 `git checkout` 注册文件并删除新文件**，工作树回到 `dirty = 0`，**无半成品残留**。第二版把 `adopt` 保持 protected、测试不再直接调用，通过。
+
+**经验**：在受保护/私有 API 上写测试前应先决定可见性；C++ 侧「显式 adopt」是对上游 JS 属性反射式 `initialize()` 的等价替换（已在头注释说明）。
+
+## 验证
+
+- 构建 exit 0；过滤 `*AST*` **30 cases / 132 assertions** 全过（含既有 AST 相关用例）；`THREECPPAddonTests` 全套 **1346 cases / 38,749 assertions** 通过（+4 例 / +26 断言）。
+- 审计：`examples/jsm` 计数保持（`AST.js` 转为 partial 需 header 命名匹配规则下轮复核，见下）：
+  - **注意**：`AST.js` 目前仍可能记为 missing —— 审计按「同名头文件」判定，本文件为 `AST.h`，下轮应核对 `AST.js` 的审计状态，若仍 missing 则说明需与审计规则对齐（例如必须放在与源同名路径、或需补 `transpiler/AST` 目录映射）。
+
+**未执行验证（如实记录）**：30 类只完成 4 个；**无差分**（仅单测）；`initialize()` 的属性反射语义在 C++ 用 adopt 显式替代（差异已记录）；尚未与 `TranspilerUtils` 联调。
+
+## 下一步
+
+1. 核对 `AST.js` 审计状态（若仍 missing，确认审计的 header 匹配规则并调整文件位置/命名）。
+2. 继续补 30 类中的容器类（`Program`、`FunctionDeclaration`、`Operator`、`Accessor` 等），按 §7/§8 规格。
+3. 加数据级差分（构造 → 字段 → `isNumericExpression`/`hasAssignment`/`getProgram`）。# 当前接续：拆分 helper 的「同 materialIndex 分组先合并」路径补测（r86 遗留缺口），2026-11-05
 
 目标保持 active：固定 three.js 11738a9d55e502fb484cefffcea3a66dc44e9fe9 全部 src + examples/jsm 原生 C++ 逻辑，Vulkan 后端；禁止 CEF/生产 JS 引擎/桥接。阶段本地 Git 提交，不推送。
 
