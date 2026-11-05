@@ -1,4 +1,34 @@
-# 当前接续：`sortInstancedMesh` 的颜色 / 实例属性分支补测（单测覆盖，无差分），2026-11-05
+# 当前接续：全仓健康校验轮（主套件 + addon 套件 + 抽样差分全部通过），2026-11-05
+
+目标保持 active：固定 three.js 11738a9d55e502fb484cefffcea3a66dc44e9fe9 全部 src + examples/jsm 原生 C++ 逻辑，Vulkan 后端；禁止 CEF/生产 JS 引擎/桥接。阶段本地 Git 提交，不推送。
+
+## 本轮为校验轮（无代码变更）
+
+在本轮之前，session 已连续交付 examples/jsm 15 个 addon（Gyroscope、ColorEnvironment、ColorUtils、MorphAnimMesh、MaterialXLog、DebugEnvironment、GroundedSkybox、TranspilerUtils、GeometryUtils、MorphBlendMesh、ShadowMesh、RectAreaLightHelper、STLExporter、OBJExporter、SceneUtils）及 src 侧 4 个聚合/映射模块（Three.TSL/WebGPU/WebGPU.Nodes 聚合头、NodeMaterials 映射、nodes/TSL、nodes/Nodes 聚合头）。本轮验证这些改动**没有污染既有测试**：
+
+## 校验结果（全部通过）
+
+| 套件 | 结果 |
+|---|---|
+| 主套件 `THREECPPTests` | **All tests passed（1645 test cases / 214,902 assertions）**，exit 0 |
+| addon 套件 `THREECPPAddonTests` | **All tests passed（1334 test cases / 38,673 assertions）**，exit 0 |
+| 抽样差分（ctest） | `materialx-log` / `color-utils` / `color-environment` / `gyroscope` 四个 parity **全部 Passed**，`100% tests passed, 0 tests failed` |
+| 工作树 | `dirty = 0` |
+
+## 当前总进度（审计口径）
+
+- `src`：**13 missing / 452 partial-unverified / 290 vulkan-port-pending**
+- `examples/jsm`：**325 missing / 151 partial-unverified / 20 dependency-unverified**
+- 模块总数 1,251；审计拒绝其他 commit，pinned 工作树 `dirty = 0`。
+
+**未执行验证（如实记录）**：未跑**全量** ctest（大量 native/vulkan 用例耗时长，仅抽样 4 个差分 + 两个主套件二进制）；未做渲染验证。
+
+## 下一步（与 r65–r71 结论一致）
+
+1. **`transpiler/AST.js`(8,868)** —— examples 中最有价值的下一项，可与已完成的 `TranspilerUtils` 联调。
+2. **`ShadowNode`(24,331)** —— src 剩余项中依赖最齐备的大模块。
+3. **`PhysicalLightingModel`(32,829)** —— 单点解锁 `MeshStandard/Physical/SSSNodeMaterial`（属大模块轮次）。
+4. examples 其余：`utils/SceneUtils` 已部分完成（缺 `createMeshesFromMultiMaterialMesh`，需 `mergeGroups`）。# 当前接续：`sortInstancedMesh` 的颜色 / 实例属性分支补测（单测覆盖，无差分），2026-11-05
 
 目标保持 active：固定 three.js 11738a9d55e502fb484cefffcea3a66dc44e9fe9 全部 src + examples/jsm 原生 C++ 逻辑，Vulkan 后端；禁止 CEF/生产 JS 引擎/桥接。阶段本地 Git 提交，不推送。
 
