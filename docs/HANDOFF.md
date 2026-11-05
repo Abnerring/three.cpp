@@ -1,4 +1,29 @@
-# 当前接续：SpriteNodeMaterial 已移植（accessor 语义 + 位置图双侧真实构建），2026-11-05
+# 当前接续：PointsNodeMaterial 已移植（alphaToCoverage 访问器语义 + setupPositionView 真实构建），2026-11-05
+
+目标保持 active：固定 three.js 11738a9d55e502fb484cefffcea3a66dc44e9fe9 全部 src + examples/jsm 原生 C++ 逻辑，Vulkan 后端；禁止 CEF/生产 JS 引擎/桥接。阶段本地 Git 提交，不推送。
+
+本轮新增 `src/materials/nodes/PointsNodeMaterial.{h,cpp}`（4,952 B 源），**extends 上一轮做的 `SpriteNodeMaterial`**：
+
+- 构造：`sizeNode = null`、`isPointsNodeMaterial = true`，然后 `setDefaultValues( new PointsMaterial() )` → `setValues( parameters )`（PointsMaterial 的 `size = 1`、`sizeAttenuation = true` 会被继承下来）。
+- `setupPositionView()`（**无参数**）：`modelViewMatrix.mul( vec3( positionNode || positionLocal ) ).xyz`。
+- **`setupVertexSprite( builder )`**：先 `super.setupVertex(builder)`；`material.isNodeMaterial !== true` 时直接返回；否则 `pointSize = sizeNode !== null ? vec2(sizeNode) : materialPointSize`，乘 `screenDPR`；**透视相机且 `sizeAttenuation === true`** 时再乘 `scale.div(positionView.z.negate())`（`scale` 是模块级 uniform）；`scaleNode.isNode` 时乘 `vec2(scaleNode)`；`offset = positionGeometry.xy`，`rotationNode.isNode` 时 `rotate(offset, float(rotationNode))`；`offset.mul(pointSize).div(viewportSize/2).mul(mvp.w)`；最后 `mvp.add( vec4(offset, 0, 0) )`（**三个实参**，offset 已占 xy）。
+- **`setupVertex( builder )`**：`builder.object.isPoints` → 走基类 `setupVertex`；否则走 `this.setupVertexSprite`。
+- **`alphaToCoverage` 访问器**：getter 返回 `_useAlphaToCoverage`；setter 仅在变化时写回 + `needsUpdate = true`。
+- 模块级 `scale = uniform(1).setGroup(renderGroup).onRenderUpdate(function({renderer}){ const size = renderer.getSize(_size); this.value = 0.5*size.y; })`，`_size` 是共享的 `Vector2`（两处单例都用**强引用 keeper**）。
+
+**本轮两处自我修正**：
+1. 初版 `setupPositionView` 里写了一段**冗余三元表达式**（两边分支相同）与 `vec4(offset, 0, 0, 0)`（**多了一个实参**，上游是 `vec4(offset, 0, 0)`），均已修正。
+2. **`alphaToCoverage` 的 version 语义被我initial假设错了**：我原以为「`_useAlphaToCoverage` 初始为 undefined，故首次赋 false 也算变化并 bump version」。实测两侧 `version` 都是 `0,0,0,1`——因为 **`Material` 基类已把该 flag 初始化为 `false`**，首次赋 false 是**无操作**。已把单测预期改为「首次同值不 bump、真正变化才 bump」，与上游一致。
+
+验证：构建 exit 0。THREECPPTests **1613 cases / 214,658 assertions 全过**，较上轮 1610/214,636 增 3 例 22 断言。差分 `threecpp.threejs-points-node-material-parity` **Passed**，比较：name/length=1/静态与实例 type、`isPointsNodeMaterial`、**继承的 `isSpriteNodeMaterial`/`isNodeMaterial`**、`sizeNode === null`、`positionNode === null`、**继承的 `size = 1` 与 `sizeAttenuation = true`**、三个方法的 arity（`setupPositionView` **0**、`setupVertex` 1、`setupVertexSprite` 1）、**alphaToCoverage 的 version 序列（0,0,0,1）与 flag**、`setupPositionView()` **真实构建且返回节点**、`setupVertex` 两个分支在桩 builder 下的**成立/抛错布尔**（两侧都是抛错，属如实记录而非通过）、class `toString` 逐字节。
+
+**未执行验证的部分（如实记录）**：`setupVertexSprite` 的完整路径（需完整 builder 的 `material`/`camera`/`mvp`）**未执行**——两侧在桩 builder 下都抛错，`pointsBranchBuilt`/`spriteBranchBuilt` 均为 false，差分只记录"两侧一致"；`renderGroup` uniform 的 `onRenderUpdate` 回调（依赖 `renderer.getSize`）**未执行**；节点图未求值；渲染路径未触及。
+
+审计（固定 worktree，HEAD=11738a9d55）：**src missing 29→28、partial 436→437**，`PointsNodeMaterial` 记 `partial-unverified`。
+
+`src/materials/nodes` 剩余 missing 5 个：`Line2NodeMaterial`(18,172)、`MeshPhysicalNodeMaterial`(18,482)、`MeshSSSNodeMaterial`(4,726)、**`MeshStandardNodeMaterial`(4,817)**、`NodeMaterials`(1,639，注册表，依赖前四者)。
+
+下一步：**`MeshStandardNodeMaterial`（4,817）** —— 普通材质模式，但其 `setupLightingModel` 需要 `StandardLightingModel`/`PhysicalLightingModel` 之类（需先核对存在性）；或 `MeshSSSNodeMaterial`（4,726）。`NodeMaterials` 要等这 4 个材质齐了才能做（还差 `NodeMaterialObserver`）。# 当前接续：SpriteNodeMaterial 已移植（accessor 语义 + 位置图双侧真实构建），2026-11-05
 
 目标保持 active：固定 three.js 11738a9d55e502fb484cefffcea3a66dc44e9fe9 全部 src + examples/jsm 原生 C++ 逻辑，Vulkan 后端；禁止 CEF/生产 JS 引擎/桥接。阶段本地 Git 提交，不推送。
 
