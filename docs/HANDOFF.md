@@ -1,4 +1,25 @@
-# 当前接续：NodeLoader 已移植（节点 JSON 解析链路，parse/parseNodes/回退全部行为级验证），2026-11-05
+# 当前接续：NodeMaterialLoader 已移植（节点材质 JSON 解析 + inputNodes 映射 + 注册表优先，2026-11-05）
+
+目标保持 active：固定 three.js 11738a9d55e502fb484cefffcea3a66dc44e9fe9 全部 src + examples/jsm 原生 C++ 逻辑，Vulkan 后端；禁止 CEF/生产 JS 引擎/桥接。阶段本地 Git 提交，不推送。
+
+本轮新增 `src/loaders/nodes/NodeMaterialLoader.{h,cpp}`（2,246 B 源）+ `NodeMaterialLoaderSources.inc`。继承 `MaterialLoader`（C++ 类，经 `MaterialLoader::prototype()` 取得 JS 原型）。
+
+- **`constructor( manager )` → length 1**；`super( manager )`；`nodes = {}`、`nodeMaterials = {}`。
+- `parse( json )`：先 `super.parse(json)` 得到材质，再读 `json.inputNodes`，对其**每个可枚举自有属性**的 uuid 从 `this.nodes` 取节点并写到 `material[property]`。
+- `setNodes` / `setNodeMaterials`：写字段并**返回 this**。
+- `createMaterialFromType( type )`：`this.nodeMaterials[type]` 存在则 `new 该构造器()`；否则交回 `super.createMaterialFromType(type)`。
+
+**本轮两处实测修正**：
+1. **未知类型不抛错**：我原以为基类会抛 `Undefined type`；实测上游 `MaterialLoader` 是 **`error('THREE.MaterialLoader: Unknown material type ...')` 后返回兜底 `Material`**（`isMaterial: true`、`type: 'Material'`）。单测改为断言"不抛 + 返回兜底 Material"，差分新增 `unknownIsMaterial`/`unknownType` 两项一并验证。
+2. **基类构造取法**沿用上轮修好的 holder 模式（`captures[0].get("constructor").getPrototype()`）。
+
+验证：构建 exit 0。THREECPPTests **1644 cases / 214,893 assertions 全过**（较上轮 1641/214,873 → +3 例 / +20 断言）。差分 `threecpp.threejs-node-material-loader-parity` **Passed**，比较：name/length=1、两个注册表对象、四个方法 arity、两个 setter 返回自身且存值、**注册表优先创建**（StubNodeMaterial 命中并返回 `isNodeMaterial` 实例）、**未知类型回退**（不抛、`isMaterial: true`、`type: "Material"`）、**`parse` 的 `inputNodes` 映射**（`material.colorNode === nodes["node-uuid"]`）、class `toString` 逐字节。
+
+**未执行验证的部分（如实记录）**：`parse` 只用了最小 JSON（`type`/`uuid`/`inputNodes`），未覆盖完整材质字段反序列化；`load` 未执行；材质真实渲染未触及。
+
+审计（固定 worktree，HEAD=11738a9d55）：**src missing 21→20、partial 444→445**，`NodeMaterialLoader` 记 `partial-unverified`。**`src/loaders/nodes` 只剩 `NodeObjectLoader`（3,695）**，其依赖 `NodeLoader`（已完成）+ `NodeMaterialLoader`（本轮完成）**均已具备**。
+
+`src` 剩余 20 个。下一步：① **`NodeObjectLoader`(3,695)** —— 现在依赖齐备，可直接做，做完 `src/loaders/nodes` 清零；② **`PhysicalLightingModel`(32,829)** 仍是解锁三材质 + `NodeMaterials` 链路的关键（建议专门大轮）；③ `ShadowNode`(24,331)+`PointShadowNode`(12,693) lighting 收尾；④ `PassNode`(26,843) 解锁 `ToonOutlinePassNode`。# 当前接续：NodeLoader 已移植（节点 JSON 解析链路，parse/parseNodes/回退全部行为级验证），2026-11-05
 
 目标保持 active：固定 three.js 11738a9d55e502fb484cefffcea3a66dc44e9fe9 全部 src + examples/jsm 原生 C++ 逻辑，Vulkan 后端；禁止 CEF/生产 JS 引擎/桥接。阶段本地 Git 提交，不推送。
 

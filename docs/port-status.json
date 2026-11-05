@@ -201,8 +201,8 @@
     "note": "Accepted port scope is src and examples/jsm, including tracked third-party dependencies. Editor/manual web applications are excluded from native application rewrites. Native host behavior, packaging and all three platforms require separate implementation and verification evidence."
   },
   "counts": {
-    "partial-unverified": 580,
-    "missing": 361,
+    "partial-unverified": 581,
+    "missing": 360,
     "vulkan-port-pending": 290,
     "dependency-unverified": 20
   },
@@ -210,8 +210,8 @@
     "src": {
       "modules": 755,
       "counts": {
-        "partial-unverified": 444,
-        "missing": 21,
+        "partial-unverified": 445,
+        "missing": 20,
         "vulkan-port-pending": 290
       }
     },
@@ -747,7 +747,7 @@
       "path": "src/loaders/nodes",
       "upstreamFiles": 3,
       "moduleCount": 3,
-      "modulesWithCppFiles": 1,
+      "modulesWithCppFiles": 2,
       "verifiedComplete": 0
     },
     {
@@ -5294,11 +5294,11 @@
       "scope": "src",
       "kind": "core",
       "upstreamSha256": "fe2d29d5a2aed28bcb5b8ad555f92f5ae638df2ffb97bd3ffacb7df43c454e73",
-      "header": null,
-      "implementation": null,
+      "header": "src/loaders/nodes/NodeMaterialLoader.h",
+      "implementation": "src/loaders/nodes/NodeMaterialLoader.cpp",
       "expectedHeader": "src/loaders/nodes/NodeMaterialLoader.h",
       "expectedImplementation": "src/loaders/nodes/NodeMaterialLoader.cpp",
-      "status": "missing",
+      "status": "partial-unverified",
       "verifiedComplete": false,
       "apiExtraction": "static-only",
       "verification": {
@@ -5307,7 +5307,9 @@
           "pointer": "/modules/141"
         },
         "upstreamUnitTests": [],
-        "cppUnitTests": [],
+        "cppUnitTests": [
+          "test/unit/src/loaders/nodes/NodeMaterialLoader.tests.cpp"
+        ],
         "reviewedImplementation": [],
         "differentialResults": [],
         "renderingResults": [],
