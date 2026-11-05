@@ -201,8 +201,8 @@
     "note": "Accepted port scope is src and examples/jsm, including tracked third-party dependencies. Editor/manual web applications are excluded from native application rewrites. Native host behavior, packaging and all three platforms require separate implementation and verification evidence."
   },
   "counts": {
-    "partial-unverified": 549,
-    "missing": 392,
+    "partial-unverified": 550,
+    "missing": 391,
     "vulkan-port-pending": 290,
     "dependency-unverified": 20
   },
@@ -210,8 +210,8 @@
     "src": {
       "modules": 755,
       "counts": {
-        "partial-unverified": 413,
-        "missing": 52,
+        "partial-unverified": 414,
+        "missing": 51,
         "vulkan-port-pending": 290
       }
     },
@@ -866,7 +866,7 @@
       "path": "src/nodes/lighting",
       "upstreamFiles": 23,
       "moduleCount": 23,
-      "modulesWithCppFiles": 17,
+      "modulesWithCppFiles": 18,
       "verifiedComplete": 0
     },
     {
@@ -11803,11 +11803,11 @@
       "scope": "src",
       "kind": "core",
       "upstreamSha256": "eb0906d0ad57bc9fa1bf4857e6585a5ed2e09bfa73af9426d6054b6f6f4dfa2f",
-      "header": null,
-      "implementation": null,
+      "header": "src/nodes/lighting/ShadowFilterNode.h",
+      "implementation": "src/nodes/lighting/ShadowFilterNode.cpp",
       "expectedHeader": "src/nodes/lighting/ShadowFilterNode.h",
       "expectedImplementation": "src/nodes/lighting/ShadowFilterNode.cpp",
-      "status": "missing",
+      "status": "partial-unverified",
       "verifiedComplete": false,
       "apiExtraction": "partial-static",
       "verification": {
@@ -11816,7 +11816,9 @@
           "pointer": "/modules/372"
         },
         "upstreamUnitTests": [],
-        "cppUnitTests": [],
+        "cppUnitTests": [
+          "test/unit/src/nodes/lighting/ShadowFilterNode.tests.cpp"
+        ],
         "reviewedImplementation": [],
         "differentialResults": [],
         "renderingResults": [],

@@ -1,3 +1,27 @@
+# 当前接续：ShadowFilterNode 已移植（三个过滤器，两个已真实构建节点图），2026-11-05
+
+目标保持 active：固定 three.js 11738a9d55e502fb484cefffcea3a66dc44e9fe9 全部 src + examples/jsm 原生 C++ 逻辑，Vulkan 后端；禁止 CEF/生产 JS 引擎/桥接。阶段本地 Git 提交，不推送。
+
+本轮新增 `src/nodes/lighting/ShadowFilterNode.{h,cpp}`。**该模块没有类**，只有三个 TSL `Fn` 过滤器导出，故不生成 classSource 追踪（与上一轮 PostProcessingUtils 一致——模块级箭头函数无类体可追踪）。实现：
+
+- **`BasicShadowFilter`**：`texture(depthTexture, shadowCoord.xy).setName('t_basic')`，`isArrayTexture` 时套 `.depth(depthLayer)`，返回 `.compare(shadowCoord.z)`。
+- **`PCFShadowFilter`**：内层 `depthCompare` 复用同一纹理采样；`mapSize`/`radius` 用 `reference(...).setGroup(renderGroup)`；`texelSize = vec2(1)/mapSize`；`radiusScaled = radius*texelSize.x`；`phi = interleavedGradientNoise(screenCoordinate.xy) * 6.28318530718`；**5 个 Vogel disk 采样**（i=0..4, count=5）各自 `shadowCoord.xy + sample*radiusScaled`，五次比较结果求和后 `* 1/5`。
+- **`VSMShadowFilter`**：`texture(depthTexture).sample(shadowCoord.xy)` → 数组纹理套 depth → `.rg`；`mean = distribution.x`，`variance = max(1e-7, y*y)`；`hardShadow = step(...)`（**builder 决定方向**，见下）；`output = float(1).toVar()`；`If(hardShadow.notEqual(1), () => { d = z - mean; p_max = variance/(variance+d*d); p_max = clamp((p_max-0.3)/0.65); output.assign(max(hardShadow, p_max)); })`，返回 `output`。
+
+**一处结构性偏差（必须写明）**：源码把五次比较结果一次性传给变参 `add(a,b,c,d,e)`；本实现按左到右**两两链式相加**再乘 `1/5`。**数值等价（加法结合律 + 同一分组顺序）**，但生成的节点图结构与上游不同——当前没有求值能力，故未做数值比对。
+
+**builder 边界（与上两轮同性质）**：`VSMShadowFilter` 的 `reversedDepthBuffer` 分支需要 builder，而 Fn 的 `call` 只把参数数组传进来、builder 通常不可达；两处都加了守卫，缺失时走普通分支。`If` 取自 `nativeTSLBaseBinding("If")`，不可调用时**显式抛 `std::runtime_error`**，不返回错值。
+
+验证：构建 exit 0（首轮 `invoke(invoke(...)({..}))` 多包了一层，返回 `Invocation` 而非 `JSValue`，已修）。THREECPPTests **1539 cases / 214,199 assertions 全过**，较上轮 1536/214,192 增 3 例 7 断言，与 `*ShadowFilter*` 过滤的 3 用例/7 断言一致。差分 `threecpp.threejs-shadow-filter-node-parity` **Passed 3.47s**。
+
+**本轮的真实进展**：`BasicShadowFilter` 与 `PCFShadowFilter` **在单测里被真正调用并构建出节点图**（断言返回 `isNode` 且不等于入参），比上一轮"只验导出面"更进一步——PCF 一路走通 `reference` / `renderGroup` / `screenCoordinate` / `interleavedGradientNoise` / `vogelDiskSample` / 5 次比较 / 求和 / 缩放，说明这些依赖在本运行时里可组合。**`VSMShadowFilter` 未执行**（`If` 需要 current stack）。
+
+**差分的范围（不能夸大）**：只比较**导出面**——三个名字与每个可调用。**`length` 故意不比较**：上游这些导出是 Fn 结果，其 `.length` 根本不是 helper 的参数个数（上游实际取到的是函数对象），而本运行时的 Fn 代理不暴露 `length`，比较它等于比较两个无关对象；这一条已写进脚本注释。**过滤器的数值结果本轮未验证、不声称已验证。**
+
+审计（固定 worktree，HEAD=11738a9d55）刷新后应为 **src missing 52→51、partial 413→414**；ShadowFilterNode 记 `partial-unverified` 并登记 h/cpp（若读数与预期不符，提交会被脚本拦下并在此说明）。
+
+`src/nodes/lighting` 仍缺 **5 个**：EnvironmentNode、LightsNode、PointShadowNode、RectAreaLightNode、**ShadowNode**。下一步 `ShadowNode`（24,331 B，是三件里最大的，但 `ShadowBaseNode` 与三种过滤器现已齐备，它的依赖基本就绪）；`PointShadowNode`（12,693 B）在 `ShadowNode` 之后；`RectAreaLightNode` 仍卡 `src/nodes/functions/BSDF/LTC.js`。
+
 # 当前接续：ShadowBaseNode 已移植并差分验收（含真实回调行为），2026-11-05
 
 目标保持 active：固定 three.js 11738a9d55e502fb484cefffcea3a66dc44e9fe9 全部 src + examples/jsm 原生 C++ 逻辑，Vulkan 后端；禁止 CEF/生产 JS 引擎/桥接。阶段本地 Git 提交，不推送。
