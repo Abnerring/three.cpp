@@ -1,4 +1,26 @@
-# 当前接续：`OBJExporter` 多 mesh 索引累加补测（r67 遗留缺口），2026-11-05
+# 当前接续：`OBJExporter` uv/normal 索引累加补测（r75 遗留缺口），2026-11-05
+
+目标保持 active：固定 three.js 11738a9d55e502fb484cefffcea3a66dc44e9fe9 全部 src + examples/jsm 原生 C++ 逻辑，Vulkan 后端；禁止 CEF/生产 JS 引擎/桥接。阶段本地 Git 提交，不推送。
+
+## 本轮内容（测试补充，无源码变更）
+
+r75 记录「多 mesh 的 uv/normal 索引累加未覆盖」；本轮补齐：
+
+- 新增用例：两个三角形 mesh，各带 `position` / `normal` / `uv`；断言第一 mesh 面为 `f 1/1/1 2/2/2 3/3/3`，**第二 mesh 三个计数器同时累加**为 `f 4/4/4 5/5/5 6/6/6`。
+- 覆盖 r67 实现中的 `indexVertexUvs` / `indexNormals` 累加。
+- 修一处编译错误：lambda 内 `std::vector<float>{offset, …}` 中 `offset` 为 `double` → C++ 列表初始化**禁止隐式收缩**，改为 `static_cast<float>(…)`。
+
+## 验证
+
+- 构建 exit 0；过滤 `*OBJExporter*` = **4 cases / 9 assertions** 全过（+2 断言）。
+- `THREECPPAddonTests` 全套 **1336 cases / 38,684 assertions** 通过。
+- 审计计数不变（测试补充）：examples/jsm 325 / 151，src 13 / 452。
+
+**未执行验证（如实记录）**：仍无多 mesh 差分（既有 OBJ 差分为单 mesh）；未测 index 与 uv/normal 混合几何（如索引几何 + uv 属性）的打包边界。
+
+## 下一步
+
+examples/jsm 剩余 325：`transpiler/AST.js`(8868) 最有价值。src 剩余 13：`ShadowNode`(24,331，依赖齐备) / `PhysicalLightingModel`(32,829，解锁三材质)。# 当前接续：`OBJExporter` 多 mesh 索引累加补测（r67 遗留缺口），2026-11-05
 
 目标保持 active：固定 three.js 11738a9d55e502fb484cefffcea3a66dc44e9fe9 全部 src + examples/jsm 原生 C++ 逻辑，Vulkan 后端；禁止 CEF/生产 JS 引擎/桥接。阶段本地 Git 提交，不推送。
 

@@ -76,3 +76,29 @@ TEST_CASE("OBJExporter accumulates the vertex index across meshes") {
     REQUIRE(obj.find("o first\nv 0 0 0\nv 1 0 0\nv 0 1 0\nf 1 2 3\n") == 0);
     REQUIRE(obj.find("o second\nv 2 0 0\nv 3 0 0\nv 2 1 0\nf 4 5 6\n") != std::string::npos);
 }
+TEST_CASE("OBJExporter accumulates the uv and normal indices across meshes") {
+    const auto buildTriangle = [](double offset) {
+        auto geometry = std::make_shared<BufferGeometry>();
+        geometry->setAttribute("position", std::make_shared<BufferAttribute>(
+                                               std::vector<float>{static_cast<float>(offset), 0, 0,
+                                                                 static_cast<float>(offset + 1), 0, 0,
+                                                                 static_cast<float>(offset), 1, 0}, 3));
+        geometry->setAttribute("normal", std::make_shared<BufferAttribute>(
+                                             std::vector<float>{0, 0, 1, 0, 0, 1, 0, 0, 1}, 3));
+        geometry->setAttribute("uv", std::make_shared<BufferAttribute>(
+                                         std::vector<float>{0, 0, 1, 0, 0, 1}, 2));
+        return geometry;
+    };
+    auto first = std::make_shared<Mesh>(buildTriangle(0), std::make_shared<MeshBasicMaterial>());
+    first->name = "first";
+    auto second = std::make_shared<Mesh>(buildTriangle(2), std::make_shared<MeshBasicMaterial>());
+    second->name = "second";
+    Object3D scene;
+    scene.add(first);
+    scene.add(second);
+
+    const std::string obj = OBJExporter().parse(scene);
+    // The second mesh continues all three counters: vertices, uvs and normals each start at four.
+    REQUIRE(obj.find("f 1/1/1 2/2/2 3/3/3\n") != std::string::npos);
+    REQUIRE(obj.find("f 4/4/4 5/5/5 6/6/6\n") != std::string::npos);
+}
