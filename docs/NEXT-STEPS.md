@@ -373,3 +373,9 @@ const VSMPassHorizontal = Fn( ( { samples, radius, size, shadowPass, depthLayer 
 - **Loop 调用**：`Loop({ start: int(0), end: int(samples), type: 'int', condition: '<' }, ( { i } ) => {...})` → `nativeLoopNodeBinding("Loop").call({}, {config, loopBody})`；`loopBody` 收到的第一个参数同样用 `inputObject` 解构出 `i`。
 - **垂直/水平差异**（用一个 body + captures 布尔区分）：`vec2(0, uvOffset)` vs `vec2(uvOffset, 0)`；均值取 `depth.x` vs `distribution.x`；方差项 `depth.mul(depth)` vs `add(distribution.y.mul(distribution.y), distribution.x.mul(distribution.x))`；变量名后缀 `Vertical`/`Horizontal`。
 - **插入位置**：`ShadowNode.cpp` 的 `setupShadow` 中，**段 1 之后、段 3 之前**（段 2 只对 `VSMShadowMap && !isPointLightShadow` 生效）。
+
+### PointShadowNode 结构清单（r152，下一实现目标）
+
+- 位置：`src/nodes/lighting/PointShadowNode.js`（12,693 B），依赖已完成的 `ShadowNode`（继承 `ShadowNode`）。
+- 待办：读取完整源码后按 `ShadowNode` 的同样方式分段落实现（构造/`setupShadow` 重写/`updateShadow` 立方体面循环/`vsmPass` 是否覆盖等），复用 `ShadowNode` 的辅助函数与测试夹具范式。
+- 建议顺序：①结构骨架 + `static type` + 构造字段；②`setupShadow`（点光六面 RT/滤镜）；③`updateShadow`/`renderShadow` 逐面渲染；④差分/集成测试。
