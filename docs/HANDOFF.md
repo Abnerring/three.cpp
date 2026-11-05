@@ -1,4 +1,29 @@
-# 当前接续：点光过滤三路深度转换分支全覆盖（addon 套件达 **39,000 断言**），2026-11-05
+# 当前接续：**定位 `abrupt completion` 根因**（`coordinateSystem` 必须 2000/2001）→ `renderShadow` 冒烟测试通过，2026-11-05
+
+目标保持 active：固定 three.js 11738a9d55e502fb484cefffcea3a66dc44e9fe9 全部 src + examples/jsm 原生 C++ 逻辑，Vulkan 后端；禁止 CEF/生产 JS 引擎/桥接。阶段本地 Git 提交，不推送。
+
+## 根因（r154 遗留）
+
+`Frustum.setFromProjectionMatrix(m, coordinateSystem, reversedDepth)` 的 JSValue 绑定（`Frustum.cpp:151-167`）**校验 coordinateSystem**：仅接受 `WebGLCoordinateSystem`(2000) 或 `WebGPUCoordinateSystem`(2001)，其他值构造 `Error` 抛出 → 表现为 `Native JavaScript abrupt completion`。r154 冒烟测试传了 `0` 导致失败。
+
+## 本轮交付
+
+1. **诊断用例**「diagnoses the render primitive operations」：单测 `Vector3.setFromMatrixPosition`、`Matrix4.multiplyMatrices`、`Matrix4.makeTranslation`、`Frustum.setFromProjectionMatrix(matrix, 2000, false)` —— 定位到只有 Frustum 调用抛错，修正为 2000 后通过；
+2. **重新加入 `renderShadow` 冒烟用例**（原 r154 移除）：相机/渲染器 `coordinateSystem = 2000`；真实 `Vector3/Matrix4/Color/Frustum` + stub 相机方法 + stub 渲染器；断言 **不抛错**、`scene.name` 还原为 `"Scene"`、`autoClear` 还原为 true —— **六面渲染循环真实跑通**。
+
+## 验证
+
+- 构建 exit 0；过滤 `*PointShadowNode*` = **8 cases / 24 assertions** 全过（诊断 4 断言 + 冒烟 3 断言）。
+- `THREECPPAddonTests` 全套 **1399 cases / 39,004 assertions** 通过。
+- 审计不变（PointShadowNode 已 partial）：src 11 / 454；examples/jsm 322 / 154。
+
+**未执行验证（如实记录）**：冒烟只断言「不抛 + 状态还原」，**未断言六面朝向/阴影矩阵数值**；`setRenderTarget(shadowMap, face)` 的 face 参数未逐个断言；两过滤图仍未做图结构差分。
+
+## 下一步
+
+1. 断言六面循环的 `setRenderTarget` 调用次数/face 序号与 `camera.lookAt` 目标（用 receiver 记录计数的方式扩展）；
+2. 过滤图弱差分；
+3. 之后推进 `PassNode`(26,843)/`ToonOutlinePassNode`(6,868)/`PhysicalLightingModel`(32,829)。# 当前接续：点光过滤三路深度转换分支全覆盖（addon 套件达 **39,000 断言**），2026-11-05
 
 目标保持 active：固定 three.js 11738a9d55e502fb484cefffcea3a66dc44e9fe9 全部 src + examples/jsm 原生 C++ 逻辑，Vulkan 后端；禁止 CEF/生产 JS 引擎/桥接。阶段本地 Git 提交，不推送。
 

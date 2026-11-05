@@ -138,3 +138,85 @@ TEST_CASE("PointShadowNode point filter selects the depth conversion branch") {
         REQUIRE(result.get("isNode").toBoolean());
     }
 }
+TEST_CASE("PointShadowNode diagnoses the render primitive operations") {
+    const auto vector = nativeVector3Constructor().construct();
+    const auto matrix = nativeMatrix4Constructor().construct();
+    const auto otherMatrix = nativeMatrix4Constructor().construct();
+    const auto frustum = nativeFrustumConstructor().construct();
+
+    REQUIRE_NOTHROW(vector.get("setFromMatrixPosition").call(vector, {matrix}));
+    REQUIRE_NOTHROW(matrix.get("multiplyMatrices").call(matrix, {otherMatrix, otherMatrix}));
+    // WebGLCoordinateSystem is 2000 in the pinned constants table; other values raise.
+    REQUIRE_NOTHROW(frustum.get("setFromProjectionMatrix").call(
+        frustum, {matrix, JSValue(2000), JSValue(false)}));
+    REQUIRE_NOTHROW(matrix.get("makeTranslation").call(matrix, {JSValue(1), JSValue(2), JSValue(3)}));
+}
+TEST_CASE("PointShadowNode renders the six cube faces") {
+    auto camera = JSValue::object(nullptr);
+    camera.set("position", nativeVector3Constructor().construct());
+    camera.set("up", nativeVector3Constructor().construct());
+    camera.set("projectionMatrix", nativeMatrix4Constructor().construct());
+    camera.set("matrixWorldInverse", nativeMatrix4Constructor().construct());
+    camera.set("far", JSValue(100));
+    // WebGLCoordinateSystem is 2000; the frustum helper validates the value.
+    camera.set("coordinateSystem", JSValue(2000));
+    camera.set("reversedDepth", false);
+    for (const char* method : {"updateProjectionMatrix", "lookAt", "updateMatrixWorld"}) {
+        camera.set(method, JSValue::function(
+            +[](const JSValue&, const std::vector<JSValue>&, const std::vector<JSValue>&) {
+                return JSValue{};
+            }));
+    }
+    auto mapSize = JSValue::object(nullptr);
+    mapSize.set("width", JSValue(64));
+    auto shadow = JSValue::object(nullptr);
+    shadow.set("camera", camera);
+    shadow.set("matrix", nativeMatrix4Constructor().construct());
+    shadow.set("_frustum", nativeFrustumConstructor().construct());
+    shadow.set("mapSize", mapSize);
+    shadow.set("clearColor", nativeColorConstructor().construct());
+    shadow.set("clearAlpha", JSValue(1));
+    auto light = JSValue::object(nullptr);
+    light.set("shadow", shadow);
+    light.set("matrixWorld", nativeMatrix4Constructor().construct());
+    light.set("name", JSValue("Point"));
+    light.set("distance", JSValue(0));
+    light.set("id", JSValue(3));
+    auto scene = JSValue::object(nullptr);
+    scene.set("name", JSValue("Scene"));
+    auto renderer = JSValue::object(nullptr);
+    renderer.set("coordinateSystem", JSValue(2000));
+    renderer.set("autoClear", true);
+    renderer.set("getClearColor", JSValue::function(
+        +[](const JSValue&, const std::vector<JSValue>& args, const std::vector<JSValue>&) {
+            return args.size() > 0 ? args[0] : JSValue{};
+        }));
+    renderer.set("getClearAlpha", JSValue::function(
+        +[](const JSValue&, const std::vector<JSValue>&, const std::vector<JSValue>&) {
+            return JSValue(1);
+        }));
+    for (const char* method : {"setClearColor", "setRenderTarget", "clear"}) {
+        renderer.set(method, JSValue::function(
+            +[](const JSValue&, const std::vector<JSValue>&, const std::vector<JSValue>&) {
+                return JSValue{};
+            }));
+    }
+    renderer.set("render", JSValue::function(
+        +[](const JSValue&, const std::vector<JSValue>&, const std::vector<JSValue>&) {
+            return JSValue{};
+        }));
+    auto frame = JSValue::object(nullptr);
+    frame.set("renderer", renderer);
+    frame.set("scene", scene);
+
+    auto node = nativePointShadowNodeConstructor().construct({light});
+    auto target = JSValue::object(nullptr);
+    target.set("setSize", JSValue::function(
+        +[](const JSValue&, const std::vector<JSValue>&, const std::vector<JSValue>&) {
+            return JSValue{};
+        }));
+    node.set("shadowMap", target);
+    REQUIRE_NOTHROW(node.get("renderShadow").call(node, {frame}));
+    REQUIRE(scene.get("name").toString() == "Scene");
+    REQUIRE(renderer.get("autoClear").toBoolean());
+}
