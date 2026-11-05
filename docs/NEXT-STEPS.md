@@ -64,3 +64,27 @@ ASTNode, Comment, Program, VariableDeclaration, Uniform, Varying, FunctionParame
 - 每个类是**纯数据节点**（字段 + getter，如 `isNumericExpression`），适合按类移植；`ASTNode` 基类先做（含 `isASTNode`、`linker { reference, accesses, assignments }`、`parent`）。
 - 先叶子类（`Comment` / `Uniform` / `Varying` / `Literal` 等），再容器类（`Program` / `FunctionDeclaration` / `Switch` 等）。
 - 差分按「构造 → 字段值 → 序列化/`toString`」数据级比较；完成后与 `TranspilerUtils::isExpression`（读 `isFor`/`isWhile` 等标志）联调。
+
+## 8. `ASTNode` 及首批叶子类字段（已确认，可直接实现）
+
+### `ASTNode`（`:3` 起，~104 行）
+- `isASTNode = true`
+- `linker = { reference: null, accesses: [], assignments: [] }`
+- `parent = null`
+- `get isNumericExpression() { return false; }`（基类恒 false，子类可覆盖）
+- `get hasAssignment()`：`this.isAssignment === true` → true；否则 `parent === null` → false；否则递归 `parent.hasAssignment`
+- `getType()`：`return this.type || null`
+- `getProgram()`：沿 `parent` 上溯，`isProgram === true` 时返回该节点，否则 null
+- `getParent(parents = [])`：递归把祖先 push 进数组并返回
+- `initialize()`：遍历**自身全部可枚举属性**，若值为 ASTNode 则设 `parent = this`；若为数组，则对其中每个 ASTNode 设 `parent = this`
+
+### `Comment`（`:107`）
+- ctor `(comment)`：`comment`、`isComment = true`，随后 `initialize()`
+
+### `Uniform`（`:168`）
+- ctor `(type, name)`：`type`、`name`、`isUniform = true`，随后 `initialize()`
+
+### `Varying`（`:185`）
+- ctor `(type, name)`：`type`、`name`、`isVarying = true`，随后 `initialize()`
+
+**实现提示**：`initialize()` 的上游语义是「扫描自身属性找子节点/数组」，C++ 里等价做法是**基类提供 `void adopt(ASTNode* child)` / `void adopt(std::vector<ASTNode*>&)` 并在每个子类构造器末尾显式登记自己的子节点**（已确认的这三个叶子类没有子节点，`initialize()` 为 no-op）。`linker.reference/accesses/assignments` 在 C++ 中用裸指针表示（与 `parent` 一致，生命周期由 AST 树持有者管理）。
