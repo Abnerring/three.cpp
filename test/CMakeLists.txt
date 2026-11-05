@@ -115,6 +115,7 @@ add_executable(THREECPPTests
         unit/src/materials/nodes/MeshLambertNodeMaterial.tests.cpp
         unit/src/materials/nodes/MeshPhongNodeMaterial.tests.cpp
         unit/src/materials/nodes/MeshBasicNodeMaterial.tests.cpp
+        unit/src/materials/nodes/LineDashedNodeMaterial.tests.cpp
         unit/src/nodes/functions/ShadowMaskModel.tests.cpp
         unit/src/nodes/functions/ToonPhongLightingModel.tests.cpp
         unit/src/nodes/utils/Oscillators.tests.cpp
@@ -1100,6 +1101,13 @@ if(THREECPP_NODE_EXECUTABLE AND THREEJS_SOURCE_DIR)
     add_test(NAME threecpp.threejs-mesh-basic-node-material-parity
         COMMAND "${THREECPP_NODE_EXECUTABLE}" "${CMAKE_CURRENT_SOURCE_DIR}/unit/utils/parity/compare-mesh-basic-node-material.mjs"
         "${THREEJS_SOURCE_DIR}" "$<TARGET_FILE:ThreeJsMeshBasicNodeMaterialParityProbe>")
+endif()
+add_executable(ThreeJsLineDashedNodeMaterialParityProbe unit/utils/parity/LineDashedNodeMaterialParityProbe.cpp)
+target_link_libraries(ThreeJsLineDashedNodeMaterialParityProbe PRIVATE threecpp::threecpp)
+if(THREECPP_NODE_EXECUTABLE AND THREEJS_SOURCE_DIR)
+    add_test(NAME threecpp.threejs-line-dashed-node-material-parity
+        COMMAND "${THREECPP_NODE_EXECUTABLE}" "${CMAKE_CURRENT_SOURCE_DIR}/unit/utils/parity/compare-line-dashed-node-material.mjs"
+        "${THREEJS_SOURCE_DIR}" "$<TARGET_FILE:ThreeJsLineDashedNodeMaterialParityProbe>")
 endif()
 add_executable(ThreeJsMaterialXColorParityProbe unit/utils/parity/MaterialXColorParityProbe.cpp)
 target_link_libraries(ThreeJsMaterialXColorParityProbe PRIVATE threecpp::threecpp)

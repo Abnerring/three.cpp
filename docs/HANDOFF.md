@@ -1,4 +1,26 @@
-# 当前接续：MeshBasicNodeMaterial 已移植（六个方法中五个真实执行），2026-11-05
+# 当前接续：LineDashedNodeMaterial 已移植，setupVariants 双侧真实构建成功，2026-11-05
+
+目标保持 active：固定 three.js 11738a9d55e502fb484cefffcea3a66dc44e9fe9 全部 src + examples/jsm 原生 C++ 逻辑，Vulkan 后端；禁止 CEF/生产 JS 引擎/桥接。阶段本地 Git 提交，不推送。
+
+本轮新增 `src/materials/nodes/LineDashedNodeMaterial.{h,cpp}`（3,918 B）：模块级 `_defaultValues = new LineDashedMaterial()`；构造按**源码顺序**先 `isLineDashedNodeMaterial = true`、`setDefaultValues(defaults)`，**然后**才写 `dashOffset = 0` 与四个 `null` 覆盖节点（`offsetNode` / `dashScaleNode` / `dashSizeNode` / `gapSizeNode`），最后 `setValues(parameters)`——顺序很关键，`dashOffset = 0` 必须晚于 defaults 才生效。`setupVariants()` 四个输入各自「有覆盖节点则 `float(node)`，否则取材质访问器（`materialLineDashOffset` / `materialLineScale` / `materialLineDashSize` / `materialLineGapSize`）」；`dashSize.assign(...)`、`gapSize.assign(...)`；`varying( attribute('lineDistance').mul(dashScaleNode) )`；有 offsetNode 时 `v.add(offsetNode)`；最后 `v.mod(dashSize.add(gapSize)).greaterThan(dashSize).discard()`。
+
+**本轮的关键验证**：`setupVariants()` **在两侧都真实执行并成功构建节点图**（差分的 `variantsBuilt` 字段两侧一致为 true）——这实证了 `attribute()`、`varying()`、`mod`、`greaterThan`、`discard()` 在本运行时里可用，不是只验签名。
+
+**本轮两个自我更正**：① 单测原断言 `dashSize == 1`，实跑为假——上游 `LineDashedMaterial` 缺省是 `scale = 1`、**`dashSize = 3`**、`gapSize = 1`，已按其真值改为 3（并顺手确认 `gapSize = 1` 通过）；② `setupVariants` 的上游签名是 `setupVariants( /* builder */ )`——**参数被注释掉，故 `Function.length` 为 0**，我起初注册成 1，差分报 `setupVariantsLength: 1 vs 0`，已改注册与断言为 0。这两条都是差分/实跑给出的真值，不是猜的。
+
+验证：构建 exit 0。THREECPPTests **1590 cases / 214,533 assertions 全过**，较上轮 1588/214,518 增 2 例 15 断言。差分 `threecpp.threejs-line-dashed-node-material-parity` **Passed 1.44s**，比较：name/length=1/静态与实例 type/`isLineDashedNodeMaterial`/`isNodeMaterial`、`dashOffset = 0`、`dashSize = 3`、`gapSize = 1`、四个覆盖节点 `=== null`、**完整自有属性快照**、`setupVariants.length = 0`、**`variantsBuilt`（真实执行结果）**、class `toString` 逐字节。
+
+**未执行验证的部分（如实记录）**：`varying`/`discard` 构建出的节点图**未被求值**（无求值能力），所以只验证"能构建"；材质真实渲染路径未触及；`setupVariants` 里 `dashSize`/`gapSize` 两个共享 property 节点的 assign 效果不可观测。
+
+审计（固定 worktree，HEAD=11738a9d55）：**src missing 36→35、partial 429→430**，`LineDashedNodeMaterial` 记 `partial-unverified`。
+
+**剩余最小的 missing src 模块**（已实测体量）：
+- `src/materials/nodes/VolumeNodeMaterial.js`（1,507）—— 前置 `VolumetricLightingModel`（6,004）**未移植**，且它含 `If/Else` + `Loop` + `onRenderUpdate`，较复杂；本轮读过后判断不适合与材质混做，应单独一轮做 model 再做材质。
+- `src/materials/nodes/NodeMaterials.js`（1,639）—— 汇总注册表，需较多材质就位后才有意义。
+- `src/nodes/display/ViewportSharedTextureNode.js`（1,824）、`src/nodes/utils/SampleNode.js`（2,165）、`src/nodes/utils/SpriteUtils.js`（3,079）—— 这三个是 non-material 的独立节点模块，可能比大材质更容易拿到完整验证。
+- `src/loaders/nodes/NodeMaterialLoader.js`（2,246）、`src/Three.*.js` 三个入口汇总文件（体量小但属打包入口，需判断是否该移植）。
+
+下一步建议：`SampleNode`（2,165）或 `ViewportSharedTextureNode`（1,824）——独立、依赖少；`ShadowNode`（24,331）+ `PointShadowNode`（12,693）仍需较充裕上下文。# 当前接续：MeshBasicNodeMaterial 已移植（六个方法中五个真实执行），2026-11-05
 
 目标保持 active：固定 three.js 11738a9d55e502fb484cefffcea3a66dc44e9fe9 全部 src + examples/jsm 原生 C++ 逻辑，Vulkan 后端；禁止 CEF/生产 JS 引擎/桥接。阶段本地 Git 提交，不推送。
 
