@@ -10,8 +10,10 @@
 #include "nodes/display/ViewportDepthNode.h"
 #include "nodes/lighting/LightingNodeRuntime.h"
 #include "core/RenderTarget.h"
+#include "math/Vector4.h"
 #include "textures/DepthTexture.h"
 
+#include <cmath>
 #include <stdexcept>
 #include <string>
 
@@ -213,6 +215,110 @@ JSValue passGetLinearDepthNode(const JSValue& rawSelf, const Args& args, const A
     return linearDepthNode;
 }
 
+// setup( { renderer } ) { renderTarget.samples = options.samples ?? renderer.samples; ... }
+JSValue passSetup(const JSValue& rawSelf, const Args& args, const Args&) {
+    JSValue& self = const_cast<JSValue&>(rawSelf);
+    const auto renderer = arg(args, 0).get("renderer");
+    auto renderTarget = self.get("renderTarget");
+    const auto options = self.get("options");
+    const auto samplesOption = options.isObject() ? options.get("samples") : JSValue{};
+    renderTarget.set("samples",
+                     samplesOption.isUndefined() ? renderer.get("samples") : samplesOption);
+    renderTarget.get("texture").set("type", renderer.get("getOutputBufferType").call(renderer, {}));
+    auto depthTexture = renderTarget.get("depthTexture");
+    if (renderer.get("reversedDepthBuffer").strictEquals(true) && depthTexture.toBoolean()) {
+        depthTexture.set("type", JSValue(static_cast<double>(FloatType)));
+    }
+    if (self.get("scope").strictEquals(JSValue("color"))) {
+        return self.get("getTextureNode").call(self, {});
+    }
+    return self.get("getLinearDepthNode").call(self, {});
+}
+
+// setSize( width, height ) { ... effective = floor( size * resolutionScale ); renderTarget.setSize(...); scissor/viewport }
+JSValue passSetSize(const JSValue& rawSelf, const Args& args, const Args&) {
+    JSValue& self = const_cast<JSValue&>(rawSelf);
+    const auto width = arg(args, 0, JSValue(1));
+    const auto height = arg(args, 1, JSValue(1));
+    self.set("_width", width);
+    self.set("_height", height);
+    const auto scale = self.get("_resolutionScale").toNumber();
+    const auto effectiveWidth = JSValue(std::floor(width.toNumber() * scale));
+    const auto effectiveHeight = JSValue(std::floor(height.toNumber() * scale));
+    auto renderTarget = self.get("renderTarget");
+    renderTarget.get("setSize").call(renderTarget, {effectiveWidth, effectiveHeight});
+
+    auto scissor = self.get("_scissor");
+    if (scissor.toBoolean()) {
+        auto targetScissor = renderTarget.get("scissor");
+        targetScissor = targetScissor.get("copy").call(targetScissor, {scissor});
+        targetScissor = targetScissor.get("multiplyScalar").call(targetScissor, {JSValue(scale)});
+        targetScissor.get("floor").call(targetScissor, {});
+        renderTarget.set("scissor", targetScissor);
+        renderTarget.set("scissorTest", true);
+    } else {
+        renderTarget.set("scissorTest", false);
+    }
+
+    auto viewport = self.get("_viewport");
+    if (viewport.toBoolean()) {
+        auto targetViewport = renderTarget.get("viewport");
+        targetViewport = targetViewport.get("copy").call(targetViewport, {viewport});
+        targetViewport = targetViewport.get("multiplyScalar").call(targetViewport, {JSValue(scale)});
+        targetViewport.get("floor").call(targetViewport, {});
+        renderTarget.set("viewport", targetViewport);
+    }
+    return JSValue{};
+}
+
+JSValue passSetScissor(const JSValue& rawSelf, const Args& args, const Args&) {
+    JSValue& self = const_cast<JSValue&>(rawSelf);
+    const auto x = arg(args, 0, JSValue(nullptr));
+    if (x.isNull()) {
+        self.set("_scissor", JSValue(nullptr));
+        return JSValue{};
+    }
+    auto scissor = self.get("_scissor");
+    if (!scissor.toBoolean()) scissor = nativeVector4Constructor().construct();
+    if (x.get("isVector4").toBoolean()) {
+        scissor.get("copy").call(scissor, {x});
+    } else {
+        scissor.get("set").call(scissor, {x, arg(args, 1, JSValue(0)),
+                                          arg(args, 2, JSValue(0)), arg(args, 3, JSValue(0))});
+    }
+    self.set("_scissor", scissor);
+    return JSValue{};
+}
+
+JSValue passSetViewport(const JSValue& rawSelf, const Args& args, const Args&) {
+    JSValue& self = const_cast<JSValue&>(rawSelf);
+    const auto x = arg(args, 0, JSValue(nullptr));
+    if (x.isNull()) {
+        self.set("_viewport", JSValue(nullptr));
+        return JSValue{};
+    }
+    auto viewport = self.get("_viewport");
+    if (!viewport.toBoolean()) viewport = nativeVector4Constructor().construct();
+    if (x.get("isVector4").toBoolean()) {
+        viewport.get("copy").call(viewport, {x});
+    } else {
+        viewport.get("set").call(viewport, {x, arg(args, 1, JSValue(0)),
+                                              arg(args, 2, JSValue(0)), arg(args, 3, JSValue(0))});
+    }
+    self.set("_viewport", viewport);
+    return JSValue{};
+}
+
+// dispose() { super.dispose(); this.renderTarget.dispose(); }
+JSValue passDispose(const JSValue& rawSelf, const Args&, const Args&) {
+    JSValue& self = const_cast<JSValue&>(rawSelf);
+    const auto basePrototype = nativeNodeConstructor().get("prototype");
+    const auto baseDispose = basePrototype.get("dispose");
+    if (baseDispose.toBoolean()) baseDispose.call(self, {});
+    self.get("renderTarget").get("dispose").call(self.get("renderTarget"), {});
+    return JSValue{};
+}
+
 // constructor( scope, scene, camera, options = {} ) { super( 'vec4' ); ... }
 JSValue passNodeInitialize(const JSValue& target, const Args& args, const Args& captures) {
     auto self = superConstruct(target, captures, {JSValue("vec4")});
@@ -384,6 +490,11 @@ JSValue nativePassNodeModule() {
         method(prototype, "getPreviousTextureNode", 1, passGetPreviousTextureNode, {}, "");
         method(prototype, "getViewZNode", 1, passGetViewZNode, {}, "");
         method(prototype, "getLinearDepthNode", 1, passGetLinearDepthNode, {}, "");
+        method(prototype, "setup", 1, passSetup, {}, "");
+        method(prototype, "setSize", 2, passSetSize, {}, "");
+        method(prototype, "setScissor", 4, passSetScissor, {}, "");
+        method(prototype, "setViewport", 4, passSetViewport, {}, "");
+        method(prototype, "dispose", 0, passDispose, {}, "");
     }
     own(bindings, "PassNode", passNodeConstructor);
 

@@ -1,4 +1,29 @@
-# 当前接续：`PassNode` **Stage C 完成**（4 个节点访问器），PassNode 剩 Stage D，2026-11-05
+# 当前接续：`PassNode` Stage D 小方法完成（setup/setSize/setScissor/setViewport/dispose），仅剩 `updateBefore`，2026-11-05
+
+目标保持 active：固定 three.js 11738a9d55e502fb484cefffcea3a66dc44e9fe9 全部 src + examples/jsm 原生 C++ 逻辑，Vulkan 后端；禁止 CEF/生产 JS 引擎/桥接。阶段本地 Git 提交，不推送。
+
+## 本轮交付（照 L826–1074）
+
+- **`setup({renderer})`**：`renderTarget.samples = options.samples ?? renderer.samples`；`renderTarget.texture.type = renderer.getOutputBufferType()`；`reversedDepthBuffer===true && depthTexture` → `depthTexture.type = FloatType`；返回 `scope==='color' ? getTextureNode() : getLinearDepthNode()`；
+- **`setSize(w,h)`**：存 `_width/_height`；`floor(size*_resolutionScale)` → `renderTarget.setSize`；scissor 存在 → `copy(_scissor).multiplyScalar(scale).floor()` + `scissorTest=true`，否则 `scissorTest=false`；viewport 存在同理缩放；
+- **`setScissor(x,y,w,h)`** / **`setViewport(x,y,w,h)`**：`x===null` → 清空；懒创建 `Vector4`；`x.isVector4` → copy，否则 `set(x,y,w,h)`；
+- **`dispose()`**：基类 `dispose()` + `renderTarget.dispose()`。
+
+## 测试（+3 例 / 19 断言）
+
+`setSize` 缩放 renderTarget/scissor/viewport（scale=2）；清 scissor 后 `scissorTest=false`；`setup` 取 buffer 类型（1009）、depth 类型（1015/FloatType）与 option 覆盖 samples；`dispose` 调用 renderTarget.dispose 一次。
+
+## 验证
+
+- 构建 exit 0；过滤 `*Pass*` = **23 cases / 117 assertions** 全过；`THREECPPAddonTests` 全套 **1416 cases / 39,192 assertions** 通过。
+- 审计不变（PassNode 已 partial）：src 10 / 455；examples/jsm 322 / 154。
+
+**未执行验证（如实记录）**：**`updateBefore`（L842–962，约 120 行，PassNode 最后且最大一块）未实现**；`compileAsync` 未实现；废弃别名 `setResolution/getResolution` 未实现。
+
+## 下一步（PassNode 收口）
+
+1. 读 L842–962 并分 2 轮实现 `updateBefore`：①状态保存/恢复与 renderTarget 切换/clear/overrideMaterial/MRT/layers ②相机 near/far uniform 更新与 scene 渲染、`_previousTextures` 轮换；
+2. 收口后推进 **`ToonOutlinePassNode`(6,868)**（PassNode 下游）。# 当前接续：`PassNode` **Stage C 完成**（4 个节点访问器），PassNode 剩 Stage D，2026-11-05
 
 目标保持 active：固定 three.js 11738a9d55e502fb484cefffcea3a66dc44e9fe9 全部 src + examples/jsm 原生 C++ 逻辑，Vulkan 后端；禁止 CEF/生产 JS 引擎/桥接。阶段本地 Git 提交，不推送。
 

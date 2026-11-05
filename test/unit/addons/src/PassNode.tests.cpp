@@ -190,3 +190,76 @@ TEST_CASE("PassNode node accessors cache the texture and depth nodes") {
     REQUIRE(linearDepth.toBoolean());
     REQUIRE(linearDepth.get("isNode").toBoolean());
 }
+TEST_CASE("PassNode setSize scales the target and the scissor and viewport") {
+    auto scene = JSValue::object(nullptr);
+    auto camera = JSValue::object(nullptr);
+    const auto node = nativePassNodeConstructor().construct(
+        {JSValue("color"), scene, camera});
+    node.get("setResolutionScale").call(node, {JSValue(2)});
+    node.get("setScissor").call(node, {JSValue(1), JSValue(2), JSValue(3), JSValue(4)});
+    node.get("setViewport").call(node, {JSValue(5), JSValue(6), JSValue(7), JSValue(8)});
+    node.get("setSize").call(node, {JSValue(100), JSValue(50)});
+
+    const auto renderTarget = node.get("renderTarget");
+    REQUIRE(renderTarget.get("width").toNumber() == Approx(200));
+    REQUIRE(renderTarget.get("height").toNumber() == Approx(100));
+    REQUIRE(renderTarget.get("scissorTest").toBoolean());
+    const auto scissor = renderTarget.get("scissor");
+    REQUIRE(scissor.get("x").toNumber() == Approx(2));
+    REQUIRE(scissor.get("y").toNumber() == Approx(4));
+    REQUIRE(scissor.get("z").toNumber() == Approx(6));
+    REQUIRE(scissor.get("w").toNumber() == Approx(8));
+    const auto viewport = renderTarget.get("viewport");
+    REQUIRE(viewport.get("x").toNumber() == Approx(10));
+    REQUIRE(viewport.get("y").toNumber() == Approx(12));
+    REQUIRE(viewport.get("z").toNumber() == Approx(14));
+    REQUIRE(viewport.get("w").toNumber() == Approx(16));
+
+    // Clearing the scissor disables the test on the next size update.
+    node.get("setScissor").call(node, {JSValue(nullptr)});
+    REQUIRE(node.get("_scissor").isNull());
+    node.get("setSize").call(node, {JSValue(10), JSValue(10)});
+    REQUIRE_FALSE(renderTarget.get("scissorTest").toBoolean());
+}
+
+TEST_CASE("PassNode setup takes the renderer buffer type and depth type") {
+    auto scene = JSValue::object(nullptr);
+    auto camera = JSValue::object(nullptr);
+    auto options = JSValue::object(nullptr);
+    options.set("samples", JSValue(2));
+    const auto node = nativePassNodeConstructor().construct(
+        {JSValue("color"), scene, camera, options});
+    auto renderer = JSValue::object(nullptr);
+    renderer.set("samples", JSValue(8));
+    renderer.set("reversedDepthBuffer", true);
+    renderer.set("getOutputBufferType", JSValue::function(
+        +[](const JSValue&, const std::vector<JSValue>&, const std::vector<JSValue>&) {
+            return JSValue(1009); // HalfFloatType
+        }));
+    auto builder = JSValue::object(nullptr);
+    builder.set("renderer", renderer);
+    const auto result = node.get("setup").call(node, {builder});
+    REQUIRE(result.get("type").toString() == "PassMultipleTextureNode");
+    const auto renderTarget = node.get("renderTarget");
+    // The explicit option wins over the renderer sample count.
+    REQUIRE(renderTarget.get("samples").toNumber() == Approx(2));
+    REQUIRE(renderTarget.get("texture").get("type").toNumber() == Approx(1009));
+    REQUIRE(renderTarget.get("depthTexture").get("type").toNumber() == Approx(1015));
+}
+
+TEST_CASE("PassNode dispose disposes the render target") {
+    auto scene = JSValue::object(nullptr);
+    auto camera = JSValue::object(nullptr);
+    auto node = nativePassNodeConstructor().construct({JSValue("color"), scene, camera});
+    auto target = JSValue::object(nullptr);
+    target.set("_disposes", JSValue(0));
+    target.set("dispose", JSValue::function(
+        +[](const JSValue& receiver, const std::vector<JSValue>&, const std::vector<JSValue>&) {
+            JSValue& self = const_cast<JSValue&>(receiver);
+            self.set("_disposes", JSValue(self.get("_disposes").toNumber() + 1));
+            return JSValue{};
+        }));
+    node.set("renderTarget", target);
+    REQUIRE_NOTHROW(node.get("dispose").call(node, {}));
+    REQUIRE(target.get("_disposes").toNumber() == Approx(1));
+}
