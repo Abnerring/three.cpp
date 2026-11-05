@@ -125,6 +125,7 @@ add_executable(THREECPPTests
         unit/src/nodes/gpgpu/AtomicFunctionNode.tests.cpp
         unit/src/nodes/gpgpu/SubgroupFunctionNode.tests.cpp
         unit/src/nodes/utils/RTTNode.tests.cpp
+        unit/src/loaders/nodes/NodeLoader.tests.cpp
         unit/src/nodes/utils/SpriteUtils.tests.cpp
         unit/src/nodes/display/ViewportSharedTextureNode.tests.cpp
         unit/src/nodes/utils/SampleNode.tests.cpp
@@ -1205,6 +1206,13 @@ if(THREECPP_NODE_EXECUTABLE AND THREEJS_SOURCE_DIR)
     add_test(NAME threecpp.threejs-rtt-node-parity
         COMMAND "${THREECPP_NODE_EXECUTABLE}" "${CMAKE_CURRENT_SOURCE_DIR}/unit/utils/parity/compare-rtt-node.mjs"
         "${THREEJS_SOURCE_DIR}" "$<TARGET_FILE:ThreeJsRTTNodeParityProbe>")
+endif()
+add_executable(ThreeJsNodeLoaderParityProbe unit/utils/parity/NodeLoaderParityProbe.cpp)
+target_link_libraries(ThreeJsNodeLoaderParityProbe PRIVATE threecpp::threecpp)
+if(THREECPP_NODE_EXECUTABLE AND THREEJS_SOURCE_DIR)
+    add_test(NAME threecpp.threejs-node-loader-parity
+        COMMAND "${THREECPP_NODE_EXECUTABLE}" "${CMAKE_CURRENT_SOURCE_DIR}/unit/utils/parity/compare-node-loader.mjs"
+        "${THREEJS_SOURCE_DIR}" "$<TARGET_FILE:ThreeJsNodeLoaderParityProbe>")
 endif()
 add_executable(ThreeJsMaterialXColorParityProbe unit/utils/parity/MaterialXColorParityProbe.cpp)
 target_link_libraries(ThreeJsMaterialXColorParityProbe PRIVATE threecpp::threecpp)

@@ -227,6 +227,7 @@ target_sources(threecpp PRIVATE
     src/nodes/gpgpu/AtomicFunctionNode.cpp
     src/nodes/gpgpu/SubgroupFunctionNode.cpp
     src/nodes/utils/RTTNode.cpp
+    src/loaders/nodes/NodeLoader.cpp
     src/nodes/utils/SpriteUtils.cpp
     src/nodes/functions/VolumetricLightingModel.cpp
     src/nodes/display/ViewportSharedTextureNode.cpp

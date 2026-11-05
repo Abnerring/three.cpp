@@ -1,4 +1,29 @@
-# 当前接续：RTTNode 已移植（渲染到纹理节点，含 setSize/缩放/clone/convert 行为级验证），2026-11-05
+# 当前接续：NodeLoader 已移植（节点 JSON 解析链路，parse/parseNodes/回退全部行为级验证），2026-11-05
+
+目标保持 active：固定 three.js 11738a9d55e502fb484cefffcea3a66dc44e9fe9 全部 src + examples/jsm 原生 C++ 逻辑，Vulkan 后端；禁止 CEF/生产 JS 引擎/桥接。阶段本地 Git 提交，不推送。
+
+本轮新增 `src/loaders/nodes/NodeLoader.{h,cpp}`（4,052 B 源）+ `src/loaders/nodes/NodeLoaderSources.inc`（7 个键）。**这是 `src/loaders/nodes` 首个模块**；剩余 2 个（`NodeMaterialLoader`、`NodeObjectLoader`）。
+
+- **`constructor( manager )` → length 1**；`super( manager )` 走 `Loader` 基类；`textures = {}`、`nodes = {}`。**该类没有静态 `type` getter**（`ctor.type` 两侧均为 undefined）。
+- `load( url, onLoad, onProgress, onError )`：创建 C++ `FileLoader(this.manager)`，转发 `setPath`/`setRequestHeader`/`setWithCredentials`，`fileLoader.load(url, onText, onProgress, onError)`；`onText` 里 `JSON.parse` → `this.parse(...)` → `onLoad(...)`，异常时 `onError` 或 `error(...)` 并 `manager.itemError(url)`。
+- `parseNodes( json )`：按 `{uuid,type}` 逐项 `createNodeFromType` 并写回 `uuid`，构造 `meta = { nodes, textures }`，再对每个 JSON **设 `meta` → `deserialize` → 删 `meta`**（删除用 `JSValue::erase`，与 JS `delete` 等价）。
+- `parse( json )`：`createNodeFromType(json.type)` → 写 `uuid` → `parseNodes(json.nodes)` → 构造 `meta` → `json.meta = meta` → `deserialize(json)` → `json.meta` 删除 → 返回节点。
+- `setTextures` / `setNodes`：写字段并**返回 this**。
+- `createNodeFromType( type )`：`nodes[type]` 未注册时 `error('NodeLoader: Node type not found:', type)` 并**返回 `float()`**（回退，不抛）。
+
+**本轮四处实现/测试修正**：
+1. **手工建类的基类取错**：最初写 `baseCtor.getPrototype().construct(...)`（= `Function.prototype`）导致 `Value is not a constructor`；改为 holder 模式（`captures[0].get("constructor").getPrototype()` 才是 `Loader` 基类）。
+2. **`NodeLoader` 无静态 type getter**——断言改为 `ctor.type` 为 undefined，并从差分中移除该字段。
+3. **`isLoader`/`type` 字段在上游实例上不存在**（`Loader` 基类不设 `isLoader`），从单测与差分中移除。
+4. **`float()` 回退节点的 `nodeType` 为 null**（不是 `"float"`），两侧一致（差分已证），单测改为断言 `isNull()`；另外测试需**显式传入 manager**（不传时 `manager` 为 undefined，与上游 `DefaultLoadingManager` 默认化不同——本端口 `Loader` 基类的默认 manager 行为差异**未修**，仅避免依赖）。
+
+验证：构建 exit 0。THREECPPTests **1641 cases / 214,873 assertions 全过**（较上轮 1637/214,846 → +4 例 / +27 断言）。差分 `threecpp.threejs-node-loader-parity` **Passed**，比较：name/length=1、`textures`/`nodes` 对象、六个方法 arity、`setTextures` 返回自身且存值、**未知类型回退为 `isNode` 且 `nodeType` 为 null**、**`parse` 的根与子节点都被 `deserialize` 且两次 payload 都带 `meta`**、**`parse` 后 `json.meta` 与 `childJSON.meta` 均被删除**、`parseNodes` 以 uuid 为键返回节点、class `toString` 逐字节。
+
+**未执行验证的部分（如实记录）**：`load()`（需要 FileLoader 的 transport 与真实 I/O）**未执行**；`deserialize` 的具体还原语义由 stub 记录，未与真实节点类联调；`Loader` 基类对缺省 manager 的默认化差异**未修**（本端口不默认 `DefaultLoadingManager`，测试显式传入 manager 规避）。
+
+审计（固定 worktree，HEAD=11738a9d55）：**src missing 22→21、partial 443→444**，`NodeLoader` 记 `partial-unverified`。
+
+下一步：① `NodeMaterialLoader`(2,246) —— 依赖 `NodeMaterials` 注册表（仍被 4 个材质阻塞）；② `NodeObjectLoader`(3,695) —— 依赖 `NodeLoader`（已完成）+ `NodeMaterialLoader`；③ **`PhysicalLightingModel`(32,829)** 仍是解锁三材质与 `NodeMaterials` 链路的关键；④ `ShadowNode`+`PointShadowNode` 收尾 lighting。# 当前接续：RTTNode 已移植（渲染到纹理节点，含 setSize/缩放/clone/convert 行为级验证），2026-11-05
 
 目标保持 active：固定 three.js 11738a9d55e502fb484cefffcea3a66dc44e9fe9 全部 src + examples/jsm 原生 C++ 逻辑，Vulkan 后端；禁止 CEF/生产 JS 引擎/桥接。阶段本地 Git 提交，不推送。
 
