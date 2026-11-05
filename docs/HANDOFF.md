@@ -1,4 +1,35 @@
-# 当前接续：`mergeGroups` 实现蓝图（算法已逐行确认 + C++ 落点已定位），2026-11-05
+# 当前接续：更正 r79/r80 前提——`mergeGroups` 其实已实现；`SceneUtils` 下一步可直接做 multi-material mesh，2026-11-05
+
+目标保持 active：固定 three.js 11738a9d55e502fb484cefffcea3a66dc44e9fe9 全部 src + examples/jsm 原生 C++ 逻辑，Vulkan 后端；禁止 CEF/生产 JS 引擎/桥接。阶段本地 Git 提交，不推送。
+
+## 重要更正（本轮实测发现）
+
+r79/r80 记录「`BufferGeometryUtils.mergeGroups` 未实现、需先移植」——**这是错的**。本轮核对：
+
+- `examples/jsm/utils/BufferGeometryUtils.h:78` 有声明，`.cpp` 中**已有定义**（`GeometryPtr BufferGeometryUtils::mergeGroups(...)`）；
+- 测试文件已有 `mergeGroups` 用例（本轮过滤运行 `*mergeGroups*` = **1 case / 15 assertions 全过**）；
+- 因此 r79/r80 的「实现蓝图」**实际上不必再做**，该前置早已具备。
+
+## 由此得到的下一步（已可直接做）
+
+`SceneUtils.createMeshesFromMultiMaterialMesh` 的唯一前置已存在，因此可**直接实现**：
+
+1. `materialIsArray == false` → `console.warn('THREE.SceneUtils.createMeshesFromMultiMaterialMesh(): The given mesh has no multiple materials.')` 并**原样返回 mesh**（不是 Group）。
+2. `object = new Group(); object.copy(mesh)`。
+3. `geometry = BufferGeometryUtils::mergeGroups(mesh->geometry)`。
+4. 对 `geometry->groups` 每个 group：新建 `BufferGeometry`，遍历 `geometry->attributes` 的每个属性，按 `group.count * itemSize` 建新属性，用 `index->getX(k)`（k ∈ [start, start+count)）逐顶点写入 x/y/z/w 分量；材质取 `mesh->materials[group.materialIndex]`；`object->add(Mesh(newGeometry, newMaterial))`。
+5. 返回 `object`。
+
+**待确认 API（实现前先核对）**：`VertexAttribute` 是否有 `getW/setW`（`itemSize == 4` 时需要）；新建属性后写分量应走 `BufferAttribute` 的 `setX/setY/setZ/setW` 还是 `VertexAttribute::setComponent`。
+
+## 验证
+
+- 本轮**无源码变更**（调查本身即为产出：纠正了一个会导致下一轮浪费整轮的错误前提）。
+- 构建 exit 0（既有全部用例通过）；`*mergeGroups*` 过滤运行通过；审计保持 src 13 missing / 452 partial，examples 325 / 151。
+
+## 其余优先级不变
+
+`transpiler/AST.js`(8868) / `ShadowNode`(24,331) / `PhysicalLightingModel`(32,829)。另：`SceneUtils` 头部注释仍需把 `createMeshesFromMultiMaterialMesh` 从「未移植」更新。# 当前接续：`mergeGroups` 实现蓝图（算法已逐行确认 + C++ 落点已定位），2026-11-05
 
 目标保持 active：固定 three.js 11738a9d55e502fb484cefffcea3a66dc44e9fe9 全部 src + examples/jsm 原生 C++ 逻辑，Vulkan 后端；禁止 CEF/生产 JS 引擎/桥接。阶段本地 Git 提交，不推送。
 
