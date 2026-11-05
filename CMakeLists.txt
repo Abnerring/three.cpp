@@ -196,6 +196,7 @@ target_sources(threecpp PRIVATE
     src/nodes/accessors/ClippingNode.cpp
     src/nodes/lighting/LightingNode.cpp
     src/nodes/lighting/AnalyticLightNode.cpp
+    src/nodes/lighting/BasicEnvironmentNode.cpp
     src/nodes/lighting/LightProbeNode.cpp
     src/nodes/lighting/LightingContextNode.cpp
     src/nodes/lighting/AONode.cpp
@@ -276,6 +277,7 @@ target_sources(threecpp PRIVATE
     src/nodes/core/SampleNode.cpp
     src/nodes/utils/RotateNode.cpp
     src/nodes/utils/ViewportUtils.cpp
+    src/nodes/utils/UVUtils.cpp
     src/nodes/utils/FlipNode.cpp
     src/nodes/utils/SplitNode.cpp
     src/nodes/utils/JoinNode.cpp

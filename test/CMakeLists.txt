@@ -92,8 +92,10 @@ add_executable(THREECPPTests
         unit/src/nodes/accessors/SceneProperties.tests.cpp
         unit/src/nodes/accessors/Lights.tests.cpp
         unit/src/nodes/lighting/BasicLightMapNode.tests.cpp
+        unit/src/nodes/lighting/BasicEnvironmentNode.tests.cpp
         unit/src/nodes/utils/Oscillators.tests.cpp
         unit/src/nodes/utils/ViewportUtils.tests.cpp
+        unit/src/nodes/utils/UVUtils.tests.cpp
         unit/src/nodes/math/BitcastNode.tests.cpp
         unit/src/nodes/math/BitcountNode.tests.cpp
         unit/src/nodes/math/Packed4x8IntegerNode.tests.cpp
@@ -905,6 +907,14 @@ if(THREECPP_NODE_EXECUTABLE AND THREEJS_SOURCE_DIR)
         "${THREEJS_SOURCE_DIR}" "$<TARGET_FILE:ThreeJsLightProbeNodeParityProbe>")
 endif()
 
+add_executable(ThreeJsBasicEnvironmentNodeParityProbe unit/utils/parity/BasicEnvironmentNodeParityProbe.cpp)
+target_link_libraries(ThreeJsBasicEnvironmentNodeParityProbe PRIVATE threecpp::threecpp)
+if(THREECPP_NODE_EXECUTABLE AND THREEJS_SOURCE_DIR)
+    add_test(NAME threecpp.threejs-basic-environment-node-parity
+        COMMAND "${THREECPP_NODE_EXECUTABLE}" "${CMAKE_CURRENT_SOURCE_DIR}/unit/utils/parity/compare-basic-environment-node.mjs"
+        "${THREEJS_SOURCE_DIR}" "$<TARGET_FILE:ThreeJsBasicEnvironmentNodeParityProbe>")
+endif()
+
 add_executable(ThreeJsMaterialXColorParityProbe unit/utils/parity/MaterialXColorParityProbe.cpp)
 target_link_libraries(ThreeJsMaterialXColorParityProbe PRIVATE threecpp::threecpp)
 add_test(NAME threecpp.materialx-color-metadata COMMAND ThreeJsMaterialXColorParityProbe --metadata)
@@ -1045,6 +1055,13 @@ if(THREECPP_NODE_EXECUTABLE AND THREEJS_SOURCE_DIR)
     add_test(NAME threecpp.threejs-viewport-utils-parity
         COMMAND "${THREECPP_NODE_EXECUTABLE}" "${CMAKE_CURRENT_SOURCE_DIR}/unit/utils/parity/compare-viewport-utils.mjs"
         "${THREEJS_SOURCE_DIR}" "$<TARGET_FILE:ThreeJsViewportUtilsParityProbe>")
+endif()
+add_executable(ThreeJsUVUtilsParityProbe unit/utils/parity/UVUtilsParityProbe.cpp)
+target_link_libraries(ThreeJsUVUtilsParityProbe PRIVATE threecpp::threecpp)
+if(THREECPP_NODE_EXECUTABLE AND THREEJS_SOURCE_DIR)
+    add_test(NAME threecpp.threejs-uv-utils-parity
+        COMMAND "${THREECPP_NODE_EXECUTABLE}" "${CMAKE_CURRENT_SOURCE_DIR}/unit/utils/parity/compare-uv-utils.mjs"
+        "${THREEJS_SOURCE_DIR}" "$<TARGET_FILE:ThreeJsUVUtilsParityProbe>")
 endif()
 add_executable(ThreeJsTriplanarTexturesParityProbe unit/utils/parity/TriplanarTexturesParityProbe.cpp)
 target_link_libraries(ThreeJsTriplanarTexturesParityProbe PRIVATE threecpp::threecpp)

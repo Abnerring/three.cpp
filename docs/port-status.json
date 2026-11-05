@@ -201,8 +201,8 @@
     "note": "Accepted port scope is src and examples/jsm, including tracked third-party dependencies. Editor/manual web applications are excluded from native application rewrites. Native host behavior, packaging and all three platforms require separate implementation and verification evidence."
   },
   "counts": {
-    "partial-unverified": 538,
-    "missing": 403,
+    "partial-unverified": 540,
+    "missing": 401,
     "vulkan-port-pending": 290,
     "dependency-unverified": 20
   },
@@ -210,8 +210,8 @@
     "src": {
       "modules": 755,
       "counts": {
-        "partial-unverified": 402,
-        "missing": 63,
+        "partial-unverified": 404,
+        "missing": 61,
         "vulkan-port-pending": 290
       }
     },
@@ -866,7 +866,7 @@
       "path": "src/nodes/lighting",
       "upstreamFiles": 23,
       "moduleCount": 23,
-      "modulesWithCppFiles": 8,
+      "modulesWithCppFiles": 9,
       "verifiedComplete": 0
     },
     {
@@ -922,7 +922,7 @@
       "path": "src/nodes/utils",
       "upstreamFiles": 31,
       "moduleCount": 31,
-      "modulesWithCppFiles": 25,
+      "modulesWithCppFiles": 26,
       "verifiedComplete": 0
     },
     {
@@ -11320,11 +11320,11 @@
       "scope": "src",
       "kind": "core",
       "upstreamSha256": "0ccd46dcda8eaa184eb78d61b3d17a8eaf61314d20d4efe73ff13a01cc888c19",
-      "header": null,
-      "implementation": null,
+      "header": "src/nodes/lighting/BasicEnvironmentNode.h",
+      "implementation": "src/nodes/lighting/BasicEnvironmentNode.cpp",
       "expectedHeader": "src/nodes/lighting/BasicEnvironmentNode.h",
       "expectedImplementation": "src/nodes/lighting/BasicEnvironmentNode.cpp",
-      "status": "missing",
+      "status": "partial-unverified",
       "verifiedComplete": false,
       "apiExtraction": "static-only",
       "verification": {
@@ -11333,7 +11333,9 @@
           "pointer": "/modules/355"
         },
         "upstreamUnitTests": [],
-        "cppUnitTests": [],
+        "cppUnitTests": [
+          "test/unit/src/nodes/lighting/BasicEnvironmentNode.tests.cpp"
+        ],
         "reviewedImplementation": [],
         "differentialResults": [],
         "renderingResults": [],
@@ -13363,11 +13365,11 @@
       "scope": "src",
       "kind": "core",
       "upstreamSha256": "f867ead23db16135d738019c438332dcb4c084100e7c941efaa40f2a5303f684",
-      "header": null,
-      "implementation": null,
+      "header": "src/nodes/utils/UVUtils.h",
+      "implementation": "src/nodes/utils/UVUtils.cpp",
       "expectedHeader": "src/nodes/utils/UVUtils.h",
       "expectedImplementation": "src/nodes/utils/UVUtils.cpp",
-      "status": "missing",
+      "status": "partial-unverified",
       "verifiedComplete": false,
       "apiExtraction": "partial-static",
       "verification": {
@@ -13376,7 +13378,9 @@
           "pointer": "/modules/428"
         },
         "upstreamUnitTests": [],
-        "cppUnitTests": [],
+        "cppUnitTests": [
+          "test/unit/src/nodes/utils/UVUtils.tests.cpp"
+        ],
         "reviewedImplementation": [],
         "differentialResults": [],
         "renderingResults": [],
