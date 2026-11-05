@@ -12,6 +12,7 @@
 #include "core/WebGLCubeRenderTarget.h"
 #include "core/JSJobs.h"
 #include "materials/MeshBasicMaterial.h"
+#include "math/Vector4.h"
 #include "objects/Group.h"
 #include "objects/Mesh.h"
 #include "objects/InstancedMesh.h"
@@ -1728,6 +1729,221 @@ void renderTargetTests(bool validation) {
     require(renderer.getRenderTarget() == nullptr, "target cleared");
 }
 
+void viewportScissorTests(bool validation) {
+    VulkanRenderer renderer({64, 48, validation});
+    renderer.srgbOutput = false;
+    renderer.autoClear = false;
+    const std::array<int, 4> transparent{0, 0, 0, 0}, red{255, 0, 0, 255},
+        green{0, 255, 0, 255}, blue{0, 0, 255, 255}, yellow{255, 255, 0, 255},
+        black{0, 0, 0, 255};
+    const auto expectCoverage = [&](const auto& expected, const char* description) {
+        const auto pixels = renderer.readPixels();
+        const auto width = renderer.getWidth(), height = renderer.getHeight();
+        require(pixels.size() == std::size_t(width) * height * 4, "coverage readback has the full framebuffer");
+        for (unsigned y = 0; y < height; ++y)
+            for (unsigned x = 0; x < width; ++x) {
+                const auto color = expected(x, height - 1 - y); // lower-left coordinates
+                for (unsigned c = 0; c < 4; ++c)
+                    if (std::abs(int(pixels[(std::size_t(y) * width + x) * 4 + c]) - color[c]) > 1) {
+                        std::cerr << description << ": pixel " << x << ',' << y << " component " << c << '\n';
+                        require(false, description);
+                    }
+            }
+        require(true, description);
+    };
+    const auto inside = [](unsigned x, unsigned y, unsigned left, unsigned bottom, unsigned width, unsigned height) {
+        return x >= left && x < left + width && y >= bottom && y < bottom + height;
+    };
+    renderer.setViewport(2.6, 3.6, 18.6, 12.6);
+    renderer.setScissor(Vector4(1.6, 2.6, 20.6, 14.6));
+    renderer.setScissorTest(true);
+    Vector4 value;
+    renderer.getCurrentViewport(value);
+    require(value.equals(Vector4(3, 4, 19, 13)), "viewport setters round the current device-pixel rectangle");
+
+    auto target = std::make_shared<RenderTarget>(32, 24);
+    target->viewport.set(8, 4, 16, 12);
+    target->scissor.set(10, 6, 8, 8);
+    target->scissorTest = true;
+    renderer.setRenderTarget(target);
+    renderer.getViewport(value);
+    require(value.equals(Vector4(2.6, 3.6, 18.6, 12.6)), "target binding preserves the global viewport");
+    renderer.getScissor(value);
+    require(value.equals(Vector4(1.6, 2.6, 20.6, 14.6)) && renderer.getScissorTest(),
+            "target binding preserves the global scissor and scissor-test setting");
+    renderer.setClearColor(Color(1, 0, 0));
+    renderer.clear();
+    expectCoverage([&](unsigned x, unsigned y) { return inside(x, y, 10, 6, 8, 8) ? red : transparent; },
+                   "first scissored clear initializes untouched pixels and uses the target's lower-left rectangle");
+
+    target->scissorTest = false;
+    renderer.setRenderTarget(target);
+    renderer.clear();
+    expectCoverage([&](unsigned, unsigned) { return red; }, "clear ignores viewport when scissor testing is disabled");
+    OrthographicCamera camera(-1, 1, 1, -1, .1, 20);
+    camera.position.z = 5;
+    Scene scene;
+    auto mesh = std::make_shared<Mesh>(std::make_shared<PlaneGeometry>(2, 2),
+                                      std::make_shared<MeshBasicMaterial>(Color(0, 1, 0)));
+    scene.add(mesh);
+    renderHostTurn(renderer, scene, camera);
+    const auto viewportImage = [&](unsigned x, unsigned y) { return inside(x, y, 8, 4, 16, 12) ? green : red; };
+    expectCoverage(viewportImage, "target viewport maps the full camera image into only its specified rectangle");
+
+    target->viewport.set(0, 0, 32, 24);
+    target->scissorTest = true;
+    renderHostTurn(renderer, scene, camera);
+    expectCoverage(viewportImage, "mutating a target rectangle does not change the snapshot until target rebinding");
+    renderer.setRenderTarget(target);
+    renderer.setClearColor(Color(0, 0, 1));
+    renderer.clear();
+    expectCoverage([&](unsigned x, unsigned y) { return inside(x, y, 10, 6, 8, 8) ? blue : viewportImage(x, y); },
+                   "vkCmdClearAttachments explicitly clips color clears to the active scissor");
+    basic(mesh)->color.setRGB(1, 1, 0);
+    renderHostTurn(renderer, scene, camera);
+    expectCoverage([&](unsigned x, unsigned y) { return inside(x, y, 10, 6, 8, 8) ? yellow : viewportImage(x, y); },
+                   "target rebinding reloads the viewport and the scissor also clips GPU draws");
+
+    target->viewport.set(8, 4, 16, 12);
+    target->scissor.set(-4, -3, 10, 8);
+    renderer.setRenderTarget(target);
+    renderer.clear();
+    expectCoverage([&](unsigned x, unsigned y) {
+        if (inside(x, y, 0, 0, 6, 5)) return blue;
+        return inside(x, y, 10, 6, 8, 8) ? yellow : viewportImage(x, y);
+    }, "negative scissor origins clip to the framebuffer and clears remain independent of viewport");
+    const auto beforeEmptyClear = renderer.readPixels();
+    target->scissor.set(0, 0, 0, 24);
+    renderer.setRenderTarget(target);
+    renderer.setClearColor(Color(0, 1, 0));
+    renderer.clear();
+    require(renderer.readPixels() == beforeEmptyClear, "empty scissor is a no-op for color and depth clears");
+
+    renderer.setRenderTarget(nullptr);
+    renderer.getCurrentViewport(value);
+    require(value.equals(Vector4(2, 3, 18, 12)), "restoring the screen floors the global rectangle at pixel ratio one");
+    renderer.setClearColor(Color(0, 0, 1));
+    renderer.clear();
+    expectCoverage([&](unsigned x, unsigned y) { return inside(x, y, 1, 2, 20, 14) ? blue : transparent; },
+                   "screen binding restores its own scissor and dimensions without target scaling");
+
+    target->viewport.set(0, 0, 32, 24);
+    target->scissorTest = false;
+    renderer.setRenderTarget(target);
+    renderer.setClearColor(Color(0, 0, 0));
+    renderer.clear();
+    basic(mesh)->color.setRGB(0, 1, 0);
+    mesh->onBeforeRender = [&](auto&, auto&, auto&, auto*, auto*, auto*) {
+        renderer.setViewport(Vector4(4, 2, 8, 6));
+        renderer.setScissor(6, 3, 10, 8);
+        renderer.setScissorTest(true);
+        renderer.setClearColor(Color(0, 0, 1));
+        renderer.clear();
+        (void)renderer.readPixels(); // ends and resumes the Vulkan render pass
+    };
+    renderHostTurn(renderer, scene, camera);
+    expectCoverage([&](unsigned x, unsigned y) {
+        if (inside(x, y, 6, 3, 10, 8)) return inside(x, y, 4, 2, 8, 6) ? green : blue;
+        return black;
+    }, "callback setters apply immediately and viewport/scissor survive synchronous readback and render-pass resumption");
+    mesh->onBeforeRender = {};
+    renderer.setViewport(0, 0, 0, 24);
+    renderer.setScissorTest(false);
+    renderer.setClearColor(Color(1, 0, 0));
+    renderer.clear();
+    renderHostTurn(renderer, scene, camera);
+    expectCoverage([&](unsigned, unsigned) { return red; }, "zero-width viewport suppresses draws without suppressing clears");
+
+    renderer.setClearColor(Color(0, 0, 0));
+    renderer.clear();
+    renderer.setViewport(-2, 3, 14, 10);
+    renderer.setViewport(9, 10, -6, 7);
+    renderer.getViewport(value);
+    require(value.equals(Vector4(9, 10, -6, 7)), "negative viewport size remains visible in the global getter");
+    renderer.getCurrentViewport(value);
+    require(value.equals(Vector4(9, 10, -6, 7)), "negative viewport size remains visible in the current getter");
+    renderer.setScissor(2, -2, 7, 10);
+    renderer.setScissor(15, 13, 8, -5);
+    renderer.getScissor(value);
+    require(value.equals(Vector4(15, 13, 8, -5)), "negative scissor size remains visible in the global getter");
+    renderer.setScissorTest(true);
+    renderer.setClearColor(Color(0, 0, 1));
+    renderer.clear();
+    renderHostTurn(renderer, scene, camera);
+    const auto retainedRectangleImage = [&](unsigned x, unsigned y, const std::array<int, 4>& drawn,
+                                             const std::array<int, 4>& cleared, const std::array<int, 4>& untouched) {
+        if (inside(x, y, 2, 0, 7, 8)) return y >= 3 ? drawn : cleared;
+        return untouched;
+    };
+    expectCoverage([&](unsigned x, unsigned y) { return retainedRectangleImage(x, y, green, blue, black); },
+                   "negative sizes set outside recording retain the last valid viewport and scissor for draws and clears");
+    basic(mesh)->color.setRGB(1, 1, 0);
+    mesh->onBeforeRender = [&](auto&, auto&, auto&, auto*, auto*, auto*) {
+        renderer.setViewport(10, 10, 8, -4);
+        renderer.setScissor(0, 0, -2, 10);
+        renderer.clear();
+        (void)renderer.readPixels();
+    };
+    renderHostTurn(renderer, scene, camera);
+    expectCoverage([&](unsigned x, unsigned y) { return retainedRectangleImage(x, y, yellow, blue, black); },
+                   "negative callback rectangles retain valid GPU state across synchronous readback resumption");
+    mesh->onBeforeRender = {};
+
+    auto invalidRectangleTarget = std::make_shared<RenderTarget>(20, 16);
+    invalidRectangleTarget->viewport.set(7, 8, -5, 6);
+    invalidRectangleTarget->scissor.set(8, 9, 4, -3);
+    invalidRectangleTarget->scissorTest = true;
+    renderer.setRenderTarget(invalidRectangleTarget);
+    renderer.getCurrentViewport(value);
+    require(value.equals(invalidRectangleTarget->viewport), "negative target viewport is retained in the binding snapshot");
+    renderer.getViewport(value);
+    require(value.equals(Vector4(10, 10, 8, -4)), "target binding keeps the independent negative global viewport");
+    renderer.getScissor(value);
+    require(value.equals(Vector4(0, 0, -2, 10)), "target binding keeps the independent negative global scissor");
+    renderer.setClearColor(Color(1, 0, 0));
+    renderer.clear();
+    renderHostTurn(renderer, scene, camera);
+    expectCoverage([&](unsigned x, unsigned y) { return retainedRectangleImage(x, y, yellow, red, transparent); },
+                   "negative target rectangles preserve previous lower-left GPU rectangles across framebuffer size changes");
+    invalidRectangleTarget->viewport.set(0, 0, 0, 16);
+    invalidRectangleTarget->scissor.set(0, 0, 20, 16);
+    renderer.setRenderTarget(invalidRectangleTarget);
+    renderer.clear();
+    renderHostTurn(renderer, scene, camera);
+    expectCoverage([&](unsigned, unsigned) { return red; },
+                   "a zero target viewport replaces the retained valid rectangle rather than acting like a negative size");
+
+    renderer.setRenderTarget(target);
+    renderer.autoClear = true;
+    renderer.setClearColor(Color(0, 0, 0));
+    basic(mesh)->color.setRGB(1, 0, 0);
+    mesh->position.z = 1;
+    renderHostTurn(renderer, scene, camera);
+    renderer.autoClear = false;
+    renderer.setScissor(0, 0, 16, 24);
+    renderer.setScissorTest(true);
+    renderer.clear(false, true);
+    renderer.setScissorTest(false);
+    basic(mesh)->color.setRGB(0, 1, 0);
+    mesh->position.z = 0;
+    renderHostTurn(renderer, scene, camera);
+    expectCoverage([&](unsigned x, unsigned) { return x < 16 ? green : red; },
+                   "depth-only scissored clear preserves depth outside the rectangle");
+    renderer.setSize(48, 16);
+    renderer.getCurrentViewport(value);
+    require(value.equals(Vector4(0, 0, 48, 16)) && renderer.getWidth() == 32 && renderer.getHeight() == 24,
+            "setSize resets the global viewport while retaining the bound target's dimensions");
+    renderer.getScissor(value);
+    require(value.equals(Vector4(0, 0, 16, 24)), "setSize preserves the global scissor rectangle");
+    renderer.setRenderTarget(nullptr);
+    renderer.autoClear = true;
+    renderHostTurn(renderer, scene, camera);
+    require(renderer.getWidth() == 48 && renderer.getHeight() == 16, "screen resize survives target unbinding");
+    expectCoverage([&](unsigned, unsigned) { return green; }, "screen resize restores the complete resized viewport");
+    require(renderer.getInfo().validationEnabled == validation && renderer.getValidationMessages().empty(),
+            "viewport/scissor coverage uses the requested validation mode without Vulkan warnings");
+}
+
 void cubeRenderTargetTests(bool validation) {
     VulkanRenderer renderer({64, 64, validation});
     auto cube = std::make_shared<WebGLCubeRenderTarget>(16);
@@ -1980,6 +2196,7 @@ int main(int argc, char** argv) {
         if (argc > 1 && std::string(argv[1]) == "--first") { unsupportedMeshTests(validation); std::cout << "first group ok\n"; return 0; }
         if (argc > 1 && std::string(argv[1]) == "--third") { instancingTests(validation); std::cout << "third group ok\n"; return 0; }
         if (argc > 1 && std::string(argv[1]) == "--polygon-offset") { polygonOffsetTests(validation); std::cout << "polygon offset group ok\n"; return 0; }
+        if (argc > 1 && std::string(argv[1]) == "--viewport-scissor") { viewportScissorTests(validation); std::cout << "viewport/scissor group: " << assertions << " assertions\n"; return 0; }
         if (argc > 1 && std::string(argv[1]) == "--second") { unsupportedPrimitiveTests(validation); std::cout << "second group ok\n"; return 0; }
         if (argc > 1 && std::string(argv[1]) == "--cube") { std::cerr << "[group] renderTargetTests\n"; renderTargetTests(validation); std::cerr << "[group] cubeRenderTargetTests\n"; cubeRenderTargetTests(validation); std::cerr << "[group] cubeCameraUpdateTests\n"; cubeCameraUpdateTests(validation); std::cerr << "[group] equirectangularToCubeTests\n"; equirectangularToCubeTests(validation); std::cerr << "[group] equirectangularDirectionTests\n"; equirectangularDirectionTests(validation); std::cerr << "[group] blurCubeTests\n"; blurCubeTests(validation); std::cerr << "[group] parkRestoreTests\n"; parkRestoreTests(validation); std::cout << "cube group: " << assertions << " assertions\n"; return 0; }
         std::cerr << "[group] unsupportedMeshTests" << '\n';
@@ -2012,6 +2229,8 @@ int main(int argc, char** argv) {
         geometryObjectProtocolTests(validation);
         std::cerr << "[group] renderTargetTests" << '\n';
         renderTargetTests(validation);
+        std::cerr << "[group] viewportScissorTests" << '\n';
+        viewportScissorTests(validation);
         std::cerr << "[group] blurCubeTests" << '\n';
         blurCubeTests(validation);
         VulkanRenderer renderer({64, 64, validation});

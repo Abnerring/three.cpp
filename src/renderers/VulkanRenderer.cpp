@@ -906,6 +906,11 @@ struct VulkanRenderer::Impl {
     std::shared_ptr<RenderTarget> renderTarget;
     std::uint32_t activeCubeFace = 0, activeMipmapLevel = 0;
     std::uint32_t savedWidth = 0, savedHeight = 0;
+    Vector4 viewport, scissor, currentViewport, currentScissor;
+    Vector4 gpuViewport, gpuScissor;
+    bool scissorTest = false, currentScissorTest = false;
+    std::array<std::uint32_t, 2> maxViewportDimensions{};
+    std::array<float, 2> viewportBounds{};
     bool disposing = false;
     bool colorWrite = true;
     bool reversedDepth = false;
@@ -1071,6 +1076,8 @@ struct VulkanRenderer::Impl {
             VulkanShaderModules::Dispatch{api.vkCreateShaderModule, api.vkDestroyShaderModule}, compiledStages);
         VkPhysicalDeviceProperties shaderProperties{};
         api.vkGetPhysicalDeviceProperties(physicalDevice, &shaderProperties);
+        std::copy_n(shaderProperties.limits.maxViewportDimensions, 2, maxViewportDimensions.begin());
+        std::copy_n(shaderProperties.limits.viewportBoundsRange, 2, viewportBounds.begin());
         const auto& vertexInterface = shaderModules->interfaces().front();
         const auto transforms = std::find_if(vertexInterface.descriptors.begin(), vertexInterface.descriptors.end(),
             [](const auto& descriptor) { return descriptor.set == 0 && descriptor.binding == 2; });
@@ -2890,6 +2897,53 @@ struct VulkanRenderer::Impl {
         api.vkCmdPipelineBarrier(commandBuffer, sourceStage, destinationStage, 0, 0, nullptr, 0,
                                  nullptr, 1, &barrier);
     }
+    static void retainValidRectangle(const Vector4& requested, Vector4& effective) {
+        // WebGL records the requested JS rectangle even when glViewport/glScissor
+        // rejects a negative GLsizei. Keep the last valid GPU rectangle separately,
+        // in lower-left coordinates so it survives framebuffer size changes.
+        if (std::trunc(requested.z) < 0 || std::trunc(requested.w) < 0) return;
+        effective.copy(requested);
+    }
+    VkRect2D scissorRectangle() const {
+        if (!currentScissorTest) return {{0, 0}, {width, height}};
+        // WebGL's integer rectangle may extend beyond the framebuffer. Vulkan
+        // requires nonnegative offsets, so intersect in lower-left coordinates
+        // before converting to the top-to-bottom image/readback coordinates.
+        const auto x = std::trunc(gpuScissor.x), y = std::trunc(gpuScissor.y);
+        const auto w = std::trunc(gpuScissor.z), h = std::trunc(gpuScissor.w);
+        if (!std::isfinite(x) || !std::isfinite(y) || !std::isfinite(w) || !std::isfinite(h) || w <= 0 || h <= 0)
+            return {};
+        const auto left = std::clamp(x, 0.0, double(width));
+        const auto bottom = std::clamp(y, 0.0, double(height));
+        const auto right = std::clamp(x + w, left, double(width));
+        const auto top = std::clamp(y + h, bottom, double(height));
+        return {{static_cast<std::int32_t>(left), static_cast<std::int32_t>(height - top)},
+                {static_cast<std::uint32_t>(right - left), static_cast<std::uint32_t>(top - bottom)}};
+    }
+    void applyViewportAndScissor() {
+        if (!recording) return;
+        const auto x = std::trunc(gpuViewport.x), bottom = std::trunc(gpuViewport.y);
+        const auto w = std::min(std::trunc(gpuViewport.z), double(maxViewportDimensions[0]));
+        const auto h = std::min(std::trunc(gpuViewport.w), double(maxViewportDimensions[1]));
+        if (!std::isfinite(x) || !std::isfinite(bottom) || !std::isfinite(w) || !std::isfinite(h))
+            throw std::invalid_argument("Viewport components must be finite");
+        auto rectangle = scissorRectangle();
+        VkViewport viewport{0, 0, 1, 1, 0, 1};
+        if (w > 0 && h > 0) {
+            const auto y = height - bottom - h;
+            if (x < viewportBounds[0] || y < viewportBounds[0] ||
+                x + w > viewportBounds[1] || y + h > viewportBounds[1])
+                throw std::invalid_argument("Viewport exceeds Vulkan device coordinate bounds");
+            viewport = {static_cast<float>(x), static_cast<float>(y),
+                        static_cast<float>(w), static_cast<float>(h), 0, 1};
+        } else {
+            // Vulkan disallows zero viewport width. An empty draw scissor has
+            // the same rasterization result while clears retain their own box.
+            rectangle = {};
+        }
+        api.vkCmdSetViewport(commandBuffer, 0, 1, &viewport);
+        api.vkCmdSetScissor(commandBuffer, 0, 1, &rectangle);
+    }
     void beginFrame(bool clearColorAttachment, bool clearDepthAttachment, const Color& color,
                     HIGH_PRECISION alpha, bool srgb, GpuTarget* sampledCube = nullptr) {
         ensureBoundTarget();
@@ -2908,7 +2962,8 @@ struct VulkanRenderer::Impl {
                              VK_ACCESS_COLOR_ATTACHMENT_WRITE_BIT, VK_ACCESS_SHADER_READ_BIT,
                              VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT,
                              VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT, layer);
-        if ((active->initializedLayers & (1u << activeCubeFace)) == 0) {
+        const bool initializeAttachments = (active->initializedLayers & (1u << activeCubeFace)) == 0;
+        if (initializeAttachments) {
             imageBarrier(active->color.image, VK_IMAGE_ASPECT_COLOR_BIT, VK_IMAGE_LAYOUT_UNDEFINED,
                          VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL, 0,
                          VK_ACCESS_COLOR_ATTACHMENT_READ_BIT | VK_ACCESS_COLOR_ATTACHMENT_WRITE_BIT,
@@ -2929,15 +2984,14 @@ struct VulkanRenderer::Impl {
         api.vkCmdBeginRenderPass(commandBuffer, &render, VK_SUBPASS_CONTENTS_INLINE);
         recording = true;
         ++recordingEpoch;
-        clearAttachments(clearColorAttachment || !active->initialized, clearDepthAttachment || !active->initialized,
-                         color, alpha, srgb);
-        VkViewport viewport{0, 0, static_cast<float>(width), static_cast<float>(height), 0, 1};
-        VkRect2D scissor{{0, 0}, {width, height}};
-        api.vkCmdSetViewport(commandBuffer, 0, 1, &viewport);
-        api.vkCmdSetScissor(commandBuffer, 0, 1, &scissor);
+        // WebGL allocations start with zero color. Initialize the whole image
+        // separately so a first scissored clear cannot expose undefined pixels.
+        if (initializeAttachments) clearAttachments(true, true, Color(0, 0, 0), 0, false, false);
+        clearAttachments(clearColorAttachment, clearDepthAttachment, color, alpha, srgb);
+        applyViewportAndScissor();
     }
     void clearAttachments(bool clearColorAttachment, bool clearDepthAttachment, const Color& color,
-                          HIGH_PRECISION alpha, bool srgb) {
+                          HIGH_PRECISION alpha, bool srgb, bool useScissor = true) {
         srgb = srgb && active->colorFormat != VK_FORMAT_R16G16B16A16_SFLOAT;
         std::vector<VkClearAttachment> attachments;
         if (clearColorAttachment) {
@@ -2959,9 +3013,10 @@ struct VulkanRenderer::Impl {
             attachments.push_back(attachment);
         }
         VkClearRect rect{};
-        rect.rect.extent = {width, height};
+        // vkCmdClearAttachments does not use dynamic scissor state.
+        rect.rect = useScissor ? scissorRectangle() : VkRect2D{{0, 0}, {width, height}};
         rect.layerCount = 1;
-        if (!attachments.empty())
+        if (!attachments.empty() && rect.rect.extent.width && rect.rect.extent.height)
             api.vkCmdClearAttachments(commandBuffer, static_cast<std::uint32_t>(attachments.size()),
                                       attachments.data(), 1, &rect);
     }
@@ -3032,6 +3087,12 @@ struct VulkanRenderer::Impl {
 VulkanRenderer::VulkanRenderer(const VulkanRendererParameters& parameters)
     : impl(std::make_unique<Impl>()) {
     impl->initialize(parameters);
+    impl->viewport.set(0, 0, parameters.width, parameters.height);
+    impl->scissor.copy(impl->viewport);
+    impl->currentViewport.copy(impl->viewport);
+    impl->currentScissor.copy(impl->scissor);
+    impl->gpuViewport.copy(impl->currentViewport);
+    impl->gpuScissor.copy(impl->currentScissor);
     auto modes = JSValue::object();
     modes.set("TRIANGLES", 4); modes.set("LINES", 1); modes.set("LINE_STRIP", 3);
     modes.set("LINE_LOOP", 2); modes.set("POINTS", 0);
@@ -3050,6 +3111,7 @@ void VulkanRenderer::setSize(std::uint32_t width, std::uint32_t height) {
         impl->savedWidth = width; impl->savedHeight = height;
         impl->ensureBoundTarget();
     } else impl->resize(width, height);
+    setViewport(0, 0, width, height);
 }
 std::uint32_t VulkanRenderer::getWidth() const {
     return impl->width;
@@ -3057,6 +3119,32 @@ std::uint32_t VulkanRenderer::getWidth() const {
 std::uint32_t VulkanRenderer::getHeight() const {
     return impl->height;
 }
+void VulkanRenderer::setViewport(HIGH_PRECISION x, HIGH_PRECISION y, HIGH_PRECISION width, HIGH_PRECISION height) {
+    impl->viewport.set(x, y, width, height);
+    impl->currentViewport.copy(impl->viewport).round();
+    Impl::retainValidRectangle(impl->currentViewport, impl->gpuViewport);
+    impl->applyViewportAndScissor();
+}
+void VulkanRenderer::setViewport(const Vector4& viewport) {
+    setViewport(viewport.x, viewport.y, viewport.z, viewport.w);
+}
+Vector4& VulkanRenderer::getViewport(Vector4& target) const { return target.copy(impl->viewport); }
+Vector4& VulkanRenderer::getCurrentViewport(Vector4& target) const { return target.copy(impl->currentViewport); }
+void VulkanRenderer::setScissor(HIGH_PRECISION x, HIGH_PRECISION y, HIGH_PRECISION width, HIGH_PRECISION height) {
+    impl->scissor.set(x, y, width, height);
+    impl->currentScissor.copy(impl->scissor).round();
+    Impl::retainValidRectangle(impl->currentScissor, impl->gpuScissor);
+    impl->applyViewportAndScissor();
+}
+void VulkanRenderer::setScissor(const Vector4& scissor) {
+    setScissor(scissor.x, scissor.y, scissor.z, scissor.w);
+}
+Vector4& VulkanRenderer::getScissor(Vector4& target) const { return target.copy(impl->scissor); }
+void VulkanRenderer::setScissorTest(bool enabled) {
+    impl->scissorTest = impl->currentScissorTest = enabled;
+    impl->applyViewportAndScissor();
+}
+bool VulkanRenderer::getScissorTest() const { return impl->scissorTest; }
 void VulkanRenderer::setClearColor(const Color& color, HIGH_PRECISION alpha) {
     impl->clearColor.copy(color);
     impl->clearAlpha = alpha;
@@ -3105,6 +3193,17 @@ void VulkanRenderer::setRenderTarget(std::shared_ptr<RenderTarget> target,
         impl->activeCubeFace = activeCubeFace; impl->activeMipmapLevel = activeMipmapLevel;
         impl->resize(shape.width, shape.height, shape.layers, shape.colorFormat);
         impl->selectFace(activeCubeFace);
+        if (target) {
+            impl->currentViewport.copy(target->viewport);
+            impl->currentScissor.copy(target->scissor);
+            impl->currentScissorTest = target->scissorTest;
+        } else {
+            impl->currentViewport.copy(impl->viewport).floor();
+            impl->currentScissor.copy(impl->scissor).floor();
+            impl->currentScissorTest = impl->scissorTest;
+        }
+        Impl::retainValidRectangle(impl->currentViewport, impl->gpuViewport);
+        Impl::retainValidRectangle(impl->currentScissor, impl->gpuScissor);
     } catch (...) {
         impl->useTarget(previous.get());
         impl->renderTarget = previous;

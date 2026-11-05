@@ -13,6 +13,7 @@
 class RenderTarget;
 class Scene;
 class Camera;
+class Vector4;
 
 struct VulkanRendererParameters {
     std::uint32_t width = 256;
@@ -62,6 +63,18 @@ class VulkanRenderer {
     void setSize(std::uint32_t width, std::uint32_t height);
     std::uint32_t getWidth() const;
     std::uint32_t getHeight() const;
+    // Coordinates follow three.js: x/y identify the lower left corner. The
+    // renderer currently uses a pixel ratio of one, including for render targets.
+    // Negative dimensions update getters but preserve the last valid GPU rectangle.
+    void setViewport(HIGH_PRECISION x, HIGH_PRECISION y, HIGH_PRECISION width, HIGH_PRECISION height);
+    void setViewport(const Vector4& viewport);
+    Vector4& getViewport(Vector4& target) const;
+    Vector4& getCurrentViewport(Vector4& target) const;
+    void setScissor(HIGH_PRECISION x, HIGH_PRECISION y, HIGH_PRECISION width, HIGH_PRECISION height);
+    void setScissor(const Vector4& scissor);
+    Vector4& getScissor(Vector4& target) const;
+    void setScissorTest(bool enabled);
+    bool getScissorTest() const;
     void setClearColor(const Color& color, HIGH_PRECISION alpha = 1);
     const Color& getClearColor() const;
     HIGH_PRECISION getClearAlpha() const;
