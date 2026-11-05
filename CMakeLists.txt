@@ -610,6 +610,7 @@ if(THREECPP_BUILD_ADDONS)
         examples/jsm/animation/AnimationClipCreator.cpp
     examples/jsm/misc/Gyroscope.cpp
     examples/jsm/environments/ColorEnvironment.cpp
+    examples/jsm/utils/ColorUtils.cpp
         examples/jsm/lights/RectAreaLightTexturesLib.cpp
         examples/jsm/lights/RectAreaLightUniformsLib.cpp
         examples/jsm/curves/NURBSUtils.cpp

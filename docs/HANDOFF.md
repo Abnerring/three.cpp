@@ -1,4 +1,32 @@
-# 当前接续：addon `ColorEnvironment` 移植（场景图结构 + dispose 事件级差分），examples 连续第 2 个，2026-11-05
+# 当前接续：addon `ColorUtils.setKelvin` 移植（12 温度点 × 3 通道数值级差分 + 精确 hex），examples 连续第 3 个，2026-11-05
+
+目标保持 active：固定 three.js 11738a9d55e502fb484cefffcea3a66dc44e9fe9 全部 src + examples/jsm 原生 C++ 逻辑，Vulkan 后端；禁止 CEF/生产 JS 引擎/桥接。阶段本地 Git 提交，不推送。
+
+## 本轮交付：`examples/jsm/utils/ColorUtils`
+
+- `examples/jsm/utils/ColorUtils.{h,cpp}`：命名空间 `ColorUtils`，唯一函数 `Color& setKelvin(Color& color, double kelvin)`。逐行照抄上游的四段式黑体近似：先把 kelvin **夹到 [1000, 40000]** 再 `/100` 得 `temp`；`r` 在 `temp<=66` 时取 255，否则 `329.698727446 * pow(temp-60, -0.1332047592)`；`g` 在 `temp<=66` 时取 `99.4708025861*log(temp)-161.1195681661`，否则 `288.1221695283*pow(temp-60, -0.0755148492)`；`b` 在 `temp>=66` 取 255、`temp<=19` 取 0，否则 `138.5177312231*log(temp-10)-305.0447927307`；最后三个通道各自 `clamp(0,255)/255` 后 `color.setRGB(..., SRGBColorSpace)`。
+- `test/unit/addons/utils/ColorUtils.tests.cpp`（2 用例 / 17 断言）：1000K 红饱和且蓝为 0、低于夹取下界结果与 1000K 一致；40000K 蓝饱和、高于上界与 40000K 一致；色温升高时蓝通道单调升、红通道单调降。
+- `test/unit/utils/parity/ColorUtilsParityProbe.cpp` + `compare-color-utils.mjs`：**12 个温度点**（500/1000/1500/1900/2000/3000/6500/6600/10000/20000/40000/50000）逐点比 **r/g/b 三通道（1e-12 容差）+ `getHex()` 精确相等**；上游模块裸 `from 'three'` 重写到 `build/three.module.js` 的 data URL 导入。
+
+## 实现说明
+
+- `MathUtils.clamp` 用文件内 `clamp` 内联（语义相同，避免与 C++ `MathUtils` 的签名绑定）。
+- `SRGBColorSpace` 取自根 `constants.h`（字符串 `"srgb"`），与上游常量一致。
+
+## 验证
+
+- 构建 exit 0。
+- `THREECPPAddonTests`：**1296 cases / 31,205 assertions 全过**（较上轮 1294/31,188 → +2 例 / +17 断言）；过滤 `*ColorUtils*` = 2 cases / 17 assertions。
+- 差分 `threecpp.threejs-color-utils-parity` **Passed**（12 点 ×(3 通道+hex)）。
+- 审计：**examples/jsm missing 338→337、partial-unverified 138→139**；`src` 不变（19 / 446）。
+
+**未执行验证（如实记录）**：未做真实渲染；`Color` 的**色彩管理工作空间转换**只通过 `r/g/b` 原始值（两侧同公式）+ `getHex()` 比较，未单独验证 working color space 的配置差异；温度网格是选定的 12 个点，未穷举。
+
+## 下一步
+
+继续 examples 小 addon。已筛选出**不含 DOM/canvas/three-tsl 的 0 依赖候选**（实测）：`utils/ColorUtils`(已完成)、`misc/MorphAnimMesh.js`(2468，Mesh+AnimationMixer，可做)、`objects/GroundedSkybox.js`(2049)、`generators/city/InstancedMeshGenerator.js`(2230)、`environments/DebugEnvironment.js`(2723)、`helpers/OctreeHelper.js`(2913)、`loaders/materialx/MaterialXLog.js`(1361)、`materialx/MaterialXArchive.js`(2327)。
+其中 **`MorphAnimMesh`** 依赖 `AnimationMixer`/`AnimationClip.findByName`/`AnimationAction::timeScale`，需先核对这几个 C++ API 的可用形态，是最自然的下一轮目标。
+`transpiler/TranspilerUtils.js`(682) 仍未做（其输入是 transpiler AST 对象，本端口 AST 类型未核查）。# 当前接续：addon `ColorEnvironment` 移植（场景图结构 + dispose 事件级差分），examples 连续第 2 个，2026-11-05
 
 目标保持 active：固定 three.js 11738a9d55e502fb484cefffcea3a66dc44e9fe9 全部 src + examples/jsm 原生 C++ 逻辑，Vulkan 后端；禁止 CEF/生产 JS 引擎/桥接。阶段本地 Git 提交，不推送。
 

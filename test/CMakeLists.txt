@@ -814,6 +814,7 @@ if(THREECPP_BUILD_ADDONS)
         unit/addons/animation/AnimationClipCreator.tests.cpp
         unit/addons/misc/Gyroscope.tests.cpp
         unit/addons/environments/ColorEnvironment.tests.cpp
+        unit/addons/utils/ColorUtils.tests.cpp
         unit/addons/geometries/ParametricFunctions.tests.cpp
         unit/addons/geometries/ParametricGeometry.tests.cpp
         unit/addons/geometries/BoxLineGeometry.tests.cpp
@@ -1231,6 +1232,13 @@ if(THREECPP_NODE_EXECUTABLE AND THREEJS_SOURCE_DIR)
     add_test(NAME threecpp.threejs-three-legacy-parity
         COMMAND "${THREECPP_NODE_EXECUTABLE}" "${CMAKE_CURRENT_SOURCE_DIR}/unit/utils/parity/compare-three-legacy.mjs"
         "${THREEJS_SOURCE_DIR}" "$<TARGET_FILE:ThreeJsThreeLegacyParityProbe>")
+endif()
+add_executable(ThreeJsColorUtilsParityProbe unit/utils/parity/ColorUtilsParityProbe.cpp)
+target_link_libraries(ThreeJsColorUtilsParityProbe PRIVATE threecpp::addons)
+if(THREECPP_NODE_EXECUTABLE AND THREEJS_SOURCE_DIR)
+    add_test(NAME threecpp.threejs-color-utils-parity
+        COMMAND "${THREECPP_NODE_EXECUTABLE}" "${CMAKE_CURRENT_SOURCE_DIR}/unit/utils/parity/compare-color-utils.mjs"
+        "${THREEJS_SOURCE_DIR}" "$<TARGET_FILE:ThreeJsColorUtilsParityProbe>")
 endif()
 add_executable(ThreeJsColorEnvironmentParityProbe unit/utils/parity/ColorEnvironmentParityProbe.cpp)
 target_link_libraries(ThreeJsColorEnvironmentParityProbe PRIVATE threecpp::addons)
