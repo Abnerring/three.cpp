@@ -1,4 +1,32 @@
-# 当前接续：PointShadowNode **双坐标系统全覆盖**（WebGPU up + render 计数），11 例 / 125 断言，2026-11-05
+# 当前接续：`PassNode` **Stage A** 落地 —— src missing 11→10，2026-11-05
+
+目标保持 active：固定 three.js 11738a9d55e502fb484cefffcea3a66dc44e9fe9 全部 src + examples/jsm 原生 C++ 逻辑，Vulkan 后端；禁止 CEF/生产 JS 引擎/桥接。阶段本地 Git 提交，不推送。
+
+## 本轮交付：`src/nodes/display/PassNode`（Stage A）
+
+- `PassNode.{h,cpp}`：模块并导出两个 texture 包装节点
+  - **`PassTextureNode`**（继承 `TextureNode`）：`makeClass("PassTextureNode", 2, base=TextureNode)`；`super(texture)`（第二参数）；设 `passNode`、`isPassTextureNode=true`、`setUpdateMatrix(false)`；`isCacheable → true`；`setup(builder)`：`getNodeProperties(self).passNode = this.passNode` 后调**基类 prototype 的 setup**（captures 传 texturePrototype）。
+  - **`PassMultipleTextureNode`**（继承 `PassTextureNode`）：`super(passNode, null)`；设 `textureName`、`previousTexture`（默认 false）、`isPassMultipleTextureNode=true`；`updateTexture()`：按 `previousTexture` 调 `passNode.getPreviousTexture/getTexture(textureName)` 并写入 `value`。
+- 测试 3 例 / 8 断言：`PassTextureNode` 继承与 type/字段；`PassMultipleTextureNode` textureName/previousTexture；`updateTexture` 从 passNode 取纹理写入 value。
+
+## 本轮踩的 2 个坑（已记录）
+
+1. **`makeClass/method/own/publish` 只在 `nodes/lighting/LightingNodeRuntime.h`** 中提供（`UtilityNodeRuntime` 没有）→ 非光照节点也可复用该运行时；
+2. `method(prototype, name, arity, nullptr, ...)` 会抛 `Function requires a callback` → 自定义 setup 用 `JSValue::function(...)` + `prototype.set("setup", fn)` 挂载。
+
+## 验证
+
+- 构建 exit 0；过滤 `*PassTextureNode*` = 3 断言、`*PassMultiple*` = 5 断言全过；`THREECPPAddonTests` 全套 **1405 cases / 39,116 assertions** 通过。
+- 审计：**src missing 11→10、partial 454→455**；`PassNode.js -> partial-unverified`。
+
+**未执行验证（如实记录）**：`PassNode` 主类（ctor/`setup`/`updateBefore`/`setSize`/`setScissor`/`setViewport`/`dispose`/`getTexture` 等 30+ 成员）**未实现**；`clone()` 未实现；两个 TextureNode 类未做差分。
+
+## 下一步（PassNode Stage B+）
+
+1. **Stage B**：`PassNode` 类骨架 + ctor 字段（scope/scene/camera/options、resolution、renderTarget 相关、`_textures`/`_previousTextures` 容器、MRT、layers）；
+2. **Stage C**：`getTexture`/`getPreviousTexture`/`getTextureNode`/`getPreviousTextureNode`/`toggleTexture`/`setMRT`/`getMRT`/`setLayers`/`getLayers`；
+3. **Stage D**：`setup`/`updateBefore`/`setSize`/`setScissor`/`setViewport`/`dispose` + `COLOR`/`DEPTH` 静态 getter；
+4. 之后推进 `ToonOutlinePassNode`(6,868)（依赖 PassNode）。# 当前接续：PointShadowNode **双坐标系统全覆盖**（WebGPU up + render 计数），11 例 / 125 断言，2026-11-05
 
 目标保持 active：固定 three.js 11738a9d55e502fb484cefffcea3a66dc44e9fe9 全部 src + examples/jsm 原生 C++ 逻辑，Vulkan 后端；禁止 CEF/生产 JS 引擎/桥接。阶段本地 Git 提交，不推送。
 
