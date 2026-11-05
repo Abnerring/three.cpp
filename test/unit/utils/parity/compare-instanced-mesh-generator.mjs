@@ -42,7 +42,31 @@ for (let i = 0; i < placements.length; i += 1) {
   translations.push(matrix.elements[12], matrix.elements[13], matrix.elements[14]);
 }
 
+// Capacity growth: a third placement no longer fits the capacity of two.
+const threePlacements = [ ...placements ];
+{
+  const extra = new THREE.Matrix4();
+  extra.makeTranslation(3.0, 2.0, 3.0);
+  threePlacements.push(extra);
+}
+const grownMesh = generator.build(threePlacements);
+
+// Parameter change: the same placements rebuild because the parameters key changed.
+generator.parameters.size = 2;
+const rebuiltMesh = generator.build(placements);
+const rebuiltTranslations = [];
+for (let i = 0; i < placements.length; i += 1) {
+  const matrix = new THREE.Matrix4();
+  rebuiltMesh.getMatrixAt(i, matrix);
+  rebuiltTranslations.push(matrix.elements[12], matrix.elements[13], matrix.elements[14]);
+}
+
 const expected = {
+  grownCapacity: grownMesh.instanceMatrix.count,
+  grownCount: grownMesh.count,
+  rebuiltCapacity: rebuiltMesh.instanceMatrix.count,
+  rebuiltCount: rebuiltMesh.count,
+  rebuiltTranslations,
   capacity: mesh.instanceMatrix.count,
   count: mesh.count,
   visible: mesh.visible,
