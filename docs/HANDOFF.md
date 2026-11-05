@@ -1,4 +1,23 @@
-# 当前接续：MeshLambertNodeMaterial 已移植；澄清两个「不存在的上游文件」；记录 Phong 材质的确切阻塞，2026-11-05
+# 当前接续：MeshPhongNodeMaterial 已移植；撤回上轮「MaterialNode 缺 SHININESS」的判断，2026-11-05
+
+目标保持 active：固定 three.js 11738a9d55e502fb484cefffcea3a66dc44e9fe9 全部 src + examples/jsm 原生 C++ 逻辑，Vulkan 后端；禁止 CEF/生产 JS 引擎/桥接。阶段本地 Git 提交，不推送。
+
+**先更正上轮的一个错误判断**：上轮 HANDOFF 写「我们的 `MaterialNode` 端口里看不到 `SHININESS` 生成分支，所以 `MeshPhongNodeMaterial` 受阻，需先补 MaterialNode」。**这个结论是错的，`MeshPhongNodeMaterial` 从未受阻。** 事实：`MaterialNode` 的常量与 immutable 绑定**不在 `.cpp` 里，而在生成的 `MaterialNodeSource.inc` 中**——该 inc 的 `constants` 表已含 `{"SHININESS","shininess"}`、`{"SPECULAR","specular"}`，`immutables` 表已含 `{"materialShininess","SHININESS"}`、`{"materialSpecular","SPECULAR"}`，模块初始化时用 `for (const auto& [key, scopeName] : immutables) own(bindings, key, nodeImmutable(ctor, ctor.get(scopeName)))` 统一注册。我上轮只 grep 了 `MaterialNode.cpp` 的逻辑部分，**没看生成的 `.inc`**，于是又犯了一次「观察范围不全就下结论」的错。本轮实际使用 `nativeMaterialNodeBinding("materialShininess"/"materialSpecular")` 构建 `setupVariants`，**两侧都构建成功**，实证其可用。
+
+本轮新增 `src/materials/nodes/MeshPhongNodeMaterial.{h,cpp}`（3,406 B）：模块级 `_defaultValues = new MeshPhongMaterial()`；构造按源码顺序设 `isMeshPhongNodeMaterial`、`lights = true`、`shininessNode = null`、`specularNode = null` → defaults → parameters；三个方法：
+- `setupEnvironment( builder )`：取 `NodeMaterial` 原型实现，空则返回 `null`，否则 `new BasicEnvironmentNode( envNode )`；
+- `setupLightingModel()`：`new PhongLightingModel()`（**specular 保持默认 true**，与 Lambert 材质的 `false` 形成对照）；
+- `setupVariants()`：`shininessNode = ( this.shininessNode ? float(this.shininessNode) : materialShininess ).max(1e-4)`（**1e-4 是源码为防 `pow(0,0)` 的下限**）→ `shininess.assign(...)`；`specularNode = this.specularNode || materialSpecular` → `specularColor.assign(...)`。
+
+验证：构建 exit 0，**首次运行即全绿**。THREECPPTests **1583 cases / 214,494 assertions 全过**，较上轮 1580/214,474 增 3 例 20 断言。差分 `threecpp.threejs-mesh-phong-node-material-parity` **Passed 1.54s**，比较：`name`/`length=1`/静态与实例 `type`/`isMeshPhongNodeMaterial`/`isNodeMaterial`/`lights`、`shininessNode === null`、`specularNode === null`、`shininess = 30`（Phong 材质缺省）、**完整自有属性快照**、`setupLightingModel()` 的 **`specular === true`** 与 other arities、两次调用不同实例、`setupEnvironment` 无环境时返回 `null`、`setupVariants` 可构建（`variantsBuilt: true` 双侧一致）、class `toString` 逐字节。
+
+**未执行验证的部分（如实记录）**：① `setupEnvironment` 仅验证无环境路径；② `setupVariants` 里 `shininess`/`specularColor` 两个共享 property 节点的 **assign 效果不可观测**，只验证"图能构建且不抛异常"；③ 材质真实渲染路径未触及。
+
+审计（固定 worktree，HEAD=11738a9d55）：**src missing 38→37、partial 427→428**，`MeshPhongNodeMaterial` 记 `partial-unverified`。
+
+**方法教训（第二次同型错误，值得记下）**：本仓库的绑定大量来自**生成的 `.inc` 表**（`MaterialNodeSource.inc` / `NodeMaterialSources.inc` / `NodeFunctionSources.inc` / `LightingEventNodeSources.inc`）。判断「某能力是否已移植」时，**必须同时查 `.cpp` 与对应的 `.inc` 表**，否则会把"已实现"误判成"缺失"。上一轮 `id` 那次是枚举 API 不一致，这次是搜索范围不完整——两次都是**观察方式问题**，不是实现问题。
+
+下一步：`MeshBasicNodeMaterial`（3,270）；`VolumeNodeMaterial`（1,507，需先读 import 确定基类来源，因为 `VolumeMaterial.js` 不在树上）；`SpriteNodeMaterial`（4,620）/`LineDashedNodeMaterial`（3,918）/`MeshSSSNodeMaterial`（4,726）；`ShadowNode` + `PointShadowNode`（lighting 最后两个缺口，前置全齐）。# 当前接续：MeshLambertNodeMaterial 已移植；澄清两个「不存在的上游文件」；记录 Phong 材质的确切阻塞，2026-11-05
 
 目标保持 active：固定 three.js 11738a9d55e502fb484cefffcea3a66dc44e9fe9 全部 src + examples/jsm 原生 C++ 逻辑，Vulkan 后端；禁止 CEF/生产 JS 引擎/桥接。阶段本地 Git 提交，不推送。
 

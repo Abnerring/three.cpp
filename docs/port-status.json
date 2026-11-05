@@ -201,8 +201,8 @@
     "note": "Accepted port scope is src and examples/jsm, including tracked third-party dependencies. Editor/manual web applications are excluded from native application rewrites. Native host behavior, packaging and all three platforms require separate implementation and verification evidence."
   },
   "counts": {
-    "partial-unverified": 563,
-    "missing": 378,
+    "partial-unverified": 564,
+    "missing": 377,
     "vulkan-port-pending": 290,
     "dependency-unverified": 20
   },
@@ -210,8 +210,8 @@
     "src": {
       "modules": 755,
       "counts": {
-        "partial-unverified": 427,
-        "missing": 38,
+        "partial-unverified": 428,
+        "missing": 37,
         "vulkan-port-pending": 290
       }
     },
@@ -761,7 +761,7 @@
       "path": "src/materials/nodes",
       "upstreamFiles": 19,
       "moduleCount": 19,
-      "modulesWithCppFiles": 7,
+      "modulesWithCppFiles": 8,
       "verifiedComplete": 0
     },
     {
@@ -6088,11 +6088,11 @@
       "scope": "src",
       "kind": "core",
       "upstreamSha256": "d107f08b7da765491e22f5ec158099f14c58f2d1deb9eb7a7bf6850db6209b29",
-      "header": null,
-      "implementation": null,
+      "header": "src/materials/nodes/MeshPhongNodeMaterial.h",
+      "implementation": "src/materials/nodes/MeshPhongNodeMaterial.cpp",
       "expectedHeader": "src/materials/nodes/MeshPhongNodeMaterial.h",
       "expectedImplementation": "src/materials/nodes/MeshPhongNodeMaterial.cpp",
-      "status": "missing",
+      "status": "partial-unverified",
       "verifiedComplete": false,
       "apiExtraction": "static-only",
       "verification": {
@@ -6101,7 +6101,9 @@
           "pointer": "/modules/169"
         },
         "upstreamUnitTests": [],
-        "cppUnitTests": [],
+        "cppUnitTests": [
+          "test/unit/src/materials/nodes/MeshPhongNodeMaterial.tests.cpp"
+        ],
         "reviewedImplementation": [],
         "differentialResults": [],
         "renderingResults": [],

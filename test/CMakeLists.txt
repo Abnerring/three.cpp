@@ -113,6 +113,7 @@ add_executable(THREECPPTests
         unit/src/materials/nodes/ShadowNodeMaterial.tests.cpp
         unit/src/materials/nodes/ToonMatcapNodeMaterials.tests.cpp
         unit/src/materials/nodes/MeshLambertNodeMaterial.tests.cpp
+        unit/src/materials/nodes/MeshPhongNodeMaterial.tests.cpp
         unit/src/nodes/functions/ShadowMaskModel.tests.cpp
         unit/src/nodes/functions/ToonPhongLightingModel.tests.cpp
         unit/src/nodes/utils/Oscillators.tests.cpp
@@ -1084,6 +1085,13 @@ if(THREECPP_NODE_EXECUTABLE AND THREEJS_SOURCE_DIR)
     add_test(NAME threecpp.threejs-mesh-lambert-node-material-parity
         COMMAND "${THREECPP_NODE_EXECUTABLE}" "${CMAKE_CURRENT_SOURCE_DIR}/unit/utils/parity/compare-mesh-lambert-node-material.mjs"
         "${THREEJS_SOURCE_DIR}" "$<TARGET_FILE:ThreeJsMeshLambertNodeMaterialParityProbe>")
+endif()
+add_executable(ThreeJsMeshPhongNodeMaterialParityProbe unit/utils/parity/MeshPhongNodeMaterialParityProbe.cpp)
+target_link_libraries(ThreeJsMeshPhongNodeMaterialParityProbe PRIVATE threecpp::threecpp)
+if(THREECPP_NODE_EXECUTABLE AND THREEJS_SOURCE_DIR)
+    add_test(NAME threecpp.threejs-mesh-phong-node-material-parity
+        COMMAND "${THREECPP_NODE_EXECUTABLE}" "${CMAKE_CURRENT_SOURCE_DIR}/unit/utils/parity/compare-mesh-phong-node-material.mjs"
+        "${THREEJS_SOURCE_DIR}" "$<TARGET_FILE:ThreeJsMeshPhongNodeMaterialParityProbe>")
 endif()
 add_executable(ThreeJsMaterialXColorParityProbe unit/utils/parity/MaterialXColorParityProbe.cpp)
 target_link_libraries(ThreeJsMaterialXColorParityProbe PRIVATE threecpp::threecpp)
