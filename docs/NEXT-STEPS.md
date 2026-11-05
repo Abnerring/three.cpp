@@ -208,3 +208,38 @@ static get type() { return 'ShadowNode'; }
 - `parameters`（`Object.assign({}, defaults, parameters)`）→ C++ 用 `JSValue` 对象或 `JsonValue` 保存参数并序列化 key；
 - 三个导出函数 `createInstances` / `updateInstances` / 类 `InstancedMeshGenerator`（`build(placements)` / `dispose()` / `_parametersKey` 缓存 / `_createGeometry`/`_createMaterial` 回调 → `std::function`）。
 - 建议实现：C++ 类 + `std::function` 工厂回调；`placements` 为 `std::vector<Matrix4>`；差分用两个 placements 场景比较 mesh 的 capacity/count/visible/instanceMatrix/name/castShadow 与重建语义。
+
+## 11. 长会话总结（r49–r118，2026-11-05）
+
+### 当前计数（审计口径）
+
+| 范围 | missing | partial-unverified | 其他 |
+|---|---|---|---|
+| `src` | 13 | 606 | vulkan-port-pending 290 |
+| `examples/jsm` | 322 | 154 | dependency-unverified 20 |
+
+主套件 `THREECPPTests` 1645 cases / 214,902 assertions；addon 套件 `THREECPPAddonTests` **1365 cases / 38,903 assertions**（本长会话起点 1292 左右）。所有差分 `ctest -R '<name>-parity'` 通过。
+
+### 本长会话新增（全部已提交、逐轮验证）
+
+**examples/jsm addon (16)**：Gyroscope、ColorEnvironment、ColorUtils、MorphAnimMesh、MaterialXLog、DebugEnvironment、GroundedSkybox、TranspilerUtils、GeometryUtils、MorphBlendMesh、ShadowMesh、RectAreaLightHelper、STLExporter(ascii+binary)、OBJExporter、SceneUtils(全部 helper + 差分)、AST、Linker、InstancedMeshGenerator。
+
+**src 聚合/映射 (6)**：`Three.TSL`/`Three.WebGPU`/`Three.WebGPU.Nodes` 聚合头、`NodeMaterials` 真实映射、`nodes/TSL`、`nodes/Nodes`。
+
+**transpiler 子系统**：`AST`（30 类全量）+ 差分；`Linker` + 差分；`TranspilerUtils` + 差分。
+
+### 关键经验（本会话新增，务必先读）
+
+1. **新 API 先读头文件，禁止臆测**（r110/r105 的失败皆因臆测 `JsonValue`/`SwitchCase` API）。
+2. **AST 类禁止花括号初始化列表作构造参数（MSVC C2665）**：一律 `std::vector<ASTNode*> x{...}` 具名变量。
+3. **判断模块是否已移植要看仓库文件与导出函数**，不能只看 `port-status.json` 的 `vulkan-port-pending`（r108 更正）。
+4. **批量字符串替换前先读取真实文本并断言替换命中**；失败轮必须自动回滚（本会话多次生效）。
+5. **提交前必须跑全套**（r111 曾把红测试带进提交，随后单独修正）。
+6. `Array.sort` 回调返回**数值**；`JSMember` 必须立即物化；字面量 `0` 会命中 `set(const char*)`。
+
+### 新会话建议路径
+
+1. **`ShadowNode`(24,331)**：依赖地图见 §9，阻塞已澄清（§9 更正）；建议分 3–4 轮：先读完整 835 行并列出**方法清单与字段**，再分段实现 `setupShadowCoord` / `setupShadowFilter` / `setupRenderTarget` / VSM passes / 主 `setup`，每段配单测（TSL 图可用 `toString`/节点类型做弱差分）。
+2. **`PhysicalLightingModel`(32,829)**：单点解锁 `MeshStandard/Physical/SSSNodeMaterial`，同样建议分段。
+3. 其余 src 大项：`PassNode`/`ToonOutlinePassNode`/`ReflectorNode`/`Line2NodeMaterial`/`PointShadowNode`/`MaterialXNoise`/`NodeObjectLoader`(被 `ObjectLoader` 阻塞)。
+4. examples 侧：剩余小模块基本都受宿主/TSL/wasm 限制（§10 表），新增大模块需先读源码评估。
