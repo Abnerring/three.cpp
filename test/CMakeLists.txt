@@ -94,6 +94,7 @@ add_executable(THREECPPTests
         unit/src/nodes/lighting/BasicLightMapNode.tests.cpp
         unit/src/nodes/lighting/BasicEnvironmentNode.tests.cpp
         unit/src/nodes/lighting/AmbientLightNode.tests.cpp
+        unit/src/nodes/lighting/DirectionalLightNode.tests.cpp
         unit/src/nodes/utils/Oscillators.tests.cpp
         unit/src/nodes/utils/ViewportUtils.tests.cpp
         unit/src/nodes/utils/UVUtils.tests.cpp
@@ -922,6 +923,13 @@ if(THREECPP_NODE_EXECUTABLE AND THREEJS_SOURCE_DIR)
     add_test(NAME threecpp.threejs-ambient-light-node-parity
         COMMAND "${THREECPP_NODE_EXECUTABLE}" "${CMAKE_CURRENT_SOURCE_DIR}/unit/utils/parity/compare-ambient-light-node.mjs"
         "${THREEJS_SOURCE_DIR}" "$<TARGET_FILE:ThreeJsAmbientLightNodeParityProbe>")
+endif()
+add_executable(ThreeJsDirectionalLightNodeParityProbe unit/utils/parity/DirectionalLightNodeParityProbe.cpp)
+target_link_libraries(ThreeJsDirectionalLightNodeParityProbe PRIVATE threecpp::threecpp)
+if(THREECPP_NODE_EXECUTABLE AND THREEJS_SOURCE_DIR)
+    add_test(NAME threecpp.threejs-directional-light-node-parity
+        COMMAND "${THREECPP_NODE_EXECUTABLE}" "${CMAKE_CURRENT_SOURCE_DIR}/unit/utils/parity/compare-directional-light-node.mjs"
+        "${THREEJS_SOURCE_DIR}" "$<TARGET_FILE:ThreeJsDirectionalLightNodeParityProbe>")
 endif()
 add_executable(ThreeJsMaterialXColorParityProbe unit/utils/parity/MaterialXColorParityProbe.cpp)
 target_link_libraries(ThreeJsMaterialXColorParityProbe PRIVATE threecpp::threecpp)

@@ -1,3 +1,19 @@
+# 当前接续：DirectionalLightNode 已移植并差分验收，2026-11-05
+
+目标保持 active：固定 three.js 11738a9d55e502fb484cefffcea3a66dc44e9fe9 全部 src + examples/jsm 原生 C++ 逻辑，Vulkan 后端；禁止 CEF/生产 JS 引擎/桥接。阶段本地 Git 提交，不推送。
+
+本轮新增 `src/nodes/lighting/DirectionalLightNode.{h,cpp}`：以 AnalyticLightNode 为基类，`setupDirect()` 返回 `{ lightDirection, lightColor }`，其中 colour 取 `this.colorNode`、direction 由**已移植**的 `nativeLightsBinding("lightTargetDirection")` 求出（该 accessor 早在 `src/nodes/accessors/Lights.cpp:203` 落地，本轮不是桩）。按源码顺序先读 colour 再求 direction，避免节点分配次序被改变。`LightingEventNodeSources.inc` 追加 `DirectionalLightNodeSource{classSource,typeSource,setupDirectSource}`。
+
+提取器已泛化：`build/gen-node-source-trace.mjs <upstreamRoot> <relPath> <Namespace> <member>... [--apply <inc>]`，键名按同族约定推导（`get type()`→`typeSource`、`setupDirect()`→`setupDirectSource`），不手写转写源位置。
+
+验证：构建 exit 0（含 `THREECPPTests` 与探针）；`.inc` 再次变更后按纪律删除 lighting 目录全部 `.obj` 再建。THREECPPTests **1508 cases / 214,002 assertions 全过**，较上轮 1506/213,987 增 2 例 15 断言，与 `*DirectionalLight*` 过滤的 2 用例/15 断言一致，确认真实执行。差分 **`threecpp.threejs-directional-light-node-parity` Passed 0.86s**，与 `...-ambient-light-node-parity`(0.57s) 同时通过，`assert.deepEqual` 无容差，比较 name / length=0 / static type / 实例 type / isAnalyticLightNode / light===null / **setupDirect.length=0** / class `toString` 源位置。
+
+审计（固定 worktree `D:/Temp/surui/threejs-pinned-11738a-20261104`，HEAD=11738a9d55）刷新后：**src missing 60→59、partial 405→406**；DirectionalLightNode 记 missing→`partial-unverified` 并登记 h/cpp。总计 1251 模块：partial 542 / missing 399 / vulkan-port-pending 290 / dependency 20；examples/jsm 仍 340 missing。
+
+`src/nodes/lighting` 仍缺 12 个：EnvironmentNode、HemisphereLightNode、IESSpotLightNode、LightsNode、PointLightNode、PointShadowNode、ProjectorLightNode、RectAreaLightNode、ShadowBaseNode、ShadowFilterNode、ShadowNode、SpotLightNode。
+
+下一步：HemisphereLightNode / PointLightNode / SpotLightNode（与已移植的 AnalyticLightNode 同族，先做 SHA 闸门再提取）；`LightsNode.js` 的 SHA 与 port-status 记录仍不一致，必须先从固定 worktree 取字节比对，不可直接用主 checkout 版本。
+
 # 当前接续：AmbientLightNode 已移植并差分验收，2026-11-05
 
 目标保持 active：固定 three.js 11738a9d55e502fb484cefffcea3a66dc44e9fe9 全部 src + examples/jsm 原生 C++ 逻辑，Vulkan 后端；禁止 CEF/生产 JS 引擎/桥接。阶段本地 Git 提交，不推送。
