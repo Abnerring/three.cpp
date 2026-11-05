@@ -1,4 +1,26 @@
-# 当前接续：`PointShadowNode` **Stage C `renderShadow`** 实现（六面渲染，测试受阻已移除），2026-11-05
+# 当前接续：`PointShadowNode` **Stage B 完成** —— 两个点光过滤图 + `setupShadowFilter`，2026-11-05
+
+目标保持 active：固定 three.js 11738a9d55e502fb484cefffcea3a66dc44e9fe9 全部 src + examples/jsm 原生 C++ 逻辑，Vulkan 后端；禁止 CEF/生产 JS 引擎/桥接。阶段本地 Git 提交，不推送。
+
+## 本轮交付：Stage B
+
+1. **`PointShadowFilter` 图**（`pointShadowFilterBody`）：`radius/mapSize` 引用（renderGroup）→ `texelSize = radius.div(mapSize.x)` → `absDir` → tangent 选择轴（`absDir.x.greaterThan(absDir.z).select(vec3(0,1,0), vec3(1,0,0))`）→ `tangent/bitangent`（`normalize/cross`）→ `phi = interleavedGradientNoise(screenCoordinate.xy)*2π` → **5 个 VogelDisk 采样**（`tangent.mul(sample.x).add(bitangent.mul(sample.y)).mul(texelSize)` → `cubeTexture(depthTexture, dir).compare(dp)`）→ 求和 `.mul(1/5)`；
+2. **`pointShadowFilter` 图**（`pointShadowFilterGraphBody`）：`shadowCoord.xyz.toConst()`、`abs`、`viewZ = max(x,y,z)`；`near/far` **uniform + onRenderUpdate 回调**（捕获 shadow，读 `camera.near/far`）；`bias` 引用；`result = float(1).toVar()`；按 **reversed → logarithmic → perspective** 三路深度转换 + bias 加减；`bd3D = normalize(shadowPosition)`；`result.assign(filterFn({depthTexture, bd3D, dp, shadow}))`；
+3. **`setupShadowFilter(builder, {...})`** → `pointShadowFilter({filterFn, depthTexture, shadowCoord, shadow}, builder)`；
+4. **`getShadowFilterFn` 非 Basic 分支**改为返回 `pointShadowFilterGraph()`（前置声明），不再抛错。
+
+## 验证
+
+- 构建 exit 0；过滤 `*PointShadowNode*` = **5 cases / 10 assertions** 全过（+1 例）；`THREECPPAddonTests` 全套 **1396 cases / 38,993 assertions** 通过。
+- 审计不变（PointShadowNode 已 partial）：src 11 / 454；examples/jsm 322 / 154。
+
+**未执行验证（如实记录）**：两个图的**数值/结构**未断言；`setupShadowFilter` 用例在 stub 深度纹理下可能走 raise→`SUCCEED` 分支（弱断言）；`renderShadow` 仍无测试；`If` 包裹被简化（filtered 先计算再 assign，图结构略有差异，已在代码注释说明）。
+
+## 下一步
+
+1. 用真实 `CubeDepthTexture`/`Texture` 夹具重写 `setupShadowFilter` 测试以走通图构建；
+2. `If` 包裹恢复为上游结构（filtered 在 If body 内构建）；
+3. `renderShadow` 定位 `abrupt completion`；之后推进 `PassNode`/`ToonOutlinePassNode`/`PhysicalLightingModel`。# 当前接续：`PointShadowNode` **Stage C `renderShadow`** 实现（六面渲染，测试受阻已移除），2026-11-05
 
 目标保持 active：固定 three.js 11738a9d55e502fb484cefffcea3a66dc44e9fe9 全部 src + examples/jsm 原生 C++ 逻辑，Vulkan 后端；禁止 CEF/生产 JS 引擎/桥接。阶段本地 Git 提交，不推送。
 

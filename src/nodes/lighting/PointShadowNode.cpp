@@ -5,6 +5,16 @@
 #include "core/JSGlobal.h"
 #include "core/NativeObject.h"
 #include "nodes/accessors/CubeTextureNode.h"
+#include "nodes/accessors/ReferenceNode.h"
+#include "nodes/core/UniformGroupNode.h"
+#include "nodes/core/UniformNode.h"
+#include "nodes/display/ScreenNode.h"
+#include "nodes/display/ViewportDepthNode.h"
+#include "nodes/math/MathNode.h"
+#include "nodes/math/OperatorNode.h"
+#include "nodes/tsl/TSLBase.h"
+#include "nodes/tsl/TSLCore.h"
+#include "nodes/utils/PostProcessingUtils.h"
 #include "nodes/core/NodeUtils.h"
 #include "nodes/lighting/LightingNodeRuntime.h"
 #include "nodes/lighting/ShadowNode.h"
@@ -21,6 +31,9 @@
 namespace {
 using namespace LightingNodeRuntime;
 JSWeakValue& lexical() { static thread_local JSWeakValue weak; return weak; }
+
+// Forward declaration: the sampled point filter graph is defined below the filter lookup.
+JSValue pointShadowFilterGraph();
 
 [[noreturn]] JSValue notPorted(const char* name) {
     throw std::runtime_error(std::string("PointShadowNode: ") + name + " is not ported yet");
@@ -42,7 +55,7 @@ JSValue getShadowFilterFn(const JSValue&, const Args& args, const Args&) {
                 return invoke(sampled, "compare")({dp});
             });
     }
-    return notPorted("getShadowFilterFn (PointShadowFilter)");
+    return pointShadowFilterGraph();
 }
 
 // setupShadowCoord( builder, shadowPosition ) { return shadowPosition; }
@@ -74,8 +87,151 @@ JSValue setupRenderTarget(const JSValue&, const Args& args, const Args&) {
     return result;
 }
 
-JSValue setupShadowFilter(const JSValue&, const Args&, const Args&) {
-    return notPorted("setupShadowFilter");
+// The Fn convention: the inputs arrive as one iterable whose single entry is the destructured object.
+JSValue inputObject(const Args& args) {
+    auto iterator = getJSIterator(arg(args, 0));
+    JSValue inputs;
+    if (!iterator.done) {
+        const auto value = stepJSIterator(iterator);
+        if (value) inputs = *value;
+    }
+    if (!iterator.done) closeJSIterator(iterator);
+    return inputs;
+}
+
+JSValue floatNode(double value) { return nativeTSLBaseBinding("float").call({}, {JSValue(value)}); }
+
+JSValue makeFn(JSValue::NativeFunction body) {
+    auto callback = JSValue::function(body, {}, "", 0);
+    return nativeTSLCoreBinding("Fn").call({}, {callback});
+}
+
+// PointShadowFilter = Fn( ( { depthTexture, bd3D, dp, shadow } ) => { ... 5 Vogel disk samples ... } )
+JSValue pointShadowFilterBody(const JSValue&, const Args& args, const Args&) {
+    const auto inputs = inputObject(args);
+    const auto depthTexture = inputs.get("depthTexture");
+    const auto bd3D = inputs.get("bd3D");
+    const auto dp = inputs.get("dp");
+    const auto shadow = inputs.get("shadow");
+
+    const auto group = nativeUniformGroupNodeBinding("renderGroup");
+    const auto makeReference = [&](const char* propertyName, const char* propertyType) {
+        auto referenceNode =
+            nativeReferenceNodeBinding("reference").call({}, {JSValue(propertyName), JSValue(propertyType), shadow});
+        return invoke(referenceNode, "setGroup")({group});
+    };
+    const auto radius = makeReference("radius", "float");
+    const auto mapSize = makeReference("mapSize", "vec2");
+    const auto texelSize = invoke(radius, "div")({mapSize.get("x")});
+
+    const auto absDir = invoke(bd3D, "abs")();
+    const auto axis = invoke(invoke(absDir.get("x"), "greaterThan")({absDir.get("z")}), "select")(
+        {nativeTSLBaseBinding("vec3").call({}, {JSValue(0.0), JSValue(1.0), JSValue(0.0)}),
+         nativeTSLBaseBinding("vec3").call({}, {JSValue(1.0), JSValue(0.0), JSValue(0.0)})});
+    const auto tangent =
+        nativeMathNodeBinding("normalize")
+            .call({}, {nativeMathNodeBinding("cross").call({}, {bd3D, axis})});
+    const auto bitangent = nativeMathNodeBinding("cross").call({}, {bd3D, tangent});
+    const auto phi = invoke(
+        nativePostProcessingUtilsBinding("interleavedGradientNoise")
+            .call({}, {nativeScreenNodeBinding("screenCoordinate").get("xy")}),
+        "mul")({JSValue(6.28318530718)});
+
+    const auto add = nativeOperatorNodeBinding("add");
+    JSValue sum;
+    for (int sample = 0; sample < 5; ++sample) {
+        const auto sampleOffset =
+            nativePostProcessingUtilsBinding("vogelDiskSample")
+                .call({}, {JSValue(static_cast<double>(sample)), JSValue(5.0), phi});
+        const auto offset = invoke(
+            invoke(invoke(sampleOffset.get("x"), "mul")({tangent}), "add")({invoke(sampleOffset.get("y"), "mul")({bitangent})}),
+            "mul")({texelSize});
+        const auto sampleDirection = invoke(bd3D, "add")({offset});
+        const auto sampled =
+            nativeCubeTextureNodeBinding("cubeTexture").call({}, {depthTexture, sampleDirection});
+        const auto term = invoke(sampled, "compare")({dp});
+        sum = sample == 0 ? term : add.call({}, {sum, term});
+    }
+    return invoke(sum, "mul")({floatNode(1.0 / 5.0)});
+}
+
+// pointShadowFilter = Fn( ( { filterFn, depthTexture, shadowCoord, shadow }, builder ) => { ... } )
+JSValue pointShadowFilterGraphBody(const JSValue&, const Args& args, const Args&) {
+    const auto inputs = inputObject(args);
+    const auto builder = args.size() > 1 ? args.at(1) : JSValue{};
+    const auto renderer = builder.isObject() ? builder.get("renderer") : JSValue{};
+    const auto filterFn = inputs.get("filterFn");
+    const auto depthTexture = inputs.get("depthTexture");
+    const auto shadowCoord = inputs.get("shadowCoord");
+    const auto shadow = inputs.get("shadow");
+
+    const auto shadowPosition = invoke(shadowCoord.get("xyz"), "toConst")();
+    const auto shadowPositionAbs = invoke(shadowPosition, "abs")();
+    const auto viewZ = invoke(
+        invoke(shadowPositionAbs.get("x"), "max")({shadowPositionAbs.get("y")}),
+        "max")({shadowPositionAbs.get("z")});
+
+    const auto group = nativeUniformGroupNodeBinding("renderGroup");
+    auto nearUniform = invoke(nativeUniformFactory().call({}, {JSValue("float")}), "setGroup")({group});
+    auto farUniform = invoke(nativeUniformFactory().call({}, {JSValue("float")}), "setGroup")({group});
+    const auto nearCallback = JSValue::function(
+        +[](const JSValue&, const Args&, const Args& captures) -> JSValue {
+            return captures.at(0).get("camera").get("near");
+        },
+        {shadow});
+    const auto farCallback = JSValue::function(
+        +[](const JSValue&, const Args&, const Args& captures) -> JSValue {
+            return captures.at(0).get("camera").get("far");
+        },
+        {shadow});
+    nearUniform = invoke(nearUniform, "onRenderUpdate")({nearCallback});
+    farUniform = invoke(farUniform, "onRenderUpdate")({farCallback});
+    auto bias = nativeReferenceNodeBinding("reference").call({}, {JSValue("bias"), JSValue("float"), shadow});
+    bias = invoke(bias, "setGroup")({group});
+
+    auto result = invoke(floatNode(1.0), "toVar")();
+    const auto negatedViewZ = invoke(viewZ, "negate")();
+    JSValue dp;
+    if (renderer.get("reversedDepthBuffer").toBoolean()) {
+        dp = nativeViewportDepthNodeBinding("viewZToReversedPerspectiveDepth")
+                 .call({}, {negatedViewZ, nearUniform, farUniform});
+        invoke(dp, "subAssign")({bias});
+    } else if (renderer.get("logarithmicDepthBuffer").toBoolean()) {
+        dp = nativeViewportDepthNodeBinding("viewZToLogarithmicDepth")
+                 .call({}, {negatedViewZ, nearUniform, farUniform});
+        invoke(dp, "addAssign")({bias});
+    } else {
+        dp = nativeViewportDepthNodeBinding("viewZToPerspectiveDepth")
+                 .call({}, {negatedViewZ, nearUniform, farUniform});
+        invoke(dp, "addAssign")({bias});
+    }
+
+    const auto bd3D = nativeMathNodeBinding("normalize").call({}, {shadowPosition});
+    auto filterConfiguration = JSValue::object(nullptr);
+    filterConfiguration.set("depthTexture", depthTexture);
+    filterConfiguration.set("bd3D", bd3D);
+    filterConfiguration.set("dp", dp);
+    filterConfiguration.set("shadow", shadow);
+    const auto filtered = filterFn.call({}, {filterConfiguration});
+    invoke(result, "assign")({filtered});
+    return result;
+}
+
+JSValue pointShadowFilterFn() { return makeFn(pointShadowFilterGraphBody); }
+JSValue pointShadowFilterGraph() { return makeFn(pointShadowFilterBody); }
+
+// setupShadowFilter( builder, { filterFn, depthTexture, shadowCoord, shadow } ) {
+//     return pointShadowFilter( { filterFn, depthTexture, shadowCoord, shadow } );
+// }
+JSValue setupShadowFilter(const JSValue&, const Args& args, const Args&) {
+    const auto builder = arg(args, 0);
+    const auto configuration = arg(args, 1);
+    auto inputs = JSValue::object(nullptr);
+    inputs.set("filterFn", configuration.get("filterFn"));
+    inputs.set("depthTexture", configuration.get("depthTexture"));
+    inputs.set("shadowCoord", configuration.get("shadowCoord"));
+    inputs.set("shadow", configuration.get("shadow"));
+    return pointShadowFilterFn().call({}, {inputs, builder});
 }
 // Module level cube face tables, mirroring the pinned WebGPU/WebGL direction and up arrays.
 JSWeakValue& cubeTablesCache() { static thread_local JSWeakValue weak; return weak; }

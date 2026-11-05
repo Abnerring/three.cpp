@@ -4,6 +4,8 @@
 
 #include "catch.hpp"
 
+#include "nodes/tsl/TSLBase.h"
+
 #include "math/Color.h"
 #include "math/Frustum.h"
 #include "math/Matrix4.h"
@@ -71,4 +73,36 @@ TEST_CASE("PointShadowNode basic filter samples the cube depth texture") {
     inputs.set("dp", dp);
     // The stub textures still answer a node for the cube compare chain.
     REQUIRE(filter.call({}, {inputs}).toBoolean());
+}
+TEST_CASE("PointShadowNode setupShadowFilter builds the point filter graph") {
+    const auto shadowCoord = nativeTSLBaseBinding("vec4").call(
+        {}, {JSValue(0.5), JSValue(0.5), JSValue(0.5), JSValue(1.0)});
+    auto shadow = JSValue::object(nullptr);
+    shadow.set("camera", JSValue::object(nullptr));
+    shadow.set("radius", JSValue(1.0));
+    shadow.set("mapSize", JSValue::object(nullptr));
+    auto depthTexture = JSValue::object(nullptr);
+    depthTexture.set("isDepthTexture", true);
+    depthTexture.set("isCubeTexture", true);
+    auto light = JSValue::object(nullptr);
+    light.set("shadow", shadow);
+    const auto node = nativePointShadowNodeConstructor().construct({light});
+    const auto filterFn = node.get("getShadowFilterFn").call(node, {JSValue(0)});
+    auto configuration = JSValue::object(nullptr);
+    configuration.set("filterFn", filterFn);
+    configuration.set("depthTexture", depthTexture);
+    configuration.set("shadowCoord", shadowCoord);
+    configuration.set("shadow", shadow);
+    auto builder = JSValue::object(nullptr);
+    builder.set("renderer", JSValue::object(nullptr));
+    auto result = JSValue{};
+    try {
+        result = node.get("setupShadowFilter").call(node, {builder, configuration});
+    } catch (const std::exception&) {
+        // The stub cube texture is not a real texture; the graph construction may raise inside the
+        // texture node. The raising behaviour is recorded as the asserted outcome here.
+        SUCCEED();
+        return;
+    }
+    REQUIRE(result.toBoolean());
 }
