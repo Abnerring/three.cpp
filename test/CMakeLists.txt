@@ -97,6 +97,7 @@ add_executable(THREECPPTests
         unit/src/nodes/lighting/DirectionalLightNode.tests.cpp
         unit/src/nodes/lighting/HemisphereLightNode.tests.cpp
         unit/src/nodes/lighting/AnalyticLightNode.tests.cpp
+        unit/src/nodes/lighting/SpotLightNode.tests.cpp
         unit/src/nodes/utils/Oscillators.tests.cpp
         unit/src/nodes/utils/ViewportUtils.tests.cpp
         unit/src/nodes/utils/UVUtils.tests.cpp
@@ -946,6 +947,13 @@ if(THREECPP_NODE_EXECUTABLE AND THREEJS_SOURCE_DIR)
     add_test(NAME threecpp.threejs-analytic-light-node-parity
         COMMAND "${THREECPP_NODE_EXECUTABLE}" "${CMAKE_CURRENT_SOURCE_DIR}/unit/utils/parity/compare-analytic-light-node.mjs"
         "${THREEJS_SOURCE_DIR}" "$<TARGET_FILE:ThreeJsAnalyticLightNodeParityProbe>")
+endif()
+add_executable(ThreeJsSpotLightNodeParityProbe unit/utils/parity/SpotLightNodeParityProbe.cpp)
+target_link_libraries(ThreeJsSpotLightNodeParityProbe PRIVATE threecpp::threecpp)
+if(THREECPP_NODE_EXECUTABLE AND THREEJS_SOURCE_DIR)
+    add_test(NAME threecpp.threejs-spot-light-node-parity
+        COMMAND "${THREECPP_NODE_EXECUTABLE}" "${CMAKE_CURRENT_SOURCE_DIR}/unit/utils/parity/compare-spot-light-node.mjs"
+        "${THREEJS_SOURCE_DIR}" "$<TARGET_FILE:ThreeJsSpotLightNodeParityProbe>")
 endif()
 add_executable(ThreeJsMaterialXColorParityProbe unit/utils/parity/MaterialXColorParityProbe.cpp)
 target_link_libraries(ThreeJsMaterialXColorParityProbe PRIVATE threecpp::threecpp)

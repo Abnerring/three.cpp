@@ -199,6 +199,7 @@ target_sources(threecpp PRIVATE
     src/nodes/lighting/AmbientLightNode.cpp
     src/nodes/lighting/DirectionalLightNode.cpp
     src/nodes/lighting/HemisphereLightNode.cpp
+    src/nodes/lighting/SpotLightNode.cpp
     src/nodes/lighting/BasicEnvironmentNode.cpp
     src/nodes/lighting/LightProbeNode.cpp
     src/nodes/lighting/LightingContextNode.cpp

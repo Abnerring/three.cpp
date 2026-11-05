@@ -1,3 +1,23 @@
+# 当前接续：SpotLightNode 已移植并差分验收，2026-11-05
+
+目标保持 active：固定 three.js 11738a9d55e502fb484cefffcea3a66dc44e9fe9 全部 src + examples/jsm 原生 C++ 逻辑，Vulkan 后端；禁止 CEF/生产 JS 引擎/桥接。阶段本地 Git 提交，不推送。
+
+本轮新增 `src/nodes/lighting/SpotLightNode.{h,cpp}`：构造期在父类之上建四个 `uniform(0)` 标量（`coneCosNode`/`penumbraCosNode`/`cutoffDistanceNode`/`decayExponentNode`）并**按源码重设 `colorNode`** 为 `uniform( this.color )`，全都在 `renderGroup`；`update` 内联 `super.update` 后写 `Math.cos( light.angle )`、`Math.cos( light.angle * ( 1 - light.penumbra ) )`、`light.distance`、`light.decay`；`getSpotAttenuation` 用 MathNode 的 `smoothstep`；`getLightCoord` 用 `builder.getNodeProperties( this ).projectionUV` 缓存、未命中时调 `lightProjectionUV( light, builder.context.positionWorld )`；`setupDirect` 逐步复现源码：`getLightVector`→`normalize`→`dot( lightTargetDirection( light ) )`→`getSpotAttenuation`→`length`→`getDistanceAttenuation({lightDistance, cutoffDistance, decayExponent})`→`colorNode.mul(spot).mul(distance)`，再按 `light.colorNode` / `light.map` 分支取投影贴图并做 `inSpotLightMap.select(...)`。`LightingEventNodeSources.inc` 追加 `SpotLightNodeSource` 五个源位置（class/type/update/getSpotAttenuation/getLightCoord/setupDirect，提取器生成）。
+
+**`Math.cos` 用 `JSNumberMath::cos`**（项目已移植的 V8 fdlibm），不用平台 libm——两侧据此才可能逐位一致。
+
+验证：构建 exit 0。THREECPPTests **1516 cases / 214,067 assertions 全过**，较上轮 1513/214,035 增 3 例 32 断言，与 `*SpotLight*` 过滤的 3 用例/32 断言一致。**五个差分全过**：ambient 0.53s / directional 0.85s / hemisphere 1.18s / analytic 0.93s / **spot 2.19s**；spot 差分比较 name / length=0 / static type / 实例 type / isAnalyticLightNode / 五个 uniform 的 `type` 与 `groupNode.name` / 三个方法 arity 与 `getSpotAttenuation.name` / class `toString` 源位置。
+
+**一处自我更正**：单测最初断言 `getSpotAttenuation` 结果的 `type` 为 `"float"`，实跑为假——上游 `smoothstep` 的节点类型要等 builder 询问时才由操作数推出，**`"float"` 是我无据的假定**。已改为可验证断言（产物是 node、不等于任一操作数、两次调用产生两个节点），并在测试里写明为何不断言未构建类型。
+
+**未在本轮运行验证的部分（如实记录）**：`getLightCoord` 与 `setupDirect` 需要带 `getNodeProperties`/`context.positionWorld` 的真实 builder，当前环境无此构造，故只验证了它们的 arity 与源位置，未执行其内部路径。
+
+审计（固定 worktree，HEAD=11738a9d55）刷新后：**src missing 58→57、partial 407→408**；SpotLightNode 记 `partial-unverified` 并登记 h/cpp。总计 partial 544 / missing 397 / vulkan-port-pending 290 / dependency 20。
+
+`src/nodes/lighting` 仍缺 **10 个**：EnvironmentNode、IESSpotLightNode、LightsNode、PointLightNode、PointShadowNode、ProjectorLightNode、RectAreaLightNode、ShadowBaseNode、ShadowFilterNode、ShadowNode。其中 `IESSpotLightNode` 与 `ProjectorLightNode` 现在是**直接可做**（都只 extends SpotLightNode + 已移植依赖）；shadow 四件仍需先补 `src/nodes/utils/PostProcessingUtils`。
+
+下一步：`IESSpotLightNode` 与 `ProjectorLightNode`（同一批，均新增一个方法），再 `PointLightNode`；另仍有 `LightProbeNode` 的 `Function.length` 应为 0 待修。
+
 # 当前接续：AnalyticLightNode 补 getLightVector 并修正 length，2026-11-05
 
 目标保持 active：固定 three.js 11738a9d55e502fb484cefffcea3a66dc44e9fe9 全部 src + examples/jsm 原生 C++ 逻辑，Vulkan 后端；禁止 CEF/生产 JS 引擎/桥接。阶段本地 Git 提交，不推送。
