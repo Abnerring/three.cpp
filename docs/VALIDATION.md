@@ -1,3 +1,14 @@
+# 2026-11-06: managed scene/render pipeline and Vulkan resource execution
+
+Fixed upstream `11738a9d55e502fb484cefffcea3a66dc44e9fe9`; parent `74b6a2e`.
+
+- New strict CPU comparisons: WebGLRendererScene 76 scenarios, WebGLBackground/Color.getRGB 82; both pass against the actual pinned source. CPU service traces do not prove GPU execution of their unsupported branches.
+- New units: 9 cases / 152 assertions pass. Selected CPU CTests: 7/7 pass, including existing color and native object/array lifetime checks.
+- Actual managed Vulkan execution: 192 assertions pass, including native ObjectLoader.parse JSON with shared geometry/material, unchanged raw identities, version/updateRanges/onUpload/disposal, raw indices/colors/instancing/clipping/wireframe, mirror/side, original callback order/arguments, nested rendering and direct draw reentry, index callback uniform timing, clear alpha/depth and typed depth-state isolation, unsupported resource recovery, target isolation and escaped service lifetime.
+- Existing GPU regression groups: 3/3 pass. Existing render-target-texture pinned CPU comparison: 1/1 pass. Validation layers are absent: --validation reports VK_LAYER_KHRONOS_validation unavailable before any scene executes. Zero collected messages in ordinary runs are not validation-layer evidence.
+- Full core: 1768 cases / 218618 assertions passed. Full addons: 1441 cases / 39577 assertions passed. Both native generators are byte reproducible. Port audit/check and 5/5 audit tests pass; classifications remain 619 partial, 290 renderer pending, 322 missing, 20 dependency unverified.
+- Logs and hash evidence are under D:/Temp/surui/threecpp-managed-render-*. See the current HANDOFF entry for remaining implementation boundaries. No full renderer, addon set, platform set or whole-project semantic completion is asserted.
+
 # 2026-11-06: canonical native curve algorithms and reusable Vulkan draw state
 
 Parent commit `eca46469`; fixed upstream `11738a9d55e502fb484cefffcea3a66dc44e9fe9`.

@@ -1,4 +1,10 @@
 #include "renderers/VulkanRenderer.h"
+#include "renderers/WebGLRendererScene.h"
+#include "renderers/webgl/WebGLBackground.h"
+#include "renderers/webgl/WebGLRenderLists.h"
+#include "renderers/webgl/WebGLRenderStates.h"
+#include "renderers/webgl/WebGLExtensions.h"
+#include "core/JSGlobal.h"
 #include "core/InterleavedBufferAttribute.h"
 #include "core/RenderTarget.h"
 #include "core/WebGLCubeRenderTarget.h"
@@ -6,71 +12,38 @@
 #include "cameras/PerspectiveCamera.h"
 #include "math/JSNumberMath.h"
 #include "math/MathUtils.h"
-#include "math/JSNumberMath.h"
 #include "extras/DataUtils.h"
-#include "math/JSNumberMath.h"
 #include "cameras/Camera.h"
-#include "math/JSNumberMath.h"
 #include "core/BufferGeometry.h"
-#include "math/JSNumberMath.h"
 #include "core/InstancedBufferGeometry.h"
-#include "math/JSNumberMath.h"
 #include "core/ArraySort.h"
-#include "math/JSNumberMath.h"
 #include "core/NativeObject.h"
-#include "math/JSNumberMath.h"
 #include "renderers/webgl/WebGLAttributes.h"
-#include "math/JSNumberMath.h"
 #include "renderers/webgl/WebGLInfo.h"
-#include "math/JSNumberMath.h"
 #include "renderers/webgl/WebGLGeometries.h"
-#include "math/JSNumberMath.h"
 #include "renderers/webgl/WebGLObjects.h"
-#include "math/JSNumberMath.h"
 #include "renderers/webgl/WebGLBindingStates.h"
-#include "math/JSNumberMath.h"
 #include "renderers/webgl/WebGLClipping.h"
-#include "math/JSNumberMath.h"
 #include "renderers/webgl/WebGLProperties.h"
-#include "math/JSNumberMath.h"
 #include "renderers/vulkan/VulkanBindingCommands.h"
-#include "math/JSNumberMath.h"
 #include "renderers/vulkan/VulkanBufferCommands.h"
-#include "math/JSNumberMath.h"
 #include "renderers/vulkan/VulkanShaderModules.h"
-#include "math/JSNumberMath.h"
 #include "renderers/vulkan/VulkanPipelineLayout.h"
-#include "math/JSNumberMath.h"
 #include "renderers/vulkan/VulkanUniformBuffer.h"
-#include "math/JSNumberMath.h"
 #include "materials/MeshBasicMaterial.h"
-#include "math/JSNumberMath.h"
 #include "math/Frustum.h"
-#include "math/JSNumberMath.h"
 #include "math/Matrix4.h"
-#include "math/JSNumberMath.h"
 #include "math/Vector4.h"
-#include "math/JSNumberMath.h"
 #include "objects/Mesh.h"
-#include "math/JSNumberMath.h"
 #include "objects/InstancedMesh.h"
-#include "math/JSNumberMath.h"
 #include "objects/SkinnedMesh.h"
-#include "math/JSNumberMath.h"
 #include "objects/LOD.h"
-#include "math/JSNumberMath.h"
 #include "objects/Line.h"
-#include "math/JSNumberMath.h"
 #include "objects/Points.h"
-#include "math/JSNumberMath.h"
 #include "objects/Sprite.h"
-#include "math/JSNumberMath.h"
 #include "scenes/FogExp2.h"
-#include "math/JSNumberMath.h"
 #include "scenes/Scene.h"
-#include "math/JSNumberMath.h"
 #include "textures/DataTexture.h"
-#include "math/JSNumberMath.h"
 #include <bit>
 
 #define VK_NO_PROTOTYPES
@@ -1274,6 +1247,7 @@ struct VulkanRenderer::Impl {
             // Every escaped interface remains inert even if disposal is interrupted.
             try { if (objects) objects->dispose(); if (geometries) geometries->dispose(); } catch (...) {}
             try { if (bindingStates) bindingStates->dispose(); } catch (...) {}
+            managedPrepared.clear(); managedIndices.clear();
             boundInputs.clear(); matrixInputs.clear(); programs.clear();
             while (!instanceCache.empty()) removeInstance(instanceCache.begin()->first, true);
             while (!geometryCache.empty())
@@ -3238,11 +3212,15 @@ struct VulkanRenderer::Impl {
         active->initializedLayers |= 1u << activeCubeFace;
         collectRetiredTargets();
     }
+#include "renderers/vulkan/VulkanManagedDraw.inc"
+#include "renderers/vulkan/VulkanManagedRenderer.inc"
 };
 
 VulkanRenderer::VulkanRenderer(const VulkanRendererParameters& parameters)
     : impl(std::make_unique<Impl>()) {
     impl->initialize(parameters);
+    impl->managedAlpha = parameters.alpha;
+    impl->managedPremultipliedAlpha = parameters.premultipliedAlpha;
     impl->viewport.set(0, 0, parameters.width, parameters.height);
     impl->scissor.copy(impl->viewport);
     impl->currentViewport.copy(impl->viewport);
@@ -3259,6 +3237,21 @@ VulkanRenderer::VulkanRenderer(const VulkanRendererParameters& parameters)
     impl->clipping = std::make_unique<WebGLClipping>(impl->clippingProperties->object());
 }
 VulkanRenderer::~VulkanRenderer() = default;
+JSValue VulkanRenderer::object() {
+    if (impl->managedRenderer.isUndefined()) {
+        impl->initializeManagedRenderer();
+        auto value = impl->managedRenderer;
+        value.set("autoClear", autoClear); value.set("autoClearColor", autoClearColor);
+        value.set("autoClearDepth", autoClearDepth); value.set("sortObjects", sortObjects);
+        value.set("clippingPlanes", clippingPlanes); value.set("localClippingEnabled", localClippingEnabled);
+        value.set("outputColorSpace", srgbOutput ? SRGBColorSpace : LinearSRGBColorSpace);
+    }
+    return impl->managedRenderer;
+}
+JSValue VulkanRenderer::render(JSValue scene, JSValue camera) {
+    auto value = object();
+    return value.get("render").call(value, {scene, camera});
+}
 void VulkanRenderer::setSize(std::uint32_t width, std::uint32_t height) {
     if (impl->rendering)
         throw std::logic_error("setSize inside render or upload callbacks is not supported yet");
@@ -3279,6 +3272,7 @@ void VulkanRenderer::setViewport(HIGH_PRECISION x, HIGH_PRECISION y, HIGH_PRECIS
     impl->viewport.set(x, y, width, height);
     impl->currentViewport.copy(impl->viewport).round();
     Impl::retainValidRectangle(impl->currentViewport, impl->gpuViewport);
+    impl->syncManagedViewport();
     impl->applyViewportAndScissor();
 }
 void VulkanRenderer::setViewport(const Vector4& viewport) {

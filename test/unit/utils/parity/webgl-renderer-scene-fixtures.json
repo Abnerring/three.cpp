@@ -1,0 +1,396 @@
+[
+  {
+    "case": "metadata",
+    "op": "metadata"
+  },
+  {
+    "case": "basic"
+  },
+  {
+    "case": "visible:False",
+    "visible": false
+  },
+  {
+    "case": "visible:0",
+    "visible": 0
+  },
+  {
+    "case": "visible:None",
+    "visible": null
+  },
+  {
+    "case": "visible:yes",
+    "visible": "yes"
+  },
+  {
+    "case": "materialVisible:False",
+    "materialVisible": false
+  },
+  {
+    "case": "materialVisible:0",
+    "materialVisible": 0
+  },
+  {
+    "case": "materialVisible:None",
+    "materialVisible": null
+  },
+  {
+    "case": "materialVisible:yes",
+    "materialVisible": "yes"
+  },
+  {
+    "case": "sort:False",
+    "sort": false
+  },
+  {
+    "case": "sort:1",
+    "sort": 1
+  },
+  {
+    "case": "allowOverride:False",
+    "allowOverride": false,
+    "override": true
+  },
+  {
+    "case": "allowOverride:0",
+    "allowOverride": 0,
+    "override": true
+  },
+  {
+    "case": "allowOverride:None",
+    "allowOverride": null,
+    "override": true
+  },
+  {
+    "case": "groups",
+    "groups": true
+  },
+  {
+    "case": "sprite",
+    "sprite": true
+  },
+  {
+    "case": "line",
+    "line": true
+  },
+  {
+    "case": "points",
+    "points": true
+  },
+  {
+    "case": "group",
+    "group": true
+  },
+  {
+    "case": "lod",
+    "lod": true
+  },
+  {
+    "case": "light",
+    "light": true
+  },
+  {
+    "case": "clipping",
+    "clipping": true
+  },
+  {
+    "case": "nodes",
+    "nodes": true
+  },
+  {
+    "case": "arrayCamera",
+    "arrayCamera": true
+  },
+  {
+    "case": "layerMismatch",
+    "layerMismatch": true
+  },
+  {
+    "case": "target",
+    "target": true
+  },
+  {
+    "case": "contextLost",
+    "contextLost": true
+  },
+  {
+    "case": "badCamera",
+    "badCamera": true
+  },
+  {
+    "case": "visibleGetter:False",
+    "visibleGetter": true,
+    "visible": false
+  },
+  {
+    "case": "visibleGetter:0",
+    "visibleGetter": true,
+    "visible": 0
+  },
+  {
+    "case": "visibleGetter:None",
+    "visibleGetter": true,
+    "visible": null
+  },
+  {
+    "case": "visibleGetter:yes",
+    "visibleGetter": true,
+    "visible": "yes"
+  },
+  {
+    "case": "options:32",
+    "cull": true
+  },
+  {
+    "case": "options:33",
+    "cull": true,
+    "rejectFrustum": true
+  },
+  {
+    "case": "options:34",
+    "cull": true,
+    "arrayCamera": true
+  },
+  {
+    "case": "options:35",
+    "override": true
+  },
+  {
+    "case": "options:36",
+    "groups": true,
+    "override": true
+  },
+  {
+    "case": "options:37",
+    "transparent": true,
+    "side": 2
+  },
+  {
+    "case": "options:38",
+    "transparent": 1,
+    "side": 2
+  },
+  {
+    "case": "options:39",
+    "transparent": true,
+    "side": 0
+  },
+  {
+    "case": "options:40",
+    "arrayCamera": true,
+    "groups": true,
+    "clipping": true
+  },
+  {
+    "case": "options:41",
+    "group": true,
+    "layerMismatch": true
+  },
+  {
+    "case": "options:42",
+    "xr": true
+  },
+  {
+    "case": "options:43",
+    "xr": true,
+    "depthSensing": true
+  },
+  {
+    "case": "options:44",
+    "xr": true,
+    "depthMesh": true
+  },
+  {
+    "case": "options:45",
+    "nodes": true,
+    "light": true
+  },
+  {
+    "case": "reentry:scene.before:scene",
+    "reentry": "scene.before:scene",
+    "clipping": true
+  },
+  {
+    "case": "reentry:objects.update",
+    "reentry": "objects.update",
+    "clipping": true
+  },
+  {
+    "case": "reentry:object.before:mesh",
+    "reentry": "object.before:mesh",
+    "clipping": true
+  },
+  {
+    "case": "reentry:material.before:material",
+    "reentry": "material.before:material",
+    "clipping": true
+  },
+  {
+    "case": "reentry:draw",
+    "reentry": "draw",
+    "clipping": true
+  },
+  {
+    "case": "reentry:scene.after:scene",
+    "reentry": "scene.after:scene",
+    "clipping": true
+  },
+  {
+    "case": "throw:objects.update",
+    "throwAt": "objects.update",
+    "nodes": true,
+    "expectedError": {
+      "name": "ThrownValue",
+      "raw": "objects.update"
+    }
+  },
+  {
+    "case": "throw:object.before:mesh",
+    "throwAt": "object.before:mesh",
+    "nodes": true,
+    "expectedError": {
+      "name": "ThrownValue",
+      "raw": "object.before:mesh"
+    }
+  },
+  {
+    "case": "throw:material.before:material",
+    "throwAt": "material.before:material",
+    "nodes": true,
+    "expectedError": {
+      "name": "ThrownValue",
+      "raw": "material.before:material"
+    }
+  },
+  {
+    "case": "throw:draw",
+    "throwAt": "draw",
+    "nodes": true,
+    "expectedError": {
+      "name": "ThrownValue",
+      "raw": "draw"
+    }
+  },
+  {
+    "case": "throw:scene.after:scene",
+    "throwAt": "scene.after:scene",
+    "nodes": true,
+    "expectedError": {
+      "name": "ThrownValue",
+      "raw": "scene.after:scene"
+    }
+  },
+  {
+    "case": "throw:renderState.setupLightsView",
+    "throwAt": "renderState.setupLightsView",
+    "nodes": true,
+    "expectedError": {
+      "name": "ThrownValue",
+      "raw": "renderState.setupLightsView"
+    }
+  },
+  {
+    "case": "throw:bindingStates.resetDefaultState",
+    "throwAt": "bindingStates.resetDefaultState",
+    "nodes": true,
+    "expectedError": {
+      "name": "ThrownValue",
+      "raw": "bindingStates.resetDefaultState"
+    }
+  },
+  {
+    "case": "throw:nodes.renderEnd",
+    "throwAt": "nodes.renderEnd",
+    "nodes": true,
+    "expectedError": {
+      "name": "ThrownValue",
+      "raw": "nodes.renderEnd"
+    }
+  },
+  {
+    "case": "output:True",
+    "output": true,
+    "outputValue": true
+  },
+  {
+    "case": "output:False",
+    "output": true,
+    "outputValue": false
+  },
+  {
+    "case": "output:0",
+    "output": true,
+    "outputValue": 0
+  },
+  {
+    "case": "output:None",
+    "output": true,
+    "outputValue": null
+  },
+  {
+    "case": "passes:64",
+    "output": true,
+    "skipScene": true
+  },
+  {
+    "case": "passes:65",
+    "output": true,
+    "xr": true
+  },
+  {
+    "case": "passes:66",
+    "output": true,
+    "xr": true,
+    "compositing": true
+  },
+  {
+    "case": "passes:67",
+    "transmission": true
+  },
+  {
+    "case": "passes:68",
+    "transmission": true,
+    "msrt": true
+  },
+  {
+    "case": "passes:69",
+    "transmission": true,
+    "arrayCamera": true
+  },
+  {
+    "case": "passes:70",
+    "transmission": true,
+    "override": true
+  },
+  {
+    "case": "passes:71",
+    "transmission": true,
+    "target": true
+  },
+  {
+    "case": "shrinkChildren",
+    "shrinkChildren": true,
+    "expectedError": {
+      "name": "TypeError"
+    }
+  },
+  {
+    "case": "backendUnsupported",
+    "drawThrow": true,
+    "expectedError": {
+      "name": "ThrownValue",
+      "raw": "GPU:unsupported"
+    }
+  },
+  {
+    "case": "doubleSideBackendThrow",
+    "drawThrow": true,
+    "transparent": true,
+    "side": 2,
+    "expectedError": {
+      "name": "ThrownValue",
+      "raw": "GPU:unsupported"
+    },
+    "throwMesh": true
+  }
+]

@@ -478,6 +478,8 @@ target_sources(threecpp PRIVATE
     src/renderers/webgl/WebGLLights.cpp
     src/renderers/webgl/WebGLRenderStates.cpp
     src/renderers/webgl/WebGLRenderLists.cpp
+    src/renderers/WebGLRendererScene.cpp
+    src/renderers/webgl/WebGLBackground.cpp
     src/renderers/webgl/WebGLUniforms.cpp
     src/renderers/webgl/WebGLUniformsGroups.cpp
     src/renderers/webgl/WebGLState.cpp

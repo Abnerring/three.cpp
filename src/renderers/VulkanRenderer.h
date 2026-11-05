@@ -19,6 +19,8 @@ struct VulkanRendererParameters {
     std::uint32_t width = 256;
     std::uint32_t height = 256;
     bool validation = false;
+    bool alpha = false;
+    bool premultipliedAlpha = true;
 };
 
 struct VulkanRendererInfo {
@@ -80,6 +82,11 @@ class VulkanRenderer {
     HIGH_PRECISION getClearAlpha() const;
     void clear(bool color = true, bool depth = true);
     void render(Scene& scene, Camera& camera);
+    // Original managed scene graph, including ObjectLoader results. The stable
+    // renderer object is passed unchanged to source callbacks. Its properties
+    // are the managed API; the typed overload remains a compatibility entry.
+    JSValue object();
+    JSValue render(JSValue scene, JSValue camera);
     // Rendering into an offscreen target follows WebGL: the renderer temporarily takes
     // the target size, and restoring a null target restores the previous size.
     void setRenderTarget(std::shared_ptr<RenderTarget> target, std::uint32_t activeCubeFace = 0,

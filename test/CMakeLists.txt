@@ -3699,3 +3699,26 @@ if(THREECPP_NODE_EXECUTABLE AND THREEJS_SOURCE_DIR)
         COMMAND "${THREECPP_NODE_EXECUTABLE}" "${CMAKE_CURRENT_SOURCE_DIR}/unit/utils/parity/compare-curve-paths.mjs"
         "${THREEJS_SOURCE_DIR}" "$<TARGET_FILE:ThreeJsCurvePathsParityProbe>")
 endif()
+
+target_sources(THREECPPTests PRIVATE
+    unit/src/renderers/webgl/WebGLBackground.tests.cpp)
+add_executable(ThreeJsWebGLBackgroundParityProbe unit/utils/parity/WebGLBackgroundProbe.cpp)
+target_link_libraries(ThreeJsWebGLBackgroundParityProbe PRIVATE threecpp::threecpp)
+add_executable(ThreeJsWebGLRendererSceneParityProbe unit/utils/parity/WebGLRendererSceneProbe.cpp)
+target_link_libraries(ThreeJsWebGLRendererSceneParityProbe PRIVATE threecpp::threecpp)
+if(THREECPP_NODE_EXECUTABLE AND THREEJS_SOURCE_DIR)
+    add_test(NAME threecpp.threejs-webgl-background-parity
+        COMMAND "${THREECPP_NODE_EXECUTABLE}" "${CMAKE_CURRENT_SOURCE_DIR}/unit/utils/parity/compare-webgl-background.mjs"
+            "${THREEJS_SOURCE_DIR}" "$<TARGET_FILE:ThreeJsWebGLBackgroundParityProbe>")
+    add_test(NAME threecpp.threejs-webgl-renderer-scene-parity
+        COMMAND "${THREECPP_NODE_EXECUTABLE}" "${CMAKE_CURRENT_SOURCE_DIR}/unit/utils/parity/compare-webgl-renderer-scene.mjs"
+            "${THREEJS_SOURCE_DIR}" "$<TARGET_FILE:ThreeJsWebGLRendererSceneParityProbe>")
+endif()
+if(TARGET threecpp_vulkan)
+    add_executable(VulkanManagedDrawTests unit/src/renderers/VulkanManagedDraw.tests.cpp)
+    target_link_libraries(VulkanManagedDrawTests PRIVATE threecpp::vulkan)
+    add_test(NAME threecpp.vulkan-managed-draw COMMAND VulkanManagedDrawTests)
+    set_tests_properties(threecpp.vulkan-managed-draw PROPERTIES LABELS "GPU;Vulkan")
+endif()
+
+target_sources(THREECPPTests PRIVATE unit/src/renderers/WebGLRendererScene.tests.cpp)

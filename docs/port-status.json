@@ -984,7 +984,7 @@
       "path": "src/renderers/webgl",
       "upstreamFiles": 30,
       "moduleCount": 30,
-      "modulesWithCppFiles": 24,
+      "modulesWithCppFiles": 25,
       "verifiedComplete": 0
     },
     {
@@ -19533,8 +19533,8 @@
       "scope": "src",
       "kind": "core",
       "upstreamSha256": "94c136f1fad0afafb319292789c190fd94fe0a62fac9df79ac3257fdcb846321",
-      "header": null,
-      "implementation": null,
+      "header": "src/renderers/webgl/WebGLBackground.h",
+      "implementation": "src/renderers/webgl/WebGLBackground.cpp",
       "expectedHeader": "src/renderers/webgl/WebGLBackground.h",
       "expectedImplementation": "src/renderers/webgl/WebGLBackground.cpp",
       "status": "vulkan-port-pending",
@@ -19546,7 +19546,9 @@
           "pointer": "/modules/651"
         },
         "upstreamUnitTests": [],
-        "cppUnitTests": [],
+        "cppUnitTests": [
+          "test/unit/src/renderers/webgl/WebGLBackground.tests.cpp"
+        ],
         "reviewedImplementation": [],
         "differentialResults": [],
         "renderingResults": [],

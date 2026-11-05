@@ -1,0 +1,1927 @@
+[
+  {
+    "case": "metadata",
+    "op": "metadata"
+  },
+  {
+    "case": "clear:None:None",
+    "op": "clear",
+    "alpha": null,
+    "mode": null,
+    "premultiplied": true,
+    "actions": [
+      {
+        "op": "render"
+      },
+      {
+        "op": "setColor",
+        "color": 3368601,
+        "alpha": 0.3
+      },
+      {
+        "op": "render"
+      },
+      {
+        "op": "setAlpha",
+        "alpha": 0.7
+      },
+      {
+        "op": "render",
+        "background": "color"
+      },
+      {
+        "op": "render",
+        "background": "none"
+      }
+    ]
+  },
+  {
+    "case": "clear:None:opaque",
+    "op": "clear",
+    "alpha": null,
+    "mode": "opaque",
+    "premultiplied": true,
+    "actions": [
+      {
+        "op": "render"
+      },
+      {
+        "op": "setColor",
+        "color": 3368601,
+        "alpha": 0.3
+      },
+      {
+        "op": "render"
+      },
+      {
+        "op": "setAlpha",
+        "alpha": 0.7
+      },
+      {
+        "op": "render",
+        "background": "color"
+      },
+      {
+        "op": "render",
+        "background": "none"
+      }
+    ]
+  },
+  {
+    "case": "clear:None:additive",
+    "op": "clear",
+    "alpha": null,
+    "mode": "additive",
+    "premultiplied": true,
+    "actions": [
+      {
+        "op": "render"
+      },
+      {
+        "op": "setColor",
+        "color": 3368601,
+        "alpha": 0.3
+      },
+      {
+        "op": "render"
+      },
+      {
+        "op": "setAlpha",
+        "alpha": 0.7
+      },
+      {
+        "op": "render",
+        "background": "color"
+      },
+      {
+        "op": "render",
+        "background": "none"
+      }
+    ]
+  },
+  {
+    "case": "clear:None:alpha-blend",
+    "op": "clear",
+    "alpha": null,
+    "mode": "alpha-blend",
+    "premultiplied": true,
+    "actions": [
+      {
+        "op": "render"
+      },
+      {
+        "op": "setColor",
+        "color": 3368601,
+        "alpha": 0.3
+      },
+      {
+        "op": "render"
+      },
+      {
+        "op": "setAlpha",
+        "alpha": 0.7
+      },
+      {
+        "op": "render",
+        "background": "color"
+      },
+      {
+        "op": "render",
+        "background": "none"
+      }
+    ]
+  },
+  {
+    "case": "clear:False:None",
+    "op": "clear",
+    "alpha": false,
+    "mode": null,
+    "premultiplied": true,
+    "actions": [
+      {
+        "op": "render"
+      },
+      {
+        "op": "setColor",
+        "color": 3368601,
+        "alpha": 0.3
+      },
+      {
+        "op": "render"
+      },
+      {
+        "op": "setAlpha",
+        "alpha": 0.7
+      },
+      {
+        "op": "render",
+        "background": "color"
+      },
+      {
+        "op": "render",
+        "background": "none"
+      }
+    ]
+  },
+  {
+    "case": "clear:False:opaque",
+    "op": "clear",
+    "alpha": false,
+    "mode": "opaque",
+    "premultiplied": true,
+    "actions": [
+      {
+        "op": "render"
+      },
+      {
+        "op": "setColor",
+        "color": 3368601,
+        "alpha": 0.3
+      },
+      {
+        "op": "render"
+      },
+      {
+        "op": "setAlpha",
+        "alpha": 0.7
+      },
+      {
+        "op": "render",
+        "background": "color"
+      },
+      {
+        "op": "render",
+        "background": "none"
+      }
+    ]
+  },
+  {
+    "case": "clear:False:additive",
+    "op": "clear",
+    "alpha": false,
+    "mode": "additive",
+    "premultiplied": true,
+    "actions": [
+      {
+        "op": "render"
+      },
+      {
+        "op": "setColor",
+        "color": 3368601,
+        "alpha": 0.3
+      },
+      {
+        "op": "render"
+      },
+      {
+        "op": "setAlpha",
+        "alpha": 0.7
+      },
+      {
+        "op": "render",
+        "background": "color"
+      },
+      {
+        "op": "render",
+        "background": "none"
+      }
+    ]
+  },
+  {
+    "case": "clear:False:alpha-blend",
+    "op": "clear",
+    "alpha": false,
+    "mode": "alpha-blend",
+    "premultiplied": true,
+    "actions": [
+      {
+        "op": "render"
+      },
+      {
+        "op": "setColor",
+        "color": 3368601,
+        "alpha": 0.3
+      },
+      {
+        "op": "render"
+      },
+      {
+        "op": "setAlpha",
+        "alpha": 0.7
+      },
+      {
+        "op": "render",
+        "background": "color"
+      },
+      {
+        "op": "render",
+        "background": "none"
+      }
+    ]
+  },
+  {
+    "case": "clear:True:None",
+    "op": "clear",
+    "alpha": true,
+    "mode": null,
+    "premultiplied": true,
+    "actions": [
+      {
+        "op": "render"
+      },
+      {
+        "op": "setColor",
+        "color": 3368601,
+        "alpha": 0.3
+      },
+      {
+        "op": "render"
+      },
+      {
+        "op": "setAlpha",
+        "alpha": 0.7
+      },
+      {
+        "op": "render",
+        "background": "color"
+      },
+      {
+        "op": "render",
+        "background": "none"
+      }
+    ]
+  },
+  {
+    "case": "clear:True:opaque",
+    "op": "clear",
+    "alpha": true,
+    "mode": "opaque",
+    "premultiplied": true,
+    "actions": [
+      {
+        "op": "render"
+      },
+      {
+        "op": "setColor",
+        "color": 3368601,
+        "alpha": 0.3
+      },
+      {
+        "op": "render"
+      },
+      {
+        "op": "setAlpha",
+        "alpha": 0.7
+      },
+      {
+        "op": "render",
+        "background": "color"
+      },
+      {
+        "op": "render",
+        "background": "none"
+      }
+    ]
+  },
+  {
+    "case": "clear:True:additive",
+    "op": "clear",
+    "alpha": true,
+    "mode": "additive",
+    "premultiplied": true,
+    "actions": [
+      {
+        "op": "render"
+      },
+      {
+        "op": "setColor",
+        "color": 3368601,
+        "alpha": 0.3
+      },
+      {
+        "op": "render"
+      },
+      {
+        "op": "setAlpha",
+        "alpha": 0.7
+      },
+      {
+        "op": "render",
+        "background": "color"
+      },
+      {
+        "op": "render",
+        "background": "none"
+      }
+    ]
+  },
+  {
+    "case": "clear:True:alpha-blend",
+    "op": "clear",
+    "alpha": true,
+    "mode": "alpha-blend",
+    "premultiplied": true,
+    "actions": [
+      {
+        "op": "render"
+      },
+      {
+        "op": "setColor",
+        "color": 3368601,
+        "alpha": 0.3
+      },
+      {
+        "op": "render"
+      },
+      {
+        "op": "setAlpha",
+        "alpha": 0.7
+      },
+      {
+        "op": "render",
+        "background": "color"
+      },
+      {
+        "op": "render",
+        "background": "none"
+      }
+    ]
+  },
+  {
+    "case": "clear:0:None",
+    "op": "clear",
+    "alpha": 0,
+    "mode": null,
+    "premultiplied": true,
+    "actions": [
+      {
+        "op": "render"
+      },
+      {
+        "op": "setColor",
+        "color": 3368601,
+        "alpha": 0.3
+      },
+      {
+        "op": "render"
+      },
+      {
+        "op": "setAlpha",
+        "alpha": 0.7
+      },
+      {
+        "op": "render",
+        "background": "color"
+      },
+      {
+        "op": "render",
+        "background": "none"
+      }
+    ]
+  },
+  {
+    "case": "clear:0:opaque",
+    "op": "clear",
+    "alpha": 0,
+    "mode": "opaque",
+    "premultiplied": true,
+    "actions": [
+      {
+        "op": "render"
+      },
+      {
+        "op": "setColor",
+        "color": 3368601,
+        "alpha": 0.3
+      },
+      {
+        "op": "render"
+      },
+      {
+        "op": "setAlpha",
+        "alpha": 0.7
+      },
+      {
+        "op": "render",
+        "background": "color"
+      },
+      {
+        "op": "render",
+        "background": "none"
+      }
+    ]
+  },
+  {
+    "case": "clear:0:additive",
+    "op": "clear",
+    "alpha": 0,
+    "mode": "additive",
+    "premultiplied": true,
+    "actions": [
+      {
+        "op": "render"
+      },
+      {
+        "op": "setColor",
+        "color": 3368601,
+        "alpha": 0.3
+      },
+      {
+        "op": "render"
+      },
+      {
+        "op": "setAlpha",
+        "alpha": 0.7
+      },
+      {
+        "op": "render",
+        "background": "color"
+      },
+      {
+        "op": "render",
+        "background": "none"
+      }
+    ]
+  },
+  {
+    "case": "clear:0:alpha-blend",
+    "op": "clear",
+    "alpha": 0,
+    "mode": "alpha-blend",
+    "premultiplied": true,
+    "actions": [
+      {
+        "op": "render"
+      },
+      {
+        "op": "setColor",
+        "color": 3368601,
+        "alpha": 0.3
+      },
+      {
+        "op": "render"
+      },
+      {
+        "op": "setAlpha",
+        "alpha": 0.7
+      },
+      {
+        "op": "render",
+        "background": "color"
+      },
+      {
+        "op": "render",
+        "background": "none"
+      }
+    ]
+  },
+  {
+    "case": "clear:1:None",
+    "op": "clear",
+    "alpha": 1,
+    "mode": null,
+    "premultiplied": true,
+    "actions": [
+      {
+        "op": "render"
+      },
+      {
+        "op": "setColor",
+        "color": 3368601,
+        "alpha": 0.3
+      },
+      {
+        "op": "render"
+      },
+      {
+        "op": "setAlpha",
+        "alpha": 0.7
+      },
+      {
+        "op": "render",
+        "background": "color"
+      },
+      {
+        "op": "render",
+        "background": "none"
+      }
+    ]
+  },
+  {
+    "case": "clear:1:opaque",
+    "op": "clear",
+    "alpha": 1,
+    "mode": "opaque",
+    "premultiplied": true,
+    "actions": [
+      {
+        "op": "render"
+      },
+      {
+        "op": "setColor",
+        "color": 3368601,
+        "alpha": 0.3
+      },
+      {
+        "op": "render"
+      },
+      {
+        "op": "setAlpha",
+        "alpha": 0.7
+      },
+      {
+        "op": "render",
+        "background": "color"
+      },
+      {
+        "op": "render",
+        "background": "none"
+      }
+    ]
+  },
+  {
+    "case": "clear:1:additive",
+    "op": "clear",
+    "alpha": 1,
+    "mode": "additive",
+    "premultiplied": true,
+    "actions": [
+      {
+        "op": "render"
+      },
+      {
+        "op": "setColor",
+        "color": 3368601,
+        "alpha": 0.3
+      },
+      {
+        "op": "render"
+      },
+      {
+        "op": "setAlpha",
+        "alpha": 0.7
+      },
+      {
+        "op": "render",
+        "background": "color"
+      },
+      {
+        "op": "render",
+        "background": "none"
+      }
+    ]
+  },
+  {
+    "case": "clear:1:alpha-blend",
+    "op": "clear",
+    "alpha": 1,
+    "mode": "alpha-blend",
+    "premultiplied": true,
+    "actions": [
+      {
+        "op": "render"
+      },
+      {
+        "op": "setColor",
+        "color": 3368601,
+        "alpha": 0.3
+      },
+      {
+        "op": "render"
+      },
+      {
+        "op": "setAlpha",
+        "alpha": 0.7
+      },
+      {
+        "op": "render",
+        "background": "color"
+      },
+      {
+        "op": "render",
+        "background": "none"
+      }
+    ]
+  },
+  {
+    "case": "clear:true:None",
+    "op": "clear",
+    "alpha": "true",
+    "mode": null,
+    "premultiplied": true,
+    "actions": [
+      {
+        "op": "render"
+      },
+      {
+        "op": "setColor",
+        "color": 3368601,
+        "alpha": 0.3
+      },
+      {
+        "op": "render"
+      },
+      {
+        "op": "setAlpha",
+        "alpha": 0.7
+      },
+      {
+        "op": "render",
+        "background": "color"
+      },
+      {
+        "op": "render",
+        "background": "none"
+      }
+    ]
+  },
+  {
+    "case": "clear:true:opaque",
+    "op": "clear",
+    "alpha": "true",
+    "mode": "opaque",
+    "premultiplied": true,
+    "actions": [
+      {
+        "op": "render"
+      },
+      {
+        "op": "setColor",
+        "color": 3368601,
+        "alpha": 0.3
+      },
+      {
+        "op": "render"
+      },
+      {
+        "op": "setAlpha",
+        "alpha": 0.7
+      },
+      {
+        "op": "render",
+        "background": "color"
+      },
+      {
+        "op": "render",
+        "background": "none"
+      }
+    ]
+  },
+  {
+    "case": "clear:true:additive",
+    "op": "clear",
+    "alpha": "true",
+    "mode": "additive",
+    "premultiplied": true,
+    "actions": [
+      {
+        "op": "render"
+      },
+      {
+        "op": "setColor",
+        "color": 3368601,
+        "alpha": 0.3
+      },
+      {
+        "op": "render"
+      },
+      {
+        "op": "setAlpha",
+        "alpha": 0.7
+      },
+      {
+        "op": "render",
+        "background": "color"
+      },
+      {
+        "op": "render",
+        "background": "none"
+      }
+    ]
+  },
+  {
+    "case": "clear:true:alpha-blend",
+    "op": "clear",
+    "alpha": "true",
+    "mode": "alpha-blend",
+    "premultiplied": true,
+    "actions": [
+      {
+        "op": "render"
+      },
+      {
+        "op": "setColor",
+        "color": 3368601,
+        "alpha": 0.3
+      },
+      {
+        "op": "render"
+      },
+      {
+        "op": "setAlpha",
+        "alpha": 0.7
+      },
+      {
+        "op": "render",
+        "background": "color"
+      },
+      {
+        "op": "render",
+        "background": "none"
+      }
+    ]
+  },
+  {
+    "case": "clear:auto:False:screen",
+    "op": "clear",
+    "autoClear": false,
+    "target": "screen",
+    "outputColorSpace": "srgb",
+    "actions": [
+      {
+        "op": "render"
+      },
+      {
+        "op": "render",
+        "background": "color"
+      },
+      {
+        "op": "setColor",
+        "color": "rgb(10,20,30)"
+      },
+      {
+        "op": "render",
+        "background": "texture"
+      }
+    ]
+  },
+  {
+    "case": "clear:auto:False:target",
+    "op": "clear",
+    "autoClear": false,
+    "target": "target",
+    "outputColorSpace": "srgb",
+    "actions": [
+      {
+        "op": "render"
+      },
+      {
+        "op": "render",
+        "background": "color"
+      },
+      {
+        "op": "setColor",
+        "color": "rgb(10,20,30)"
+      },
+      {
+        "op": "render",
+        "background": "texture"
+      }
+    ]
+  },
+  {
+    "case": "clear:auto:False:xr",
+    "op": "clear",
+    "autoClear": false,
+    "target": "xr",
+    "outputColorSpace": "srgb",
+    "actions": [
+      {
+        "op": "render"
+      },
+      {
+        "op": "render",
+        "background": "color"
+      },
+      {
+        "op": "setColor",
+        "color": "rgb(10,20,30)"
+      },
+      {
+        "op": "render",
+        "background": "texture"
+      }
+    ]
+  },
+  {
+    "case": "clear:auto:True:screen",
+    "op": "clear",
+    "autoClear": true,
+    "target": "screen",
+    "outputColorSpace": "srgb",
+    "actions": [
+      {
+        "op": "render"
+      },
+      {
+        "op": "render",
+        "background": "color"
+      },
+      {
+        "op": "setColor",
+        "color": "rgb(10,20,30)"
+      },
+      {
+        "op": "render",
+        "background": "texture"
+      }
+    ]
+  },
+  {
+    "case": "clear:auto:True:target",
+    "op": "clear",
+    "autoClear": true,
+    "target": "target",
+    "outputColorSpace": "srgb",
+    "actions": [
+      {
+        "op": "render"
+      },
+      {
+        "op": "render",
+        "background": "color"
+      },
+      {
+        "op": "setColor",
+        "color": "rgb(10,20,30)"
+      },
+      {
+        "op": "render",
+        "background": "texture"
+      }
+    ]
+  },
+  {
+    "case": "clear:auto:True:xr",
+    "op": "clear",
+    "autoClear": true,
+    "target": "xr",
+    "outputColorSpace": "srgb",
+    "actions": [
+      {
+        "op": "render"
+      },
+      {
+        "op": "render",
+        "background": "color"
+      },
+      {
+        "op": "setColor",
+        "color": "rgb(10,20,30)"
+      },
+      {
+        "op": "render",
+        "background": "texture"
+      }
+    ]
+  },
+  {
+    "case": "clear:auto:0:screen",
+    "op": "clear",
+    "autoClear": 0,
+    "target": "screen",
+    "outputColorSpace": "srgb",
+    "actions": [
+      {
+        "op": "render"
+      },
+      {
+        "op": "render",
+        "background": "color"
+      },
+      {
+        "op": "setColor",
+        "color": "rgb(10,20,30)"
+      },
+      {
+        "op": "render",
+        "background": "texture"
+      }
+    ]
+  },
+  {
+    "case": "clear:auto:0:target",
+    "op": "clear",
+    "autoClear": 0,
+    "target": "target",
+    "outputColorSpace": "srgb",
+    "actions": [
+      {
+        "op": "render"
+      },
+      {
+        "op": "render",
+        "background": "color"
+      },
+      {
+        "op": "setColor",
+        "color": "rgb(10,20,30)"
+      },
+      {
+        "op": "render",
+        "background": "texture"
+      }
+    ]
+  },
+  {
+    "case": "clear:auto:0:xr",
+    "op": "clear",
+    "autoClear": 0,
+    "target": "xr",
+    "outputColorSpace": "srgb",
+    "actions": [
+      {
+        "op": "render"
+      },
+      {
+        "op": "render",
+        "background": "color"
+      },
+      {
+        "op": "setColor",
+        "color": "rgb(10,20,30)"
+      },
+      {
+        "op": "render",
+        "background": "texture"
+      }
+    ]
+  },
+  {
+    "case": "clear:auto:yes:screen",
+    "op": "clear",
+    "autoClear": "yes",
+    "target": "screen",
+    "outputColorSpace": "srgb",
+    "actions": [
+      {
+        "op": "render"
+      },
+      {
+        "op": "render",
+        "background": "color"
+      },
+      {
+        "op": "setColor",
+        "color": "rgb(10,20,30)"
+      },
+      {
+        "op": "render",
+        "background": "texture"
+      }
+    ]
+  },
+  {
+    "case": "clear:auto:yes:target",
+    "op": "clear",
+    "autoClear": "yes",
+    "target": "target",
+    "outputColorSpace": "srgb",
+    "actions": [
+      {
+        "op": "render"
+      },
+      {
+        "op": "render",
+        "background": "color"
+      },
+      {
+        "op": "setColor",
+        "color": "rgb(10,20,30)"
+      },
+      {
+        "op": "render",
+        "background": "texture"
+      }
+    ]
+  },
+  {
+    "case": "clear:auto:yes:xr",
+    "op": "clear",
+    "autoClear": "yes",
+    "target": "xr",
+    "outputColorSpace": "srgb",
+    "actions": [
+      {
+        "op": "render"
+      },
+      {
+        "op": "render",
+        "background": "color"
+      },
+      {
+        "op": "setColor",
+        "color": "rgb(10,20,30)"
+      },
+      {
+        "op": "render",
+        "background": "texture"
+      }
+    ]
+  },
+  {
+    "case": "clear:isScene:False",
+    "op": "clear",
+    "isScene": false,
+    "actions": [
+      {
+        "op": "render",
+        "background": "color"
+      }
+    ]
+  },
+  {
+    "case": "clear:isScene:0",
+    "op": "clear",
+    "isScene": 0,
+    "actions": [
+      {
+        "op": "render",
+        "background": "color"
+      }
+    ]
+  },
+  {
+    "case": "clear:isScene:1",
+    "op": "clear",
+    "isScene": 1,
+    "actions": [
+      {
+        "op": "render",
+        "background": "color"
+      }
+    ]
+  },
+  {
+    "case": "clear:isScene:yes",
+    "op": "clear",
+    "isScene": "yes",
+    "actions": [
+      {
+        "op": "render",
+        "background": "color"
+      }
+    ]
+  },
+  {
+    "case": "clear:isScene:None",
+    "op": "clear",
+    "isScene": null,
+    "actions": [
+      {
+        "op": "render",
+        "background": "color"
+      }
+    ]
+  },
+  {
+    "case": "texture:plane:srgb:rt=False",
+    "op": "texture",
+    "textures": [
+      {
+        "kind": "plane",
+        "colorSpace": "srgb",
+        "renderTarget": false
+      }
+    ],
+    "actions": [
+      {
+        "op": "add",
+        "texture": 0
+      },
+      {
+        "op": "add",
+        "texture": 0
+      },
+      {
+        "op": "add",
+        "texture": 0,
+        "intensity": 0.3,
+        "blurriness": 0.5
+      },
+      {
+        "op": "add",
+        "texture": 0,
+        "bumpVersion": true
+      },
+      {
+        "op": "add",
+        "texture": 0,
+        "toneMapping": 1
+      },
+      {
+        "op": "dispose"
+      },
+      {
+        "op": "add",
+        "texture": 0
+      },
+      {
+        "op": "dispose"
+      },
+      {
+        "op": "dispose"
+      }
+    ]
+  },
+  {
+    "case": "texture:plane:srgb:rt=True",
+    "op": "texture",
+    "textures": [
+      {
+        "kind": "plane",
+        "colorSpace": "srgb",
+        "renderTarget": true
+      }
+    ],
+    "actions": [
+      {
+        "op": "add",
+        "texture": 0
+      },
+      {
+        "op": "add",
+        "texture": 0
+      },
+      {
+        "op": "add",
+        "texture": 0,
+        "intensity": 0.3,
+        "blurriness": 0.5
+      },
+      {
+        "op": "add",
+        "texture": 0,
+        "bumpVersion": true
+      },
+      {
+        "op": "add",
+        "texture": 0,
+        "toneMapping": 1
+      },
+      {
+        "op": "dispose"
+      },
+      {
+        "op": "add",
+        "texture": 0
+      },
+      {
+        "op": "dispose"
+      },
+      {
+        "op": "dispose"
+      }
+    ]
+  },
+  {
+    "case": "texture:plane:srgb-linear:rt=False",
+    "op": "texture",
+    "textures": [
+      {
+        "kind": "plane",
+        "colorSpace": "srgb-linear",
+        "renderTarget": false
+      }
+    ],
+    "actions": [
+      {
+        "op": "add",
+        "texture": 0
+      },
+      {
+        "op": "add",
+        "texture": 0
+      },
+      {
+        "op": "add",
+        "texture": 0,
+        "intensity": 0.3,
+        "blurriness": 0.5
+      },
+      {
+        "op": "add",
+        "texture": 0,
+        "bumpVersion": true
+      },
+      {
+        "op": "add",
+        "texture": 0,
+        "toneMapping": 1
+      },
+      {
+        "op": "dispose"
+      },
+      {
+        "op": "add",
+        "texture": 0
+      },
+      {
+        "op": "dispose"
+      },
+      {
+        "op": "dispose"
+      }
+    ]
+  },
+  {
+    "case": "texture:plane:srgb-linear:rt=True",
+    "op": "texture",
+    "textures": [
+      {
+        "kind": "plane",
+        "colorSpace": "srgb-linear",
+        "renderTarget": true
+      }
+    ],
+    "actions": [
+      {
+        "op": "add",
+        "texture": 0
+      },
+      {
+        "op": "add",
+        "texture": 0
+      },
+      {
+        "op": "add",
+        "texture": 0,
+        "intensity": 0.3,
+        "blurriness": 0.5
+      },
+      {
+        "op": "add",
+        "texture": 0,
+        "bumpVersion": true
+      },
+      {
+        "op": "add",
+        "texture": 0,
+        "toneMapping": 1
+      },
+      {
+        "op": "dispose"
+      },
+      {
+        "op": "add",
+        "texture": 0
+      },
+      {
+        "op": "dispose"
+      },
+      {
+        "op": "dispose"
+      }
+    ]
+  },
+  {
+    "case": "texture:cube:srgb:rt=False",
+    "op": "texture",
+    "textures": [
+      {
+        "kind": "cube",
+        "colorSpace": "srgb",
+        "renderTarget": false
+      }
+    ],
+    "actions": [
+      {
+        "op": "add",
+        "texture": 0
+      },
+      {
+        "op": "add",
+        "texture": 0
+      },
+      {
+        "op": "add",
+        "texture": 0,
+        "intensity": 0.3,
+        "blurriness": 0.5
+      },
+      {
+        "op": "add",
+        "texture": 0,
+        "bumpVersion": true
+      },
+      {
+        "op": "add",
+        "texture": 0,
+        "toneMapping": 1
+      },
+      {
+        "op": "dispose"
+      },
+      {
+        "op": "add",
+        "texture": 0
+      },
+      {
+        "op": "dispose"
+      },
+      {
+        "op": "dispose"
+      }
+    ]
+  },
+  {
+    "case": "texture:cube:srgb:rt=True",
+    "op": "texture",
+    "textures": [
+      {
+        "kind": "cube",
+        "colorSpace": "srgb",
+        "renderTarget": true
+      }
+    ],
+    "actions": [
+      {
+        "op": "add",
+        "texture": 0
+      },
+      {
+        "op": "add",
+        "texture": 0
+      },
+      {
+        "op": "add",
+        "texture": 0,
+        "intensity": 0.3,
+        "blurriness": 0.5
+      },
+      {
+        "op": "add",
+        "texture": 0,
+        "bumpVersion": true
+      },
+      {
+        "op": "add",
+        "texture": 0,
+        "toneMapping": 1
+      },
+      {
+        "op": "dispose"
+      },
+      {
+        "op": "add",
+        "texture": 0
+      },
+      {
+        "op": "dispose"
+      },
+      {
+        "op": "dispose"
+      }
+    ]
+  },
+  {
+    "case": "texture:cube:srgb-linear:rt=False",
+    "op": "texture",
+    "textures": [
+      {
+        "kind": "cube",
+        "colorSpace": "srgb-linear",
+        "renderTarget": false
+      }
+    ],
+    "actions": [
+      {
+        "op": "add",
+        "texture": 0
+      },
+      {
+        "op": "add",
+        "texture": 0
+      },
+      {
+        "op": "add",
+        "texture": 0,
+        "intensity": 0.3,
+        "blurriness": 0.5
+      },
+      {
+        "op": "add",
+        "texture": 0,
+        "bumpVersion": true
+      },
+      {
+        "op": "add",
+        "texture": 0,
+        "toneMapping": 1
+      },
+      {
+        "op": "dispose"
+      },
+      {
+        "op": "add",
+        "texture": 0
+      },
+      {
+        "op": "dispose"
+      },
+      {
+        "op": "dispose"
+      }
+    ]
+  },
+  {
+    "case": "texture:cube:srgb-linear:rt=True",
+    "op": "texture",
+    "textures": [
+      {
+        "kind": "cube",
+        "colorSpace": "srgb-linear",
+        "renderTarget": true
+      }
+    ],
+    "actions": [
+      {
+        "op": "add",
+        "texture": 0
+      },
+      {
+        "op": "add",
+        "texture": 0
+      },
+      {
+        "op": "add",
+        "texture": 0,
+        "intensity": 0.3,
+        "blurriness": 0.5
+      },
+      {
+        "op": "add",
+        "texture": 0,
+        "bumpVersion": true
+      },
+      {
+        "op": "add",
+        "texture": 0,
+        "toneMapping": 1
+      },
+      {
+        "op": "dispose"
+      },
+      {
+        "op": "add",
+        "texture": 0
+      },
+      {
+        "op": "dispose"
+      },
+      {
+        "op": "dispose"
+      }
+    ]
+  },
+  {
+    "case": "texture:alternate",
+    "op": "texture",
+    "textures": [
+      {
+        "kind": "plane",
+        "colorSpace": "srgb",
+        "matrixAutoUpdate": false
+      },
+      {
+        "kind": "cube",
+        "colorSpace": "srgb-linear",
+        "renderTarget": false
+      },
+      {
+        "kind": "cube",
+        "colorSpace": "srgb",
+        "renderTarget": true
+      }
+    ],
+    "actions": [
+      {
+        "op": "add",
+        "texture": 0,
+        "rotation": [
+          0.1,
+          0.3,
+          -0.4
+        ]
+      },
+      {
+        "op": "add",
+        "texture": 0,
+        "rotation": [
+          0.1,
+          0.3,
+          -0.4
+        ]
+      },
+      {
+        "op": "add",
+        "texture": 1,
+        "rotation": [
+          0.1,
+          0.3,
+          -0.4
+        ]
+      },
+      {
+        "op": "add",
+        "texture": 1,
+        "rotation": [
+          0.1,
+          0.3,
+          -0.4
+        ]
+      },
+      {
+        "op": "add",
+        "texture": 2,
+        "rotation": [
+          0.1,
+          0.3,
+          -0.4
+        ]
+      },
+      {
+        "op": "add",
+        "texture": 0,
+        "rotation": [
+          0.1,
+          0.3,
+          -0.4
+        ]
+      },
+      {
+        "op": "add",
+        "texture": 1,
+        "rotation": [
+          0.1,
+          0.3,
+          -0.4
+        ]
+      },
+      {
+        "op": "dispose"
+      },
+      {
+        "op": "add",
+        "texture": 0
+      },
+      {
+        "op": "add",
+        "texture": 1
+      }
+    ]
+  },
+  {
+    "case": "environment:null",
+    "op": "texture",
+    "envResult": "null",
+    "textures": [
+      {
+        "kind": "cube",
+        "colorSpace": "srgb"
+      }
+    ],
+    "actions": [
+      {
+        "op": "add",
+        "texture": 0
+      },
+      {
+        "op": "render",
+        "texture": 0
+      }
+    ]
+  },
+  {
+    "case": "environment:undefined",
+    "op": "texture",
+    "envResult": "undefined",
+    "textures": [
+      {
+        "kind": "cube",
+        "colorSpace": "srgb"
+      }
+    ],
+    "actions": [
+      {
+        "op": "add",
+        "texture": 0
+      },
+      {
+        "op": "render",
+        "texture": 0
+      }
+    ]
+  },
+  {
+    "case": "environment:input",
+    "op": "texture",
+    "envResult": "input",
+    "textures": [
+      {
+        "kind": "cube",
+        "colorSpace": "srgb"
+      }
+    ],
+    "actions": [
+      {
+        "op": "add",
+        "texture": 0
+      },
+      {
+        "op": "render",
+        "texture": 0
+      }
+    ]
+  },
+  {
+    "case": "observable:updateThrow",
+    "op": "observable",
+    "variant": "updateThrow"
+  },
+  {
+    "case": "observable:envThrow",
+    "op": "observable",
+    "variant": "envThrow"
+  },
+  {
+    "case": "observable:clearThrow",
+    "op": "observable",
+    "variant": "clearThrow"
+  },
+  {
+    "case": "observable:xrThrow",
+    "op": "observable",
+    "variant": "xrThrow"
+  },
+  {
+    "case": "observable:disposeThrow",
+    "op": "observable",
+    "variant": "disposeThrow"
+  },
+  {
+    "case": "observable:cacheGetters",
+    "op": "observable",
+    "variant": "cacheGetters"
+  },
+  {
+    "case": "observable:rgbReentry",
+    "op": "observable",
+    "variant": "rgbReentry"
+  },
+  {
+    "case": "observable:uniformAlias",
+    "op": "observable",
+    "variant": "uniformAlias"
+  },
+  {
+    "case": "observable:mapGetter",
+    "op": "observable",
+    "variant": "mapGetter"
+  },
+  {
+    "case": "observable:beforeRenderReceiver",
+    "op": "observable",
+    "variant": "beforeRenderReceiver"
+  },
+  {
+    "case": "environment:convert:alternate",
+    "op": "texture",
+    "envResult": "alternate",
+    "textures": [
+      {
+        "kind": "plane",
+        "colorSpace": "srgb"
+      },
+      {
+        "kind": "cube",
+        "colorSpace": "srgb-linear"
+      }
+    ],
+    "actions": [
+      {
+        "op": "add",
+        "texture": 0
+      },
+      {
+        "op": "add",
+        "texture": 0,
+        "blurriness": 0.3
+      },
+      {
+        "op": "render",
+        "texture": 0
+      },
+      {
+        "op": "dispose"
+      }
+    ]
+  },
+  {
+    "case": "environment:convert:first",
+    "op": "texture",
+    "envResult": "first",
+    "textures": [
+      {
+        "kind": "plane",
+        "colorSpace": "srgb"
+      },
+      {
+        "kind": "cube",
+        "colorSpace": "srgb-linear"
+      }
+    ],
+    "actions": [
+      {
+        "op": "add",
+        "texture": 1
+      },
+      {
+        "op": "add",
+        "texture": 1,
+        "blurriness": 0.3
+      },
+      {
+        "op": "render",
+        "texture": 1
+      },
+      {
+        "op": "dispose"
+      }
+    ]
+  },
+  {
+    "case": "clear:premultiplied:False",
+    "op": "clear",
+    "premultiplied": false,
+    "actions": [
+      {
+        "op": "setColor",
+        "color": 1193046,
+        "alpha": 0.4
+      },
+      {
+        "op": "render"
+      }
+    ]
+  },
+  {
+    "case": "clear:premultiplied:1",
+    "op": "clear",
+    "premultiplied": 1,
+    "actions": [
+      {
+        "op": "setColor",
+        "color": 1193046,
+        "alpha": 0.4
+      },
+      {
+        "op": "render"
+      }
+    ]
+  },
+  {
+    "case": "clear:premultiplied:raw",
+    "op": "clear",
+    "premultiplied": "raw",
+    "actions": [
+      {
+        "op": "setColor",
+        "color": 1193046,
+        "alpha": 0.4
+      },
+      {
+        "op": "render"
+      }
+    ]
+  },
+  {
+    "case": "clear:premultiplied:{'raw': True}",
+    "op": "clear",
+    "premultiplied": {
+      "raw": true
+    },
+    "actions": [
+      {
+        "op": "setColor",
+        "color": 1193046,
+        "alpha": 0.4
+      },
+      {
+        "op": "render"
+      }
+    ]
+  },
+  {
+    "case": "Color.getRGB:metadata",
+    "op": "colorRGB",
+    "variant": "metadata"
+  },
+  {
+    "case": "Color.getRGB:default",
+    "op": "colorRGB",
+    "variant": "default"
+  },
+  {
+    "case": "Color.getRGB:getterOrder",
+    "op": "colorRGB",
+    "variant": "getterOrder"
+  },
+  {
+    "case": "Color.getRGB:setterReentry",
+    "op": "colorRGB",
+    "variant": "setterReentry"
+  },
+  {
+    "case": "Color.getRGB:setterThrow",
+    "op": "colorRGB",
+    "variant": "setterThrow",
+    "expectedError": {
+      "raw": "setter"
+    }
+  },
+  {
+    "case": "Color.getRGB:returnIgnored",
+    "op": "colorRGB",
+    "variant": "returnIgnored"
+  },
+  {
+    "case": "Color.getRGB:convertReentry",
+    "op": "colorRGB",
+    "variant": "convertReentry"
+  },
+  {
+    "case": "Color.getRGB:convertThrow",
+    "op": "colorRGB",
+    "variant": "convertThrow",
+    "expectedError": {
+      "raw": "convert"
+    }
+  },
+  {
+    "case": "Color.getRGB:targetNull",
+    "op": "colorRGB",
+    "variant": "targetNull",
+    "expectedError": {
+      "name": "TypeError"
+    }
+  },
+  {
+    "case": "Color.getRGB:space=srgb",
+    "op": "colorRGB",
+    "variant": "default",
+    "colorSpace": "srgb"
+  },
+  {
+    "case": "Color.getRGB:space=srgb-linear",
+    "op": "colorRGB",
+    "variant": "default",
+    "colorSpace": "srgb-linear"
+  },
+  {
+    "case": "Color.getRGB:space=",
+    "op": "colorRGB",
+    "variant": "default",
+    "colorSpace": ""
+  }
+]

@@ -89,6 +89,16 @@ double hue(double p, double q, double t) {
 }
 JSValue method(const JSValue& receiver, const Args& args, const Args& captures) {
     auto self = receiver; const auto name = captures[0].string(); const auto first = arg(args, 0);
+    if(name=="getRGB"){
+        const auto management=nativeColorManagement();
+        const auto requestedSpace=arg(args,1),space=requestedSpace.isUndefined()?management.get("workingColorSpace"):requestedSpace;
+        // _color is the original module scratch object shared with getHex.
+        const auto convert=management.get("workingToColorSpace"),scratch=*scratchColor().lock();
+        const auto copied=scratch.get("copy").call(scratch,{self});convert.call(management,{copied,space});
+        auto target=first;
+        target.set("r",scratch.get("r"));target.set("g",scratch.get("g"));target.set("b",scratch.get("b"));
+        return target;
+    }
     if(name=="getHex"){
         const auto space=first.isUndefined()?JSValue(SRGBColorSpace):first;
         const auto management=nativeColorManagement(),convert=management.get("workingToColorSpace");
@@ -232,10 +242,12 @@ JSValue nativeColorConstructor() {
     auto prototype = ctor.get("prototype"); const auto names = keywords();
     for (const auto& [key, arity] : std::initializer_list<std::pair<const char*, unsigned>>{
         {"set",3},{"setScalar",1},{"setHex",1},{"setRGB",3},{"setHSL",3},{"setStyle",1},{"setColorName",1},
-        {"clone",0},{"copy",1},{"multiplyScalar",1},{"getHex",0},{"applyMatrix3",1},{"equals",1},{"fromArray",1},{"toArray",0},{"toJSON",0}}) {
+        {"clone",0},{"copy",1},{"multiplyScalar",1},{"getHex",0},{"getRGB",1},{"applyMatrix3",1},{"equals",1},{"fromArray",1},{"toArray",0},{"toJSON",0}}) {
         JSPropertyDescriptor d; d.value = JSValue::function(method, {key, names}, key, arity);
         if (std::string(key) == "multiplyScalar") d.value->setFunctionSourceText(
             "multiplyScalar( s ) {\r\n\r\n\t\tthis.r *= s;\r\n\t\tthis.g *= s;\r\n\t\tthis.b *= s;\r\n\r\n\t\treturn this;\r\n\r\n\t}");
+        if (std::string(key) == "getRGB") d.value->setFunctionSourceText(
+            "getRGB( target, colorSpace = ColorManagement.workingColorSpace ) {\r\n\r\n\t\tColorManagement.workingToColorSpace( _color.copy( this ), colorSpace );\r\n\r\n\t\ttarget.r = _color.r;\r\n\t\ttarget.g = _color.g;\r\n\t\ttarget.b = _color.b;\r\n\r\n\t\treturn target;\r\n\r\n\t}");
         d.writable = d.configurable = true; prototype.defineProperty(key, d);
     }
     ctor.set("NAMES", names); ctor.retainForHeapLifetime(); weak = JSWeakValue(ctor);
