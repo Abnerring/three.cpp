@@ -1,4 +1,36 @@
-# 当前接续：`PassNode` **Stage A** 落地 —— src missing 11→10，2026-11-05
+# 当前接续：`PassNode` **Stage B 完成**（主类构造器 + 静态 COLOR/DEPTH + 模块工厂），2026-11-05
+
+目标保持 active：固定 three.js 11738a9d55e502fb484cefffcea3a66dc44e9fe9 全部 src + examples/jsm 原生 C++ 逻辑，Vulkan 后端；禁止 CEF/生产 JS 引擎/桥接。阶段本地 Git 提交，不推送。
+
+## 本轮交付：`PassNode` 主类构造器
+
+- `makeClass("PassNode", 4, base=Node, passNodeInitialize)`；`superConstruct(..., {'vec4'})`（**节点类型在 `nodeType` 字段**，非 `type`）；
+- 字段全量照 L204–510：`scope/scene/camera/options`、`_width/_height=1`；
+  - `renderTarget = new RenderTarget(1,1,{type: HalfFloatType, ...options})`（`Object.assign` 展开），`texture.name='output'`；
+  - 深度：`scope==='depth' || options.depthBuffer !== false` → `options.depthTexture ?? new DepthTexture()`；stencil → `DepthStencilFormat`/`UnsignedInt248Type`；`isRenderTargetTexture=true`、`name='depth'`、挂 RT；
+  - `overrideMaterial/transparent/opaque/lighting`；`autoClear*`（options 覆盖默认 true，helper `optionOr`）；
+  - `contextNode/_contextNodeCache`；`_textures{output[,depth]}`、5 个节点/纹理字典、`_cameraNear/_cameraFar = uniform(0)`；
+  - `_mrt/_layers/null`、`_resolutionScale=1`、`_viewport/_scissor=null`；
+  - `isPassNode=true`、`updateBeforeType=NodeUpdateType.FRAME`、`global=true`。
+- **静态 getter**：`PassNode.COLOR='color'`、`PassNode.DEPTH='depth'`（`Object.defineProperty` + getter 捕获值）。
+- **模块导出工厂**：`pass(scene,camera,options)`→COLOR、`depthPass(...)`→DEPTH、`passTexture(pass,texture)`→`PassTextureNode`。
+
+## 测试（+4 例 / 25 断言）
+
+构造器字段与 RT/texture/depth 命名；静态 COLOR/DEPTH 与 `pass`/`depthPass`/`passTexture`；`depthBuffer:false` 与 autoClear 选项；depth scope 强制深度纹理。
+
+## 验证
+
+- 构建 exit 0；过滤 `*Pass*` = 16 cases / 73 assertions 全过；`THREECPPAddonTests` 全套 **1409 cases / 39,141 assertions** 通过。
+- 审计不变（PassNode 已 partial）：src 10 / 455；examples/jsm 322 / 154。
+
+**未执行验证（如实记录）**：`setup`/`updateBefore`/`setSize`/`setScissor`/`setViewport`/`dispose`、纹理/MRT/layers/resolution 访问器、`clone` 仍未实现；stencil 深度格式分支未测。
+
+## 下一步
+
+1. **Stage C**：`getTexture`/`getPreviousTexture`/`getTextureNode`/`getPreviousTextureNode`/`toggleTexture`/`setMRT`/`getMRT`/`setLayers`/`getLayers`/`setResolutionScale`/`getResolutionScale`/`getViewZNode`/`getLinearDepthNode`；
+2. **Stage D**：`setup`/`updateBefore`/`setSize`/`setScissor`/`setViewport`/`dispose`；
+3. 之后 `ToonOutlinePassNode`(6,868)。# 当前接续：`PassNode` **Stage A** 落地 —— src missing 11→10，2026-11-05
 
 目标保持 active：固定 three.js 11738a9d55e502fb484cefffcea3a66dc44e9fe9 全部 src + examples/jsm 原生 C++ 逻辑，Vulkan 后端；禁止 CEF/生产 JS 引擎/桥接。阶段本地 Git 提交，不推送。
 
