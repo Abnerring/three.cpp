@@ -9,6 +9,7 @@
 #include "nodes/lighting/ShadowFilterNode.h"
 #include "nodes/tsl/TSLBase.h"
 #include "renderers/common/QuadMesh.h"
+#include "renderers/common/RendererUtils.h"
 #include "textures/DepthTexture.h"
 
 #include <stdexcept>
@@ -214,7 +215,53 @@ JSValue vsmPass(const JSValue& self, const Args& args, const Args&) {
     quadMesh.get("render").call(quadMesh, {renderer});
     return {};
 }
-JSValue updateShadow(const JSValue&, const Args&, const Args&) { return notPorted("updateShadow"); }
+// module level renderer state cache, like the pinned `let _rendererState;`
+JSWeakValue& rendererStateCache() { static thread_local JSWeakValue weak; return weak; }
+
+// updateShadow( frame ) { save the renderer state, render the shadow map, restore it. }
+JSValue updateShadow(const JSValue& rawSelf, const Args& args, const Args&) {
+    JSValue& self = const_cast<JSValue&>(rawSelf);
+    const auto frame = arg(args, 0);
+    const auto shadowMap = self.get("shadowMap");
+    const auto shadow = self.get("shadow");
+    const auto renderer = frame.get("renderer");
+    const auto scene = frame.get("scene");
+    const auto camera = frame.get("camera");
+
+    const auto shadowType = renderer.get("shadowMap").get("type");
+    auto shadowCamera = shadow.get("camera");
+    auto layers = shadowCamera.get("layers");
+    const auto shadowCameraLayer = layers.get("mask").toNumber();
+    // if ( ( shadow.camera.layers.mask & 0xFFFFFFFE ) === 0 ) shadow.camera.layers.mask = camera.layers.mask
+    if ((static_cast<long long>(shadowCameraLayer) & 0xFFFFFFFEL) == 0) {
+        layers.set("mask", camera.get("layers").get("mask"));
+    }
+
+    const auto currentRenderObjectFunction = renderer.get("getRenderObjectFunction").call(renderer, {});
+    const auto resetState = nativeRendererUtilsBinding("resetRendererAndSceneState");
+    auto rendererState = resetState.call({}, {renderer, scene, JSValue(nullptr)});
+    rendererStateCache() = JSWeakValue(rendererState);
+
+    JSValue& sceneRef = const_cast<JSValue&>(scene);
+    sceneRef.set("overrideMaterial", self.get("getShadowMaterial").call(self, {}));
+    renderer.get("setRenderObjectFunction")
+        .call(renderer,
+              {self.get("getShadowRenderObjectFunction").call(self, {renderer, shadow})});
+    renderer.get("setClearColor").call(renderer, {JSValue(0x000000), JSValue(0)});
+    renderer.get("setRenderTarget").call(renderer, {shadowMap});
+    self.get("renderShadow").call(self, {frame});
+    renderer.get("setRenderObjectFunction").call(renderer, {currentRenderObjectFunction});
+
+    const auto vsmType = nativeNodeConstantsBinding("VSMShadowMap");
+    if (shadowType.strictEquals(vsmType) && !shadow.get("isPointLightShadow").toBoolean()) {
+        self.get("vsmPass").call(self, {renderer});
+    }
+
+    layers.set("mask", JSValue(shadowCameraLayer));
+    nativeRendererUtilsBinding("restoreRendererAndSceneState")
+        .call({}, {renderer, scene, rendererState});
+    return {};
+}
 JSValue updateBefore(const JSValue&, const Args&, const Args&) { return notPorted("updateBefore"); }
 }  // namespace
 

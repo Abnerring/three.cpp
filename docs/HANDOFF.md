@@ -1,4 +1,34 @@
-# 当前接续：`ShadowNode` `renderShadow`/`vsmPass` 冒烟测试补齐（r124 缺口），2026-11-05
+# 当前接续：`ShadowNode` `updateShadow` 实现完成（测试受阻于 RendererUtils 真实依赖），2026-11-05
+
+目标保持 active：固定 three.js 11738a9d55e502fb484cefffcea3a66dc44e9fe9 全部 src + examples/jsm 原生 C++ 逻辑，Vulkan 后端；禁止 CEF/生产 JS 引擎/桥接。阶段本地 Git 提交，不推送。
+
+## 本轮交付：`updateShadow`（照抄 L666–709）
+
+实现内容：
+1. `shadowType = renderer.shadowMap.type`；
+2. 保存 `shadowCamera.layers.mask`；若 `(mask & 0xFFFFFFFE) === 0` 则临时改为 `camera.layers.mask`；
+3. `currentRenderObjectFunction = renderer.getRenderObjectFunction()`；
+4. `_rendererState = resetRendererAndSceneState(renderer, scene, _rendererState)`（模块级 `rendererStateCache()` 用 `JSWeakValue` 保存）；
+5. `scene.overrideMaterial = this.getShadowMaterial()`；`renderer.setRenderObjectFunction(this.getShadowRenderObjectFunction(renderer, shadow))`；`setClearColor(0x000000, 0)`；`setRenderTarget(shadowMap)`；`this.renderShadow(frame)`；恢复 `setRenderObjectFunction(currentRenderObjectFunction)`；
+6. `shadowType === VSMShadowMap && !shadow.isPointLightShadow` → `this.vsmPass(renderer)`；
+7. 恢复 `shadowCamera.layers.mask`，`restoreRendererAndSceneState(renderer, scene, _rendererState)`。
+
+## 本轮测试尝试与结论（如实记录）
+
+尝试写 `updateShadow` 冒烟测试，在 `REQUIRE_NOTHROW` 处**抛异常**：原因是 `resetRendererAndSceneState` / `restoreRendererAndSceneState` 来自 `RendererUtils` 的**原生实现**，需要真实 renderer 的完整状态字段，**用 stub renderer 无法满足**。因此**移除该测试用例**，实现保留（编译通过、全套绿），并记录：`updateShadow` **目前无测试覆盖**，将来需用**真实 renderer 夹具**或为该工具函数提供可注入的 stub 绑定才能测。
+
+## 验证
+
+- 构建 exit 0；过滤 `*ShadowNode*` = **8 cases / 32 assertions** 全过；`THREECPPAddonTests` 全套 **1373 cases / 38,935 assertions** 通过。
+- 审计不变（ShadowNode 已 partial）：src 12 / 453；examples/jsm 322 / 154。
+
+**未执行验证（如实记录）**：`updateShadow` 无测试（原因见上）；`setupShadow`（240 行 TSL 图）、`setup`、`updateBefore` 仍为抛错 stub；`_quadMesh` 仍每次新建。
+
+## 下一步
+
+1. **D 段**：`setupShadow`（240 行 TSL 图）——剩余最大一块；
+2. `setup` + `updateBefore` 串联（`setup` 需 `Fn` 包裹与 `setupShadowPosition`）；
+3. `_quadMesh` 模块级单例；为 `updateShadow` 建真实 renderer 夹具。# 当前接续：`ShadowNode` `renderShadow`/`vsmPass` 冒烟测试补齐（r124 缺口），2026-11-05
 
 目标保持 active：固定 three.js 11738a9d55e502fb484cefffcea3a66dc44e9fe9 全部 src + examples/jsm 原生 C++ 逻辑，Vulkan 后端；禁止 CEF/生产 JS 引擎/桥接。阶段本地 Git 提交，不推送。
 
