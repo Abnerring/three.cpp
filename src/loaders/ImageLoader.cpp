@@ -19,12 +19,16 @@ void ImageLoader::setDecoder(JSValue value){decoderSlot()=std::move(value);}
 JSValue ImageLoader::decoder(){return decoderSlot();}
 ImageLoader::ImageLoader(JSValue manager):Loader(JSValue::object(prototype()),Existing{}){initialize(object_,manager);}
 JSValue ImageLoader::prototype() {
-    static thread_local auto value=[] {
+    static thread_local JSWeakValue cached;
+    if(const auto value=cached.lock();value&&value->isObject())return *value;
+    static thread_local bool initializing=false;
+    JSModuleInitializationScope scope(initializing,"ImageLoader prototype");
+    auto value=[] {
         auto constructor=JSValue::constructor([](const JSValue& self,const Args& args,const Args&)->JSValue{
             initialize(self,arg(args,0));
             return {};
         },{},"ImageLoader",1);
-        constructor.setPrototype(Loader::prototype().get("constructor"));
+        constructor.setPrototype(nativeLoaderConstructor());
         auto result=constructor.get("prototype");
         result.setPrototype(Loader::prototype());
         for(const auto& [name,arity]:std::initializer_list<std::pair<const char*,unsigned>>{{"load",4}}) {
@@ -35,10 +39,14 @@ JSValue ImageLoader::prototype() {
             },{name},name,arity);
             result.defineProperty(name,descriptor);
         }
+        result.setInternalSlot("ImageLoader.constructor",constructor);
+        constructor.retainForHeapLifetime();
         return result;
     }();
+    cached=JSWeakValue(value);
     return value;
 }
+JSValue nativeImageLoaderConstructor(){return ImageLoader::prototype().getInternalSlot("ImageLoader.constructor");}
 JSValue ImageLoader::load(JSValue url,JSValue onLoad,JSValue onProgress,JSValue onError){
     static_cast<void>(onProgress);   // unsupported upstream, and not consulted here
     JSValue self=object_;

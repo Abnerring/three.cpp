@@ -20,3 +20,7 @@ class TorusGeometry : public BufferGeometry {
     JsonValue toJSON() const override;
     static std::shared_ptr<TorusGeometry> fromJSON(const JsonValue& data);
 };
+
+JSValue nativeTorusGeometryModule();
+JSValue nativeTorusGeometryBinding(const std::string& name);
+JSValue nativeTorusGeometryConstructor();

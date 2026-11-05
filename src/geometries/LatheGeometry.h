@@ -20,3 +20,7 @@ class LatheGeometry : public BufferGeometry {
     JsonValue toJSON() const override;
     static std::shared_ptr<LatheGeometry> fromJSON(const JsonValue& data);
 };
+
+JSValue nativeLatheGeometryModule();
+JSValue nativeLatheGeometryBinding(const std::string& name);
+JSValue nativeLatheGeometryConstructor();

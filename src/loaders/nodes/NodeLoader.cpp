@@ -3,6 +3,7 @@
 #include "loaders/nodes/NodeLoaderSources.inc"
 
 #include "core/JSGlobal.h"
+#include "core/JSPromise.h"
 #include "loaders/FileLoader.h"
 #include "loaders/Loader.h"
 #include "nodes/lighting/LightingNodeRuntime.h"
@@ -18,82 +19,81 @@ JSWeakValue& lexical() { static thread_local JSWeakValue weak; return weak; }
 
 // load( url, onLoad, onProgress, onError ) { ... }
 JSValue load(const JSValue& self, const Args& args, const Args&) {
-    const auto url = arg(args, 0, nullptr);
-    const auto onLoad = arg(args, 1, nullptr);
-    const auto onProgress = arg(args, 2, nullptr);
-    const auto onError = arg(args, 3, nullptr);
+    const auto url = arg(args, 0);
+    const auto onLoad = arg(args, 1);
+    const auto onProgress = arg(args, 2);
+    const auto onError = arg(args, 3);
 
     FileLoader fileLoader(self.get("manager"));
-    const auto forward = [&](const char* name, const JSValue& value) {
-        const auto method = fileLoader.object().get(name);
-        if (!method.isUndefined()) method.call(fileLoader.object(), {value});
-    };
-    forward("setPath", self.get("path"));
-    forward("setRequestHeader", self.get("requestHeader"));
-    forward("setWithCredentials", self.get("withCredentials"));
+    invoke(fileLoader.object(), "setPath")({self.get("path")});
+    invoke(fileLoader.object(), "setRequestHeader")({self.get("requestHeader")});
+    invoke(fileLoader.object(), "setWithCredentials")({self.get("withCredentials")});
 
     // ( text ) => { try { onLoad( this.parse( JSON.parse( text ) ) ); } catch ( e ) { ... } }
     auto onText = JSValue::function(
         +[](const JSValue&, const Args& args, const Args& captures) -> JSValue {
             const auto self = captures[0];
-            const auto text = arg(args, 0, nullptr);
+            const auto text = arg(args, 0);
             const auto onLoad = captures[1];
             const auto onError = captures[2];
             const auto url = captures[3];
             try {
-                const auto json = nativeGlobalBinding("JSON").get("parse").call({}, {text});
-                onLoad.call({}, {invoke(self, "parse")({json})});
-            } catch (const std::exception& exception) {
+                const auto parse = invoke(self, "parse");
+                const auto jsonObject = nativeGlobalBinding("JSON");
+                const auto json = jsonObject.get("parse").call(jsonObject, {text});
+                onLoad.call({}, {parse({json})});
+            } catch (...) {
+                const auto exception = nativeExceptionValue(std::current_exception());
                 if (onError.toBoolean()) {
-                    onError.call({}, {JSValue(exception.what())});
+                    onError.call({}, {exception});
                 } else {
-                    ThreeUtils::error({JSValue(exception.what())});
+                    ThreeUtils::error({exception});
                 }
                 invoke(self.get("manager"), "itemError")({url});
             }
             return {};
         },
-        {self, onLoad, onError, url}, "onLoad", 1);
-    return fileLoader.load(url, onText, onProgress, onError);
+        {self, onLoad, onError, url}, "", 1);
+    onText.setFunctionSourceText(NodeLoaderSource::loadCallbackSource);
+    fileLoader.load(url, onText, onProgress, onError);
+    return {};
 }
 
 // parseNodes( json ) { ... }
 JSValue parseNodes(const JSValue& self, const Args& args, const Args&) {
-    auto nodes = JSValue::object(nullptr);
-    const auto json = arg(args, 0, nullptr);
-    if (!json.isUndefined() && !json.isNull()) {
-        const auto length = json.length();
-        for (std::size_t i = 0; i < length; ++i) {
-            const auto nodeJSON = json.get(i);
+    auto nodes = JSValue::object();
+    const auto json = arg(args, 0);
+    if (!json.isUndefined()) {
+        each(json, [&](const JSValue& nodeJSON) {
             const auto uuid = nodeJSON.get("uuid");
             const auto type = nodeJSON.get("type");
-            auto created = invoke(self, "createNodeFromType")({type});
+            const auto value = invoke(self, "createNodeFromType")({type});
+            nodes.set(uuid, value);
+            auto created = nodes.get(uuid);
             created.set("uuid", uuid);
-            nodes.set(uuid.toString(), created);
-        }
-        auto meta = JSValue::object(nullptr);
-        meta.set("nodes", nodes);
-        meta.set("textures", self.get("textures"));
-        for (std::size_t i = 0; i < length; ++i) {
-            auto nodeJSON = json.get(i);
+        });
+        auto meta = JSValue::object();
+        own(meta, "nodes", nodes);
+        own(meta, "textures", self.get("textures"));
+        each(json, [&](JSValue nodeJSON) {
             nodeJSON.set("meta", meta);
-            const auto node = nodes.get(nodeJSON.get("uuid").toString());
+            const auto node = nodes.get(nodeJSON.get("uuid"));
             invoke(node, "deserialize")({nodeJSON});
             nodeJSON.erase("meta");
-        }
+        });
     }
     return nodes;
 }
 
 // parse( json ) { ... }
 JSValue parse(const JSValue& self, const Args& args, const Args&) {
-    const auto json = arg(args, 0, nullptr);
+    const auto json = arg(args, 0);
     auto node = invoke(self, "createNodeFromType")({json.get("type")});
     node.set("uuid", json.get("uuid"));
     const auto nodes = invoke(self, "parseNodes")({json.get("nodes")});
-    auto meta = JSValue::object(nullptr);
-    meta.set("nodes", nodes);
-    meta.set("textures", self.get("textures"));
+    auto meta = JSValue::object();
+    own(meta, "nodes", nodes);
+    own(meta, "textures", self.get("textures"));
     auto data = json;
     data.set("meta", meta);
     invoke(node, "deserialize")({data});
@@ -104,27 +104,25 @@ JSValue parse(const JSValue& self, const Args& args, const Args&) {
 // setTextures( value ) { this.textures = value; return this; }
 JSValue setTextures(const JSValue& self, const Args& args, const Args&) {
     auto node = self;
-    node.set("textures", arg(args, 0, nullptr));
+    node.set("textures", arg(args, 0));
     return self;
 }
 
 // setNodes( value ) { this.nodes = value; return this; }
 JSValue setNodes(const JSValue& self, const Args& args, const Args&) {
     auto node = self;
-    node.set("nodes", arg(args, 0, nullptr));
+    node.set("nodes", arg(args, 0));
     return self;
 }
 
 // createNodeFromType( type ) { ... }
 JSValue createNodeFromType(const JSValue& self, const Args& args, const Args&) {
-    const auto type = arg(args, 0, nullptr);
-    const auto registry = self.get("nodes");
-    const auto ctorValue = registry.get(type.toString());
-    if (ctorValue.isUndefined()) {
+    const auto type = arg(args, 0);
+    if (self.get("nodes").get(type).isUndefined()) {
         ThreeUtils::error({JSValue("NodeLoader: Node type not found:"), type});
         return nativeTSLBaseBinding("float").call({}, {});
     }
-    return ctorValue.construct({});
+    return self.get("nodes").get(type).construct({});
 }
 }  // namespace
 
@@ -142,8 +140,8 @@ JSValue nativeNodeLoaderModule() {
             // super( manager ): the base class is the prototype of the constructor the holder carries.
             const auto baseCtor = captures[0].get("constructor").getPrototype();
             auto self = baseCtor.construct({arg(args, 0)}, target);
-            self.set("textures", JSValue::object(nullptr));
-            self.set("nodes", JSValue::object(nullptr));
+            self.set("textures", JSValue::object());
+            self.set("nodes", JSValue::object());
             return self;
         },
         {holder}, "NodeLoader", 1);

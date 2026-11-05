@@ -1,5 +1,6 @@
 #pragma once
 #include "loaders/LoadingManager.h"
+JSValue nativeLoaderConstructor();
 
 class Loader {
   public:

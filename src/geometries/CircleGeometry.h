@@ -17,3 +17,7 @@ class CircleGeometry : public BufferGeometry {
     JsonValue toJSON() const override;
     static std::shared_ptr<CircleGeometry> fromJSON(const JsonValue& data);
 };
+
+JSValue nativeCircleGeometryModule();
+JSValue nativeCircleGeometryBinding(const std::string& name);
+JSValue nativeCircleGeometryConstructor();

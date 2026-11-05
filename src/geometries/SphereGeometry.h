@@ -20,3 +20,7 @@ class SphereGeometry : public BufferGeometry {
     JsonValue toJSON() const override;
     static std::shared_ptr<SphereGeometry> fromJSON(const JsonValue& data);
 };
+
+JSValue nativeSphereGeometryModule();
+JSValue nativeSphereGeometryBinding(const std::string& name);
+JSValue nativeSphereGeometryConstructor();

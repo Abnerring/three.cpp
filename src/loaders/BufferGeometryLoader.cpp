@@ -187,58 +187,190 @@ std::shared_ptr<BufferGeometry> BufferGeometryLoader::parseGeometry(JSValue json
     if(!userData.isUndefined())geometry->userData=userData.toJSON().value_or(JsonValue::Object{});   // JsonValue, not JSValue
     return geometry;
 }
-JSValue BufferGeometryLoader::parse(JSValue json){return nativeGeometry(parseGeometry(json));}
-BufferGeometryLoader::BufferGeometryLoader(JSValue manager):Loader(JSValue::object(prototype()),Existing{}){initialize(object_,manager);}
-JSValue BufferGeometryLoader::prototype() {
-    static thread_local auto value=[] {
-        auto constructor=JSValue::constructor([](const JSValue& self,const Args& args,const Args&)->JSValue{
-            initialize(self,arg(args,0));
-            return {};
-        },{},"BufferGeometryLoader",1);
-        constructor.setPrototype(Loader::prototype().get("constructor"));
-        auto result=constructor.get("prototype");
-        result.setPrototype(Loader::prototype());
-        for(const auto& [name,arity]:std::initializer_list<std::pair<const char*,unsigned>>{{"load",4},{"parse",1}}) {
-            JSPropertyDescriptor descriptor;descriptor.configurable=descriptor.writable=true;
-            descriptor.value=JSValue::function([](const JSValue& receiver,const Args& args,const Args& captures)->JSValue{
-                BufferGeometryLoader loader=BufferGeometryLoader::fromObject(receiver);
-                if(captures[0].string()=="parse")return loader.parse(arg(args,0));
-                return loader.load(arg(args,0),arg(args,1),arg(args,2),arg(args,3));
-            },{name},name,arity);
-            result.defineProperty(name,descriptor);
-        }
-        return result;
-    }();
-    return value;
-}
-namespace {
-struct Pending {
-    JSValue onLoad{},onError{},manager{},url{};
+#include "loaders/BufferGeometryLoaderSources.inc"
+#include "core/JSGlobal.h"
+#include "core/JSPromise.h"
+#include "utils.h"
+#include <unordered_set>
+#include <limits>
+namespace BufferGeometryLoaderManaged {
+struct Invocation {
+    JSValue receiver,method;
+    JSValue operator()(const Args& args={})const{return method.call(receiver,args);}
 };
-Pending& pending(){static thread_local Pending value;return value;}
-JSValue loadedCallback(const JSValue&,const Args& args,const Args&){
-    auto& slot=pending();
-    try {
-        BufferGeometryLoader parser;
-        const auto geometry=parser.parse(Animation_detail::parseJSON(args.empty()?std::string{}:args[0].toString()));
-        if(!slot.onLoad.isUndefined())slot.onLoad.call(JSValue{}, {geometry});
-    } catch(const std::exception& error) {
-        if(!slot.onError.isUndefined())slot.onError.call(JSValue{}, {JSValue(error.what())});
-        if(!slot.manager.isUndefined())slot.manager.get("itemError").call(slot.manager, {slot.url});
+Invocation invoke(const JSValue& receiver,const char* name){return {receiver,receiver.get(name)};}
+void own(JSValue object,const char* key,const JSValue& value){JSPropertyDescriptor descriptor;descriptor.value=value;descriptor.writable=descriptor.enumerable=descriptor.configurable=true;object.defineProperty(key,descriptor);}
+class ForInCursor {
+    JSValue object;std::vector<JSValue> keys;std::unordered_set<std::string> visited;
+    std::size_t index=0;bool loaded=false;
+  public:
+    explicit ForInCursor(JSValue value):object(value.isNull()||value.isUndefined()?JSValue(nullptr):value.toObject()){}
+    std::optional<JSValue> next(){
+        while(!object.isNull()){
+            if(!loaded){keys=object.ownPropertyKeys();index=0;loaded=true;}
+            while(index<keys.size()){
+                const auto key=keys[index++];if(key.isSymbol()||visited.contains(key.string()))continue;
+                const auto descriptor=object.getOwnPropertyDescriptor(key);if(!descriptor)continue;
+                visited.insert(key.string());if(descriptor->enumerable.value_or(false))return key;
+            }
+            object=object.getPrototype();loaded=false;
+        }
+        return {};
     }
-    return {};
+};
+JSValue instancedGeometryConstructor(const JSValue& base){
+    auto constructor=JSValue::builtinConstructor(+[](const JSValue& newTarget,const Args&,const Args& captures)->JSValue{
+        auto self=captures[0].construct({},newTarget);
+        own(self,"isInstancedBufferGeometry",true);self.set("type","InstancedBufferGeometry");own(self,"instanceCount",std::numeric_limits<double>::infinity());return self;
+    },{base},"InstancedBufferGeometry",0);
+    constructor.setPrototype(base);constructor.setFunctionSourceText(BufferGeometryLoaderSource::instancedClassSource);
+    auto prototype=constructor.get("prototype");prototype.setPrototype(base.get("prototype"));
+    JSPropertyDescriptor descriptor;descriptor.writable=descriptor.configurable=true;
+    auto copy=JSValue::function(+[](const JSValue& self,const Args& args,const Args& captures)->JSValue{
+        const auto parent=captures[0].getPrototype();const auto method=parent.get("copy",self);method.call(self,{arg(args,0)});
+        auto target=self;target.set("instanceCount",arg(args,0).get("instanceCount"));return self;
+    },{prototype},"copy",1);copy.setFunctionSourceText(BufferGeometryLoaderSource::instancedCopySource);descriptor.value=copy;prototype.defineProperty("copy",descriptor);
+    auto toJSON=JSValue::function(+[](const JSValue& self,const Args&,const Args& captures)->JSValue{
+        const auto parent=captures[0].getPrototype();const auto method=parent.get("toJSON",self);auto data=method.call(self,{});
+        data.set("instanceCount",self.get("instanceCount"));data.set("isInstancedBufferGeometry",true);return data;
+    },{prototype},"toJSON",0);toJSON.setFunctionSourceText(BufferGeometryLoaderSource::instancedToJSONSource);descriptor.value=toJSON;prototype.defineProperty("toJSON",descriptor);
+    return constructor;
 }
+JSValue typedArray(const JSValue& imports,const JSValue& type,const JSValue& buffer){
+    return imports.get("TYPED_ARRAYS").get(type).construct({buffer});
 }
-JSValue BufferGeometryLoader::load(JSValue url,JSValue onLoad,JSValue onProgress,JSValue onError){
-    auto& slot=pending();
-    slot.onLoad=onLoad;slot.onError=onError;slot.url=url;
-    slot.manager=object_.get("manager");
-    FileLoader fileLoader(slot.manager);
-    const auto call=[&](const char* name,const JSValue& value){const auto method=fileLoader.object().get(name);if(!method.isUndefined())method.call(fileLoader.object(),{value});};
-    call("setPath",object_.get("path"));
-    call("setRequestHeader",object_.get("requestHeader"));
-    call("setWithCredentials",object_.get("withCredentials"));
-    const auto result=fileLoader.load(url,JSValue::function(loadedCallback,{}, "onLoad", 1),onProgress,onError);
-    slot= Pending{};
-    return result;
+JSValue arrayBuffer(const JSValue& state,const JSValue& json,const JSValue& uuid){
+    auto cache=state.get("arrayBufferMap");
+    if(!cache.get(uuid).isUndefined())return cache.get(uuid);
+    const auto arrays=json.get("arrayBuffers");const auto words=arrays.get(uuid);
+    const auto buffer=nativeGlobalBinding("Uint32Array").construct({words}).get("buffer");
+    cache.set(uuid,buffer);return buffer;
 }
+JSValue interleavedBuffer(const JSValue& state,const JSValue& json,const JSValue& uuid){
+    auto cache=state.get("interleavedBufferMap");
+    if(!cache.get(uuid).isUndefined())return cache.get(uuid);
+    const auto buffers=json.get("interleavedBuffers");const auto description=buffers.get(uuid);
+    const auto buffer=arrayBuffer(state,json,description.get("buffer"));
+    const auto imports=state.get("imports");const auto type=description.get("type");const auto array=typedArray(imports,type,buffer);
+    const auto ib=imports.get("InterleavedBuffer").construct({array,description.get("stride")});
+    auto result=ib;result.set("uuid",description.get("uuid"));
+    if(!description.get("usage").isUndefined())invoke(ib,"setUsage")({description.get("usage")});
+    cache.set(uuid,ib);return ib;
+}
+void optionalAttributeFields(const JSValue& description,JSValue attribute){
+    if(!description.get("name").isUndefined())attribute.set("name",description.get("name"));
+    if(!description.get("usage").isUndefined())invoke(attribute,"setUsage")({description.get("usage")});
+    if(!description.get("gpuType").isUndefined())attribute.set("gpuType",description.get("gpuType"));
+}
+JSValue makeAttribute(const JSValue& state,const JSValue& json,const JSValue& description,bool morph){
+    const auto imports=state.get("imports");JSValue attribute;
+    if(description.get("isInterleavedBufferAttribute").toBoolean()){
+        // json.data is read anew at this exact source call site. Its getter
+        // may return a distinct data object, mutate the document, or reenter.
+        const auto data=json.get("data");const auto uuid=description.get("data");
+        const auto ib=interleavedBuffer(state,data,uuid);
+        attribute=imports.get("InterleavedBufferAttribute").construct({ib,description.get("itemSize"),description.get("offset"),description.get("normalized")});
+    }else{
+        const auto type=description.get("type");const auto values=description.get("array");const auto array=typedArray(imports,type,values);
+        const auto constructor=morph?imports.get("BufferAttribute"):description.get("isInstancedBufferAttribute").toBoolean()?imports.get("InstancedBufferAttribute"):imports.get("BufferAttribute");
+        attribute=constructor.construct({array,description.get("itemSize"),description.get("normalized")});
+    }
+    optionalAttributeFields(description,attribute);return attribute;
+}
+JSValue parse(const JSValue&,const Args& args,const Args& captures){
+    const auto json=arg(args,0),imports=captures[0];
+    auto state=JSValue::object(nullptr);own(state,"imports",imports);own(state,"interleavedBufferMap",JSValue::object());own(state,"arrayBufferMap",JSValue::object());
+    const auto constructor=json.get("isInstancedBufferGeometry").toBoolean()?imports.get("InstancedBufferGeometry"):imports.get("BufferGeometry");
+    auto geometry=constructor.construct();
+    const auto index=json.get("data").get("index");
+    if(!index.isUndefined()){
+        const auto type=index.get("type");const auto values=index.get("array");const auto array=typedArray(imports,type,values);
+        invoke(geometry,"setIndex")({imports.get("BufferAttribute").construct({array,1})});
+    }
+    const auto attributes=json.get("data").get("attributes");
+    ForInCursor attributeKeys(attributes);
+    while(const auto key=attributeKeys.next()){
+        const auto description=attributes.get(*key);const auto attribute=makeAttribute(state,json,description,false);
+        invoke(geometry,"setAttribute")({*key,attribute});
+    }
+    const auto morph=json.get("data").get("morphAttributes");
+    if(morph.toBoolean()){
+        ForInCursor morphKeys(morph);
+        while(const auto key=morphKeys.next()){
+            const auto descriptions=morph.get(*key);auto array=JSValue::array();const auto length=descriptions.get("length");
+            for(double i=0;i<length.toNumber();++i){
+                const auto description=descriptions.get(JSValue(i));const auto attribute=makeAttribute(state,json,description,true);
+                invoke(array,"push")({attribute});
+            }
+            auto destination=geometry.get("morphAttributes");destination.set(*key,array);
+        }
+    }
+    const auto relative=json.get("data").get("morphTargetsRelative");
+    if(relative.toBoolean())geometry.set("morphTargetsRelative",true);
+    auto groups=json.get("data").get("groups");
+    if(!groups.toBoolean())groups=json.get("data").get("drawcalls");
+    if(!groups.toBoolean())groups=json.get("data").get("offsets");
+    if(!groups.isUndefined()){
+        const auto length=groups.get("length");
+        for(double i=0;!JSValue(i).strictEquals(length);++i){
+            const auto group=groups.get(JSValue(i));invoke(geometry,"addGroup")({group.get("start"),group.get("count"),group.get("materialIndex")});
+        }
+    }
+    const auto sphere=json.get("data").get("boundingSphere");
+    if(!sphere.isUndefined())geometry.set("boundingSphere",invoke(imports.get("Sphere").construct(),"fromJSON")({sphere}));
+    if(json.get("name").toBoolean())geometry.set("name",json.get("name"));
+    if(json.get("userData").toBoolean())geometry.set("userData",json.get("userData"));
+    return geometry;
+}
+JSValue load(const JSValue& self,const Args& args,const Args& captures){
+    const auto imports=captures[0],url=arg(args,0),onLoad=arg(args,1),onProgress=arg(args,2),onError=arg(args,3);
+    const auto loader=imports.get("FileLoader").construct({self.get("manager")});
+    invoke(loader,"setPath")({self.get("path")});invoke(loader,"setRequestHeader")({self.get("requestHeader")});invoke(loader,"setWithCredentials")({self.get("withCredentials")});
+    auto callback=JSValue::function(+[](const JSValue&,const Args& args,const Args& captures)->JSValue{
+        try{
+            // Resolve scope.parse before JSON.parse, preserving member getter
+            // order and the source catch boundary around the onLoad callback.
+            const auto parse=invoke(captures[0],"parse");
+            const auto json=invoke(nativeGlobalBinding("JSON"),"parse")({arg(args,0)});
+            captures[1].call({}, {parse({json})});
+        }catch(...){
+            const auto error=nativeExceptionValue(std::current_exception());
+            if(captures[2].toBoolean())captures[2].call({}, {error});else ThreeUtils::error({error});
+            invoke(captures[0].get("manager"),"itemError")({captures[3]});
+        }
+        return {};
+    },{self,onLoad,onError,url},"",1);
+    callback.setFunctionSourceText(BufferGeometryLoaderSource::callback1Source);
+    invoke(loader,"load")({url,callback,onProgress,onError});return {};
+}
+JSValue imports(){
+    auto imports=JSValue::object(nullptr);own(imports,"BufferGeometry",nativeBufferGeometryConstructor());
+    own(imports,"InstancedBufferGeometry",instancedGeometryConstructor(imports.get("BufferGeometry")));
+    own(imports,"BufferAttribute",nativeBufferAttributeConstructor());own(imports,"InstancedBufferAttribute",nativeInstancedBufferAttributeConstructor());
+    own(imports,"InterleavedBuffer",InterleavedBuffer::constructor());own(imports,"InterleavedBufferAttribute",InterleavedBufferAttribute::constructor());
+    own(imports,"FileLoader",nativeFileLoaderConstructor());own(imports,"Sphere",nativeSphereConstructor());
+    auto arrays=JSValue::object();
+    for(const auto* name:{"Int8Array","Uint8Array","Uint8ClampedArray","Int16Array","Uint16Array","Int32Array","Uint32Array","Float32Array","Float64Array"})own(arrays,name,nativeGlobalBinding(name));
+    own(imports,"TYPED_ARRAYS",arrays);return imports;
+}
+} // namespace BufferGeometryLoaderManaged
+
+JSValue BufferGeometryLoader::parse(JSValue json){return object_.get("parse").call(object_,{json});}
+BufferGeometryLoader::BufferGeometryLoader(JSValue manager):Loader(nativeBufferGeometryLoaderConstructor().construct({manager}),Existing{}){}
+JSValue BufferGeometryLoader::prototype(){
+    static thread_local JSWeakValue cached;
+    if(const auto value=cached.lock();value&&value->isObject())return *value;
+    static thread_local bool initializing=false;JSModuleInitializationScope scope(initializing,"BufferGeometryLoader prototype");
+    auto imports=BufferGeometryLoaderManaged::imports();
+    auto constructor=JSValue::builtinConstructor(+[](const JSValue& newTarget,const Args& args,const Args& captures)->JSValue{
+        return captures[0].construct({arg(args,0)},newTarget);
+    },{nativeLoaderConstructor()},"BufferGeometryLoader",1);
+    constructor.setPrototype(nativeLoaderConstructor());constructor.setFunctionSourceText(BufferGeometryLoaderSource::classSource);
+    auto prototype=constructor.get("prototype");prototype.setPrototype(Loader::prototype());
+    JSPropertyDescriptor descriptor;descriptor.writable=descriptor.configurable=true;
+    auto load=JSValue::function(BufferGeometryLoaderManaged::load,{imports},"load",4);load.setFunctionSourceText(BufferGeometryLoaderSource::loadSource);descriptor.value=load;prototype.defineProperty("load",descriptor);
+    auto parse=JSValue::function(BufferGeometryLoaderManaged::parse,{imports},"parse",1);parse.setFunctionSourceText(BufferGeometryLoaderSource::parseSource);descriptor.value=parse;prototype.defineProperty("parse",descriptor);
+    prototype.setInternalSlot("BufferGeometryLoader.constructor",constructor);constructor.retainForHeapLifetime();cached=JSWeakValue(prototype);return prototype;
+}
+JSValue nativeBufferGeometryLoaderConstructor(){return BufferGeometryLoader::prototype().getInternalSlot("BufferGeometryLoader.constructor");}
+JSValue BufferGeometryLoader::load(JSValue url,JSValue onLoad,JSValue onProgress,JSValue onError){return object_.get("load").call(object_,{url,onLoad,onProgress,onError});}

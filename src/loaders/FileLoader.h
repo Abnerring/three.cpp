@@ -1,5 +1,6 @@
 ﻿#pragma once
 #include "loaders/Loader.h"
+JSValue nativeFileLoaderConstructor();
 
 // Native port of src/loaders/FileLoader.js from the pinned three.js revision (see upstream.json).
 //

@@ -1,8 +1,13 @@
 #pragma once
+#include "core/JSValue.h"
 #include "math/Vector2.h"
 #include <array>
 #include <memory>
 #include <vector>
+
+JSValue nativeShapeUtilsModule();
+JSValue nativeShapeUtilsConstructor();
+JSValue nativeShapeUtilsBinding(const std::string& name);
 
 class ShapeUtils {
   public:

@@ -1,6 +1,11 @@
 #pragma once
 #include "loaders/Loader.h"
 #include "materials/Material.h"
+
+JSValue nativeMaterialLoaderModule();
+JSValue nativeMaterialLoaderBinding(const std::string& name);
+JSValue nativeMaterialLoaderConstructor();
+
 class MaterialLoader : public Loader {
   public:
     explicit MaterialLoader(JSValue manager={});

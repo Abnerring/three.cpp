@@ -1,0 +1,3361 @@
+{
+  "schema": {
+    "Object3D": [
+      "type",
+      "uuid",
+      "name",
+      "parent",
+      "children",
+      "up",
+      "position",
+      "rotation",
+      "quaternion",
+      "scale",
+      "pivot",
+      "matrix",
+      "matrixWorld",
+      "matrixAutoUpdate",
+      "matrixWorldAutoUpdate",
+      "matrixWorldNeedsUpdate",
+      "layers",
+      "visible",
+      "castShadow",
+      "receiveShadow",
+      "frustumCulled",
+      "renderOrder",
+      "static",
+      "userData",
+      "animations",
+      "geometry",
+      "material",
+      "morphTargetDictionary",
+      "morphTargetInfluences",
+      "count",
+      "instanceMatrix",
+      "instanceColor",
+      "bindMode",
+      "bindMatrix",
+      "bindMatrixInverse",
+      "skeleton",
+      "background",
+      "environment",
+      "fog",
+      "backgroundBlurriness",
+      "backgroundIntensity",
+      "backgroundRotation",
+      "environmentIntensity",
+      "environmentRotation",
+      "fov",
+      "aspect",
+      "near",
+      "far",
+      "focus",
+      "zoom",
+      "filmGauge",
+      "filmOffset",
+      "view",
+      "left",
+      "right",
+      "top",
+      "bottom",
+      "projectionMatrix",
+      "projectionMatrixInverse",
+      "color",
+      "intensity",
+      "groundColor",
+      "target",
+      "shadow",
+      "distance",
+      "decay",
+      "angle",
+      "penumbra",
+      "width",
+      "height",
+      "sh",
+      "center",
+      "autoUpdate",
+      "levels",
+      "boundingBox",
+      "boundingSphere",
+      "_drawRanges",
+      "_reservedRanges",
+      "_geometryInfo",
+      "_instanceInfo",
+      "_availableInstanceIds",
+      "_availableGeometryIds",
+      "_nextIndexStart",
+      "_nextVertexStart",
+      "_geometryCount",
+      "_maxInstanceCount",
+      "_maxVertexCount",
+      "_maxIndexCount",
+      "_geometryInitialized",
+      "_matricesTexture",
+      "_indirectTexture",
+      "_colorsTexture"
+    ],
+    "BufferGeometry": [
+      "type",
+      "uuid",
+      "name",
+      "index",
+      "attributes",
+      "morphAttributes",
+      "morphTargetsRelative",
+      "groups",
+      "boundingBox",
+      "boundingSphere",
+      "drawRange",
+      "indirect",
+      "parameters",
+      "userData",
+      "instanceCount"
+    ],
+    "BufferAttribute": [
+      "name",
+      "array",
+      "itemSize",
+      "count",
+      "normalized",
+      "usage",
+      "updateRanges",
+      "gpuType",
+      "version",
+      "meshPerAttribute"
+    ],
+    "InterleavedBufferAttribute": [
+      "name",
+      "data",
+      "itemSize",
+      "offset",
+      "normalized"
+    ],
+    "InterleavedBuffer": [
+      "array",
+      "stride",
+      "count",
+      "usage",
+      "updateRanges",
+      "version",
+      "meshPerAttribute"
+    ],
+    "Material": [
+      "type",
+      "uuid",
+      "name",
+      "color",
+      "roughness",
+      "metalness",
+      "clearcoat",
+      "clearcoatRoughness",
+      "transmission",
+      "thickness",
+      "ior",
+      "iridescence",
+      "iridescenceIOR",
+      "iridescenceThicknessRange",
+      "sheen",
+      "sheenColor",
+      "sheenRoughness",
+      "specularColor",
+      "specularIntensity",
+      "emissive",
+      "emissiveIntensity",
+      "opacity",
+      "transparent",
+      "alphaTest",
+      "alphaHash",
+      "side",
+      "depthTest",
+      "depthWrite",
+      "colorWrite",
+      "blending",
+      "blendSrc",
+      "blendDst",
+      "blendEquation",
+      "vertexColors",
+      "visible",
+      "toneMapped",
+      "wireframe",
+      "map",
+      "alphaMap",
+      "normalMap",
+      "normalScale",
+      "roughnessMap",
+      "metalnessMap",
+      "emissiveMap",
+      "aoMap",
+      "envMap",
+      "bumpMap",
+      "bumpScale",
+      "displacementMap",
+      "displacementScale",
+      "displacementBias",
+      "userData",
+      "version"
+    ],
+    "Texture": [
+      "uuid",
+      "name",
+      "source",
+      "mipmaps",
+      "mapping",
+      "channel",
+      "wrapS",
+      "wrapT",
+      "magFilter",
+      "minFilter",
+      "anisotropy",
+      "format",
+      "internalFormat",
+      "type",
+      "offset",
+      "repeat",
+      "center",
+      "rotation",
+      "matrixAutoUpdate",
+      "matrix",
+      "generateMipmaps",
+      "mipmapsAutoUpdate",
+      "premultiplyAlpha",
+      "flipY",
+      "unpackAlignment",
+      "colorSpace",
+      "compareFunction",
+      "normalized",
+      "userData",
+      "version"
+    ],
+    "TextureSource": [
+      "uuid",
+      "data",
+      "dataReady",
+      "version"
+    ],
+    "Skeleton": [
+      "uuid",
+      "bones",
+      "boneInverses",
+      "boneMatrices",
+      "boneTexture"
+    ],
+    "Color": [
+      "r",
+      "g",
+      "b"
+    ],
+    "Vector2": [
+      "x",
+      "y"
+    ],
+    "Vector3": [
+      "x",
+      "y",
+      "z"
+    ],
+    "Vector4": [
+      "x",
+      "y",
+      "z",
+      "w"
+    ],
+    "Euler": [
+      "x",
+      "y",
+      "z",
+      "order"
+    ],
+    "Quaternion": [
+      "x",
+      "y",
+      "z",
+      "w"
+    ],
+    "Matrix3": [
+      "elements"
+    ],
+    "Matrix4": [
+      "elements"
+    ],
+    "Box3": [
+      "min",
+      "max"
+    ],
+    "Sphere": [
+      "center",
+      "radius"
+    ],
+    "SphericalHarmonics3": [
+      "coefficients"
+    ],
+    "Fog": [
+      "name",
+      "color",
+      "near",
+      "far"
+    ],
+    "FogExp2": [
+      "name",
+      "color",
+      "density"
+    ],
+    "Curve": [
+      "type",
+      "uuid",
+      "arcLengthDivisions",
+      "autoClose",
+      "curves",
+      "currentPoint",
+      "holes",
+      "aX",
+      "aY",
+      "xRadius",
+      "yRadius",
+      "aStartAngle",
+      "aEndAngle",
+      "aClockwise",
+      "aRotation",
+      "v0",
+      "v1",
+      "v2",
+      "v3",
+      "points",
+      "closed",
+      "curveType",
+      "tension"
+    ],
+    "Shadow": [
+      "camera",
+      "intensity",
+      "bias",
+      "biasNode",
+      "normalBias",
+      "radius",
+      "blurSamples",
+      "mapSize",
+      "mapType",
+      "map",
+      "mapPass",
+      "matrix",
+      "autoUpdate",
+      "needsUpdate",
+      "focus",
+      "aspect"
+    ],
+    "AnimationClip": [
+      "uuid",
+      "name",
+      "duration",
+      "blendMode",
+      "tracks",
+      "userData"
+    ],
+    "KeyframeTrack": [
+      "name",
+      "times",
+      "values",
+      "ValueTypeName",
+      "DefaultInterpolation"
+    ]
+  },
+  "brands": [
+    [
+      "isObject3D",
+      "Object3D"
+    ],
+    [
+      "isBufferGeometry",
+      "BufferGeometry"
+    ],
+    [
+      "isBufferAttribute",
+      "BufferAttribute"
+    ],
+    [
+      "isInterleavedBufferAttribute",
+      "InterleavedBufferAttribute"
+    ],
+    [
+      "isInterleavedBuffer",
+      "InterleavedBuffer"
+    ],
+    [
+      "isMaterial",
+      "Material"
+    ],
+    [
+      "isTexture",
+      "Texture"
+    ],
+    [
+      "isTextureSource",
+      "TextureSource"
+    ],
+    [
+      "isSkeleton",
+      "Skeleton"
+    ],
+    [
+      "isColor",
+      "Color"
+    ],
+    [
+      "isVector2",
+      "Vector2"
+    ],
+    [
+      "isVector3",
+      "Vector3"
+    ],
+    [
+      "isVector4",
+      "Vector4"
+    ],
+    [
+      "isEuler",
+      "Euler"
+    ],
+    [
+      "isQuaternion",
+      "Quaternion"
+    ],
+    [
+      "isMatrix3",
+      "Matrix3"
+    ],
+    [
+      "isMatrix4",
+      "Matrix4"
+    ],
+    [
+      "isBox3",
+      "Box3"
+    ],
+    [
+      "isSphere",
+      "Sphere"
+    ],
+    [
+      "isSphericalHarmonics3",
+      "SphericalHarmonics3"
+    ],
+    [
+      "isFog",
+      "Fog"
+    ],
+    [
+      "isFogExp2",
+      "FogExp2"
+    ]
+  ],
+  "structuralBrands": [
+    [
+      "arcLengthDivisions",
+      "type",
+      "Curve"
+    ],
+    [
+      "camera",
+      "mapSize",
+      "Shadow"
+    ],
+    [
+      "tracks",
+      "duration",
+      "AnimationClip"
+    ],
+    [
+      "times",
+      "values",
+      "KeyframeTrack"
+    ]
+  ],
+  "cases": [
+    {
+      "case": "metadata",
+      "op": "metadata",
+      "json": null
+    },
+    {
+      "case": "parse-empty-scene",
+      "op": "parse",
+      "json": {
+        "metadata": {
+          "version": 4.7,
+          "type": "Object",
+          "generator": "Object3D.toJSON"
+        },
+        "object": {
+          "uuid": "scene",
+          "type": "Scene"
+        }
+      },
+      "onLoad": true
+    },
+    {
+      "case": "parse-async-empty-scene",
+      "op": "parseAsync",
+      "json": {
+        "metadata": {
+          "version": 4.7,
+          "type": "Object",
+          "generator": "Object3D.toJSON"
+        },
+        "object": {
+          "uuid": "scene",
+          "type": "Scene"
+        }
+      }
+    },
+    {
+      "case": "parse-transform-tree",
+      "op": "parse",
+      "json": {
+        "metadata": {
+          "version": 4.7,
+          "type": "Object",
+          "generator": "Object3D.toJSON"
+        },
+        "object": {
+          "uuid": "scene",
+          "type": "Scene",
+          "name": "root",
+          "position": [
+            1,
+            2,
+            3
+          ],
+          "rotation": [
+            0.1,
+            0.2,
+            0.3,
+            "ZYX"
+          ],
+          "scale": [
+            2,
+            3,
+            4
+          ],
+          "up": [
+            0,
+            0,
+            1
+          ],
+          "layers": 5,
+          "userData": {
+            "x": 1
+          },
+          "children": [
+            {
+              "uuid": "group",
+              "type": "Group",
+              "name": "group",
+              "children": [
+                {
+                  "uuid": "child",
+                  "type": "Object3D",
+                  "position": [
+                    4,
+                    5,
+                    6
+                  ],
+                  "visible": false,
+                  "renderOrder": 3,
+                  "static": true
+                }
+              ]
+            }
+          ]
+        }
+      }
+    },
+    {
+      "case": "parse-camera-tree",
+      "op": "parse",
+      "json": {
+        "metadata": {
+          "version": 4.7,
+          "type": "Object",
+          "generator": "Object3D.toJSON"
+        },
+        "object": {
+          "uuid": "scene",
+          "type": "Scene",
+          "children": [
+            {
+              "uuid": "perspective",
+              "type": "PerspectiveCamera",
+              "fov": 37,
+              "aspect": 1.7,
+              "near": 0.2,
+              "far": 300,
+              "focus": 8,
+              "zoom": 2,
+              "filmGauge": 40,
+              "filmOffset": 0.2,
+              "view": {
+                "enabled": true,
+                "fullWidth": 100,
+                "fullHeight": 100,
+                "offsetX": 4,
+                "offsetY": 5,
+                "width": 60,
+                "height": 70
+              }
+            },
+            {
+              "uuid": "orthographic",
+              "type": "OrthographicCamera",
+              "left": -2,
+              "right": 3,
+              "top": 4,
+              "bottom": -5,
+              "near": 0.1,
+              "far": 40,
+              "zoom": 1.5
+            }
+          ]
+        }
+      }
+    },
+    {
+      "case": "parse-mesh-shared-resources",
+      "op": "parse",
+      "json": {
+        "metadata": {
+          "version": 4.7,
+          "type": "Object",
+          "generator": "Object3D.toJSON"
+        },
+        "object": {
+          "uuid": "scene",
+          "type": "Scene",
+          "children": [
+            {
+              "uuid": "meshA",
+              "type": "Mesh",
+              "geometry": "triangle",
+              "material": "basic"
+            },
+            {
+              "uuid": "meshB",
+              "type": "Mesh",
+              "geometry": "triangle",
+              "material": "basic"
+            }
+          ]
+        },
+        "geometries": [
+          {
+            "uuid": "triangle",
+            "type": "BufferGeometry",
+            "name": "triangle",
+            "userData": {
+              "owner": "fixture"
+            },
+            "data": {
+              "attributes": {
+                "position": {
+                  "itemSize": 3,
+                  "type": "Float32Array",
+                  "array": [
+                    0,
+                    0,
+                    0,
+                    1,
+                    0,
+                    0,
+                    0,
+                    1,
+                    0
+                  ],
+                  "normalized": false
+                }
+              },
+              "index": {
+                "type": "Uint16Array",
+                "array": [
+                  0,
+                  1,
+                  2
+                ]
+              },
+              "groups": [
+                {
+                  "start": 0,
+                  "count": 3,
+                  "materialIndex": 0
+                }
+              ],
+              "boundingSphere": {
+                "center": [
+                  0,
+                  0,
+                  0
+                ],
+                "radius": 2
+              }
+            }
+          }
+        ],
+        "materials": [
+          {
+            "uuid": "basic",
+            "type": "MeshBasicMaterial",
+            "name": "basic",
+            "color": 16711680,
+            "opacity": 0.5,
+            "transparent": true,
+            "userData": {
+              "fixture": true
+            }
+          }
+        ]
+      }
+    },
+    {
+      "case": "parse-material-array-morph",
+      "op": "parse",
+      "json": {
+        "metadata": {
+          "version": 4.7,
+          "type": "Object",
+          "generator": "Object3D.toJSON"
+        },
+        "object": {
+          "uuid": "scene",
+          "type": "Scene",
+          "children": [
+            {
+              "uuid": "mesh",
+              "type": "Mesh",
+              "geometry": "triangle",
+              "material": [
+                "basic",
+                "physical"
+              ],
+              "morphTargetDictionary": {
+                "smile": 0
+              },
+              "morphTargetInfluences": [
+                0.4
+              ]
+            }
+          ]
+        },
+        "geometries": [
+          {
+            "uuid": "triangle",
+            "type": "BufferGeometry",
+            "name": "triangle",
+            "userData": {
+              "owner": "fixture"
+            },
+            "data": {
+              "attributes": {
+                "position": {
+                  "itemSize": 3,
+                  "type": "Float32Array",
+                  "array": [
+                    0,
+                    0,
+                    0,
+                    1,
+                    0,
+                    0,
+                    0,
+                    1,
+                    0
+                  ],
+                  "normalized": false
+                }
+              },
+              "index": {
+                "type": "Uint16Array",
+                "array": [
+                  0,
+                  1,
+                  2
+                ]
+              },
+              "groups": [
+                {
+                  "start": 0,
+                  "count": 3,
+                  "materialIndex": 0
+                }
+              ],
+              "boundingSphere": {
+                "center": [
+                  0,
+                  0,
+                  0
+                ],
+                "radius": 2
+              },
+              "morphAttributes": {
+                "position": [
+                  {
+                    "itemSize": 3,
+                    "type": "Float32Array",
+                    "array": [
+                      0,
+                      0,
+                      0,
+                      1,
+                      0,
+                      0,
+                      0,
+                      1,
+                      0
+                    ],
+                    "normalized": false,
+                    "name": "smile"
+                  }
+                ]
+              },
+              "morphTargetsRelative": true
+            }
+          }
+        ],
+        "materials": [
+          {
+            "uuid": "basic",
+            "type": "MeshBasicMaterial",
+            "name": "basic",
+            "color": 16711680,
+            "opacity": 0.5,
+            "transparent": true,
+            "userData": {
+              "fixture": true
+            }
+          },
+          {
+            "uuid": "physical",
+            "type": "MeshPhysicalMaterial",
+            "name": "physical",
+            "color": 3368652,
+            "roughness": 0.3,
+            "metalness": 0.7,
+            "clearcoat": 0.6,
+            "clearcoatRoughness": 0.2,
+            "transmission": 0.4,
+            "thickness": 0.8,
+            "ior": 1.4,
+            "sheen": 1,
+            "sheenColor": 65535,
+            "sheenRoughness": 0.25,
+            "userData": {
+              "pbr": true
+            }
+          }
+        ]
+      }
+    },
+    {
+      "case": "parse-box-physical",
+      "op": "parse",
+      "json": {
+        "metadata": {
+          "version": 4.7,
+          "type": "Object",
+          "generator": "Object3D.toJSON"
+        },
+        "object": {
+          "uuid": "scene",
+          "type": "Scene",
+          "children": [
+            {
+              "uuid": "mesh",
+              "type": "Mesh",
+              "geometry": "box",
+              "material": "physical"
+            }
+          ]
+        },
+        "geometries": [
+          {
+            "uuid": "box",
+            "type": "BoxGeometry",
+            "width": 2,
+            "height": 3,
+            "depth": 4,
+            "widthSegments": 1,
+            "heightSegments": 1,
+            "depthSegments": 1
+          }
+        ],
+        "materials": [
+          {
+            "uuid": "physical",
+            "type": "MeshPhysicalMaterial",
+            "name": "physical",
+            "color": 3368652,
+            "roughness": 0.3,
+            "metalness": 0.7,
+            "clearcoat": 0.6,
+            "clearcoatRoughness": 0.2,
+            "transmission": 0.4,
+            "thickness": 0.8,
+            "ior": 1.4,
+            "sheen": 1,
+            "sheenColor": 65535,
+            "sheenRoughness": 0.25,
+            "userData": {
+              "pbr": true
+            }
+          }
+        ]
+      }
+    },
+    {
+      "case": "parse-inline-texture-alias",
+      "op": "parse",
+      "json": {
+        "metadata": {
+          "version": 4.7,
+          "type": "Object",
+          "generator": "Object3D.toJSON"
+        },
+        "object": {
+          "uuid": "scene",
+          "type": "Scene",
+          "background": "texture",
+          "environment": "texture",
+          "children": [
+            {
+              "uuid": "mesh",
+              "type": "Mesh",
+              "geometry": "triangle",
+              "material": "basic"
+            }
+          ]
+        },
+        "geometries": [
+          {
+            "uuid": "triangle",
+            "type": "BufferGeometry",
+            "name": "triangle",
+            "userData": {
+              "owner": "fixture"
+            },
+            "data": {
+              "attributes": {
+                "position": {
+                  "itemSize": 3,
+                  "type": "Float32Array",
+                  "array": [
+                    0,
+                    0,
+                    0,
+                    1,
+                    0,
+                    0,
+                    0,
+                    1,
+                    0
+                  ],
+                  "normalized": false
+                }
+              },
+              "index": {
+                "type": "Uint16Array",
+                "array": [
+                  0,
+                  1,
+                  2
+                ]
+              },
+              "groups": [
+                {
+                  "start": 0,
+                  "count": 3,
+                  "materialIndex": 0
+                }
+              ],
+              "boundingSphere": {
+                "center": [
+                  0,
+                  0,
+                  0
+                ],
+                "radius": 2
+              }
+            }
+          }
+        ],
+        "images": [
+          {
+            "uuid": "pixels",
+            "url": {
+              "data": [
+                255,
+                0,
+                0,
+                255,
+                0,
+                255,
+                0,
+                255
+              ],
+              "type": "Uint8Array",
+              "width": 2,
+              "height": 1
+            }
+          }
+        ],
+        "textures": [
+          {
+            "uuid": "texture",
+            "image": "pixels",
+            "name": "inline",
+            "mapping": 300,
+            "offset": [
+              0.1,
+              0.2
+            ],
+            "repeat": [
+              2,
+              3
+            ],
+            "center": [
+              0.5,
+              0.5
+            ],
+            "rotation": 0.25,
+            "wrap": [
+              1000,
+              1002
+            ],
+            "minFilter": 1006,
+            "magFilter": 1006,
+            "flipY": false,
+            "colorSpace": "srgb",
+            "userData": {
+              "inline": true
+            }
+          },
+          {
+            "uuid": "texture2",
+            "image": "pixels",
+            "name": "inline",
+            "mapping": 300,
+            "offset": [
+              0.1,
+              0.2
+            ],
+            "repeat": [
+              2,
+              3
+            ],
+            "center": [
+              0.5,
+              0.5
+            ],
+            "rotation": 0.25,
+            "wrap": [
+              1000,
+              1002
+            ],
+            "minFilter": 1006,
+            "magFilter": 1006,
+            "flipY": false,
+            "colorSpace": "srgb",
+            "userData": {
+              "inline": true
+            }
+          }
+        ],
+        "materials": [
+          {
+            "uuid": "basic",
+            "type": "MeshBasicMaterial",
+            "name": "basic",
+            "color": 16711680,
+            "opacity": 0.5,
+            "transparent": true,
+            "userData": {
+              "fixture": true
+            },
+            "map": "texture",
+            "alphaMap": "texture2"
+          }
+        ]
+      },
+      "onLoad": true
+    },
+    {
+      "case": "parse-async-inline-texture",
+      "op": "parseAsync",
+      "json": {
+        "metadata": {
+          "version": 4.7,
+          "type": "Object",
+          "generator": "Object3D.toJSON"
+        },
+        "object": {
+          "uuid": "scene",
+          "type": "Scene",
+          "environment": "texture"
+        },
+        "images": [
+          {
+            "uuid": "pixels",
+            "url": {
+              "data": [
+                255,
+                0,
+                0,
+                255,
+                0,
+                255,
+                0,
+                255
+              ],
+              "type": "Uint8Array",
+              "width": 2,
+              "height": 1
+            }
+          }
+        ],
+        "textures": [
+          {
+            "uuid": "texture",
+            "image": "pixels",
+            "name": "inline",
+            "mapping": 300,
+            "offset": [
+              0.1,
+              0.2
+            ],
+            "repeat": [
+              2,
+              3
+            ],
+            "center": [
+              0.5,
+              0.5
+            ],
+            "rotation": 0.25,
+            "wrap": [
+              1000,
+              1002
+            ],
+            "minFilter": 1006,
+            "magFilter": 1006,
+            "flipY": false,
+            "colorSpace": "srgb",
+            "userData": {
+              "inline": true
+            }
+          }
+        ]
+      }
+    },
+    {
+      "case": "parse-shape-geometry",
+      "op": "parse",
+      "json": {
+        "metadata": {
+          "version": 4.7,
+          "type": "Object",
+          "generator": "Object3D.toJSON"
+        },
+        "object": {
+          "uuid": "scene",
+          "type": "Scene",
+          "children": [
+            {
+              "uuid": "mesh",
+              "type": "Mesh",
+              "geometry": "shaped",
+              "material": "basic"
+            }
+          ]
+        },
+        "shapes": [
+          {
+            "type": "Shape",
+            "uuid": "shape",
+            "arcLengthDivisions": 200,
+            "autoClose": false,
+            "curves": [
+              {
+                "metadata": {
+                  "version": 4.7,
+                  "type": "Curve"
+                },
+                "type": "LineCurve",
+                "arcLengthDivisions": 200,
+                "v1": [
+                  0,
+                  0
+                ],
+                "v2": [
+                  1,
+                  0
+                ]
+              },
+              {
+                "metadata": {
+                  "version": 4.7,
+                  "type": "Curve"
+                },
+                "type": "LineCurve",
+                "arcLengthDivisions": 200,
+                "v1": [
+                  1,
+                  0
+                ],
+                "v2": [
+                  0,
+                  1
+                ]
+              },
+              {
+                "metadata": {
+                  "version": 4.7,
+                  "type": "Curve"
+                },
+                "type": "LineCurve",
+                "arcLengthDivisions": 200,
+                "v1": [
+                  0,
+                  1
+                ],
+                "v2": [
+                  0,
+                  0
+                ]
+              }
+            ],
+            "currentPoint": [
+              0,
+              0
+            ],
+            "holes": []
+          }
+        ],
+        "geometries": [
+          {
+            "uuid": "shaped",
+            "type": "ShapeGeometry",
+            "shapes": [
+              "shape"
+            ],
+            "curveSegments": 3
+          }
+        ],
+        "materials": [
+          {
+            "uuid": "basic",
+            "type": "MeshBasicMaterial",
+            "name": "basic",
+            "color": 16711680,
+            "opacity": 0.5,
+            "transparent": true,
+            "userData": {
+              "fixture": true
+            }
+          }
+        ]
+      }
+    },
+    {
+      "case": "parse-animation",
+      "op": "parse",
+      "json": {
+        "metadata": {
+          "version": 4.7,
+          "type": "Object",
+          "generator": "Object3D.toJSON"
+        },
+        "object": {
+          "uuid": "scene",
+          "type": "Scene",
+          "animations": [
+            "animation"
+          ]
+        },
+        "animations": [
+          {
+            "uuid": "animation",
+            "name": "move",
+            "duration": 1,
+            "tracks": [
+              {
+                "name": ".position",
+                "type": "vector",
+                "times": [
+                  0,
+                  1
+                ],
+                "values": [
+                  0,
+                  0,
+                  0,
+                  1,
+                  2,
+                  3
+                ]
+              }
+            ]
+          }
+        ]
+      }
+    },
+    {
+      "case": "parse-all-lights",
+      "op": "parse",
+      "json": {
+        "metadata": {
+          "version": 4.7,
+          "type": "Object",
+          "generator": "Object3D.toJSON"
+        },
+        "object": {
+          "uuid": "scene",
+          "type": "Scene",
+          "children": [
+            {
+              "uuid": "ambient",
+              "type": "AmbientLight",
+              "color": 16711680,
+              "intensity": 0.5
+            },
+            {
+              "uuid": "directional",
+              "type": "DirectionalLight",
+              "color": 65535,
+              "intensity": 2,
+              "target": "target"
+            },
+            {
+              "uuid": "point",
+              "type": "PointLight",
+              "color": 16777215,
+              "intensity": 3,
+              "distance": 5,
+              "decay": 1.5
+            },
+            {
+              "uuid": "spot",
+              "type": "SpotLight",
+              "color": 255,
+              "intensity": 4,
+              "distance": 9,
+              "angle": 0.6,
+              "penumbra": 0.3,
+              "decay": 2,
+              "target": "target"
+            },
+            {
+              "uuid": "hemisphere",
+              "type": "HemisphereLight",
+              "color": 65535,
+              "groundColor": 16711680,
+              "intensity": 0.7
+            },
+            {
+              "uuid": "rect",
+              "type": "RectAreaLight",
+              "color": 16777215,
+              "intensity": 5,
+              "width": 2,
+              "height": 3
+            },
+            {
+              "uuid": "probe",
+              "type": "LightProbe",
+              "sh": [
+                0,
+                0.037037037037037035,
+                0.07407407407407407,
+                0.1111111111111111,
+                0.14814814814814814,
+                0.18518518518518517,
+                0.2222222222222222,
+                0.25925925925925924,
+                0.2962962962962963,
+                0.3333333333333333,
+                0.37037037037037035,
+                0.4074074074074074,
+                0.4444444444444444,
+                0.48148148148148145,
+                0.5185185185185185,
+                0.5555555555555556,
+                0.5925925925925926,
+                0.6296296296296297,
+                0.6666666666666666,
+                0.7037037037037037,
+                0.7407407407407407,
+                0.7777777777777778,
+                0.8148148148148148,
+                0.8518518518518519,
+                0.8888888888888888,
+                0.9259259259259259,
+                0.9629629629629629
+              ],
+              "intensity": 0.8
+            },
+            {
+              "uuid": "target",
+              "type": "Object3D"
+            }
+          ]
+        }
+      }
+    },
+    {
+      "case": "parse-fog",
+      "op": "parse",
+      "json": {
+        "metadata": {
+          "version": 4.7,
+          "type": "Object",
+          "generator": "Object3D.toJSON"
+        },
+        "object": {
+          "uuid": "scene",
+          "type": "Scene",
+          "fog": {
+            "type": "Fog",
+            "color": 3368652,
+            "near": 2,
+            "far": 90,
+            "name": "mist"
+          },
+          "background": 16777215,
+          "backgroundIntensity": 2,
+          "backgroundRotation": [
+            0.1,
+            0.2,
+            0.3,
+            "XYZ"
+          ],
+          "environmentIntensity": 0.5,
+          "environmentRotation": [
+            0.3,
+            0.2,
+            0.1,
+            "ZYX"
+          ]
+        }
+      }
+    },
+    {
+      "case": "parse-fog-exp2",
+      "op": "parse",
+      "json": {
+        "metadata": {
+          "version": 4.7,
+          "type": "Object",
+          "generator": "Object3D.toJSON"
+        },
+        "object": {
+          "uuid": "scene",
+          "type": "Scene",
+          "fog": {
+            "type": "FogExp2",
+            "color": 16711680,
+            "density": 0.03,
+            "name": "dense"
+          }
+        }
+      }
+    },
+    {
+      "case": "parse-primitives",
+      "op": "parse",
+      "json": {
+        "metadata": {
+          "version": 4.7,
+          "type": "Object",
+          "generator": "Object3D.toJSON"
+        },
+        "object": {
+          "uuid": "scene",
+          "type": "Scene",
+          "children": [
+            {
+              "uuid": "primitive0",
+              "type": "Line",
+              "geometry": "triangle",
+              "material": "line"
+            },
+            {
+              "uuid": "primitive1",
+              "type": "LineLoop",
+              "geometry": "triangle",
+              "material": "line"
+            },
+            {
+              "uuid": "primitive2",
+              "type": "LineSegments",
+              "geometry": "triangle",
+              "material": "line"
+            },
+            {
+              "uuid": "primitive3",
+              "type": "Points",
+              "geometry": "triangle",
+              "material": "line"
+            },
+            {
+              "uuid": "primitive4",
+              "type": "PointCloud",
+              "geometry": "triangle",
+              "material": "line"
+            },
+            {
+              "uuid": "sprite",
+              "type": "Sprite",
+              "material": "sprite"
+            }
+          ]
+        },
+        "geometries": [
+          {
+            "uuid": "triangle",
+            "type": "BufferGeometry",
+            "name": "triangle",
+            "userData": {
+              "owner": "fixture"
+            },
+            "data": {
+              "attributes": {
+                "position": {
+                  "itemSize": 3,
+                  "type": "Float32Array",
+                  "array": [
+                    0,
+                    0,
+                    0,
+                    1,
+                    0,
+                    0,
+                    0,
+                    1,
+                    0
+                  ],
+                  "normalized": false
+                }
+              },
+              "index": {
+                "type": "Uint16Array",
+                "array": [
+                  0,
+                  1,
+                  2
+                ]
+              },
+              "groups": [
+                {
+                  "start": 0,
+                  "count": 3,
+                  "materialIndex": 0
+                }
+              ],
+              "boundingSphere": {
+                "center": [
+                  0,
+                  0,
+                  0
+                ],
+                "radius": 2
+              }
+            }
+          }
+        ],
+        "materials": [
+          {
+            "uuid": "line",
+            "type": "LineBasicMaterial",
+            "color": 65535
+          },
+          {
+            "uuid": "sprite",
+            "type": "SpriteMaterial",
+            "color": 16711680
+          }
+        ]
+      }
+    },
+    {
+      "case": "parse-lod",
+      "op": "parse",
+      "json": {
+        "metadata": {
+          "version": 4.7,
+          "type": "Object",
+          "generator": "Object3D.toJSON"
+        },
+        "object": {
+          "uuid": "scene",
+          "type": "Scene",
+          "children": [
+            {
+              "uuid": "lod",
+              "type": "LOD",
+              "autoUpdate": false,
+              "children": [
+                {
+                  "uuid": "near",
+                  "type": "Object3D"
+                },
+                {
+                  "uuid": "far",
+                  "type": "Object3D"
+                }
+              ],
+              "levels": [
+                {
+                  "object": "near",
+                  "distance": 0,
+                  "hysteresis": 0.1
+                },
+                {
+                  "object": "far",
+                  "distance": 10,
+                  "hysteresis": 0.2
+                }
+              ]
+            }
+          ]
+        }
+      }
+    },
+    {
+      "case": "parse-skinned",
+      "op": "parse",
+      "json": {
+        "metadata": {
+          "version": 4.7,
+          "type": "Object",
+          "generator": "Object3D.toJSON"
+        },
+        "object": {
+          "uuid": "scene",
+          "type": "Scene",
+          "children": [
+            {
+              "uuid": "bone",
+              "type": "Bone",
+              "name": "rootBone"
+            },
+            {
+              "uuid": "skin",
+              "type": "SkinnedMesh",
+              "geometry": "triangle",
+              "material": "basic",
+              "skeleton": "skeleton",
+              "bindMode": "detached"
+            }
+          ]
+        },
+        "geometries": [
+          {
+            "uuid": "triangle",
+            "type": "BufferGeometry",
+            "name": "triangle",
+            "userData": {
+              "owner": "fixture"
+            },
+            "data": {
+              "attributes": {
+                "position": {
+                  "itemSize": 3,
+                  "type": "Float32Array",
+                  "array": [
+                    0,
+                    0,
+                    0,
+                    1,
+                    0,
+                    0,
+                    0,
+                    1,
+                    0
+                  ],
+                  "normalized": false
+                }
+              },
+              "index": {
+                "type": "Uint16Array",
+                "array": [
+                  0,
+                  1,
+                  2
+                ]
+              },
+              "groups": [
+                {
+                  "start": 0,
+                  "count": 3,
+                  "materialIndex": 0
+                }
+              ],
+              "boundingSphere": {
+                "center": [
+                  0,
+                  0,
+                  0
+                ],
+                "radius": 2
+              }
+            }
+          }
+        ],
+        "materials": [
+          {
+            "uuid": "basic",
+            "type": "MeshBasicMaterial",
+            "name": "basic",
+            "color": 16711680,
+            "opacity": 0.5,
+            "transparent": true,
+            "userData": {
+              "fixture": true
+            }
+          }
+        ],
+        "skeletons": [
+          {
+            "uuid": "skeleton",
+            "bones": [
+              "bone"
+            ],
+            "boneInverses": [
+              [
+                1,
+                0,
+                0,
+                0,
+                0,
+                1,
+                0,
+                0,
+                0,
+                0,
+                1,
+                0,
+                0,
+                0,
+                0,
+                1
+              ]
+            ]
+          }
+        ]
+      }
+    },
+    {
+      "case": "parse-instanced",
+      "op": "parse",
+      "json": {
+        "metadata": {
+          "version": 4.7,
+          "type": "Object",
+          "generator": "Object3D.toJSON"
+        },
+        "object": {
+          "uuid": "scene",
+          "type": "Scene",
+          "children": [
+            {
+              "uuid": "instances",
+              "type": "InstancedMesh",
+              "geometry": "triangle",
+              "material": "basic",
+              "count": 1,
+              "instanceMatrix": {
+                "array": [
+                  1,
+                  0,
+                  0,
+                  0,
+                  0,
+                  1,
+                  0,
+                  0,
+                  0,
+                  0,
+                  1,
+                  0,
+                  1,
+                  2,
+                  3,
+                  1
+                ]
+              },
+              "instanceColor": {
+                "array": [
+                  0.1,
+                  0.2,
+                  0.3
+                ],
+                "itemSize": 3
+              }
+            }
+          ]
+        },
+        "geometries": [
+          {
+            "uuid": "triangle",
+            "type": "BufferGeometry",
+            "name": "triangle",
+            "userData": {
+              "owner": "fixture"
+            },
+            "data": {
+              "attributes": {
+                "position": {
+                  "itemSize": 3,
+                  "type": "Float32Array",
+                  "array": [
+                    0,
+                    0,
+                    0,
+                    1,
+                    0,
+                    0,
+                    0,
+                    1,
+                    0
+                  ],
+                  "normalized": false
+                }
+              },
+              "index": {
+                "type": "Uint16Array",
+                "array": [
+                  0,
+                  1,
+                  2
+                ]
+              },
+              "groups": [
+                {
+                  "start": 0,
+                  "count": 3,
+                  "materialIndex": 0
+                }
+              ],
+              "boundingSphere": {
+                "center": [
+                  0,
+                  0,
+                  0
+                ],
+                "radius": 2
+              }
+            }
+          }
+        ],
+        "materials": [
+          {
+            "uuid": "basic",
+            "type": "MeshBasicMaterial",
+            "name": "basic",
+            "color": 16711680,
+            "opacity": 0.5,
+            "transparent": true,
+            "userData": {
+              "fixture": true
+            }
+          }
+        ]
+      }
+    },
+    {
+      "case": "object-matrix-pivot",
+      "op": "parseObject",
+      "json": {
+        "uuid": "matrix",
+        "type": "Object3D",
+        "pivot": [
+          1,
+          0,
+          0
+        ],
+        "matrix": [
+          1,
+          0,
+          0,
+          0,
+          0,
+          1,
+          0,
+          0,
+          0,
+          0,
+          1,
+          0,
+          3,
+          4,
+          5,
+          1
+        ],
+        "matrixAutoUpdate": true
+      }
+    },
+    {
+      "case": "object-matrix-no-auto",
+      "op": "parseObject",
+      "json": {
+        "uuid": "matrix",
+        "type": "Object3D",
+        "matrix": [
+          1,
+          0,
+          0,
+          0,
+          0,
+          1,
+          0,
+          0,
+          0,
+          0,
+          1,
+          0,
+          3,
+          4,
+          5,
+          1
+        ],
+        "matrixAutoUpdate": false
+      }
+    },
+    {
+      "case": "object-unknown-fallback",
+      "op": "parseObject",
+      "json": {
+        "uuid": "unknown",
+        "type": "UnknownType",
+        "name": "fallback"
+      }
+    },
+    {
+      "case": "shapes-empty",
+      "op": "parseShapes",
+      "json": []
+    },
+    {
+      "case": "shapes-triangle",
+      "op": "parseShapes",
+      "json": [
+        {
+          "type": "Shape",
+          "uuid": "shape",
+          "arcLengthDivisions": 200,
+          "autoClose": false,
+          "curves": [
+            {
+              "metadata": {
+                "version": 4.7,
+                "type": "Curve"
+              },
+              "type": "LineCurve",
+              "arcLengthDivisions": 200,
+              "v1": [
+                0,
+                0
+              ],
+              "v2": [
+                1,
+                0
+              ]
+            },
+            {
+              "metadata": {
+                "version": 4.7,
+                "type": "Curve"
+              },
+              "type": "LineCurve",
+              "arcLengthDivisions": 200,
+              "v1": [
+                1,
+                0
+              ],
+              "v2": [
+                0,
+                1
+              ]
+            },
+            {
+              "metadata": {
+                "version": 4.7,
+                "type": "Curve"
+              },
+              "type": "LineCurve",
+              "arcLengthDivisions": 200,
+              "v1": [
+                0,
+                1
+              ],
+              "v2": [
+                0,
+                0
+              ]
+            }
+          ],
+          "currentPoint": [
+            0,
+            0
+          ],
+          "holes": []
+        }
+      ]
+    },
+    {
+      "case": "geometries-buffer-and-box",
+      "op": "parseGeometries",
+      "json": [
+        {
+          "uuid": "triangle",
+          "type": "BufferGeometry",
+          "name": "triangle",
+          "userData": {
+            "owner": "fixture"
+          },
+          "data": {
+            "attributes": {
+              "position": {
+                "itemSize": 3,
+                "type": "Float32Array",
+                "array": [
+                  0,
+                  0,
+                  0,
+                  1,
+                  0,
+                  0,
+                  0,
+                  1,
+                  0
+                ],
+                "normalized": false
+              }
+            },
+            "index": {
+              "type": "Uint16Array",
+              "array": [
+                0,
+                1,
+                2
+              ]
+            },
+            "groups": [
+              {
+                "start": 0,
+                "count": 3,
+                "materialIndex": 0
+              }
+            ],
+            "boundingSphere": {
+              "center": [
+                0,
+                0,
+                0
+              ],
+              "radius": 2
+            }
+          }
+        },
+        {
+          "uuid": "box",
+          "type": "BoxGeometry",
+          "width": 2,
+          "height": 3,
+          "depth": 4,
+          "widthSegments": 1,
+          "heightSegments": 1,
+          "depthSegments": 1
+        }
+      ]
+    },
+    {
+      "case": "geometries-instanced",
+      "op": "parseGeometries",
+      "json": [
+        {
+          "uuid": "instancedGeometry",
+          "type": "InstancedBufferGeometry",
+          "name": "triangle",
+          "userData": {
+            "owner": "fixture"
+          },
+          "data": {
+            "attributes": {
+              "position": {
+                "itemSize": 3,
+                "type": "Float32Array",
+                "array": [
+                  0,
+                  0,
+                  0,
+                  1,
+                  0,
+                  0,
+                  0,
+                  1,
+                  0
+                ],
+                "normalized": false
+              }
+            },
+            "index": {
+              "type": "Uint16Array",
+              "array": [
+                0,
+                1,
+                2
+              ]
+            },
+            "groups": [
+              {
+                "start": 0,
+                "count": 3,
+                "materialIndex": 0
+              }
+            ],
+            "boundingSphere": {
+              "center": [
+                0,
+                0,
+                0
+              ],
+              "radius": 2
+            }
+          },
+          "isInstancedBufferGeometry": true
+        }
+      ]
+    },
+    {
+      "case": "geometries-unknown-error",
+      "op": "parseGeometries",
+      "json": [
+        {
+          "uuid": "bad",
+          "type": "UnknownGeometry"
+        }
+      ],
+      "expectedError": {
+        "name": "TypeError"
+      }
+    },
+    {
+      "case": "materials-basic-physical",
+      "op": "parseMaterials",
+      "json": [
+        {
+          "uuid": "basic",
+          "type": "MeshBasicMaterial",
+          "name": "basic",
+          "color": 16711680,
+          "opacity": 0.5,
+          "transparent": true,
+          "userData": {
+            "fixture": true
+          }
+        },
+        {
+          "uuid": "physical",
+          "type": "MeshPhysicalMaterial",
+          "name": "physical",
+          "color": 3368652,
+          "roughness": 0.3,
+          "metalness": 0.7,
+          "clearcoat": 0.6,
+          "clearcoatRoughness": 0.2,
+          "transmission": 0.4,
+          "thickness": 0.8,
+          "ior": 1.4,
+          "sheen": 1,
+          "sheenColor": 65535,
+          "sheenRoughness": 0.25,
+          "userData": {
+            "pbr": true
+          }
+        }
+      ]
+    },
+    {
+      "case": "materials-duplicate-cache",
+      "op": "parseMaterials",
+      "json": [
+        {
+          "uuid": "basic",
+          "type": "MeshBasicMaterial",
+          "name": "basic",
+          "color": 16711680,
+          "opacity": 0.5,
+          "transparent": true,
+          "userData": {
+            "fixture": true
+          }
+        },
+        {
+          "uuid": "basic",
+          "type": "MeshBasicMaterial",
+          "name": "basic",
+          "color": 255,
+          "opacity": 0.5,
+          "transparent": true,
+          "userData": {
+            "fixture": true
+          }
+        }
+      ]
+    },
+    {
+      "case": "images-inline",
+      "op": "parseImages",
+      "json": [
+        {
+          "uuid": "pixels",
+          "url": {
+            "data": [
+              255,
+              0,
+              0,
+              255,
+              0,
+              255,
+              0,
+              255
+            ],
+            "type": "Uint8Array",
+            "width": 2,
+            "height": 1
+          }
+        }
+      ]
+    },
+    {
+      "case": "images-inline-cube",
+      "op": "parseImages",
+      "json": [
+        {
+          "uuid": "cubePixels",
+          "url": [
+            {
+              "data": [
+                255,
+                0,
+                0,
+                255,
+                0,
+                255,
+                0,
+                255
+              ],
+              "type": "Uint8Array",
+              "width": 2,
+              "height": 1
+            },
+            {
+              "data": [
+                255,
+                0,
+                0,
+                255,
+                0,
+                255,
+                0,
+                255
+              ],
+              "type": "Uint8Array",
+              "width": 2,
+              "height": 1
+            },
+            {
+              "data": [
+                255,
+                0,
+                0,
+                255,
+                0,
+                255,
+                0,
+                255
+              ],
+              "type": "Uint8Array",
+              "width": 2,
+              "height": 1
+            },
+            {
+              "data": [
+                255,
+                0,
+                0,
+                255,
+                0,
+                255,
+                0,
+                255
+              ],
+              "type": "Uint8Array",
+              "width": 2,
+              "height": 1
+            },
+            {
+              "data": [
+                255,
+                0,
+                0,
+                255,
+                0,
+                255,
+                0,
+                255
+              ],
+              "type": "Uint8Array",
+              "width": 2,
+              "height": 1
+            },
+            {
+              "data": [
+                255,
+                0,
+                0,
+                255,
+                0,
+                255,
+                0,
+                255
+              ],
+              "type": "Uint8Array",
+              "width": 2,
+              "height": 1
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "case": "images-inline-async",
+      "op": "parseImagesAsync",
+      "json": [
+        {
+          "uuid": "pixels",
+          "url": {
+            "data": [
+              255,
+              0,
+              0,
+              255,
+              0,
+              255,
+              0,
+              255
+            ],
+            "type": "Uint8Array",
+            "width": 2,
+            "height": 1
+          }
+        }
+      ]
+    },
+    {
+      "case": "images-null-data",
+      "op": "parseImages",
+      "json": [
+        {
+          "uuid": "nullPixels",
+          "url": {}
+        }
+      ]
+    },
+    {
+      "case": "textures-inline",
+      "op": "parseTextures",
+      "json": [
+        {
+          "uuid": "texture",
+          "image": "pixels",
+          "name": "inline",
+          "mapping": 300,
+          "offset": [
+            0.1,
+            0.2
+          ],
+          "repeat": [
+            2,
+            3
+          ],
+          "center": [
+            0.5,
+            0.5
+          ],
+          "rotation": 0.25,
+          "wrap": [
+            1000,
+            1002
+          ],
+          "minFilter": 1006,
+          "magFilter": 1006,
+          "flipY": false,
+          "colorSpace": "srgb",
+          "userData": {
+            "inline": true
+          }
+        },
+        {
+          "uuid": "texture2",
+          "image": "pixels",
+          "name": "inline",
+          "mapping": 300,
+          "offset": [
+            0.1,
+            0.2
+          ],
+          "repeat": [
+            2,
+            3
+          ],
+          "center": [
+            0.5,
+            0.5
+          ],
+          "rotation": 0.25,
+          "wrap": [
+            1000,
+            1002
+          ],
+          "minFilter": 1006,
+          "magFilter": 1006,
+          "flipY": false,
+          "colorSpace": "srgb",
+          "userData": {
+            "inline": true
+          }
+        }
+      ],
+      "images": [
+        {
+          "uuid": "pixels",
+          "url": {
+            "data": [
+              255,
+              0,
+              0,
+              255,
+              0,
+              255,
+              0,
+              255
+            ],
+            "type": "Uint8Array",
+            "width": 2,
+            "height": 1
+          }
+        }
+      ]
+    },
+    {
+      "case": "textures-cube",
+      "op": "parseTextures",
+      "json": [
+        {
+          "uuid": "cube",
+          "image": "cubePixels"
+        }
+      ],
+      "images": [
+        {
+          "uuid": "cubePixels",
+          "url": [
+            {
+              "data": [
+                255,
+                0,
+                0,
+                255,
+                0,
+                255,
+                0,
+                255
+              ],
+              "type": "Uint8Array",
+              "width": 2,
+              "height": 1
+            },
+            {
+              "data": [
+                255,
+                0,
+                0,
+                255,
+                0,
+                255,
+                0,
+                255
+              ],
+              "type": "Uint8Array",
+              "width": 2,
+              "height": 1
+            },
+            {
+              "data": [
+                255,
+                0,
+                0,
+                255,
+                0,
+                255,
+                0,
+                255
+              ],
+              "type": "Uint8Array",
+              "width": 2,
+              "height": 1
+            },
+            {
+              "data": [
+                255,
+                0,
+                0,
+                255,
+                0,
+                255,
+                0,
+                255
+              ],
+              "type": "Uint8Array",
+              "width": 2,
+              "height": 1
+            },
+            {
+              "data": [
+                255,
+                0,
+                0,
+                255,
+                0,
+                255,
+                0,
+                255
+              ],
+              "type": "Uint8Array",
+              "width": 2,
+              "height": 1
+            },
+            {
+              "data": [
+                255,
+                0,
+                0,
+                255,
+                0,
+                255,
+                0,
+                255
+              ],
+              "type": "Uint8Array",
+              "width": 2,
+              "height": 1
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "case": "textures-missing-image",
+      "op": "parseTextures",
+      "json": [
+        {
+          "uuid": "bad",
+          "image": "absent"
+        }
+      ],
+      "expectedError": {
+        "name": "TypeError"
+      }
+    },
+    {
+      "case": "animations-empty",
+      "op": "parseAnimations",
+      "json": []
+    },
+    {
+      "case": "animations-track",
+      "op": "parseAnimations",
+      "json": [
+        {
+          "uuid": "animation",
+          "name": "opacity",
+          "duration": 1,
+          "tracks": [
+            {
+              "name": ".material.opacity",
+              "type": "number",
+              "times": [
+                0,
+                1
+              ],
+              "values": [
+                0,
+                1
+              ]
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "case": "skeletons-bone-identity",
+      "op": "parseSkeletons",
+      "json": [
+        {
+          "uuid": "skeleton",
+          "bones": [
+            "bone"
+          ],
+          "boneInverses": [
+            [
+              1,
+              0,
+              0,
+              0,
+              0,
+              1,
+              0,
+              0,
+              0,
+              0,
+              1,
+              0,
+              0,
+              0,
+              0,
+              1
+            ]
+          ]
+        }
+      ],
+      "object": {
+        "uuid": "root",
+        "type": "Group",
+        "children": [
+          {
+            "uuid": "bone",
+            "type": "Bone",
+            "name": "joint"
+          }
+        ]
+      }
+    },
+    {
+      "case": "dispatch-normal",
+      "op": "dispatch",
+      "json": {},
+      "variant": "normal"
+    },
+    {
+      "case": "dispatch-reenter",
+      "op": "dispatch",
+      "json": {},
+      "variant": "reenter"
+    },
+    {
+      "case": "dispatch-syncImages",
+      "op": "dispatch",
+      "json": {},
+      "variant": "syncImages",
+      "onLoad": true,
+      "expectedError": {
+        "name": "ReferenceError"
+      }
+    },
+    {
+      "case": "dispatch-getterThrow",
+      "op": "dispatch",
+      "json": {},
+      "variant": "getterThrow",
+      "expectedError": {
+        "name": "ThrownValue",
+        "raw": "geometries"
+      }
+    },
+    {
+      "case": "load-success",
+      "op": "load",
+      "json": {
+        "metadata": {
+          "type": "Object"
+        },
+        "object": {
+          "uuid": "loaded",
+          "type": "Scene"
+        }
+      },
+      "variant": "success",
+      "onLoad": true,
+      "options": {
+        "path": "base/",
+        "resourcePath": "",
+        "requestHeader": {
+          "X": "fixture"
+        },
+        "withCredentials": true
+      }
+    },
+    {
+      "case": "load-badJSON",
+      "op": "load",
+      "json": {
+        "metadata": {
+          "type": "Object"
+        },
+        "object": {
+          "uuid": "loaded",
+          "type": "Scene"
+        }
+      },
+      "variant": "badJSON",
+      "onLoad": true,
+      "options": {
+        "path": "base/",
+        "resourcePath": "",
+        "requestHeader": {
+          "X": "fixture"
+        },
+        "withCredentials": true
+      }
+    },
+    {
+      "case": "load-geometryMetadata",
+      "op": "load",
+      "json": {
+        "metadata": {
+          "type": "Geometry"
+        },
+        "object": {
+          "uuid": "loaded",
+          "type": "Scene"
+        }
+      },
+      "variant": "geometryMetadata",
+      "onLoad": true,
+      "options": {
+        "path": "base/",
+        "resourcePath": "",
+        "requestHeader": {
+          "X": "fixture"
+        },
+        "withCredentials": true
+      }
+    },
+    {
+      "case": "loadAsync-success",
+      "op": "loadAsync",
+      "json": {
+        "metadata": {
+          "type": "Object"
+        },
+        "object": {
+          "uuid": "loaded",
+          "type": "Scene"
+        }
+      },
+      "variant": "success",
+      "options": {
+        "path": "base/",
+        "resourcePath": "",
+        "requestHeader": {
+          "X": "fixture"
+        },
+        "withCredentials": true
+      }
+    },
+    {
+      "case": "loadAsync-badJSON",
+      "op": "loadAsync",
+      "json": {
+        "metadata": {
+          "type": "Object"
+        },
+        "object": {
+          "uuid": "loaded",
+          "type": "Scene"
+        }
+      },
+      "variant": "badJSON",
+      "options": {
+        "path": "base/",
+        "resourcePath": "",
+        "requestHeader": {
+          "X": "fixture"
+        },
+        "withCredentials": true
+      },
+      "expectedError": {
+        "name": "Error"
+      }
+    },
+    {
+      "case": "loadAsync-geometryMetadata",
+      "op": "loadAsync",
+      "json": {
+        "metadata": {
+          "type": "Geometry"
+        },
+        "object": {
+          "uuid": "loaded",
+          "type": "Scene"
+        }
+      },
+      "variant": "geometryMetadata",
+      "options": {
+        "path": "base/",
+        "resourcePath": "",
+        "requestHeader": {
+          "X": "fixture"
+        },
+        "withCredentials": true
+      },
+      "expectedError": {
+        "name": "Error"
+      }
+    },
+    {
+      "case": "parse-batched-mesh",
+      "op": "parse",
+      "json": {
+        "metadata": {
+          "version": 4.7,
+          "type": "Object",
+          "generator": "Object3D.toJSON"
+        },
+        "geometries": [
+          {
+            "uuid": "6cffcd64-1d22-4f88-be88-20c38162b773",
+            "type": "BufferGeometry",
+            "name": "",
+            "data": {
+              "attributes": {
+                "position": {
+                  "itemSize": 3,
+                  "type": "Float32Array",
+                  "array": [
+                    0,
+                    0,
+                    0,
+                    1,
+                    0,
+                    0,
+                    0,
+                    1,
+                    0,
+                    0,
+                    0,
+                    0,
+                    0,
+                    0,
+                    0,
+                    0,
+                    0,
+                    0
+                  ],
+                  "normalized": false,
+                  "name": "",
+                  "usage": 35044,
+                  "gpuType": 1015
+                }
+              },
+              "index": {
+                "type": "Uint16Array",
+                "array": [
+                  0,
+                  1,
+                  2,
+                  0,
+                  0,
+                  0
+                ]
+              }
+            }
+          }
+        ],
+        "materials": [
+          {
+            "uuid": "batched-material",
+            "type": "MeshBasicMaterial",
+            "blending": 1,
+            "side": 0,
+            "shadowSide": null,
+            "vertexColors": false,
+            "opacity": 1,
+            "transparent": false,
+            "blendSrc": 204,
+            "blendDst": 205,
+            "blendEquation": 100,
+            "blendSrcAlpha": null,
+            "blendDstAlpha": null,
+            "blendEquationAlpha": null,
+            "blendColor": 0,
+            "blendAlpha": 0,
+            "depthFunc": 3,
+            "depthTest": true,
+            "depthWrite": true,
+            "colorWrite": true,
+            "clipIntersection": false,
+            "clipShadows": false,
+            "stencilWriteMask": 255,
+            "stencilFunc": 519,
+            "stencilRef": 0,
+            "stencilFuncMask": 255,
+            "stencilFail": 7680,
+            "stencilZFail": 7680,
+            "stencilZPass": 7680,
+            "stencilWrite": false,
+            "polygonOffset": false,
+            "polygonOffsetFactor": 0,
+            "polygonOffsetUnits": 0,
+            "dithering": false,
+            "alphaTest": 0,
+            "alphaHash": false,
+            "alphaToCoverage": false,
+            "premultipliedAlpha": false,
+            "forceSinglePass": false,
+            "allowOverride": true,
+            "visible": true,
+            "toneMapped": true,
+            "name": "",
+            "color": 1193046,
+            "envMapRotation": [
+              0,
+              0,
+              0,
+              "XYZ"
+            ],
+            "reflectivity": 1,
+            "refractionRatio": 0.98,
+            "wireframe": false,
+            "wireframeLinewidth": 1,
+            "wireframeLinecap": "round",
+            "wireframeLinejoin": "round",
+            "fog": true
+          }
+        ],
+        "textures": [
+          {
+            "uuid": "31e3e241-6c56-46f4-95f4-dbbd50e7f220",
+            "name": "",
+            "image": "f0385baa-bc87-4d63-9c80-23b30e2d80c5",
+            "mapping": 300,
+            "channel": 0,
+            "repeat": [
+              1,
+              1
+            ],
+            "offset": [
+              0,
+              0
+            ],
+            "center": [
+              0,
+              0
+            ],
+            "rotation": 0,
+            "wrap": [
+              1001,
+              1001
+            ],
+            "format": 1023,
+            "internalFormat": null,
+            "type": 1015,
+            "normalized": false,
+            "colorSpace": "",
+            "minFilter": 1003,
+            "magFilter": 1003,
+            "anisotropy": 1,
+            "flipY": false,
+            "generateMipmaps": false,
+            "mipmapsAutoUpdate": true,
+            "premultiplyAlpha": false,
+            "unpackAlignment": 1
+          },
+          {
+            "uuid": "905dbfda-4294-4435-b714-bd361300cc0a",
+            "name": "",
+            "image": "c9c8e870-2b3a-4e90-aabd-67494b3b067f",
+            "mapping": 300,
+            "channel": 0,
+            "repeat": [
+              1,
+              1
+            ],
+            "offset": [
+              0,
+              0
+            ],
+            "center": [
+              0,
+              0
+            ],
+            "rotation": 0,
+            "wrap": [
+              1001,
+              1001
+            ],
+            "format": 1029,
+            "internalFormat": null,
+            "type": 1014,
+            "normalized": false,
+            "colorSpace": "",
+            "minFilter": 1003,
+            "magFilter": 1003,
+            "anisotropy": 1,
+            "flipY": false,
+            "generateMipmaps": false,
+            "mipmapsAutoUpdate": true,
+            "premultiplyAlpha": false,
+            "unpackAlignment": 1
+          }
+        ],
+        "images": [
+          {
+            "uuid": "f0385baa-bc87-4d63-9c80-23b30e2d80c5",
+            "url": {
+              "data": [
+                1,
+                0,
+                0,
+                0,
+                0,
+                1,
+                0,
+                0,
+                0,
+                0,
+                1,
+                0,
+                0,
+                0,
+                0,
+                1,
+                0,
+                0,
+                0,
+                0,
+                0,
+                0,
+                0,
+                0,
+                0,
+                0,
+                0,
+                0,
+                0,
+                0,
+                0,
+                0,
+                0,
+                0,
+                0,
+                0,
+                0,
+                0,
+                0,
+                0,
+                0,
+                0,
+                0,
+                0,
+                0,
+                0,
+                0,
+                0,
+                0,
+                0,
+                0,
+                0,
+                0,
+                0,
+                0,
+                0,
+                0,
+                0,
+                0,
+                0,
+                0,
+                0,
+                0,
+                0
+              ],
+              "width": 4,
+              "height": 4,
+              "type": "Float32Array"
+            }
+          },
+          {
+            "uuid": "c9c8e870-2b3a-4e90-aabd-67494b3b067f",
+            "url": {
+              "data": [
+                0,
+                0,
+                0,
+                0
+              ],
+              "width": 2,
+              "height": 2,
+              "type": "Uint32Array"
+            }
+          }
+        ],
+        "object": {
+          "uuid": "batched",
+          "type": "BatchedMesh",
+          "name": "batch",
+          "castShadow": false,
+          "receiveShadow": false,
+          "visible": true,
+          "frustumCulled": true,
+          "renderOrder": 0,
+          "static": false,
+          "matrixAutoUpdate": true,
+          "layers": 1,
+          "matrix": [
+            1,
+            0,
+            0,
+            0,
+            0,
+            1,
+            0,
+            0,
+            0,
+            0,
+            1,
+            0,
+            0,
+            0,
+            0,
+            1
+          ],
+          "up": [
+            0,
+            1,
+            0
+          ],
+          "perObjectFrustumCulled": true,
+          "sortObjects": true,
+          "geometryInfo": [
+            {
+              "vertexStart": 0,
+              "vertexCount": 3,
+              "reservedVertexCount": 3,
+              "indexStart": 0,
+              "indexCount": 3,
+              "reservedIndexCount": 3,
+              "start": 0,
+              "count": 3,
+              "boundingBox": {
+                "min": [
+                  0,
+                  0,
+                  0
+                ],
+                "max": [
+                  1,
+                  1,
+                  0
+                ]
+              },
+              "boundingSphere": {
+                "radius": 0.7071067811865476,
+                "center": [
+                  0.5,
+                  0.5,
+                  0
+                ]
+              },
+              "active": true
+            }
+          ],
+          "instanceInfo": [
+            {
+              "visible": true,
+              "active": true,
+              "geometryIndex": 0
+            }
+          ],
+          "availableInstanceIds": [],
+          "availableGeometryIds": [],
+          "nextIndexStart": 3,
+          "nextVertexStart": 3,
+          "geometryCount": 1,
+          "maxInstanceCount": 2,
+          "maxVertexCount": 6,
+          "maxIndexCount": 6,
+          "geometryInitialized": true,
+          "matricesTexture": {
+            "uuid": "31e3e241-6c56-46f4-95f4-dbbd50e7f220",
+            "name": "",
+            "image": "f0385baa-bc87-4d63-9c80-23b30e2d80c5",
+            "mapping": 300,
+            "channel": 0,
+            "repeat": [
+              1,
+              1
+            ],
+            "offset": [
+              0,
+              0
+            ],
+            "center": [
+              0,
+              0
+            ],
+            "rotation": 0,
+            "wrap": [
+              1001,
+              1001
+            ],
+            "format": 1023,
+            "internalFormat": null,
+            "type": 1015,
+            "normalized": false,
+            "colorSpace": "",
+            "minFilter": 1003,
+            "magFilter": 1003,
+            "anisotropy": 1,
+            "flipY": false,
+            "generateMipmaps": false,
+            "mipmapsAutoUpdate": true,
+            "premultiplyAlpha": false,
+            "unpackAlignment": 1
+          },
+          "indirectTexture": {
+            "uuid": "905dbfda-4294-4435-b714-bd361300cc0a",
+            "name": "",
+            "image": "c9c8e870-2b3a-4e90-aabd-67494b3b067f",
+            "mapping": 300,
+            "channel": 0,
+            "repeat": [
+              1,
+              1
+            ],
+            "offset": [
+              0,
+              0
+            ],
+            "center": [
+              0,
+              0
+            ],
+            "rotation": 0,
+            "wrap": [
+              1001,
+              1001
+            ],
+            "format": 1029,
+            "internalFormat": null,
+            "type": 1014,
+            "normalized": false,
+            "colorSpace": "",
+            "minFilter": 1003,
+            "magFilter": 1003,
+            "anisotropy": 1,
+            "flipY": false,
+            "generateMipmaps": false,
+            "mipmapsAutoUpdate": true,
+            "premultiplyAlpha": false,
+            "unpackAlignment": 1
+          },
+          "boundingSphere": {
+            "radius": 0.7071067811865476,
+            "center": [
+              0.5,
+              0.5,
+              0
+            ]
+          },
+          "boundingBox": {
+            "min": [
+              0,
+              0,
+              0
+            ],
+            "max": [
+              1,
+              1,
+              0
+            ]
+          },
+          "geometry": "6cffcd64-1d22-4f88-be88-20c38162b773",
+          "material": "batched-material"
+        }
+      }
+    },
+    {
+      "case": "geometries-dispatch-custom",
+      "op": "geometryDispatch",
+      "variant": "custom",
+      "uuid": "outer",
+      "nested": {
+        "uuid": "inner"
+      }
+    },
+    {
+      "case": "geometries-dispatch-reenter",
+      "op": "geometryDispatch",
+      "variant": "reenter",
+      "uuid": "outer",
+      "nested": {
+        "uuid": "inner"
+      }
+    },
+    {
+      "case": "geometries-dispatch-unknown",
+      "op": "geometryDispatch",
+      "variant": "unknown",
+      "uuid": "outer",
+      "nested": {
+        "uuid": "inner"
+      },
+      "expectedError": {
+        "name": "TypeError"
+      }
+    },
+    {
+      "case": "geometries-dispatch-throw",
+      "op": "geometryDispatch",
+      "variant": "throw",
+      "uuid": "outer",
+      "nested": {
+        "uuid": "inner"
+      },
+      "expectedError": {
+        "name": "ThrownValue",
+        "raw": "custom geometry"
+      }
+    },
+    {
+      "case": "materials-dispatch-normal",
+      "op": "materialDispatch",
+      "variant": "normal"
+    },
+    {
+      "case": "materials-dispatch-parseThrow",
+      "op": "materialDispatch",
+      "variant": "parseThrow",
+      "expectedError": {
+        "name": "ThrownValue",
+        "raw": "material parse"
+      }
+    },
+    {
+      "case": "materials-dispatch-keyThrow",
+      "op": "materialDispatch",
+      "variant": "keyThrow",
+      "expectedError": {
+        "name": "ThrownValue",
+        "raw": "material key"
+      }
+    }
+  ]
+}

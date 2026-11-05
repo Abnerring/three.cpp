@@ -63,12 +63,13 @@ JSValue LoadingManager::prototype() {
     JSModuleInitializationScope scope(initializing,"LoadingManager prototype");
     auto value=[] {
         auto constructor=JSValue::constructor([](const JSValue& self,const Args& args,const Args&)->JSValue{initialize(self,arg(args,0),arg(args,1),arg(args,2));return {};},{},"LoadingManager",3);
-        auto prototype=constructor.get("prototype");JSPropertyDescriptor descriptor;descriptor.configurable=true;
+        auto prototype=constructor.get("prototype");prototype.setInternalSlot("LoadingManager.constructor",constructor);JSPropertyDescriptor descriptor;descriptor.configurable=true;
         descriptor.getter=JSValue::function([](const JSValue& receiver,const Args&,const Args&)->JSValue {
             auto self=receiver;if(!self.get("_abortController").toBoolean())self.set("_abortController",createNativeAbortController());return self.get("_abortController");
         },{},"get abortController");prototype.defineProperty("abortController",descriptor);constructor.retainForHeapLifetime();return prototype;
     }();cached=JSWeakValue(value);return value;
 }
+JSValue nativeLoadingManagerConstructor(){return LoadingManager::prototype().getInternalSlot("LoadingManager.constructor");}
 LoadingManager::LoadingManager(JSValue onLoad,JSValue onProgress,JSValue onError):object_(JSValue::object(prototype())){initialize(object_,onLoad,onProgress,onError);}
 void LoadingManager::itemStart(JSValue url){object_.get("itemStart").call(object_,{url});}
 void LoadingManager::itemEnd(JSValue url){object_.get("itemEnd").call(object_,{url});}

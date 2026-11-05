@@ -16,3 +16,7 @@ class ShapeGeometry : public BufferGeometry {
     JsonValue toJSON() const override;
     static std::shared_ptr<ShapeGeometry> fromJSON(const JsonValue& data, const ShapeMap& shapes);
 };
+
+JSValue nativeShapeGeometryModule();
+JSValue nativeShapeGeometryBinding(const std::string& name);
+JSValue nativeShapeGeometryConstructor();

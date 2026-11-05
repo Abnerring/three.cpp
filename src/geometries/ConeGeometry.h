@@ -20,3 +20,7 @@ class ConeGeometry : public CylinderGeometry {
     JsonValue toJSON() const override;
     static std::shared_ptr<ConeGeometry> fromJSON(const JsonValue& data);
 };
+
+JSValue nativeConeGeometryModule();
+JSValue nativeConeGeometryBinding(const std::string& name);
+JSValue nativeConeGeometryConstructor();

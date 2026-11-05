@@ -441,6 +441,10 @@ target_sources(threecpp PRIVATE
     src/loaders/DataTextureLoader.cpp
     src/loaders/CompressedTextureLoader.cpp src/loaders/MaterialLoader.cpp src/loaders/FileLoader.cpp
     src/loaders/ObjectLoader.cpp
+    src/loaders/ObjectLoaderRuntime.cpp
+    src/loaders/ObjectLoaderShapes.cpp
+    src/loaders/nodes/NodeObjectLoader.cpp
+    src/geometries/Geometries.cpp
     src/core/InterleavedBufferAttribute.cpp
     src/objects/Line.cpp
     src/objects/LineLoop.cpp

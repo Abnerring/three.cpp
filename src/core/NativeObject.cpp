@@ -1125,11 +1125,86 @@ JSValue wrapGeometry(const std::shared_ptr<BufferGeometry>& geometry) {
     }
     return result;
 }
-template <class T> JSValue primitiveRead(const std::shared_ptr<T>& object,const std::string& key) {
+// The source classes accept ordinary JS values in these fields. Keep their
+// authority in traced graph edges; the typed renderer fields are adapters.
+// A mirror identity lets a later native replacement retire an old JS alias.
+JSValue rawObjectField(const JSValue& self,const std::string& key) {
+    const auto fields=self.getHostSlot("rawObjectFields");
+    return fields.isUndefined()?JSValue{}:fields.get(key);
+}
+void storeRawObjectField(JSValue self,const std::string& key,const JSValue& value,const JSValue& mirror) {
+    auto fields=self.getHostSlot("rawObjectFields");
+    if(fields.isUndefined()){fields=JSValue::object(nullptr);self.setHostSlot("rawObjectFields",fields);}
+    auto field=JSValue::object(nullptr);field.set("value",value);field.set("mirror",mirror);fields.set(key,field);
+}
+std::optional<JSValue> readRawObjectField(const JSValue& self,const std::string& key,const JSValue& mirror) {
+    const auto field=rawObjectField(self,key);
+    if(field.isUndefined())return {};
+    if(field.get("mirror").sameValue(mirror))return field.get("value");
+    auto fields=self.getHostSlot("rawObjectFields");fields.erase(key);return {};
+}
+void snapshotMorphNumbers(const JSValue& value,SharedArray<double>& result) {
+    // Reading descriptors on an ordinary array does not evaluate accessors or
+    // coerce element values. Assignment must not execute extra user callbacks.
+    if(value.type()!=JSValue::Type::Array||value.isProxy()||value.isHostObject(arrayTag<double>()))return;
+    const auto length=value.getOwnPropertyDescriptor("length");
+    if(!length||!length->value||length->value->type()!=JSValue::Type::Number)return;
+    const auto size=static_cast<std::size_t>(length->value->number());
+    const auto storage=result.storage();storage->values.assign(size,std::numeric_limits<double>::quiet_NaN());
+    storage->holes.clear();storage->flags.clear();storage->lengthWritable=length->writable.value_or(false);
+    for(std::size_t i=0;i<size;++i){
+        const auto descriptor=value.getOwnPropertyDescriptor(std::to_string(i));
+        if(!descriptor){storage->holes.insert(i);continue;}
+        if(descriptor->value&&descriptor->value->type()==JSValue::Type::Number)storage->values[i]=descriptor->value->number();
+        storage->flags[i]={descriptor->writable.value_or(false),descriptor->enumerable.value_or(false),descriptor->configurable.value_or(false)};
+    }
+}
+void snapshotMorphDictionary(const JSValue& value,const std::shared_ptr<Dictionary>& result) {
+    if(!result||!value.isObject()||value.isProxy()||value.isHostObject("three.MorphDictionary"))return;
+    result->clear();
+    for(const auto& key:value.ownPropertyKeys()){
+        if(key.isSymbol())continue;
+        const auto descriptor=value.getOwnPropertyDescriptor(key);
+        if(!descriptor||!descriptor->value||descriptor->value->type()!=JSValue::Type::Number)continue;
+        const auto number=descriptor->value->number();
+        if(std::isfinite(number)&&number>=0&&std::trunc(number)==number&&number<double(std::numeric_limits<std::size_t>::max()))
+            (*result)[key.string()]=static_cast<std::size_t>(number);
+    }
+}
+template <class T> JSValue readMorphField(const JSValue& self,const std::shared_ptr<T>& object,const std::string& key) {
+    if(key=="morphTargetInfluences"){
+        const auto mirror=object->morphTargetInfluences?nativeSharedArray(*object->morphTargetInfluences):JSValue{};
+        if(const auto value=readRawObjectField(self,key,mirror)){
+            if(object->morphTargetInfluences)snapshotMorphNumbers(*value,*object->morphTargetInfluences);
+            return *value;
+        }
+        return mirror;
+    }
+    const auto mirror=nativeDictionary(object->morphTargetDictionary);
+    if(const auto value=readRawObjectField(self,key,mirror)){
+        snapshotMorphDictionary(*value,object->morphTargetDictionary);return *value;
+    }
+    return mirror;
+}
+template <class T> void writeMorphField(const JSValue& self,const std::shared_ptr<T>& object,const std::string& key,const JSValue& value) {
+    if(key=="morphTargetInfluences"){
+        if(value.isHostObject(arrayTag<double>()))object->morphTargetInfluences=readSharedArray<double>(value);
+        else if(value.type()==JSValue::Type::Array&&!value.isProxy()){
+            SharedArray<double> mirror;snapshotMorphNumbers(value,mirror);object->morphTargetInfluences=std::move(mirror);
+        }else object->morphTargetInfluences.reset();
+        storeRawObjectField(self,key,value,object->morphTargetInfluences?nativeSharedArray(*object->morphTargetInfluences):JSValue{});
+    }else{
+        if(value.isHostObject("three.MorphDictionary"))object->morphTargetDictionary=payload<Dictionary>(value,"three.MorphDictionary");
+        else if(value.isObject()&&!value.isProxy()){
+            auto mirror=std::make_shared<Dictionary>();snapshotMorphDictionary(value,mirror);object->morphTargetDictionary=std::move(mirror);
+        }else object->morphTargetDictionary.reset();
+        storeRawObjectField(self,key,value,nativeDictionary(object->morphTargetDictionary));
+    }
+}
+template <class T> JSValue primitiveRead(const JSValue& self,const std::shared_ptr<T>& object,const std::string& key) {
     if (key == "material") return object->materialIsArray || !object->materials.empty() ? nativeSharedArray(object->materials) : nativeMaterial(object->material);
     if (key == "geometry") return nativeGeometry(object->geometry);
-    if (key == "morphTargetInfluences") return object->morphTargetInfluences ? nativeSharedArray(*object->morphTargetInfluences) : JSValue();
-    if (key == "morphTargetDictionary") return nativeDictionary(object->morphTargetDictionary);
+    if (key == "morphTargetInfluences"||key=="morphTargetDictionary") return readMorphField(self,object,key);
     return {};
 }
 JSValue planeScratch() {
@@ -1330,11 +1405,10 @@ JSValue objectRead(const JSValue& self, const Args&, const Args& capture) {
         if (key == "count") return mesh->count.asValue();
         if (key == "material") return mesh->materialIsArray || !mesh->materials.empty() ? nativeSharedArray(mesh->materials) : nativeMaterial(mesh->material);
         if (key == "geometry") return nativeGeometry(mesh->geometry);
-        if (key == "morphTargetInfluences") return mesh->morphTargetInfluences ? nativeSharedArray(*mesh->morphTargetInfluences) : JSValue();
-        if (key == "morphTargetDictionary") return nativeDictionary(mesh->morphTargetDictionary);
+        if (key == "morphTargetInfluences"||key=="morphTargetDictionary") return readMorphField(self,mesh,key);
     }
-    if (auto line = std::dynamic_pointer_cast<Line>(o)) return primitiveRead(line,key);
-    if (auto points = std::dynamic_pointer_cast<Points>(o)) return primitiveRead(points,key);
+    if (auto line = std::dynamic_pointer_cast<Line>(o)) return primitiveRead(self,line,key);
+    if (auto points = std::dynamic_pointer_cast<Points>(o)) return primitiveRead(self,points,key);
     if (auto sprite = std::dynamic_pointer_cast<Sprite>(o)) {
         if (key == "material") return nativeMaterial(sprite->material);
         if (key == "geometry") return nativeGeometry(sprite->geometry);
@@ -1342,7 +1416,11 @@ JSValue objectRead(const JSValue& self, const Args&, const Args& capture) {
         if (key == "count") return sprite->count.asValue();
     }
     if (auto skinned = std::dynamic_pointer_cast<SkinnedMesh>(o)) {
-        if (key == "skeleton") return skinned->skeleton ? nativeSkeleton(skinned->skeleton) : JSValue();
+        if (key == "skeleton") {
+            const auto mirror=skinned->skeleton?nativeSkeleton(skinned->skeleton):JSValue{};
+            if(const auto value=readRawObjectField(self,key,mirror))return *value;
+            return mirror;
+        }
         if (key == "bindMode") return skinned->bindMode;
         if (key == "bindMatrix") return nativeMatrix(std::shared_ptr<Matrix4>(skinned,&skinned->bindMatrix));
         if (key == "bindMatrixInverse") return nativeMatrix(std::shared_ptr<Matrix4>(skinned,&skinned->bindMatrixInverse));
@@ -1355,7 +1433,11 @@ JSValue objectRead(const JSValue& self, const Args&, const Args& capture) {
         if (key == "groundColor") return nativeColor(std::shared_ptr<Color>(light,&light->groundColor));
     }
     if (auto light = std::dynamic_pointer_cast<DirectionalLight>(o)) {
-        if (key == "target") return nativeObject(light->target);
+        if (key == "target") {
+            const auto mirror=nativeObject(light->target);
+            if(const auto value=readRawObjectField(self,key,mirror))return *value;
+            return mirror;
+        }
         if (key == "shadow") return nativeShadow(light->shadow);
     }
     if (auto light = std::dynamic_pointer_cast<PointLight>(o)) {
@@ -1366,7 +1448,11 @@ JSValue objectRead(const JSValue& self, const Args&, const Args& capture) {
     }
     if (auto light = std::dynamic_pointer_cast<SpotLight>(o)) {
         if (key == "shadow") return nativeShadow(light->shadow);
-        if (key == "target") return nativeObject(light->target);
+        if (key == "target") {
+            const auto mirror=nativeObject(light->target);
+            if(const auto value=readRawObjectField(self,key,mirror))return *value;
+            return mirror;
+        }
         if (key == "map") return nativeTexture(light->map);
         if (key == "power") return light->getPower();
         if (key == "distance") return light->distance;
@@ -1406,7 +1492,7 @@ bool helperWrite(const std::shared_ptr<Object3D>& object,const std::string& key,
     if(const auto g=std::dynamic_pointer_cast<ClippingGroup>(object)){if(key=="clippingPlanes"){g->clippingPlanes=readSharedArray<std::shared_ptr<Plane>>(value);return true;}if(key=="enabled"){g->enabled=value;return true;}if(key=="clipIntersection"){g->clipIntersection=value;return true;}if(key=="clipShadows"){g->clipShadows=value;return true;}}
     return false;
 }
-template <class T> void primitiveWrite(const std::shared_ptr<T>& object,const std::string& key,const JSValue& value) {
+template <class T> void primitiveWrite(const JSValue& self,const std::shared_ptr<T>& object,const std::string& key,const JSValue& value) {
     if (key == "geometry") object->geometry = value.isNull() ? nullptr : payload<BufferGeometry>(value,"three.BufferGeometry");
     else if (key == "material") {
         if (value.isHostObject(arrayTag<std::shared_ptr<Material>>())) {
@@ -1414,10 +1500,7 @@ template <class T> void primitiveWrite(const std::shared_ptr<T>& object,const st
         } else {
             object->material=value.isNull()?nullptr:payload<Material>(value,materialTag);object->materials={};object->materialIsArray=false;
         }
-    } else if (key == "morphTargetInfluences") {
-        if (value.isUndefined()) object->morphTargetInfluences.reset();
-        else object->morphTargetInfluences=readSharedArray<double>(value);
-    } else if (key == "morphTargetDictionary") object->morphTargetDictionary=value.isUndefined()?nullptr:payload<Dictionary>(value,"three.MorphDictionary");
+    } else if (key == "morphTargetInfluences"||key=="morphTargetDictionary") writeMorphField(self,object,key,value);
 }
 JSValue objectWrite(const JSValue& self, const Args& args, const Args& capture) {
     auto o = payload<Object3D>(self, objectTag);
@@ -1449,13 +1532,10 @@ JSValue objectWrite(const JSValue& self, const Args& args, const Args& capture) 
                 mesh->materials = {}; mesh->materialIsArray = false;
             }
         } else if (key == "geometry") mesh->geometry = value.isNull() ? nullptr : payload<BufferGeometry>(value, "three.BufferGeometry");
-        else if (key == "morphTargetInfluences") {
-            if (value.isUndefined()) mesh->morphTargetInfluences.reset();
-            else mesh->morphTargetInfluences = readSharedArray<double>(value);
-        } else if (key == "morphTargetDictionary") mesh->morphTargetDictionary = value.isUndefined() ? nullptr : payload<Dictionary>(value, "three.MorphDictionary");
+        else if (key == "morphTargetInfluences"||key=="morphTargetDictionary") writeMorphField(self,mesh,key,value);
     }
-    if (auto line = std::dynamic_pointer_cast<Line>(o)) primitiveWrite(line,key,value);
-    if (auto points = std::dynamic_pointer_cast<Points>(o)) primitiveWrite(points,key,value);
+    if (auto line = std::dynamic_pointer_cast<Line>(o)) primitiveWrite(self,line,key,value);
+    if (auto points = std::dynamic_pointer_cast<Points>(o)) primitiveWrite(self,points,key,value);
     if (auto sprite = std::dynamic_pointer_cast<Sprite>(o)) {
         if (key == "material") sprite->material=value.isNull()?nullptr:payload<Material>(value,materialTag);
         else if (key == "geometry") sprite->geometry=value.isNull()?nullptr:payload<BufferGeometry>(value,"three.BufferGeometry");
@@ -1463,10 +1543,16 @@ JSValue objectWrite(const JSValue& self, const Args& args, const Args& capture) 
     }
     if (auto skinned = std::dynamic_pointer_cast<SkinnedMesh>(o)) {
         if (key == "bindMode") skinned->bindMode = value.toString();
-        else if (key == "skeleton") skinned->skeleton = value.isUndefined() ? nullptr : payload<Skeleton>(value,"three.Skeleton");
+        else if (key == "skeleton") {
+            skinned->skeleton=value.isHostObject("three.Skeleton")?payload<Skeleton>(value,"three.Skeleton"):nullptr;
+            storeRawObjectField(self,key,value,skinned->skeleton?nativeSkeleton(skinned->skeleton):JSValue{});
+        }
     }
     if (auto light = std::dynamic_pointer_cast<Light>(o)) if (key == "intensity") light->intensity = value.toNumber();
-    if (auto light = std::dynamic_pointer_cast<DirectionalLight>(o)) if (key == "target") light->target = payload<Object3D>(value,objectTag);
+    if (auto light = std::dynamic_pointer_cast<DirectionalLight>(o)) if (key == "target") {
+        light->target=value.isHostObject(objectTag)?payload<Object3D>(value,objectTag):nullptr;
+        storeRawObjectField(self,key,value,nativeObject(light->target));
+    }
     if(key=="shadow") {
         const auto shadow=value.isNull()?nullptr:payload<LightShadow>(value,"three.LightShadow");
         if(const auto light=std::dynamic_pointer_cast<DirectionalLight>(o)) {const auto typed=std::dynamic_pointer_cast<DirectionalLightShadow>(shadow);if(shadow&&!typed)throw JSTypeError("DirectionalLight shadow requires matching native type");light->shadow=typed;}
@@ -1484,7 +1570,10 @@ JSValue objectWrite(const JSValue& self, const Args& args, const Args& capture) 
         else if (key == "angle") light->angle = value.toNumber();
         else if (key == "penumbra") light->penumbra = value.toNumber();
         else if (key == "decay") light->decay = value.toNumber();
-        else if (key == "target") light->target = payload<Object3D>(value,objectTag);
+        else if (key == "target") {
+            light->target=value.isHostObject(objectTag)?payload<Object3D>(value,objectTag):nullptr;
+            storeRawObjectField(self,key,value,nativeObject(light->target));
+        }
         else if (key == "map") light->map = value.isNull() ? nullptr : payload<Texture>(value,"three.Texture");
     }
     if (auto light = std::dynamic_pointer_cast<RectAreaLight>(o)) {

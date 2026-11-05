@@ -6,3 +6,7 @@ class IcosahedronGeometry : public PolyhedronGeometry {
     std::shared_ptr<BufferGeometry> clone() const override;
     static std::shared_ptr<IcosahedronGeometry> fromJSON(const JsonValue& data);
 };
+
+JSValue nativeIcosahedronGeometryModule();
+JSValue nativeIcosahedronGeometryBinding(const std::string& name);
+JSValue nativeIcosahedronGeometryConstructor();

@@ -21,3 +21,7 @@ class CylinderGeometry : public BufferGeometry {
     JsonValue toJSON() const override;
     static std::shared_ptr<CylinderGeometry> fromJSON(const JsonValue& data);
 };
+
+JSValue nativeCylinderGeometryModule();
+JSValue nativeCylinderGeometryBinding(const std::string& name);
+JSValue nativeCylinderGeometryConstructor();

@@ -15,3 +15,7 @@ class TubeGeometry : public BufferGeometry {
     JsonValue toJSON() const override;
     static std::shared_ptr<TubeGeometry> fromJSON(const JsonValue& data);
 };
+
+JSValue nativeTubeGeometryModule();
+JSValue nativeTubeGeometryBinding(const std::string& name);
+JSValue nativeTubeGeometryConstructor();

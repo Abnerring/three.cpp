@@ -16,3 +16,7 @@ class PolyhedronGeometry : public BufferGeometry {
     JsonValue toJSON() const override;
     static std::shared_ptr<PolyhedronGeometry> fromJSON(const JsonValue& data);
 };
+
+JSValue nativePolyhedronGeometryModule();
+JSValue nativePolyhedronGeometryBinding(const std::string& name);
+JSValue nativePolyhedronGeometryConstructor();

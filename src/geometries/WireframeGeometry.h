@@ -9,3 +9,7 @@ class WireframeGeometry : public BufferGeometry {
     std::shared_ptr<BufferGeometry> clone() const override;
     JsonValue toJSON() const override;
 };
+
+JSValue nativeWireframeGeometryModule();
+JSValue nativeWireframeGeometryBinding(const std::string& name);
+JSValue nativeWireframeGeometryConstructor();

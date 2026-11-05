@@ -32,9 +32,11 @@ JSValue Loader::prototype() {
         for(const auto& [name,arity]:std::initializer_list<std::pair<const char*,unsigned>>{{"load",0},{"parse",0},{"loadAsync",2},{"setCrossOrigin",1},{"setWithCredentials",1},{"setPath",1},{"setResourcePath",1},{"setRequestHeader",1},{"abort",0}}) {
             JSPropertyDescriptor descriptor;descriptor.configurable=descriptor.writable=true;descriptor.value=JSValue::function(method,{name},name,arity);result.defineProperty(name,descriptor);
         }
+        result.setInternalSlot("Loader.constructor",constructor);
         constructor.retainForHeapLifetime();return result;
     }();cached=JSWeakValue(value);return value;
 }
+JSValue nativeLoaderConstructor(){return Loader::prototype().getInternalSlot("Loader.constructor");}
 Loader::Loader(JSValue manager):object_(JSValue::object(prototype())){initialize(object_,manager);}
 JSValue Loader::load(JSValue url,JSValue onLoad,JSValue onProgress,JSValue onError){return object_.get("load").call(object_,{url,onLoad,onProgress,onError});}
 JSValue Loader::loadAsync(JSValue url,JSValue onProgress){return object_.get("loadAsync").call(object_,{url,onProgress});}

@@ -201,17 +201,16 @@
     "note": "Accepted port scope is src and examples/jsm, including tracked third-party dependencies. Editor/manual web applications are excluded from native application rewrites. Native host behavior, packaging and all three platforms require separate implementation and verification evidence."
   },
   "counts": {
-    "partial-unverified": 618,
-    "missing": 323,
+    "partial-unverified": 619,
     "vulkan-port-pending": 290,
+    "missing": 322,
     "dependency-unverified": 20
   },
   "scopeCounts": {
     "src": {
       "modules": 755,
       "counts": {
-        "partial-unverified": 464,
-        "missing": 1,
+        "partial-unverified": 465,
         "vulkan-port-pending": 290
       }
     },
@@ -747,7 +746,7 @@
       "path": "src/loaders/nodes",
       "upstreamFiles": 3,
       "moduleCount": 3,
-      "modulesWithCppFiles": 2,
+      "modulesWithCppFiles": 3,
       "verifiedComplete": 0
     },
     {
@@ -3601,7 +3600,7 @@
       "kind": "core",
       "upstreamSha256": "5b5994f7e462836db8a8ef5a55b6306c96fc7108aa8dba398ed4de3eda501cbe",
       "header": "src/geometries/Geometries.h",
-      "implementation": null,
+      "implementation": "src/geometries/Geometries.cpp",
       "expectedHeader": "src/geometries/Geometries.h",
       "expectedImplementation": "src/geometries/Geometries.cpp",
       "status": "partial-unverified",
@@ -5191,7 +5190,9 @@
         "upstreamUnitTests": [
           "test/unit/src/loaders/MaterialLoader.tests.js"
         ],
-        "cppUnitTests": [],
+        "cppUnitTests": [
+          "test/unit/src/loaders/MaterialLoader.tests.cpp"
+        ],
         "reviewedImplementation": [],
         "differentialResults": [],
         "renderingResults": [],
@@ -5325,11 +5326,11 @@
       "scope": "src",
       "kind": "core",
       "upstreamSha256": "51b824dfb1b9605e519f96e9094bb8fbeaa17c34c6294e2a8f0fc344b1822fd3",
-      "header": null,
-      "implementation": null,
+      "header": "src/loaders/nodes/NodeObjectLoader.h",
+      "implementation": "src/loaders/nodes/NodeObjectLoader.cpp",
       "expectedHeader": "src/loaders/nodes/NodeObjectLoader.h",
       "expectedImplementation": "src/loaders/nodes/NodeObjectLoader.cpp",
-      "status": "missing",
+      "status": "partial-unverified",
       "verifiedComplete": false,
       "apiExtraction": "static-only",
       "verification": {
@@ -5338,7 +5339,9 @@
           "pointer": "/modules/142"
         },
         "upstreamUnitTests": [],
-        "cppUnitTests": [],
+        "cppUnitTests": [
+          "test/unit/src/loaders/nodes/NodeObjectLoader.tests.cpp"
+        ],
         "reviewedImplementation": [],
         "differentialResults": [],
         "renderingResults": [],

@@ -6,3 +6,7 @@ class DodecahedronGeometry : public PolyhedronGeometry {
     std::shared_ptr<BufferGeometry> clone() const override;
     static std::shared_ptr<DodecahedronGeometry> fromJSON(const JsonValue& data);
 };
+
+JSValue nativeDodecahedronGeometryModule();
+JSValue nativeDodecahedronGeometryBinding(const std::string& name);
+JSValue nativeDodecahedronGeometryConstructor();

@@ -20,3 +20,6 @@
 #include "geometries/TorusKnotGeometry.h"
 #include "geometries/TubeGeometry.h"
 #include "geometries/WireframeGeometry.h"
+
+JSValue nativeGeometriesModule();
+JSValue nativeGeometriesBinding(const std::string& name);

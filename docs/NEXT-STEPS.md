@@ -7,12 +7,12 @@
 
 | 范围 | missing | partial-unverified | 其他 |
 |---|---|---|---|
-| `src` | **1** | 464 | vulkan-port-pending 290 |
+| `src` | **0** | 465 | vulkan-port-pending 290 |
 | `examples/jsm` | **322** | 154 | dependency-unverified 20 |
 
 上游固定为 `11738a9d55e502fb484cefffcea3a66dc44e9fe9`（`upstream.json`）；审计脚本**拒绝其他 commit**。
 
-四类合计 1,251 个模块；`partial-unverified` 表示已有对应代码，`vulkan-port-pending` 也可能已有部分实现。二者均不代表全功能通过，文件覆盖率不能换算成完成率。剩余普通 src 的 1 项不包含 Vulkan 分类内的渲染器主执行链。
+四类合计 1,251 个模块；`partial-unverified` 表示已有对应代码，`vulkan-port-pending` 也可能已有部分实现。二者均不代表全功能通过，文件覆盖率不能换算成完成率。普通 src 的对应文件缺失数已为 0；Vulkan 分类内的渲染器主执行链及已有模块的完整行为验收仍待完成。
 
 ## 2. 一轮标准工作流
 
@@ -45,14 +45,15 @@
 
 1. **传统 Vulkan 渲染路径** — 从现有 MeshBasicMaterial 绘制扩展到完整材质、纹理、光照、阴影、后处理，以及 Line/Points/Sprite/SkinnedMesh、完整渲染目标与窗口呈现。
 2. **现代 Vulkan 执行链** — PhysicalLightingModel 与 Standard/Physical/SSS 节点材质已接入原生节点图；继续完整 Renderer/NodeBuilder、GLSL/WGSL 编译、GPU 绘制、计算与存储资源闭环。
-3. **剩余普通 src 模块** — NodeObjectLoader：先补齐 ObjectLoader 的 managed constructor/prototype、动态 parseMaterials 和 parseAsync，再接入节点对象加载。现有 typed ObjectLoader 的材料解析硬编码 MaterialLoader，不能用薄包装替代派生调用；同时核对 NodeLoader 的迭代器语义和 NodeMaterialLoader 的继承属性枚举。
+3. **已有 src 的行为与渲染连接** — ObjectLoader、NodeObjectLoader、BufferGeometryLoader 的原生动态路径已接通并通过本轮差分。继续完整 Curve 数值方法与 Frenet 的动态语义，将曲线桥接整合回 extras/core 与 extras/curves 对应实现，并补齐 URL 图像异步宿主、旧 typed facade 与动态场景图到 Vulkan 的资源/绘制连接。已有文件不等于完整实现；不要用数值适配或结构快照推断整个模块已完成。
 4. **examples 与宿主适配** — 尚缺 322 个模块；补齐原生平台依赖并逐项差分，最后验收 Windows/Linux/macOS。AST、Linker、TranspilerUtils 已有实现，勿重复创建。
-5. **验证性能** — 本轮完整 core 单测通过，但耗时约 616 秒（同时运行 addon 与差分），比上一轮增加。需量测新增常驻节点图对原生堆 GC 的影响；目前未证实性能原因，不把通过等同于无退化。
+5. **验证性能** — 本轮完整 core 1745 用例通过，用时约 650 秒，其中一个 BufferAttribute GC 用例占 499.403 秒；冷跑同例仅 0.006–0.007 秒。GC/ownership 算法本轮未改，具体累计根原因尚未确定。下一轮以 THREECPP_GC_TRACE=1 二分前序用例，量测 native owner 逐项释放与稳定标记成本。
 
 ## 6. 近期已完成（避免重复劳动）
 
-- 本轮新增：Vulkan 直接采样 RenderTarget GPU 附件（含线性/sRGB/HalfFloat、跨目标传递、上传回调中读回/释放后的恢复）；Line2NodeMaterial 节点图通过 209 个差分场景，MaterialXNoise/MaterialXNodes 通过 233 个差分场景。MaterialX 的验证包含算法体、延迟分支/循环及 4 个 NodeBuilder 基类构建场景，尚不证明 Vulkan 噪声着色器出图。普通 src 缺失只剩 NodeObjectLoader，但完整渲染执行链和 322 个 addons 仍待完成。
-- 本轮 PBR：原生 LightingModel 基类、PhysicalLightingModel 全部钩子及 helper、MeshStandard/Physical/SSSNodeMaterial 已实现并通过所选源码差分；EON、LTC、DFGLUT、EnvironmentBRDF 已修正依赖行为。此项证明节点逻辑，不代表完整 Vulkan PBR 出图。
+- 本轮加载与几何：ObjectLoader、NodeObjectLoader、BufferGeometryLoader 原生动态管线，21 个几何导出（20 个新增源码构造实现）、曲线/Shape JSON 链、ShapeUtils，以及 Array.forEach/reverse。7 组共 403 个真实源码差分已通过；旧加载器/几何与生命周期 10 项回归已通过。旧 typed facade、Curve 数值适配、URL 图像宿主和 Vulkan 连接仍有缺口。
+- 此前 Vulkan/Line2/MaterialX 轮：Vulkan 直接采样 RenderTarget GPU 附件（含线性/sRGB/HalfFloat、跨目标传递、上传回调中读回/释放后的恢复）；Line2NodeMaterial 节点图通过 209 个差分场景，MaterialXNoise/MaterialXNodes 通过 233 个差分场景。MaterialX 的验证包含算法体、延迟分支/循环及 4 个 NodeBuilder 基类构建场景，尚不证明 Vulkan 噪声着色器出图。该轮普通 src 缺失只剩 NodeObjectLoader（本轮已补入对应文件），完整渲染执行链和 322 个 addons 仍待完成。
+- 此前 PBR 轮：原生 LightingModel 基类、PhysicalLightingModel 全部钩子及 helper、MeshStandard/Physical/SSSNodeMaterial 已实现并通过所选源码差分；EON、LTC、DFGLUT、EnvironmentBRDF 已修正依赖行为。此项证明节点逻辑，不代表完整 Vulkan PBR 出图。
 - `examples/jsm`（部分验证，多为 partial）：ColorEnvironment、ColorUtils、DebugEnvironment、GeometryUtils、GroundedSkybox、MaterialXLog、MorphAnimMesh、MorphBlendMesh、OBJExporter、RectAreaLightHelper、SceneUtils（全部 helper）、ShadowMesh、STLExporter（ascii+binary）、TranspilerUtils、Gyroscope。
 - `src` 聚合/映射：`Three.TSL`、`Three.WebGPU`、`Three.WebGPU.Nodes`、`nodes/TSL`、`nodes/Nodes`、`NodeMaterials`（19 个构造器映射，已覆盖 pinned 导出表）。
 - **已确认既有实现**：`BufferGeometryUtils.mergeGroups`（r81 更正）。

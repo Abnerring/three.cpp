@@ -2,7 +2,13 @@
 #include "core/NativeObject.h"
 #include "animation/PropertyBinding.h"
 #include "objects/Mesh.h"
+#include "objects/Line.h"
+#include "objects/Points.h"
+#include "objects/SkinnedMesh.h"
+#include "lights/DirectionalLight.h"
+#include "lights/SpotLight.h"
 #include "textures/DataTexture.h"
+#include <thread>
 
 TEST_CASE("Native bindings write actual object fields and retain replaced resources", "[native]") {
     auto mesh = std::make_shared<Mesh>(); auto object = nativeObject(mesh);
@@ -121,4 +127,111 @@ TEST_CASE("Native morph dictionary rejects unsupported descriptors explicitly", 
     REQUIRE_THROWS_AS(dictionary.defineProperty("smile",getter),JSTypeError);
     REQUIRE(dictionary.get("smile").number()==0);dictionary.set("smile",2);REQUIRE(mesh->morphTargetDictionary->at("smile")==2);
     dictionary.set("blink",3);REQUIRE(mesh->morphTargetDictionary->at("blink")==3);
+}
+
+TEST_CASE("Native light targets preserve pending UUIDs and bind native object identities", "[native][loader]") {
+    const auto verify=[](const auto& light){
+        auto object=nativeObject(light);
+        object.set("target","target-uuid");
+        REQUIRE(object.get("target").strictEquals("target-uuid"));
+        REQUIRE(light->target==nullptr);
+        auto pending=JSValue::object();pending.set("owner",object);
+        pending.set("toString",JSValue::function([](const JSValue&,const std::vector<JSValue>&,const std::vector<JSValue>&)->JSValue{
+            throw JSTypeError("Pending target must not be coerced");
+        }));
+        object.set("target",pending);REQUIRE(object.get("target").sameValue(pending));
+        auto target=std::make_shared<Object3D>();auto targetObject=nativeObject(target);
+        targetObject.set("marker",17);object.set("target",targetObject);
+        REQUIRE(light->target==target);REQUIRE(object.get("target").sameValue(targetObject));
+        object.collectGarbage();REQUIRE(object.get("target").get("marker").strictEquals(17));
+        auto replacement=std::make_shared<Object3D>();light->target=replacement;
+        REQUIRE(object.get("target").sameValue(nativeObject(replacement)));
+        object.set("target",nullptr);REQUIRE(object.get("target").isNull());REQUIRE(light->target==nullptr);
+        object.set("target",JSValue{});REQUIRE(object.get("target").isUndefined());
+    };
+    verify(std::make_shared<DirectionalLight>());verify(std::make_shared<SpotLight>());
+}
+
+TEST_CASE("Native skinned skeleton fields retain UUIDs until native binding", "[native][loader]") {
+    auto mesh=std::make_shared<SkinnedMesh>();auto object=nativeObject(mesh);
+    object.set("skeleton","skeleton-uuid");
+    REQUIRE(object.get("skeleton").strictEquals("skeleton-uuid"));REQUIRE(mesh->skeleton==nullptr);
+    auto source=std::make_shared<SkinnedMesh>();source->skeleton=std::make_shared<Skeleton>();
+    auto skeleton=nativeObject(source).get("skeleton");skeleton.set("marker",23);
+    object.set("skeleton",skeleton);
+    REQUIRE(mesh->skeleton==source->skeleton);REQUIRE(object.get("skeleton").sameValue(skeleton));
+    object.collectGarbage();REQUIRE(object.get("skeleton").get("marker").strictEquals(23));
+    mesh->skeleton=std::make_shared<Skeleton>();
+    REQUIRE_FALSE(object.get("skeleton").sameValue(skeleton));
+    object.set("skeleton",nullptr);REQUIRE(object.get("skeleton").isNull());REQUIRE(mesh->skeleton==nullptr);
+    object.set("skeleton",JSValue{});REQUIRE(object.get("skeleton").isUndefined());
+}
+
+TEST_CASE("Native morph fields accept ordinary objects and sparse arrays without callbacks", "[native][loader]") {
+    const auto verify=[](const auto& primitive){
+        auto object=nativeObject(primitive);auto array=JSValue::array(3);array.set("0",.25);array.set("2",.75);
+        auto dictionary=JSValue::object();dictionary.set("smile",2);dictionary.set("blink",0);
+        JSPropertyDescriptor accessor;accessor.getter=JSValue::function([](const JSValue&,const std::vector<JSValue>&,const std::vector<JSValue>&)->JSValue{
+            throw JSTypeError("Morph assignment/read must not call an element getter");
+        });accessor.enumerable=accessor.configurable=true;
+        dictionary.defineProperty("accessor",accessor);
+        object.set("morphTargetInfluences",array);object.set("morphTargetDictionary",dictionary);
+        REQUIRE(object.get("morphTargetInfluences").sameValue(array));
+        REQUIRE(object.get("morphTargetDictionary").sameValue(dictionary));
+        REQUIRE(primitive->morphTargetInfluences->size()==3);
+        REQUIRE(primitive->morphTargetInfluences->at(0)==.25);
+        REQUIRE(primitive->morphTargetInfluences->storage()->holes.contains(1));
+        REQUIRE(primitive->morphTargetDictionary->at("smile")==2);
+        REQUIRE_FALSE(primitive->morphTargetDictionary->contains("accessor"));
+        array.set("0",.5);dictionary.set("smile",1);
+        REQUIRE(object.get("morphTargetInfluences").sameValue(array));
+        REQUIRE(object.get("morphTargetDictionary").sameValue(dictionary));
+        REQUIRE(primitive->morphTargetInfluences->at(0)==.5);REQUIRE(primitive->morphTargetDictionary->at("smile")==1);
+        array.defineProperty("1",accessor);
+        object.set("morphTargetInfluences",array);REQUIRE(object.get("morphTargetInfluences").sameValue(array));
+        REQUIRE_THROWS_AS(array.get("1"),JSTypeError);
+        REQUIRE_THROWS_AS(dictionary.get("accessor"),JSTypeError);
+        object.set("morphTargetInfluences",nullptr);REQUIRE(object.get("morphTargetInfluences").isNull());
+        object.set("morphTargetDictionary",JSValue{});REQUIRE(object.get("morphTargetDictionary").isUndefined());
+    };
+    verify(std::make_shared<Mesh>());verify(std::make_shared<Line>());verify(std::make_shared<Points>());
+}
+
+TEST_CASE("Native updateMorphTargets retires ordinary morph field aliases", "[native][loader]") {
+    auto geometry=std::make_shared<BufferGeometry>();
+    geometry->morphAttributes["position"].push_back(std::make_shared<Float32BufferAttribute>(std::vector<float>{0,0,0},3));
+    auto mesh=std::make_shared<Mesh>(geometry);auto object=nativeObject(mesh);
+    auto array=JSValue::array(1);array.set("0",.8);auto dictionary=JSValue::object();dictionary.set("custom",0);
+    object.set("morphTargetInfluences",array);object.set("morphTargetDictionary",dictionary);
+    mesh->updateMorphTargets();
+    REQUIRE_FALSE(object.get("morphTargetInfluences").sameValue(array));
+    REQUIRE_FALSE(object.get("morphTargetDictionary").sameValue(dictionary));
+    REQUIRE(mesh->morphTargetInfluences->at(0)==0);
+    REQUIRE_FALSE(mesh->morphTargetDictionary->contains("custom"));
+    REQUIRE(array.get("0").strictEquals(.8));REQUIRE(dictionary.get("custom").strictEquals(0));
+}
+
+TEST_CASE("Native pending references and ordinary morph cycles are traced and reclaimed", "[native][loader][gc]") {
+    std::vector<bool> evidence;
+    std::thread worker([&]{
+        JSWeakValue meshWeak,arrayWeak,dictionaryWeak,lightWeak,targetWeak;
+        std::weak_ptr<Mesh> meshOwner;std::weak_ptr<DirectionalLight> lightOwner;
+        {
+            auto mesh=std::make_shared<Mesh>();meshOwner=mesh;auto object=nativeObject(mesh);
+            auto array=JSValue::array();array.set("owner",object);auto dictionary=JSValue::object();dictionary.set("owner",object);
+            object.set("morphTargetInfluences",array);object.set("morphTargetDictionary",dictionary);
+            meshWeak=JSWeakValue(object);arrayWeak=JSWeakValue(array);dictionaryWeak=JSWeakValue(dictionary);
+            auto light=std::make_shared<DirectionalLight>();lightOwner=light;auto lightObject=nativeObject(light);
+            auto pending=JSValue::object();pending.set("owner",lightObject);lightObject.set("target",pending);
+            lightWeak=JSWeakValue(lightObject);targetWeak=JSWeakValue(pending);
+            array={};dictionary={};pending={};object.collectGarbage();
+            evidence.push_back(!arrayWeak.expired()&&!dictionaryWeak.expired()&&!targetWeak.expired());
+            evidence.push_back(object.get("morphTargetInfluences").get("owner").sameValue(object));
+            evidence.push_back(lightObject.get("target").get("owner").sameValue(lightObject));
+        }
+        JSValue::nativeSafepoint();
+        evidence.push_back(meshWeak.expired()&&arrayWeak.expired()&&dictionaryWeak.expired());
+        evidence.push_back(lightWeak.expired()&&targetWeak.expired()&&meshOwner.expired()&&lightOwner.expired());
+    });worker.join();
+    REQUIRE(evidence==std::vector<bool>{true,true,true,true,true});
 }

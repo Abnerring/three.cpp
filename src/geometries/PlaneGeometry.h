@@ -13,3 +13,7 @@ class PlaneGeometry : public BufferGeometry {
     JsonValue toJSON() const override;
     static std::shared_ptr<PlaneGeometry> fromJSON(const JsonValue& json);
 };
+
+JSValue nativePlaneGeometryModule();
+JSValue nativePlaneGeometryBinding(const std::string& name);
+JSValue nativePlaneGeometryConstructor();

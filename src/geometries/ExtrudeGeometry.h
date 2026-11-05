@@ -42,3 +42,7 @@ class ExtrudeGeometry : public BufferGeometry {
     JsonValue toJSON() const override;
     static std::shared_ptr<ExtrudeGeometry> fromJSON(const JsonValue& data, const ShapeMap& shapes);
 };
+
+JSValue nativeExtrudeGeometryModule();
+JSValue nativeExtrudeGeometryBinding(const std::string& name);
+JSValue nativeExtrudeGeometryConstructor();

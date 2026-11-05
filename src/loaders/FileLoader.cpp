@@ -126,7 +126,11 @@ JSValue method(const JSValue& receiverValue,const Args& args,const Args& capture
 void FileLoader::setTransport(JSValue value){transportSlot()=std::move(value);}
 JSValue FileLoader::transport(){return transportSlot();}
 JSValue FileLoader::prototype() {
-    static thread_local auto value=[] {
+    static thread_local JSWeakValue cached;
+    if(const auto value=cached.lock();value&&value->isObject())return *value;
+    static thread_local bool initializing=false;
+    JSModuleInitializationScope scope(initializing,"FileLoader prototype");
+    auto value=[] {
         auto constructor=JSValue::constructor([](const JSValue& selfValue,const Args& args,const Args&)->JSValue{
             JSValue self=selfValue;
             initialize(self,arg(args,0));
@@ -137,7 +141,7 @@ JSValue FileLoader::prototype() {
             self.set("_abortController",controller);
             return {};
         },{},"FileLoader",1);
-        constructor.setPrototype(Loader::prototype().get("constructor"));
+        constructor.setPrototype(nativeLoaderConstructor());
         auto result=constructor.get("prototype");
         result.setPrototype(Loader::prototype());
         for(const auto& [name,arity]:std::initializer_list<std::pair<const char*,unsigned>>{
@@ -146,10 +150,14 @@ JSValue FileLoader::prototype() {
             descriptor.value=JSValue::function(method,{name},name,arity);
             result.defineProperty(name,descriptor);
         }
+        result.setInternalSlot("FileLoader.constructor",constructor);
+        constructor.retainForHeapLifetime();
         return result;
     }();
+    cached=JSWeakValue(value);
     return value;
 }
+JSValue nativeFileLoaderConstructor(){return FileLoader::prototype().getInternalSlot("FileLoader.constructor");}
 FileLoader::FileLoader(JSValue manager):Loader(JSValue::object(prototype()),Existing{}){initialize(object_,manager);object_.set("mimeType","");object_.set("responseType","");auto controller=JSValue::object();controller.set("aborted",false);object_.set("_abortController",controller);}
 FileLoader& FileLoader::setResponseType(JSValue value){object_.get("setResponseType").call(object_,{value});return *this;}
 FileLoader& FileLoader::setMimeType(JSValue value){object_.get("setMimeType").call(object_,{value});return *this;}

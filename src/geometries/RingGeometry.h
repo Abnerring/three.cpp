@@ -19,3 +19,7 @@ class RingGeometry : public BufferGeometry {
     JsonValue toJSON() const override;
     static std::shared_ptr<RingGeometry> fromJSON(const JsonValue& data);
 };
+
+JSValue nativeRingGeometryModule();
+JSValue nativeRingGeometryBinding(const std::string& name);
+JSValue nativeRingGeometryConstructor();

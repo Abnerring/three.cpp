@@ -1,6 +1,7 @@
 #pragma once
 #include "core/JSValue.h"
 #include "loaders/Loader.h"
+JSValue nativeImageLoaderConstructor();
 
 // Port of src/loaders/ImageLoader.js at the pinned revision (see upstream.json).
 //

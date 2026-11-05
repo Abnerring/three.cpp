@@ -1,5 +1,6 @@
 #pragma once
 #include "core/JSValue.h"
+#include "core/JSMember.h"
 #include "core/OrderedMap.h"
 #include "extras/core/Shape.h"
 #include "geometries/ShapeGeometry.h"
@@ -17,14 +18,32 @@ class Material;
 class Texture;
 class Skeleton;
 
-// Port of src/loaders/ObjectLoader.js, first slice.
-//
-// The pipeline order is upstream's: animations, geometries, materials, then the object tree, because the
-// later stages resolve by the uuid the earlier ones recorded. Images and textures are not part of this
-// slice, so parseTextures is absent and a document that needs a texture is refused rather than silently
-// losing it. The epilogue that every object shares is ported line for line from the upstream tail.
+JSValue nativeObjectLoaderModule();
+JSValue nativeObjectLoaderBinding(const std::string& name);
+JSValue nativeObjectLoaderConstructor();
+
+// The managed object exposes the source ObjectLoader pipeline, including images,
+// textures and intrinsic async methods. The typed Result/parseGeometry facade is
+// retained for callers using the earlier typed object graph.
 class ObjectLoader {
   public:
+    explicit ObjectLoader(JSValue manager = {});
+    static JSValue prototype();
+    JSValue object() const { return object_; }
+    operator JSValue() const { return object_; }
+    JSMember manager{&object_, "manager"}, crossOrigin{&object_, "crossOrigin"};
+    JSMember withCredentials{&object_, "withCredentials"}, path{&object_, "path"};
+    JSMember resourcePath{&object_, "resourcePath"}, requestHeader{&object_, "requestHeader"};
+    JSValue load(JSValue url = {}, JSValue onLoad = {}, JSValue onProgress = {}, JSValue onError = {});
+    JSValue loadAsync(JSValue url, JSValue onProgress = {});
+    JSValue parseManaged(JSValue json, JSValue onLoad = {});
+    JSValue parseAsync(JSValue json);
+    ObjectLoader& setCrossOrigin(JSValue value);
+    ObjectLoader& setWithCredentials(JSValue value);
+    ObjectLoader& setPath(JSValue value);
+    ObjectLoader& setResourcePath(JSValue value);
+    ObjectLoader& setRequestHeader(JSValue value);
+    static void registerGeometry(JSValue type, JSValue geometryClass);
     struct Result {
         std::shared_ptr<Object3D> object;
         std::vector<std::shared_ptr<AnimationClip>> animations;
@@ -32,6 +51,7 @@ class ObjectLoader {
     Result parse(const JSValue& json);
 
   private:
+    JSValue object_;
     std::shared_ptr<Object3D> parseObject(const JSValue& data);
     std::map<std::string, std::shared_ptr<BufferGeometry>> geometries_;
     std::map<std::string, std::shared_ptr<Material>> materials_;

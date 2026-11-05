@@ -18,3 +18,7 @@ class CapsuleGeometry : public BufferGeometry {
     JsonValue toJSON() const override;
     static std::shared_ptr<CapsuleGeometry> fromJSON(const JsonValue& data);
 };
+
+JSValue nativeCapsuleGeometryModule();
+JSValue nativeCapsuleGeometryBinding(const std::string& name);
+JSValue nativeCapsuleGeometryConstructor();

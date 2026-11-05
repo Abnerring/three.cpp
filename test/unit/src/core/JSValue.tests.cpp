@@ -1,9 +1,187 @@
 #include "catch.hpp"
 #include "core/JSValue.h"
 #include "core/JSDataSnapshot.h"
+#include "core/JSProxy.h"
+#include "core/JSPromise.h"
 #include "materials/MeshBasicMaterial.h"
 #include <cmath>
 #include <limits>
+
+TEST_CASE("Array reverse retains native metadata boxed receivers and sparse aliases", "[core][runtime][reverse]") {
+    const auto prototype = JSValue::array().getPrototype(), method = prototype.get("reverse");
+    const auto descriptor = prototype.getOwnPropertyDescriptor("reverse");
+    REQUIRE(descriptor.has_value()); REQUIRE(*descriptor->writable); REQUIRE_FALSE(*descriptor->enumerable); REQUIRE(*descriptor->configurable);
+    REQUIRE(method.get("name").strictEquals("reverse")); REQUIRE(method.get("length").strictEquals(0));
+    REQUIRE(method.get("toString").call(method).strictEquals("function reverse() { [native code] }"));
+    REQUIRE_FALSE(method.isConstructible()); REQUIRE_FALSE(method.hasOwn("prototype"));
+    REQUIRE_THROWS_AS(method.call(nullptr), JSTypeError); REQUIRE_THROWS_AS(method.call(JSValue{}), JSTypeError);
+    REQUIRE_THROWS_AS(method.call("ab"), JSTypeError); REQUIRE(method.call("x").toPrimitive().strictEquals("x"));
+    for (const auto& value : std::vector<JSValue>{17, true, JSValue::symbol("boxed")}) { const auto boxed = method.call(value); REQUIRE(boxed.isObject()); REQUIRE(boxed.toPrimitive().sameValue(value)); }
+    auto array = JSValue::array(8), item = JSValue::object(); array.set("0", item); array.set("7", "right7"); array.set("6", "right6"); array.set("2", "left2");
+    REQUIRE(method.call(array, {"ignored"}).sameValue(array)); REQUIRE(array.length() == 8);
+    REQUIRE(array.get("0").strictEquals("right7")); REQUIRE(array.get("7").sameValue(item)); REQUIRE(array.get("1").strictEquals("right6")); REQUIRE(array.get("5").strictEquals("left2"));
+    for (const auto* key : {"2", "3", "4", "6"}) REQUIRE_FALSE(array.hasOwn(key));
+    auto odd = JSValue::array(3); odd.set("0", 1); odd.set("1", item); odd.set("2", 3); method.call(odd); REQUIRE(odd.get("1").sameValue(item)); REQUIRE(odd.get("0").strictEquals(3)); REQUIRE(odd.get("2").strictEquals(1));
+}
+
+TEST_CASE("Array reverse snapshots length and orders inherited Proxy reads writes and deletions", "[core][runtime][reverse]") {
+    using Args = std::vector<JSValue>;
+    const auto method = JSValue::array().get("reverse"); auto trace = JSValue::array(), target = JSValue::object(), inherited = JSValue::object(), length = JSValue::object(), handler = JSValue::object();
+    inherited.set("0", "left"); target.setPrototype(inherited); target.set("3", "right"); target.set("2", "upperOnly");
+    length.set("valueOf", JSValue::function(+[](const JSValue&, const Args&, const Args& c) -> JSValue { c[0].get("push").call(c[0], {"length:valueOf"}); return 4.9; }, {trace}));
+    JSPropertyDescriptor d; d.configurable = true; d.getter = JSValue::function(+[](const JSValue&, const Args&, const Args& c) -> JSValue { c[0].get("push").call(c[0], {"length:get"}); return c[1]; }, {trace, length}); target.defineProperty("length", d);
+    handler.set("has", JSValue::function(+[](const JSValue&, const Args& a, const Args& c) -> JSValue { c[0].get("push").call(c[0], {"has:" + a[1].toString()}); return a[0].has(a[1]); }, {trace}));
+    handler.set("get", JSValue::function(+[](const JSValue&, const Args& a, const Args& c) -> JSValue { c[0].get("push").call(c[0], {"get:" + a[1].toString()}); return a[0].get(a[1], a[2]); }, {trace}));
+    handler.set("set", JSValue::function(+[](const JSValue&, const Args& a, const Args& c) -> JSValue {
+        c[0].get("push").call(c[0], {"set:" + a[1].toString() + ":" + a[2].toString()});
+        if (a[1].strictEquals("0")) { auto target = a[0]; JSPropertyDescriptor d; d.value = 0; d.writable = d.configurable = true; target.defineProperty("length", d); }
+        return a[0].reflectSet(a[1], a[2], a[3]);
+    }, {trace}));
+    handler.set("deleteProperty", JSValue::function(+[](const JSValue&, const Args& a, const Args& c) -> JSValue { c[0].get("push").call(c[0], {"delete:" + a[1].toString()}); auto target = a[0]; return target.erase(a[1]); }, {trace}));
+    const auto proxy = createNativeProxy(target, handler); REQUIRE(method.call(proxy).sameValue(proxy));
+    REQUIRE(trace.toJSON()->dump() == R"(["get:length","length:get","length:valueOf","has:0","get:0","has:3","get:3","set:0:right","set:3:left","has:1","has:2","get:2","set:1:upperOnly","delete:2"])");
+    REQUIRE(target.get("length").strictEquals(0)); REQUIRE(target.hasOwn("0")); REQUIRE(target.get("0").strictEquals("right")); REQUIRE(target.get("3").strictEquals("left")); REQUIRE_FALSE(target.hasOwn("2")); REQUIRE(inherited.get("0").strictEquals("left"));
+}
+
+TEST_CASE("Array reverse retains partial mutation when strict writes or deletions fail", "[core][runtime][reverse]") {
+    const auto method = JSValue::array().get("reverse");
+    const auto object = []() { auto out = JSValue::object(nullptr); out.set("length", 2); return out; };
+    const auto property = [](JSValue out, const char* key, const JSValue& value, bool writable, bool configurable) { JSPropertyDescriptor d; d.value = value; d.writable = writable; d.configurable = configurable; out.defineProperty(key, d); };
+    auto lowerReadOnly = object(); property(lowerReadOnly, "0", "L", false, true); lowerReadOnly.set("1", "U"); REQUIRE_THROWS_AS(method.call(lowerReadOnly), JSTypeError); REQUIRE(lowerReadOnly.get("0").strictEquals("L")); REQUIRE(lowerReadOnly.get("1").strictEquals("U"));
+    auto upperReadOnly = object(); upperReadOnly.set("0", "L"); property(upperReadOnly, "1", "U", false, true); REQUIRE_THROWS_AS(method.call(upperReadOnly), JSTypeError); REQUIRE(upperReadOnly.get("0").strictEquals("U")); REQUIRE(upperReadOnly.get("1").strictEquals("U"));
+    auto upperFixed = object(); property(upperFixed, "1", "U", true, false); REQUIRE_THROWS_AS(method.call(upperFixed), JSTypeError); REQUIRE(upperFixed.get("0").strictEquals("U")); REQUIRE(upperFixed.get("1").strictEquals("U"));
+    auto lowerFixed = object(); property(lowerFixed, "0", "L", true, false); REQUIRE_THROWS_AS(method.call(lowerFixed), JSTypeError); REQUIRE(lowerFixed.get("0").strictEquals("L")); REQUIRE_FALSE(lowerFixed.hasOwn("1"));
+    auto sealedLower = object(); sealedLower.set("0", "L"); sealedLower.preventExtensions(); REQUIRE_THROWS_AS(method.call(sealedLower), JSTypeError); REQUIRE_FALSE(sealedLower.hasOwn("0")); REQUIRE_FALSE(sealedLower.hasOwn("1"));
+    auto sealedUpper = object(); sealedUpper.set("1", "U"); sealedUpper.preventExtensions(); REQUIRE_THROWS_AS(method.call(sealedUpper), JSTypeError); REQUIRE_FALSE(sealedUpper.hasOwn("0")); REQUIRE(sealedUpper.get("1").strictEquals("U"));
+    using Args = std::vector<JSValue>;
+    const auto denied = JSValue::function(+[](const JSValue&, const Args&, const Args&) -> JSValue { return false; });
+    auto setTarget = object(), setHandler = JSValue::object(); setTarget.set("0", "L"); setTarget.set("1", "U"); setHandler.set("set", denied);
+    REQUIRE_THROWS_AS(method.call(createNativeProxy(setTarget, setHandler)), JSTypeError); REQUIRE(setTarget.get("0").strictEquals("L")); REQUIRE(setTarget.get("1").strictEquals("U"));
+    auto deleteTarget = object(), deleteHandler = JSValue::object(); deleteTarget.set("1", "U"); deleteHandler.set("deleteProperty", denied);
+    REQUIRE_THROWS_AS(method.call(createNativeProxy(deleteTarget, deleteHandler)), JSTypeError); REQUIRE(deleteTarget.get("0").strictEquals("U")); REQUIRE(deleteTarget.get("1").strictEquals("U"));
+}
+
+TEST_CASE("Array reverse propagates exact abrupt values from every observable operation", "[core][runtime][reverse]") {
+    using Args = std::vector<JSValue>; const auto method = JSValue::array().get("reverse"); auto reason = JSValue::object();
+    for (const auto* stage : {"length", "has", "getLower", "getUpper", "setLower", "setUpper", "delete"}) {
+        CAPTURE(stage); auto target = JSValue::object(), handler = JSValue::object(); target.set("length", 2); target.set("1", "U"); if (std::string(stage) != "delete") target.set("0", "L");
+        handler.set("has", JSValue::function(+[](const JSValue&, const Args& a, const Args& c) -> JSValue { if (c[0].strictEquals("has")) throw JSThrownValue(c[1]); return a[0].has(a[1]); }, {stage, reason}));
+        handler.set("get", JSValue::function(+[](const JSValue&, const Args& a, const Args& c) -> JSValue { if ((c[0].strictEquals("length") && a[1].strictEquals("length")) || (c[0].strictEquals("getLower") && a[1].strictEquals("0")) || (c[0].strictEquals("getUpper") && a[1].strictEquals("1"))) throw JSThrownValue(c[1]); return a[0].get(a[1], a[2]); }, {stage, reason}));
+        handler.set("set", JSValue::function(+[](const JSValue&, const Args& a, const Args& c) -> JSValue { if ((c[0].strictEquals("setLower") && a[1].strictEquals("0")) || (c[0].strictEquals("setUpper") && a[1].strictEquals("1"))) throw JSThrownValue(c[1]); return a[0].reflectSet(a[1], a[2], a[3]); }, {stage, reason}));
+        handler.set("deleteProperty", JSValue::function(+[](const JSValue&, const Args&, const Args& c) -> JSValue { throw JSThrownValue(c[0]); }, {reason}));
+        try { method.call(createNativeProxy(target, handler)); FAIL("abrupt completion must escape"); } catch (const JSThrownValue& e) { REQUIRE(e.value.sameValue(reason)); }
+    }
+    auto target = JSValue::object(), length = JSValue::object(); length.set("valueOf", JSValue::function(+[](const JSValue&, const Args&, const Args& c) -> JSValue { throw JSThrownValue(c[0]); }, {reason})); target.set("length", length);
+    try { method.call(target); FAIL("length coercion must preserve the thrown value"); } catch (const JSThrownValue& e) { REQUIRE(e.value.sameValue(reason)); }
+}
+
+TEST_CASE("Array reverse preserves captured values and range across Proxy getter reentry", "[core][runtime][reverse]") {
+    using Args = std::vector<JSValue>; const auto method = JSValue::array().get("reverse");
+    auto target = JSValue::object(), handler = JSValue::object(), state = JSValue::object(), trace = JSValue::array(); target.set("length", 2); target.set("0", "L"); target.set("1", "U"); state.set("entered", false);
+    handler.set("get", JSValue::function(+[](const JSValue&, const Args& a, const Args& c) -> JSValue {
+        c[0].get("push").call(c[0], {a[1]}); auto state = c[1];
+        if (a[1].strictEquals("0") && !state.get("entered").toBoolean()) { state.set("entered", true); c[2].call(a[0]); auto target = a[0]; target.set("length", 4); target.set("3", "outside"); }
+        return a[0].get(a[1], a[2]);
+    }, {trace, state, method}));
+    const auto proxy = createNativeProxy(target, handler); REQUIRE(method.call(proxy).sameValue(proxy));
+    REQUIRE(trace.toJSON()->dump() == R"(["length","0","1"])"); REQUIRE(target.get("0").strictEquals("L")); REQUIRE(target.get("1").strictEquals("U")); REQUIRE(target.get("3").strictEquals("outside")); REQUIRE(target.get("length").strictEquals(4));
+}
+
+TEST_CASE("Array forEach retains native metadata strict callback receivers and boxed source identity", "[core][runtime][forEach]") {
+    using Args = std::vector<JSValue>;
+    const auto prototype = JSValue::array().getPrototype(), method = prototype.get("forEach");
+    const auto descriptor = prototype.getOwnPropertyDescriptor("forEach");
+    REQUIRE(descriptor.has_value()); REQUIRE(*descriptor->writable); REQUIRE_FALSE(*descriptor->enumerable); REQUIRE(*descriptor->configurable);
+    REQUIRE(method.get("name").strictEquals("forEach")); REQUIRE(method.get("length").strictEquals(1));
+    REQUIRE(method.get("toString").call(method).strictEquals("function forEach() { [native code] }"));
+    REQUIRE_FALSE(method.isConstructible()); REQUIRE_FALSE(method.hasOwn("prototype"));
+    REQUIRE_THROWS_AS(method.call(nullptr), JSTypeError); REQUIRE_THROWS_AS(method.call(JSValue{}), JSTypeError);
+    auto rows = JSValue::array(), state = JSValue::object(), receiver = JSValue::symbol("callback-this");
+    const auto callback = JSValue::function(+[](const JSValue& self, const Args& args, const Args& captures) -> JSValue {
+        auto state = captures[1];
+        if (!state.hasOwn("source")) state.set("source", args[2]);
+        auto row = JSValue::array(); row.set("0", args[0]); row.set("1", args[1]);
+        row.set("2", self.sameValue(captures[2])); row.set("3", args[2].sameValue(state.get("source")));
+        captures[0].get("push").call(captures[0], {row});
+        return false;
+    }, {rows, state, receiver});
+    REQUIRE(method.call("ab", {callback, receiver}).isUndefined());
+    REQUIRE(rows.toJSON()->dump() == R"([["a",0,true,true],["b",1,true,true]])");
+    REQUIRE(state.get("source").isObject()); REQUIRE(state.get("source").toPrimitive().strictEquals("ab"));
+    auto flags = JSValue::array();
+    const auto strictCallback = JSValue::function(+[](const JSValue& self, const Args&, const Args& captures) -> JSValue {
+        captures[0].get("push").call(captures[0], {self.isUndefined()}); return {};
+    }, {flags});
+    auto single = JSValue::array(); single.set("0", 1); method.call(single, {strictCallback});
+    REQUIRE(flags.toJSON()->dump() == "[true]");
+    for (const auto& primitive : Args{17, true, JSValue::symbol("source")}) REQUIRE(method.call(primitive, {strictCallback}).isUndefined());
+    REQUIRE(flags.toJSON()->dump() == "[true]");
+}
+
+TEST_CASE("Array forEach snapshots converted length then observes inherited sparse and changed keys", "[core][runtime][forEach]") {
+    using Args = std::vector<JSValue>;
+    const auto method = JSValue::array().get("forEach");
+    auto trace = JSValue::array(), target = JSValue::object(), inherited = JSValue::object(), length = JSValue::object(), handler = JSValue::object();
+    inherited.set("1", "inherited"); target.setPrototype(inherited); target.set("0", "zero"); target.set("2", "removed");
+    length.set("valueOf", JSValue::function(+[](const JSValue&, const Args&, const Args& c) -> JSValue {
+        c[0].get("push").call(c[0], {"value:length"}); return 4.9;
+    }, {trace}));
+    JSPropertyDescriptor d; d.configurable = true; d.getter = JSValue::function(+[](const JSValue&, const Args&, const Args& c) -> JSValue {
+        c[0].get("push").call(c[0], {"length:get"}); return c[1];
+    }, {trace, length}); target.defineProperty("length", d);
+    d.getter = JSValue::function(+[](const JSValue&, const Args&, const Args&) -> JSValue { throw JSThrownValue("unexpected species read"); }); target.defineProperty("constructor", d);
+    handler.set("has", JSValue::function(+[](const JSValue&, const Args& a, const Args& c) -> JSValue {
+        c[0].get("push").call(c[0], {"has:" + a[1].toString()}); return a[0].has(a[1]);
+    }, {trace}));
+    handler.set("get", JSValue::function(+[](const JSValue&, const Args& a, const Args& c) -> JSValue {
+        c[0].get("push").call(c[0], {"get:" + a[1].toString()}); return a[0].get(a[1], a[2]);
+    }, {trace}));
+    const auto proxy = createNativeProxy(target, handler);
+    const auto callback = JSValue::function(+[](const JSValue&, const Args& a, const Args& c) -> JSValue {
+        c[0].get("push").call(c[0], {"callback:" + a[1].toString() + ":" + a[0].toString()});
+        if (a[1].strictEquals(0)) { auto target = c[1]; target.erase("2"); target.set("3", "added"); target.set("4", "outside"); JSPropertyDescriptor d; d.value = 9; d.writable = d.configurable = true; target.defineProperty("length", d); }
+        if (!a[2].sameValue(c[2])) throw JSThrownValue("source identity changed"); return {};
+    }, {trace, target, proxy});
+    REQUIRE(method.call(proxy, {callback}).isUndefined());
+    REQUIRE(trace.toJSON()->dump() == R"(["get:length","length:get","value:length","has:0","get:0","callback:0:zero","has:1","get:1","callback:1:inherited","has:2","has:3","get:3","callback:3:added"])");
+}
+
+TEST_CASE("Array forEach validates callbacks after length and propagates original abrupt values", "[core][runtime][forEach]") {
+    using Args = std::vector<JSValue>;
+    const auto method = JSValue::array().get("forEach");
+    auto reason = JSValue::object(), trace = JSValue::array(), target = JSValue::object();
+    JSPropertyDescriptor d; d.configurable = true; d.getter = JSValue::function(+[](const JSValue&, const Args&, const Args& c) -> JSValue {
+        c[0].get("push").call(c[0], {"length"}); throw JSThrownValue(c[1]);
+    }, {trace, reason}); target.defineProperty("length", d);
+    try { method.call(target); FAIL("length getter must throw before callback validation"); } catch (const JSThrownValue& e) { REQUIRE(e.value.sameValue(reason)); }
+    REQUIRE(trace.toJSON()->dump() == "[\"length\"]");
+    auto length = JSValue::object(); length.set("valueOf", JSValue::function(+[](const JSValue&, const Args&, const Args& c) -> JSValue { throw JSThrownValue(c[0]); }, {reason}));
+    d = JSPropertyDescriptor{}; d.value = length; d.writable = d.configurable = true; target.defineProperty("length", d);
+    try { method.call(target); FAIL("length conversion must preserve thrown value"); } catch (const JSThrownValue& e) { REQUIRE(e.value.sameValue(reason)); }
+    d.value = 0; target.defineProperty("length", d); REQUIRE_THROWS_AS(method.call(target), JSTypeError);
+    const auto noop = JSValue::function(+[](const JSValue&, const Args&, const Args&) -> JSValue { return {}; });
+    for (const auto& size : Args{-1, std::numeric_limits<double>::quiet_NaN(), -std::numeric_limits<double>::infinity(), .9}) { target.set("length", size); REQUIRE(method.call(target, {noop}).isUndefined()); }
+    for (const auto* stage : {"has", "get", "callback"}) {
+        CAPTURE(stage); auto handler = JSValue::object(); target.set("length", 2); target.set("0", 1); target.set("1", 2);
+        handler.set("has", JSValue::function(+[](const JSValue&, const Args& a, const Args& c) -> JSValue { if (c[0].strictEquals("has")) throw JSThrownValue(c[1]); return a[0].has(a[1]); }, {stage, reason}));
+        handler.set("get", JSValue::function(+[](const JSValue&, const Args& a, const Args& c) -> JSValue { if (c[0].strictEquals("get") && a[1].strictEquals("0")) throw JSThrownValue(c[1]); return a[0].get(a[1], a[2]); }, {stage, reason}));
+        const auto proxy = createNativeProxy(target, handler), callback = JSValue::function(+[](const JSValue&, const Args&, const Args& c) -> JSValue { throw JSThrownValue(c[0]); }, {reason});
+        try { method.call(proxy, {callback}); FAIL("abrupt completion must escape"); } catch (const JSThrownValue& e) { REQUIRE(e.value.sameValue(reason)); }
+    }
+}
+
+TEST_CASE("Array forEach supports nested iteration without extending the active range", "[core][runtime][forEach]") {
+    using Args = std::vector<JSValue>;
+    auto outer = JSValue::array(), inner = JSValue::array(), trace = JSValue::array(); outer.set("0", 1); outer.set("1", 2); inner.set("0", 9);
+    const auto method = outer.get("forEach"), nested = JSValue::function(+[](const JSValue&, const Args& a, const Args& c) -> JSValue { c[0].get("push").call(c[0], {"inner:" + a[0].toString()}); return false; }, {trace});
+    const auto callback = JSValue::function(+[](const JSValue&, const Args& a, const Args& c) -> JSValue {
+        c[0].get("push").call(c[0], {"outer:" + a[0].toString()});
+        if (a[1].strictEquals(0)) { c[1].call(c[2], {c[3]}); auto outer = a[2]; outer.set("2", 3); }
+        return false;
+    }, {trace, method, inner, nested});
+    REQUIRE(method.call(outer, {callback}).isUndefined()); REQUIRE(outer.length() == 3);
+    REQUIRE(trace.toJSON()->dump() == R"(["outer:1","inner:9","outer:2"])");
+}
 
 TEST_CASE("Array includes uses SameValueZero and reads sparse inherited values", "[core][runtime][includes]") {
     auto values = JSValue::array(4); const auto includes = values.get("includes");

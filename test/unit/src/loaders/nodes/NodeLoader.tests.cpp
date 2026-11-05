@@ -132,3 +132,29 @@ TEST_CASE("NodeLoader parseNodes answers the nodes keyed by uuid") {
     REQUIRE(nodes.get("b").get("uuid").strictEquals("b"));
     REQUIRE(log.length() == Approx(2));
 }
+
+#include "../../../utils/parity/LoaderSemanticsFixtures.h"
+
+TEST_CASE("NodeLoader observes iterable passes closes abrupt bodies and retains failed meta", "[loaders][node-loader][iterator]") {
+    namespace F=LoaderSemanticsFixtures;
+    const auto good=F::run(F::request("iterator"));REQUIRE(good.get("result").strictEquals("u"));REQUIRE_FALSE(good.get("metaRetained").toBoolean());
+    REQUIRE(good.get("trace").toJSON()->dump()==R"([["iterator",1,true],["next",1,0,true],"get:uuid","get:type",["create","T"],["next",1,1,true],["iterator",2,true],["next",2,0,true],"get:uuid",["deserialize","u",true,true],["next",2,1,true]])");
+    for(const auto* variant:{"uuidThrow","typeThrow","createThrow","deserializeThrow","nextThrow","secondNextThrow","returnThrow"}){
+        CAPTURE(variant);const auto result=F::run(F::request("iterator",variant));REQUIRE(result.get("result").strictEquals("reason"));
+        REQUIRE(result.get("metaRetained").toBoolean()==(std::string(variant)=="deserializeThrow"));
+        const auto trace=result.get("trace").toJSON()->dump();
+        if(std::string(variant)=="nextThrow"||std::string(variant)=="secondNextThrow")REQUIRE(trace.find("return")==std::string::npos);
+        else REQUIRE(trace.find("get:return")!=std::string::npos);
+    }
+    const auto closeThrow=F::run(F::request("iterator","returnThrow"));REQUIRE(closeThrow.get("trace").get(std::to_string(closeThrow.get("trace").length()-1)).get("0").strictEquals("get:return"));
+}
+TEST_CASE("NodeLoader preserves computed keys repeated registry reads and changing arrays", "[loaders][node-loader]") {
+    namespace F=LoaderSemanticsFixtures;
+    const auto registry=F::run(F::request("registry"));REQUIRE(registry.get("tag").strictEquals("second"));REQUIRE(registry.get("trace").toJSON()->dump()==R"(["get:nodes","first:type","get:nodes","construct"])");
+    REQUIRE(F::run(F::request("keys")).toJSON()->dump()==R"(["get:create","create","key","key","set:uuid","key","deserialize"])");
+    const auto grow=F::run(F::request("array","grow"));REQUIRE(grow.get("count").strictEquals(2));REQUIRE(grow.get("keys").toJSON()->dump()==R"(["a","b"])");
+    const auto duplicate=F::run(F::request("array","duplicate"));REQUIRE(duplicate.get("keys").toJSON()->dump()==R"(["same"])");REQUIRE(duplicate.get("trace").toJSON()->dump()==R"([["create",1],["create",2],["deserialize",2,1],["deserialize",2,2]])");
+    const auto nullish=F::run(F::request("nullish"));REQUIRE(nullish.get("undefined").toBoolean());REQUIRE(nullish.get("null").strictEquals("TypeError"));REQUIRE(nullish.get("number").strictEquals("TypeError"));REQUIRE(nullish.get("texturesUndefined").toBoolean());REQUIRE(nullish.get("nodesUndefined").toBoolean());
+    // This pinned source attempts to assign Node.uuid, which is getter-only.
+    REQUIRE(F::run(F::request("realNode")).strictEquals("TypeError"));
+}

@@ -9,3 +9,7 @@ class EdgesGeometry : public BufferGeometry {
     std::shared_ptr<BufferGeometry> clone() const override;
     JsonValue toJSON() const override;
 };
+
+JSValue nativeEdgesGeometryModule();
+JSValue nativeEdgesGeometryBinding(const std::string& name);
+JSValue nativeEdgesGeometryConstructor();

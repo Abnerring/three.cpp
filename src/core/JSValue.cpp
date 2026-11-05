@@ -410,6 +410,30 @@ JSValue arrayShift(const JSValue& receiver, const Args&, const Args&) {
     object.set("length", length - 1);
     return first;
 }
+JSValue arrayReverse(const JSValue& receiver, const Args&, const Args&) {
+    auto object = receiver.toObject();
+    const auto length = arrayLikeLength(object);
+    for (std::uint64_t lower = 0; lower < length / 2; ++lower) {
+        const auto lowerKey = std::to_string(lower), upperKey = std::to_string(length - lower - 1);
+        const bool lowerExists = object.has(lowerKey);
+        JSValue lowerValue;
+        if (lowerExists) lowerValue = object.get(lowerKey);
+        const bool upperExists = object.has(upperKey);
+        JSValue upperValue;
+        if (upperExists) upperValue = object.get(upperKey);
+        if (lowerExists && upperExists) {
+            object.set(lowerKey, upperValue);
+            object.set(upperKey, lowerValue);
+        } else if (upperExists) {
+            object.set(lowerKey, upperValue);
+            deleteOrThrow(object, upperKey);
+        } else if (lowerExists) {
+            deleteOrThrow(object, lowerKey);
+            object.set(upperKey, lowerValue);
+        }
+    }
+    return object;
+}
 JSValue arrayResult(JSValue original, std::uint64_t length) {
     JSValue constructor;
     if (isNativeArray(original)) {
@@ -468,6 +492,20 @@ JSValue arraySlice(const JSValue& receiver, const Args& args, const Args&) {
         if (object.has(key)) result.defineProperty(std::to_string(n), dataDescriptor(object.get(key)));
     }
     result.set("length", count); return result;
+}
+JSValue arrayForEach(const JSValue& receiver, const Args& args, const Args&) {
+    const auto object = receiver.toObject();
+    const auto length = arrayLikeLength(object);
+    const auto callback = argument(args, 0), thisArg = argument(args, 1);
+    if (!callback.isCallable()) throw JSTypeError("Array.prototype.forEach callback is not callable");
+    for (std::uint64_t index = 0; index < length; ++index) {
+        const auto key = std::to_string(index);
+        if (object.has(key)) {
+            const auto value = object.get(key);
+            callback.call(thisArg, {value, JSValue(index), object});
+        }
+    }
+    return {};
 }
 JSValue arrayMap(const JSValue& receiver, const Args& args, const Args&) {
     if (receiver.isNull() || receiver.isUndefined()) throw JSTypeError("Array.prototype.map requires a non-null receiver");
@@ -1120,11 +1158,12 @@ class JSHeap : public std::enable_shared_from_this<JSHeap> {
         }, 1);
         install(array, "join", arrayJoin, 1); install(array, "toString", arrayToString, 0);
         install(array, "push", arrayPush, 1); install(array, "pop", arrayPop, 0);
-        install(array, "shift", arrayShift, 0);
+        install(array, "shift", arrayShift, 0); install(array, "reverse", arrayReverse, 0);
         install(array, "unshift", arrayUnshift, 1); install(array, "sort", arraySort, 1);
         install(array, "concat", arrayConcat, 1); install(array, "slice", arraySlice, 2); install(array, "indexOf", arrayIndexOf, 1);
         install(array, "includes", arrayIncludes, 1);
         install(array, "splice", arraySplice, 2);
+        install(array, "forEach", arrayForEach, 1);
         install(array, "map", arrayMap, 1);
         install(array, "filter", arrayFilter, 1);
         install(array, "reduce", arrayReduce, 1);

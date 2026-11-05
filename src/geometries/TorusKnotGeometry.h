@@ -19,3 +19,7 @@ class TorusKnotGeometry : public BufferGeometry {
     JsonValue toJSON() const override;
     static std::shared_ptr<TorusKnotGeometry> fromJSON(const JsonValue& data);
 };
+
+JSValue nativeTorusKnotGeometryModule();
+JSValue nativeTorusKnotGeometryBinding(const std::string& name);
+JSValue nativeTorusKnotGeometryConstructor();

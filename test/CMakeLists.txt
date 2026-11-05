@@ -4,6 +4,11 @@ add_executable(THREECPPTests
         unit/src/loaders/FileLoader.tests.cpp
         unit/src/loaders/AnimationLoader.tests.cpp
         unit/src/loaders/ObjectLoader.tests.cpp
+        unit/src/loaders/ObjectLoaderManaged.tests.cpp
+        unit/src/loaders/ObjectLoaderShapesJSON.tests.cpp
+        unit/src/loaders/BufferGeometryLoaderManaged.tests.cpp
+        unit/src/loaders/MaterialLoader.tests.cpp
+        unit/src/loaders/StableLoaderConstructors.tests.cpp
         unit/src/loaders/ImageBitmapLoader.tests.cpp
         unit/src/loaders/AudioLoader.tests.cpp
         unit/src/loaders/ImageLoader.tests.cpp
@@ -133,6 +138,7 @@ add_executable(THREECPPTests
         unit/src/nodes/utils/RTTNode.tests.cpp
         unit/src/loaders/nodes/NodeLoader.tests.cpp
         unit/src/loaders/nodes/NodeMaterialLoader.tests.cpp
+        unit/src/loaders/nodes/NodeObjectLoader.tests.cpp
         unit/src/Three.Legacy.tests.cpp
         unit/src/nodes/utils/SpriteUtils.tests.cpp
         unit/src/nodes/display/ViewportSharedTextureNode.tests.cpp
@@ -3610,3 +3616,59 @@ foreach(_threecpp_materialx IN ITEMS Noise Nodes)
             "${THREEJS_SOURCE_DIR}" "$<TARGET_FILE:ThreeJsMaterialX${_threecpp_materialx}ParityProbe>")
     endif()
 endforeach()
+
+add_executable(ThreeJsLoaderSemanticsParityProbe unit/utils/parity/LoaderSemanticsParityProbe.cpp)
+target_link_libraries(ThreeJsLoaderSemanticsParityProbe PRIVATE threecpp::threecpp)
+if(THREECPP_NODE_EXECUTABLE AND THREEJS_SOURCE_DIR)
+    add_test(NAME threecpp.threejs-loader-semantics-parity
+        COMMAND "${THREECPP_NODE_EXECUTABLE}" "${CMAKE_CURRENT_SOURCE_DIR}/unit/utils/parity/compare-loader-semantics.mjs"
+        "${THREEJS_SOURCE_DIR}" "$<TARGET_FILE:ThreeJsLoaderSemanticsParityProbe>")
+endif()
+
+add_executable(ThreeJsShapeUtilsParityProbe unit/utils/parity/ShapeUtilsParityProbe.cpp)
+target_link_libraries(ThreeJsShapeUtilsParityProbe PRIVATE threecpp::threecpp)
+if(THREECPP_NODE_EXECUTABLE AND THREEJS_SOURCE_DIR)
+    add_test(NAME threecpp.threejs-shape-utils-parity
+        COMMAND "${THREECPP_NODE_EXECUTABLE}" "${CMAKE_CURRENT_SOURCE_DIR}/unit/utils/parity/compare-shape-utils.mjs"
+        "${THREEJS_SOURCE_DIR}" "$<TARGET_FILE:ThreeJsShapeUtilsParityProbe>")
+endif()
+
+add_executable(ThreeJsNodeObjectLoaderParityProbe unit/utils/parity/NodeObjectLoaderParityProbe.cpp)
+target_link_libraries(ThreeJsNodeObjectLoaderParityProbe PRIVATE threecpp::threecpp)
+if(THREECPP_NODE_EXECUTABLE AND THREEJS_SOURCE_DIR)
+    add_test(NAME threecpp.threejs-node-object-loader-parity
+        COMMAND "${THREECPP_NODE_EXECUTABLE}" "${CMAKE_CURRENT_SOURCE_DIR}/unit/utils/parity/compare-node-object-loader.mjs"
+        "${THREEJS_SOURCE_DIR}" "$<TARGET_FILE:ThreeJsNodeObjectLoaderParityProbe>")
+endif()
+
+add_executable(ThreeJsGeometryRuntimeParityProbe unit/utils/parity/GeometryRuntimeParityProbe.cpp)
+target_link_libraries(ThreeJsGeometryRuntimeParityProbe PRIVATE threecpp::threecpp)
+if(THREECPP_NODE_EXECUTABLE AND THREEJS_SOURCE_DIR)
+    add_test(NAME threecpp.threejs-geometry-runtime-parity
+        COMMAND "${THREECPP_NODE_EXECUTABLE}" "${CMAKE_CURRENT_SOURCE_DIR}/unit/utils/parity/compare-geometry-runtime.mjs"
+        "${THREEJS_SOURCE_DIR}" "$<TARGET_FILE:ThreeJsGeometryRuntimeParityProbe>")
+endif()
+
+add_executable(ThreeJsObjectLoaderNativeParityProbe unit/utils/parity/ObjectLoaderNativeProbe.cpp)
+target_link_libraries(ThreeJsObjectLoaderNativeParityProbe PRIVATE threecpp::threecpp)
+if(THREECPP_NODE_EXECUTABLE AND THREEJS_SOURCE_DIR)
+    add_test(NAME threecpp.threejs-object-loader-native-parity
+        COMMAND "${THREECPP_NODE_EXECUTABLE}" "${CMAKE_CURRENT_SOURCE_DIR}/unit/utils/parity/compare-object-loader-native.mjs"
+        "${THREEJS_SOURCE_DIR}" "$<TARGET_FILE:ThreeJsObjectLoaderNativeParityProbe>")
+endif()
+
+add_executable(ThreeJsBufferGeometryLoaderNativeParityProbe unit/utils/parity/BufferGeometryLoaderNativeProbe.cpp)
+target_link_libraries(ThreeJsBufferGeometryLoaderNativeParityProbe PRIVATE threecpp::threecpp)
+if(THREECPP_NODE_EXECUTABLE AND THREEJS_SOURCE_DIR)
+    add_test(NAME threecpp.threejs-buffer-geometry-loader-native-parity
+        COMMAND "${THREECPP_NODE_EXECUTABLE}" "${CMAKE_CURRENT_SOURCE_DIR}/unit/utils/parity/compare-buffer-geometry-loader-native.mjs"
+        "${THREEJS_SOURCE_DIR}" "$<TARGET_FILE:ThreeJsBufferGeometryLoaderNativeParityProbe>")
+endif()
+
+add_executable(ThreeJsObjectLoaderShapeJSONParityProbe unit/utils/parity/ObjectLoaderShapeJSONProbe.cpp)
+target_link_libraries(ThreeJsObjectLoaderShapeJSONParityProbe PRIVATE threecpp::threecpp)
+if(THREECPP_NODE_EXECUTABLE AND THREEJS_SOURCE_DIR)
+    add_test(NAME threecpp.threejs-object-loader-shapes-json-parity
+        COMMAND "${THREECPP_NODE_EXECUTABLE}" "${CMAKE_CURRENT_SOURCE_DIR}/unit/utils/parity/compare-object-loader-shapes-json.mjs"
+        "${THREEJS_SOURCE_DIR}" "$<TARGET_FILE:ThreeJsObjectLoaderShapeJSONParityProbe>")
+endif()

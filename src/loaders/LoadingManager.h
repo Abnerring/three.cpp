@@ -1,6 +1,7 @@
 #pragma once
 #include "core/JSMember.h"
 #include "core/JSModuleObject.h"
+JSValue nativeLoadingManagerConstructor();
 
 class LoadingManager {
   public:

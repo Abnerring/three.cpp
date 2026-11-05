@@ -6,3 +6,7 @@ class TetrahedronGeometry : public PolyhedronGeometry {
     std::shared_ptr<BufferGeometry> clone() const override;
     static std::shared_ptr<TetrahedronGeometry> fromJSON(const JsonValue& data);
 };
+
+JSValue nativeTetrahedronGeometryModule();
+JSValue nativeTetrahedronGeometryBinding(const std::string& name);
+JSValue nativeTetrahedronGeometryConstructor();

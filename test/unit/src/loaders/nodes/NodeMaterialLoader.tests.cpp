@@ -97,3 +97,19 @@ TEST_CASE("NodeMaterialLoader parse assigns the input nodes to the material") {
     // The input node was resolved through the registry by uuid.
     REQUIRE(material.get("colorNode").sameValue(childNode));
 }
+
+#include "../../../utils/parity/LoaderSemanticsFixtures.h"
+
+TEST_CASE("NodeMaterialLoader resolves inherited inputs while own hidden names shadow prototypes", "[loaders][node-material-loader]") {
+    namespace F=LoaderSemanticsFixtures;
+    const auto result=F::run(F::request("forIn"));REQUIRE(result.get("result").strictEquals(true));REQUIRE(result.get("assigned").get("own").strictEquals("node:a"));REQUIRE(result.get("assigned").get("inherited").strictEquals("node:b"));REQUIRE_FALSE(result.get("assigned").hasOwn("hidden"));REQUIRE(result.get("assigned").keys().size()==2);
+    const auto mutated=F::run(F::request("forIn","mutate"));REQUIRE(mutated.get("assigned").get("deleted").strictEquals("node:c"));REQUIRE_FALSE(mutated.get("assigned").hasOwn("added"));
+    const auto string=F::run(F::request("forIn","string"));REQUIRE(string.get("assigned").get("0").strictEquals("node:a"));REQUIRE(string.get("assigned").get("1").strictEquals("node:b"));
+    for(const auto* variant:{"null","undefined"})REQUIRE(F::run(F::request("forIn",variant)).get("assigned").keys().empty());
+    const auto thrown=F::run(F::request("forIn","throw"));REQUIRE(thrown.get("result").strictEquals("reason"));REQUIRE(thrown.get("assigned").keys().empty());
+}
+TEST_CASE("NodeMaterialLoader uses dynamic home super and actual managed node materials", "[loaders][node-material-loader]") {
+    namespace F=LoaderSemanticsFixtures;
+    const auto super=F::run(F::request("super"));REQUIRE(super.get("parseSame").toBoolean());REQUIRE(super.get("createSame").toBoolean());REQUIRE(super.get("trace").toJSON()->dump()==R"([["get:super",true],["call:super",true,"json"],["get:create",true],["call:create",true,"missing"]])");
+    const auto real=F::run(F::request("real"));REQUIRE(real.get("isNodeMaterial").strictEquals(true));REQUIRE(real.get("uuid").strictEquals("material-1"));REQUIRE(real.get("opacity").strictEquals(.75));REQUIRE(real.get("sameNode").toBoolean());REQUIRE(real.get("value").strictEquals(.375));
+}
