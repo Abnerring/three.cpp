@@ -309,3 +309,56 @@ static get type() { return 'ShadowNode'; }
 **所需绑定清单**：`nativeDepthTextureConstructor`、`nativeNodeMaterialConstructor`（`NodeMaterial`）、`nativeContextNodeBinding("context")`、`nativeTextureNodeBinding("texture")`、`nativeCubeTextureNodeBinding("cubeTexture")`、`nativeReferenceNodeBinding("reference")`、`nativeTSLBaseBinding("mix"|"vec4")`、`nativeMathNodeBinding("mix")`、`nativeLightsBinding("lightShadowMatrix")`、`nativeNormalBinding("normalWorld")`、`nativePositionBinding("positionLocal")`、`nativeShadowBaseNodeBinding("shadowPositionWorld")`、`nativeUniformNodeBinding("uniform")`、`nativeUniformGroupNodeBinding("renderGroup")`、`nativeViewportDepthNodeBinding("perspectiveDepthToViewZ"|"orthographicDepthToViewZ"|"viewZToOrthographicDepth")`、`nativeEquirectUVBinding("equirectDirection")`、`nativeShadowFilterNodeBinding(...)`、`nativeNodeConstantsBinding("PCFShadowMap"|"VSMShadowMap"|"LinearFilter"|"NearestFilter"|"RGFormat"|"Compatibility")`、`renderer.hasCompatibility`。
 
 **建议**：分 4 次提交（每段一次），段 4 可用「过滤函数缺失时抛错」的既有测试断言；VSM 段需先确认 `createRenderTarget` 的 `{format, depth}` 参数与 `NodeMaterial` 绑定可用。
+
+#### 段 2 前置：`VSMPassVertical` / `VSMPassHorizontal`（r134 抽取，可直接转写）
+
+上游位置：`ShadowNode.js` L24–100，模块级两个 `Fn`。**仓库中尚无移植**；可复用 `ShadowFilterNode.cpp` 的 `makeFn(body)` 范式（`LightingNodeRuntime` 提供 `makeFn`、`Fn` 包装）。
+
+完整源码（已逐行抽取）：
+
+```
+const VSMPassVertical = Fn( ( { samples, radius, size, shadowPass, depthLayer } ) => {
+	const mean = float( 0 ).toVar( 'meanVertical' );
+	const squaredMean = float( 0 ).toVar( 'squareMeanVertical' );
+	const uvStride = samples.lessThanEqual( float( 1 ) ).select( float( 0 ), float( 2 ).div( samples.sub( 1 ) ) );
+	const uvStart = samples.lessThanEqual( float( 1 ) ).select( float( 0 ), float( - 1 ) );
+	Loop( { start: int( 0 ), end: int( samples ), type: 'int', condition: '<' }, ( { i } ) => {
+		const uvOffset = uvStart.add( float( i ).mul( uvStride ) );
+		let depth = shadowPass.sample( add( screenCoordinate.xy, vec2( 0, uvOffset ).mul( radius ) ).div( size ) );
+		if ( shadowPass.value.isArrayTexture ) {
+			depth = depth.depth( depthLayer );
+		}
+		depth = depth.x;
+		mean.addAssign( depth );
+		squaredMean.addAssign( depth.mul( depth ) );
+	} );
+	mean.divAssign( samples );
+	squaredMean.divAssign( samples );
+	const std_dev = sqrt( squaredMean.sub( mean.mul( mean ) ).max( 0 ) );
+	return vec2( mean, std_dev );
+} );
+
+const VSMPassHorizontal = Fn( ( { samples, radius, size, shadowPass, depthLayer } ) => {
+	const mean = float( 0 ).toVar( 'meanHorizontal' );
+	const squaredMean = float( 0 ).toVar( 'squareMeanHorizontal' );
+	const uvStride = samples.lessThanEqual( float( 1 ) ).select( float( 0 ), float( 2 ).div( samples.sub( 1 ) ) );
+	const uvStart = samples.lessThanEqual( float( 1 ) ).select( float( 0 ), float( - 1 ) );
+	Loop( { start: int( 0 ), end: int( samples ), type: 'int', condition: '<' }, ( { i } ) => {
+		const uvOffset = uvStart.add( float( i ).mul( uvStride ) );
+		let distribution = shadowPass.sample( add( screenCoordinate.xy, vec2( uvOffset, 0 ).mul( radius ) ).div( size ) );
+		if ( shadowPass.value.isArrayTexture ) {
+			distribution = distribution.depth( depthLayer );
+		}
+		mean.addAssign( distribution.x );
+		squaredMean.addAssign( add( distribution.y.mul( distribution.y ), distribution.x.mul( distribution.x ) ) );
+	} );
+	mean.divAssign( samples );
+	squaredMean.divAssign( samples );
+	const std_dev = sqrt( squaredMean.sub( mean.mul( mean ) ).max( 0 ) );
+	return vec2( mean, std_dev );
+} );
+```
+
+**所需绑定清单**：`nativeTSLBaseBinding("float"|"int"|"vec2"|"sqrt"|"add"|"sub"|"mul"|"div")`（或对应 MathNode/OperatorNode 绑定）、`nativeLoopNodeBinding("Loop")`、`nativeScreenNodeBinding("screenCoordinate")`；节点方法：`lessThanEqual`/`select`/`toVar`/`sub`/`div`/`mul`/`add`/`addAssign`/`divAssign`/`max`/`sample`/`depth`/`value`/`x`/`y`。
+
+**段 2 其余部分**（RT 与材质，L384–448）：`compareFunction=null`；`shadowMap.depth>1` 复用 `_vsmShadowMapVertical/Horizontal` 或 `builder.createRenderTarget(w,h,{format: RGFormat, ...})`；两个 `texture()` 采样；`reference('blurSamples'|'radius'|'mapSize')`；`context(builder.getSharedContext())`；两个 `NodeMaterial` 设 `contextNode`/`fragmentNode`/`name`。
