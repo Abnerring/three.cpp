@@ -144,3 +144,31 @@ static get type() { return 'ShadowNode'; }
 1. 先确认上表依赖中哪些**尚未移植**（很大可能是 `QuadMesh`、`RendererUtils`、`ShadowFilterNode`、`ViewportDepthNode`、`Lights` 访问器、`EquirectUV`）；
 2. 按依赖顺序逐个小模块落地（每轮 1–2 个），最后组装 ShadowNode；
 3. 与 `PointShadowNode` 一并规划（它依赖 ShadowNode）。
+
+### ShadowNode 依赖实测状态（2026-11-05，`docs/port-status.json` 查询结果）
+
+| 状态 | 依赖 | 体量 |
+|---|---|---|
+| **vulkan-port-pending（未移植）** | `renderers/common/QuadMesh.js` | 3,230 |
+| **vulkan-port-pending（未移植）** | `renderers/common/RendererUtils.js` | 5,802 |
+| partial（已有头/实现） | `nodes/lighting/ShadowBaseNode.js` | 6,605 |
+| partial | `nodes/lighting/ShadowFilterNode.js` | 4,761 |
+| partial | `nodes/accessors/ReferenceNode.js` | 8,537 |
+| partial | `nodes/accessors/TextureNode.js` | 28,223 |
+| partial | `nodes/accessors/CubeTextureNode.js` | 5,336 |
+| partial | `nodes/accessors/Normal.js` | 5,333 |
+| partial | `nodes/accessors/Position.js` | 3,773 |
+| partial | `nodes/accessors/Lights.js` | 4,557 |
+| partial | `nodes/math/MathNode.js` | 33,978 |
+| partial | `nodes/math/OperatorNode.js` | 17,835 |
+| partial | `textures/DepthTexture.js` | 2,974 |
+| partial | `nodes/utils/LoopNode.js` | 9,510 |
+| partial | `nodes/display/ScreenNode.js` | 5,890 |
+| partial | `nodes/core/UniformGroupNode.js` | 4,398 |
+| partial | `nodes/core/UniformNode.js` | 5,858 |
+| partial | `nodes/display/ViewportDepthNode.js` | 11,202 |
+| partial | `nodes/utils/EquirectUV.js` | 1,630 |
+| partial | `nodes/core/ContextNode.js` | 8,173 |
+
+**结论**：ShadowNode 的**唯一硬阻塞**是 `QuadMesh` + `RendererUtils` 两个 renderer 模块（共约 9KB）。其余依赖已有移植骨架，但需逐个确认「partial 是否足以支撑 ShadowNode 使用」。
+**建议顺序**：① 移植 `QuadMesh`(3,230) → ② 移植 `RendererUtils`(5,802) → ③ 复核 ShadowBaseNode/ShadowFilterNode/Lights/ViewportDepthNode 是否完备 → ④ 组装 `ShadowNode` → ⑤ `PointShadowNode`。
