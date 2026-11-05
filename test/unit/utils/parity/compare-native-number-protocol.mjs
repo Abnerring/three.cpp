@@ -31,7 +31,7 @@ for(const method of ['toFixed','valueOf','toString'])for(let r=0;r<17;r++)for(le
  const number=1.25,fixed=number.toFixed;log.push('result:'+fixed.call(number,1));const symbolMethod=number[symbol];log.push('symbol:'+symbolMethod.call(number,2));const other=Reflect.get(Number.prototype,'toFixed',-2.5);log.push('other:'+other.call(-2.5,0));
  Object.defineProperty(Number.prototype,'toFixed',original);delete Number.prototype[symbol];results.push({mutation:log});
 }
-const proc=spawnSync(executable,[],{encoding:'utf8',maxBuffer:32*1024*1024});assert.equal(proc.status,0,proc.stderr);
+const proc=spawnSync(executable,[],{encoding:'utf8',maxBuffer:32*1024*1024});assert.equal(proc.status, 0, String(proc.stderr ?? proc.error?.message ?? ''));
 const native=JSON.parse(proc.stdout);assert.equal(native.length,results.length);
 let boundaries=0;
 for(let i=0;i<results.length;i++){

@@ -12,6 +12,6 @@ function intrinsic(proto,key){const value={},method=proto[key];method.payload=va
 await take('deleted-exec-intrinsic',intrinsic(RegExp.prototype,'exec'));
 await take('deleted-string-intrinsic',intrinsic(String.prototype,'replace'));
 function ordinary(){const value={};function fn(){}fn.payload=value;return new WeakRef(value);}await take('ordinary-function-control',ordinary());
-const proc=spawnSync(process.argv[2],[],{encoding:'utf8'});assert.equal(proc.status,0,proc.stderr);const actual=JSON.parse(proc.stdout);
+const proc=spawnSync(process.argv[2],[],{encoding:'utf8'});assert.equal(proc.status, 0, String(proc.stderr ?? proc.error?.message ?? ''));const actual=JSON.parse(proc.stdout);
 if(process.env.REGEXP_SAVE_PREFIX){fs.writeFileSync(process.env.REGEXP_SAVE_PREFIX+'-node.json',JSON.stringify(snapshots,null,2));fs.writeFileSync(process.env.REGEXP_SAVE_PREFIX+'-native.json',JSON.stringify(actual,null,2));}
 assert.deepEqual(actual,snapshots);console.log(`RegExp/String GC: ${snapshots.length} actual Node ${process.version} snapshots`);

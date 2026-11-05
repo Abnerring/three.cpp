@@ -335,7 +335,7 @@ for(let fog=1;fog<=3;++fog)for(let renderMode=0;renderMode<3;++renderMode){const
 if(process.argv[4]==='--native-only')cases.splice(0,cases.length,...cases.filter(s=>s.native));
 const expected=cases.map(spec=>spec.construct?constructScenario(spec):spec.native?nativeScenario(spec):scenario(spec));
 if(process.argv[3]==='--oracle-only'){console.log(`${cases.length} pinned WebGLMaterials scenarios executed`);process.exit(0);}
-const native=spawnSync(process.argv[3],[],{input:JSON.stringify(cases),encoding:'utf8',maxBuffer:128*1024*1024});assert.equal(native.status,0,native.stderr);
+const native=spawnSync(process.argv[3],[],{input:JSON.stringify(cases),encoding:'utf8',maxBuffer:128*1024*1024});assert.equal(native.status, 0, String(native.stderr ?? native.error?.message ?? ''));
 const actual=native.stdout.trim().split(/\r?\n/).map(JSON.parse);assert.equal(actual.length,expected.length);
 let comparisons=0;
 function compare(a,b,key){comparisons++;if(a&&b&&typeof a==='object'&&typeof b==='object'){assert.equal(Array.isArray(a),Array.isArray(b),key);assert.deepEqual(Object.keys(a).sort(),Object.keys(b).sort(),key+' keys');for(const k of Object.keys(b))compare(a[k],b[k],key+'.'+k);}else if(typeof a==='string'&&typeof b==='string'&&/^(call|set) [^ ]+ /.test(a)&&/^(call|set) [^ ]+ /.test(b)){const am=/^((?:call|set) [^ ]+) (.+)$/.exec(a),bm=/^((?:call|set) [^ ]+) (.+)$/.exec(b);assert.equal(am[1],bm[1],key+' operation');compare(JSON.parse(am[2]),JSON.parse(bm[2]),key+' payload');}else assert.deepEqual(a,b,key);}

@@ -14,6 +14,6 @@ let weakMethod;
 function setupMethod(){const method=Number.prototype.toFixed,payload={};weakMethod=new WeakRef(method);weakPayload=new WeakRef(payload);method.payload=payload;kept=method;delete Number.prototype.toFixed;}setupMethod();
 await collect();expected.push({step:'method-kept',method:!!weakMethod.deref(),payload:!!weakPayload.deref(),result:kept.call(1.25,1)});
 kept=undefined;await collect();expected.push({step:'method-drop',method:!!weakMethod.deref(),payload:!!weakPayload.deref()});
-const proc=spawnSync(process.argv[2],[],{encoding:'utf8'});assert.equal(proc.status,0,proc.stderr);const actual=JSON.parse(proc.stdout);
+const proc=spawnSync(process.argv[2],[],{encoding:'utf8'});assert.equal(proc.status, 0, String(proc.stderr ?? proc.error?.message ?? ''));const actual=JSON.parse(proc.stdout);
 if(process.env.NUMBER_SAVE_PREFIX){fs.writeFileSync(process.env.NUMBER_SAVE_PREFIX+'-node.json',JSON.stringify(expected));fs.writeFileSync(process.env.NUMBER_SAVE_PREFIX+'-native.json',JSON.stringify(actual));}
 assert.deepEqual(actual,expected);console.log(`Native Number GC: ${expected.length} actual Node snapshots passed (${process.version}); GC scheduling is host-specific`);

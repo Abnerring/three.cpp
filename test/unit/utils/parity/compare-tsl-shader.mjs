@@ -160,7 +160,7 @@ if ( executable === '--oracle-only' ) {
     console.log( `${ requests.length } pinned upstream TSL shader oracle rows saved` ); process.exit( 0 );
 }
 const native = spawnSync( executable, isolated ? [] : [ '--eager-builder-import' ], { input: JSON.stringify( requests ), encoding: 'utf8', maxBuffer: 64 * 1024 * 1024, env: { ...process.env, TEMP: 'D:\\Temp\\surui', TMP: 'D:\\Temp\\surui' } } );
-assert.equal( native.status, 0, native.stderr );
+assert.equal(native.status, 0, String(native.stderr ?? native.error?.message ?? ''));
 const actual = JSON.parse( native.stdout );
 // Both snapshots pass through JSON. Own properties holding undefined disappear
 // during that transport in the same way as the native probe's JSON output.

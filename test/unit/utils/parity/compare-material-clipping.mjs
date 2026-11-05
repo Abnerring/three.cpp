@@ -114,7 +114,7 @@ if (process.argv[3] === '--oracle-only') {
     process.exit(0);
 }
 const native = spawnSync(process.argv[3], [], { encoding: 'utf8', maxBuffer: 16 * 1024 * 1024 });
-assert.equal(native.status, 0, native.stderr);
+assert.equal(native.status, 0, String(native.stderr ?? native.error?.message ?? ''));
 const actual = native.stdout.trim().split(/\r?\n/).map(JSON.parse);
 assert.equal(actual.length, expected.length);
 let comparisons = 0;

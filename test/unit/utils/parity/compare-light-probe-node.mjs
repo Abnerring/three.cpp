@@ -14,7 +14,7 @@ node.update({});
 const vector = value => ({ x: value.x, y: value.y, z: value.z });
 const expected = { type: node.type, isLightingNode: node.isLightingNode, isAnalyticLightNode: node.isAnalyticLightNode, arrayLength: node.lightProbe.array.length, first: vector(node.lightProbe.array[0]), last: vector(node.lightProbe.array[8]) };
 const result = spawnSync(path.resolve(probe), [], { input: '', encoding: 'utf8' });
-assert.equal(result.status, 0, result.stderr);
+assert.equal(result.status, 0, String(result.stderr ?? result.error?.message ?? ''));
 const actual = JSON.parse(result.stdout);
 assert.deepEqual(actual, expected);
 console.log('LightProbeNode native/module parity passed');

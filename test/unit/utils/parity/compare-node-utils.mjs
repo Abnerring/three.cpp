@@ -121,13 +121,13 @@ if ( native.status !== 0 ) throw new Error( native.stderr || `probe exit ${ nati
 const actual = JSON.parse( native.stdout ), expected = requests.map( run );actual[ 0 ].sort( ( a, b ) => a.name.localeCompare( b.name ) );
 for ( let i = 0; i < requests.length; ++ i ) assert.deepStrictEqual( actual[ i ], expected[ i ], `case ${ i }: ${ JSON.stringify( requests[ i ] ) }` );
 const nativeGC = spawnSync( executable, [ 'gc' ], { encoding: 'utf8' } );
-assert.equal( nativeGC.status, 0, nativeGC.stderr );
+assert.equal(nativeGC.status, 0, String(nativeGC.stderr ?? nativeGC.error?.message ?? ''));
 const upstreamGC = [ 'cycle', 'retain-key', 'retain-data', 'retain-data-cycle' ].map( mode => {
     const child = spawnSync( process.execPath, [ '--expose-gc', process.argv[ 1 ], '--gc-child', upstream, executable, mode ], { encoding: 'utf8' } );
-    assert.equal( child.status, 0, child.stderr );return JSON.parse( child.stdout );
+    assert.equal(child.status, 0, String(child.stderr ?? child.error?.message ?? ''));return JSON.parse( child.stdout );
 } );
 assert.deepStrictEqual( JSON.parse( nativeGC.stdout ), upstreamGC );
-const stable = spawnSync( executable, [ 'array-buffer-intrinsic' ], { encoding: 'utf8' } );assert.equal( stable.status, 0, stable.stderr );
+const stable = spawnSync( executable, [ 'array-buffer-intrinsic' ], { encoding: 'utf8' } );assert.equal(stable.status, 0, String(stable.stderr ?? stable.error?.message ?? ''));
 const originalBufferConstructor = Object.getOwnPropertyDescriptor( ArrayBuffer.prototype, 'constructor' );Object.defineProperty( ArrayBuffer.prototype, 'constructor', { ...originalBufferConstructor, value: false } );
 try { assert.deepStrictEqual( JSON.parse( stable.stdout ), [ U.getValueType( new ArrayBuffer( 0 ) ), U.getValueType( Object.create( ArrayBuffer.prototype ) ) ] ); } finally { Object.defineProperty( ArrayBuffer.prototype, 'constructor', originalBufferConstructor ); }
 console.log( `NodeUtils + StackTrace: ${ requests.length } direct upstream cases + 4 GC cases + stable ArrayBuffer binding passed` );

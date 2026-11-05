@@ -32,7 +32,7 @@ function metadata(kind){const fn=classes[kind].prototype.equals;let constructibl
 const expected=[];for(let k=0;k<6;k++){for(let m=0;m<12;m++)expected.push(scenario(k,m));expected.push(metadata(k));}
 fs.writeFileSync(path.join(output,'expected.jsonl'),expected.map(v=>JSON.stringify(v)).join('\n')+'\n');
 const run=spawnSync(probe,[],{encoding:'utf8',maxBuffer:16*1024*1024});
-fs.writeFileSync(path.join(output,'actual.jsonl'),run.stdout??'');fs.writeFileSync(path.join(output,'probe.stderr.log'),run.stderr??'');assert.equal(run.status,0,run.stderr);
+fs.writeFileSync(path.join(output,'actual.jsonl'),run.stdout??'');fs.writeFileSync(path.join(output,'probe.stderr.log'),run.stderr??'');assert.equal(run.status, 0, String(run.stderr ?? run.error?.message ?? ''));
 const actual=run.stdout.trim().split(/\r?\n/).map(v=>JSON.parse(v));assert.equal(actual.length,expected.length);let comparisons=0;
 function compare(a,b,p){comparisons++;if(a===null||b===null||typeof a!=='object'||typeof b!=='object'){assert.deepEqual(a,b,p);return;}
  assert.equal(Array.isArray(a),Array.isArray(b),p);assert.deepEqual(Object.keys(a).sort(),Object.keys(b).sort(),p);for(const k of Object.keys(b))compare(a[k],b[k],`${p}.${k}`);}

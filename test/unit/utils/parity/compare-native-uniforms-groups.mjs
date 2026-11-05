@@ -57,7 +57,7 @@ const expected=Array.from({length:9},(_,i)=>scenario(i));
 fs.writeFileSync(path.join(output,'expected.jsonl'),expected.map(v=>JSON.stringify(v)).join('\n')+'\n');
 const run=spawnSync(probe,[],{encoding:'utf8',maxBuffer:64*1024*1024});
 fs.writeFileSync(path.join(output,'actual.jsonl'),run.stdout??'');fs.writeFileSync(path.join(output,'probe.stderr.log'),run.stderr??'');
-assert.equal(run.status,0,run.stderr);
+assert.equal(run.status, 0, String(run.stderr ?? run.error?.message ?? ''));
 const actual=run.stdout.trim().split(/\r?\n/).map(v=>JSON.parse(v));assert.equal(actual.length,expected.length);
 let comparisons=0;
 function compare(a,b,p){comparisons++;if(a===null||b===null||typeof a!=='object'||typeof b!=='object'){assert.deepEqual(a,b,p);return;}

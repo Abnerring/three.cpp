@@ -30,7 +30,7 @@ function fixture(config){
 }
 fs.mkdirSync(out,{recursive:true});fs.writeFileSync(path.join(out,'inputs.json'),JSON.stringify(cases,null,2)+'\n');
 const result=spawnSync(exe,[],{input:cases.map(c=>JSON.stringify(c)).join('\n')+'\n',encoding:'utf8',maxBuffer:128*1024*1024});
-fs.writeFileSync(path.join(out,'native.stdout'),result.stdout);fs.writeFileSync(path.join(out,'native.stderr'),result.stderr);assert.equal(result.status,0,result.stderr);
+fs.writeFileSync(path.join(out,'native.stdout'),result.stdout);fs.writeFileSync(path.join(out,'native.stderr'),result.stderr);assert.equal(result.status, 0, String(result.stderr ?? result.error?.message ?? ''));
 const actual=result.stdout.trim().split(/\r?\n/).map(s=>JSON.parse(s));assert.equal(actual.length,cases.length);
 const manifest={commit:head.stdout.trim(),cases:[],upstreamSources:{}};
 for(const file of ['src/renderers/webgl/WebGLPrograms.js','src/renderers/webgl/WebGLProgram.js','src/renderers/webgl/WebGLShader.js','src/renderers/shaders/ShaderLib.js'])manifest.upstreamSources[file]=crypto.createHash('sha256').update(fs.readFileSync(path.join(checkout,file))).digest('hex');

@@ -99,7 +99,7 @@ function run( request ) {
     setCurrentStack( null );return result;
 }
 const native = spawnSync( executable, [], { input: JSON.stringify( requests ), encoding: 'utf8', maxBuffer: 8 * 1024 * 1024, env: { ...process.env, TEMP: 'D:\\Temp\\surui', TMP: 'D:\\Temp\\surui' } } );
-assert.equal( native.status, 0, native.stderr );const actual = JSON.parse( native.stdout ), expected = requests.map( run );
+assert.equal(native.status, 0, String(native.stderr ?? native.error?.message ?? ''));const actual = JSON.parse( native.stdout ), expected = requests.map( run );
 if ( outputDirectory ) {
     mkdirSync( outputDirectory, { recursive: true } );
     for ( const [ file, value ] of Object.entries( { 'fixtures.json': requests, 'upstream.json': expected, 'native.json': actual } ) ) writeFileSync( path.join( outputDirectory, file ), JSON.stringify( value, null, 2 ) + '\n' );

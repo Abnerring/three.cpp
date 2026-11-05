@@ -92,7 +92,7 @@ function run( request ) {
     result.events = state.events;return result;
 }
 const native = spawnSync( executable, [], { input: JSON.stringify( requests ), encoding: 'utf8', maxBuffer: 32 * 1024 * 1024, env: { ...process.env, TEMP: 'D:\\Temp\\surui', TMP: 'D:\\Temp\\surui' } } );
-assert.equal( native.status, 0, native.stderr );const actual = JSON.parse( native.stdout ), expected = requests.map( run );
+assert.equal(native.status, 0, String(native.stderr ?? native.error?.message ?? ''));const actual = JSON.parse( native.stdout ), expected = requests.map( run );
 if ( outputDirectory ) { mkdirSync( outputDirectory, { recursive: true } );for ( const [ name, value ] of Object.entries( { 'fixtures.json': requests, 'native.json': actual, 'upstream.json': expected } ) ) writeFileSync( path.join( outputDirectory, name ), JSON.stringify( value, null, 2 ) + '\n' ); }
 for ( let i = 0; i < requests.length; ++ i ) assert.deepStrictEqual( actual[ i ], expected[ i ], `case ${ i }: ${ JSON.stringify( requests[ i ] ) }` );
 console.log( `InputNode/ConstNode/UniformGroupNode/UniformNode: ${ requests.length } direct pinned-upstream cases passed` );

@@ -84,7 +84,7 @@ function metadata(){
 const cases=fs.readFileSync(input,'utf8').trim().split(/\r?\n/).map(JSON.parse);
 const native=spawnSync(probe,[input],{encoding:'utf8',maxBuffer:128*1024*1024,timeout:900000});
 const output=process.argv[5]??probe+'.actual.jsonl';
-fs.writeFileSync(output,native.stdout);fs.writeFileSync(output+'.stderr.log',native.stderr);assert.equal(native.status,0,native.stderr);
+fs.writeFileSync(output,native.stdout);fs.writeFileSync(output+'.stderr.log',native.stderr);assert.equal(native.status, 0, String(native.stderr ?? native.error?.message ?? ''));
 const actual=native.stdout.trim().split(/\r?\n/).map(JSON.parse);assert.equal(actual.length,cases.length);
 const expected=cases.map(spec=>spec.mode==='metadata'?metadata():scenario(spec));fs.writeFileSync(output+'.expected.jsonl',expected.map(v=>JSON.stringify(v)).join('\n')+'\n');
 let comparisons=0;function compare(a,b,location){comparisons++;if(a!==null&&typeof a==='object'&&b!==null&&typeof b==='object'){assert.equal(Array.isArray(a),Array.isArray(b),location);assert.deepEqual(Object.keys(a).sort(),Object.keys(b).sort(),location);for(const key of Object.keys(b))compare(a[key],b[key],location+'.'+key);}else assert.deepEqual(a,b,location);}

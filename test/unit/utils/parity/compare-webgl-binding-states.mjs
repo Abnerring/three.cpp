@@ -224,7 +224,7 @@ for(let variant=0;variant<11;variant++)expected.push(enumerationCase(variant));
 for(let variant=0;variant<16;variant++)for(let phase=1;phase<5;phase++)expected.push(dynamicEnumerationCase(variant,phase));
 for(let variant=0;variant<10;variant++)expected.push(invalidCase(variant));
 const native=spawnSync(path.resolve(process.argv[3]),[],{encoding:'utf8',maxBuffer:128*1024*1024});
-assert.equal(native.status,0,native.stderr);const actual=native.stdout.trim().split(/\r?\n/).map(line=>JSON.parse(line));assert.equal(actual.length,expected.length);
+assert.equal(native.status, 0, String(native.stderr ?? native.error?.message ?? ''));const actual=native.stdout.trim().split(/\r?\n/).map(line=>JSON.parse(line));assert.equal(actual.length,expected.length);
 let comparisons=0;
 function compare(a,b,label){comparisons++;if(Array.isArray(b)){assert.ok(Array.isArray(a),label);assert.equal(a.length,b.length,`${label}.length`);b.forEach((v,i)=>compare(a[i],v,`${label}[${i}]`));}
     else if(b&&typeof b==='object'){assert.ok(a&&typeof a==='object',label);assert.deepEqual(Object.keys(a),Object.keys(b),`${label}.keys`);for(const key of Object.keys(b))compare(a[key],b[key],`${label}.${key}`);}

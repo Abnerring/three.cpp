@@ -1,3 +1,19 @@
+# 当前接续：修正 49 个差分脚本的失败信息缺陷，并更正 If 可用性判断，2026-11-05
+
+目标保持 active：固定 three.js 11738a9d55e502fb484cefffcea3a66dc44e9fe9 全部 src + examples/jsm 原生 C++ 逻辑，Vulkan 后端；禁止 CEF/生产 JS 引擎/桥接。阶段本地 Git 提交，不推送。
+
+本轮修测试基建，不动产品代码。问题：差分探针是独立 target，只构建 `THREECPPTests` 不会产出探针 exe；此时 `spawnSync` 因 ENOENT 返回的对象没有 `stderr`，而脚本写 `assert.equal(<id>.status, 0, <id>.stderr)`，把 `undefined` 当 message 传给 Node 26 的 `assert.equal`，**直接抛 `ERR_INVALID_ARG_TYPE: The "message" argument must be one of type string or function. Received undefined`**。症状在 ctest 输出里长得像被测代码回归，实际只是二进制没构建——上一轮就是被它误导了一轮。
+
+修法：新增 `build/fix-compare-messages.mjs`，用**同名反向引用**的通用规则 `assert\.equal\(\s*(\w+)\.status\s*,\s*0\s*,\s*\1\.stderr\s*\)` 把 message 改成 `String(<id>.stderr ?? <id>.error?.message ?? '')`，保证 `a.status` 不会被配上 `b.stderr`。共 **41 个文件 52 处**替换（与第一轮按具体变量名的 10 处合并，`git status` 显示 **49 个脚本**被改），之后残留的同类不安全写法为 **0**。
+
+验证：① 对全部 49 个被改脚本逐个 `node --check`，**0 语法失败**；② 回归跑 `threecpp.threejs-light-probe-node-parity`（其探针上轮已构建），**Passed 0.61s**，改脚本未削弱任何比较；③ **故意指向不存在的探针** `build/bin/NoSuchProbe.exe`，现在报 `AssertionError [ERR_ASSERTION]: spawnSync <path> ENOENT`，**从类型错误变成可读的断言失败**，证明修复有效。
+
+**同时更正上轮一个判断**：上轮记录「`nativeTSLCoreBinding` 未暴露 `If`」，本轮 grep 到 `TSLShaderNodes.cpp:417` 有 `for ( const auto* name : {"If", "Switch"} ) own(module, name, ...)`，与该文件里 `Fn`/`setCurrentStack`/`getCurrentStack` 的注册同处，说明 **`If`/`Switch` 是在 TSLCore 侧注册的**，上轮结论不成立。故 `ProjectorLightNode` 的阻塞可能不存在，下轮先用一次实际绑定取值确认 `nativeTSLCoreBinding("If")` 可取，再实现其 `getSpotAttenuation`。
+
+审计未运行：本轮只改测试脚本，`docs/port-status.json` 不受影响，保持 src missing 57 / partial 408 / vulkan 290、总计 partial 544 / missing 397 / vulkan-port-pending 290 / dependency 20。**本轮不增加任何覆盖率数字。**
+
+下一步：① `ProjectorLightNode`（先确认 `If` 绑定，再实现 update 与 getSpotAttenuation；`If` 需要回调形式，注意捕获）；② `IESSpotLightNode`（先验证 swizzle getter 在 `JSValue::get` 下的语义）；③ 给 CTest 加"探针必须先构建"的前置，避免再出现"测试条目存在但二进制缺失"。
+
 # 当前接续：修 LightProbeNode 的 Function.length，并记录探针未构建导致的假失败，2026-11-05
 
 目标保持 active：固定 three.js 11738a9d55e502fb484cefffcea3a66dc44e9fe9 全部 src + examples/jsm 原生 C++ 逻辑，Vulkan 后端；禁止 CEF/生产 JS 引擎/桥接。阶段本地 Git 提交，不推送。

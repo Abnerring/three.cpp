@@ -158,7 +158,7 @@ for ( let kind = 0; kind < 9; ++ kind ) for ( let mode = 0; mode < 11; ++ mode )
     } ), events ] );
 }
 const native = spawnSync( executable, [], { encoding: 'utf8', maxBuffer: 32 * 1024 * 1024, env: { ...process.env, TEMP: 'D:\\Temp\\surui', TMP: 'D:\\Temp\\surui' } } );
-assert.equal( native.status, 0, native.stderr );const actual = native.stdout.trim().split( /\r?\n/ ).map( line => JSON.parse( line ) );
+assert.equal(native.status, 0, String(native.stderr ?? native.error?.message ?? ''));const actual = native.stdout.trim().split( /\r?\n/ ).map( line => JSON.parse( line ) );
 if ( outputDirectory ) { mkdirSync( outputDirectory, { recursive: true } );for ( const [ name, value ] of Object.entries( { 'native.json': actual, 'upstream.json': expected } ) ) writeFileSync( path.join( outputDirectory, name ), JSON.stringify( value, null, 2 ) + '\n' ); }
 assert.equal( actual.length, expected.length );for ( let i = 0; i < expected.length; ++ i ) assert.deepStrictEqual( actual[ i ], expected[ i ], `case ${ i }: ${ expected[ i ].name }` );
 console.log( `Float16BufferAttribute identity, native half methods and TypedArray construction: ${ expected.length } direct pinned-upstream cases passed` );

@@ -10,8 +10,8 @@ assert.equal(spawnSync('git', ['-C', upstream, 'rev-parse', 'HEAD'], { encoding:
 const oracle = path.join(path.dirname(fileURLToPath(import.meta.url)), 'native-callback-boundary.mjs');
 const expected = spawnSync(process.execPath, [oracle, upstream], { encoding: 'utf8', timeout: 30000 });
 const actual = spawnSync(probe, [], { encoding: 'utf8', timeout: 30000 });
-assert.equal(expected.status, 0, expected.stderr);
-assert.equal(actual.status, 0, actual.stderr);
+assert.equal(expected.status, 0, String(expected.stderr ?? expected.error?.message ?? ''));
+assert.equal(actual.status, 0, String(actual.stderr ?? actual.error?.message ?? ''));
 fs.writeFileSync(output, actual.stdout);
 fs.writeFileSync(output + '.expected.jsonl', expected.stdout);
 const parse = text => text.trim().split(/\r?\n/).map(JSON.parse);

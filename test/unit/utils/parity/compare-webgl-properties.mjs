@@ -97,7 +97,7 @@ for(let k=0;k<14;k++)for(let v=0;v<14;v++)expected.push(scalarCase(k,v));
 for(let k=0;k<6;k++)for(let v=0;v<14;v++)expected.push(specialCase(k,v));
 for(let i=0;i<19;i++)expected.push(coercionCase(i));for(let i=0;i<22;i++)expected.push(dynamicCase(i));for(let i=0;i<2;i++)expected.push(pollutionCase(i));
 expected.push(...closureCases('properties', {WebGLProperties}));
-const result=spawnSync(process.argv[3],[],{encoding:'utf8',maxBuffer:32*1024*1024});if(result.error)throw result.error;assert.equal(result.status,0,result.stderr);
+const result=spawnSync(process.argv[3],[],{encoding:'utf8',maxBuffer:32*1024*1024});if(result.error)throw result.error;assert.equal(result.status, 0, String(result.stderr ?? result.error?.message ?? ''));
 const actual=result.stdout.trim().split(/\r?\n/).map(line=>JSON.parse(line));assert.equal(actual.length,expected.length);
 let comparisons=0;function compare(a,b,where){comparisons++;
     if(Array.isArray(a)&&Array.isArray(b)){assert.equal(a.length,b.length,where+'.length');for(let i=0;i<a.length;i++)compare(a[i],b[i],`${where}[${i}]`);}

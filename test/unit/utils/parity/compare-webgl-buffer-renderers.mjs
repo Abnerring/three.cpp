@@ -115,7 +115,7 @@ for(const indexed of [false,true]){
 }
 expected.push(...closureCases('buffer', {WebGLBufferRenderer, WebGLIndexedBufferRenderer}));
 expected.push(...closureCases('indexed', {WebGLBufferRenderer, WebGLIndexedBufferRenderer}));
-const result=spawnSync(process.argv[3],[],{encoding:'utf8',maxBuffer:32*1024*1024});if(result.error)throw result.error;assert.equal(result.status,0,result.stderr);
+const result=spawnSync(process.argv[3],[],{encoding:'utf8',maxBuffer:32*1024*1024});if(result.error)throw result.error;assert.equal(result.status, 0, String(result.stderr ?? result.error?.message ?? ''));
 const actual=result.stdout.trim().split(/\r?\n/).map(line=>JSON.parse(line));assert.equal(actual.length,expected.length);
 let comparisons=0;
 function compare(a,b,where){comparisons++;if(Array.isArray(a)&&Array.isArray(b)){assert.equal(a.length,b.length,where+'.length');for(let i=0;i<a.length;i++)compare(a[i],b[i],`${where}[${i}]`);}

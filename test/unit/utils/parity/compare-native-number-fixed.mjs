@@ -16,7 +16,7 @@ for(let i=0;i<20000;i++){const value=number(random());cases.push([value,Number(r
 for(let i=0;i<10000;i++){const value=number((random()&0x800fffffffffffffn)|(BigInt(900+Number(random()%194n))<<52n));cases.push([value,Number(random()%101n)]);}
 const expected=cases.map(([n,f])=>{try{return n.toFixed(f);}catch(e){return {error:e.name};}});
 const proc=spawnSync(executable,[],{input:cases.map(([n,f])=>bits(n)+' '+bits(f)).join('\n')+'\n',encoding:'utf8',maxBuffer:64*1024*1024});
-assert.equal(proc.status,0,proc.stderr);
+assert.equal(proc.status, 0, String(proc.stderr ?? proc.error?.message ?? ''));
 const actual=proc.stdout.trimEnd().split(/\r?\n/).map(JSON.parse);
 assert.equal(actual.length,expected.length);
 const failures=[];

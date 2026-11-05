@@ -28,7 +28,7 @@ if(process.argv.length!==4)throw Error('Usage: node compare-vulkan-buffer-comman
 const upstream=path.resolve(process.argv[2]),lock=JSON.parse(fs.readFileSync(new URL('../../../../upstream.json',import.meta.url)));
 assert.equal(execFileSync('git',['-C',upstream,'rev-parse','HEAD'],{encoding:'utf8'}).trim(),lock.commit);
 const {WebGLAttributes}=await import(pathToFileURL(path.join(upstream,'src/renderers/webgl/WebGLAttributes.js')));
-const run=spawnSync(process.argv[3],[],{encoding:'utf8',maxBuffer:32*1024*1024});if(run.error)throw run.error;assert.equal(run.status,0,run.stderr);
+const run=spawnSync(process.argv[3],[],{encoding:'utf8',maxBuffer:32*1024*1024});if(run.error)throw run.error;assert.equal(run.status, 0, String(run.stderr ?? run.error?.message ?? ''));
 const actual=run.stdout.trim().split(/\r?\n/).map(JSON.parse);let index=0,comparisons=0;
 function check(expected){assert.deepEqual(actual[index],expected,`case ${index}`);comparisons+=Object.keys(expected).length+expected.bytes.length;++index;}
 for(let kind=0;kind<9;++kind){

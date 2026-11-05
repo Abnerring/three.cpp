@@ -31,7 +31,7 @@ const expected=cases.map(([mode,p,f,s,r,n])=>{try{
  const value=mode==='P'?s.split(re,n):s.replace(re,mode==='F'?callback:r);return{value:encode(value),lastIndex:re.lastIndex};
 }catch(e){return{error:e.name};}});
 const proc=spawnSync(process.argv[2],[],{input:cases.map(c=>[c[0],...c.slice(1,5).map(s=>hex(s)||'-'),c[5]].join(' ')).join('\n')+'\n',encoding:'utf8',maxBuffer:512*1024*1024});
-assert.equal(proc.status,0,proc.stderr);const actual=proc.stdout.trimEnd().split(/\r?\n/).map(JSON.parse);assert.equal(actual.length,cases.length);
+assert.equal(proc.status, 0, String(proc.stderr ?? proc.error?.message ?? ''));const actual=proc.stdout.trimEnd().split(/\r?\n/).map(JSON.parse);assert.equal(actual.length,cases.length);
 const failures=[],unsupported=[];for(let i=0;i<actual.length;i++){if(actual[i].unsupported&&['(?<x>a)','(?<=a)b','(?=a)*'].includes(cases[i][1])){unsupported.push(i);continue;}try{assert.deepEqual(actual[i],expected[i]);}catch{failures.push({case:cases[i],expected:expected[i],actual:actual[i]});}}
 const categories={};for(const failure of failures){const key=failure.case[1];categories[key]=(categories[key]??0)+1;}
 const summary={categories,node:process.version,cases:cases.length,unsupported:unsupported.length,failures:failures.length,examples:failures.slice(0,50)};if(process.env.REGEXP_SAVE_PREFIX)fs.writeFileSync(process.env.REGEXP_SAVE_PREFIX+'-summary.json',JSON.stringify(summary,null,2));

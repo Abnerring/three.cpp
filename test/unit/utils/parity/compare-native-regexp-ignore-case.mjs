@@ -40,7 +40,7 @@ const expected = cases.map(([mode, pattern, flags, s, replacement, n]) => {
 const unsupported = ['id', 'iu', 'iv'].map(flags => ['E', 'a', flags, 'A', '', 0]);
 const input = [...cases, ...unsupported].map(c => [c[0], ...c.slice(1, 5).map(s => hex(s) || '-'), c[5]].join(' ')).join('\n') + '\n';
 const processResult = spawnSync(binary, [], { input, encoding: 'utf8', maxBuffer: 256 * 1024 * 1024 });
-assert.equal(processResult.status, 0, processResult.stderr);
+assert.equal(processResult.status, 0, String(processResult.stderr ?? processResult.error?.message ?? ''));
 const actualAll = processResult.stdout.trimEnd().split(/\r?\n/).map(JSON.parse); assert.equal(actualAll.length, cases.length + unsupported.length);
 const actual = actualAll.slice(0, cases.length), failures = [];
 for (let i = 0; i < cases.length; ++i) try { assert.deepEqual(actual[i], expected[i]); } catch { failures.push({ index: i, request: cases[i], expected: expected[i], actual: actual[i] }); }

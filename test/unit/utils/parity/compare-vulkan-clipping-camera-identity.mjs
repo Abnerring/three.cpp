@@ -6,7 +6,7 @@ import {pathToFileURL} from 'node:url';
 assert.equal(process.argv.length,4,'Usage: node compare-vulkan-clipping-camera-identity.mjs <lifetime executable> <three.js checkout>');
 const checkout=resolve(process.argv[3]);
 const revision=spawnSync('git',['-C',checkout,'rev-parse','HEAD'],{encoding:'utf8'});
-assert.equal(revision.status,0,revision.stderr);assert.equal(revision.stdout.trim(),'11738a9d55e502fb484cefffcea3a66dc44e9fe9');
+assert.equal(revision.status, 0, String(revision.stderr ?? revision.error?.message ?? ''));assert.equal(revision.stdout.trim(),'11738a9d55e502fb484cefffcea3a66dc44e9fe9');
 const source=name=>import(pathToFileURL(resolve(checkout,name)).href);
 const {WebGLClipping}=await source('src/renderers/webgl/WebGLClipping.js');
 const {WebGLProperties}=await source('src/renderers/webgl/WebGLProperties.js');

@@ -6,7 +6,7 @@ import {pathToFileURL} from 'node:url';
 assert.equal(process.argv.length,4,'Usage: node compare-vulkan-clipping.mjs <probe executable> <three.js checkout>');
 const checkout=resolve(process.argv[3]);
 const revision=spawnSync('git',['-C',checkout,'rev-parse','HEAD'],{encoding:'utf8'});
-assert.equal(revision.status,0,revision.stderr);assert.equal(revision.stdout.trim(),'11738a9d55e502fb484cefffcea3a66dc44e9fe9');
+assert.equal(revision.status, 0, String(revision.stderr ?? revision.error?.message ?? ''));assert.equal(revision.stdout.trim(),'11738a9d55e502fb484cefffcea3a66dc44e9fe9');
 const source=relative=>import(pathToFileURL(resolve(checkout,relative)).href);
 const {WebGLClipping}=await source('src/renderers/webgl/WebGLClipping.js');
 const {WebGLProperties}=await source('src/renderers/webgl/WebGLProperties.js');
@@ -68,7 +68,7 @@ function expected(seed){
         const calls=seed===14?2:1;return {seed,projected,pixels,calls,triangles:calls*2};
     }finally{Plane.prototype.applyMatrix4=original;}
 }
-const run=spawnSync(resolve(process.argv[2]),[],{encoding:'utf8',maxBuffer:10*1024*1024});assert.equal(run.status,0,run.stderr);
+const run=spawnSync(resolve(process.argv[2]),[],{encoding:'utf8',maxBuffer:10*1024*1024});assert.equal(run.status, 0, String(run.stderr ?? run.error?.message ?? ''));
 const actual=run.stdout.trim().split(/\r?\n/).map(JSON.parse);assert.equal(actual.length,22);
 for(let seed=0;seed<22;++seed)assert.deepEqual(actual[seed],JSON.parse(JSON.stringify(expected(seed))),`Vulkan clipping scenario ${seed}`);
 console.log('22 actual Vulkan clipping scenarios match pinned projection, renderer selection, and fragment inequalities');

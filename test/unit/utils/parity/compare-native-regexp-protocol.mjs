@@ -26,6 +26,6 @@ function scenario(mode,variant,fail){
  try{return {value:tagged(run()),events};}catch(e){return {error:e.name,events};}
 }
 const cases=[];for(let mode=0;mode<15;mode++)for(let variant=0;variant<2;variant++)for(let fail=0;fail<60;fail++)cases.push([mode,variant,fail]);
-const expected=cases.map(c=>scenario(...c));const proc=spawnSync(process.argv[2],[],{input:cases.map(c=>c.join(' ')).join('\n')+'\n',encoding:'utf8',maxBuffer:64*1024*1024});assert.equal(proc.status,0,proc.stderr);const actual=proc.stdout.trimEnd().split(/\r?\n/).map(JSON.parse);assert.equal(actual.length,cases.length);const failures=[];
+const expected=cases.map(c=>scenario(...c));const proc=spawnSync(process.argv[2],[],{input:cases.map(c=>c.join(' ')).join('\n')+'\n',encoding:'utf8',maxBuffer:64*1024*1024});assert.equal(proc.status, 0, String(proc.stderr ?? proc.error?.message ?? ''));const actual=proc.stdout.trimEnd().split(/\r?\n/).map(JSON.parse);assert.equal(actual.length,cases.length);const failures=[];
 for(let i=0;i<cases.length;i++){try{assert.deepEqual(actual[i],JSON.parse(JSON.stringify(expected[i])));}catch{failures.push({case:cases[i],expected:expected[i],actual:actual[i]});}}
 const summary={node:process.version,cases:cases.length,failures:failures.length,examples:failures.slice(0,20)};if(process.env.REGEXP_SAVE_PREFIX)fs.writeFileSync(process.env.REGEXP_SAVE_PREFIX+'-summary.json',JSON.stringify(summary,null,2));assert.equal(failures.length,0,JSON.stringify(failures.slice(0,5),null,2));console.log(JSON.stringify({...summary,examples:undefined}));

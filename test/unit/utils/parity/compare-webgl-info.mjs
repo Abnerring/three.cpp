@@ -103,7 +103,7 @@ setConsoleFunction(()=>{});
 expected.push(...closureCases('info', {WebGLInfo}));
 setConsoleFunction(null);
 const result=spawnSync(process.argv[3],[],{encoding:'utf8',maxBuffer:32*1024*1024});
-if(result.error)throw result.error;assert.equal(result.status,0,result.stderr);
+if(result.error)throw result.error;assert.equal(result.status, 0, String(result.stderr ?? result.error?.message ?? ''));
 const actual=result.stdout.trim().split(/\r?\n/).map(line=>JSON.parse(line));assert.equal(actual.length,expected.length);
 let comparisons=0;
 function compare(a,b,where){

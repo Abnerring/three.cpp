@@ -88,7 +88,7 @@ const expected=fixtures.map(trace);
 const input=fixtures.map(({kind,args})=>kind+' '+args.map(n=>String(number(n))).join(' ')).join('\n')+'\n';
 const result=spawnSync(process.argv[3],[],{input,encoding:'utf8',maxBuffer:128*1024*1024});
 if(result.error) throw result.error;
-assert.equal(result.status,0,result.stderr);
+assert.equal(result.status, 0, String(result.stderr ?? result.error?.message ?? ''));
 const actual=result.stdout.trim().split(/\r?\n/).map(line=>JSON.parse(line));
 assert.equal(actual.length,expected.length);
 let comparisons=0;
