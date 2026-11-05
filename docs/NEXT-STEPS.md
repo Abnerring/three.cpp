@@ -88,3 +88,59 @@ ASTNode, Comment, Program, VariableDeclaration, Uniform, Varying, FunctionParame
 - ctor `(type, name)`：`type`、`name`、`isVarying = true`，随后 `initialize()`
 
 **实现提示**：`initialize()` 的上游语义是「扫描自身属性找子节点/数组」，C++ 里等价做法是**基类提供 `void adopt(ASTNode* child)` / `void adopt(std::vector<ASTNode*>&)` 并在每个子类构造器末尾显式登记自己的子节点**（已确认的这三个叶子类没有子节点，`initialize()` 为 no-op）。`linker.reference/accesses/assignments` 在 C++ 中用裸指针表示（与 `parent` 一致，生命周期由 AST 树持有者管理）。
+
+## 9. `ShadowNode` 调研（835 行 / 24,331B，依赖面很广，需专门轮次）
+
+上游：`src/nodes/lighting/ShadowNode.js`，`class ShadowNode extends ShadowBaseNode`。
+
+### 顶层依赖（多数组件需先确认已移植）
+
+| 依赖 | 用途 |
+|---|---|
+| `NodeMaterial`、`QuadMesh` | VSM 模糊用的全屏 quad 材质/网格 |
+| `ShadowBaseNode` + `shadowPositionWorld` | 基类与投影世界坐标 |
+| `TSLCore`（float/vec2/vec3/vec4/int/Fn）| 构建 TSL 节点 |
+| `ReferenceNode.reference`、`TextureNode.texture`、`CubeTextureNode.cubeTexture` | 引用/采样 |
+| `Normal.normalWorld`、`Position.positionLocal` | 法线/位置 |
+| `MathNode`（mix/sqrt）、`OperatorNode.add` | 数学 |
+| `DepthTexture`、`RenderTarget`（推断）| 阴影贴图 |
+| `LoopNode.Loop`、`ScreenNode.screenCoordinate` | VSM 采样循环 |
+| `UniformGroupNode.renderGroup`、`UniformNode.uniform` | uniform |
+| `ViewportDepthNode` 的 4 个深度转换函数 | 对数深度缓冲路径 |
+| `Lights.lightShadowMatrix` | 阴影矩阵 |
+| `RendererUtils` reset/restore | 临时改渲染器/场景状态 |
+| `ShadowFilterNode`（Basic/PCF/VSM）| 阴影过滤 |
+| `EquirectUV.equirectDirection`、`ContextNode.context` | 点光/环境相关 |
+| `constants`：Compatibility/GreaterEqualCompare/HalfFloatType/LessEqualCompare/LinearFilter/NearestFilter/PCFShadowMap/RGFormat/VSMShadowMap… | |
+
+### 构造字段（已确认）
+
+```js
+constructor( light, shadow = null ) {
+  super( light );
+  this.shadow = shadow || light.shadow;
+  this.shadowMap = null;
+  this.vsmShadowMapVertical = null;
+  this.vsmShadowMapHorizontal = null;
+  this.vsmMaterialVertical = null;
+  this.vsmMaterialHorizontal = null;
+  this._node = null;
+  this._currentShadowType = null;
+  this._cameraFrameId = new WeakMap();
+  this.isShadowNode = true;
+  this.depthLayer = 0;
+}
+static get type() { return 'ShadowNode'; }
+```
+
+### 已读到的关键结构
+
+- 模块级：`VSMPassVertical` / `VSMPassHorizontal`（两个 `Fn`，VSM 均值/方差两趟）、`_shadowFilterLib = [BasicShadowFilter, PCFShadowFilter, null, VSMShadowFilter]`、`_rendererState`、`_quadMesh = new QuadMesh()`。
+- 方法（截至 200 行）：`setupShadowFilter(builder,{filterFn,depthTexture,shadowCoord,shadow,depthLayer})`（frustum test `.select(shadowNode, float(1))`）、`setupShadowCoord(builder, shadowPosition)`（正交/对数深度两路径、`oneMinus` 翻转、reversedDepthBuffer 分支）、`getShadowFilterFn(type)`、`setupRenderTarget(shadow,builder)`（`new DepthTexture(mapSize.w, mapSize.h)` …）。
+
+### 结论与建议
+
+**不建议单轮硬啃**：真实移植需要 ~15 个内部组件协同（渲染器状态、RT、TSL 图），且差分只能用「节点图/材质状态」级比较，工作量大。建议：
+1. 先确认上表依赖中哪些**尚未移植**（很大可能是 `QuadMesh`、`RendererUtils`、`ShadowFilterNode`、`ViewportDepthNode`、`Lights` 访问器、`EquirectUV`）；
+2. 按依赖顺序逐个小模块落地（每轮 1–2 个），最后组装 ShadowNode；
+3. 与 `PointShadowNode` 一并规划（它依赖 ShadowNode）。
