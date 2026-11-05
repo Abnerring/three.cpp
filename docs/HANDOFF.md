@@ -1,4 +1,30 @@
-# 当前接续：`src/nodes/TSL.js` 聚合器做成如实标注缺口的聚合头，src 缺口 15→14，2026-11-05
+# 当前接续：`src/nodes/Nodes.js` 聚合器做成如实标注缺口的聚合头，src 缺口 14→13，2026-11-05
+
+目标保持 active：固定 three.js 11738a9d55e502fb484cefffcea3a66dc44e9fe9 全部 src + examples/jsm 原生 C++ 逻辑，Vulkan 后端；禁止 CEF/生产 JS 引擎/桥接。阶段本地 Git 提交，不推送。
+
+## 本轮交付：`src/nodes/Nodes`
+
+- `src/nodes/Nodes.h`：上游 `src/nodes/Nodes.js`（10,073B）是节点族的 re-export 清单。本端口 include **确实存在且可编译**的节点族头：`nodes/core/PropertyNode.h`、`nodes/accessors/MaterialNode.h`、`nodes/functions/PhongLightingModel.h`、`nodes/lighting/BasicEnvironmentNode.h`、`nodes/lighting/LightingNodeRuntime.h`、`nodes/tsl/TSLBase.h`；**其余导出组逐类标注未移植**（core 其余节点、accessors 其余、display、lighting 其余、materialx、utils、渲染侧节点入口）→ 记为 partial。
+- `test/unit/addons/src/ThreeAggregators.tests.cpp` 增补 `#include "nodes/Nodes.h"`，继续以编译级用例证明聚合头与 core/TSL 头共存、无重复符号。
+
+## 验证
+
+- 构建 exit 0；过滤 `*aggregator*` 通过；`THREECPPAddonTests` 全套 **1324 cases / 38,641 assertions** 通过。
+- 审计：**src missing 14→13、partial-unverified 451→452**；`examples/jsm` 不变（328 / 148）。
+
+**未执行验证（如实记录）**：该头**无行为测试**（聚合无行为）；节点族大多数成员仍未移植，**不能**当作完整节点入口使用。
+
+## 下一步（承 r63 排序，未变）
+
+1. **`PhysicalLightingModel`(32,829)** —— 单点解锁 `MeshStandard/Physical/SSSNodeMaterial`；先核对 `LightingModel`/BSDF 节点齐备度。
+2. **`ShadowNode`(24,331)** —— 依赖齐备，大模块轮次首选。
+3. `MaterialXNoise`(48,687) → 解锁 `MaterialXNodes`。
+4. `Line2NodeMaterial` / `ReflectorNode` / `PassNode` 依赖接近齐备。
+
+src 剩余 13：`ShadowNode`、`PointShadowNode`、`PhysicalLightingModel`、`PassNode`、`ToonOutlinePassNode`、`ReflectorNode`、`Line2NodeMaterial`、`MeshStandard/Physical/SSSNodeMaterial`、`MaterialXNodes`、`MaterialXNoise`、`NodeObjectLoader`（被 `ObjectLoader` 阻塞）。
+examples/jsm 剩余 328（`SimplifyModifier`、`SceneUtils`、`AST.js`、`OBJExporter`）。
+
+**注**：src 剩余 13 中有 12 个是**大体量功能模块**（≥12KB，且多数互为前置），聚合式推进已基本到达边界；下一轮应正面开始 `PhysicalLightingModel` 或 `ShadowNode`。# 当前接续：`src/nodes/TSL.js` 聚合器做成如实标注缺口的聚合头，src 缺口 15→14，2026-11-05
 
 目标保持 active：固定 three.js 11738a9d55e502fb484cefffcea3a66dc44e9fe9 全部 src + examples/jsm 原生 C++ 逻辑，Vulkan 后端；禁止 CEF/生产 JS 引擎/桥接。阶段本地 Git 提交，不推送。
 

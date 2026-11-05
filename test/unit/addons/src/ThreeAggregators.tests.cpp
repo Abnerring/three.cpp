@@ -2,6 +2,7 @@
 #include "Three.TSL.h"
 #include "Three.WebGPU.Nodes.h"
 #include "Three.WebGPU.h"
+#include "nodes/Nodes.h"
 #include "nodes/TSL.h"
 
 #include "catch.hpp"

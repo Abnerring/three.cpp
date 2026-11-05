@@ -201,8 +201,8 @@
     "note": "Accepted port scope is src and examples/jsm, including tracked third-party dependencies. Editor/manual web applications are excluded from native application rewrites. Native host behavior, packaging and all three platforms require separate implementation and verification evidence."
   },
   "counts": {
-    "partial-unverified": 599,
-    "missing": 342,
+    "partial-unverified": 600,
+    "missing": 341,
     "vulkan-port-pending": 290,
     "dependency-unverified": 20
   },
@@ -210,8 +210,8 @@
     "src": {
       "modules": 755,
       "counts": {
-        "partial-unverified": 451,
-        "missing": 14,
+        "partial-unverified": 452,
+        "missing": 13,
         "vulkan-port-pending": 290
       }
     },
@@ -789,7 +789,7 @@
       "path": "src/nodes",
       "upstreamFiles": 2,
       "moduleCount": 2,
-      "modulesWithCppFiles": 1,
+      "modulesWithCppFiles": 2,
       "verifiedComplete": 0
     },
     {
@@ -7320,11 +7320,11 @@
       "scope": "src",
       "kind": "core",
       "upstreamSha256": "26e346cdaa7658165c3720e1a59a8870bdc257dd6b4cfbf418a19b2052d96f9a",
-      "header": null,
+      "header": "src/nodes/Nodes.h",
       "implementation": null,
       "expectedHeader": "src/nodes/Nodes.h",
       "expectedImplementation": "src/nodes/Nodes.cpp",
-      "status": "missing",
+      "status": "partial-unverified",
       "verifiedComplete": false,
       "apiExtraction": "static-only",
       "verification": {
