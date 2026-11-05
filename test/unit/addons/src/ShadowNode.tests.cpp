@@ -382,3 +382,10 @@ TEST_CASE("ShadowNode setupShadowFilter builds the frustum select") {
     REQUIRE(result.toBoolean());
     REQUIRE(result.get("isNode").toBoolean());
 }
+TEST_CASE("ShadowNode VSM pass graphs can be built") {
+    const auto vertical = nativeShadowNodeVsmPassGraph(true);
+    REQUIRE(vertical.isCallable());
+    const auto horizontal = nativeShadowNodeVsmPassGraph(false);
+    REQUIRE(horizontal.isCallable());
+    REQUIRE_FALSE(vertical.strictEquals(horizontal));
+}

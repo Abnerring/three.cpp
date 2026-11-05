@@ -1,4 +1,29 @@
-# 当前接续：`setupShadow` **段 2（VSM 两趟）落地 —— ShadowNode 全部成员已实现，无抛错 stub**，2026-11-05
+# 当前接续：VSM pass 图加移植专用测试钩子并通过（ShadowNode 15 例 / 48 断言），2026-11-05
+
+目标保持 active：固定 three.js 11738a9d55e502fb484cefffcea3a66dc44e9fe9 全部 src + examples/jsm 原生 C++ 逻辑，Vulkan 后端；禁止 CEF/生产 JS 引擎/桥接。阶段本地 Git 提交，不推送。
+
+## 本轮交付：VSM 图可测化
+
+- 新增**移植专用测试钩子**（header 明确标注 port-only、不属于 pinned 模块导出面）：
+  ```cpp
+  JSValue nativeShadowNodeVsmPassGraph(bool vertical);
+  ```
+  实现：`return makeVsmFn(vertical);`
+- 新增用例：分别构建 vertical/horizontal 两个图，断言二者 **`isCallable()`** 且**互不相同**（`strictEquals` 为假）——验证 `makeVsmFn`（`nativeTSLCoreBinding("Fn")` 包装共享 body）确实产出可调用图对象，而不是仅编译通过。
+
+## 验证
+
+- 构建 exit 0；过滤 `*ShadowNode*` = **15 cases / 48 assertions** 全过（+1 例 / +3 断言）。
+- `THREECPPAddonTests` 全套 **1380 cases / 38,951 assertions** 通过。
+- 审计不变（ShadowNode 已 partial）：src 12 / 453；examples/jsm 322 / 154。
+
+**未执行验证（如实记录）**：只验证了**图的构造**，**未实际调用**（调用需 samples/radius/size/shadowPass 的真实节点输入与 Loop 迭代环境）；`toInspector` 仍省略；`_quadMesh` 每次新建；段 3/4 无直接断言。
+
+## 下一步
+
+1. 给 `nativeShadowNodeVsmPassGraph` 增加**带输入的调用测试**（fake `shadowPass`：`sample` 返回含 `x`/`y`/`depth` 的对象，`value.isArrayTexture=false`），断言返回节点；
+2. `_quadMesh` 模块级单例；`updateShadow` 真实 renderer 夹具；段 3/4 补断言；
+3. 收口后推进 **`PointShadowNode`(12,693)**、`PhysicalLightingModel`(32,829)。# 当前接续：`setupShadow` **段 2（VSM 两趟）落地 —— ShadowNode 全部成员已实现，无抛错 stub**，2026-11-05
 
 目标保持 active：固定 three.js 11738a9d55e502fb484cefffcea3a66dc44e9fe9 全部 src + examples/jsm 原生 C++ 逻辑，Vulkan 后端；禁止 CEF/生产 JS 引擎/桥接。阶段本地 Git 提交，不推送。
 

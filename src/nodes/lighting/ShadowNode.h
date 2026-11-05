@@ -11,3 +11,6 @@
 JSValue nativeShadowNodeModule();
 JSValue nativeShadowNodeBinding(const std::string& name);
 JSValue nativeShadowNodeConstructor();
+// Port only test hook: builds the VSMPassVertical / VSMPassHorizontal graph node so its construction can be
+// covered by a unit test. Not part of the pinned module surface.
+JSValue nativeShadowNodeVsmPassGraph(bool vertical);
