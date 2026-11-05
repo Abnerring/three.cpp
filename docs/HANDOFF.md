@@ -1,4 +1,32 @@
-# 当前接续：`ShadowNode` `updateShadow` 实现完成（测试受阻于 RendererUtils 真实依赖），2026-11-05
+# 当前接续：`ShadowNode` `updateBefore` + 模块级 `shadow()` 工厂完成（C 段基本收口），2026-11-05
+
+目标保持 active：固定 three.js 11738a9d55e502fb484cefffcea3a66dc44e9fe9 全部 src + examples/jsm 原生 C++ 逻辑，Vulkan 后端；禁止 CEF/生产 JS 引擎/桥接。阶段本地 Git 提交，不推送。
+
+## 本轮交付
+
+1. **`updateBefore(frame)`**（照抄 L790–820）：
+   - `renderer._precompilationState !== null` → 直接返回；
+   - `needsUpdate = shadow.needsUpdate || shadow.autoUpdate`；
+   - 需要更新时：`_cameraFrameId.get(camera) === frameId` → 取消更新（**同一相机同一帧只更新一次**），随后 `_cameraFrameId.set(camera, frameId)`；
+   - 仍需更新 → `updateShadow(frame)` 并 `shadow.needsUpdate = false`。
+2. **模块级 `shadow(light, shadow)` 工厂**（上游 L835 `export const shadow = (light, shadow) => new ShadowNode(light, shadow)`）：以 `JSValue::function` + 捕获 `ctor` 实现，挂在模块导出 `shadow`。
+3. **测试（新增 2 例，含可断言桩）**：
+   - `updateBefore` 用例用**无捕获原生函数 + receiver 记录计数**（`self.set("_count", ...)`），断言：首次更新 1 次并清 `needsUpdate`；**同相机同 frameId 再次 dirty 不更新**；**frameId 变化后再更新**（共 2 次）。
+   - `shadow()` 工厂用例：调用后实例 `type == "ShadowNode"` 且 `shadow` 字段指向传入对象。
+
+## 验证
+
+- 构建 exit 0；过滤 `*ShadowNode*` = **10 cases / 39 assertions** 全过（+2 例 / +7 断言）。
+- `THREECPPAddonTests` 全套 **1375 cases / 38,942 assertions** 通过。
+- 审计不变（ShadowNode 已 partial）：src 12 / 453；examples/jsm 322 / 154。
+
+**未执行验证（如实记录）**：`_cameraFrameId` 用真实 `WeakMap`（由构造器创建），已由上述帧缓存断言间接验证；`updateShadow` 仍无测试（RendererUtils 依赖真实 renderer）；`setupShadow`（240 行）与 `setup` 仍为抛错 stub。
+
+## 下一步（剩余唯一大块）
+
+1. **`setupShadow`**（L355–595，240 行 TSL 图）+ **`setup`**（L596–632，含 `Fn` 包裹、`setupShadowPosition(builder)`、`material.receivedShadowNode` 回调）；
+2. 之后补 `_quadMesh` 模块级单例、`updateShadow` 真实 renderer 夹具；
+3. `ShadowNode` 完成后可推进 `PointShadowNode`（依赖它）。# 当前接续：`ShadowNode` `updateShadow` 实现完成（测试受阻于 RendererUtils 真实依赖），2026-11-05
 
 目标保持 active：固定 three.js 11738a9d55e502fb484cefffcea3a66dc44e9fe9 全部 src + examples/jsm 原生 C++ 逻辑，Vulkan 后端；禁止 CEF/生产 JS 引擎/桥接。阶段本地 Git 提交，不推送。
 

@@ -262,7 +262,31 @@ JSValue updateShadow(const JSValue& rawSelf, const Args& args, const Args&) {
         .call({}, {renderer, scene, rendererState});
     return {};
 }
-JSValue updateBefore(const JSValue&, const Args&, const Args&) { return notPorted("updateBefore"); }
+// updateBefore( frame ) { update the shadow map once per camera frame when needed. }
+JSValue updateBefore(const JSValue& rawSelf, const Args& args, const Args&) {
+    JSValue& self = const_cast<JSValue&>(rawSelf);
+    const auto frame = arg(args, 0);
+    const auto renderer = frame.get("renderer");
+    // if ( frame.renderer._precompilationState !== null ) return;
+    if (!renderer.get("_precompilationState").isNull()) return {};
+
+    auto shadow = self.get("shadow");
+    bool needsUpdate =
+        shadow.get("needsUpdate").toBoolean() || shadow.get("autoUpdate").toBoolean();
+    if (needsUpdate) {
+        auto cameraFrameId = self.get("_cameraFrameId");
+        const auto camera = frame.get("camera");
+        const auto frameId = frame.get("frameId");
+        const auto cached = cameraFrameId.get("get").call(cameraFrameId, {camera});
+        if (cached.toBoolean() && cached.toNumber() == frameId.toNumber()) needsUpdate = false;
+        cameraFrameId.get("set").call(cameraFrameId, {camera, frameId});
+    }
+    if (needsUpdate) {
+        self.get("updateShadow").call(self, {frame});
+        const_cast<JSValue&>(shadow).set("needsUpdate", false);
+    }
+    return {};
+}
 }  // namespace
 
 JSValue nativeShadowNodeModule() {
@@ -311,6 +335,13 @@ JSValue nativeShadowNodeModule() {
     method(prototype, "updateShadow", 1, updateShadow, {}, "");
     method(prototype, "vsmPass", 1, vsmPass, {}, "");
     method(prototype, "updateBefore", 1, updateBefore, {}, "");
+    own(bindings, "shadow", JSValue::function(
+        +[](const JSValue&, const Args& args, const Args& captures) -> JSValue {
+            const auto ctor = captures.at(0);
+            auto shadowArgument = arg(args, 1, JSValue{});
+            return ctor.construct({arg(args, 0, nullptr), shadowArgument});
+        },
+        {ctor}));
     own(bindings, "default", ctor);
     return publish(bindings, lexical(), weak);
 }

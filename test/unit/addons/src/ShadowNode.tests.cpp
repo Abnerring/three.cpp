@@ -209,3 +209,53 @@ TEST_CASE("ShadowNode vsmPass drives the two blur passes") {
     REQUIRE_NOTHROW(node.get("vsmPass").call(node, {renderer}));
     (void) setRenderTargetCalls;
 }
+TEST_CASE("ShadowNode updateBefore updates once per camera frame when needed") {
+    auto shadow = JSValue::object(nullptr);
+    shadow.set("needsUpdate", true);
+    shadow.set("autoUpdate", false);
+    auto light = JSValue::object(nullptr);
+    light.set("shadow", shadow);
+    auto camera = JSValue::object(nullptr);
+    auto renderer = JSValue::object(nullptr);
+    renderer.set("_precompilationState", JSValue(nullptr));
+    auto frame = JSValue::object(nullptr);
+    frame.set("renderer", renderer);
+    frame.set("camera", camera);
+    frame.set("frameId", JSValue(7));
+
+    auto node = nativeShadowNodeConstructor().construct({light});
+    // The stub records calls on the receiver (captureless native functions cannot capture).
+    node.set("_count", JSValue(0));
+    node.set("updateShadow", JSValue::function(
+        +[](const JSValue& receiver, const std::vector<JSValue>&, const std::vector<JSValue>&) {
+            JSValue& self = const_cast<JSValue&>(receiver);
+            self.set("_count", JSValue(self.get("_count").toNumber() + 1));
+            return JSValue{};
+        }));
+
+    node.get("updateBefore").call(node, {frame});
+    REQUIRE(node.get("_count").toNumber() == Approx(1));
+    // The update cleared the dirty flag.
+    REQUIRE_FALSE(shadow.get("needsUpdate").toBoolean());
+
+    // Dirty again but the same camera frame id: the per camera frame cache skips the update.
+    shadow.set("needsUpdate", true);
+    node.get("updateBefore").call(node, {frame});
+    REQUIRE(node.get("_count").toNumber() == Approx(1));
+
+    // A new frame id updates once more.
+    frame.set("frameId", JSValue(8));
+    node.get("updateBefore").call(node, {frame});
+    REQUIRE(node.get("_count").toNumber() == Approx(2));
+}
+
+TEST_CASE("ShadowNode module exposes the shadow factory") {
+    auto shadow = JSValue::object(nullptr);
+    auto light = JSValue::object(nullptr);
+    light.set("shadow", shadow);
+    const auto factory = nativeShadowNodeBinding("shadow");
+    REQUIRE(factory.toBoolean());
+    const auto node = factory.call({}, {light});
+    REQUIRE(node.get("type").toString() == "ShadowNode");
+    REQUIRE(node.get("shadow").strictEquals(shadow));
+}
