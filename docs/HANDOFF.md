@@ -1,4 +1,30 @@
-# 当前接续：addon `SceneUtils` 移植（4 个可完整实现函数 + 3 项如实标注未移植），examples 连续第 15 个，2026-11-05
+# 当前接续：`SceneUtils::sortInstancedMesh` 补全实现（矩阵/颜色/实例属性快照排序），2026-11-05
+
+目标保持 active：固定 three.js 11738a9d55e502fb484cefffcea3a66dc44e9fe9 全部 src + examples/jsm 原生 C++ 逻辑，Vulkan 后端；禁止 CEF/生产 JS 引擎/桥接。阶段本地 Git 提交，不推送。
+
+## 本轮交付：`examples/jsm/utils/SceneUtils::sortInstancedMesh`
+
+- `sortInstancedMesh(mesh, compareFn)`：与上游同语义 —— 先**快照**实例载荷，再按比较器排序索引，然后把载荷按新顺序写回。
+  - 矩阵：`getMatrixAt(i, matrices[i])` 快照 → 排序 → `setMatrixAt(i, matrices[ref])`。
+  - 实例颜色（若 `instanceColor` 存在）：`getColorAt` 快照 → `setColorAt` 写回。
+  - 几何实例属性（`dynamic_cast<InstancedBufferAttribute>` 判定，**不是** `VertexAttribute` 成员）：按 `itemSize` 逐分量（x/y/z/w）快照到 `AttributeSnapshot`，排序后逐分量写回。
+  - 排序用 `std::stable_sort`，比较器为 `std::function<bool(double,double)>`（对应上游 `tokens.sort(compareFn)` 的索引比较）。
+  - **实现说明**：上游依赖 `BufferGeometryUtils.deepCloneAttribute`，本端口用等价的「分量快照」内联实现，未跨模块引用尚未完整移植的工具函数。
+- `test/unit/addons/utils/SceneUtils.tests.cpp` 新增用例：3 个实例矩阵平移 x = 3,1,2 → 按 x 升序排序后 `getMatrixAt` 的 x 依次为 1,2,3（**4 cases / 15 assertions 全过**）。
+- 头注释同步更新：`sortInstancedMesh` 从「未移植」移入已移植；**仍缺** `createMeshesFromMultiMaterialMesh`（需 `mergeGroups`）。
+
+## 验证
+
+- 构建 exit 0；过滤 `*SceneUtils*` = 4 cases / 15 assertions 通过。
+- **未新增差分**（如实说明）：本轮新函数仅由单测覆盖，未补 parity probe；既有 `SceneUtils` 的 7 项差分（r68）不受影响。
+- 审计计数应无变化（本轮未新增模块头）：examples/jsm 保持 325 missing / 151 partial，src 13 / 452。
+
+**未执行验证（如实记录）**：`sortInstancedMesh` **无差分**（仅单测：单属性、无颜色分支；实例颜色与几何实例属性两条分支**未被测试覆盖**）；`createMeshesFromMultiMaterialMesh` 仍未实现。
+
+## 下一步
+
+examples/jsm 剩余 325：`transpiler/AST.js`(8868) 最有价值（可与 `TranspilerUtils` 联调）。已排除：`SimplifyModifier`(meshopt wasm)、`MaterialXArchive`(fflate/Blob)、`InstancedMeshGenerator`(需 JS 侧状态)。
+src 剩余 13：`ShadowNode`(24,331，依赖齐备) / `PhysicalLightingModel`(32,829，解锁三材质)。# 当前接续：addon `SceneUtils` 移植（4 个可完整实现函数 + 3 项如实标注未移植），examples 连续第 15 个，2026-11-05
 
 目标保持 active：固定 three.js 11738a9d55e502fb484cefffcea3a66dc44e9fe9 全部 src + examples/jsm 原生 C++ 逻辑，Vulkan 后端；禁止 CEF/生产 JS 引擎/桥接。阶段本地 Git 提交，不推送。
 

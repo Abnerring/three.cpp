@@ -23,7 +23,6 @@ class Material;
 //
 // Not ported yet (documented instead of approximated):
 //   createMeshesFromMultiMaterialMesh - needs mergeGroups from BufferGeometryUtils
-//   sortInstancedMesh                 - needs deepCloneAttribute from BufferGeometryUtils
 //   traverseGenerator and the two sibling generators - C++ uses the Object3D traversal methods,
 //   which have the same visit order, so generators are not offered as a separate API.
 namespace SceneUtils {
@@ -34,4 +33,8 @@ std::shared_ptr<Group> createMultiMaterialObject(
 double reduceVertices(const std::shared_ptr<Object3D>& object,
                       const std::function<double(double, const Vector3&)>& callback,
                       double initialValue);
+// Sorts the instance payloads by the given index comparator; the comparator receives two instance
+// indices like the pinned Array.prototype.sort callback.
+void sortInstancedMesh(const std::shared_ptr<InstancedMesh>& mesh,
+                       const std::function<bool(double, double)>& compareFn);
 }  // namespace SceneUtils

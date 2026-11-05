@@ -63,3 +63,29 @@ TEST_CASE("SceneUtils reduceVertices folds every visible vertex") {
     // A unit box has vertices at y = +/- 0.5, so the sum cancels out.
     REQUIRE(sumY == Approx(0));
 }
+
+TEST_CASE("SceneUtils sorts instanced payloads by the comparator") {
+    auto geometry = std::make_shared<BoxGeometry>();
+    auto material = std::make_shared<MeshBasicMaterial>();
+    auto instanced = std::make_shared<InstancedMesh>(geometry, material, JSValue(3));
+    Matrix4 matrix;
+    matrix.makeTranslation(3, 0, 0);
+    instanced->setMatrixAt(0, matrix);
+    matrix.makeTranslation(1, 0, 0);
+    instanced->setMatrixAt(1, matrix);
+    matrix.makeTranslation(2, 0, 0);
+    instanced->setMatrixAt(2, matrix);
+
+    auto positionAt = [](double index, const std::shared_ptr<InstancedMesh>& mesh) {
+        Matrix4 current;
+        mesh->getMatrixAt(index, current);
+        return current.elements()[12];
+    };
+    // Sort ascending by the instance translation x, which is stored in the last column.
+    SceneUtils::sortInstancedMesh(instanced, [&](double a, double b) {
+        return positionAt(a, instanced) < positionAt(b, instanced);
+    });
+    REQUIRE(positionAt(0, instanced) == Approx(1));
+    REQUIRE(positionAt(1, instanced) == Approx(2));
+    REQUIRE(positionAt(2, instanced) == Approx(3));
+}
