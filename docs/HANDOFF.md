@@ -1,3 +1,25 @@
+# 当前接续：LTC（线性变换余弦）已移植，LTC_Uv 双侧执行并比对，2026-11-05
+
+目标保持 active：固定 three.js 11738a9d55e502fb484cefffcea3a66dc44e9fe9 全部 src + examples/jsm 原生 C++ 逻辑，Vulkan 后端；禁止 CEF/生产 JS 引擎/桥接。阶段本地 Git 提交，不推送。
+
+本轮选做 `src/nodes/functions/BSDF/LTC.js`（4,971 B，148 行）——它是 `RectAreaLightNode` 的唯一阻塞项。**该模块没有大数组 LUT**，只有 5 个 `Fn`（3 个导出 `LTC_Uv` / `LTC_Evaluate` / `LTC_Evaluate_Volume`，2 个内部 `LTC_ClippedSphereFormFactor` / `LTC_EdgeVectorFormFactor`，内部件按需构建并缓存）。实现逐行复现：
+
+- **`LTC_Uv`**：`LUT_SIZE=64`、`LUT_SCALE=(64-1)/64`、`LUT_BIAS=0.5/64`；`dotNV = N.dot(V).saturate()`；`uv = vec2( roughness, dotNV.oneMinus().sqrt() )`；`uv.assign( uv.mul(LUT_SCALE).add(LUT_BIAS) )`。
+- **`LTC_ClippedSphereFormFactor`**：`l = f.length()`，`max( l*l + f.z ) / (l+1)`，下限 0。
+- **`LTC_EdgeVectorFormFactor`**：有理多项式 `a/b`、`y = |x|`、`x.greaterThan(0).select(...)`、`max(x*x 的 oneMinus, 1e-7).inverseSqrt().mul(0.5).sub(v)`、最后 `v1.cross(v2).mul(theta_sintheta)`。
+- **`LTC_Evaluate`**：`v1=p1-p0`、`v2=p3-p0`、`lightNormal=v1×v2`、`result=vec3().toVar()`；`If( lightNormal.dot(P-p0) >= 0, … )` 内构造正交基 `T1/T2`、`mat = mInv × mat3(T1,T2,N).transpose()`、四个角点 `mat×(p-P)` 归一化、四条边各加一次 form factor、`result.assign(vec3(clippedFormFactor(vectorFormFactor)))`。
+- **`LTC_Evaluate_Volume`**：同上但**不做基变换**，且对 form factor 先取 `abs()`。
+
+验证：构建 exit 0。THREECPPTests **1546 cases / 214,234 assertions 全过**，较上轮 1544/214,228 增 2 例 6 断言，与 `*LTC*` 过滤的 2 用例/6 断言一致。差分 `threecpp.threejs-ltc-parity` **Passed 0.51s**，environment 组回归 2/2 全过。
+
+**本轮差分的实质性提升**：不只比导出面——`LTC_Uv` 在**两侧都真实执行**（`vec3(0,0,1)`、`vec3(0,0,1)`、`float(0.5)`），并比对返回节点的 `isNode` 与 `type`。第一次跑单测时我断言 `type === "vec2"`，**实跑为假**；我没有猜，而是把该返回值纳入差分让上游给出真值，结果两侧一致为 **`VarNode`**（`.assign()` 返回 var 型节点是上游同样的行为），单测据此改为断言 `VarNode` 并在注释里说明**期望来自差分对照而非猜测**。
+
+**未执行验证的部分（如实记录）**：`LTC_Evaluate` 与 `LTC_Evaluate_Volume` **未执行**——两者体都被 `If( ... )` 包住，而 `If` 需要 current stack（`nativeGetCurrentStack()`）；`If` 不可调用时实现**显式抛 `std::runtime_error`**，不返回错值。因此**这两个评估器的数值结果本轮未验证、不声称已验证**。
+
+审计（固定 worktree，HEAD=11738a9d55）刷新后应为 **src missing 50→49、partial 415→416**；`src/nodes/functions/BSDF/LTC.js` 记 `partial-unverified` 并登记 h/cpp（若读数与预期不符，提交会被脚本拦下并在此说明）。
+
+**解锁效果**：`RectAreaLightNode`（3,107 B）的 LTC 依赖现已具备，下一轮可直接做它，做完 `src/nodes/lighting` 只剩 `LightsNode`、`PointShadowNode`、`ShadowNode` 三个。
+
 # 当前接续：EnvironmentNode 已移植，setup 端到端跑通并差分验收，2026-11-05
 
 目标保持 active：固定 three.js 11738a9d55e502fb484cefffcea3a66dc44e9fe9 全部 src + examples/jsm 原生 C++ 逻辑，Vulkan 后端；禁止 CEF/生产 JS 引擎/桥接。阶段本地 Git 提交，不推送。
