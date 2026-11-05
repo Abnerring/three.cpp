@@ -1,4 +1,29 @@
-# 当前接续：`InstancedMeshGenerator` 差分扩展到重建场景（容量增长 + 参数变更），2026-11-05
+# 当前接续：`InstancedMeshGenerator` 差分补 dispose 事件对照（重建资源释放），2026-11-05
+
+目标保持 active：固定 three.js 11738a9d55e502fb484cefffcea3a66dc44e9fe9 全部 src + examples/jsm 原生 C++ 逻辑，Vulkan 后端；禁止 CEF/生产 JS 引擎/桥接。阶段本地 Git 提交，不推送。
+
+## 本轮内容（差分扩展，16 项比较）
+
+r114 记录「重建后资源是否真正 dispose 未核对」。本轮在首个构建后给 `generator.geometry` 与 `generator.material` 挂 `dispose` 监听，再执行容量增长与参数变更两次重建，比较：
+
+- `firstGeometryDisposeEvents`、`firstMaterialDisposeEvents` —— 两侧均为 **1**（第一次构建的资源在重建时被释放一次）；
+- 其余 14 项沿用 r114（首次构建状态、容量增长、重建状态与矩阵）。
+
+C++ 侧用 `EventDispatcher::addEventListener("dispose", ...)` 计数，JS 侧用 `addEventListener('dispose', ...)`，同一序列 → **Passed**。
+
+## 验证
+
+- 构建 exit 0；`threecpp.threejs-instanced-mesh-generator-parity` **Passed**（16 项）。
+- `THREECPPAddonTests` 全套 **1365 cases / 38,903 assertions** 全过（差分不影响用例数）。
+- 审计不变：examples/jsm 322 / 154；src 13 / 452。
+
+**未执行验证（如实记录）**：mesh 自身的 dispose 事件（`InstancedMesh::dispose`）未单独计数；`parameters` 的 `dump()` vs `JSON.stringify` 表示差异仍未验证；`createGeometry` 收到的参数内容未断言。
+
+## 下一步
+
+1. **`ShadowNode`(24,331)** —— 前置已确认齐备（r108 更正：QuadMesh/RendererUtils 早已移植），可进入组装阶段；
+2. `PhysicalLightingModel`(32,829)；
+3. 可选的 `InstancedMeshGenerator` 收尾：mesh dispose 计数、参数内容断言。# 当前接续：`InstancedMeshGenerator` 差分扩展到重建场景（容量增长 + 参数变更），2026-11-05
 
 目标保持 active：固定 three.js 11738a9d55e502fb484cefffcea3a66dc44e9fe9 全部 src + examples/jsm 原生 C++ 逻辑，Vulkan 后端；禁止 CEF/生产 JS 引擎/桥接。阶段本地 Git 提交，不推送。
 

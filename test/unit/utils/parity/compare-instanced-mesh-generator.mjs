@@ -42,6 +42,12 @@ for (let i = 0; i < placements.length; i += 1) {
   translations.push(matrix.elements[12], matrix.elements[13], matrix.elements[14]);
 }
 
+// Count the dispose events of the first resources so a rebuild can be checked.
+let firstGeometryDisposeEvents = 0;
+let firstMaterialDisposeEvents = 0;
+generator.geometry.addEventListener('dispose', () => { firstGeometryDisposeEvents += 1; });
+generator.material.addEventListener('dispose', () => { firstMaterialDisposeEvents += 1; });
+
 // Capacity growth: a third placement no longer fits the capacity of two.
 const threePlacements = [ ...placements ];
 {
@@ -62,6 +68,8 @@ for (let i = 0; i < placements.length; i += 1) {
 }
 
 const expected = {
+  firstGeometryDisposeEvents,
+  firstMaterialDisposeEvents,
   grownCapacity: grownMesh.instanceMatrix.count,
   grownCount: grownMesh.count,
   rebuiltCapacity: rebuiltMesh.instanceMatrix.count,

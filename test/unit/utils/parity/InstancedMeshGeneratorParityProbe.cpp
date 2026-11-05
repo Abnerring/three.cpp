@@ -1,5 +1,6 @@
 #include "generators/city/InstancedMeshGenerator.h"
 
+#include "core/EventDispatcher.h"
 #include "core/JSValue.h"
 #include "geometries/BoxGeometry.h"
 #include "materials/MeshBasicMaterial.h"
@@ -35,6 +36,18 @@ int main() {
             translations.set(index++, JSValue(matrix.elements()[14]));
         }
 
+        // Count the dispose events of the first resources so a rebuild can be checked.
+        int firstGeometryDisposeEvents = 0;
+        int firstMaterialDisposeEvents = 0;
+        if (generator.geometry) {
+            generator.geometry->addEventListener(
+                "dispose", [&firstGeometryDisposeEvents](Event&) { ++firstGeometryDisposeEvents; });
+        }
+        if (generator.material) {
+            generator.material->addEventListener(
+                "dispose", [&firstMaterialDisposeEvents](Event&) { ++firstMaterialDisposeEvents; });
+        }
+
         // Capacity growth: a third placement no longer fits the capacity of two.
         std::vector<Matrix4> threePlacements = placements;
         Matrix4 extra;
@@ -47,6 +60,8 @@ int main() {
         const auto rebuiltMesh = generator.build(placements);
 
         auto output = JSValue::object(nullptr);
+        output.set("firstGeometryDisposeEvents", JSValue(firstGeometryDisposeEvents));
+        output.set("firstMaterialDisposeEvents", JSValue(firstMaterialDisposeEvents));
         output.set("grownCapacity", JSValue(grownMesh->instanceMatrix->getCount()));
         output.set("grownCount", JSValue(static_cast<double>(grownMesh->count)));
         output.set("rebuiltCapacity", JSValue(rebuiltMesh->instanceMatrix->getCount()));
