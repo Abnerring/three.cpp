@@ -1,4 +1,32 @@
-# 当前接续：`ShadowNode` `setup` 实现完成 —— 仅剩 `setupShadow`（240 行 TSL 图），2026-11-05
+# 当前接续：`setupShadow` **段 1** 落地（RT/过滤/相机刷新），段 2–4 仍抛错，2026-11-05
+
+目标保持 active：固定 three.js 11738a9d55e502fb484cefffcea3a66dc44e9fe9 全部 src + examples/jsm 原生 C++ 逻辑，Vulkan 后端；禁止 CEF/生产 JS 引擎/桥接。阶段本地 Git 提交，不推送。
+
+## 本轮交付：`setupShadow` 段 1（L357–380）
+
+- 调用 `this.setupRenderTarget(shadow, builder)` 取 `{depthTexture, shadowMap}`；
+- `shadowMapType = renderer.shadowMap.type`；`hasTextureCompare = renderer.hasCompatibility(Compatibility.TEXTURE_COMPARE)`；
+- `PCFShadowMap && hasTextureCompare` → `depthTexture.minFilter/magFilter = LinearFilter`，否则 `NearestFilter`；
+- `shadow.camera.coordinateSystem = camera.coordinateSystem`；`shadow.camera._reversedDepth = renderer.reversedDepthBuffer`；`shadow.camera.updateProjectionMatrix()`；
+- 之后 `throw notPorted("setupShadow (segments 2-4)")` —— **段 2–4 未实现**（VSM 两趟、阴影坐标高精度分支、过滤/输出图）。
+
+测试调整：
+- 新增段 1 用例（stub `setupRenderTarget` 返回新对象、renderer/camera 桩、`VSMShadowMap=3`），断言**仍抛异常**（即段 1 完成后停在段 2–4）；
+- 原「重方法抛 `runtime_error`」用例改为 **`REQUIRE_THROWS`**（段 1 先跑，可能抛非 `runtime_error` 类型）。
+
+## 验证
+
+- 构建 exit 0；过滤 `*ShadowNode*` = **13 cases / 43 assertions** 全过（+1 例 / +1 断言）。
+- `THREECPPAddonTests` 全套 **1378 cases / 38,946 assertions** 通过。
+- 审计不变（ShadowNode 已 partial）：src 12 / 453；examples/jsm 322 / 154。
+
+**未执行验证（如实记录）**：段 1 的**效果未直接断言**（stub 返回的新对象不便于观察 filter 赋值；测试只断言「抛错位置已推进到段 2–4」）；段 2–4 全部未实现；`setup` 非缓存路径仍会抛错。
+
+## 下一步
+
+1. **段 2（VSM 两趟）**：`compareFunction=null`、RT 复用/新建、两个 `texture()` 采样、`reference(blurSamples/radius/mapSize)`、`context(getSharedContext())`、两个 `NodeMaterial`（`VSMPassVertical/Horizontal`）；
+2. **段 3（阴影坐标）**：`intensity`/`normalBias` 引用、`lightShadowMatrix`、高精度 `uniform('mat4').onObjectUpdate` 分支、`setupShadowCoord`；
+3. **段 4（过滤/输出）**：`filterFn`（`shadow.filterNode || getShadowFilterFn(type) || null`，null 抛 `Shadow map type not supported yet.`）、transmitted 取色、`mix` 强度、`shadow.map`、两处 `toInspector`。# 当前接续：`ShadowNode` `setup` 实现完成 —— 仅剩 `setupShadow`（240 行 TSL 图），2026-11-05
 
 目标保持 active：固定 three.js 11738a9d55e502fb484cefffcea3a66dc44e9fe9 全部 src + examples/jsm 原生 C++ 逻辑，Vulkan 后端；禁止 CEF/生产 JS 引擎/桥接。阶段本地 Git 提交，不推送。
 

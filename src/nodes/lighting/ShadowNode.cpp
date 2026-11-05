@@ -159,7 +159,41 @@ JSValue setupRenderTarget(const JSValue&, const Args& args, const Args&) {
     result.set("depthTexture", depthTexture);
     return result;
 }
-JSValue setupShadow(const JSValue&, const Args&, const Args&) { return notPorted("setupShadow"); }
+// setupShadow( builder ) { ... }
+// Segment 1 only: build the render target and depth texture, configure the filters from the renderer
+// compatibility and shadow map type, then refresh the shadow camera projection. Segments 2 to 4 (the VSM
+// passes, the shadow coordinate branch and the filter/output graph) still raise until they land.
+JSValue setupShadow(const JSValue& rawSelf, const Args& args, const Args&) {
+    JSValue& self = const_cast<JSValue&>(rawSelf);
+    const auto builder = arg(args, 0);
+    const auto renderer = builder.get("renderer");
+    const auto camera = builder.get("camera");
+    const auto shadow = self.get("shadow");
+
+    const auto renderTargets = self.get("setupRenderTarget").call(self, {shadow, builder});
+    auto depthTexture = renderTargets.get("depthTexture");
+    const auto shadowMapType = renderer.get("shadowMap").get("type");
+    const auto compatibility = nativeNodeConstantsBinding("Compatibility");
+    const auto hasTextureCompare = renderer.get("hasCompatibility")
+                                       .call(renderer, {compatibility.get("TEXTURE_COMPARE")});
+    const auto linearFilter = nativeNodeConstantsBinding("LinearFilter");
+    const auto nearestFilter = nativeNodeConstantsBinding("NearestFilter");
+    if (shadowMapType.strictEquals(nativeNodeConstantsBinding("PCFShadowMap")) &&
+        hasTextureCompare.toBoolean()) {
+        depthTexture.set("minFilter", linearFilter);
+        depthTexture.set("magFilter", linearFilter);
+    } else {
+        depthTexture.set("minFilter", nearestFilter);
+        depthTexture.set("magFilter", nearestFilter);
+    }
+
+    auto shadowCamera = shadow.get("camera");
+    shadowCamera.set("coordinateSystem", camera.get("coordinateSystem"));
+    shadowCamera.set("_reversedDepth", renderer.get("reversedDepthBuffer"));
+    shadowCamera.get("updateProjectionMatrix").call(shadowCamera, {});
+
+    return notPorted("setupShadow (segments 2-4)");
+}
 // setup( builder ) { check the renderer shadow state, reuse the cached node and run the material hook. }
 // The pinned wrapper runs the body inside Fn(...)(); the body is executed directly here, which has the
 // same observable result because the call happens immediately. setupShadow is still a raising member.
