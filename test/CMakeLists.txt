@@ -118,6 +118,9 @@ add_executable(THREECPPTests
         unit/src/materials/nodes/MeshStandardNodeMaterial.tests.cpp
         unit/src/materials/nodes/MeshPhysicalNodeMaterial.tests.cpp
         unit/src/materials/nodes/MeshSSSNodeMaterial.tests.cpp
+        unit/src/materials/nodes/Line2NodeMaterial.tests.cpp
+        unit/src/nodes/materialx/MaterialXNoise.tests.cpp
+        unit/src/nodes/materialx/MaterialXNodes.tests.cpp
         unit/src/materials/nodes/LineDashedNodeMaterial.tests.cpp
         unit/src/materials/nodes/VolumeNodeMaterial.tests.cpp
         unit/src/materials/nodes/ProxyNodeMaterial.tests.cpp
@@ -1147,6 +1150,13 @@ if(THREECPP_NODE_EXECUTABLE AND THREEJS_SOURCE_DIR)
         COMMAND "${THREECPP_NODE_EXECUTABLE}" "${CMAKE_CURRENT_SOURCE_DIR}/unit/utils/parity/compare-mesh-basic-node-material.mjs"
         "${THREEJS_SOURCE_DIR}" "$<TARGET_FILE:ThreeJsMeshBasicNodeMaterialParityProbe>")
 endif()
+add_executable(ThreeJsLine2NodeMaterialParityProbe unit/utils/parity/Line2NodeMaterialParityProbe.cpp)
+target_link_libraries(ThreeJsLine2NodeMaterialParityProbe PRIVATE threecpp::threecpp)
+if(THREECPP_NODE_EXECUTABLE AND THREEJS_SOURCE_DIR)
+    add_test(NAME threecpp.threejs-line2-node-material-parity
+        COMMAND "${THREECPP_NODE_EXECUTABLE}" "${CMAKE_CURRENT_SOURCE_DIR}/unit/utils/parity/compare-line2-node-material.mjs"
+        "${THREEJS_SOURCE_DIR}" "$<TARGET_FILE:ThreeJsLine2NodeMaterialParityProbe>")
+endif()
 foreach(_threecpp_pbr_material IN ITEMS Standard Physical SSS)
     if(_threecpp_pbr_material STREQUAL "SSS")
         set(_threecpp_pbr_slug "sss")
@@ -1655,7 +1665,8 @@ if(THREECPP_BUILD_VULKAN)
     target_link_libraries(VulkanRendererTests PRIVATE threecpp::vulkan)
     add_test(NAME threecpp.vulkan COMMAND VulkanRendererTests)
     add_test(NAME threecpp.vulkan-cube COMMAND VulkanRendererTests --cube)
-    set_tests_properties(threecpp.vulkan threecpp.vulkan-cube PROPERTIES LABELS "GPU;Vulkan")
+    add_test(NAME threecpp.vulkan-target-textures COMMAND VulkanRendererTests --target-textures)
+    set_tests_properties(threecpp.vulkan threecpp.vulkan-cube threecpp.vulkan-target-textures PROPERTIES LABELS "GPU;Vulkan")
 endif()
 add_executable(ThreeJsParityProbe unit/utils/parity/ParityProbe.cpp)
 add_executable(ThreeJsPromiseParityProbe unit/utils/parity/PromiseParityProbe.cpp)
@@ -3582,3 +3593,20 @@ if(THREECPP_NODE_EXECUTABLE AND THREEJS_SOURCE_DIR)
         COMMAND "${THREECPP_NODE_EXECUTABLE}" "${CMAKE_CURRENT_SOURCE_DIR}/unit/utils/parity/compare-range-node.mjs"
         "${THREEJS_SOURCE_DIR}" "$<TARGET_FILE:ThreeJsRangeNodeParityProbe>")
 endif()
+
+if(THREECPP_NODE_EXECUTABLE AND THREEJS_SOURCE_DIR)
+    add_test(NAME threecpp.render-target-texture-source
+        COMMAND "${THREECPP_NODE_EXECUTABLE}" "${CMAKE_CURRENT_SOURCE_DIR}/unit/utils/parity/check-render-target-texture-source.mjs"
+        "${THREEJS_SOURCE_DIR}")
+endif()
+
+foreach(_threecpp_materialx IN ITEMS Noise Nodes)
+    string(TOLOWER "${_threecpp_materialx}" _threecpp_materialx_slug)
+    add_executable(ThreeJsMaterialX${_threecpp_materialx}ParityProbe "unit/utils/parity/MaterialX${_threecpp_materialx}ParityProbe.cpp")
+    target_link_libraries(ThreeJsMaterialX${_threecpp_materialx}ParityProbe PRIVATE threecpp::threecpp)
+    if(THREECPP_NODE_EXECUTABLE AND THREEJS_SOURCE_DIR)
+        add_test(NAME threecpp.threejs-materialx-${_threecpp_materialx_slug}-parity
+            COMMAND "${THREECPP_NODE_EXECUTABLE}" "${CMAKE_CURRENT_SOURCE_DIR}/unit/utils/parity/compare-materialx-${_threecpp_materialx_slug}.mjs"
+            "${THREEJS_SOURCE_DIR}" "$<TARGET_FILE:ThreeJsMaterialX${_threecpp_materialx}ParityProbe>")
+    endif()
+endforeach()

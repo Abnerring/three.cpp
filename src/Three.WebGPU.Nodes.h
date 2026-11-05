@@ -10,7 +10,7 @@
 // is explicit instead of silently missing:
 //
 //   export * from './Three.Core.js';                        -> #include "Three.Core.h"
-//   export * from './materials/nodes/NodeMaterials.js';     -> NodeMaterials.h (Line2 remains pending)
+//   export * from './materials/nodes/NodeMaterials.js';     -> NodeMaterials.h
 //   WebGPURenderer           -> not ported yet (renderer side is Vulkan here)
 //   WebGPUBackend            -> not ported yet
 //   WebGLBackend             -> not ported yet

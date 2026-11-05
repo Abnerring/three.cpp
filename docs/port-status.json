@@ -201,8 +201,8 @@
     "note": "Accepted port scope is src and examples/jsm, including tracked third-party dependencies. Editor/manual web applications are excluded from native application rewrites. Native host behavior, packaging and all three platforms require separate implementation and verification evidence."
   },
   "counts": {
-    "partial-unverified": 615,
-    "missing": 326,
+    "partial-unverified": 618,
+    "missing": 323,
     "vulkan-port-pending": 290,
     "dependency-unverified": 20
   },
@@ -210,8 +210,8 @@
     "src": {
       "modules": 755,
       "counts": {
-        "partial-unverified": 461,
-        "missing": 4,
+        "partial-unverified": 464,
+        "missing": 1,
         "vulkan-port-pending": 290
       }
     },
@@ -761,7 +761,7 @@
       "path": "src/materials/nodes",
       "upstreamFiles": 19,
       "moduleCount": 19,
-      "modulesWithCppFiles": 18,
+      "modulesWithCppFiles": 19,
       "verifiedComplete": 0
     },
     {
@@ -873,7 +873,7 @@
       "path": "src/nodes/materialx",
       "upstreamFiles": 6,
       "moduleCount": 5,
-      "modulesWithCppFiles": 3,
+      "modulesWithCppFiles": 5,
       "verifiedComplete": 0
     },
     {
@@ -5903,11 +5903,11 @@
       "scope": "src",
       "kind": "core",
       "upstreamSha256": "ace7365f7da9892c0fbc6ee1dd09a04009f29dbe221358bf55ee735d71433acf",
-      "header": null,
-      "implementation": null,
+      "header": "src/materials/nodes/Line2NodeMaterial.h",
+      "implementation": "src/materials/nodes/Line2NodeMaterial.cpp",
       "expectedHeader": "src/materials/nodes/Line2NodeMaterial.h",
       "expectedImplementation": "src/materials/nodes/Line2NodeMaterial.cpp",
-      "status": "missing",
+      "status": "partial-unverified",
       "verifiedComplete": false,
       "apiExtraction": "static-only",
       "verification": {
@@ -5916,7 +5916,9 @@
           "pointer": "/modules/162"
         },
         "upstreamUnitTests": [],
-        "cppUnitTests": [],
+        "cppUnitTests": [
+          "test/unit/src/materials/nodes/Line2NodeMaterial.tests.cpp"
+        ],
         "reviewedImplementation": [],
         "differentialResults": [],
         "renderingResults": [],
@@ -12021,11 +12023,11 @@
       "scope": "src",
       "kind": "core",
       "upstreamSha256": "010a842634137320fef1796dd7cc5685f688cc734d2e41f88680030075f5ade4",
-      "header": null,
-      "implementation": null,
+      "header": "src/nodes/materialx/MaterialXNodes.h",
+      "implementation": "src/nodes/materialx/MaterialXNodes.cpp",
       "expectedHeader": "src/nodes/materialx/MaterialXNodes.h",
       "expectedImplementation": "src/nodes/materialx/MaterialXNodes.cpp",
-      "status": "missing",
+      "status": "partial-unverified",
       "verifiedComplete": false,
       "apiExtraction": "static-only",
       "verification": {
@@ -12034,7 +12036,9 @@
           "pointer": "/modules/378"
         },
         "upstreamUnitTests": [],
-        "cppUnitTests": [],
+        "cppUnitTests": [
+          "test/unit/src/nodes/materialx/MaterialXNodes.tests.cpp"
+        ],
         "reviewedImplementation": [],
         "differentialResults": [],
         "renderingResults": [],
@@ -12048,11 +12052,11 @@
       "scope": "src",
       "kind": "core",
       "upstreamSha256": "835a637f33610f12747979e2bdd109794385876ba4af32a80b4d709f95a4e320",
-      "header": null,
-      "implementation": null,
+      "header": "src/nodes/materialx/MaterialXNoise.h",
+      "implementation": "src/nodes/materialx/MaterialXNoise.cpp",
       "expectedHeader": "src/nodes/materialx/MaterialXNoise.h",
       "expectedImplementation": "src/nodes/materialx/MaterialXNoise.cpp",
-      "status": "missing",
+      "status": "partial-unverified",
       "verifiedComplete": false,
       "apiExtraction": "partial-static",
       "verification": {
@@ -12061,7 +12065,9 @@
           "pointer": "/modules/379"
         },
         "upstreamUnitTests": [],
-        "cppUnitTests": [],
+        "cppUnitTests": [
+          "test/unit/src/nodes/materialx/MaterialXNoise.tests.cpp"
+        ],
         "reviewedImplementation": [],
         "differentialResults": [],
         "renderingResults": [],

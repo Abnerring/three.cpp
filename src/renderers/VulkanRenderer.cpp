@@ -414,8 +414,11 @@ struct VulkanRenderer::Impl {
     } readback;
     // The PMREM box positions, uploaded once at construction.
     Buffer pmremVertices;
+    struct TextureResource;
     // A GPU target owns the images, framebuffer and readback published by actual draws.
     struct GpuTarget {
+        std::weak_ptr<TextureResource> sampledTexture;
+        VkSampler sampler = VK_NULL_HANDLE;
         Image color, depth;
         VkFormat colorFormat = VK_FORMAT_R8G8B8A8_UNORM;
         VkFramebuffer framebuffer = VK_NULL_HANDLE;
@@ -429,12 +432,12 @@ struct VulkanRenderer::Impl {
         // CPU copy of the last frame copied out of this target, so readback is per target.
         std::vector<std::uint8_t> pixels;
     };
-    std::unique_ptr<GpuTarget> spareTarget;
+    std::shared_ptr<GpuTarget> spareTarget;
     // Storage currently referenced by draw/clear commands.
-    std::unique_ptr<GpuTarget> active;
+    std::shared_ptr<GpuTarget> active;
     // Targets not currently bound keep their storage here, keyed by the render target.
     const RenderTarget* activeKey = nullptr;
-    std::unordered_map<const RenderTarget*, std::unique_ptr<GpuTarget>> parkedTargets;
+    std::unordered_map<const RenderTarget*, std::shared_ptr<GpuTarget>> parkedTargets;
     struct TargetRegistration {
         std::weak_ptr<RenderTarget> owner;
         std::weak_ptr<Texture> color;
@@ -442,13 +445,14 @@ struct VulkanRenderer::Impl {
     };
     std::unordered_map<const RenderTarget*, std::shared_ptr<TargetRegistration>> targetRegistrations;
     std::shared_ptr<TargetRegistration> activeRegistration;
-    std::unique_ptr<GpuTarget> screenTarget;
-    std::vector<std::unique_ptr<GpuTarget>> retiredTargets;
+    std::shared_ptr<GpuTarget> screenTarget;
+    std::vector<std::shared_ptr<GpuTarget>> retiredTargets;
+    std::vector<GpuTarget*> sampledTargets;
     bool activeInvalidated = false;
     bool targetSubmissionPending = false;
 
     static std::uint32_t colorPixelBytes(VkFormat format) {
-        if (format == VK_FORMAT_R8G8B8A8_UNORM) return 4;
+        if (format == VK_FORMAT_R8G8B8A8_UNORM || format == VK_FORMAT_R8G8B8A8_SRGB) return 4;
         if (format == VK_FORMAT_R16G16B16A16_SFLOAT) return 8;
         throw std::logic_error("Unsupported Vulkan color target storage format");
     }
@@ -496,9 +500,15 @@ struct VulkanRenderer::Impl {
         if (target.depth != 1 || target.isRenderTarget3D || target.multiview ||
             texture->isArrayTexture || texture->isData3DTexture)
             throw std::logic_error("Vulkan array, 3D and multiview render targets are not implemented yet");
-        const auto colorFormat = texture->type == HalfFloatType
-            ? VK_FORMAT_R16G16B16A16_SFLOAT : VK_FORMAT_R8G8B8A8_UNORM;
-        const auto expectedInternal = texture->type == HalfFloatType ? "RGBA16F" : "RGBA8";
+        const bool srgbStorage = texture->internalFormat ? *texture->internalFormat == "SRGB8_ALPHA8" :
+            texture->colorSpace == SRGBColorSpace;
+        const auto colorFormat = texture->type == HalfFloatType ? VK_FORMAT_R16G16B16A16_SFLOAT :
+            srgbStorage ? VK_FORMAT_R8G8B8A8_SRGB : VK_FORMAT_R8G8B8A8_UNORM;
+        const auto expectedInternal = texture->type == HalfFloatType ? "RGBA16F" :
+            srgbStorage ? "SRGB8_ALPHA8" : "RGBA8";
+        if (texture->colorSpace != NoColorSpace && texture->colorSpace != LinearSRGBColorSpace &&
+            texture->colorSpace != SRGBColorSpace)
+            throw std::logic_error("Vulkan render target color space is not supported");
         if (texture->format != RGBAFormat ||
             (texture->type != UnsignedByteType && texture->type != HalfFloatType) ||
             (texture->internalFormat && *texture->internalFormat != expectedInternal))
@@ -542,7 +552,6 @@ struct VulkanRenderer::Impl {
             if (active) retiredTargets.push_back(std::move(active));
             activeInvalidated = false;
         }
-        for (auto& target : retiredTargets) if (target) destroyGpuTarget(*target);
         retiredTargets.clear();
     }
     void retireTarget(const RenderTarget* key, std::shared_ptr<TargetRegistration> registration) {
@@ -622,6 +631,7 @@ struct VulkanRenderer::Impl {
             activeRegistration = registration;
             resize(shape.width, shape.height, shape.layers, shape.colorFormat);
             selectFace(activeCubeFace);
+            setupTargetTexture(*active, *renderTarget->texture.get());
         } else if (!active) {
             resize(width, height);
         }
@@ -732,6 +742,7 @@ struct VulkanRenderer::Impl {
         std::uint32_t unpackAlignment = 1;
     };
     struct TextureResource {
+        std::shared_ptr<GpuTarget> target;
         Image image;
         VkSampler sampler = VK_NULL_HANDLE;
         TextureConfig config;
@@ -764,7 +775,7 @@ struct VulkanRenderer::Impl {
     };
     std::unordered_map<std::uint64_t, std::shared_ptr<TextureCache>> textureCache;
     std::unordered_map<std::uint64_t, std::shared_ptr<SourceCache>> sourceCache;
-    TextureRef whiteTexture, emptyTexture;
+    TextureRef whiteTexture, emptyTexture, incompleteTexture;
     BufferRef zeroUv;
     struct TextureUniforms {
         float mapTransform[12]{}, alphaTransform[12]{}, modelView[16]{};
@@ -1255,6 +1266,7 @@ struct VulkanRenderer::Impl {
             sourceCache.clear();
             whiteTexture.reset();
             emptyTexture.reset();
+            incompleteTexture.reset();
             zeroUv.reset();
             for (const auto pool : descriptorPools) api.vkDestroyDescriptorPool(device, pool, nullptr);
             if (textureFence) api.vkDestroyFence(device, textureFence, nullptr);
@@ -1262,13 +1274,10 @@ struct VulkanRenderer::Impl {
             noFog.reset();
             emptyStorage.reset();
             destroyTargets();
-            for (auto& [key, target] : parkedTargets)
-                if (target) destroyGpuTarget(*target);
             parkedTargets.clear();
-            if (screenTarget) { destroyGpuTarget(*screenTarget); screenTarget.reset(); }
-            for (auto& target : retiredTargets) if (target) destroyGpuTarget(*target);
+            screenTarget.reset();
             retiredTargets.clear();
-            if (spareTarget) { destroyGpuTarget(*spareTarget); spareTarget.reset(); }
+            spareTarget.reset();
             destroyBuffer(pmremVertices);
             if (pmremSampler) api.vkDestroySampler(device, pmremSampler, nullptr);
             for (const auto& [format, pipeline] : pmremPipelines) api.vkDestroyPipeline(device, pipeline, nullptr);
@@ -1552,11 +1561,11 @@ struct VulkanRenderer::Impl {
             key += value ? "true," : "false,";
         return key + JSValue(texture.unpackAlignment).toString() + ',' + texture.colorSpace;
     }
-    TextureConfig textureConfig(const Texture& texture, const TextureImage& image) {
+    TextureConfig textureConfig(const Texture& texture, const TextureImage& image, bool target = false) {
         TextureConfig config;
-        if (!texture.isDataTexture || texture.isDataArrayTexture || texture.isData3DTexture ||
+        if ((!texture.isDataTexture && !target) || texture.isDataArrayTexture || texture.isData3DTexture ||
             texture.isCubeTexture || texture.isCompressedTexture || texture.isDepthTexture ||
-            texture.isRenderTargetTexture)
+            (texture.isRenderTargetTexture && !target))
             throw std::invalid_argument("Vulkan sampling currently requires a 2D DataTexture");
         const auto dimension = [&](double value, bool allowZero = false) {
             if (!std::isfinite(value) || value < (allowZero ? 0 : 1) || value > maxTextureSize || std::trunc(value) != value)
@@ -1599,6 +1608,11 @@ struct VulkanRenderer::Impl {
             config.format = VK_FORMAT_R8G8B8A8_SRGB; internal = "SRGB8_ALPHA8";
         } else if (texture.colorSpace != NoColorSpace && texture.colorSpace != LinearSRGBColorSpace)
             throw std::invalid_argument("Vulkan texture color space is not supported");
+        if (target && texture.type == UnsignedByteType && texture.format == RGBAFormat && texture.internalFormat) {
+            // WebGL's explicit internalFormat overrides its color-space default.
+            if (*texture.internalFormat == "RGBA8") { config.format = VK_FORMAT_R8G8B8A8_UNORM; internal = "RGBA8"; }
+            else if (*texture.internalFormat == "SRGB8_ALPHA8") { config.format = VK_FORMAT_R8G8B8A8_SRGB; internal = "SRGB8_ALPHA8"; }
+        }
         if (texture.internalFormat && *texture.internalFormat != internal)
             throw std::invalid_argument("Vulkan explicit texture internalFormat must match its supported storage format");
         const auto wrap = [](double value) {
@@ -1827,8 +1841,73 @@ struct VulkanRenderer::Impl {
             std::vector<std::byte>(4, white ? std::byte{255} : std::byte{0})}}, {}, false);
         return texture;
     }
+    // A render target owns its texture storage. Sampling bypasses DataTexture
+    // versions, CPU pixels and onUpdate, as WebGLTextures.setTexture2D does.
+    void setupTargetTexture(GpuTarget& target, const Texture& texture) {
+        if (target.layers != 1 || target.sampler) return;
+        TextureImage image(target.width, target.height);
+        const auto config = textureConfig(texture, image, true);
+        VkSamplerCreateInfo sampler{VK_STRUCTURE_TYPE_SAMPLER_CREATE_INFO};
+        sampler.magFilter = config.mag; sampler.minFilter = config.min;
+        sampler.mipmapMode = config.mipmapMode;
+        sampler.addressModeU = config.wrapS; sampler.addressModeV = config.wrapT;
+        sampler.addressModeW = VK_SAMPLER_ADDRESS_MODE_CLAMP_TO_EDGE;
+        sampler.anisotropyEnable = config.anisotropy > 1; sampler.maxAnisotropy = config.anisotropy;
+        sampler.maxLod = 0;
+        check(api.vkCreateSampler(device, &sampler, nullptr, &target.sampler), "vkCreateSampler(render target)");
+    }
+    void resumeRenderPass() {
+        VkRenderPassBeginInfo render{VK_STRUCTURE_TYPE_RENDER_PASS_BEGIN_INFO};
+        render.renderPass = renderPassFor(active->colorFormat);
+        render.framebuffer = active->layers > 1 && active->faceFramebuffer ? active->faceFramebuffer : active->framebuffer;
+        render.renderArea.extent = {active->width, active->height};
+        api.vkCmdBeginRenderPass(commandBuffer, &render, VK_SUBPASS_CONTENTS_INLINE);
+        applyViewportAndScissor();
+    }
+    TextureRef renderTargetTexture(const std::shared_ptr<Texture>& texture) {
+        pruneRenderTargets();
+        std::shared_ptr<RenderTarget> owner;
+        for (const auto& [key, registration] : targetRegistrations)
+            if (registration->color.lock() == texture) {
+                owner = registration->owner.lock();
+                break;
+            }
+        // Do not follow Texture.renderTarget: a texture may outlive that raw pointer.
+        auto* target = owner ? findTarget(*owner) : nullptr;
+        if (!target) return fallbackTexture(false);
+        if (target->layers != 1)
+            throw std::invalid_argument("A cube render target cannot bind a sampler2D");
+        setupTargetTexture(*target, *texture);
+        auto resource = target->sampledTexture.lock();
+        if (!resource) {
+            resource = TextureRef(new TextureResource{}, [](TextureResource* value) { delete value; });
+            resource->target = target == active.get() ? active : parkedTargets.at(owner.get());
+            resource->image = target->color;
+            resource->sampler = target->sampler;
+            // Retain physical storage across upload callbacks which can submit,
+            // dispose or resize a target before this draw's descriptor is written.
+            // The target keeps only a weak alias, so there is no ownership cycle.
+            target->sampledTexture = resource;
+        }
+        // Active-attachment feedback is a rejected draw, not a Vulkan read/write hazard.
+        if (target == active.get()) return resource;
+        if (!target->initialized) return fallbackTexture(false);
+        if (std::find(sampledTargets.begin(), sampledTargets.end(), target) == sampledTargets.end()) {
+            if (!recording) throw std::logic_error("Render target sampling requires an active draw recording");
+            api.vkCmdEndRenderPass(commandBuffer);
+            imageBarrier(target->color.image, VK_IMAGE_ASPECT_COLOR_BIT,
+                VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL,
+                VK_ACCESS_COLOR_ATTACHMENT_WRITE_BIT, VK_ACCESS_SHADER_READ_BIT,
+                VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT,
+                VK_PIPELINE_STAGE_VERTEX_SHADER_BIT | VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT);
+            sampledTargets.push_back(target);
+            resumeRenderPass();
+        }
+        return resource;
+    }
     TextureRef updateTexture(const std::shared_ptr<Texture>& texture, std::shared_ptr<TextureEntry>& binding) {
         if (!texture) return fallbackTexture(true);
+        if (texture->isRenderTargetTexture) return renderTargetTexture(texture);
         auto found = textureCache.find(texture->id);
         auto cached = found == textureCache.end() ? nullptr : found->second;
         if (texture->version > 0 && (!cached || cached->version != texture->version)) {
@@ -2348,7 +2427,7 @@ struct VulkanRenderer::Impl {
 
         // The per target teardown releases its own framebuffer.
 
-        if (active) { destroyGpuTarget(*active); active.reset(); }
+        active.reset();
 
 
         destroyBuffer(readback);
@@ -2391,11 +2470,14 @@ struct VulkanRenderer::Impl {
         active->selectedFace = face; activeCubeFace = face;
     }
     // Builds a complete GPU target without touching the renderer current one.
-    std::unique_ptr<GpuTarget> createGpuTarget(std::uint32_t targetWidth,
+    std::shared_ptr<GpuTarget> createGpuTarget(std::uint32_t targetWidth,
                                               std::uint32_t targetHeight,
                                               std::uint32_t targetLayerCount,
                                               VkFormat colorFormat = VK_FORMAT_R8G8B8A8_UNORM) {
-        auto target = std::make_unique<GpuTarget>();
+        auto target = std::shared_ptr<GpuTarget>(new GpuTarget{}, [this](GpuTarget* value) {
+            destroyGpuTarget(*value);
+            delete value;
+        });
         target->width = targetWidth;
         target->height = targetHeight;
         target->layers = targetLayerCount;
@@ -2419,12 +2501,15 @@ struct VulkanRenderer::Impl {
         check(api.vkCreateFramebuffer(device, &create, nullptr, &target->framebuffer),
               "vkCreateFramebuffer(gpu target)");
         target->pixels.assign(static_cast<std::size_t>(targetWidth) * targetHeight * colorPixelBytes(colorFormat), 0);
-        } catch (...) { destroyGpuTarget(*target); throw; }
+        } catch (...) { target.reset(); throw; }
         target->memoryTracked = true;
         ++info.renderTargets; info.renderTargetImages += 2;
         return target;
     }
     void destroyGpuTarget(GpuTarget& target) {
+        target.sampledTexture.reset();
+        if (target.sampler) api.vkDestroySampler(device, target.sampler, nullptr);
+        target.sampler = VK_NULL_HANDLE;
         if (target.faceFramebuffer) api.vkDestroyFramebuffer(device, target.faceFramebuffer, nullptr);
         if (target.faceView) api.vkDestroyImageView(device, target.faceView, nullptr);
         if (target.framebuffer) api.vkDestroyFramebuffer(device, target.framebuffer, nullptr);
@@ -2461,7 +2546,7 @@ struct VulkanRenderer::Impl {
         Buffer replacementReadback;
         try { replacementReadback = createBuffer(static_cast<VkDeviceSize>(newWidth) * newHeight * colorPixelBytes(colorFormat),
                                                 VK_BUFFER_USAGE_TRANSFER_DST_BIT); }
-        catch (...) { destroyGpuTarget(*replacement); throw; }
+        catch (...) { replacement.reset(); throw; }
         destroyTargets();
         width = newWidth; height = newHeight;
         active = std::move(replacement);
@@ -2947,6 +3032,7 @@ struct VulkanRenderer::Impl {
     void beginFrame(bool clearColorAttachment, bool clearDepthAttachment, const Color& color,
                     HIGH_PRECISION alpha, bool srgb, GpuTarget* sampledCube = nullptr) {
         ensureBoundTarget();
+        sampledTargets.clear();
         activeDescriptorPool = 0;
         for (const auto pool : descriptorPools)
             check(api.vkResetDescriptorPool(device, pool, 0), "vkResetDescriptorPool");
@@ -2992,7 +3078,9 @@ struct VulkanRenderer::Impl {
     }
     void clearAttachments(bool clearColorAttachment, bool clearDepthAttachment, const Color& color,
                           HIGH_PRECISION alpha, bool srgb, bool useScissor = true) {
-        srgb = srgb && active->colorFormat != VK_FORMAT_R16G16B16A16_SFLOAT;
+        // Ordinary render targets use working color space. An sRGB attachment
+        // performs its transfer in the Vulkan format conversion, as GL storage does.
+        srgb = srgb && !renderTarget && active->colorFormat != VK_FORMAT_R16G16B16A16_SFLOAT;
         std::vector<VkClearAttachment> attachments;
         if (clearColorAttachment) {
             VkClearAttachment attachment{};
@@ -3033,6 +3121,14 @@ struct VulkanRenderer::Impl {
     }
     void endFrame(GpuTarget* sampledCube = nullptr) {
         api.vkCmdEndRenderPass(commandBuffer);
+        for (auto* target : sampledTargets)
+            imageBarrier(target->color.image, VK_IMAGE_ASPECT_COLOR_BIT,
+                VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL, VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL,
+                VK_ACCESS_SHADER_READ_BIT,
+                VK_ACCESS_COLOR_ATTACHMENT_READ_BIT | VK_ACCESS_COLOR_ATTACHMENT_WRITE_BIT,
+                VK_PIPELINE_STAGE_VERTEX_SHADER_BIT | VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT,
+                VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT);
+        sampledTargets.clear();
         if (sampledCube)
             for (std::uint32_t layer = 0; layer < sampledCube->layers; ++layer)
                 imageBarrier(sampledCube->color.image, VK_IMAGE_ASPECT_COLOR_BIT,
@@ -3193,6 +3289,7 @@ void VulkanRenderer::setRenderTarget(std::shared_ptr<RenderTarget> target,
         impl->activeCubeFace = activeCubeFace; impl->activeMipmapLevel = activeMipmapLevel;
         impl->resize(shape.width, shape.height, shape.layers, shape.colorFormat);
         impl->selectFace(activeCubeFace);
+        if (target) impl->setupTargetTexture(*impl->active, *target->texture.get());
         if (target) {
             impl->currentViewport.copy(target->viewport);
             impl->currentScissor.copy(target->scissor);
@@ -3336,7 +3433,7 @@ std::vector<std::uint8_t> VulkanRenderer::readRenderTargetPixels(RenderTarget& t
     const auto* gt = impl->findTarget(target);
     if (!gt || !gt->initialized || gt->pixels.empty())
         throw std::logic_error("readRenderTargetPixels: that target has no pixels yet");
-    if (gt->colorFormat != VK_FORMAT_R8G8B8A8_UNORM)
+    if (gt->colorFormat != VK_FORMAT_R8G8B8A8_UNORM && gt->colorFormat != VK_FORMAT_R8G8B8A8_SRGB)
         throw std::invalid_argument("HalfFloat render target readback requires a Uint16 destination");
     const auto& source = gt->pixels;
     const auto rowBytes = static_cast<std::size_t>(gt->width) * 4;
@@ -3364,7 +3461,8 @@ std::vector<std::uint8_t> VulkanRenderer::readPixels() const {
     // not the one that gets written, so returning it would hand back a vector that was
     // never filled. A renderer with no target has nothing to give.
     if (retiredReadback || !impl->active) return {};
-    if (impl->active->colorFormat != VK_FORMAT_R8G8B8A8_UNORM)
+    if (impl->active->colorFormat != VK_FORMAT_R8G8B8A8_UNORM &&
+        impl->active->colorFormat != VK_FORMAT_R8G8B8A8_SRGB)
         throw std::invalid_argument("HalfFloat current target readback requires Uint16 storage");
     return impl->active->pixels;
 }
@@ -3763,7 +3861,8 @@ void VulkanRenderer::render(Scene& scene, Camera& camera) {
                 !material.transparent && material.blending == 1 && !material.alphaToCoverage ? 1.0f
                                                                                              : 0.0f;
             uniformSnapshot.settings[2] = material.premultipliedAlpha ? 1.0f : 0.0f;
-            const bool targetSRGB = srgbOutput && impl->active->colorFormat != VK_FORMAT_R16G16B16A16_SFLOAT;
+            const bool targetSRGB = srgbOutput && !impl->renderTarget &&
+                impl->active->colorFormat != VK_FORMAT_R16G16B16A16_SFLOAT;
             uniformSnapshot.settings[3] = targetSRGB ? 1.0f : 0.0f;
             if (fogEnabled) {
                 const Color* fogColor;
@@ -3794,6 +3893,14 @@ void VulkanRenderer::render(Scene& scene, Camera& camera) {
                 for (int column = 0; column < 3; ++column)
                     for (int row = 0; row < 3; ++row)
                         destination[column * 4 + row] = float(elements[column * 3 + row]);
+                // GL framebuffer row zero is the bottom row. Vulkan render images
+                // store the top row first; compensate after the user's UV matrix.
+                // Render-target flipY is an upload flag and has no effect here.
+                if (texture && texture->isRenderTargetTexture) {
+                    for (int column = 0; column < 3; ++column)
+                        destination[column * 4 + 1] = -destination[column * 4 + 1];
+                    destination[9] += 1;
+                }
             };
             // Snapshot both transforms before upload callbacks, as refreshMaterialUniforms does.
             matrix(mapTexture, textureUniforms.mapTransform);
@@ -4133,6 +4240,32 @@ void VulkanRenderer::render(Scene& scene, Camera& camera) {
             draw.textureUniforms = impl->sharedBuffer(encodedTextureUniforms.bytes().size(),
                 VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT, encodedTextureUniforms.bytes().data());
             draw.clippingPlanes = impl->sharedBuffer(clippingData.size(), VK_BUFFER_USAGE_STORAGE_BUFFER_BIT, clippingData.data());
+            // Upload/binding callbacks above can perform readPixels(), which
+            // submits the command buffer and restores sampled image layouts. They
+            // can also dispose a source. Resolve target bindings after all such
+            // callbacks, before writing descriptors for the current recording.
+            const auto refreshTargetBinding = [&](const std::shared_ptr<Texture>& texture, const Impl::TextureRef& bound) {
+                if (!texture || !texture->isRenderTargetTexture) return bound;
+                const auto refreshed = impl->renderTargetTexture(texture);
+                if (bound->target && bound->target != refreshed->target) {
+                    // deleteTexture implicitly unbinds a texture already selected
+                    // for this draw. GLES incomplete sampling is opaque black;
+                    // a later draw explicitly binds three.js's zero-RGBA fallback.
+                    // GLES 3.0.6 sections 3.8.1 and 3.9.2.1.
+                    if (!impl->incompleteTexture)
+                        impl->incompleteTexture = impl->createTextureResource(Impl::TextureConfig{},
+                            {{0, 1, 1, {std::byte{0}, std::byte{0}, std::byte{0}, std::byte{255}}}}, {}, false);
+                    return impl->incompleteTexture;
+                }
+                return refreshed;
+            };
+            draw.map = refreshTargetBinding(mapTexture, draw.map);
+            draw.alpha = refreshTargetBinding(alphaTexture, draw.alpha);
+            if (draw.map->image.image == impl->active->color.image ||
+                draw.alpha->image.image == impl->active->color.image) {
+                draw.invalidBindings = true;
+                impl->bindingCommands->invalidDraw();
+            }
             draw.descriptor = impl->textureDescriptor(draw.map, draw.alpha, draw.textureUniforms,
                 draw.instanceMatrices, draw.instanceColors, draw.morphPositions, draw.morphWeights,
                 draw.positions, draw.colors, draw.mapUv, draw.alphaUv, draw.clippingPlanes);

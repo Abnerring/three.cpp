@@ -1,0 +1,8179 @@
+{
+  "declarations": {
+    "MaterialXNoise": [
+      {
+        "name": "mx_select",
+        "exported": true,
+        "kind": "Fn",
+        "layout": [
+          [
+            "b",
+            "bool"
+          ],
+          [
+            "t",
+            "float"
+          ],
+          [
+            "f",
+            "float"
+          ],
+          [
+            "return",
+            "float"
+          ]
+        ],
+        "params": [
+          "[ b_immutable, t_immutable, f_immutable ]"
+        ]
+      },
+      {
+        "name": "mx_negate_if",
+        "exported": true,
+        "kind": "Fn",
+        "layout": [
+          [
+            "val",
+            "float"
+          ],
+          [
+            "b",
+            "bool"
+          ],
+          [
+            "return",
+            "float"
+          ]
+        ],
+        "params": [
+          "[ val_immutable, b_immutable ]"
+        ]
+      },
+      {
+        "name": "mx_floor",
+        "exported": true,
+        "kind": "Fn",
+        "layout": [
+          [
+            "x",
+            "float"
+          ],
+          [
+            "return",
+            "int"
+          ]
+        ],
+        "params": [
+          "[ x_immutable ]"
+        ]
+      },
+      {
+        "name": "mx_floorfrac",
+        "exported": true,
+        "kind": "Fn",
+        "layout": null,
+        "params": [
+          "[ x_immutable, i ]"
+        ]
+      },
+      {
+        "name": "mxBilerpValue",
+        "exported": false,
+        "kind": "function",
+        "params": [
+          "v0",
+          "v1",
+          "v2",
+          "v3",
+          "s",
+          "t"
+        ]
+      },
+      {
+        "name": "mxTrilerpValue",
+        "exported": false,
+        "kind": "function",
+        "params": [
+          "v0",
+          "v1",
+          "v2",
+          "v3",
+          "v4",
+          "v5",
+          "v6",
+          "v7",
+          "s",
+          "t",
+          "r"
+        ]
+      },
+      {
+        "name": "mx_bilerp_0",
+        "exported": true,
+        "kind": "Fn",
+        "layout": [
+          [
+            "v0",
+            "float"
+          ],
+          [
+            "v1",
+            "float"
+          ],
+          [
+            "v2",
+            "float"
+          ],
+          [
+            "v3",
+            "float"
+          ],
+          [
+            "s",
+            "float"
+          ],
+          [
+            "t",
+            "float"
+          ],
+          [
+            "return",
+            "float"
+          ]
+        ],
+        "params": [
+          "[ v0_immutable, v1_immutable, v2_immutable, v3_immutable, s_immutable, t_immutable ]"
+        ]
+      },
+      {
+        "name": "mx_bilerp_1",
+        "exported": true,
+        "kind": "Fn",
+        "layout": [
+          [
+            "v0",
+            "vec3"
+          ],
+          [
+            "v1",
+            "vec3"
+          ],
+          [
+            "v2",
+            "vec3"
+          ],
+          [
+            "v3",
+            "vec3"
+          ],
+          [
+            "s",
+            "float"
+          ],
+          [
+            "t",
+            "float"
+          ],
+          [
+            "return",
+            "vec3"
+          ]
+        ],
+        "params": [
+          "[ v0_immutable, v1_immutable, v2_immutable, v3_immutable, s_immutable, t_immutable ]"
+        ]
+      },
+      {
+        "name": "mx_bilerp",
+        "exported": true,
+        "kind": "overload",
+        "candidates": [
+          "mx_bilerp_0",
+          "mx_bilerp_1"
+        ]
+      },
+      {
+        "name": "mx_trilerp_0",
+        "exported": true,
+        "kind": "Fn",
+        "layout": [
+          [
+            "v0",
+            "float"
+          ],
+          [
+            "v1",
+            "float"
+          ],
+          [
+            "v2",
+            "float"
+          ],
+          [
+            "v3",
+            "float"
+          ],
+          [
+            "v4",
+            "float"
+          ],
+          [
+            "v5",
+            "float"
+          ],
+          [
+            "v6",
+            "float"
+          ],
+          [
+            "v7",
+            "float"
+          ],
+          [
+            "s",
+            "float"
+          ],
+          [
+            "t",
+            "float"
+          ],
+          [
+            "r",
+            "float"
+          ],
+          [
+            "return",
+            "float"
+          ]
+        ],
+        "params": [
+          "[ v0_immutable, v1_immutable, v2_immutable, v3_immutable, v4_immutable, v5_immutable, v6_immutable, v7_immutable, s_immutable, t_immutable, r_immutable ]"
+        ]
+      },
+      {
+        "name": "mx_trilerp_1",
+        "exported": true,
+        "kind": "Fn",
+        "layout": [
+          [
+            "v0",
+            "vec3"
+          ],
+          [
+            "v1",
+            "vec3"
+          ],
+          [
+            "v2",
+            "vec3"
+          ],
+          [
+            "v3",
+            "vec3"
+          ],
+          [
+            "v4",
+            "vec3"
+          ],
+          [
+            "v5",
+            "vec3"
+          ],
+          [
+            "v6",
+            "vec3"
+          ],
+          [
+            "v7",
+            "vec3"
+          ],
+          [
+            "s",
+            "float"
+          ],
+          [
+            "t",
+            "float"
+          ],
+          [
+            "r",
+            "float"
+          ],
+          [
+            "return",
+            "vec3"
+          ]
+        ],
+        "params": [
+          "[ v0_immutable, v1_immutable, v2_immutable, v3_immutable, v4_immutable, v5_immutable, v6_immutable, v7_immutable, s_immutable, t_immutable, r_immutable ]"
+        ]
+      },
+      {
+        "name": "mx_trilerp",
+        "exported": true,
+        "kind": "overload",
+        "candidates": [
+          "mx_trilerp_0",
+          "mx_trilerp_1"
+        ]
+      },
+      {
+        "name": "mx_gradient_float_0",
+        "exported": true,
+        "kind": "Fn",
+        "layout": [
+          [
+            "hash",
+            "uint"
+          ],
+          [
+            "x",
+            "float"
+          ],
+          [
+            "y",
+            "float"
+          ],
+          [
+            "return",
+            "float"
+          ]
+        ],
+        "params": [
+          "[ hash_immutable, x_immutable, y_immutable ]"
+        ]
+      },
+      {
+        "name": "mx_gradient_float_1",
+        "exported": true,
+        "kind": "Fn",
+        "layout": [
+          [
+            "hash",
+            "uint"
+          ],
+          [
+            "x",
+            "float"
+          ],
+          [
+            "y",
+            "float"
+          ],
+          [
+            "z",
+            "float"
+          ],
+          [
+            "return",
+            "float"
+          ]
+        ],
+        "params": [
+          "[ hash_immutable, x_immutable, y_immutable, z_immutable ]"
+        ]
+      },
+      {
+        "name": "mx_gradient_float",
+        "exported": true,
+        "kind": "overload",
+        "candidates": [
+          "mx_gradient_float_0",
+          "mx_gradient_float_1"
+        ]
+      },
+      {
+        "name": "mx_gradient_vec3_0",
+        "exported": true,
+        "kind": "Fn",
+        "layout": [
+          [
+            "hash",
+            "uvec3"
+          ],
+          [
+            "x",
+            "float"
+          ],
+          [
+            "y",
+            "float"
+          ],
+          [
+            "return",
+            "vec3"
+          ]
+        ],
+        "params": [
+          "[ hash_immutable, x_immutable, y_immutable ]"
+        ]
+      },
+      {
+        "name": "mx_gradient_vec3_1",
+        "exported": true,
+        "kind": "Fn",
+        "layout": [
+          [
+            "hash",
+            "uvec3"
+          ],
+          [
+            "x",
+            "float"
+          ],
+          [
+            "y",
+            "float"
+          ],
+          [
+            "z",
+            "float"
+          ],
+          [
+            "return",
+            "vec3"
+          ]
+        ],
+        "params": [
+          "[ hash_immutable, x_immutable, y_immutable, z_immutable ]"
+        ]
+      },
+      {
+        "name": "mx_gradient_vec3",
+        "exported": true,
+        "kind": "overload",
+        "candidates": [
+          "mx_gradient_vec3_0",
+          "mx_gradient_vec3_1"
+        ]
+      },
+      {
+        "name": "mx_gradient_scale2d_0",
+        "exported": true,
+        "kind": "Fn",
+        "layout": [
+          [
+            "v",
+            "float"
+          ],
+          [
+            "return",
+            "float"
+          ]
+        ],
+        "params": [
+          "[ v_immutable ]"
+        ]
+      },
+      {
+        "name": "mx_gradient_scale3d_0",
+        "exported": true,
+        "kind": "Fn",
+        "layout": [
+          [
+            "v",
+            "float"
+          ],
+          [
+            "return",
+            "float"
+          ]
+        ],
+        "params": [
+          "[ v_immutable ]"
+        ]
+      },
+      {
+        "name": "mx_gradient_scale2d_1",
+        "exported": true,
+        "kind": "Fn",
+        "layout": [
+          [
+            "v",
+            "vec3"
+          ],
+          [
+            "return",
+            "vec3"
+          ]
+        ],
+        "params": [
+          "[ v_immutable ]"
+        ]
+      },
+      {
+        "name": "mx_gradient_scale2d",
+        "exported": true,
+        "kind": "overload",
+        "candidates": [
+          "mx_gradient_scale2d_0",
+          "mx_gradient_scale2d_1"
+        ]
+      },
+      {
+        "name": "mx_gradient_scale3d_1",
+        "exported": true,
+        "kind": "Fn",
+        "layout": [
+          [
+            "v",
+            "vec3"
+          ],
+          [
+            "return",
+            "vec3"
+          ]
+        ],
+        "params": [
+          "[ v_immutable ]"
+        ]
+      },
+      {
+        "name": "mx_gradient_scale3d",
+        "exported": true,
+        "kind": "overload",
+        "candidates": [
+          "mx_gradient_scale3d_0",
+          "mx_gradient_scale3d_1"
+        ]
+      },
+      {
+        "name": "mx_rotl32",
+        "exported": true,
+        "kind": "Fn",
+        "layout": [
+          [
+            "x",
+            "uint"
+          ],
+          [
+            "k",
+            "int"
+          ],
+          [
+            "return",
+            "uint"
+          ]
+        ],
+        "params": [
+          "[ x_immutable, k_immutable ]"
+        ]
+      },
+      {
+        "name": "mx_bjmix",
+        "exported": true,
+        "kind": "Fn",
+        "layout": [
+          [
+            "a",
+            "uint"
+          ],
+          [
+            "b",
+            "uint"
+          ],
+          [
+            "c",
+            "uint"
+          ],
+          [
+            "return",
+            "uvec3"
+          ]
+        ],
+        "params": [
+          "[ a, b, c ]"
+        ]
+      },
+      {
+        "name": "mx_bjfinal",
+        "exported": true,
+        "kind": "Fn",
+        "layout": [
+          [
+            "a",
+            "uint"
+          ],
+          [
+            "b",
+            "uint"
+          ],
+          [
+            "c",
+            "uint"
+          ],
+          [
+            "return",
+            "uint"
+          ]
+        ],
+        "params": [
+          "[ a_immutable, b_immutable, c_immutable ]"
+        ]
+      },
+      {
+        "name": "mx_bits_to_01",
+        "exported": true,
+        "kind": "Fn",
+        "layout": [
+          [
+            "bits",
+            "uint"
+          ],
+          [
+            "return",
+            "float"
+          ]
+        ],
+        "params": [
+          "[ bits_immutable ]"
+        ]
+      },
+      {
+        "name": "mx_fade",
+        "exported": true,
+        "kind": "Fn",
+        "layout": [
+          [
+            "t",
+            "float"
+          ],
+          [
+            "return",
+            "float"
+          ]
+        ],
+        "params": [
+          "[ t_immutable ]"
+        ]
+      },
+      {
+        "name": "mx_hash_int_0",
+        "exported": true,
+        "kind": "Fn",
+        "layout": [
+          [
+            "x",
+            "int"
+          ],
+          [
+            "return",
+            "uint"
+          ]
+        ],
+        "params": [
+          "[ x_immutable ]"
+        ]
+      },
+      {
+        "name": "mx_hash_int_1",
+        "exported": true,
+        "kind": "Fn",
+        "layout": [
+          [
+            "x",
+            "int"
+          ],
+          [
+            "y",
+            "int"
+          ],
+          [
+            "return",
+            "uint"
+          ]
+        ],
+        "params": [
+          "[ x_immutable, y_immutable ]"
+        ]
+      },
+      {
+        "name": "mx_hash_int_2",
+        "exported": true,
+        "kind": "Fn",
+        "layout": [
+          [
+            "x",
+            "int"
+          ],
+          [
+            "y",
+            "int"
+          ],
+          [
+            "z",
+            "int"
+          ],
+          [
+            "return",
+            "uint"
+          ]
+        ],
+        "params": [
+          "[ x_immutable, y_immutable, z_immutable ]"
+        ]
+      },
+      {
+        "name": "mx_hash_int_3",
+        "exported": true,
+        "kind": "Fn",
+        "layout": [
+          [
+            "x",
+            "int"
+          ],
+          [
+            "y",
+            "int"
+          ],
+          [
+            "z",
+            "int"
+          ],
+          [
+            "xx",
+            "int"
+          ],
+          [
+            "return",
+            "uint"
+          ]
+        ],
+        "params": [
+          "[ x_immutable, y_immutable, z_immutable, xx_immutable ]"
+        ]
+      },
+      {
+        "name": "mx_hash_int_4",
+        "exported": true,
+        "kind": "Fn",
+        "layout": [
+          [
+            "x",
+            "int"
+          ],
+          [
+            "y",
+            "int"
+          ],
+          [
+            "z",
+            "int"
+          ],
+          [
+            "xx",
+            "int"
+          ],
+          [
+            "yy",
+            "int"
+          ],
+          [
+            "return",
+            "uint"
+          ]
+        ],
+        "params": [
+          "[ x_immutable, y_immutable, z_immutable, xx_immutable, yy_immutable ]"
+        ]
+      },
+      {
+        "name": "mx_hash_int",
+        "exported": true,
+        "kind": "overload",
+        "candidates": [
+          "mx_hash_int_0",
+          "mx_hash_int_1",
+          "mx_hash_int_2",
+          "mx_hash_int_3",
+          "mx_hash_int_4"
+        ]
+      },
+      {
+        "name": "mx_hash_vec3_0",
+        "exported": true,
+        "kind": "Fn",
+        "layout": [
+          [
+            "x",
+            "int"
+          ],
+          [
+            "y",
+            "int"
+          ],
+          [
+            "return",
+            "uvec3"
+          ]
+        ],
+        "params": [
+          "[ x_immutable, y_immutable ]"
+        ]
+      },
+      {
+        "name": "mx_hash_vec3_1",
+        "exported": true,
+        "kind": "Fn",
+        "layout": [
+          [
+            "x",
+            "int"
+          ],
+          [
+            "y",
+            "int"
+          ],
+          [
+            "z",
+            "int"
+          ],
+          [
+            "return",
+            "uvec3"
+          ]
+        ],
+        "params": [
+          "[ x_immutable, y_immutable, z_immutable ]"
+        ]
+      },
+      {
+        "name": "mx_hash_vec3",
+        "exported": true,
+        "kind": "overload",
+        "candidates": [
+          "mx_hash_vec3_0",
+          "mx_hash_vec3_1"
+        ]
+      },
+      {
+        "name": "mx_perlin_noise_float_0",
+        "exported": true,
+        "kind": "Fn",
+        "layout": [
+          [
+            "p",
+            "vec2"
+          ],
+          [
+            "return",
+            "float"
+          ]
+        ],
+        "params": [
+          "[ p_immutable ]"
+        ]
+      },
+      {
+        "name": "mx_perlin_noise_float_1",
+        "exported": true,
+        "kind": "Fn",
+        "layout": [
+          [
+            "p",
+            "vec3"
+          ],
+          [
+            "return",
+            "float"
+          ]
+        ],
+        "params": [
+          "[ p_immutable ]"
+        ]
+      },
+      {
+        "name": "mx_perlin_noise_float",
+        "exported": true,
+        "kind": "overload",
+        "candidates": [
+          "mx_perlin_noise_float_0",
+          "mx_perlin_noise_float_1"
+        ]
+      },
+      {
+        "name": "mx_perlin_noise_vec3_0",
+        "exported": true,
+        "kind": "Fn",
+        "layout": [
+          [
+            "p",
+            "vec2"
+          ],
+          [
+            "return",
+            "vec3"
+          ]
+        ],
+        "params": [
+          "[ p_immutable ]"
+        ]
+      },
+      {
+        "name": "mx_perlin_noise_vec3_1",
+        "exported": true,
+        "kind": "Fn",
+        "layout": [
+          [
+            "p",
+            "vec3"
+          ],
+          [
+            "return",
+            "vec3"
+          ]
+        ],
+        "params": [
+          "[ p_immutable ]"
+        ]
+      },
+      {
+        "name": "mx_perlin_noise_vec3",
+        "exported": true,
+        "kind": "overload",
+        "candidates": [
+          "mx_perlin_noise_vec3_0",
+          "mx_perlin_noise_vec3_1"
+        ]
+      },
+      {
+        "name": "mx_cell_noise_float_0",
+        "exported": true,
+        "kind": "Fn",
+        "layout": [
+          [
+            "p",
+            "float"
+          ],
+          [
+            "return",
+            "float"
+          ]
+        ],
+        "params": [
+          "[ p_immutable ]"
+        ]
+      },
+      {
+        "name": "mx_cell_noise_float_1",
+        "exported": true,
+        "kind": "Fn",
+        "layout": [
+          [
+            "p",
+            "vec2"
+          ],
+          [
+            "return",
+            "float"
+          ]
+        ],
+        "params": [
+          "[ p_immutable ]"
+        ]
+      },
+      {
+        "name": "mx_cell_noise_float_2",
+        "exported": true,
+        "kind": "Fn",
+        "layout": [
+          [
+            "p",
+            "vec3"
+          ],
+          [
+            "return",
+            "float"
+          ]
+        ],
+        "params": [
+          "[ p_immutable ]"
+        ]
+      },
+      {
+        "name": "mx_cell_noise_float_3",
+        "exported": true,
+        "kind": "Fn",
+        "layout": [
+          [
+            "p",
+            "vec4"
+          ],
+          [
+            "return",
+            "float"
+          ]
+        ],
+        "params": [
+          "[ p_immutable ]"
+        ]
+      },
+      {
+        "name": "mx_cell_noise_float",
+        "exported": true,
+        "kind": "overload",
+        "candidates": [
+          "mx_cell_noise_float_0",
+          "mx_cell_noise_float_1",
+          "mx_cell_noise_float_2",
+          "mx_cell_noise_float_3"
+        ]
+      },
+      {
+        "name": "mx_cell_noise_vec3_0",
+        "exported": true,
+        "kind": "Fn",
+        "layout": [
+          [
+            "p",
+            "float"
+          ],
+          [
+            "return",
+            "vec3"
+          ]
+        ],
+        "params": [
+          "[ p_immutable ]"
+        ]
+      },
+      {
+        "name": "mx_cell_noise_vec3_1",
+        "exported": true,
+        "kind": "Fn",
+        "layout": [
+          [
+            "p",
+            "vec2"
+          ],
+          [
+            "return",
+            "vec3"
+          ]
+        ],
+        "params": [
+          "[ p_immutable ]"
+        ]
+      },
+      {
+        "name": "mx_cell_noise_vec3_2",
+        "exported": true,
+        "kind": "Fn",
+        "layout": [
+          [
+            "p",
+            "vec3"
+          ],
+          [
+            "return",
+            "vec3"
+          ]
+        ],
+        "params": [
+          "[ positionInput ]"
+        ]
+      },
+      {
+        "name": "mx_cell_noise_vec3_3",
+        "exported": true,
+        "kind": "Fn",
+        "layout": [
+          [
+            "p",
+            "vec4"
+          ],
+          [
+            "return",
+            "vec3"
+          ]
+        ],
+        "params": [
+          "[ p_immutable ]"
+        ]
+      },
+      {
+        "name": "mx_cell_noise_vec3",
+        "exported": true,
+        "kind": "overload",
+        "candidates": [
+          "mx_cell_noise_vec3_0",
+          "mx_cell_noise_vec3_1",
+          "mx_cell_noise_vec3_2",
+          "mx_cell_noise_vec3_3"
+        ]
+      },
+      {
+        "name": "mx_cell_noise_vec3_3d",
+        "exported": false,
+        "kind": "Fn",
+        "layout": [
+          [
+            "position",
+            "vec3"
+          ],
+          [
+            "return",
+            "vec3"
+          ]
+        ],
+        "params": [
+          "[ positionInput ]"
+        ]
+      },
+      {
+        "name": "mx_fractal_noise_float_2d",
+        "exported": true,
+        "kind": "Fn",
+        "layout": [
+          [
+            "p",
+            "vec2"
+          ],
+          [
+            "octaves",
+            "int"
+          ],
+          [
+            "lacunarity",
+            "float"
+          ],
+          [
+            "diminish",
+            "float"
+          ],
+          [
+            "return",
+            "float"
+          ]
+        ],
+        "params": [
+          "[ p_immutable, octaves_immutable, lacunarity_immutable, diminish_immutable ]"
+        ]
+      },
+      {
+        "name": "mx_fractal_noise_float",
+        "exported": true,
+        "kind": "Fn",
+        "layout": [
+          [
+            "p",
+            "vec3"
+          ],
+          [
+            "octaves",
+            "int"
+          ],
+          [
+            "lacunarity",
+            "float"
+          ],
+          [
+            "diminish",
+            "float"
+          ],
+          [
+            "return",
+            "float"
+          ]
+        ],
+        "params": [
+          "[ p_immutable, octaves_immutable, lacunarity_immutable, diminish_immutable ]"
+        ]
+      },
+      {
+        "name": "mx_fractal_noise_vec3",
+        "exported": true,
+        "kind": "Fn",
+        "layout": [
+          [
+            "p",
+            "vec3"
+          ],
+          [
+            "octaves",
+            "int"
+          ],
+          [
+            "lacunarity",
+            "float"
+          ],
+          [
+            "diminish",
+            "float"
+          ],
+          [
+            "return",
+            "vec3"
+          ]
+        ],
+        "params": [
+          "[ p_immutable, octaves_immutable, lacunarity_immutable, diminish_immutable ]"
+        ]
+      },
+      {
+        "name": "mx_fractal_noise_vec2",
+        "exported": true,
+        "kind": "Fn",
+        "layout": [
+          [
+            "p",
+            "vec3"
+          ],
+          [
+            "octaves",
+            "int"
+          ],
+          [
+            "lacunarity",
+            "float"
+          ],
+          [
+            "diminish",
+            "float"
+          ],
+          [
+            "return",
+            "vec2"
+          ]
+        ],
+        "params": [
+          "[ p_immutable, octaves_immutable, lacunarity_immutable, diminish_immutable ]"
+        ]
+      },
+      {
+        "name": "mx_fractal_noise_vec4",
+        "exported": true,
+        "kind": "Fn",
+        "layout": [
+          [
+            "p",
+            "vec3"
+          ],
+          [
+            "octaves",
+            "int"
+          ],
+          [
+            "lacunarity",
+            "float"
+          ],
+          [
+            "diminish",
+            "float"
+          ],
+          [
+            "return",
+            "vec4"
+          ]
+        ],
+        "params": [
+          "[ p_immutable, octaves_immutable, lacunarity_immutable, diminish_immutable ]"
+        ]
+      },
+      {
+        "name": "mx_worley_distance_0",
+        "exported": true,
+        "kind": "Fn",
+        "layout": [
+          [
+            "p",
+            "vec2"
+          ],
+          [
+            "x",
+            "int"
+          ],
+          [
+            "y",
+            "int"
+          ],
+          [
+            "xoff",
+            "int"
+          ],
+          [
+            "yoff",
+            "int"
+          ],
+          [
+            "jitter",
+            "float"
+          ],
+          [
+            "metric",
+            "int"
+          ],
+          [
+            "return",
+            "float"
+          ]
+        ],
+        "params": [
+          "[ p_immutable, x_immutable, y_immutable, xoff_immutable, yoff_immutable, jitter_immutable, metric_immutable ]"
+        ]
+      },
+      {
+        "name": "mx_worley_distance_1",
+        "exported": true,
+        "kind": "Fn",
+        "layout": [
+          [
+            "p",
+            "vec3"
+          ],
+          [
+            "x",
+            "int"
+          ],
+          [
+            "y",
+            "int"
+          ],
+          [
+            "z",
+            "int"
+          ],
+          [
+            "xoff",
+            "int"
+          ],
+          [
+            "yoff",
+            "int"
+          ],
+          [
+            "zoff",
+            "int"
+          ],
+          [
+            "jitter",
+            "float"
+          ],
+          [
+            "metric",
+            "int"
+          ],
+          [
+            "return",
+            "float"
+          ]
+        ],
+        "params": [
+          "[ p_immutable, x_immutable, y_immutable, z_immutable, xoff_immutable, yoff_immutable, zoff_immutable, jitter_immutable, metric_immutable ]"
+        ]
+      },
+      {
+        "name": "mx_worley_distance",
+        "exported": true,
+        "kind": "overload",
+        "candidates": [
+          "mx_worley_distance_0",
+          "mx_worley_distance_1"
+        ]
+      },
+      {
+        "name": "mx_perlin_noise_float_scaled",
+        "exported": false,
+        "kind": "function",
+        "params": [
+          "texcoord",
+          "amplitude = 1",
+          "pivot = 0"
+        ]
+      },
+      {
+        "name": "mx_worley_noise_float_3d",
+        "exported": true,
+        "kind": "Fn",
+        "layout": [
+          [
+            "position",
+            "vec3"
+          ],
+          [
+            "jitter",
+            "float"
+          ],
+          [
+            "style",
+            "int"
+          ],
+          [
+            "return",
+            "float"
+          ]
+        ],
+        "params": [
+          "[ positionInput, jitterInput, styleInput ]"
+        ]
+      },
+      {
+        "name": "mx_worley_noise_float_2d",
+        "exported": true,
+        "kind": "Fn",
+        "layout": [
+          [
+            "texcoord",
+            "vec2"
+          ],
+          [
+            "jitter",
+            "float"
+          ],
+          [
+            "style",
+            "int"
+          ],
+          [
+            "return",
+            "float"
+          ]
+        ],
+        "params": [
+          "[ texcoordInput, jitterInput, styleInput ]"
+        ]
+      },
+      {
+        "name": "mx_worley_noise_float",
+        "exported": true,
+        "kind": "overload",
+        "candidates": [
+          "mx_worley_noise_float_2d",
+          "mx_worley_noise_float_3d"
+        ]
+      },
+      {
+        "name": "mx_worley_noise_vec2_0",
+        "exported": true,
+        "kind": "Fn",
+        "layout": [
+          [
+            "p",
+            "vec2"
+          ],
+          [
+            "jitter",
+            "float"
+          ],
+          [
+            "metric",
+            "int"
+          ],
+          [
+            "return",
+            "vec2"
+          ]
+        ],
+        "params": [
+          "[ p_immutable, jitter_immutable, metric_immutable ]"
+        ]
+      },
+      {
+        "name": "mx_worley_noise_vec3_0",
+        "exported": true,
+        "kind": "Fn",
+        "layout": [
+          [
+            "p",
+            "vec2"
+          ],
+          [
+            "jitter",
+            "float"
+          ],
+          [
+            "metric",
+            "int"
+          ],
+          [
+            "return",
+            "vec3"
+          ]
+        ],
+        "params": [
+          "[ p_immutable, jitter_immutable, metric_immutable ]"
+        ]
+      },
+      {
+        "name": "mx_worley_noise_vec2_1",
+        "exported": true,
+        "kind": "Fn",
+        "layout": [
+          [
+            "p",
+            "vec3"
+          ],
+          [
+            "jitter",
+            "float"
+          ],
+          [
+            "metric",
+            "int"
+          ],
+          [
+            "return",
+            "vec2"
+          ]
+        ],
+        "params": [
+          "[ p_immutable, jitter_immutable, metric_immutable ]"
+        ]
+      },
+      {
+        "name": "mx_worley_noise_vec2",
+        "exported": true,
+        "kind": "overload",
+        "candidates": [
+          "mx_worley_noise_vec2_0",
+          "mx_worley_noise_vec2_1"
+        ]
+      },
+      {
+        "name": "mx_worley_noise_vec3_1",
+        "exported": true,
+        "kind": "Fn",
+        "layout": [
+          [
+            "p",
+            "vec3"
+          ],
+          [
+            "jitter",
+            "float"
+          ],
+          [
+            "metric",
+            "int"
+          ],
+          [
+            "return",
+            "vec3"
+          ]
+        ],
+        "params": [
+          "[ p_immutable, jitter_immutable, metric_immutable ]"
+        ]
+      },
+      {
+        "name": "mx_worley_noise_vec3",
+        "exported": true,
+        "kind": "overload",
+        "candidates": [
+          "mx_worley_noise_vec3_0",
+          "mx_worley_noise_vec3_1"
+        ]
+      },
+      {
+        "name": "mx_worley_noise_vec3_style_0",
+        "exported": true,
+        "kind": "Fn",
+        "layout": [
+          [
+            "p",
+            "vec2"
+          ],
+          [
+            "jitter",
+            "float"
+          ],
+          [
+            "style",
+            "int"
+          ],
+          [
+            "metric",
+            "int"
+          ],
+          [
+            "return",
+            "vec3"
+          ]
+        ],
+        "params": [
+          "[ p_immutable, jitter_immutable, style_immutable, metric_immutable ]"
+        ]
+      },
+      {
+        "name": "mx_worley_noise_vec3_style_1",
+        "exported": true,
+        "kind": "Fn",
+        "layout": [
+          [
+            "p",
+            "vec3"
+          ],
+          [
+            "jitter",
+            "float"
+          ],
+          [
+            "style",
+            "int"
+          ],
+          [
+            "metric",
+            "int"
+          ],
+          [
+            "return",
+            "vec3"
+          ]
+        ],
+        "params": [
+          "[ p_immutable, jitter_immutable, style_immutable, metric_immutable ]"
+        ]
+      },
+      {
+        "name": "mx_worley_noise_vec3_style",
+        "exported": true,
+        "kind": "overload",
+        "candidates": [
+          "mx_worley_noise_vec3_style_0",
+          "mx_worley_noise_vec3_style_1"
+        ]
+      },
+      {
+        "name": "mx_unifiednoise2d",
+        "exported": true,
+        "kind": "Fn",
+        "layout": [
+          [
+            "noiseType",
+            "int"
+          ],
+          [
+            "texcoord",
+            "vec2"
+          ],
+          [
+            "freq",
+            "vec2"
+          ],
+          [
+            "offset",
+            "vec2"
+          ],
+          [
+            "jitter",
+            "float"
+          ],
+          [
+            "outmin",
+            "float"
+          ],
+          [
+            "outmax",
+            "float"
+          ],
+          [
+            "clampoutput",
+            "float"
+          ],
+          [
+            "octaves",
+            "int"
+          ],
+          [
+            "lacunarity",
+            "float"
+          ],
+          [
+            "diminish",
+            "float"
+          ],
+          [
+            "style",
+            "int"
+          ],
+          [
+            "return",
+            "float"
+          ]
+        ],
+        "params": [
+          "[\r\n\tnoiseTypeInput,\r\n\ttexcoordInput,\r\n\tfreqInput,\r\n\toffsetInput,\r\n\tjitterInput,\r\n\toutminInput,\r\n\toutmaxInput,\r\n\tclampoutputInput,\r\n\toctavesInput,\r\n\tlacunarityInput,\r\n\tdiminishInput,\r\n\tstyleInput\r\n]"
+        ]
+      },
+      {
+        "name": "mx_unifiednoise3d",
+        "exported": true,
+        "kind": "Fn",
+        "layout": [
+          [
+            "noiseType",
+            "int"
+          ],
+          [
+            "position",
+            "vec3"
+          ],
+          [
+            "freq",
+            "vec3"
+          ],
+          [
+            "offset",
+            "vec3"
+          ],
+          [
+            "jitter",
+            "float"
+          ],
+          [
+            "outmin",
+            "float"
+          ],
+          [
+            "outmax",
+            "float"
+          ],
+          [
+            "clampoutput",
+            "float"
+          ],
+          [
+            "octaves",
+            "int"
+          ],
+          [
+            "lacunarity",
+            "float"
+          ],
+          [
+            "diminish",
+            "float"
+          ],
+          [
+            "style",
+            "int"
+          ],
+          [
+            "return",
+            "float"
+          ]
+        ],
+        "params": [
+          "[\r\n\tnoiseTypeInput,\r\n\tpositionInput,\r\n\tfreqInput,\r\n\toffsetInput,\r\n\tjitterInput,\r\n\toutminInput,\r\n\toutmaxInput,\r\n\tclampoutputInput,\r\n\toctavesInput,\r\n\tlacunarityInput,\r\n\tdiminishInput,\r\n\tstyleInput\r\n]"
+        ]
+      }
+    ],
+    "MaterialXNodes": [
+      {
+        "name": "mx_aastep",
+        "exported": true,
+        "kind": "function",
+        "params": [
+          "threshold",
+          "value"
+        ]
+      },
+      {
+        "name": "_ramp",
+        "exported": false,
+        "kind": "function",
+        "params": [
+          "a",
+          "b",
+          "uv",
+          "p"
+        ]
+      },
+      {
+        "name": "mx_ramplr",
+        "exported": true,
+        "kind": "function",
+        "params": [
+          "valuel",
+          "valuer",
+          "texcoord = uv()"
+        ]
+      },
+      {
+        "name": "mx_ramptb",
+        "exported": true,
+        "kind": "function",
+        "params": [
+          "valueb",
+          "valuet",
+          "texcoord = uv()"
+        ]
+      },
+      {
+        "name": "mx_ramp4",
+        "exported": true,
+        "kind": "function",
+        "params": [
+          "valuetl",
+          "valuetr",
+          "valuebl",
+          "valuebr",
+          "texcoord = uv()"
+        ]
+      },
+      {
+        "name": "_split",
+        "exported": false,
+        "kind": "function",
+        "params": [
+          "a",
+          "b",
+          "center",
+          "uv",
+          "p"
+        ]
+      },
+      {
+        "name": "mx_splitlr",
+        "exported": true,
+        "kind": "function",
+        "params": [
+          "valuel",
+          "valuer",
+          "center",
+          "texcoord = uv()"
+        ]
+      },
+      {
+        "name": "mx_splittb",
+        "exported": true,
+        "kind": "function",
+        "params": [
+          "valueb",
+          "valuet",
+          "center",
+          "texcoord = uv()"
+        ]
+      },
+      {
+        "name": "mx_transform_uv",
+        "exported": true,
+        "kind": "function",
+        "params": [
+          "uv_scale = 1",
+          "uv_offset = 0",
+          "uv_geo = uv()"
+        ]
+      },
+      {
+        "name": "mx_safepower",
+        "exported": true,
+        "kind": "function",
+        "params": [
+          "in1",
+          "in2 = 1"
+        ]
+      },
+      {
+        "name": "mx_contrast",
+        "exported": true,
+        "kind": "function",
+        "params": [
+          "input",
+          "amount = 1",
+          "pivot = .5"
+        ]
+      },
+      {
+        "name": "mx_noise_float",
+        "exported": true,
+        "kind": "function",
+        "params": [
+          "texcoord = uv()",
+          "amplitude = 1",
+          "pivot = 0"
+        ]
+      },
+      {
+        "name": "mx_noise_vec3",
+        "exported": true,
+        "kind": "function",
+        "params": [
+          "texcoord = uv()",
+          "amplitude = 1",
+          "pivot = 0"
+        ]
+      },
+      {
+        "name": "mx_perlin_noise_vec4_0",
+        "exported": false,
+        "kind": "Fn",
+        "layout": [
+          [
+            "p",
+            "vec2"
+          ],
+          [
+            "return",
+            "vec4"
+          ]
+        ],
+        "params": [
+          "[ p ]"
+        ]
+      },
+      {
+        "name": "mx_perlin_noise_vec4_1",
+        "exported": false,
+        "kind": "Fn",
+        "layout": [
+          [
+            "p",
+            "vec3"
+          ],
+          [
+            "return",
+            "vec4"
+          ]
+        ],
+        "params": [
+          "[ p ]"
+        ]
+      },
+      {
+        "name": "mx_perlin_noise_vec4",
+        "exported": false,
+        "kind": "overload",
+        "candidates": [
+          "mx_perlin_noise_vec4_0",
+          "mx_perlin_noise_vec4_1"
+        ]
+      },
+      {
+        "name": "mx_noise_vec4",
+        "exported": true,
+        "kind": "function",
+        "params": [
+          "texcoord = uv()",
+          "amplitude = 1",
+          "pivot = 0"
+        ]
+      },
+      {
+        "name": "mx_smoothstep",
+        "exported": true,
+        "kind": "function",
+        "params": [
+          "inNode",
+          "low = 0",
+          "high = 1"
+        ]
+      },
+      {
+        "name": "mx_cell_noise_vec3",
+        "exported": true,
+        "kind": "function",
+        "params": [
+          "texcoord = uv()"
+        ]
+      },
+      {
+        "name": "mx_worley_noise_float_2d",
+        "exported": true,
+        "kind": "function",
+        "params": [
+          "texcoord = uv()",
+          "jitter = 1",
+          "style = 0"
+        ]
+      },
+      {
+        "name": "mx_worley_noise_float_3d",
+        "exported": true,
+        "kind": "function",
+        "params": [
+          "texcoord = uv()",
+          "jitter = 1",
+          "style = 0"
+        ]
+      },
+      {
+        "name": "mx_unifiednoise2d",
+        "exported": true,
+        "kind": "function",
+        "params": [
+          "noiseType",
+          "texcoord = uv()",
+          "freq = vec2( 1, 1 )",
+          "offset = vec2( 0, 0 )",
+          "jitter = 1",
+          "outmin = 0",
+          "outmax = 1",
+          "clampoutput = false",
+          "octaves = 1",
+          "lacunarity = 2",
+          "diminish = .5",
+          "style = 0"
+        ]
+      },
+      {
+        "name": "mx_unifiednoise3d",
+        "exported": true,
+        "kind": "function",
+        "params": [
+          "noiseType",
+          "texcoord = uv()",
+          "freq = vec3( 1, 1, 1 )",
+          "offset = vec3( 0, 0, 0 )",
+          "jitter = 1",
+          "outmin = 0",
+          "outmax = 1",
+          "clampoutput = false",
+          "octaves = 1",
+          "lacunarity = 2",
+          "diminish = .5",
+          "style = 0"
+        ]
+      },
+      {
+        "name": "mx_worley_noise_float",
+        "exported": true,
+        "kind": "function",
+        "params": [
+          "texcoord = uv()",
+          "jitter = 1",
+          "style = 0"
+        ]
+      },
+      {
+        "name": "mx_worley_noise_vec2",
+        "exported": true,
+        "kind": "function",
+        "params": [
+          "texcoord = uv()",
+          "jitter = 1"
+        ]
+      },
+      {
+        "name": "mx_worley_noise_vec3",
+        "exported": true,
+        "kind": "function",
+        "params": [
+          "texcoord = uv()",
+          "jitter = 1",
+          "metric = 1"
+        ]
+      },
+      {
+        "name": "mx_worley_noise_vec3_style",
+        "exported": true,
+        "kind": "function",
+        "params": [
+          "texcoord = uv()",
+          "jitter = 1",
+          "style = 0",
+          "metric = 0"
+        ]
+      },
+      {
+        "name": "mx_cell_noise_float",
+        "exported": true,
+        "kind": "function",
+        "params": [
+          "texcoord = uv()"
+        ]
+      },
+      {
+        "name": "mx_fractal_noise_float_2d",
+        "exported": true,
+        "kind": "function",
+        "params": [
+          "texcoord = uv()",
+          "octaves = 3",
+          "lacunarity = 2",
+          "diminish = .5",
+          "amplitude = 1"
+        ]
+      },
+      {
+        "name": "mx_fractal_noise_float",
+        "exported": true,
+        "kind": "function",
+        "params": [
+          "position = uv()",
+          "octaves = 3",
+          "lacunarity = 2",
+          "diminish = .5",
+          "amplitude = 1"
+        ]
+      },
+      {
+        "name": "mx_fractal_noise_vec2",
+        "exported": true,
+        "kind": "function",
+        "params": [
+          "position = uv()",
+          "octaves = 3",
+          "lacunarity = 2",
+          "diminish = .5",
+          "amplitude = 1"
+        ]
+      },
+      {
+        "name": "mx_fractal_noise_vec3",
+        "exported": true,
+        "kind": "function",
+        "params": [
+          "position = uv()",
+          "octaves = 3",
+          "lacunarity = 2",
+          "diminish = .5",
+          "amplitude = 1"
+        ]
+      },
+      {
+        "name": "mx_fractal_noise_vec4",
+        "exported": true,
+        "kind": "function",
+        "params": [
+          "position = uv()",
+          "octaves = 3",
+          "lacunarity = 2",
+          "diminish = .5",
+          "amplitude = 1"
+        ]
+      },
+      {
+        "name": "mx_add",
+        "exported": true,
+        "kind": "function",
+        "params": [
+          "in1",
+          "in2 = float( 0 )"
+        ]
+      },
+      {
+        "name": "mx_subtract",
+        "exported": true,
+        "kind": "function",
+        "params": [
+          "in1",
+          "in2 = float( 0 )"
+        ]
+      },
+      {
+        "name": "mx_multiply",
+        "exported": true,
+        "kind": "function",
+        "params": [
+          "in1",
+          "in2 = float( 1 )"
+        ]
+      },
+      {
+        "name": "mx_divide",
+        "exported": true,
+        "kind": "function",
+        "params": [
+          "in1",
+          "in2 = float( 1 )"
+        ]
+      },
+      {
+        "name": "mx_modulo",
+        "exported": true,
+        "kind": "function",
+        "params": [
+          "in1",
+          "in2 = float( 1 )"
+        ]
+      },
+      {
+        "name": "mx_power",
+        "exported": true,
+        "kind": "function",
+        "params": [
+          "in1",
+          "in2 = float( 1 )"
+        ]
+      },
+      {
+        "name": "mx_atan2",
+        "exported": true,
+        "kind": "function",
+        "params": [
+          "in1 = float( 0 )",
+          "in2 = float( 1 )"
+        ]
+      },
+      {
+        "name": "mx_timer",
+        "exported": true,
+        "kind": "function",
+        "params": []
+      },
+      {
+        "name": "mx_frame",
+        "exported": true,
+        "kind": "function",
+        "params": []
+      },
+      {
+        "name": "mx_invert",
+        "exported": true,
+        "kind": "function",
+        "params": [
+          "in1",
+          "amount = float( 1 )"
+        ]
+      },
+      {
+        "name": "mx_ifgreater",
+        "exported": true,
+        "kind": "function",
+        "params": [
+          "value1",
+          "value2",
+          "in1",
+          "in2"
+        ]
+      },
+      {
+        "name": "mx_ifgreatereq",
+        "exported": true,
+        "kind": "function",
+        "params": [
+          "value1",
+          "value2",
+          "in1",
+          "in2"
+        ]
+      },
+      {
+        "name": "mx_ifequal",
+        "exported": true,
+        "kind": "function",
+        "params": [
+          "value1",
+          "value2",
+          "in1",
+          "in2"
+        ]
+      },
+      {
+        "name": "mx_separate",
+        "exported": true,
+        "kind": "function",
+        "params": [
+          "in1",
+          "channelOrOut = null"
+        ]
+      },
+      {
+        "name": "mx_place2d",
+        "exported": true,
+        "kind": "function",
+        "params": [
+          "texcoord",
+          "pivot = vec2( 0, 0 )",
+          "scale = vec2( 1, 1 )",
+          "rotate = float( 0 )",
+          "offset = vec2( 0, 0 )",
+          "operationorder = int( 0 )"
+        ]
+      },
+      {
+        "name": "mx_heighttonormal",
+        "exported": true,
+        "kind": "function",
+        "params": [
+          "input",
+          "scale = 1",
+          "texcoord = uv()"
+        ]
+      }
+    ]
+  },
+  "cases": [
+    {
+      "label": "metadata",
+      "module": "MaterialXNoise",
+      "mode": "metadata"
+    },
+    {
+      "label": "body:mx_select",
+      "module": "MaterialXNoise",
+      "mode": "body",
+      "kind": "Fn",
+      "fn": "mx_select",
+      "args": [
+        {
+          "node": "bool",
+          "args": [
+            true
+          ]
+        },
+        {
+          "node": "float",
+          "args": [
+            0.398
+          ]
+        },
+        {
+          "node": "float",
+          "args": [
+            0.425
+          ]
+        }
+      ]
+    },
+    {
+      "label": "body:mx_negate_if",
+      "module": "MaterialXNoise",
+      "mode": "body",
+      "kind": "Fn",
+      "fn": "mx_negate_if",
+      "args": [
+        {
+          "node": "float",
+          "args": [
+            0.371
+          ]
+        },
+        {
+          "node": "bool",
+          "args": [
+            true
+          ]
+        }
+      ]
+    },
+    {
+      "label": "body:mx_floor",
+      "module": "MaterialXNoise",
+      "mode": "body",
+      "kind": "Fn",
+      "fn": "mx_floor",
+      "args": [
+        {
+          "node": "float",
+          "args": [
+            0.371
+          ]
+        }
+      ]
+    },
+    {
+      "label": "body:mx_floorfrac",
+      "module": "MaterialXNoise",
+      "mode": "body",
+      "kind": "Fn",
+      "fn": "mx_floorfrac",
+      "args": [
+        {
+          "node": "float",
+          "args": [
+            0.371
+          ]
+        },
+        {
+          "node": "int",
+          "args": [
+            2
+          ],
+          "variable": "floorResult"
+        }
+      ]
+    },
+    {
+      "label": "body:mxBilerpValue",
+      "module": "MaterialXNoise",
+      "mode": "body",
+      "kind": "function",
+      "fn": "mxBilerpValue",
+      "args": [
+        {
+          "node": "float",
+          "args": [
+            0.371
+          ]
+        },
+        {
+          "node": "float",
+          "args": [
+            0.398
+          ]
+        },
+        {
+          "node": "float",
+          "args": [
+            0.425
+          ]
+        },
+        {
+          "node": "float",
+          "args": [
+            0.452
+          ]
+        },
+        {
+          "node": "float",
+          "args": [
+            0.479
+          ]
+        },
+        {
+          "node": "float",
+          "args": [
+            0.506
+          ]
+        }
+      ]
+    },
+    {
+      "label": "body:mxTrilerpValue",
+      "module": "MaterialXNoise",
+      "mode": "body",
+      "kind": "function",
+      "fn": "mxTrilerpValue",
+      "args": [
+        {
+          "node": "float",
+          "args": [
+            0.371
+          ]
+        },
+        {
+          "node": "float",
+          "args": [
+            0.398
+          ]
+        },
+        {
+          "node": "float",
+          "args": [
+            0.425
+          ]
+        },
+        {
+          "node": "float",
+          "args": [
+            0.452
+          ]
+        },
+        {
+          "node": "float",
+          "args": [
+            0.479
+          ]
+        },
+        {
+          "node": "float",
+          "args": [
+            0.506
+          ]
+        },
+        {
+          "node": "float",
+          "args": [
+            0.533
+          ]
+        },
+        {
+          "node": "float",
+          "args": [
+            0.56
+          ]
+        },
+        {
+          "node": "float",
+          "args": [
+            0.587
+          ]
+        },
+        {
+          "node": "float",
+          "args": [
+            0.614
+          ]
+        },
+        {
+          "node": "float",
+          "args": [
+            0.641
+          ]
+        }
+      ]
+    },
+    {
+      "label": "body:mx_bilerp_0",
+      "module": "MaterialXNoise",
+      "mode": "body",
+      "kind": "Fn",
+      "fn": "mx_bilerp_0",
+      "args": [
+        {
+          "node": "float",
+          "args": [
+            0.371
+          ]
+        },
+        {
+          "node": "float",
+          "args": [
+            0.398
+          ]
+        },
+        {
+          "node": "float",
+          "args": [
+            0.425
+          ]
+        },
+        {
+          "node": "float",
+          "args": [
+            0.452
+          ]
+        },
+        {
+          "node": "float",
+          "args": [
+            0.479
+          ]
+        },
+        {
+          "node": "float",
+          "args": [
+            0.506
+          ]
+        }
+      ]
+    },
+    {
+      "label": "body:mx_bilerp_1",
+      "module": "MaterialXNoise",
+      "mode": "body",
+      "kind": "Fn",
+      "fn": "mx_bilerp_1",
+      "args": [
+        {
+          "node": "vec3",
+          "args": [
+            0.173,
+            0.346,
+            0.5189999999999999
+          ]
+        },
+        {
+          "node": "vec3",
+          "args": [
+            0.19199999999999998,
+            0.365,
+            0.5379999999999999
+          ]
+        },
+        {
+          "node": "vec3",
+          "args": [
+            0.211,
+            0.38399999999999995,
+            0.5569999999999999
+          ]
+        },
+        {
+          "node": "vec3",
+          "args": [
+            0.22999999999999998,
+            0.40299999999999997,
+            0.5759999999999998
+          ]
+        },
+        {
+          "node": "float",
+          "args": [
+            0.479
+          ]
+        },
+        {
+          "node": "float",
+          "args": [
+            0.506
+          ]
+        }
+      ]
+    },
+    {
+      "label": "overload:mx_bilerp:mx_bilerp_0",
+      "module": "MaterialXNoise",
+      "mode": "overload",
+      "fn": "mx_bilerp",
+      "args": [
+        {
+          "node": "float",
+          "args": [
+            0.371
+          ]
+        },
+        {
+          "node": "float",
+          "args": [
+            0.398
+          ]
+        },
+        {
+          "node": "float",
+          "args": [
+            0.425
+          ]
+        },
+        {
+          "node": "float",
+          "args": [
+            0.452
+          ]
+        },
+        {
+          "node": "float",
+          "args": [
+            0.479
+          ]
+        },
+        {
+          "node": "float",
+          "args": [
+            0.506
+          ]
+        }
+      ]
+    },
+    {
+      "label": "overload:mx_bilerp:mx_bilerp_1",
+      "module": "MaterialXNoise",
+      "mode": "overload",
+      "fn": "mx_bilerp",
+      "args": [
+        {
+          "node": "vec3",
+          "args": [
+            0.173,
+            0.346,
+            0.5189999999999999
+          ]
+        },
+        {
+          "node": "vec3",
+          "args": [
+            0.19199999999999998,
+            0.365,
+            0.5379999999999999
+          ]
+        },
+        {
+          "node": "vec3",
+          "args": [
+            0.211,
+            0.38399999999999995,
+            0.5569999999999999
+          ]
+        },
+        {
+          "node": "vec3",
+          "args": [
+            0.22999999999999998,
+            0.40299999999999997,
+            0.5759999999999998
+          ]
+        },
+        {
+          "node": "float",
+          "args": [
+            0.479
+          ]
+        },
+        {
+          "node": "float",
+          "args": [
+            0.506
+          ]
+        }
+      ]
+    },
+    {
+      "label": "body:mx_trilerp_0",
+      "module": "MaterialXNoise",
+      "mode": "body",
+      "kind": "Fn",
+      "fn": "mx_trilerp_0",
+      "args": [
+        {
+          "node": "float",
+          "args": [
+            0.371
+          ]
+        },
+        {
+          "node": "float",
+          "args": [
+            0.398
+          ]
+        },
+        {
+          "node": "float",
+          "args": [
+            0.425
+          ]
+        },
+        {
+          "node": "float",
+          "args": [
+            0.452
+          ]
+        },
+        {
+          "node": "float",
+          "args": [
+            0.479
+          ]
+        },
+        {
+          "node": "float",
+          "args": [
+            0.506
+          ]
+        },
+        {
+          "node": "float",
+          "args": [
+            0.533
+          ]
+        },
+        {
+          "node": "float",
+          "args": [
+            0.56
+          ]
+        },
+        {
+          "node": "float",
+          "args": [
+            0.587
+          ]
+        },
+        {
+          "node": "float",
+          "args": [
+            0.614
+          ]
+        },
+        {
+          "node": "float",
+          "args": [
+            0.641
+          ]
+        }
+      ]
+    },
+    {
+      "label": "body:mx_trilerp_1",
+      "module": "MaterialXNoise",
+      "mode": "body",
+      "kind": "Fn",
+      "fn": "mx_trilerp_1",
+      "args": [
+        {
+          "node": "vec3",
+          "args": [
+            0.173,
+            0.346,
+            0.5189999999999999
+          ]
+        },
+        {
+          "node": "vec3",
+          "args": [
+            0.19199999999999998,
+            0.365,
+            0.5379999999999999
+          ]
+        },
+        {
+          "node": "vec3",
+          "args": [
+            0.211,
+            0.38399999999999995,
+            0.5569999999999999
+          ]
+        },
+        {
+          "node": "vec3",
+          "args": [
+            0.22999999999999998,
+            0.40299999999999997,
+            0.5759999999999998
+          ]
+        },
+        {
+          "node": "vec3",
+          "args": [
+            0.249,
+            0.422,
+            0.5949999999999999
+          ]
+        },
+        {
+          "node": "vec3",
+          "args": [
+            0.268,
+            0.44099999999999995,
+            0.6139999999999999
+          ]
+        },
+        {
+          "node": "vec3",
+          "args": [
+            0.287,
+            0.45999999999999996,
+            0.6329999999999999
+          ]
+        },
+        {
+          "node": "vec3",
+          "args": [
+            0.306,
+            0.479,
+            0.6519999999999999
+          ]
+        },
+        {
+          "node": "float",
+          "args": [
+            0.587
+          ]
+        },
+        {
+          "node": "float",
+          "args": [
+            0.614
+          ]
+        },
+        {
+          "node": "float",
+          "args": [
+            0.641
+          ]
+        }
+      ]
+    },
+    {
+      "label": "overload:mx_trilerp:mx_trilerp_0",
+      "module": "MaterialXNoise",
+      "mode": "overload",
+      "fn": "mx_trilerp",
+      "args": [
+        {
+          "node": "float",
+          "args": [
+            0.371
+          ]
+        },
+        {
+          "node": "float",
+          "args": [
+            0.398
+          ]
+        },
+        {
+          "node": "float",
+          "args": [
+            0.425
+          ]
+        },
+        {
+          "node": "float",
+          "args": [
+            0.452
+          ]
+        },
+        {
+          "node": "float",
+          "args": [
+            0.479
+          ]
+        },
+        {
+          "node": "float",
+          "args": [
+            0.506
+          ]
+        },
+        {
+          "node": "float",
+          "args": [
+            0.533
+          ]
+        },
+        {
+          "node": "float",
+          "args": [
+            0.56
+          ]
+        },
+        {
+          "node": "float",
+          "args": [
+            0.587
+          ]
+        },
+        {
+          "node": "float",
+          "args": [
+            0.614
+          ]
+        },
+        {
+          "node": "float",
+          "args": [
+            0.641
+          ]
+        }
+      ]
+    },
+    {
+      "label": "overload:mx_trilerp:mx_trilerp_1",
+      "module": "MaterialXNoise",
+      "mode": "overload",
+      "fn": "mx_trilerp",
+      "args": [
+        {
+          "node": "vec3",
+          "args": [
+            0.173,
+            0.346,
+            0.5189999999999999
+          ]
+        },
+        {
+          "node": "vec3",
+          "args": [
+            0.19199999999999998,
+            0.365,
+            0.5379999999999999
+          ]
+        },
+        {
+          "node": "vec3",
+          "args": [
+            0.211,
+            0.38399999999999995,
+            0.5569999999999999
+          ]
+        },
+        {
+          "node": "vec3",
+          "args": [
+            0.22999999999999998,
+            0.40299999999999997,
+            0.5759999999999998
+          ]
+        },
+        {
+          "node": "vec3",
+          "args": [
+            0.249,
+            0.422,
+            0.5949999999999999
+          ]
+        },
+        {
+          "node": "vec3",
+          "args": [
+            0.268,
+            0.44099999999999995,
+            0.6139999999999999
+          ]
+        },
+        {
+          "node": "vec3",
+          "args": [
+            0.287,
+            0.45999999999999996,
+            0.6329999999999999
+          ]
+        },
+        {
+          "node": "vec3",
+          "args": [
+            0.306,
+            0.479,
+            0.6519999999999999
+          ]
+        },
+        {
+          "node": "float",
+          "args": [
+            0.587
+          ]
+        },
+        {
+          "node": "float",
+          "args": [
+            0.614
+          ]
+        },
+        {
+          "node": "float",
+          "args": [
+            0.641
+          ]
+        }
+      ]
+    },
+    {
+      "label": "body:mx_gradient_float_0",
+      "module": "MaterialXNoise",
+      "mode": "body",
+      "kind": "Fn",
+      "fn": "mx_gradient_float_0",
+      "args": [
+        {
+          "node": "uint",
+          "args": [
+            2
+          ]
+        },
+        {
+          "node": "float",
+          "args": [
+            0.398
+          ]
+        },
+        {
+          "node": "float",
+          "args": [
+            0.425
+          ]
+        }
+      ]
+    },
+    {
+      "label": "body:mx_gradient_float_1",
+      "module": "MaterialXNoise",
+      "mode": "body",
+      "kind": "Fn",
+      "fn": "mx_gradient_float_1",
+      "args": [
+        {
+          "node": "uint",
+          "args": [
+            2
+          ]
+        },
+        {
+          "node": "float",
+          "args": [
+            0.398
+          ]
+        },
+        {
+          "node": "float",
+          "args": [
+            0.425
+          ]
+        },
+        {
+          "node": "float",
+          "args": [
+            0.452
+          ]
+        }
+      ]
+    },
+    {
+      "label": "overload:mx_gradient_float:mx_gradient_float_0",
+      "module": "MaterialXNoise",
+      "mode": "overload",
+      "fn": "mx_gradient_float",
+      "args": [
+        {
+          "node": "uint",
+          "args": [
+            2
+          ]
+        },
+        {
+          "node": "float",
+          "args": [
+            0.398
+          ]
+        },
+        {
+          "node": "float",
+          "args": [
+            0.425
+          ]
+        }
+      ]
+    },
+    {
+      "label": "overload:mx_gradient_float:mx_gradient_float_1",
+      "module": "MaterialXNoise",
+      "mode": "overload",
+      "fn": "mx_gradient_float",
+      "args": [
+        {
+          "node": "uint",
+          "args": [
+            2
+          ]
+        },
+        {
+          "node": "float",
+          "args": [
+            0.398
+          ]
+        },
+        {
+          "node": "float",
+          "args": [
+            0.425
+          ]
+        },
+        {
+          "node": "float",
+          "args": [
+            0.452
+          ]
+        }
+      ]
+    },
+    {
+      "label": "body:mx_gradient_vec3_0",
+      "module": "MaterialXNoise",
+      "mode": "body",
+      "kind": "Fn",
+      "fn": "mx_gradient_vec3_0",
+      "args": [
+        {
+          "node": "uvec3",
+          "args": [
+            2,
+            3,
+            4
+          ]
+        },
+        {
+          "node": "float",
+          "args": [
+            0.398
+          ]
+        },
+        {
+          "node": "float",
+          "args": [
+            0.425
+          ]
+        }
+      ]
+    },
+    {
+      "label": "body:mx_gradient_vec3_1",
+      "module": "MaterialXNoise",
+      "mode": "body",
+      "kind": "Fn",
+      "fn": "mx_gradient_vec3_1",
+      "args": [
+        {
+          "node": "uvec3",
+          "args": [
+            2,
+            3,
+            4
+          ]
+        },
+        {
+          "node": "float",
+          "args": [
+            0.398
+          ]
+        },
+        {
+          "node": "float",
+          "args": [
+            0.425
+          ]
+        },
+        {
+          "node": "float",
+          "args": [
+            0.452
+          ]
+        }
+      ]
+    },
+    {
+      "label": "overload:mx_gradient_vec3:mx_gradient_vec3_0",
+      "module": "MaterialXNoise",
+      "mode": "overload",
+      "fn": "mx_gradient_vec3",
+      "args": [
+        {
+          "node": "uvec3",
+          "args": [
+            2,
+            3,
+            4
+          ]
+        },
+        {
+          "node": "float",
+          "args": [
+            0.398
+          ]
+        },
+        {
+          "node": "float",
+          "args": [
+            0.425
+          ]
+        }
+      ]
+    },
+    {
+      "label": "overload:mx_gradient_vec3:mx_gradient_vec3_1",
+      "module": "MaterialXNoise",
+      "mode": "overload",
+      "fn": "mx_gradient_vec3",
+      "args": [
+        {
+          "node": "uvec3",
+          "args": [
+            2,
+            3,
+            4
+          ]
+        },
+        {
+          "node": "float",
+          "args": [
+            0.398
+          ]
+        },
+        {
+          "node": "float",
+          "args": [
+            0.425
+          ]
+        },
+        {
+          "node": "float",
+          "args": [
+            0.452
+          ]
+        }
+      ]
+    },
+    {
+      "label": "body:mx_gradient_scale2d_0",
+      "module": "MaterialXNoise",
+      "mode": "body",
+      "kind": "Fn",
+      "fn": "mx_gradient_scale2d_0",
+      "args": [
+        {
+          "node": "float",
+          "args": [
+            0.371
+          ]
+        }
+      ]
+    },
+    {
+      "label": "body:mx_gradient_scale3d_0",
+      "module": "MaterialXNoise",
+      "mode": "body",
+      "kind": "Fn",
+      "fn": "mx_gradient_scale3d_0",
+      "args": [
+        {
+          "node": "float",
+          "args": [
+            0.371
+          ]
+        }
+      ]
+    },
+    {
+      "label": "body:mx_gradient_scale2d_1",
+      "module": "MaterialXNoise",
+      "mode": "body",
+      "kind": "Fn",
+      "fn": "mx_gradient_scale2d_1",
+      "args": [
+        {
+          "node": "vec3",
+          "args": [
+            0.173,
+            0.346,
+            0.5189999999999999
+          ]
+        }
+      ]
+    },
+    {
+      "label": "overload:mx_gradient_scale2d:mx_gradient_scale2d_0",
+      "module": "MaterialXNoise",
+      "mode": "overload",
+      "fn": "mx_gradient_scale2d",
+      "args": [
+        {
+          "node": "float",
+          "args": [
+            0.371
+          ]
+        }
+      ]
+    },
+    {
+      "label": "overload:mx_gradient_scale2d:mx_gradient_scale2d_1",
+      "module": "MaterialXNoise",
+      "mode": "overload",
+      "fn": "mx_gradient_scale2d",
+      "args": [
+        {
+          "node": "vec3",
+          "args": [
+            0.173,
+            0.346,
+            0.5189999999999999
+          ]
+        }
+      ]
+    },
+    {
+      "label": "body:mx_gradient_scale3d_1",
+      "module": "MaterialXNoise",
+      "mode": "body",
+      "kind": "Fn",
+      "fn": "mx_gradient_scale3d_1",
+      "args": [
+        {
+          "node": "vec3",
+          "args": [
+            0.173,
+            0.346,
+            0.5189999999999999
+          ]
+        }
+      ]
+    },
+    {
+      "label": "overload:mx_gradient_scale3d:mx_gradient_scale3d_0",
+      "module": "MaterialXNoise",
+      "mode": "overload",
+      "fn": "mx_gradient_scale3d",
+      "args": [
+        {
+          "node": "float",
+          "args": [
+            0.371
+          ]
+        }
+      ]
+    },
+    {
+      "label": "overload:mx_gradient_scale3d:mx_gradient_scale3d_1",
+      "module": "MaterialXNoise",
+      "mode": "overload",
+      "fn": "mx_gradient_scale3d",
+      "args": [
+        {
+          "node": "vec3",
+          "args": [
+            0.173,
+            0.346,
+            0.5189999999999999
+          ]
+        }
+      ]
+    },
+    {
+      "label": "body:mx_rotl32",
+      "module": "MaterialXNoise",
+      "mode": "body",
+      "kind": "Fn",
+      "fn": "mx_rotl32",
+      "args": [
+        {
+          "node": "uint",
+          "args": [
+            2
+          ]
+        },
+        {
+          "node": "int",
+          "args": [
+            3
+          ]
+        }
+      ]
+    },
+    {
+      "label": "body:mx_bjmix",
+      "module": "MaterialXNoise",
+      "mode": "body",
+      "kind": "Fn",
+      "fn": "mx_bjmix",
+      "args": [
+        {
+          "node": "uint",
+          "args": [
+            2
+          ]
+        },
+        {
+          "node": "uint",
+          "args": [
+            3
+          ]
+        },
+        {
+          "node": "uint",
+          "args": [
+            4
+          ]
+        }
+      ]
+    },
+    {
+      "label": "body:mx_bjfinal",
+      "module": "MaterialXNoise",
+      "mode": "body",
+      "kind": "Fn",
+      "fn": "mx_bjfinal",
+      "args": [
+        {
+          "node": "uint",
+          "args": [
+            2
+          ]
+        },
+        {
+          "node": "uint",
+          "args": [
+            3
+          ]
+        },
+        {
+          "node": "uint",
+          "args": [
+            4
+          ]
+        }
+      ]
+    },
+    {
+      "label": "body:mx_bits_to_01",
+      "module": "MaterialXNoise",
+      "mode": "body",
+      "kind": "Fn",
+      "fn": "mx_bits_to_01",
+      "args": [
+        {
+          "node": "uint",
+          "args": [
+            2
+          ]
+        }
+      ]
+    },
+    {
+      "label": "body:mx_fade",
+      "module": "MaterialXNoise",
+      "mode": "body",
+      "kind": "Fn",
+      "fn": "mx_fade",
+      "args": [
+        {
+          "node": "float",
+          "args": [
+            0.371
+          ]
+        }
+      ]
+    },
+    {
+      "label": "body:mx_hash_int_0",
+      "module": "MaterialXNoise",
+      "mode": "body",
+      "kind": "Fn",
+      "fn": "mx_hash_int_0",
+      "args": [
+        {
+          "node": "int",
+          "args": [
+            2
+          ]
+        }
+      ]
+    },
+    {
+      "label": "body:mx_hash_int_1",
+      "module": "MaterialXNoise",
+      "mode": "body",
+      "kind": "Fn",
+      "fn": "mx_hash_int_1",
+      "args": [
+        {
+          "node": "int",
+          "args": [
+            2
+          ]
+        },
+        {
+          "node": "int",
+          "args": [
+            3
+          ]
+        }
+      ]
+    },
+    {
+      "label": "body:mx_hash_int_2",
+      "module": "MaterialXNoise",
+      "mode": "body",
+      "kind": "Fn",
+      "fn": "mx_hash_int_2",
+      "args": [
+        {
+          "node": "int",
+          "args": [
+            2
+          ]
+        },
+        {
+          "node": "int",
+          "args": [
+            3
+          ]
+        },
+        {
+          "node": "int",
+          "args": [
+            4
+          ]
+        }
+      ]
+    },
+    {
+      "label": "body:mx_hash_int_3",
+      "module": "MaterialXNoise",
+      "mode": "body",
+      "kind": "Fn",
+      "fn": "mx_hash_int_3",
+      "args": [
+        {
+          "node": "int",
+          "args": [
+            2
+          ]
+        },
+        {
+          "node": "int",
+          "args": [
+            3
+          ]
+        },
+        {
+          "node": "int",
+          "args": [
+            4
+          ]
+        },
+        {
+          "node": "int",
+          "args": [
+            5
+          ]
+        }
+      ]
+    },
+    {
+      "label": "body:mx_hash_int_4",
+      "module": "MaterialXNoise",
+      "mode": "body",
+      "kind": "Fn",
+      "fn": "mx_hash_int_4",
+      "args": [
+        {
+          "node": "int",
+          "args": [
+            2
+          ]
+        },
+        {
+          "node": "int",
+          "args": [
+            3
+          ]
+        },
+        {
+          "node": "int",
+          "args": [
+            4
+          ]
+        },
+        {
+          "node": "int",
+          "args": [
+            5
+          ]
+        },
+        {
+          "node": "int",
+          "args": [
+            6
+          ]
+        }
+      ]
+    },
+    {
+      "label": "overload:mx_hash_int:mx_hash_int_0",
+      "module": "MaterialXNoise",
+      "mode": "overload",
+      "fn": "mx_hash_int",
+      "args": [
+        {
+          "node": "int",
+          "args": [
+            2
+          ]
+        }
+      ]
+    },
+    {
+      "label": "overload:mx_hash_int:mx_hash_int_1",
+      "module": "MaterialXNoise",
+      "mode": "overload",
+      "fn": "mx_hash_int",
+      "args": [
+        {
+          "node": "int",
+          "args": [
+            2
+          ]
+        },
+        {
+          "node": "int",
+          "args": [
+            3
+          ]
+        }
+      ]
+    },
+    {
+      "label": "overload:mx_hash_int:mx_hash_int_2",
+      "module": "MaterialXNoise",
+      "mode": "overload",
+      "fn": "mx_hash_int",
+      "args": [
+        {
+          "node": "int",
+          "args": [
+            2
+          ]
+        },
+        {
+          "node": "int",
+          "args": [
+            3
+          ]
+        },
+        {
+          "node": "int",
+          "args": [
+            4
+          ]
+        }
+      ]
+    },
+    {
+      "label": "overload:mx_hash_int:mx_hash_int_3",
+      "module": "MaterialXNoise",
+      "mode": "overload",
+      "fn": "mx_hash_int",
+      "args": [
+        {
+          "node": "int",
+          "args": [
+            2
+          ]
+        },
+        {
+          "node": "int",
+          "args": [
+            3
+          ]
+        },
+        {
+          "node": "int",
+          "args": [
+            4
+          ]
+        },
+        {
+          "node": "int",
+          "args": [
+            5
+          ]
+        }
+      ]
+    },
+    {
+      "label": "overload:mx_hash_int:mx_hash_int_4",
+      "module": "MaterialXNoise",
+      "mode": "overload",
+      "fn": "mx_hash_int",
+      "args": [
+        {
+          "node": "int",
+          "args": [
+            2
+          ]
+        },
+        {
+          "node": "int",
+          "args": [
+            3
+          ]
+        },
+        {
+          "node": "int",
+          "args": [
+            4
+          ]
+        },
+        {
+          "node": "int",
+          "args": [
+            5
+          ]
+        },
+        {
+          "node": "int",
+          "args": [
+            6
+          ]
+        }
+      ]
+    },
+    {
+      "label": "body:mx_hash_vec3_0",
+      "module": "MaterialXNoise",
+      "mode": "body",
+      "kind": "Fn",
+      "fn": "mx_hash_vec3_0",
+      "args": [
+        {
+          "node": "int",
+          "args": [
+            2
+          ]
+        },
+        {
+          "node": "int",
+          "args": [
+            3
+          ]
+        }
+      ]
+    },
+    {
+      "label": "body:mx_hash_vec3_1",
+      "module": "MaterialXNoise",
+      "mode": "body",
+      "kind": "Fn",
+      "fn": "mx_hash_vec3_1",
+      "args": [
+        {
+          "node": "int",
+          "args": [
+            2
+          ]
+        },
+        {
+          "node": "int",
+          "args": [
+            3
+          ]
+        },
+        {
+          "node": "int",
+          "args": [
+            4
+          ]
+        }
+      ]
+    },
+    {
+      "label": "overload:mx_hash_vec3:mx_hash_vec3_0",
+      "module": "MaterialXNoise",
+      "mode": "overload",
+      "fn": "mx_hash_vec3",
+      "args": [
+        {
+          "node": "int",
+          "args": [
+            2
+          ]
+        },
+        {
+          "node": "int",
+          "args": [
+            3
+          ]
+        }
+      ]
+    },
+    {
+      "label": "overload:mx_hash_vec3:mx_hash_vec3_1",
+      "module": "MaterialXNoise",
+      "mode": "overload",
+      "fn": "mx_hash_vec3",
+      "args": [
+        {
+          "node": "int",
+          "args": [
+            2
+          ]
+        },
+        {
+          "node": "int",
+          "args": [
+            3
+          ]
+        },
+        {
+          "node": "int",
+          "args": [
+            4
+          ]
+        }
+      ]
+    },
+    {
+      "label": "body:mx_perlin_noise_float_0",
+      "module": "MaterialXNoise",
+      "mode": "body",
+      "kind": "Fn",
+      "fn": "mx_perlin_noise_float_0",
+      "args": [
+        {
+          "node": "vec2",
+          "args": [
+            0.173,
+            0.346
+          ]
+        }
+      ]
+    },
+    {
+      "label": "body:mx_perlin_noise_float_1",
+      "module": "MaterialXNoise",
+      "mode": "body",
+      "kind": "Fn",
+      "fn": "mx_perlin_noise_float_1",
+      "args": [
+        {
+          "node": "vec3",
+          "args": [
+            0.173,
+            0.346,
+            0.5189999999999999
+          ]
+        }
+      ]
+    },
+    {
+      "label": "overload:mx_perlin_noise_float:mx_perlin_noise_float_0",
+      "module": "MaterialXNoise",
+      "mode": "overload",
+      "fn": "mx_perlin_noise_float",
+      "args": [
+        {
+          "node": "vec2",
+          "args": [
+            0.173,
+            0.346
+          ]
+        }
+      ]
+    },
+    {
+      "label": "overload:mx_perlin_noise_float:mx_perlin_noise_float_1",
+      "module": "MaterialXNoise",
+      "mode": "overload",
+      "fn": "mx_perlin_noise_float",
+      "args": [
+        {
+          "node": "vec3",
+          "args": [
+            0.173,
+            0.346,
+            0.5189999999999999
+          ]
+        }
+      ]
+    },
+    {
+      "label": "body:mx_perlin_noise_vec3_0",
+      "module": "MaterialXNoise",
+      "mode": "body",
+      "kind": "Fn",
+      "fn": "mx_perlin_noise_vec3_0",
+      "args": [
+        {
+          "node": "vec2",
+          "args": [
+            0.173,
+            0.346
+          ]
+        }
+      ]
+    },
+    {
+      "label": "body:mx_perlin_noise_vec3_1",
+      "module": "MaterialXNoise",
+      "mode": "body",
+      "kind": "Fn",
+      "fn": "mx_perlin_noise_vec3_1",
+      "args": [
+        {
+          "node": "vec3",
+          "args": [
+            0.173,
+            0.346,
+            0.5189999999999999
+          ]
+        }
+      ]
+    },
+    {
+      "label": "overload:mx_perlin_noise_vec3:mx_perlin_noise_vec3_0",
+      "module": "MaterialXNoise",
+      "mode": "overload",
+      "fn": "mx_perlin_noise_vec3",
+      "args": [
+        {
+          "node": "vec2",
+          "args": [
+            0.173,
+            0.346
+          ]
+        }
+      ]
+    },
+    {
+      "label": "overload:mx_perlin_noise_vec3:mx_perlin_noise_vec3_1",
+      "module": "MaterialXNoise",
+      "mode": "overload",
+      "fn": "mx_perlin_noise_vec3",
+      "args": [
+        {
+          "node": "vec3",
+          "args": [
+            0.173,
+            0.346,
+            0.5189999999999999
+          ]
+        }
+      ]
+    },
+    {
+      "label": "body:mx_cell_noise_float_0",
+      "module": "MaterialXNoise",
+      "mode": "body",
+      "kind": "Fn",
+      "fn": "mx_cell_noise_float_0",
+      "args": [
+        {
+          "node": "float",
+          "args": [
+            0.371
+          ]
+        }
+      ]
+    },
+    {
+      "label": "body:mx_cell_noise_float_1",
+      "module": "MaterialXNoise",
+      "mode": "body",
+      "kind": "Fn",
+      "fn": "mx_cell_noise_float_1",
+      "args": [
+        {
+          "node": "vec2",
+          "args": [
+            0.173,
+            0.346
+          ]
+        }
+      ]
+    },
+    {
+      "label": "body:mx_cell_noise_float_2",
+      "module": "MaterialXNoise",
+      "mode": "body",
+      "kind": "Fn",
+      "fn": "mx_cell_noise_float_2",
+      "args": [
+        {
+          "node": "vec3",
+          "args": [
+            0.173,
+            0.346,
+            0.5189999999999999
+          ]
+        }
+      ]
+    },
+    {
+      "label": "body:mx_cell_noise_float_3",
+      "module": "MaterialXNoise",
+      "mode": "body",
+      "kind": "Fn",
+      "fn": "mx_cell_noise_float_3",
+      "args": [
+        {
+          "node": "vec4",
+          "args": [
+            0.173,
+            0.346,
+            0.5189999999999999,
+            0.692
+          ]
+        }
+      ]
+    },
+    {
+      "label": "overload:mx_cell_noise_float:mx_cell_noise_float_0",
+      "module": "MaterialXNoise",
+      "mode": "overload",
+      "fn": "mx_cell_noise_float",
+      "args": [
+        {
+          "node": "float",
+          "args": [
+            0.371
+          ]
+        }
+      ]
+    },
+    {
+      "label": "overload:mx_cell_noise_float:mx_cell_noise_float_1",
+      "module": "MaterialXNoise",
+      "mode": "overload",
+      "fn": "mx_cell_noise_float",
+      "args": [
+        {
+          "node": "vec2",
+          "args": [
+            0.173,
+            0.346
+          ]
+        }
+      ]
+    },
+    {
+      "label": "overload:mx_cell_noise_float:mx_cell_noise_float_2",
+      "module": "MaterialXNoise",
+      "mode": "overload",
+      "fn": "mx_cell_noise_float",
+      "args": [
+        {
+          "node": "vec3",
+          "args": [
+            0.173,
+            0.346,
+            0.5189999999999999
+          ]
+        }
+      ]
+    },
+    {
+      "label": "overload:mx_cell_noise_float:mx_cell_noise_float_3",
+      "module": "MaterialXNoise",
+      "mode": "overload",
+      "fn": "mx_cell_noise_float",
+      "args": [
+        {
+          "node": "vec4",
+          "args": [
+            0.173,
+            0.346,
+            0.5189999999999999,
+            0.692
+          ]
+        }
+      ]
+    },
+    {
+      "label": "body:mx_cell_noise_vec3_0",
+      "module": "MaterialXNoise",
+      "mode": "body",
+      "kind": "Fn",
+      "fn": "mx_cell_noise_vec3_0",
+      "args": [
+        {
+          "node": "float",
+          "args": [
+            0.371
+          ]
+        }
+      ]
+    },
+    {
+      "label": "body:mx_cell_noise_vec3_1",
+      "module": "MaterialXNoise",
+      "mode": "body",
+      "kind": "Fn",
+      "fn": "mx_cell_noise_vec3_1",
+      "args": [
+        {
+          "node": "vec2",
+          "args": [
+            0.173,
+            0.346
+          ]
+        }
+      ]
+    },
+    {
+      "label": "body:mx_cell_noise_vec3_2",
+      "module": "MaterialXNoise",
+      "mode": "body",
+      "kind": "Fn",
+      "fn": "mx_cell_noise_vec3_2",
+      "args": [
+        {
+          "node": "vec3",
+          "args": [
+            0.173,
+            0.346,
+            0.5189999999999999
+          ]
+        }
+      ]
+    },
+    {
+      "label": "body:mx_cell_noise_vec3_3",
+      "module": "MaterialXNoise",
+      "mode": "body",
+      "kind": "Fn",
+      "fn": "mx_cell_noise_vec3_3",
+      "args": [
+        {
+          "node": "vec4",
+          "args": [
+            0.173,
+            0.346,
+            0.5189999999999999,
+            0.692
+          ]
+        }
+      ]
+    },
+    {
+      "label": "overload:mx_cell_noise_vec3:mx_cell_noise_vec3_0",
+      "module": "MaterialXNoise",
+      "mode": "overload",
+      "fn": "mx_cell_noise_vec3",
+      "args": [
+        {
+          "node": "float",
+          "args": [
+            0.371
+          ]
+        }
+      ]
+    },
+    {
+      "label": "overload:mx_cell_noise_vec3:mx_cell_noise_vec3_1",
+      "module": "MaterialXNoise",
+      "mode": "overload",
+      "fn": "mx_cell_noise_vec3",
+      "args": [
+        {
+          "node": "vec2",
+          "args": [
+            0.173,
+            0.346
+          ]
+        }
+      ]
+    },
+    {
+      "label": "overload:mx_cell_noise_vec3:mx_cell_noise_vec3_2",
+      "module": "MaterialXNoise",
+      "mode": "overload",
+      "fn": "mx_cell_noise_vec3",
+      "args": [
+        {
+          "node": "vec3",
+          "args": [
+            0.173,
+            0.346,
+            0.5189999999999999
+          ]
+        }
+      ]
+    },
+    {
+      "label": "overload:mx_cell_noise_vec3:mx_cell_noise_vec3_3",
+      "module": "MaterialXNoise",
+      "mode": "overload",
+      "fn": "mx_cell_noise_vec3",
+      "args": [
+        {
+          "node": "vec4",
+          "args": [
+            0.173,
+            0.346,
+            0.5189999999999999,
+            0.692
+          ]
+        }
+      ]
+    },
+    {
+      "label": "body:mx_cell_noise_vec3_3d",
+      "module": "MaterialXNoise",
+      "mode": "body",
+      "kind": "Fn",
+      "fn": "mx_cell_noise_vec3_3d",
+      "args": [
+        {
+          "node": "vec3",
+          "args": [
+            0.173,
+            0.346,
+            0.5189999999999999
+          ]
+        }
+      ]
+    },
+    {
+      "label": "body:mx_fractal_noise_float_2d",
+      "module": "MaterialXNoise",
+      "mode": "body",
+      "kind": "Fn",
+      "fn": "mx_fractal_noise_float_2d",
+      "args": [
+        {
+          "node": "vec2",
+          "args": [
+            0.173,
+            0.346
+          ]
+        },
+        {
+          "node": "int",
+          "args": [
+            3
+          ]
+        },
+        {
+          "node": "float",
+          "args": [
+            0.425
+          ]
+        },
+        {
+          "node": "float",
+          "args": [
+            0.452
+          ]
+        }
+      ]
+    },
+    {
+      "label": "body:mx_fractal_noise_float",
+      "module": "MaterialXNoise",
+      "mode": "body",
+      "kind": "Fn",
+      "fn": "mx_fractal_noise_float",
+      "args": [
+        {
+          "node": "vec3",
+          "args": [
+            0.173,
+            0.346,
+            0.5189999999999999
+          ]
+        },
+        {
+          "node": "int",
+          "args": [
+            3
+          ]
+        },
+        {
+          "node": "float",
+          "args": [
+            0.425
+          ]
+        },
+        {
+          "node": "float",
+          "args": [
+            0.452
+          ]
+        }
+      ]
+    },
+    {
+      "label": "body:mx_fractal_noise_vec3",
+      "module": "MaterialXNoise",
+      "mode": "body",
+      "kind": "Fn",
+      "fn": "mx_fractal_noise_vec3",
+      "args": [
+        {
+          "node": "vec3",
+          "args": [
+            0.173,
+            0.346,
+            0.5189999999999999
+          ]
+        },
+        {
+          "node": "int",
+          "args": [
+            3
+          ]
+        },
+        {
+          "node": "float",
+          "args": [
+            0.425
+          ]
+        },
+        {
+          "node": "float",
+          "args": [
+            0.452
+          ]
+        }
+      ]
+    },
+    {
+      "label": "body:mx_fractal_noise_vec2",
+      "module": "MaterialXNoise",
+      "mode": "body",
+      "kind": "Fn",
+      "fn": "mx_fractal_noise_vec2",
+      "args": [
+        {
+          "node": "vec3",
+          "args": [
+            0.173,
+            0.346,
+            0.5189999999999999
+          ]
+        },
+        {
+          "node": "int",
+          "args": [
+            3
+          ]
+        },
+        {
+          "node": "float",
+          "args": [
+            0.425
+          ]
+        },
+        {
+          "node": "float",
+          "args": [
+            0.452
+          ]
+        }
+      ]
+    },
+    {
+      "label": "body:mx_fractal_noise_vec4",
+      "module": "MaterialXNoise",
+      "mode": "body",
+      "kind": "Fn",
+      "fn": "mx_fractal_noise_vec4",
+      "args": [
+        {
+          "node": "vec3",
+          "args": [
+            0.173,
+            0.346,
+            0.5189999999999999
+          ]
+        },
+        {
+          "node": "int",
+          "args": [
+            3
+          ]
+        },
+        {
+          "node": "float",
+          "args": [
+            0.425
+          ]
+        },
+        {
+          "node": "float",
+          "args": [
+            0.452
+          ]
+        }
+      ]
+    },
+    {
+      "label": "body:mx_worley_distance_0",
+      "module": "MaterialXNoise",
+      "mode": "body",
+      "kind": "Fn",
+      "fn": "mx_worley_distance_0",
+      "args": [
+        {
+          "node": "vec2",
+          "args": [
+            0.173,
+            0.346
+          ]
+        },
+        {
+          "node": "int",
+          "args": [
+            3
+          ]
+        },
+        {
+          "node": "int",
+          "args": [
+            4
+          ]
+        },
+        {
+          "node": "int",
+          "args": [
+            5
+          ]
+        },
+        {
+          "node": "int",
+          "args": [
+            6
+          ]
+        },
+        {
+          "node": "float",
+          "args": [
+            0.506
+          ]
+        },
+        {
+          "node": "int",
+          "args": [
+            8
+          ]
+        }
+      ]
+    },
+    {
+      "label": "body:mx_worley_distance_1",
+      "module": "MaterialXNoise",
+      "mode": "body",
+      "kind": "Fn",
+      "fn": "mx_worley_distance_1",
+      "args": [
+        {
+          "node": "vec3",
+          "args": [
+            0.173,
+            0.346,
+            0.5189999999999999
+          ]
+        },
+        {
+          "node": "int",
+          "args": [
+            3
+          ]
+        },
+        {
+          "node": "int",
+          "args": [
+            4
+          ]
+        },
+        {
+          "node": "int",
+          "args": [
+            5
+          ]
+        },
+        {
+          "node": "int",
+          "args": [
+            6
+          ]
+        },
+        {
+          "node": "int",
+          "args": [
+            7
+          ]
+        },
+        {
+          "node": "int",
+          "args": [
+            8
+          ]
+        },
+        {
+          "node": "float",
+          "args": [
+            0.56
+          ]
+        },
+        {
+          "node": "int",
+          "args": [
+            10
+          ]
+        }
+      ]
+    },
+    {
+      "label": "overload:mx_worley_distance:mx_worley_distance_0",
+      "module": "MaterialXNoise",
+      "mode": "overload",
+      "fn": "mx_worley_distance",
+      "args": [
+        {
+          "node": "vec2",
+          "args": [
+            0.173,
+            0.346
+          ]
+        },
+        {
+          "node": "int",
+          "args": [
+            3
+          ]
+        },
+        {
+          "node": "int",
+          "args": [
+            4
+          ]
+        },
+        {
+          "node": "int",
+          "args": [
+            5
+          ]
+        },
+        {
+          "node": "int",
+          "args": [
+            6
+          ]
+        },
+        {
+          "node": "float",
+          "args": [
+            0.506
+          ]
+        },
+        {
+          "node": "int",
+          "args": [
+            8
+          ]
+        }
+      ]
+    },
+    {
+      "label": "overload:mx_worley_distance:mx_worley_distance_1",
+      "module": "MaterialXNoise",
+      "mode": "overload",
+      "fn": "mx_worley_distance",
+      "args": [
+        {
+          "node": "vec3",
+          "args": [
+            0.173,
+            0.346,
+            0.5189999999999999
+          ]
+        },
+        {
+          "node": "int",
+          "args": [
+            3
+          ]
+        },
+        {
+          "node": "int",
+          "args": [
+            4
+          ]
+        },
+        {
+          "node": "int",
+          "args": [
+            5
+          ]
+        },
+        {
+          "node": "int",
+          "args": [
+            6
+          ]
+        },
+        {
+          "node": "int",
+          "args": [
+            7
+          ]
+        },
+        {
+          "node": "int",
+          "args": [
+            8
+          ]
+        },
+        {
+          "node": "float",
+          "args": [
+            0.56
+          ]
+        },
+        {
+          "node": "int",
+          "args": [
+            10
+          ]
+        }
+      ]
+    },
+    {
+      "label": "body:mx_perlin_noise_float_scaled",
+      "module": "MaterialXNoise",
+      "mode": "body",
+      "kind": "function",
+      "fn": "mx_perlin_noise_float_scaled",
+      "args": [
+        {
+          "node": "vec3",
+          "args": [
+            0.173,
+            0.346,
+            0.5189999999999999
+          ]
+        },
+        {
+          "node": "float",
+          "args": [
+            0.398
+          ]
+        },
+        {
+          "node": "float",
+          "args": [
+            0.425
+          ]
+        }
+      ]
+    },
+    {
+      "label": "defaults:mx_perlin_noise_float_scaled",
+      "module": "MaterialXNoise",
+      "mode": "body",
+      "kind": "function",
+      "fn": "mx_perlin_noise_float_scaled",
+      "args": [
+        {
+          "node": "vec3",
+          "args": [
+            0.173,
+            0.346,
+            0.5189999999999999
+          ]
+        }
+      ]
+    },
+    {
+      "label": "body:mx_worley_noise_float_3d",
+      "module": "MaterialXNoise",
+      "mode": "body",
+      "kind": "Fn",
+      "fn": "mx_worley_noise_float_3d",
+      "args": [
+        {
+          "node": "vec3",
+          "args": [
+            0.173,
+            0.346,
+            0.5189999999999999
+          ]
+        },
+        {
+          "node": "float",
+          "args": [
+            0.398
+          ]
+        },
+        {
+          "node": "int",
+          "args": [
+            4
+          ]
+        }
+      ]
+    },
+    {
+      "label": "body:mx_worley_noise_float_2d",
+      "module": "MaterialXNoise",
+      "mode": "body",
+      "kind": "Fn",
+      "fn": "mx_worley_noise_float_2d",
+      "args": [
+        {
+          "node": "vec2",
+          "args": [
+            0.173,
+            0.346
+          ]
+        },
+        {
+          "node": "float",
+          "args": [
+            0.398
+          ]
+        },
+        {
+          "node": "int",
+          "args": [
+            4
+          ]
+        }
+      ]
+    },
+    {
+      "label": "overload:mx_worley_noise_float:mx_worley_noise_float_2d",
+      "module": "MaterialXNoise",
+      "mode": "overload",
+      "fn": "mx_worley_noise_float",
+      "args": [
+        {
+          "node": "vec2",
+          "args": [
+            0.173,
+            0.346
+          ]
+        },
+        {
+          "node": "float",
+          "args": [
+            0.398
+          ]
+        },
+        {
+          "node": "int",
+          "args": [
+            4
+          ]
+        }
+      ]
+    },
+    {
+      "label": "overload:mx_worley_noise_float:mx_worley_noise_float_3d",
+      "module": "MaterialXNoise",
+      "mode": "overload",
+      "fn": "mx_worley_noise_float",
+      "args": [
+        {
+          "node": "vec3",
+          "args": [
+            0.173,
+            0.346,
+            0.5189999999999999
+          ]
+        },
+        {
+          "node": "float",
+          "args": [
+            0.398
+          ]
+        },
+        {
+          "node": "int",
+          "args": [
+            4
+          ]
+        }
+      ]
+    },
+    {
+      "label": "body:mx_worley_noise_vec2_0",
+      "module": "MaterialXNoise",
+      "mode": "body",
+      "kind": "Fn",
+      "fn": "mx_worley_noise_vec2_0",
+      "args": [
+        {
+          "node": "vec2",
+          "args": [
+            0.173,
+            0.346
+          ]
+        },
+        {
+          "node": "float",
+          "args": [
+            0.398
+          ]
+        },
+        {
+          "node": "int",
+          "args": [
+            4
+          ]
+        }
+      ]
+    },
+    {
+      "label": "body:mx_worley_noise_vec3_0",
+      "module": "MaterialXNoise",
+      "mode": "body",
+      "kind": "Fn",
+      "fn": "mx_worley_noise_vec3_0",
+      "args": [
+        {
+          "node": "vec2",
+          "args": [
+            0.173,
+            0.346
+          ]
+        },
+        {
+          "node": "float",
+          "args": [
+            0.398
+          ]
+        },
+        {
+          "node": "int",
+          "args": [
+            4
+          ]
+        }
+      ]
+    },
+    {
+      "label": "body:mx_worley_noise_vec2_1",
+      "module": "MaterialXNoise",
+      "mode": "body",
+      "kind": "Fn",
+      "fn": "mx_worley_noise_vec2_1",
+      "args": [
+        {
+          "node": "vec3",
+          "args": [
+            0.173,
+            0.346,
+            0.5189999999999999
+          ]
+        },
+        {
+          "node": "float",
+          "args": [
+            0.398
+          ]
+        },
+        {
+          "node": "int",
+          "args": [
+            4
+          ]
+        }
+      ]
+    },
+    {
+      "label": "overload:mx_worley_noise_vec2:mx_worley_noise_vec2_0",
+      "module": "MaterialXNoise",
+      "mode": "overload",
+      "fn": "mx_worley_noise_vec2",
+      "args": [
+        {
+          "node": "vec2",
+          "args": [
+            0.173,
+            0.346
+          ]
+        },
+        {
+          "node": "float",
+          "args": [
+            0.398
+          ]
+        },
+        {
+          "node": "int",
+          "args": [
+            4
+          ]
+        }
+      ]
+    },
+    {
+      "label": "overload:mx_worley_noise_vec2:mx_worley_noise_vec2_1",
+      "module": "MaterialXNoise",
+      "mode": "overload",
+      "fn": "mx_worley_noise_vec2",
+      "args": [
+        {
+          "node": "vec3",
+          "args": [
+            0.173,
+            0.346,
+            0.5189999999999999
+          ]
+        },
+        {
+          "node": "float",
+          "args": [
+            0.398
+          ]
+        },
+        {
+          "node": "int",
+          "args": [
+            4
+          ]
+        }
+      ]
+    },
+    {
+      "label": "body:mx_worley_noise_vec3_1",
+      "module": "MaterialXNoise",
+      "mode": "body",
+      "kind": "Fn",
+      "fn": "mx_worley_noise_vec3_1",
+      "args": [
+        {
+          "node": "vec3",
+          "args": [
+            0.173,
+            0.346,
+            0.5189999999999999
+          ]
+        },
+        {
+          "node": "float",
+          "args": [
+            0.398
+          ]
+        },
+        {
+          "node": "int",
+          "args": [
+            4
+          ]
+        }
+      ]
+    },
+    {
+      "label": "overload:mx_worley_noise_vec3:mx_worley_noise_vec3_0",
+      "module": "MaterialXNoise",
+      "mode": "overload",
+      "fn": "mx_worley_noise_vec3",
+      "args": [
+        {
+          "node": "vec2",
+          "args": [
+            0.173,
+            0.346
+          ]
+        },
+        {
+          "node": "float",
+          "args": [
+            0.398
+          ]
+        },
+        {
+          "node": "int",
+          "args": [
+            4
+          ]
+        }
+      ]
+    },
+    {
+      "label": "overload:mx_worley_noise_vec3:mx_worley_noise_vec3_1",
+      "module": "MaterialXNoise",
+      "mode": "overload",
+      "fn": "mx_worley_noise_vec3",
+      "args": [
+        {
+          "node": "vec3",
+          "args": [
+            0.173,
+            0.346,
+            0.5189999999999999
+          ]
+        },
+        {
+          "node": "float",
+          "args": [
+            0.398
+          ]
+        },
+        {
+          "node": "int",
+          "args": [
+            4
+          ]
+        }
+      ]
+    },
+    {
+      "label": "body:mx_worley_noise_vec3_style_0",
+      "module": "MaterialXNoise",
+      "mode": "body",
+      "kind": "Fn",
+      "fn": "mx_worley_noise_vec3_style_0",
+      "args": [
+        {
+          "node": "vec2",
+          "args": [
+            0.173,
+            0.346
+          ]
+        },
+        {
+          "node": "float",
+          "args": [
+            0.398
+          ]
+        },
+        {
+          "node": "int",
+          "args": [
+            4
+          ]
+        },
+        {
+          "node": "int",
+          "args": [
+            5
+          ]
+        }
+      ]
+    },
+    {
+      "label": "body:mx_worley_noise_vec3_style_1",
+      "module": "MaterialXNoise",
+      "mode": "body",
+      "kind": "Fn",
+      "fn": "mx_worley_noise_vec3_style_1",
+      "args": [
+        {
+          "node": "vec3",
+          "args": [
+            0.173,
+            0.346,
+            0.5189999999999999
+          ]
+        },
+        {
+          "node": "float",
+          "args": [
+            0.398
+          ]
+        },
+        {
+          "node": "int",
+          "args": [
+            4
+          ]
+        },
+        {
+          "node": "int",
+          "args": [
+            5
+          ]
+        }
+      ]
+    },
+    {
+      "label": "overload:mx_worley_noise_vec3_style:mx_worley_noise_vec3_style_0",
+      "module": "MaterialXNoise",
+      "mode": "overload",
+      "fn": "mx_worley_noise_vec3_style",
+      "args": [
+        {
+          "node": "vec2",
+          "args": [
+            0.173,
+            0.346
+          ]
+        },
+        {
+          "node": "float",
+          "args": [
+            0.398
+          ]
+        },
+        {
+          "node": "int",
+          "args": [
+            4
+          ]
+        },
+        {
+          "node": "int",
+          "args": [
+            5
+          ]
+        }
+      ]
+    },
+    {
+      "label": "overload:mx_worley_noise_vec3_style:mx_worley_noise_vec3_style_1",
+      "module": "MaterialXNoise",
+      "mode": "overload",
+      "fn": "mx_worley_noise_vec3_style",
+      "args": [
+        {
+          "node": "vec3",
+          "args": [
+            0.173,
+            0.346,
+            0.5189999999999999
+          ]
+        },
+        {
+          "node": "float",
+          "args": [
+            0.398
+          ]
+        },
+        {
+          "node": "int",
+          "args": [
+            4
+          ]
+        },
+        {
+          "node": "int",
+          "args": [
+            5
+          ]
+        }
+      ]
+    },
+    {
+      "label": "body:mx_unifiednoise2d",
+      "module": "MaterialXNoise",
+      "mode": "body",
+      "kind": "Fn",
+      "fn": "mx_unifiednoise2d",
+      "args": [
+        {
+          "node": "int",
+          "args": [
+            2
+          ]
+        },
+        {
+          "node": "vec2",
+          "args": [
+            0.19199999999999998,
+            0.365
+          ]
+        },
+        {
+          "node": "vec2",
+          "args": [
+            0.211,
+            0.38399999999999995
+          ]
+        },
+        {
+          "node": "vec2",
+          "args": [
+            0.22999999999999998,
+            0.40299999999999997
+          ]
+        },
+        {
+          "node": "float",
+          "args": [
+            0.479
+          ]
+        },
+        {
+          "node": "float",
+          "args": [
+            0.506
+          ]
+        },
+        {
+          "node": "float",
+          "args": [
+            0.533
+          ]
+        },
+        {
+          "node": "float",
+          "args": [
+            0.56
+          ]
+        },
+        {
+          "node": "int",
+          "args": [
+            10
+          ]
+        },
+        {
+          "node": "float",
+          "args": [
+            0.614
+          ]
+        },
+        {
+          "node": "float",
+          "args": [
+            0.641
+          ]
+        },
+        {
+          "node": "int",
+          "args": [
+            13
+          ]
+        }
+      ]
+    },
+    {
+      "label": "body:mx_unifiednoise3d",
+      "module": "MaterialXNoise",
+      "mode": "body",
+      "kind": "Fn",
+      "fn": "mx_unifiednoise3d",
+      "args": [
+        {
+          "node": "int",
+          "args": [
+            2
+          ]
+        },
+        {
+          "node": "vec3",
+          "args": [
+            0.19199999999999998,
+            0.365,
+            0.5379999999999999
+          ]
+        },
+        {
+          "node": "vec3",
+          "args": [
+            0.211,
+            0.38399999999999995,
+            0.5569999999999999
+          ]
+        },
+        {
+          "node": "vec3",
+          "args": [
+            0.22999999999999998,
+            0.40299999999999997,
+            0.5759999999999998
+          ]
+        },
+        {
+          "node": "float",
+          "args": [
+            0.479
+          ]
+        },
+        {
+          "node": "float",
+          "args": [
+            0.506
+          ]
+        },
+        {
+          "node": "float",
+          "args": [
+            0.533
+          ]
+        },
+        {
+          "node": "float",
+          "args": [
+            0.56
+          ]
+        },
+        {
+          "node": "int",
+          "args": [
+            10
+          ]
+        },
+        {
+          "node": "float",
+          "args": [
+            0.614
+          ]
+        },
+        {
+          "node": "float",
+          "args": [
+            0.641
+          ]
+        },
+        {
+          "node": "int",
+          "args": [
+            13
+          ]
+        }
+      ]
+    },
+    {
+      "label": "metadata",
+      "module": "MaterialXNodes",
+      "mode": "metadata"
+    },
+    {
+      "label": "body:mx_aastep",
+      "module": "MaterialXNodes",
+      "mode": "body",
+      "kind": "function",
+      "fn": "mx_aastep",
+      "args": [
+        {
+          "node": "float",
+          "args": [
+            0.371
+          ]
+        },
+        {
+          "node": "float",
+          "args": [
+            0.398
+          ]
+        }
+      ]
+    },
+    {
+      "label": "body:_ramp",
+      "module": "MaterialXNodes",
+      "mode": "body",
+      "kind": "function",
+      "fn": "_ramp",
+      "args": [
+        {
+          "node": "float",
+          "args": [
+            0.371
+          ]
+        },
+        {
+          "node": "float",
+          "args": [
+            0.398
+          ]
+        },
+        {
+          "node": "vec2",
+          "args": [
+            0.211,
+            0.38399999999999995
+          ]
+        },
+        "x"
+      ]
+    },
+    {
+      "label": "body:mx_ramplr",
+      "module": "MaterialXNodes",
+      "mode": "body",
+      "kind": "function",
+      "fn": "mx_ramplr",
+      "args": [
+        {
+          "node": "float",
+          "args": [
+            0.371
+          ]
+        },
+        {
+          "node": "float",
+          "args": [
+            0.398
+          ]
+        },
+        {
+          "node": "vec2",
+          "args": [
+            0.211,
+            0.38399999999999995
+          ]
+        }
+      ]
+    },
+    {
+      "label": "defaults:mx_ramplr",
+      "module": "MaterialXNodes",
+      "mode": "body",
+      "kind": "function",
+      "fn": "mx_ramplr",
+      "args": [
+        {
+          "node": "float",
+          "args": [
+            0.371
+          ]
+        },
+        {
+          "node": "float",
+          "args": [
+            0.398
+          ]
+        }
+      ]
+    },
+    {
+      "label": "body:mx_ramptb",
+      "module": "MaterialXNodes",
+      "mode": "body",
+      "kind": "function",
+      "fn": "mx_ramptb",
+      "args": [
+        {
+          "node": "float",
+          "args": [
+            0.371
+          ]
+        },
+        {
+          "node": "float",
+          "args": [
+            0.398
+          ]
+        },
+        {
+          "node": "vec2",
+          "args": [
+            0.211,
+            0.38399999999999995
+          ]
+        }
+      ]
+    },
+    {
+      "label": "defaults:mx_ramptb",
+      "module": "MaterialXNodes",
+      "mode": "body",
+      "kind": "function",
+      "fn": "mx_ramptb",
+      "args": [
+        {
+          "node": "float",
+          "args": [
+            0.371
+          ]
+        },
+        {
+          "node": "float",
+          "args": [
+            0.398
+          ]
+        }
+      ]
+    },
+    {
+      "label": "body:mx_ramp4",
+      "module": "MaterialXNodes",
+      "mode": "body",
+      "kind": "function",
+      "fn": "mx_ramp4",
+      "args": [
+        {
+          "node": "float",
+          "args": [
+            0.371
+          ]
+        },
+        {
+          "node": "float",
+          "args": [
+            0.398
+          ]
+        },
+        {
+          "node": "float",
+          "args": [
+            0.425
+          ]
+        },
+        {
+          "node": "float",
+          "args": [
+            0.452
+          ]
+        },
+        {
+          "node": "vec2",
+          "args": [
+            0.249,
+            0.422
+          ]
+        }
+      ]
+    },
+    {
+      "label": "defaults:mx_ramp4",
+      "module": "MaterialXNodes",
+      "mode": "body",
+      "kind": "function",
+      "fn": "mx_ramp4",
+      "args": [
+        {
+          "node": "float",
+          "args": [
+            0.371
+          ]
+        },
+        {
+          "node": "float",
+          "args": [
+            0.398
+          ]
+        },
+        {
+          "node": "float",
+          "args": [
+            0.425
+          ]
+        },
+        {
+          "node": "float",
+          "args": [
+            0.452
+          ]
+        }
+      ]
+    },
+    {
+      "label": "body:_split",
+      "module": "MaterialXNodes",
+      "mode": "body",
+      "kind": "function",
+      "fn": "_split",
+      "args": [
+        {
+          "node": "float",
+          "args": [
+            0.371
+          ]
+        },
+        {
+          "node": "float",
+          "args": [
+            0.398
+          ]
+        },
+        {
+          "node": "float",
+          "args": [
+            0.425
+          ]
+        },
+        {
+          "node": "vec2",
+          "args": [
+            0.22999999999999998,
+            0.40299999999999997
+          ]
+        },
+        "x"
+      ]
+    },
+    {
+      "label": "body:mx_splitlr",
+      "module": "MaterialXNodes",
+      "mode": "body",
+      "kind": "function",
+      "fn": "mx_splitlr",
+      "args": [
+        {
+          "node": "float",
+          "args": [
+            0.371
+          ]
+        },
+        {
+          "node": "float",
+          "args": [
+            0.398
+          ]
+        },
+        {
+          "node": "float",
+          "args": [
+            0.425
+          ]
+        },
+        {
+          "node": "vec2",
+          "args": [
+            0.22999999999999998,
+            0.40299999999999997
+          ]
+        }
+      ]
+    },
+    {
+      "label": "defaults:mx_splitlr",
+      "module": "MaterialXNodes",
+      "mode": "body",
+      "kind": "function",
+      "fn": "mx_splitlr",
+      "args": [
+        {
+          "node": "float",
+          "args": [
+            0.371
+          ]
+        },
+        {
+          "node": "float",
+          "args": [
+            0.398
+          ]
+        },
+        {
+          "node": "float",
+          "args": [
+            0.425
+          ]
+        }
+      ]
+    },
+    {
+      "label": "body:mx_splittb",
+      "module": "MaterialXNodes",
+      "mode": "body",
+      "kind": "function",
+      "fn": "mx_splittb",
+      "args": [
+        {
+          "node": "float",
+          "args": [
+            0.371
+          ]
+        },
+        {
+          "node": "float",
+          "args": [
+            0.398
+          ]
+        },
+        {
+          "node": "float",
+          "args": [
+            0.425
+          ]
+        },
+        {
+          "node": "vec2",
+          "args": [
+            0.22999999999999998,
+            0.40299999999999997
+          ]
+        }
+      ]
+    },
+    {
+      "label": "defaults:mx_splittb",
+      "module": "MaterialXNodes",
+      "mode": "body",
+      "kind": "function",
+      "fn": "mx_splittb",
+      "args": [
+        {
+          "node": "float",
+          "args": [
+            0.371
+          ]
+        },
+        {
+          "node": "float",
+          "args": [
+            0.398
+          ]
+        },
+        {
+          "node": "float",
+          "args": [
+            0.425
+          ]
+        }
+      ]
+    },
+    {
+      "label": "body:mx_transform_uv",
+      "module": "MaterialXNodes",
+      "mode": "body",
+      "kind": "function",
+      "fn": "mx_transform_uv",
+      "args": [
+        {
+          "node": "float",
+          "args": [
+            0.371
+          ]
+        },
+        {
+          "node": "float",
+          "args": [
+            0.398
+          ]
+        },
+        {
+          "node": "vec2",
+          "args": [
+            0.211,
+            0.38399999999999995
+          ]
+        }
+      ]
+    },
+    {
+      "label": "defaults:mx_transform_uv",
+      "module": "MaterialXNodes",
+      "mode": "body",
+      "kind": "function",
+      "fn": "mx_transform_uv",
+      "args": []
+    },
+    {
+      "label": "body:mx_safepower",
+      "module": "MaterialXNodes",
+      "mode": "body",
+      "kind": "function",
+      "fn": "mx_safepower",
+      "args": [
+        {
+          "node": "float",
+          "args": [
+            0.371
+          ]
+        },
+        {
+          "node": "float",
+          "args": [
+            0.398
+          ]
+        }
+      ]
+    },
+    {
+      "label": "defaults:mx_safepower",
+      "module": "MaterialXNodes",
+      "mode": "body",
+      "kind": "function",
+      "fn": "mx_safepower",
+      "args": [
+        {
+          "node": "float",
+          "args": [
+            0.371
+          ]
+        }
+      ]
+    },
+    {
+      "label": "body:mx_contrast",
+      "module": "MaterialXNodes",
+      "mode": "body",
+      "kind": "function",
+      "fn": "mx_contrast",
+      "args": [
+        {
+          "node": "float",
+          "args": [
+            0.371
+          ]
+        },
+        {
+          "node": "float",
+          "args": [
+            0.398
+          ]
+        },
+        {
+          "node": "vec2",
+          "args": [
+            0.211,
+            0.38399999999999995
+          ]
+        }
+      ]
+    },
+    {
+      "label": "defaults:mx_contrast",
+      "module": "MaterialXNodes",
+      "mode": "body",
+      "kind": "function",
+      "fn": "mx_contrast",
+      "args": [
+        {
+          "node": "float",
+          "args": [
+            0.371
+          ]
+        }
+      ]
+    },
+    {
+      "label": "body:mx_noise_float",
+      "module": "MaterialXNodes",
+      "mode": "body",
+      "kind": "function",
+      "fn": "mx_noise_float",
+      "args": [
+        {
+          "node": "vec2",
+          "args": [
+            0.173,
+            0.346
+          ]
+        },
+        {
+          "node": "float",
+          "args": [
+            0.398
+          ]
+        },
+        {
+          "node": "vec2",
+          "args": [
+            0.211,
+            0.38399999999999995
+          ]
+        }
+      ]
+    },
+    {
+      "label": "defaults:mx_noise_float",
+      "module": "MaterialXNodes",
+      "mode": "body",
+      "kind": "function",
+      "fn": "mx_noise_float",
+      "args": []
+    },
+    {
+      "label": "body:mx_noise_vec3",
+      "module": "MaterialXNodes",
+      "mode": "body",
+      "kind": "function",
+      "fn": "mx_noise_vec3",
+      "args": [
+        {
+          "node": "vec2",
+          "args": [
+            0.173,
+            0.346
+          ]
+        },
+        {
+          "node": "float",
+          "args": [
+            0.398
+          ]
+        },
+        {
+          "node": "vec2",
+          "args": [
+            0.211,
+            0.38399999999999995
+          ]
+        }
+      ]
+    },
+    {
+      "label": "defaults:mx_noise_vec3",
+      "module": "MaterialXNodes",
+      "mode": "body",
+      "kind": "function",
+      "fn": "mx_noise_vec3",
+      "args": []
+    },
+    {
+      "label": "body:mx_perlin_noise_vec4_0",
+      "module": "MaterialXNodes",
+      "mode": "body",
+      "kind": "Fn",
+      "fn": "mx_perlin_noise_vec4_0",
+      "args": [
+        {
+          "node": "vec2",
+          "args": [
+            0.173,
+            0.346
+          ]
+        }
+      ]
+    },
+    {
+      "label": "body:mx_perlin_noise_vec4_1",
+      "module": "MaterialXNodes",
+      "mode": "body",
+      "kind": "Fn",
+      "fn": "mx_perlin_noise_vec4_1",
+      "args": [
+        {
+          "node": "vec3",
+          "args": [
+            0.173,
+            0.346,
+            0.5189999999999999
+          ]
+        }
+      ]
+    },
+    {
+      "label": "overload:mx_perlin_noise_vec4:mx_perlin_noise_vec4_0",
+      "module": "MaterialXNodes",
+      "mode": "overload",
+      "fn": "mx_perlin_noise_vec4",
+      "args": [
+        {
+          "node": "vec2",
+          "args": [
+            0.173,
+            0.346
+          ]
+        }
+      ]
+    },
+    {
+      "label": "overload:mx_perlin_noise_vec4:mx_perlin_noise_vec4_1",
+      "module": "MaterialXNodes",
+      "mode": "overload",
+      "fn": "mx_perlin_noise_vec4",
+      "args": [
+        {
+          "node": "vec3",
+          "args": [
+            0.173,
+            0.346,
+            0.5189999999999999
+          ]
+        }
+      ]
+    },
+    {
+      "label": "body:mx_noise_vec4",
+      "module": "MaterialXNodes",
+      "mode": "body",
+      "kind": "function",
+      "fn": "mx_noise_vec4",
+      "args": [
+        {
+          "node": "vec2",
+          "args": [
+            0.173,
+            0.346
+          ]
+        },
+        {
+          "node": "float",
+          "args": [
+            0.398
+          ]
+        },
+        {
+          "node": "vec2",
+          "args": [
+            0.211,
+            0.38399999999999995
+          ]
+        }
+      ]
+    },
+    {
+      "label": "defaults:mx_noise_vec4",
+      "module": "MaterialXNodes",
+      "mode": "body",
+      "kind": "function",
+      "fn": "mx_noise_vec4",
+      "args": []
+    },
+    {
+      "label": "body:mx_smoothstep",
+      "module": "MaterialXNodes",
+      "mode": "body",
+      "kind": "function",
+      "fn": "mx_smoothstep",
+      "args": [
+        {
+          "node": "float",
+          "args": [
+            0.371
+          ]
+        },
+        {
+          "node": "float",
+          "args": [
+            0.398
+          ]
+        },
+        {
+          "node": "float",
+          "args": [
+            0.425
+          ]
+        }
+      ]
+    },
+    {
+      "label": "defaults:mx_smoothstep",
+      "module": "MaterialXNodes",
+      "mode": "body",
+      "kind": "function",
+      "fn": "mx_smoothstep",
+      "args": [
+        {
+          "node": "float",
+          "args": [
+            0.371
+          ]
+        }
+      ]
+    },
+    {
+      "label": "body:mx_cell_noise_vec3",
+      "module": "MaterialXNodes",
+      "mode": "body",
+      "kind": "function",
+      "fn": "mx_cell_noise_vec3",
+      "args": [
+        {
+          "node": "vec2",
+          "args": [
+            0.173,
+            0.346
+          ]
+        }
+      ]
+    },
+    {
+      "label": "defaults:mx_cell_noise_vec3",
+      "module": "MaterialXNodes",
+      "mode": "body",
+      "kind": "function",
+      "fn": "mx_cell_noise_vec3",
+      "args": []
+    },
+    {
+      "label": "body:mx_worley_noise_float_2d",
+      "module": "MaterialXNodes",
+      "mode": "body",
+      "kind": "function",
+      "fn": "mx_worley_noise_float_2d",
+      "args": [
+        {
+          "node": "vec2",
+          "args": [
+            0.173,
+            0.346
+          ]
+        },
+        {
+          "node": "float",
+          "args": [
+            0.398
+          ]
+        },
+        {
+          "node": "float",
+          "args": [
+            0.425
+          ]
+        }
+      ]
+    },
+    {
+      "label": "defaults:mx_worley_noise_float_2d",
+      "module": "MaterialXNodes",
+      "mode": "body",
+      "kind": "function",
+      "fn": "mx_worley_noise_float_2d",
+      "args": []
+    },
+    {
+      "label": "body:mx_worley_noise_float_3d",
+      "module": "MaterialXNodes",
+      "mode": "body",
+      "kind": "function",
+      "fn": "mx_worley_noise_float_3d",
+      "args": [
+        {
+          "node": "vec2",
+          "args": [
+            0.173,
+            0.346
+          ]
+        },
+        {
+          "node": "float",
+          "args": [
+            0.398
+          ]
+        },
+        {
+          "node": "float",
+          "args": [
+            0.425
+          ]
+        }
+      ]
+    },
+    {
+      "label": "defaults:mx_worley_noise_float_3d",
+      "module": "MaterialXNodes",
+      "mode": "body",
+      "kind": "function",
+      "fn": "mx_worley_noise_float_3d",
+      "args": []
+    },
+    {
+      "label": "body:mx_unifiednoise2d",
+      "module": "MaterialXNodes",
+      "mode": "body",
+      "kind": "function",
+      "fn": "mx_unifiednoise2d",
+      "args": [
+        {
+          "node": "float",
+          "args": [
+            0.371
+          ]
+        },
+        {
+          "node": "vec2",
+          "args": [
+            0.19199999999999998,
+            0.365
+          ]
+        },
+        {
+          "node": "float",
+          "args": [
+            0.425
+          ]
+        },
+        {
+          "node": "vec2",
+          "args": [
+            0.22999999999999998,
+            0.40299999999999997
+          ]
+        },
+        {
+          "node": "float",
+          "args": [
+            0.479
+          ]
+        },
+        {
+          "node": "float",
+          "args": [
+            0.506
+          ]
+        },
+        {
+          "node": "float",
+          "args": [
+            0.533
+          ]
+        },
+        {
+          "node": "float",
+          "args": [
+            0.56
+          ]
+        },
+        {
+          "node": "float",
+          "args": [
+            0.587
+          ]
+        },
+        {
+          "node": "float",
+          "args": [
+            0.614
+          ]
+        },
+        {
+          "node": "float",
+          "args": [
+            0.641
+          ]
+        },
+        {
+          "node": "float",
+          "args": [
+            0.6679999999999999
+          ]
+        }
+      ]
+    },
+    {
+      "label": "defaults:mx_unifiednoise2d",
+      "module": "MaterialXNodes",
+      "mode": "body",
+      "kind": "function",
+      "fn": "mx_unifiednoise2d",
+      "args": [
+        {
+          "node": "float",
+          "args": [
+            0.371
+          ]
+        }
+      ]
+    },
+    {
+      "label": "body:mx_unifiednoise3d",
+      "module": "MaterialXNodes",
+      "mode": "body",
+      "kind": "function",
+      "fn": "mx_unifiednoise3d",
+      "args": [
+        {
+          "node": "float",
+          "args": [
+            0.371
+          ]
+        },
+        {
+          "node": "vec2",
+          "args": [
+            0.19199999999999998,
+            0.365
+          ]
+        },
+        {
+          "node": "float",
+          "args": [
+            0.425
+          ]
+        },
+        {
+          "node": "vec2",
+          "args": [
+            0.22999999999999998,
+            0.40299999999999997
+          ]
+        },
+        {
+          "node": "float",
+          "args": [
+            0.479
+          ]
+        },
+        {
+          "node": "float",
+          "args": [
+            0.506
+          ]
+        },
+        {
+          "node": "float",
+          "args": [
+            0.533
+          ]
+        },
+        {
+          "node": "float",
+          "args": [
+            0.56
+          ]
+        },
+        {
+          "node": "float",
+          "args": [
+            0.587
+          ]
+        },
+        {
+          "node": "float",
+          "args": [
+            0.614
+          ]
+        },
+        {
+          "node": "float",
+          "args": [
+            0.641
+          ]
+        },
+        {
+          "node": "float",
+          "args": [
+            0.6679999999999999
+          ]
+        }
+      ]
+    },
+    {
+      "label": "defaults:mx_unifiednoise3d",
+      "module": "MaterialXNodes",
+      "mode": "body",
+      "kind": "function",
+      "fn": "mx_unifiednoise3d",
+      "args": [
+        {
+          "node": "float",
+          "args": [
+            0.371
+          ]
+        }
+      ]
+    },
+    {
+      "label": "body:mx_worley_noise_float",
+      "module": "MaterialXNodes",
+      "mode": "body",
+      "kind": "function",
+      "fn": "mx_worley_noise_float",
+      "args": [
+        {
+          "node": "vec2",
+          "args": [
+            0.173,
+            0.346
+          ]
+        },
+        {
+          "node": "float",
+          "args": [
+            0.398
+          ]
+        },
+        {
+          "node": "float",
+          "args": [
+            0.425
+          ]
+        }
+      ]
+    },
+    {
+      "label": "defaults:mx_worley_noise_float",
+      "module": "MaterialXNodes",
+      "mode": "body",
+      "kind": "function",
+      "fn": "mx_worley_noise_float",
+      "args": []
+    },
+    {
+      "label": "body:mx_worley_noise_vec2",
+      "module": "MaterialXNodes",
+      "mode": "body",
+      "kind": "function",
+      "fn": "mx_worley_noise_vec2",
+      "args": [
+        {
+          "node": "vec2",
+          "args": [
+            0.173,
+            0.346
+          ]
+        },
+        {
+          "node": "float",
+          "args": [
+            0.398
+          ]
+        }
+      ]
+    },
+    {
+      "label": "defaults:mx_worley_noise_vec2",
+      "module": "MaterialXNodes",
+      "mode": "body",
+      "kind": "function",
+      "fn": "mx_worley_noise_vec2",
+      "args": []
+    },
+    {
+      "label": "body:mx_worley_noise_vec3",
+      "module": "MaterialXNodes",
+      "mode": "body",
+      "kind": "function",
+      "fn": "mx_worley_noise_vec3",
+      "args": [
+        {
+          "node": "vec2",
+          "args": [
+            0.173,
+            0.346
+          ]
+        },
+        {
+          "node": "float",
+          "args": [
+            0.398
+          ]
+        },
+        {
+          "node": "float",
+          "args": [
+            0.425
+          ]
+        }
+      ]
+    },
+    {
+      "label": "defaults:mx_worley_noise_vec3",
+      "module": "MaterialXNodes",
+      "mode": "body",
+      "kind": "function",
+      "fn": "mx_worley_noise_vec3",
+      "args": []
+    },
+    {
+      "label": "body:mx_worley_noise_vec3_style",
+      "module": "MaterialXNodes",
+      "mode": "body",
+      "kind": "function",
+      "fn": "mx_worley_noise_vec3_style",
+      "args": [
+        {
+          "node": "vec2",
+          "args": [
+            0.173,
+            0.346
+          ]
+        },
+        {
+          "node": "float",
+          "args": [
+            0.398
+          ]
+        },
+        {
+          "node": "float",
+          "args": [
+            0.425
+          ]
+        },
+        {
+          "node": "float",
+          "args": [
+            0.452
+          ]
+        }
+      ]
+    },
+    {
+      "label": "defaults:mx_worley_noise_vec3_style",
+      "module": "MaterialXNodes",
+      "mode": "body",
+      "kind": "function",
+      "fn": "mx_worley_noise_vec3_style",
+      "args": []
+    },
+    {
+      "label": "body:mx_cell_noise_float",
+      "module": "MaterialXNodes",
+      "mode": "body",
+      "kind": "function",
+      "fn": "mx_cell_noise_float",
+      "args": [
+        {
+          "node": "vec2",
+          "args": [
+            0.173,
+            0.346
+          ]
+        }
+      ]
+    },
+    {
+      "label": "defaults:mx_cell_noise_float",
+      "module": "MaterialXNodes",
+      "mode": "body",
+      "kind": "function",
+      "fn": "mx_cell_noise_float",
+      "args": []
+    },
+    {
+      "label": "body:mx_fractal_noise_float_2d",
+      "module": "MaterialXNodes",
+      "mode": "body",
+      "kind": "function",
+      "fn": "mx_fractal_noise_float_2d",
+      "args": [
+        {
+          "node": "vec2",
+          "args": [
+            0.173,
+            0.346
+          ]
+        },
+        {
+          "node": "float",
+          "args": [
+            0.398
+          ]
+        },
+        {
+          "node": "float",
+          "args": [
+            0.425
+          ]
+        },
+        {
+          "node": "float",
+          "args": [
+            0.452
+          ]
+        },
+        {
+          "node": "float",
+          "args": [
+            0.479
+          ]
+        }
+      ]
+    },
+    {
+      "label": "defaults:mx_fractal_noise_float_2d",
+      "module": "MaterialXNodes",
+      "mode": "body",
+      "kind": "function",
+      "fn": "mx_fractal_noise_float_2d",
+      "args": []
+    },
+    {
+      "label": "body:mx_fractal_noise_float",
+      "module": "MaterialXNodes",
+      "mode": "body",
+      "kind": "function",
+      "fn": "mx_fractal_noise_float",
+      "args": [
+        {
+          "node": "vec3",
+          "args": [
+            0.173,
+            0.346,
+            0.5189999999999999
+          ]
+        },
+        {
+          "node": "float",
+          "args": [
+            0.398
+          ]
+        },
+        {
+          "node": "float",
+          "args": [
+            0.425
+          ]
+        },
+        {
+          "node": "float",
+          "args": [
+            0.452
+          ]
+        },
+        {
+          "node": "float",
+          "args": [
+            0.479
+          ]
+        }
+      ]
+    },
+    {
+      "label": "defaults:mx_fractal_noise_float",
+      "module": "MaterialXNodes",
+      "mode": "body",
+      "kind": "function",
+      "fn": "mx_fractal_noise_float",
+      "args": []
+    },
+    {
+      "label": "body:mx_fractal_noise_vec2",
+      "module": "MaterialXNodes",
+      "mode": "body",
+      "kind": "function",
+      "fn": "mx_fractal_noise_vec2",
+      "args": [
+        {
+          "node": "vec3",
+          "args": [
+            0.173,
+            0.346,
+            0.5189999999999999
+          ]
+        },
+        {
+          "node": "float",
+          "args": [
+            0.398
+          ]
+        },
+        {
+          "node": "float",
+          "args": [
+            0.425
+          ]
+        },
+        {
+          "node": "float",
+          "args": [
+            0.452
+          ]
+        },
+        {
+          "node": "float",
+          "args": [
+            0.479
+          ]
+        }
+      ]
+    },
+    {
+      "label": "defaults:mx_fractal_noise_vec2",
+      "module": "MaterialXNodes",
+      "mode": "body",
+      "kind": "function",
+      "fn": "mx_fractal_noise_vec2",
+      "args": []
+    },
+    {
+      "label": "body:mx_fractal_noise_vec3",
+      "module": "MaterialXNodes",
+      "mode": "body",
+      "kind": "function",
+      "fn": "mx_fractal_noise_vec3",
+      "args": [
+        {
+          "node": "vec3",
+          "args": [
+            0.173,
+            0.346,
+            0.5189999999999999
+          ]
+        },
+        {
+          "node": "float",
+          "args": [
+            0.398
+          ]
+        },
+        {
+          "node": "float",
+          "args": [
+            0.425
+          ]
+        },
+        {
+          "node": "float",
+          "args": [
+            0.452
+          ]
+        },
+        {
+          "node": "float",
+          "args": [
+            0.479
+          ]
+        }
+      ]
+    },
+    {
+      "label": "defaults:mx_fractal_noise_vec3",
+      "module": "MaterialXNodes",
+      "mode": "body",
+      "kind": "function",
+      "fn": "mx_fractal_noise_vec3",
+      "args": []
+    },
+    {
+      "label": "body:mx_fractal_noise_vec4",
+      "module": "MaterialXNodes",
+      "mode": "body",
+      "kind": "function",
+      "fn": "mx_fractal_noise_vec4",
+      "args": [
+        {
+          "node": "vec3",
+          "args": [
+            0.173,
+            0.346,
+            0.5189999999999999
+          ]
+        },
+        {
+          "node": "float",
+          "args": [
+            0.398
+          ]
+        },
+        {
+          "node": "float",
+          "args": [
+            0.425
+          ]
+        },
+        {
+          "node": "float",
+          "args": [
+            0.452
+          ]
+        },
+        {
+          "node": "float",
+          "args": [
+            0.479
+          ]
+        }
+      ]
+    },
+    {
+      "label": "defaults:mx_fractal_noise_vec4",
+      "module": "MaterialXNodes",
+      "mode": "body",
+      "kind": "function",
+      "fn": "mx_fractal_noise_vec4",
+      "args": []
+    },
+    {
+      "label": "body:mx_add",
+      "module": "MaterialXNodes",
+      "mode": "body",
+      "kind": "function",
+      "fn": "mx_add",
+      "args": [
+        {
+          "node": "float",
+          "args": [
+            0.371
+          ]
+        },
+        {
+          "node": "float",
+          "args": [
+            0.398
+          ]
+        }
+      ]
+    },
+    {
+      "label": "defaults:mx_add",
+      "module": "MaterialXNodes",
+      "mode": "body",
+      "kind": "function",
+      "fn": "mx_add",
+      "args": [
+        {
+          "node": "float",
+          "args": [
+            0.371
+          ]
+        }
+      ]
+    },
+    {
+      "label": "body:mx_subtract",
+      "module": "MaterialXNodes",
+      "mode": "body",
+      "kind": "function",
+      "fn": "mx_subtract",
+      "args": [
+        {
+          "node": "float",
+          "args": [
+            0.371
+          ]
+        },
+        {
+          "node": "float",
+          "args": [
+            0.398
+          ]
+        }
+      ]
+    },
+    {
+      "label": "defaults:mx_subtract",
+      "module": "MaterialXNodes",
+      "mode": "body",
+      "kind": "function",
+      "fn": "mx_subtract",
+      "args": [
+        {
+          "node": "float",
+          "args": [
+            0.371
+          ]
+        }
+      ]
+    },
+    {
+      "label": "body:mx_multiply",
+      "module": "MaterialXNodes",
+      "mode": "body",
+      "kind": "function",
+      "fn": "mx_multiply",
+      "args": [
+        {
+          "node": "float",
+          "args": [
+            0.371
+          ]
+        },
+        {
+          "node": "float",
+          "args": [
+            0.398
+          ]
+        }
+      ]
+    },
+    {
+      "label": "defaults:mx_multiply",
+      "module": "MaterialXNodes",
+      "mode": "body",
+      "kind": "function",
+      "fn": "mx_multiply",
+      "args": [
+        {
+          "node": "float",
+          "args": [
+            0.371
+          ]
+        }
+      ]
+    },
+    {
+      "label": "body:mx_divide",
+      "module": "MaterialXNodes",
+      "mode": "body",
+      "kind": "function",
+      "fn": "mx_divide",
+      "args": [
+        {
+          "node": "float",
+          "args": [
+            0.371
+          ]
+        },
+        {
+          "node": "float",
+          "args": [
+            0.398
+          ]
+        }
+      ]
+    },
+    {
+      "label": "defaults:mx_divide",
+      "module": "MaterialXNodes",
+      "mode": "body",
+      "kind": "function",
+      "fn": "mx_divide",
+      "args": [
+        {
+          "node": "float",
+          "args": [
+            0.371
+          ]
+        }
+      ]
+    },
+    {
+      "label": "body:mx_modulo",
+      "module": "MaterialXNodes",
+      "mode": "body",
+      "kind": "function",
+      "fn": "mx_modulo",
+      "args": [
+        {
+          "node": "float",
+          "args": [
+            0.371
+          ]
+        },
+        {
+          "node": "float",
+          "args": [
+            0.398
+          ]
+        }
+      ]
+    },
+    {
+      "label": "defaults:mx_modulo",
+      "module": "MaterialXNodes",
+      "mode": "body",
+      "kind": "function",
+      "fn": "mx_modulo",
+      "args": [
+        {
+          "node": "float",
+          "args": [
+            0.371
+          ]
+        }
+      ]
+    },
+    {
+      "label": "body:mx_power",
+      "module": "MaterialXNodes",
+      "mode": "body",
+      "kind": "function",
+      "fn": "mx_power",
+      "args": [
+        {
+          "node": "float",
+          "args": [
+            0.371
+          ]
+        },
+        {
+          "node": "float",
+          "args": [
+            0.398
+          ]
+        }
+      ]
+    },
+    {
+      "label": "defaults:mx_power",
+      "module": "MaterialXNodes",
+      "mode": "body",
+      "kind": "function",
+      "fn": "mx_power",
+      "args": [
+        {
+          "node": "float",
+          "args": [
+            0.371
+          ]
+        }
+      ]
+    },
+    {
+      "label": "body:mx_atan2",
+      "module": "MaterialXNodes",
+      "mode": "body",
+      "kind": "function",
+      "fn": "mx_atan2",
+      "args": [
+        {
+          "node": "float",
+          "args": [
+            0.371
+          ]
+        },
+        {
+          "node": "float",
+          "args": [
+            0.398
+          ]
+        }
+      ]
+    },
+    {
+      "label": "defaults:mx_atan2",
+      "module": "MaterialXNodes",
+      "mode": "body",
+      "kind": "function",
+      "fn": "mx_atan2",
+      "args": []
+    },
+    {
+      "label": "body:mx_timer",
+      "module": "MaterialXNodes",
+      "mode": "body",
+      "kind": "function",
+      "fn": "mx_timer",
+      "args": []
+    },
+    {
+      "label": "body:mx_frame",
+      "module": "MaterialXNodes",
+      "mode": "body",
+      "kind": "function",
+      "fn": "mx_frame",
+      "args": []
+    },
+    {
+      "label": "body:mx_invert",
+      "module": "MaterialXNodes",
+      "mode": "body",
+      "kind": "function",
+      "fn": "mx_invert",
+      "args": [
+        {
+          "node": "float",
+          "args": [
+            0.371
+          ]
+        },
+        {
+          "node": "float",
+          "args": [
+            0.398
+          ]
+        }
+      ]
+    },
+    {
+      "label": "defaults:mx_invert",
+      "module": "MaterialXNodes",
+      "mode": "body",
+      "kind": "function",
+      "fn": "mx_invert",
+      "args": [
+        {
+          "node": "float",
+          "args": [
+            0.371
+          ]
+        }
+      ]
+    },
+    {
+      "label": "body:mx_ifgreater",
+      "module": "MaterialXNodes",
+      "mode": "body",
+      "kind": "function",
+      "fn": "mx_ifgreater",
+      "args": [
+        {
+          "node": "float",
+          "args": [
+            0.371
+          ]
+        },
+        {
+          "node": "float",
+          "args": [
+            0.398
+          ]
+        },
+        {
+          "node": "float",
+          "args": [
+            0.425
+          ]
+        },
+        {
+          "node": "float",
+          "args": [
+            0.452
+          ]
+        }
+      ]
+    },
+    {
+      "label": "body:mx_ifgreatereq",
+      "module": "MaterialXNodes",
+      "mode": "body",
+      "kind": "function",
+      "fn": "mx_ifgreatereq",
+      "args": [
+        {
+          "node": "float",
+          "args": [
+            0.371
+          ]
+        },
+        {
+          "node": "float",
+          "args": [
+            0.398
+          ]
+        },
+        {
+          "node": "float",
+          "args": [
+            0.425
+          ]
+        },
+        {
+          "node": "float",
+          "args": [
+            0.452
+          ]
+        }
+      ]
+    },
+    {
+      "label": "body:mx_ifequal",
+      "module": "MaterialXNodes",
+      "mode": "body",
+      "kind": "function",
+      "fn": "mx_ifequal",
+      "args": [
+        {
+          "node": "float",
+          "args": [
+            0.371
+          ]
+        },
+        {
+          "node": "float",
+          "args": [
+            0.398
+          ]
+        },
+        {
+          "node": "float",
+          "args": [
+            0.425
+          ]
+        },
+        {
+          "node": "float",
+          "args": [
+            0.452
+          ]
+        }
+      ]
+    },
+    {
+      "label": "body:mx_separate",
+      "module": "MaterialXNodes",
+      "mode": "body",
+      "kind": "function",
+      "fn": "mx_separate",
+      "args": [
+        {
+          "node": "vec4",
+          "args": [
+            0.173,
+            0.346,
+            0.5189999999999999,
+            0.692
+          ]
+        },
+        "outG"
+      ]
+    },
+    {
+      "label": "defaults:mx_separate",
+      "module": "MaterialXNodes",
+      "mode": "body",
+      "kind": "function",
+      "fn": "mx_separate",
+      "args": [
+        {
+          "node": "vec4",
+          "args": [
+            0.173,
+            0.346,
+            0.5189999999999999,
+            0.692
+          ]
+        }
+      ]
+    },
+    {
+      "label": "body:mx_place2d",
+      "module": "MaterialXNodes",
+      "mode": "body",
+      "kind": "function",
+      "fn": "mx_place2d",
+      "args": [
+        {
+          "node": "vec2",
+          "args": [
+            0.173,
+            0.346
+          ]
+        },
+        {
+          "node": "vec2",
+          "args": [
+            0.19199999999999998,
+            0.365
+          ]
+        },
+        {
+          "node": "vec2",
+          "args": [
+            0.211,
+            0.38399999999999995
+          ]
+        },
+        {
+          "node": "float",
+          "args": [
+            0.452
+          ]
+        },
+        {
+          "node": "vec2",
+          "args": [
+            0.249,
+            0.422
+          ]
+        },
+        {
+          "node": "int",
+          "args": [
+            2
+          ]
+        }
+      ]
+    },
+    {
+      "label": "defaults:mx_place2d",
+      "module": "MaterialXNodes",
+      "mode": "body",
+      "kind": "function",
+      "fn": "mx_place2d",
+      "args": [
+        {
+          "node": "vec2",
+          "args": [
+            0.173,
+            0.346
+          ]
+        }
+      ]
+    },
+    {
+      "label": "body:mx_heighttonormal",
+      "module": "MaterialXNodes",
+      "mode": "body",
+      "kind": "function",
+      "fn": "mx_heighttonormal",
+      "args": [
+        {
+          "node": "float",
+          "args": [
+            0.371
+          ]
+        },
+        {
+          "node": "vec2",
+          "args": [
+            0.19199999999999998,
+            0.365
+          ]
+        },
+        {
+          "node": "vec2",
+          "args": [
+            0.211,
+            0.38399999999999995
+          ]
+        }
+      ]
+    },
+    {
+      "label": "defaults:mx_heighttonormal",
+      "module": "MaterialXNodes",
+      "mode": "body",
+      "kind": "function",
+      "fn": "mx_heighttonormal",
+      "args": [
+        {
+          "node": "float",
+          "args": [
+            0.371
+          ]
+        }
+      ]
+    },
+    {
+      "label": "separate:null",
+      "module": "MaterialXNodes",
+      "mode": "body",
+      "kind": "function",
+      "fn": "mx_separate",
+      "args": [
+        {
+          "node": "vec4",
+          "args": [
+            0.173,
+            0.346,
+            0.5189999999999999,
+            0.692
+          ]
+        },
+        null
+      ]
+    },
+    {
+      "label": "separate:\"x\"",
+      "module": "MaterialXNodes",
+      "mode": "body",
+      "kind": "function",
+      "fn": "mx_separate",
+      "args": [
+        {
+          "node": "vec4",
+          "args": [
+            0.173,
+            0.346,
+            0.5189999999999999,
+            0.692
+          ]
+        },
+        "x"
+      ]
+    },
+    {
+      "label": "separate:\"outR\"",
+      "module": "MaterialXNodes",
+      "mode": "body",
+      "kind": "function",
+      "fn": "mx_separate",
+      "args": [
+        {
+          "node": "vec4",
+          "args": [
+            0.173,
+            0.346,
+            0.5189999999999999,
+            0.692
+          ]
+        },
+        "outR"
+      ]
+    },
+    {
+      "label": "separate:\"outg\"",
+      "module": "MaterialXNodes",
+      "mode": "body",
+      "kind": "function",
+      "fn": "mx_separate",
+      "args": [
+        {
+          "node": "vec4",
+          "args": [
+            0.173,
+            0.346,
+            0.5189999999999999,
+            0.692
+          ]
+        },
+        "outg"
+      ]
+    },
+    {
+      "label": "separate:\"outZ\"",
+      "module": "MaterialXNodes",
+      "mode": "body",
+      "kind": "function",
+      "fn": "mx_separate",
+      "args": [
+        {
+          "node": "vec4",
+          "args": [
+            0.173,
+            0.346,
+            0.5189999999999999,
+            0.692
+          ]
+        },
+        "outZ"
+      ]
+    },
+    {
+      "label": "separate:\"outW\"",
+      "module": "MaterialXNodes",
+      "mode": "body",
+      "kind": "function",
+      "fn": "mx_separate",
+      "args": [
+        {
+          "node": "vec4",
+          "args": [
+            0.173,
+            0.346,
+            0.5189999999999999,
+            0.692
+          ]
+        },
+        "outW"
+      ]
+    },
+    {
+      "label": "separate:\"A\"",
+      "module": "MaterialXNodes",
+      "mode": "body",
+      "kind": "function",
+      "fn": "mx_separate",
+      "args": [
+        {
+          "node": "vec4",
+          "args": [
+            0.173,
+            0.346,
+            0.5189999999999999,
+            0.692
+          ]
+        },
+        "A"
+      ]
+    },
+    {
+      "label": "separate:\"invalid\"",
+      "module": "MaterialXNodes",
+      "mode": "body",
+      "kind": "function",
+      "fn": "mx_separate",
+      "args": [
+        {
+          "node": "vec4",
+          "args": [
+            0.173,
+            0.346,
+            0.5189999999999999,
+            0.692
+          ]
+        },
+        "invalid"
+      ]
+    },
+    {
+      "label": "separate:\"OUTX\"",
+      "module": "MaterialXNodes",
+      "mode": "body",
+      "kind": "function",
+      "fn": "mx_separate",
+      "args": [
+        {
+          "node": "vec4",
+          "args": [
+            0.173,
+            0.346,
+            0.5189999999999999,
+            0.692
+          ]
+        },
+        "OUTX"
+      ]
+    },
+    {
+      "label": "separate:\"out\"",
+      "module": "MaterialXNodes",
+      "mode": "body",
+      "kind": "function",
+      "fn": "mx_separate",
+      "args": [
+        {
+          "node": "vec4",
+          "args": [
+            0.173,
+            0.346,
+            0.5189999999999999,
+            0.692
+          ]
+        },
+        "out"
+      ]
+    },
+    {
+      "label": "separate:0",
+      "module": "MaterialXNodes",
+      "mode": "body",
+      "kind": "function",
+      "fn": "mx_separate",
+      "args": [
+        {
+          "node": "vec4",
+          "args": [
+            0.173,
+            0.346,
+            0.5189999999999999,
+            0.692
+          ]
+        },
+        0
+      ]
+    },
+    {
+      "label": "separate:3",
+      "module": "MaterialXNodes",
+      "mode": "body",
+      "kind": "function",
+      "fn": "mx_separate",
+      "args": [
+        {
+          "node": "vec4",
+          "args": [
+            0.173,
+            0.346,
+            0.5189999999999999,
+            0.692
+          ]
+        },
+        3
+      ]
+    },
+    {
+      "label": "separate:-1",
+      "module": "MaterialXNodes",
+      "mode": "body",
+      "kind": "function",
+      "fn": "mx_separate",
+      "args": [
+        {
+          "node": "vec4",
+          "args": [
+            0.173,
+            0.346,
+            0.5189999999999999,
+            0.692
+          ]
+        },
+        -1
+      ]
+    },
+    {
+      "label": "separate:7",
+      "module": "MaterialXNodes",
+      "mode": "body",
+      "kind": "function",
+      "fn": "mx_separate",
+      "args": [
+        {
+          "node": "vec4",
+          "args": [
+            0.173,
+            0.346,
+            0.5189999999999999,
+            0.692
+          ]
+        },
+        7
+      ]
+    },
+    {
+      "label": "separate:{\"$undefined\":true}",
+      "module": "MaterialXNodes",
+      "mode": "body",
+      "kind": "function",
+      "fn": "mx_separate",
+      "args": [
+        {
+          "node": "vec4",
+          "args": [
+            0.173,
+            0.346,
+            0.5189999999999999,
+            0.692
+          ]
+        },
+        {
+          "$undefined": true
+        }
+      ]
+    },
+    {
+      "label": "order:0",
+      "module": "MaterialXNodes",
+      "mode": "body",
+      "kind": "function",
+      "fn": "mx_place2d",
+      "args": [
+        {
+          "node": "vec2",
+          "args": [
+            0.173,
+            0.346
+          ]
+        },
+        {
+          "node": "vec2",
+          "args": [
+            0.19199999999999998,
+            0.365
+          ]
+        },
+        {
+          "node": "vec2",
+          "args": [
+            0.211,
+            0.38399999999999995
+          ]
+        },
+        {
+          "node": "float",
+          "args": [
+            0.371
+          ]
+        },
+        {
+          "node": "vec2",
+          "args": [
+            0.22999999999999998,
+            0.40299999999999997
+          ]
+        },
+        0
+      ]
+    },
+    {
+      "label": "order:0",
+      "module": "MaterialXNodes",
+      "mode": "body",
+      "kind": "function",
+      "fn": "mx_place2d",
+      "args": [
+        {
+          "node": "vec2",
+          "args": [
+            0.173,
+            0.346
+          ]
+        },
+        {
+          "node": "vec2",
+          "args": [
+            0.19199999999999998,
+            0.365
+          ]
+        },
+        {
+          "node": "vec2",
+          "args": [
+            0.211,
+            0.38399999999999995
+          ]
+        },
+        {
+          "node": "float",
+          "args": [
+            0.371
+          ]
+        },
+        {
+          "node": "vec2",
+          "args": [
+            0.22999999999999998,
+            0.40299999999999997
+          ]
+        },
+        {
+          "$number": "-0"
+        }
+      ]
+    },
+    {
+      "label": "order:2.220446049250313e-16",
+      "module": "MaterialXNodes",
+      "mode": "body",
+      "kind": "function",
+      "fn": "mx_place2d",
+      "args": [
+        {
+          "node": "vec2",
+          "args": [
+            0.173,
+            0.346
+          ]
+        },
+        {
+          "node": "vec2",
+          "args": [
+            0.19199999999999998,
+            0.365
+          ]
+        },
+        {
+          "node": "vec2",
+          "args": [
+            0.211,
+            0.38399999999999995
+          ]
+        },
+        {
+          "node": "float",
+          "args": [
+            0.371
+          ]
+        },
+        {
+          "node": "vec2",
+          "args": [
+            0.22999999999999998,
+            0.40299999999999997
+          ]
+        },
+        2.220446049250313e-16
+      ]
+    },
+    {
+      "label": "order:4.440892098500626e-16",
+      "module": "MaterialXNodes",
+      "mode": "body",
+      "kind": "function",
+      "fn": "mx_place2d",
+      "args": [
+        {
+          "node": "vec2",
+          "args": [
+            0.173,
+            0.346
+          ]
+        },
+        {
+          "node": "vec2",
+          "args": [
+            0.19199999999999998,
+            0.365
+          ]
+        },
+        {
+          "node": "vec2",
+          "args": [
+            0.211,
+            0.38399999999999995
+          ]
+        },
+        {
+          "node": "float",
+          "args": [
+            0.371
+          ]
+        },
+        {
+          "node": "vec2",
+          "args": [
+            0.22999999999999998,
+            0.40299999999999997
+          ]
+        },
+        4.440892098500626e-16
+      ]
+    },
+    {
+      "label": "order:-1",
+      "module": "MaterialXNodes",
+      "mode": "body",
+      "kind": "function",
+      "fn": "mx_place2d",
+      "args": [
+        {
+          "node": "vec2",
+          "args": [
+            0.173,
+            0.346
+          ]
+        },
+        {
+          "node": "vec2",
+          "args": [
+            0.19199999999999998,
+            0.365
+          ]
+        },
+        {
+          "node": "vec2",
+          "args": [
+            0.211,
+            0.38399999999999995
+          ]
+        },
+        {
+          "node": "float",
+          "args": [
+            0.371
+          ]
+        },
+        {
+          "node": "vec2",
+          "args": [
+            0.22999999999999998,
+            0.40299999999999997
+          ]
+        },
+        -1
+      ]
+    },
+    {
+      "label": "order:1",
+      "module": "MaterialXNodes",
+      "mode": "body",
+      "kind": "function",
+      "fn": "mx_place2d",
+      "args": [
+        {
+          "node": "vec2",
+          "args": [
+            0.173,
+            0.346
+          ]
+        },
+        {
+          "node": "vec2",
+          "args": [
+            0.19199999999999998,
+            0.365
+          ]
+        },
+        {
+          "node": "vec2",
+          "args": [
+            0.211,
+            0.38399999999999995
+          ]
+        },
+        {
+          "node": "float",
+          "args": [
+            0.371
+          ]
+        },
+        {
+          "node": "vec2",
+          "args": [
+            0.22999999999999998,
+            0.40299999999999997
+          ]
+        },
+        1
+      ]
+    },
+    {
+      "label": "order:{\"$number\":\"NaN\"}",
+      "module": "MaterialXNodes",
+      "mode": "body",
+      "kind": "function",
+      "fn": "mx_place2d",
+      "args": [
+        {
+          "node": "vec2",
+          "args": [
+            0.173,
+            0.346
+          ]
+        },
+        {
+          "node": "vec2",
+          "args": [
+            0.19199999999999998,
+            0.365
+          ]
+        },
+        {
+          "node": "vec2",
+          "args": [
+            0.211,
+            0.38399999999999995
+          ]
+        },
+        {
+          "node": "float",
+          "args": [
+            0.371
+          ]
+        },
+        {
+          "node": "vec2",
+          "args": [
+            0.22999999999999998,
+            0.40299999999999997
+          ]
+        },
+        {
+          "$number": "NaN"
+        }
+      ]
+    },
+    {
+      "label": "order:{\"$number\":\"Infinity\"}",
+      "module": "MaterialXNodes",
+      "mode": "body",
+      "kind": "function",
+      "fn": "mx_place2d",
+      "args": [
+        {
+          "node": "vec2",
+          "args": [
+            0.173,
+            0.346
+          ]
+        },
+        {
+          "node": "vec2",
+          "args": [
+            0.19199999999999998,
+            0.365
+          ]
+        },
+        {
+          "node": "vec2",
+          "args": [
+            0.211,
+            0.38399999999999995
+          ]
+        },
+        {
+          "node": "float",
+          "args": [
+            0.371
+          ]
+        },
+        {
+          "node": "vec2",
+          "args": [
+            0.22999999999999998,
+            0.40299999999999997
+          ]
+        },
+        {
+          "$number": "Infinity"
+        }
+      ]
+    },
+    {
+      "label": "builder:mx_fade",
+      "module": "MaterialXNoise",
+      "mode": "body",
+      "kind": "Fn",
+      "fn": "mx_fade",
+      "args": [
+        {
+          "node": "float",
+          "args": [
+            0.371
+          ]
+        }
+      ],
+      "build": true
+    },
+    {
+      "label": "builder:mx_bits_to_01",
+      "module": "MaterialXNoise",
+      "mode": "body",
+      "kind": "Fn",
+      "fn": "mx_bits_to_01",
+      "args": [
+        {
+          "node": "uint",
+          "args": [
+            2
+          ]
+        }
+      ],
+      "build": true
+    },
+    {
+      "label": "builder:mx_smoothstep",
+      "module": "MaterialXNodes",
+      "mode": "body",
+      "kind": "function",
+      "fn": "mx_smoothstep",
+      "args": [
+        {
+          "node": "float",
+          "args": [
+            0.371
+          ]
+        },
+        {
+          "node": "float",
+          "args": [
+            0.398
+          ]
+        },
+        {
+          "node": "float",
+          "args": [
+            0.425
+          ]
+        }
+      ],
+      "build": true
+    },
+    {
+      "label": "builder:mx_heighttonormal",
+      "module": "MaterialXNodes",
+      "mode": "body",
+      "kind": "function",
+      "fn": "mx_heighttonormal",
+      "args": [
+        {
+          "node": "float",
+          "args": [
+            0.371
+          ]
+        },
+        {
+          "node": "vec2",
+          "args": [
+            0.19199999999999998,
+            0.365
+          ]
+        },
+        {
+          "node": "vec2",
+          "args": [
+            0.211,
+            0.38399999999999995
+          ]
+        }
+      ],
+      "build": true
+    },
+    {
+      "label": "reexport:mx_rotate2d",
+      "module": "MaterialXNodes",
+      "mode": "body",
+      "kind": "function",
+      "fn": "mx_rotate2d",
+      "args": [
+        {
+          "node": "vec2",
+          "args": [
+            0.173,
+            0.346
+          ]
+        }
+      ]
+    },
+    {
+      "label": "reexport:mx_rotate3d",
+      "module": "MaterialXNodes",
+      "mode": "body",
+      "kind": "function",
+      "fn": "mx_rotate3d",
+      "args": [
+        {
+          "node": "vec3",
+          "args": [
+            0.173,
+            0.346,
+            0.5189999999999999
+          ]
+        }
+      ]
+    },
+    {
+      "label": "reexport:mx_hsvtorgb",
+      "module": "MaterialXNodes",
+      "mode": "body",
+      "kind": "Fn",
+      "fn": "mx_hsvtorgb",
+      "args": [
+        {
+          "node": "vec3",
+          "args": [
+            0.173,
+            0.346,
+            0.5189999999999999
+          ]
+        }
+      ]
+    },
+    {
+      "label": "reexport:mx_rgbtohsv",
+      "module": "MaterialXNodes",
+      "mode": "body",
+      "kind": "Fn",
+      "fn": "mx_rgbtohsv",
+      "args": [
+        {
+          "node": "vec3",
+          "args": [
+            0.173,
+            0.346,
+            0.5189999999999999
+          ]
+        }
+      ]
+    },
+    {
+      "label": "reexport:mx_srgb_texture_to_lin_rec709",
+      "module": "MaterialXNodes",
+      "mode": "body",
+      "kind": "Fn",
+      "fn": "mx_srgb_texture_to_lin_rec709",
+      "args": [
+        {
+          "node": "vec3",
+          "args": [
+            0.173,
+            0.346,
+            0.5189999999999999
+          ]
+        }
+      ]
+    },
+    {
+      "label": "global-order:success",
+      "module": "MaterialXNodes",
+      "mode": "globalOrder",
+      "variant": "success"
+    },
+    {
+      "label": "global-order:getAbsThrow",
+      "module": "MaterialXNodes",
+      "mode": "globalOrder",
+      "variant": "getAbsThrow"
+    },
+    {
+      "label": "global-order:callAbsThrow",
+      "module": "MaterialXNodes",
+      "mode": "globalOrder",
+      "variant": "callAbsThrow"
+    },
+    {
+      "label": "global-order:epsilonThrow",
+      "module": "MaterialXNodes",
+      "mode": "globalOrder",
+      "variant": "epsilonThrow"
+    },
+    {
+      "label": "global-order:coerce",
+      "module": "MaterialXNodes",
+      "mode": "globalOrder",
+      "variant": "coerce"
+    },
+    {
+      "label": "global-order:leftCoerceThrow",
+      "module": "MaterialXNodes",
+      "mode": "globalOrder",
+      "variant": "leftCoerceThrow"
+    },
+    {
+      "label": "global-order:rightCoerceThrow",
+      "module": "MaterialXNodes",
+      "mode": "globalOrder",
+      "variant": "rightCoerceThrow"
+    },
+    {
+      "label": "global-order:reenter",
+      "module": "MaterialXNodes",
+      "mode": "globalOrder",
+      "variant": "reenter"
+    }
+  ]
+}

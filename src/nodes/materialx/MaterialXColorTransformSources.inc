@@ -1,0 +1,2 @@
+// Exact pinned source metadata. Native callback bodies are in MaterialXColorTransform.cpp.
+constexpr const char* callback1Source = "( [ color_immutable ] ) => {\r\n\r\n\tconst color = vec3( color_immutable ).toVar();\r\n\tconst isAbove = bvec3( greaterThan( color, vec3( 0.04045 ) ) ).toVar();\r\n\tconst linSeg = vec3( color.div( 12.92 ) ).toVar();\r\n\tconst powSeg = vec3( pow( max( color.add( vec3( 0.055 ) ), vec3( 0.0 ) ).div( 1.055 ), vec3( 2.4 ) ) ).toVar();\r\n\r\n\treturn mix( linSeg, powSeg, isAbove );\r\n\r\n}";

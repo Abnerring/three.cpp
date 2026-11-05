@@ -1,5 +1,6 @@
 #include "materials/nodes/NodeMaterials.h"
 
+#include "materials/nodes/Line2NodeMaterial.h"
 #include "materials/nodes/LineBasicNodeMaterial.h"
 #include "materials/nodes/LineDashedNodeMaterial.h"
 #include "materials/nodes/MeshBasicNodeMaterial.h"
@@ -25,6 +26,7 @@ JSValue nativeNodeMaterialsModule() {
     module.set("NodeMaterialObserver", nativeNodeMaterialObserverConstructor());
     module.set("NodeMaterial", nativeNodeMaterialConstructor());
     module.set("ProxyNodeMaterial", nativeProxyNodeMaterialConstructor());
+    module.set("Line2NodeMaterial", nativeLine2NodeMaterialConstructor());
     module.set("LineBasicNodeMaterial", nativeLineBasicNodeMaterialConstructor());
     module.set("LineDashedNodeMaterial", nativeLineDashedNodeMaterialConstructor());
     module.set("MeshNormalNodeMaterial", nativeMeshNormalNodeMaterialConstructor());

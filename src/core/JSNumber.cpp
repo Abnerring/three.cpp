@@ -3,6 +3,7 @@
 #include <bit>
 #include <cmath>
 #include <cstdint>
+#include <limits>
 #include <string>
 #include <vector>
 
@@ -246,5 +247,7 @@ JSValue nativeNumberConstructor(){
     },{},"isInteger",1);
     JSPropertyDescriptor property;property.value=isInteger;property.writable=property.configurable=true;constructor.defineProperty("isInteger",property);
     property.value=nativeParseIntFunction();constructor.defineProperty("parseInt",property);
+    JSPropertyDescriptor epsilon;epsilon.value=std::numeric_limits<double>::epsilon();
+    epsilon.writable=epsilon.enumerable=epsilon.configurable=false;constructor.defineProperty("EPSILON",epsilon);
     constructor.retainForHeapLifetime();cached=JSWeakValue(constructor);return constructor;
 }

@@ -11,14 +11,12 @@
 // port builds the same map from the constructors that exist in C++ today:
 //
 //   NodeMaterialObserver, NodeMaterial, ProxyNodeMaterial, LineBasicNodeMaterial,
-//   LineDashedNodeMaterial, MeshNormalNodeMaterial, MeshBasicNodeMaterial,
+//   Line2NodeMaterial, LineDashedNodeMaterial, MeshNormalNodeMaterial, MeshBasicNodeMaterial,
 //   MeshLambertNodeMaterial, MeshPhongNodeMaterial, MeshStandardNodeMaterial,
 //   MeshPhysicalNodeMaterial, MeshSSSNodeMaterial, MeshToonNodeMaterial,
 //   MeshMatcapNodeMaterial, PointsNodeMaterial, SpriteNodeMaterial, ShadowNodeMaterial,
 //   VolumeNodeMaterial
 //
-// Still missing from the map (their modules are not ported yet):
-//
-//   Line2NodeMaterial
+// All pinned NodeMaterials exports have native constructor mappings.
 JSValue nativeNodeMaterialsModule();
 JSValue nativeNodeMaterialsBinding(const std::string& name);

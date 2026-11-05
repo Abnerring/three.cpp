@@ -226,6 +226,7 @@ target_sources(threecpp PRIVATE
     src/materials/nodes/MeshStandardNodeMaterial.cpp
     src/materials/nodes/MeshPhysicalNodeMaterial.cpp
     src/materials/nodes/MeshSSSNodeMaterial.cpp
+    src/materials/nodes/Line2NodeMaterial.cpp
     src/materials/nodes/LineDashedNodeMaterial.cpp
     src/materials/nodes/VolumeNodeMaterial.cpp
     src/materials/nodes/ProxyNodeMaterial.cpp
@@ -822,4 +823,6 @@ target_sources(threecpp PRIVATE src/nodes/materialx/MaterialXCore.cpp)
 target_sources(threecpp PRIVATE
     src/nodes/materialx/MaterialXColor.cpp
     src/nodes/materialx/MaterialXColorTransform.cpp
+    src/nodes/materialx/MaterialXNoise.cpp
+    src/nodes/materialx/MaterialXNodes.cpp
 )

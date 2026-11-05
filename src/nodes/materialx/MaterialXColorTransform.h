@@ -6,4 +6,5 @@
 
 JSValue nativeMaterialXColorTransformModule();
 JSValue nativeMaterialXColorTransformBinding(const std::string& name);
+JSValue nativeMaterialXColorTransformPrivate(const std::string& name);
 

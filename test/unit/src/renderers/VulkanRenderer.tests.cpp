@@ -1729,6 +1729,203 @@ void renderTargetTests(bool validation) {
     require(renderer.getRenderTarget() == nullptr, "target cleared");
 }
 
+void targetTextureSamplingTests(bool validation) {
+    VulkanRenderer renderer({64, 64, validation});
+    renderer.srgbOutput = false;
+    renderer.setClearColor(Color(0, 0, 0), 0);
+    OrthographicCamera camera(-1, 1, 1, -1, .1, 20);
+    camera.position.z = 5;
+    Scene scene;
+    auto mesh = plane(Color(1, 1, 1));
+    auto material = basic(mesh);
+    scene.add(mesh);
+    auto target = std::make_shared<RenderTarget>(8, 8);
+    auto texture = target->texture.get();
+    require(texture->version == 1, "RenderTarget preserves its constructor texture version");
+    texture->version = 0;
+    material->map = texture;
+    unsigned updates = 0;
+    texture->onUpdate = [&](Texture&) { ++updates; };
+    auto show = [&] {
+        renderer.setRenderTarget(nullptr);
+        renderer.setClearColor(Color(0, 0, 0), 0);
+        renderHostTurn(renderer, scene, camera);
+    };
+    auto fill = [&](const std::shared_ptr<RenderTarget>& destination, const Color& color) {
+        renderer.setRenderTarget(destination);
+        renderer.setClearColor(color, 1);
+        renderer.clear();
+    };
+    show();
+    expectPixel(renderer, {0, 0, 0, 255}, "An unallocated render target samples transparent black before opaque output");
+    material->transparent = true; show();
+    expectPixel(renderer, {0, 0, 0, 0}, "An unallocated target fallback also preserves zero alpha");
+    material->transparent = false;
+    renderer.setRenderTarget(target);
+    show();
+    expectPixel(renderer, {0, 0, 0, 255}, "An allocated but unrendered target samples initialized zero storage");
+    const auto uploads = renderer.getInfo().textureUploads;
+    fill(target, Color(1, 0, 0)); show();
+    expectPixel(renderer, {255, 0, 0, 255}, "The render target GPU attachment is sampled at texture version zero");
+    fill(target, Color(0, 1, 0)); show();
+    expectPixel(renderer, {0, 255, 0, 255}, "Subsequent target writes are visible without needsUpdate");
+    texture->needsUpdate = true;
+    texture->image->data = Uint8Array{255, 0, 0, 255};
+    show();
+    expectPixel(renderer, {0, 255, 0, 255}, "Target version and CPU pixels cannot overwrite its rendered storage");
+    require(updates == 0 && renderer.getInfo().textureUploads == uploads,
+            "Render target sampling neither uploads CPU pixels nor calls onUpdate");
+    require(renderer.getInfo().textureImages == 0,
+            "Sampling aliases an existing target image rather than allocating a texture copy");
+    texture->dispose(); show();
+    expectPixel(renderer, {0, 255, 0, 255}, "Texture.dispose preserves storage owned by its render target");
+    auto second = std::make_shared<RenderTarget>(12, 12);
+    renderer.setRenderTarget(second);
+    renderHostTurn(renderer, scene, camera);
+    material->map = second->texture.get(); show();
+    expectPixel(renderer, {0, 255, 0, 255}, "A target-to-target-to-screen chain samples both actual GPU attachments");
+    fill(target, Color(1, 0, 0));
+    material->map = texture;
+    renderer.setRenderTarget(second); renderHostTurn(renderer, scene, camera);
+    material->map = second->texture.get(); show();
+    expectPixel(renderer, {255, 0, 0, 255}, "Repeated ping-pong passes restore image layouts for later writes");
+
+    // GL texture row zero is the lower framebuffer row. Keep the pattern asymmetric.
+    fill(target, Color(0, 0, 1));
+    renderer.setScissor(0, 0, 8, 4); renderer.setScissorTest(true);
+    renderer.setClearColor(Color(1, 0, 0), 1); renderer.clear();
+    renderer.setScissorTest(false);
+    material->map = texture;
+    const auto uv = mesh->geometry->getAttribute("uv");
+    auto constantUV = [&](double u, double v) {
+        for (double i = 0; i < uv->getCount(); ++i) uv->setXY(i, u, v);
+        uv->setNeedsUpdate(true);
+    };
+    constantUV(.25, .25); show();
+    expectPixel(renderer, {255, 0, 0, 255}, "Render-target UV zero addresses the lower GL framebuffer row");
+    texture->flipY = true; texture->needsUpdate = true; show();
+    expectPixel(renderer, {255, 0, 0, 255}, "Render-target flipY remains an upload-only property");
+    texture->offset.set(0, .5); show();
+    expectPixel(renderer, {0, 0, 255, 255}, "Target orientation compensation follows the user's texture transform");
+    texture->offset.set(0, 0); texture->center.set(.5, .5); texture->rotation = MATH_PI; show();
+    expectPixel(renderer, {0, 0, 255, 255}, "Rotated target texture UVs retain the source row orientation");
+    texture->rotation = 0; texture->center.set(0, 0);
+
+    // Ordinary RGBA8 targets use working space even when the screen uses sRGB output.
+    renderer.srgbOutput = true;
+    fill(target, Color(.25, .25, .25));
+    const auto linearPixels = renderer.readPixels();
+    require(std::abs(int(linearPixels[0]) - 64) <= 1, "Ordinary render targets store linear working values");
+    material->map = texture; show();
+    expectPixel(renderer, {137, 137, 137, 255}, "Linear target samples are encoded exactly once for screen output", 32, 32, 2);
+    material->map = nullptr; material->color.setRGB(.25, .25, .25);
+    renderer.setRenderTarget(target); renderHostTurn(renderer, scene, camera);
+    const auto linearDraw = renderer.readPixels();
+    require(std::abs(int(linearDraw[(4 * 8 + 4) * 4]) - 64) <= 1,
+            "Material draws into ordinary targets retain working color space");
+    material->color.setRGB(1, 1, 1); material->map = texture; show();
+    expectPixel(renderer, {137, 137, 137, 255}, "A material-rendered linear target is encoded once", 32, 32, 2);
+    auto srgbOptions = JSValue::object(); srgbOptions.set("colorSpace", SRGBColorSpace);
+    auto srgbTarget = std::make_shared<RenderTarget>(8, 8, srgbOptions);
+    fill(srgbTarget, Color(.25, .25, .25));
+    const auto srgbPixels = renderer.readPixels();
+    require(std::abs(int(srgbPixels[0]) - 137) <= 2, "An sRGB target uses real sRGB attachment storage");
+    material->map = srgbTarget->texture.get(); show();
+    expectPixel(renderer, {137, 137, 137, 255}, "sRGB target sampling decodes before screen output", 32, 32, 2);
+    material->map = nullptr; material->color.setRGB(.25, .25, .25);
+    renderer.setRenderTarget(srgbTarget); renderHostTurn(renderer, scene, camera);
+    const auto srgbDraw = renderer.readPixels();
+    require(std::abs(int(srgbDraw[(4 * 8 + 4) * 4]) - 137) <= 2,
+            "An sRGB attachment encodes material shader output through the GPU format");
+    material->color.setRGB(1, 1, 1); material->map = srgbTarget->texture.get(); show();
+    expectPixel(renderer, {137, 137, 137, 255}, "Material-rendered sRGB target has no double transfer", 32, 32, 2);
+    for (const bool forceSRGB : {false, true}) {
+        auto options = JSValue::object();
+        options.set("colorSpace", forceSRGB ? NoColorSpace : SRGBColorSpace);
+        options.set("internalFormat", forceSRGB ? "SRGB8_ALPHA8" : "RGBA8");
+        auto explicitTarget = std::make_shared<RenderTarget>(8, 8, options);
+        fill(explicitTarget, Color(.25, .25, .25));
+        const auto stored = renderer.readPixels();
+        require(std::abs(int(stored[0]) - (forceSRGB ? 137 : 64)) <= 2,
+                "Explicit target internalFormat overrides the color-space storage default");
+        material->map = explicitTarget->texture.get(); show();
+        expectPixel(renderer, {137, 137, 137, 255}, "Explicit target formats retain the matching GPU sample transfer", 32, 32, 2);
+    }
+    auto halfOptions = JSValue::object(); halfOptions.set("type", HalfFloatType);
+    auto halfTarget = std::make_shared<RenderTarget>(8, 8, halfOptions);
+    fill(halfTarget, Color(.25, .25, .25));
+    material->map = halfTarget->texture.get(); show();
+    expectPixel(renderer, {137, 137, 137, 255}, "HalfFloat render targets sample their native linear GPU storage", 32, 32, 2);
+
+    renderer.srgbOutput = false;
+    fill(target, Color(1, 0, 0));
+    auto alphaTarget = std::make_shared<RenderTarget>(8, 8);
+    fill(alphaTarget, Color(0, .25, 0));
+    material->map = texture; material->alphaMap = alphaTarget->texture.get();
+    material->transparent = true; show();
+    expectPixel(renderer, {64, 0, 0, 64}, "Map and alphaMap can sample independent GPU targets in one draw", 32, 32, 2);
+    material->alphaMap = nullptr; material->transparent = false;
+    auto uploadAlpha = std::make_shared<DataTexture>(Uint8Array{0, 255, 0, 255}, 1, 1);
+    unsigned uploadReads = 0;
+    uploadAlpha->onUpdate = [&](Texture&) { ++uploadReads; (void) renderer.readPixels(); };
+    uploadAlpha->needsUpdate = true;
+    material->alphaMap = uploadAlpha;
+    show();
+    expectPixel(renderer, {255, 0, 0, 255}, "Alpha upload readback re-establishes the earlier map target sampling layout");
+    require(uploadReads == 1, "The alpha upload callback really submits an intermediate recording");
+    uploadAlpha->onUpdate = [&](Texture&) { ++uploadReads; target->dispose(); (void) renderer.readPixels(); };
+    uploadAlpha->needsUpdate = true;
+    scene.background = Color(0, 0, 1);
+    material->transparent = true;
+    show();
+    expectPixel(renderer, {0, 0, 0, 255}, "A map deleted during alpha upload samples incomplete opaque black for this draw");
+    require(uploadReads == 2, "The disposal regression executes its actual second upload callback");
+    show();
+    expectPixel(renderer, {0, 0, 255, 255}, "The next draw binds the transparent empty texture for the disposed target");
+    material->transparent = false;
+    scene.background.reset();
+    material->alphaMap = nullptr;
+    fill(target, Color(1, 0, 0));
+
+    // Callback readback submits an earlier pass and resets descriptors. Later draws
+    // must re-transition both live target sources without losing already drawn pixels.
+    auto right = plane(Color(1, 1, 1)); right->position.x = .45; right->scale.x = .5;
+    mesh->position.x = -.45; mesh->scale.x = .5;
+    right->material = material; right->renderOrder = 1; scene.add(right);
+    bool readInCallback = false;
+    right->onBeforeRender = [&](auto&, auto&, auto&, auto*, auto*, auto*) {
+        const auto seen = renderer.readPixels();
+        readInCallback = seen[(32 * 64 + 16) * 4] > 200;
+    };
+    show();
+    require(readInCallback, "A callback readback sees earlier draws sampling the target");
+    expectPixel(renderer, {255, 0, 0, 255}, "Sampling resumes after callback readback resets the descriptor pool", 48, 32);
+    right->onBeforeRender = [&](auto&, auto&, auto&, auto*, auto*, auto*) { target->dispose(); };
+    show();
+    expectPixel(renderer, {255, 0, 0, 255}, "A later target dispose preserves an earlier recorded sampling draw", 16, 32);
+    expectPixel(renderer, {0, 0, 0, 255}, "A disposed target supplies the empty texture to subsequent draws", 48, 32);
+    right->onBeforeRender = {};
+    scene.remove(right); mesh->position.x = 0; mesh->scale.x = 1;
+    fill(target, Color(0, 0, 1)); show();
+    expectPixel(renderer, {0, 0, 255, 255}, "Rebinding a disposed target recreates storage for the same texture identity");
+    target->setSize(16, 4); show();
+    expectPixel(renderer, {0, 0, 0, 255}, "Resize invalidates old sampled storage before the target is rendered again");
+    fill(target, Color(0, 1, 0)); show();
+    expectPixel(renderer, {0, 255, 0, 255}, "A resized target samples its replacement GPU allocation");
+    target.reset(); finishHostTurn(); show();
+    expectPixel(renderer, {0, 0, 0, 255}, "A texture can outlive its target without following a dangling owner pointer");
+
+    material->map = second->texture.get();
+    renderer.setRenderTarget(second);
+    unsigned after = 0;
+    mesh->onAfterRender = [&](auto&, auto&, auto&, auto*, auto*, auto*) { ++after; };
+    renderHostTurn(renderer, scene, camera);
+    expectPixel(renderer, {0, 0, 0, 0}, "Attachment feedback rejects the draw without an unsafe Vulkan read/write", 6, 6);
+    require(after == 1 && renderer.getInfo().calls == 1, "Rejected feedback retains upstream draw statistics and after callback");
+    renderer.setRenderTarget(nullptr);
+    require(renderer.getValidationMessages().empty(), "Target sampling emits no Vulkan diagnostic");
+}
+
 void viewportScissorTests(bool validation) {
     VulkanRenderer renderer({64, 48, validation});
     renderer.srgbOutput = false;
@@ -2198,6 +2395,7 @@ int main(int argc, char** argv) {
         if (argc > 1 && std::string(argv[1]) == "--polygon-offset") { polygonOffsetTests(validation); std::cout << "polygon offset group ok\n"; return 0; }
         if (argc > 1 && std::string(argv[1]) == "--viewport-scissor") { viewportScissorTests(validation); std::cout << "viewport/scissor group: " << assertions << " assertions\n"; return 0; }
         if (argc > 1 && std::string(argv[1]) == "--second") { unsupportedPrimitiveTests(validation); std::cout << "second group ok\n"; return 0; }
+        if (argc > 1 && std::string(argv[1]) == "--target-textures") { targetTextureSamplingTests(validation); std::cout << "target texture group: " << assertions << " assertions\n"; return 0; }
         if (argc > 1 && std::string(argv[1]) == "--cube") { std::cerr << "[group] renderTargetTests\n"; renderTargetTests(validation); std::cerr << "[group] cubeRenderTargetTests\n"; cubeRenderTargetTests(validation); std::cerr << "[group] cubeCameraUpdateTests\n"; cubeCameraUpdateTests(validation); std::cerr << "[group] equirectangularToCubeTests\n"; equirectangularToCubeTests(validation); std::cerr << "[group] equirectangularDirectionTests\n"; equirectangularDirectionTests(validation); std::cerr << "[group] blurCubeTests\n"; blurCubeTests(validation); std::cerr << "[group] parkRestoreTests\n"; parkRestoreTests(validation); std::cout << "cube group: " << assertions << " assertions\n"; return 0; }
         std::cerr << "[group] unsupportedMeshTests" << '\n';
         unsupportedMeshTests(validation);
@@ -2229,6 +2427,8 @@ int main(int argc, char** argv) {
         geometryObjectProtocolTests(validation);
         std::cerr << "[group] renderTargetTests" << '\n';
         renderTargetTests(validation);
+        std::cerr << "[group] targetTextureSamplingTests" << '\n';
+        targetTextureSamplingTests(validation);
         std::cerr << "[group] viewportScissorTests" << '\n';
         viewportScissorTests(validation);
         std::cerr << "[group] blurCubeTests" << '\n';

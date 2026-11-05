@@ -10,7 +10,7 @@
 // re-export list is reproduced here so the missing pieces stay visible:
 //
 //   export * from './Three.Core.js';                        -> #include "Three.Core.h"
-//   export * from './materials/nodes/NodeMaterials.js';     -> NodeMaterials.h (Line2 remains pending)
+//   export * from './materials/nodes/NodeMaterials.js';     -> NodeMaterials.h
 //   WebGPURenderer           -> not ported yet
 //   WebGPUBackend            -> not ported yet
 //   WebGLBackend             -> not ported yet

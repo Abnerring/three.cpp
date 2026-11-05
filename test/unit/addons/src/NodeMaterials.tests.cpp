@@ -6,7 +6,7 @@
 TEST_CASE("NodeMaterials re-exports every ported node material") {
     const auto module = nativeNodeMaterialsModule();
     for (const char* name : {"NodeMaterialObserver", "NodeMaterial", "ProxyNodeMaterial",
-                             "LineBasicNodeMaterial", "LineDashedNodeMaterial",
+                             "Line2NodeMaterial", "LineBasicNodeMaterial", "LineDashedNodeMaterial",
                              "MeshNormalNodeMaterial", "MeshBasicNodeMaterial",
                              "MeshStandardNodeMaterial", "MeshPhysicalNodeMaterial", "MeshSSSNodeMaterial",
                              "MeshLambertNodeMaterial", "MeshPhongNodeMaterial",
