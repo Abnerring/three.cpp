@@ -326,3 +326,104 @@ TEST_CASE("PointShadowNode answers the cube direction table") {
     REQUIRE(first.get("y").toNumber() == Approx(0));
     REQUIRE(first.get("z").toNumber() == Approx(0));
 }
+TEST_CASE("PointShadowNode uses the WebGPU cube tables and the light distance far plane") {
+    auto camera = JSValue::object(nullptr);
+    camera.set("position", nativeVector3Constructor().construct());
+    camera.set("up", nativeVector3Constructor().construct());
+    camera.set("projectionMatrix", nativeMatrix4Constructor().construct());
+    camera.set("matrixWorldInverse", nativeMatrix4Constructor().construct());
+    camera.set("far", JSValue(100));
+    // WebGPUCoordinateSystem is 2001.
+    camera.set("coordinateSystem", JSValue(2001));
+    camera.set("reversedDepth", false);
+    camera.set("_projectionUpdates", JSValue(0));
+    camera.set("updateProjectionMatrix", JSValue::function(
+        +[](const JSValue& receiver, const std::vector<JSValue>&, const std::vector<JSValue>&) {
+            JSValue& self = const_cast<JSValue&>(receiver);
+            self.set("_projectionUpdates",
+                     JSValue(self.get("_projectionUpdates").toNumber() + 1));
+            return JSValue{};
+        }));
+    camera.set("updateMatrixWorld", JSValue::function(
+        +[](const JSValue&, const std::vector<JSValue>&, const std::vector<JSValue>&) {
+            return JSValue{};
+        }));
+    camera.set("_lookTargets", JSValue::array(0));
+    camera.set("lookAt", JSValue::function(
+        +[](const JSValue& receiver, const std::vector<JSValue>& args,
+            const std::vector<JSValue>&) {
+            JSValue& self = const_cast<JSValue&>(receiver);
+            auto targets = self.get("_lookTargets");
+            auto length = targets.get("length").toNumber();
+            const auto target = args.size() > 0 ? args[0] : JSValue{};
+            targets.set(JSValue(length++), target.get("x"));
+            targets.set(JSValue(length++), target.get("y"));
+            targets.set(JSValue(length++), target.get("z"));
+            self.set("_lookTargets", targets);
+            return JSValue{};
+        }));
+    auto mapSize = JSValue::object(nullptr);
+    mapSize.set("width", JSValue(32));
+    auto shadow = JSValue::object(nullptr);
+    shadow.set("camera", camera);
+    shadow.set("matrix", nativeMatrix4Constructor().construct());
+    shadow.set("_frustum", nativeFrustumConstructor().construct());
+    shadow.set("mapSize", mapSize);
+    shadow.set("clearColor", nativeColorConstructor().construct());
+    shadow.set("clearAlpha", JSValue(1));
+    auto light = JSValue::object(nullptr);
+    light.set("shadow", shadow);
+    light.set("matrixWorld", nativeMatrix4Constructor().construct());
+    light.set("name", JSValue("Point"));
+    light.set("distance", JSValue(50));
+    light.set("id", JSValue(4));
+    auto scene = JSValue::object(nullptr);
+    scene.set("name", JSValue("Scene"));
+    auto renderer = JSValue::object(nullptr);
+    renderer.set("coordinateSystem", JSValue(2001));
+    renderer.set("autoClear", true);
+    renderer.set("getClearColor", JSValue::function(
+        +[](const JSValue&, const std::vector<JSValue>& args, const std::vector<JSValue>&) {
+            return args.size() > 0 ? args[0] : JSValue{};
+        }));
+    renderer.set("getClearAlpha", JSValue::function(
+        +[](const JSValue&, const std::vector<JSValue>&, const std::vector<JSValue>&) {
+            return JSValue(1);
+        }));
+    for (const char* method : {"setClearColor", "setRenderTarget", "clear", "render"}) {
+        renderer.set(method, JSValue::function(
+            +[](const JSValue&, const std::vector<JSValue>&, const std::vector<JSValue>&) {
+                return JSValue{};
+            }));
+    }
+    auto frame = JSValue::object(nullptr);
+    frame.set("renderer", renderer);
+    frame.set("scene", scene);
+
+    auto node = nativePointShadowNodeConstructor().construct({light});
+    auto target = JSValue::object(nullptr);
+    target.set("setSize", JSValue::function(
+        +[](const JSValue&, const std::vector<JSValue>&, const std::vector<JSValue>&) {
+            return JSValue{};
+        }));
+    node.set("shadowMap", target);
+    REQUIRE_NOTHROW(node.get("renderShadow").call(node, {frame}));
+
+    // The WebGPU direction table is used when the coordinate system is the WebGPU one.
+    const double expectedDirections[6][3] = {{-1, 0, 0}, {1, 0, 0},  {0, 1, 0},
+                                             {0, -1, 0}, {0, 0, 1},  {0, 0, -1}};
+    const auto lookTargets = camera.get("_lookTargets");
+    REQUIRE(lookTargets.get("length").toNumber() == Approx(18));
+    for (int face = 0; face < 6; ++face) {
+        INFO("webgpu face " << face);
+        for (int axis = 0; axis < 3; ++axis) {
+            REQUIRE(lookTargets.get(JSValue(static_cast<double>(face * 3 + axis))).toNumber() ==
+                    Approx(expectedDirections[face][axis]));
+        }
+    }
+
+    // The first face moves the far plane to the light distance; the remaining faces compare equal and
+    // skip the refresh, which matches the pinned \"if ( far !== camera.far )\" guard.
+    REQUIRE(camera.get("far").toNumber() == Approx(50));
+    REQUIRE(camera.get("_projectionUpdates").toNumber() == Approx(1));
+}

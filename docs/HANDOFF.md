@@ -1,4 +1,26 @@
-# 当前接续：六面 up 表 + shadowMatrix 平移断言通过（PointShadowNode 10 例 / 83 断言），2026-11-05
+# 当前接续：WebGPU 方向表 + `light.distance` 远平面路径测试通过（PointShadowNode 11 例 / 105 断言），2026-11-05
+
+目标保持 active：固定 three.js 11738a9d55e502fb484cefffcea3a66dc44e9fe9 全部 src + examples/jsm 原生 C++ 逻辑，Vulkan 后端；禁止 CEF/生产 JS 引擎/桥接。阶段本地 Git 提交，不推送。
+
+## 本轮交付
+
+新用例「uses the WebGPU cube tables and the light distance far plane」：
+- 相机与渲染器均 `coordinateSystem = 2001`（WebGPU）→ 断言六面 lookAt 目标为 **WebGPU 方向表** `(-1,0,0),(1,0,0),(0,1,0),(0,-1,0),(0,0,1),(0,0,-1)`（18 断言全过）；
+- `light.distance = 50`（≠ `camera.far=100`）→ 断言 `camera.far == 50`；**投影矩阵更新次数 == 1**（首面更新后其余面相等而跳过，符合上游 `if ( far !== camera.far )` 守卫）—— 首版误断言 6 次，已修正并记录语义。
+
+## 验证
+
+- 构建 exit 0；过滤 `*PointShadowNode*` = **11 cases / 105 assertions** 全过（+1 例 / +22 断言）。
+- `THREECPPAddonTests` 全套 **1402 cases / 39,088 assertions** 通过。
+- 审计不变（PointShadowNode 已 partial）：src 11 / 454；examples/jsm 322 / 154。
+
+**未执行验证（如实记录）**：WebGPU up 表未断言（WebGL up 已测）；`renderShadow` 中 `renderer.render` 的调用次数/参数未断言；过滤图仍未结构差分。
+
+## 下一步
+
+1. WebGPU up 表断言（可复用本用例的 `_ups` 快照记录）；
+2. `renderer.render` 六次调用断言（receiver 计数）；
+3. 之后推进 `PassNode`(26,843)/`ToonOutlinePassNode`(6,868)/`PhysicalLightingModel`(32,829)。# 当前接续：六面 up 表 + shadowMatrix 平移断言通过（PointShadowNode 10 例 / 83 断言），2026-11-05
 
 目标保持 active：固定 three.js 11738a9d55e502fb484cefffcea3a66dc44e9fe9 全部 src + examples/jsm 原生 C++ 逻辑，Vulkan 后端；禁止 CEF/生产 JS 引擎/桥接。阶段本地 Git 提交，不推送。
 
