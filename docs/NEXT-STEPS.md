@@ -379,3 +379,21 @@ const VSMPassHorizontal = Fn( ( { samples, radius, size, shadowPass, depthLayer 
 - 位置：`src/nodes/lighting/PointShadowNode.js`（12,693 B），依赖已完成的 `ShadowNode`（继承 `ShadowNode`）。
 - 待办：读取完整源码后按 `ShadowNode` 的同样方式分段落实现（构造/`setupShadow` 重写/`updateShadow` 立方体面循环/`vsmPass` 是否覆盖等），复用 `ShadowNode` 的辅助函数与测试夹具范式。
 - 建议顺序：①结构骨架 + `static type` + 构造字段；②`setupShadow`（点光六面 RT/滤镜）；③`updateShadow`/`renderShadow` 逐面渲染；④差分/集成测试。
+
+#### PointShadowNode Stage B 源码要点（r155，L66–142）
+
+**`PointShadowFilter`**（L66–95，Vogel disk 采样）：`radius/mapSize` 引用；`texelSize = radius.div(mapSize.x)`；`absDir = abs(bd3D)`；`tangent = normalize(cross(bd3D, absDir.x.greaterThan(absDir.z).select(vec3(0,1,0), vec3(1,0,0))))`；`bitangent = cross(bd3D, tangent)`；`phi = interleavedGradientNoise(screenCoordinate.xy).mul(6.28318530718)`；`sample0..4 = vogelDiskSample(i, 5, phi)`；返回 5 个 `cubeTexture(depthTexture, bd3D.add(tangent.mul(s.x).add(bitangent.mul(s.y)).mul(texelSize)))` 之和 `.mul(1/5)`。
+
+**`pointShadowFilter`**（L97–142）：
+- 签名 `Fn(({filterFn, depthTexture, shadowCoord, shadow}, builder) => …)`（**Fn body 第二参数是 builder**）；
+- `shadowPosition = shadowCoord.xyz.toConst()`；`shadowPositionAbs = shadowPosition.abs().toConst()`；`viewZ = shadowPositionAbs.x.max(.y).max(.z)`；
+- `shadowCameraNear/Far = uniform('float').setGroup(renderGroup).onRenderUpdate(() => shadow.camera.near/far)`；
+- `bias = reference('bias','float',shadow).setGroup(renderGroup)`；`result = float(1.0).toVar()`；
+- `If(viewZ.sub(far).lessThanEqual(0.0).and(viewZ.sub(near).greaterThanEqual(0.0)))` 内：
+  - reversedDepthBuffer → `dp = viewZToReversedPerspectiveDepth(viewZ.negate(), near, far); dp.subAssign(bias)`
+  - logarithmicDepthBuffer → `viewZToLogarithmicDepth(...); dp.addAssign(bias)`
+  - 否则 → `viewZToPerspectiveDepth(...); dp.addAssign(bias)`
+  - `bd3D = shadowPosition.normalize()`；`result.assign(filterFn({depthTexture, bd3D, dp, shadow}))`
+- 返回 `result`。
+
+**实现要点**：需要 `inputObject` 辅助（同 `ShadowNode.cpp`）；`If` 用 `nativeTSLBaseBinding("If")`（callable: `If(condition)(body)`）；`onRenderUpdate` 用 `invoke(uniform, "onRenderUpdate")({callback})`，callback 捕获 `shadow`；`vogelDiskSample`/`interleavedGradientNoise` 绑定待确认（`nativePostProcessingUtilsBinding`）。`setupShadowFilter` 只需 `return pointShadowFilter({filterFn, depthTexture, shadowCoord, shadow})`。
