@@ -622,6 +622,7 @@ if(THREECPP_BUILD_ADDONS)
     examples/jsm/objects/ShadowMesh.cpp
     examples/jsm/helpers/RectAreaLightHelper.cpp
     examples/jsm/exporters/STLExporter.cpp
+    examples/jsm/exporters/OBJExporter.cpp
         examples/jsm/lights/RectAreaLightTexturesLib.cpp
         examples/jsm/lights/RectAreaLightUniformsLib.cpp
         examples/jsm/curves/NURBSUtils.cpp

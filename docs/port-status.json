@@ -201,8 +201,8 @@
     "note": "Accepted port scope is src and examples/jsm, including tracked third-party dependencies. Editor/manual web applications are excluded from native application rewrites. Native host behavior, packaging and all three platforms require separate implementation and verification evidence."
   },
   "counts": {
-    "partial-unverified": 601,
-    "missing": 340,
+    "partial-unverified": 602,
+    "missing": 339,
     "vulkan-port-pending": 290,
     "dependency-unverified": 20
   },
@@ -218,8 +218,8 @@
     "examples/jsm": {
       "modules": 496,
       "counts": {
-        "missing": 327,
-        "partial-unverified": 149,
+        "missing": 326,
+        "partial-unverified": 150,
         "dependency-unverified": 20
       }
     }
@@ -285,7 +285,7 @@
       "path": "examples/jsm/exporters",
       "upstreamFiles": 8,
       "moduleCount": 8,
-      "modulesWithCppFiles": 1,
+      "modulesWithCppFiles": 2,
       "verifiedComplete": 0
     },
     {
@@ -23388,11 +23388,11 @@
       "scope": "examples/jsm",
       "kind": "addon",
       "upstreamSha256": "b4f6efcc43b2fbb18055f05bfe912a52c25c6a7d59a96f60e96b6e50a3c5d557",
-      "header": null,
-      "implementation": null,
+      "header": "examples/jsm/exporters/OBJExporter.h",
+      "implementation": "examples/jsm/exporters/OBJExporter.cpp",
       "expectedHeader": "examples/jsm/exporters/OBJExporter.h",
       "expectedImplementation": "examples/jsm/exporters/OBJExporter.cpp",
-      "status": "missing",
+      "status": "partial-unverified",
       "verifiedComplete": false,
       "apiExtraction": "static-only",
       "verification": {
@@ -23401,7 +23401,9 @@
           "pointer": "/modules/791"
         },
         "upstreamUnitTests": [],
-        "cppUnitTests": [],
+        "cppUnitTests": [
+          "test/unit/addons/exporters/OBJExporter.tests.cpp"
+        ],
         "reviewedImplementation": [],
         "differentialResults": [],
         "renderingResults": [],
