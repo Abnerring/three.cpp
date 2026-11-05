@@ -1,4 +1,36 @@
-# 当前接续：`SceneUtils.createMeshesFromMultiMaterialMesh` 前置依赖实测（mergeGroups 具体行为），2026-11-05
+# 当前接续：`mergeGroups` 实现蓝图（算法已逐行确认 + C++ 落点已定位），2026-11-05
+
+目标保持 active：固定 three.js 11738a9d55e502fb484cefffcea3a66dc44e9fe9 全部 src + examples/jsm 原生 C++ 逻辑，Vulkan 后端；禁止 CEF/生产 JS 引擎/桥接。阶段本地 Git 提交，不推送。
+
+## 本轮为蓝图沉淀（无源码变更）
+
+r79 定位了 `ScriptUtils.createMeshesFromMultiMaterialMesh` 的前置 `BufferGeometryUtils.mergeGroups`；本轮把**算法逐行确认并定位 C++ 落点**，下一轮可直接照此实现：
+
+### 上游算法（pinned `examples/jsm/utils/BufferGeometryUtils.js:1181`，共 ~75 行）
+
+1. `groups.length === 0` → `console.warn('THREE.BufferGeometryUtils.mergeGroups(): No groups are defined. Nothing to merge.')`，**原样返回 geometry**。
+2. 复制 groups 并**排序**：比较器 `materialIndex 不同 → materialIndex 差值；否则 start 差值`（**返回数值**，r70 已记录 `Array.sort` 语义）。
+3. `getIndex() === null` → 按 `position.count` 每 3 个生成 `[i, i+1, i+2]` 索引并 `setIndex`。
+4. 按**排序后的 groups** 顺序，把 `index` 中 `[start, start+count)` 的值依次 push 到 `newIndices`。
+5. `geometry.dispose()`（强制重建 buffer）→ `setIndex(newIndices)`。
+6. 重写每个 group 的 `start`（累加 `count`），然后**相邻同 materialIndex 归并**：`groups[0]` 起，若同 materialIndex 则 `currentGroup.count += group.count`，否则 push 新 group；最后 `geometry.groups = merged`。
+
+### C++ 落点（已确认）
+
+- 模块：`examples/jsm/utils/BufferGeometryUtils.{h,cpp}`（**已存在**，namespace `BufferGeometryUtils`，类型别名 `GeometryPtr`/`AttributePtr`；头文件末尾有 `} // namespace BufferGeometryUtils` 可作插入锚点）。
+- `BufferGeometry::Group { double start, count, materialIndex; }`；`SharedVector<Group> groups`；已有 `addGroup(start,count,materialIndex)` / `clearGroups()`。
+- **待确认细节（下一轮先核实再写）**：`SharedVector` 的迭代/清空/重排 API；`setIndex(std::vector<unsigned int>)` 是否存在（r67/r76 测试用过 `setIndex(make_shared<BufferAttribute>(vector<unsigned int>{...},1))`，可走该形式）。
+- 建议实现为 `GeometryPtr mergeGroups(const GeometryPtr& geometry)` 并补：无 group warn 分支、已索引分支、非索引建索引分支三组单测 + 与上游的差分（数据级比较 `groups` 与 `index` 数组）。
+
+## 验证
+
+本轮无构建/测试/审计变化（未改源码）：审计保持 src 13 missing / 452 partial，examples 325 / 151。
+
+## 下一步（顺序不变）
+
+1. **实现 `mergeGroups`**（按上面蓝图）。
+2. 再实现 `SceneUtils.createMeshesFromMultiMaterialMesh`（按 group 提取属性 → 子 Mesh）。
+3. `transpiler/AST.js`(8868) / `ShadowNode`(24,331) / `PhysicalLightingModel`(32,829)。# 当前接续：`SceneUtils.createMeshesFromMultiMaterialMesh` 前置依赖实测（mergeGroups 具体行为），2026-11-05
 
 目标保持 active：固定 three.js 11738a9d55e502fb484cefffcea3a66dc44e9fe9 全部 src + examples/jsm 原生 C++ 逻辑，Vulkan 后端；禁止 CEF/生产 JS 引擎/桥接。阶段本地 Git 提交，不推送。
 
