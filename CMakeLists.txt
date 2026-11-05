@@ -614,6 +614,7 @@ if(THREECPP_BUILD_ADDONS)
     examples/jsm/misc/MorphAnimMesh.cpp
     examples/jsm/loaders/materialx/MaterialXLog.cpp
     examples/jsm/environments/DebugEnvironment.cpp
+    examples/jsm/objects/GroundedSkybox.cpp
         examples/jsm/lights/RectAreaLightTexturesLib.cpp
         examples/jsm/lights/RectAreaLightUniformsLib.cpp
         examples/jsm/curves/NURBSUtils.cpp

@@ -1,4 +1,28 @@
-# 当前接续：addon `DebugEnvironment` 移植（5 子节点场景 + Set 去重 dispose，24 项差分），examples 连续第 6 个，2026-11-05
+# 当前接续：addon `GroundedSkybox` 移植（几何顶点级变形差分，全位置缓冲逐值比对），examples 连续第 7 个，2026-11-05
+
+目标保持 active：固定 three.js 11738a9d55e502fb484cefffcea3a66dc44e9fe9 全部 src + examples/jsm 原生 C++ 逻辑，Vulkan 后端；禁止 CEF/生产 JS 引擎/桥接。阶段本地 Git 提交，不推送。
+
+## 本轮交付：`examples/jsm/objects/GroundedSkybox`
+
+- `examples/jsm/objects/GroundedSkybox.{h,cpp}`：`class GroundedSkybox : public Mesh`，构造 `GroundedSkybox(map, height, radius, resolution = 128)`。
+  - **参数校验**：`height <= 0 || radius <= 0 || resolution <= 0` → 抛 `std::runtime_error("THREE.GroundedSkybox: height, radius, and resolution must be positive.")`（消息与上游一致）。
+  - 几何：`SphereGeometry(radius, 2*resolution, resolution)` → `scale(1,1,-1)` 镜像 → 逐顶点：`Vector3::fromBufferAttribute` 取点，`y < 0` 时按 `y1 = -height*3/2` 两支计算缩放因子（`y < y1` 用 `-height/y`，否则 `1 - y²/(3y1²)`）并 `multiplyScalar`，再用 **`VertexAttribute::setXYZ`** 写回（等价上游 `tmp.toArray(pos.array, 3*i)`，已在注释说明）；最后 `setNeedsUpdate(true)`。
+  - 材质：`MeshBasicMaterial`，`map = map`、`depthWrite = false`。
+- `test/unit/addons/objects/GroundedSkybox.tests.cpp`（2 用例 / 13 断言）：三个非法参数各自抛错；合法构造的 radius/widthSegments(8)/heightSegments(4)、`map` 同一性、`depthWrite === false`、**最低点 y === -15（= -height）**、顶点数 9×5。
+- 差分 `GroundedSkyboxParityProbe.cpp` + `compare-grounded-skybox.mjs`：除 9 项结构/材质字段外，**比对整条变形后的 position 缓冲**（45 顶点 × 3 = 135 个 double，1e-12 容差）+ `minimumY`。
+
+## 验证
+
+- 构建 exit 0。
+- `THREECPPAddonTests`：**1305 cases / 31,283 assertions 全过**（较上轮 1303/31,270 → +2 例 / +13 断言）；过滤 `*GroundedSkybox*` = 2 cases / 13 assertions。
+- 差分 `threecpp.threejs-grounded-skybox-parity` **Passed**（顶点级）。
+- 审计：**examples/jsm missing 334→333、partial-unverified 142→143**；`src` 不变（19 / 446）。
+
+**未执行验证（如实记录）**：未做真实渲染（本 addon 只构建几何）；只测了 `resolution = 4` 一档（默认 128 未跑，因顶点数大会让差分体积过大）；`map` 只验证同一性，纹理内容/采样未触。
+
+## 下一步
+
+examples 小 addon：`generators/city/InstancedMeshGenerator`(2230)、`helpers/OctreeHelper`(2913)、`materialx/MaterialXArchive`(2327)、`transpiler/TranspilerUtils`(682，AST 未核查)。src 侧仍剩 19 个（`ShadowNode` 24,331 / `PhysicalLightingModel` 32,829 为最大缺口）。# 当前接续：addon `DebugEnvironment` 移植（5 子节点场景 + Set 去重 dispose，24 项差分），examples 连续第 6 个，2026-11-05
 
 目标保持 active：固定 three.js 11738a9d55e502fb484cefffcea3a66dc44e9fe9 全部 src + examples/jsm 原生 C++ 逻辑，Vulkan 后端；禁止 CEF/生产 JS 引擎/桥接。阶段本地 Git 提交，不推送。
 
