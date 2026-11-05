@@ -1,4 +1,29 @@
-# 当前接续：`ShadowNode` C 段 `renderShadow` + `vsmPass` 实现（未加新测试，如实标注），2026-11-05
+# 当前接续：`ShadowNode` `renderShadow`/`vsmPass` 冒烟测试补齐（r124 缺口），2026-11-05
+
+目标保持 active：固定 three.js 11738a9d55e502fb484cefffcea3a66dc44e9fe9 全部 src + examples/jsm 原生 C++ 逻辑，Vulkan 后端；禁止 CEF/生产 JS 引擎/桥接。阶段本地 Git 提交，不推送。
+
+## 本轮内容（测试补充）
+
+r124 记录 `renderShadow`/`vsmPass` 无测试。本轮补 2 个**冒烟用例**（均用 stub 对象与 `JSValue::function` 桩函数）：
+
+- **`renderShadow`**：假 shadow（`updateMatrices` 桩、`mapSize`）、`shadowMap`（`setSize` 桩、`depth`）、`renderer.render` 桩、`scene.name = "Scene"`；调用后断言 **`scene.name` 被还原为 "Scene"**（覆盖暂存/改写/还原路径）。
+- **`vsmPass`**：`vsmShadowMapVertical/Horizontal` 带 `setSize` 桩、`vsmMaterialVertical/Horizontal`、`renderer.setRenderTarget`/`render` 桩；`REQUIRE_NOTHROW` 证明两趟 pass 能走通。
+
+**局限（如实记录）**：`JSValue::function` 的 **NativeFunction 是无捕获函数指针**，测试内无法把调用记录写回局部变量，因此这两条用例**只断言「不抛 + scene.name 还原」**，**未断言调用次数与参数**（`setSize(128,64,0)`、`setRenderTarget` 顺序、`render` 次数等）。如需精确调用序列，应改用可捕获的测试夹具（例如 `makeClass` 构造带状态的桩对象，或提供全局静态记录器）。
+
+## 验证
+
+- 构建 exit 0；过滤 `*ShadowNode*` = **8 cases / 32 assertions** 全过（+2 例 / +3 断言）。
+- `THREECPPAddonTests` 全套通过（1373 cases / 38,935 assertions）。
+- 审计不变（ShadowNode 已 partial）：src 12 / 453；examples/jsm 322 / 154。
+
+**未执行验证（如实记录）**：调用序列/参数未断言（见上）；`updateShadow`/`setupShadow`/`setup`/`updateBefore` 仍抛错；`_quadMesh` 仍为每次调用新建（与上游模块级单例的差异已记录）。
+
+## 下一步
+
+1. **D 段**：`setupShadow`（240 行 TSL 图）+ `setup`/`updateShadow`/`updateBefore` 串联（最大一块）；
+2. 把 `_quadMesh` 改为模块级单例；
+3. 需要精确调用序列时改用带状态桩对象。# 当前接续：`ShadowNode` C 段 `renderShadow` + `vsmPass` 实现（未加新测试，如实标注），2026-11-05
 
 目标保持 active：固定 three.js 11738a9d55e502fb484cefffcea3a66dc44e9fe9 全部 src + examples/jsm 原生 C++ 逻辑，Vulkan 后端；禁止 CEF/生产 JS 引擎/桥接。阶段本地 Git 提交，不推送。
 

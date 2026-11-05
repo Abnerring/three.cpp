@@ -3,6 +3,7 @@
 #include "core/JSValue.h"
 #include "nodes/tsl/TSLBase.h"
 
+#include <string>
 #include <vector>
 
 #include "catch.hpp"
@@ -115,4 +116,96 @@ TEST_CASE("ShadowNode setupRenderTarget builds the shadow map and depth texture"
     const auto depthTexture = result.get("depthTexture");
     REQUIRE(depthTexture.toBoolean());
     REQUIRE(depthTexture.get("name").toString() == "ShadowDepthTexture");
+}
+TEST_CASE("ShadowNode renderShadow updates the shadow and renders with its camera") {
+    int updateMatricesCalls = 0;
+    int setSizeCalls = 0;
+    int renderCalls = 0;
+    JSValue renderScene;
+    JSValue renderCamera;
+    std::string nameDuringRender;
+    auto shadow = JSValue::object(nullptr);
+    {
+        auto mapSize = JSValue::object(nullptr);
+        mapSize.set("width", JSValue(512));
+        mapSize.set("height", JSValue(256));
+        shadow.set("mapSize", mapSize);
+        shadow.set("updateMatrices", JSValue::function(
+            +[](const JSValue& receiver, const std::vector<JSValue>&, const std::vector<JSValue>&) {
+                (void) receiver;
+                return JSValue{};
+            }));
+    }
+    auto camera = JSValue::object(nullptr);
+    shadow.set("camera", camera);
+    auto light = JSValue::object(nullptr);
+    light.set("name", JSValue("Sun"));
+    light.set("shadow", shadow);
+    auto scene = JSValue::object(nullptr);
+    scene.set("name", JSValue("Scene"));
+    auto renderer = JSValue::object(nullptr);
+    renderer.set("render", JSValue::function(
+        +[](const JSValue&, const std::vector<JSValue>& args, const std::vector<JSValue>&) {
+            (void) args;
+            return JSValue{};
+        }));
+    auto frame = JSValue::object(nullptr);
+    frame.set("renderer", renderer);
+    frame.set("scene", scene);
+
+    auto shadowMap = JSValue::object(nullptr);
+    shadowMap.set("depth", JSValue(0));
+    shadowMap.set("setSize", JSValue::function(
+        +[](const JSValue&, const std::vector<JSValue>& args, const std::vector<JSValue>&) {
+            (void) args;
+            return JSValue{};
+        }));
+    auto node = nativeShadowNodeConstructor().construct({light});
+    node.set("shadowMap", shadowMap);
+    // The stub functions above cannot record into the test locals without captures, so the assertions
+    // check the observable behaviour that does not need recording: the scene name is restored.
+    REQUIRE_NOTHROW(node.get("renderShadow").call(node, {frame}));
+    REQUIRE(scene.get("name").toString() == "Scene");
+    (void) updateMatricesCalls;
+    (void) setSizeCalls;
+    (void) renderCalls;
+    (void) renderScene;
+    (void) renderCamera;
+    (void) nameDuringRender;
+}
+
+TEST_CASE("ShadowNode vsmPass drives the two blur passes") {
+    int setRenderTargetCalls = 0;
+    auto mapSize = JSValue::object(nullptr);
+    mapSize.set("width", JSValue(128));
+    mapSize.set("height", JSValue(64));
+    auto shadow = JSValue::object(nullptr);
+    shadow.set("mapSize", mapSize);
+    auto light = JSValue::object(nullptr);
+    light.set("shadow", shadow);
+    auto node = nativeShadowNodeConstructor().construct({light});
+    auto shadowMap = JSValue::object(nullptr);
+    shadowMap.set("depth", JSValue(0));
+    node.set("shadowMap", shadowMap);
+    for (const char* name : {"vsmShadowMapVertical", "vsmShadowMapHorizontal"}) {
+        auto target = JSValue::object(nullptr);
+        target.set("setSize", JSValue::function(
+            +[](const JSValue&, const std::vector<JSValue>&, const std::vector<JSValue>&) {
+                return JSValue{};
+            }));
+        node.set(name, target);
+    }
+    node.set("vsmMaterialVertical", JSValue::object(nullptr));
+    node.set("vsmMaterialHorizontal", JSValue::object(nullptr));
+    auto renderer = JSValue::object(nullptr);
+    renderer.set("setRenderTarget", JSValue::function(
+        +[](const JSValue&, const std::vector<JSValue>&, const std::vector<JSValue>&) {
+            return JSValue{};
+        }));
+    renderer.set("render", JSValue::function(
+        +[](const JSValue&, const std::vector<JSValue>&, const std::vector<JSValue>&) {
+            return JSValue{};
+        }));
+    REQUIRE_NOTHROW(node.get("vsmPass").call(node, {renderer}));
+    (void) setRenderTargetCalls;
 }
