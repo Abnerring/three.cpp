@@ -19,9 +19,13 @@ const rewritten = fs.readFileSync(sourcePath, 'utf8').replace(/from 'three'/g, `
 const moduleUrl = `data:text/javascript;base64,${Buffer.from(rewritten, 'utf8').toString('base64')}`;
 const { InstancedMeshGenerator } = await import(moduleUrl);
 
-const generator = new InstancedMeshGenerator(
+let factoryParameters = null;
+class GeneratorWithDefaults extends InstancedMeshGenerator {
+  static defaults = { fromDefaults: 7, size: 99 };
+}
+const generator = new GeneratorWithDefaults(
   { size: 1 },
-  () => new THREE.BoxGeometry(),
+  (received) => { factoryParameters = received; return new THREE.BoxGeometry(); },
   () => new THREE.MeshBasicMaterial(),
   'city',
   false
@@ -42,6 +46,7 @@ for (let i = 0; i < placements.length; i += 1) {
   translations.push(matrix.elements[12], matrix.elements[13], matrix.elements[14]);
 }
 
+// Count the dispose events of the first resources so a rebuild can be checked.
 // Count the dispose events of the first resources so a rebuild can be checked.
 let firstGeometryDisposeEvents = 0;
 let firstMaterialDisposeEvents = 0;
@@ -67,7 +72,15 @@ for (let i = 0; i < placements.length; i += 1) {
   rebuiltTranslations.push(matrix.elements[12], matrix.elements[13], matrix.elements[14]);
 }
 
+const factoryMatched = factoryParameters !== null;
+const factoryParameterKeys = factoryMatched ? Object.keys(factoryParameters).length : -1;
+const factoryHasDefaultKey = factoryMatched ? ('fromDefaults' in factoryParameters) : false;
+const factorySizeValue = factoryMatched ? factoryParameters.size : -1;
+
 const expected = {
+  factoryParameterKeys,
+  factoryHasDefaultKey,
+  factorySizeValue,
   firstGeometryDisposeEvents,
   firstMaterialDisposeEvents,
   grownCapacity: grownMesh.instanceMatrix.count,

@@ -1,4 +1,30 @@
-# 当前接续：`InstancedMeshGenerator` 差分补 dispose 事件对照（重建资源释放），2026-11-05
+# 当前接续：`InstancedMeshGenerator` 差分补「参数合并语义」校验（Object.assign 等价），2026-11-05
+
+目标保持 active：固定 three.js 11738a9d55e502fb484cefffcea3a66dc44e9fe9 全部 src + examples/jsm 原生 C++ 逻辑，Vulkan 后端；禁止 CEF/生产 JS 引擎/桥接。阶段本地 Git 提交，不推送。
+
+## 本轮内容（差分扩展，17 项比较）
+
+r113–r115 记录 `createGeometry(parameters)` 收到的合并参数**未断言**、且默认值合并没有对照。本轮补上：
+
+- **C++ 侧**：给 `InstancedMeshGenerator` 传 6 参（显式 `defaults = {fromDefaults: 7, size: 99}`）与 `parameters = {size: 1}`；工厂回调捕获收到的 `JsonValue`，输出 `factoryParameterKeys`、`factoryHasDefaultKey`、`factorySizeValue`。
+- **JS 侧**：上游 `this.constructor.defaults` 通过**子类静态字段**复现：`class GeneratorWithDefaults extends InstancedMeshGenerator { static defaults = { fromDefaults: 7, size: 99 } }`；工厂回调同样捕获收到的参数。
+- 断言：两侧 `factoryParameterKeys == 2`、`factoryHasDefaultKey == true`、`factorySizeValue == 1`（**参数覆盖默认值**，正是 `Object.assign({}, defaults, parameters)` 语义）→ **Passed**。
+
+**同时移除了两处无意义对照**：本轮曾在两次重建之后才挂 mesh dispose 监听，计数恒为 0，不具验证价值；已从探针与比较脚本中删除（保留 r115 的 geometry/material dispose 事件对照）。
+
+## 验证
+
+- 构建 exit 0；`threecpp.threejs-instanced-mesh-generator-parity` **Passed**（17 项）。
+- `THREECPPAddonTests` 全套 **1365 cases / 38,903 assertions** 全过。
+- 审计不变：examples/jsm 322 / 154；src 13 / 452。
+
+**未执行验证（如实记录）**：mesh 自身 dispose 事件仍未对照（监听器时序问题已记录，需在**首次构建后立即**挂监听）；`parameters` 的 `dump()` vs `JSON.stringify` 表示差异仍未验证（仅内部缓存用）。
+
+## 下一步
+
+1. **`ShadowNode`(24,331)** —— 前置已确认齐备（r108 更正），进入组装阶段；
+2. `PhysicalLightingModel`(32,829)；
+3. 可选：把 mesh dispose 监听挪到首次构建后，补上该事件对照。# 当前接续：`InstancedMeshGenerator` 差分补 dispose 事件对照（重建资源释放），2026-11-05
 
 目标保持 active：固定 three.js 11738a9d55e502fb484cefffcea3a66dc44e9fe9 全部 src + examples/jsm 原生 C++ 逻辑，Vulkan 后端；禁止 CEF/生产 JS 引擎/桥接。阶段本地 Git 提交，不推送。
 

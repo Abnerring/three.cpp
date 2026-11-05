@@ -14,9 +14,17 @@ int main() {
     try {
         JsonValue parameters = JsonValue::Object{};
         parameters["size"] = JsonValue(1);
-        auto createGeometry = [](const JsonValue&) { return std::make_shared<BoxGeometry>(); };
+        JsonValue defaults = JsonValue::Object{};
+        defaults["fromDefaults"] = JsonValue(7);
+        defaults["size"] = JsonValue(99);
+        JsonValue factoryParameters;
+        auto createGeometry = [&factoryParameters](const JsonValue& received) {
+            factoryParameters = received;
+            return std::make_shared<BoxGeometry>();
+        };
         auto createMaterial = [] { return std::make_shared<MeshBasicMaterial>(); };
-        InstancedMeshGenerator generator(parameters, createGeometry, createMaterial, "city", false);
+        InstancedMeshGenerator generator(parameters, createGeometry, createMaterial, "city", false,
+                                          defaults);
 
         std::vector<Matrix4> placements;
         for (int i = 0; i < 2; ++i) {
@@ -59,7 +67,18 @@ int main() {
         generator.parameters["size"] = JsonValue(2);
         const auto rebuiltMesh = generator.build(placements);
 
+        // The factory received the Object.assign( {}, defaults, parameters ) view.
+
+        const double factoryParameterKeys = static_cast<double>(factoryParameters.size());
+        const bool factoryHasDefaultKey = factoryParameters.contains("fromDefaults");
+        const double factorySizeValue = factoryParameters.at("size").isNull()
+                                            ? -1
+                                            : factoryParameters.at("size").get<double>();
+
         auto output = JSValue::object(nullptr);
+        output.set("factoryParameterKeys", JSValue(factoryParameterKeys));
+        output.set("factoryHasDefaultKey", JSValue(factoryHasDefaultKey));
+        output.set("factorySizeValue", JSValue(factorySizeValue));
         output.set("firstGeometryDisposeEvents", JSValue(firstGeometryDisposeEvents));
         output.set("firstMaterialDisposeEvents", JSValue(firstMaterialDisposeEvents));
         output.set("grownCapacity", JSValue(grownMesh->instanceMatrix->getCount()));
