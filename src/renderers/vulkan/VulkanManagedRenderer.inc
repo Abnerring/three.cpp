@@ -10,9 +10,7 @@ std::unique_ptr<WebGLExtensions> managedExtensions;
 unsigned managedRenderDepth = 0;
 bool managedAlpha = false, managedPremultipliedAlpha = true;
 bool managedReversedDepth = false;
-bool managedDepthMask = true, managedDepthTest = true, managedPolygonOffset = false;
-JSValue managedTextureUnits = 0;
-JSValue managedClearScratch, managedCurrentClear, managedViewport;
+JSValue managedViewport;
 
 static JSValue managedArg(const std::vector<JSValue>& args, std::size_t i) {
     return i < args.size() ? args[i] : JSValue{};
@@ -30,7 +28,7 @@ JSValue managedService(const char* name, unsigned arity = 0) {
         if (!lifetime || !lifetime->owner) throw JSTypeError("VulkanRenderer has been disposed");
         return lifetime->owner->managedDispatch(captures[1].string(), receiver, args);
     };
-    if (std::string(name) == "render")
+    if (std::string(name).find('.') == std::string::npos)
         return JSValue::constructor(callback, {token, name}, "", arity, JSValue::ConstructorKind::Callable);
     return JSValue::function(callback, {token, name}, name, arity);
 }
@@ -41,12 +39,15 @@ void ensureManagedRecording() {
 void syncManagedViewport() {
     if (managedScenePipeline.isUndefined()) return;
     managedCell("_height", height);
+    managedGLCanvas.set("width",width);managedGLCanvas.set("height",height);
     const auto value = managedCell("_currentViewport");
     managedCall(value, "set")({currentViewport.x, currentViewport.y, currentViewport.z, currentViewport.w});
     managedCall(managedViewport, "set")({viewport.x, viewport.y, viewport.z, viewport.w});
 }
 JSValue managedDispatch(const std::string& name, const JSValue& receiver, const std::vector<JSValue>& args) {
+    if(name.starts_with("gl."))return managedNativeGL(name.substr(3),args);
     const auto a = managedArg(args, 0), b = managedArg(args, 1);
+    if(name=="getContext")return managedGL;
     if (name == "render") return renderManaged(a, b, receiver);
     if (name == "renderBufferDirect") {
         if (renderTarget) throw std::logic_error("Managed draws to typed render targets are not implemented");
@@ -54,25 +55,15 @@ JSValue managedDispatch(const std::string& name, const JSValue& receiver, const 
         const bool outer = managedRenderDepth++ == 0;
         if (outer) rendering = true;
         try {
-        if (managedCell("_clippingEnabled").strictEquals(true)) {
-            const auto previousCamera = managedCell("_currentCamera");
-            if (managedCell("_localClippingEnabled").strictEquals(true) || !a.strictEquals(previousCamera)) {
-                const auto material = managedArg(args, 3);
-                const bool useCache = a.strictEquals(previousCamera) && material.get("id").strictEquals(managedCell("_currentMaterialId"));
-                clipping->setState(material, a, useCache);
-            }
-        }
-        ensureManagedRecording();
-        managedOutputSRGB = managedRenderer.get("outputColorSpace").strictEquals(SRGBColorSpace);
-        renderManagedBufferDirect(a, b, managedArg(args, 2), managedArg(args, 3), managedArg(args, 4), managedArg(args, 5));
-        if (outer) { if (recording) endFrame(); managedPrepared.clear(); rendering = false; }
+        managedScenePipeline.get("renderBufferDirect").call(receiver,args);
+        if (outer) { if (recording) endFrame(); clearManagedProgramFrame(); rendering = false; }
         --managedRenderDepth;
         return {};
         } catch (...) {
             --managedRenderDepth;
             if (outer) {
                 try { if (recording) endFrame(); } catch (...) {}
-                abortFrame(); managedPrepared.clear(); rendering = false;
+                abortFrame(); clearManagedProgramFrame(); rendering = false;
             }
             throw;
         }
@@ -91,11 +82,14 @@ JSValue managedDispatch(const std::string& name, const JSValue& receiver, const 
         return {};
     }
     if (name == "clear") {
-        const bool color = a.isUndefined() || a.toBoolean(), depth = b.isUndefined() || b.toBoolean();
-        if (depth) managedDepthMask = true;
-        ensureManagedRecording();
-        clearAttachments(color && colorWrite, depth, activeClearColor, activeClearAlpha, false);
-        if (managedRenderDepth == 0) { endFrame(); managedPrepared.clear(); }
+        const auto color=a.isUndefined()?JSValue(true):a;
+        const auto depth=b.isUndefined()?JSValue(true):b;
+        const auto stencilArg=managedArg(args,2),stencil=stencilArg.isUndefined()?JSValue(true):stencilArg;
+        std::uint32_t bits=0;
+        if(color.toBoolean())bits|=0x4000;
+        if(depth.toBoolean()){bits|=0x0100;managedCall(receiver.get("state").get("buffers").get("depth"),"setMask")({true});}
+        if(stencil.toBoolean()){bits|=0x0400;managedCall(receiver.get("state").get("buffers").get("stencil"),"setMask")({4294967295.0});}
+        if(bits)managedCall(managedGL,"clear")({double(bits)});
         return {};
     }
     if (name == "setClearColor") return managedBackground->setClearColor(a, b.isUndefined() ? JSValue(1) : b);
@@ -112,50 +106,11 @@ JSValue managedDispatch(const std::string& name, const JSValue& receiver, const 
         return managedCall(a, "copy")({view});
     }
     if (name == "getPixelRatio") return 1;
-    if (name == "state.viewport") {
-        const auto x = a.get("x"), y = a.get("y"), z = a.get("z"), w = a.get("w");
-        const auto nx = x.toNumber(), ny = y.toNumber(), nz = z.toNumber(), nw = w.toNumber();
-        currentViewport.set(nx, ny, nz, nw);
-        retainValidRectangle(currentViewport, gpuViewport); applyViewportAndScissor(); return {};
-    }
-    if (name == "state.color.setMask") { colorWrite = a.toBoolean(); return {}; }
-    if (name == "state.depth.setMask") { managedDepthMask = a.toBoolean(); return {}; }
-    if (name == "state.depth.setTest") { managedDepthTest = a.toBoolean(); return {}; }
-    if (name == "state.setPolygonOffset") { managedPolygonOffset = a.toBoolean(); return {}; }
-    if (name == "state.color.setClear") {
-        auto r = a, g = b, blue = managedArg(args, 2);
-        const auto alpha = managedArg(args, 3);
-        if (managedArg(args, 4).strictEquals(true)) {
-            const auto redValue = r.toNumber(); const auto redAlpha = alpha.toNumber(); r = redValue * redAlpha;
-            const auto greenValue = g.toNumber(); const auto greenAlpha = alpha.toNumber(); g = greenValue * greenAlpha;
-            const auto blueValue = blue.toNumber(); const auto blueAlpha = alpha.toNumber(); blue = blueValue * blueAlpha;
-        }
-        managedCall(managedClearScratch, "set")({r, g, blue, alpha});
-        if (!managedCall(managedCurrentClear, "equals")({managedClearScratch}).strictEquals(false)) return {};
-        // Conversion is the native clearColor command boundary; preserve the
-        // source's three separate alpha coercions above and its raw cache.
-        const auto red = float(r.toNumber()); const auto green = float(g.toNumber());
-        const auto blueValue = float(blue.toNumber()); const auto alphaValue = float(alpha.toNumber());
-        activeClearColor.r = red; activeClearColor.g = green; activeClearColor.b = blueValue;
-        activeClearAlpha = alphaValue;
-        managedCall(managedCurrentClear, "copy")({managedClearScratch});
-        // WebGLBackground already converts working colors to the selected
-        // output space before calling this native color-buffer service.
-        activeClearSRGB = false; return {};
-    }
     if (name == "xr.getEnvironmentBlendMode") return {};
     if (name == "xr.hasDepthSensing") return false;
     if (name == "xr.getDepthSensingMesh") return nullptr;
     if (name == "xr.updateCamera" || name == "xr.getCamera")
         throw std::logic_error("Native Vulkan XR session integration is not implemented");
-    if (name == "textures.getTextureUnits") return managedTextureUnits;
-    if (name == "textures.setTextureUnits") { managedTextureUnits = a; return {}; }
-    if (name == "textures.resetTextureUnits") { managedTextureUnits = 0; return {}; }
-    if (name == "textures.updateMultisampleRenderTarget" || name == "textures.updateRenderTargetMipmap")
-        throw std::logic_error("Managed Vulkan multisample/mipmap target updates are not implemented");
-    if (name == "environments.get")
-        throw std::logic_error("Managed Vulkan environment texture conversion is not implemented");
-    if (name == "gl.getExtension") return nullptr; // No GL extensions on a Vulkan device.
     if (name == "shadowMap.render") {
         const auto shadow = managedRenderer.get("shadowMap");
         // Original WebGLShadowMap early exits, before any GPU work.
@@ -168,6 +123,9 @@ JSValue managedDispatch(const std::string& name, const JSValue& receiver, const 
 }
 void initializeManagedRenderer() {
     if (!managedRenderer.isUndefined()) return;
+#ifndef THREECPP_HAS_NATIVE_ESSL
+    throw std::logic_error("Source GLSL rendering requires THREECPP_NATIVE_ESSL=ON");
+#endif
     if (renderTarget) throw std::logic_error("Initialize the managed renderer with the screen target bound");
     managedRenderer = JSValue::object();
     const auto property = [&](const char* name, JSValue value) { managedOwn(managedRenderer, name, value); };
@@ -179,9 +137,9 @@ void initializeManagedRenderer() {
     property("toneMapping", NoToneMapping); property("toneMappingExposure", 1);
     property("transmissionResolutionScale", 1); property("outputColorSpace", SRGBColorSpace);
     for (const auto& [name, arity] : std::initializer_list<std::pair<const char*, unsigned>>{
-        {"render", 2}, {"renderBufferDirect", 6}, {"clear", 0}, {"getRenderTarget", 0},
+        {"render", 2}, {"renderBufferDirect", 6}, {"clear", 0}, {"getRenderTarget", 0}, {"getContext", 0},
         {"getActiveCubeFace", 0}, {"getActiveMipmapLevel", 0}, {"setRenderTarget", 1},
-        {"getClearColor", 1}, {"getClearAlpha", 0}, {"setClearColor", 1}, {"setClearAlpha", 1},
+        {"getClearColor", 1}, {"getClearAlpha", 0}, {"setClearColor", 0}, {"setClearAlpha", 0},
         {"getSize", 1}, {"getDrawingBufferSize", 1}, {"getViewport", 1}, {"getCurrentViewport", 1}, {"getPixelRatio", 0}})
         property(name, managedService(name, arity));
     managedXR = JSValue::object(); managedOwn(managedXR, "enabled", false);
@@ -192,43 +150,34 @@ void initializeManagedRenderer() {
     auto shadow = JSValue::object(); managedOwn(shadow, "enabled", false); managedOwn(shadow, "autoUpdate", true);
     managedOwn(shadow, "needsUpdate", false); managedOwn(shadow, "type", PCFShadowMap);
     managedOwn(shadow, "render", managedService("shadowMap.render", 3)); property("shadowMap", shadow);
-    managedState = JSValue::object(); auto buffers = JSValue::object();
-    managedClearScratch = nativeVector4Constructor().construct();
-    // WebGLState initializes the GL clear color to opaque black at startup.
-    managedCurrentClear = nativeVector4Constructor().construct({0, 0, 0, 1});
+    auto debug=JSValue::object();managedOwn(debug,"checkShaderErrors",true);managedOwn(debug,"onShaderError",nullptr);property("debug",debug);
     managedViewport = nativeVector4Constructor().construct({viewport.x, viewport.y, viewport.z, viewport.w});
-    auto color = JSValue::object(), depth = JSValue::object();
-    managedOwn(color, "setClear", managedService("state.color.setClear", 5));
-    managedOwn(color, "setMask", managedService("state.color.setMask", 1));
-    managedOwn(depth, "setMask", managedService("state.depth.setMask", 1));
-    managedOwn(depth, "setTest", managedService("state.depth.setTest", 1));
-    managedOwn(buffers, "color", color); managedOwn(buffers, "depth", depth);
-    managedOwn(managedState, "buffers", buffers);
-    managedOwn(managedState, "viewport", managedService("state.viewport", 1));
-    managedOwn(managedState, "setPolygonOffset", managedService("state.setPolygonOffset", 3));
-    property("state", managedState);
-    auto gl = JSValue::object(); managedOwn(gl, "getExtension", managedService("gl.getExtension", 1));
-    managedExtensions = std::make_unique<WebGLExtensions>(gl);
-    managedRenderLists = std::make_unique<WebGLRenderLists>();
-    managedRenderStates = std::make_unique<WebGLRenderStates>(managedExtensions->object());
-    auto environments = JSValue::object(); managedOwn(environments, "get", managedService("environments.get", 2));
-    managedBackground = std::make_unique<WebGLBackground>(managedRenderer, environments, managedState, objects->object(), managedAlpha, managedPremultipliedAlpha);
-    auto textures = JSValue::object();
-    for (const char* name : {"getTextureUnits", "setTextureUnits", "resetTextureUnits", "updateMultisampleRenderTarget", "updateRenderTargetMipmap"})
-        managedOwn(textures, name, managedService((std::string("textures.") + name).c_str(), name == std::string("getTextureUnits") ? 0 : 1));
-    auto capabilities = JSValue::object(); managedOwn(capabilities, "samples", 0);
+    initializeManagedContext();
+    property("domElement",managedGLCanvas);property("state",managedState);
+    property("capabilities",managedCapabilities->object());property("extensions",managedExtensions->object());
+    property("properties",clippingProperties->object());
+    auto infoObject=drawInfo->object();infoObject.set("programs",managedPrograms->object().get("programs"));
+    managedRenderLists=std::make_unique<WebGLRenderLists>();
+    managedRenderStates=std::make_unique<WebGLRenderStates>(managedExtensions->object());
+    managedBackground=std::make_unique<WebGLBackground>(managedRenderer,managedEnvironments->object(),managedState,objects->object(),managedAlpha,managedPremultipliedAlpha);
     auto bindings = JSValue::object();
     for (const auto& [name, value] : std::initializer_list<std::pair<const char*, JSValue>>{
         {"_this", managedRenderer}, {"objects", objects->object()}, {"renderLists", managedRenderLists->object()},
         {"renderStates", managedRenderStates->object()}, {"clipping", clipping->object()},
-        {"background", managedBackground->object()}, {"shadowMap", shadow}, {"textures", textures},
+        {"background", managedBackground->object()}, {"shadowMap", shadow}, {"textures", managedTextures->object()},
         {"state", managedState}, {"xr", managedXR}, {"bindingStates", bindingStates->object()},
-        {"extensions", managedExtensions->object()}, {"capabilities", capabilities}})
+        {"extensions", managedExtensions->object()}, {"capabilities", managedCapabilities->object()},
+        {"_gl",managedGL},{"properties",clippingProperties->object()},{"programCache",managedPrograms->object()},
+        {"environments",managedEnvironments->object()},{"materials",managedMaterials->object()},
+        {"morphtargets",managedMorphtargets->object()},{"uniformsGroups",managedUniformsGroups->object()},
+        {"geometries",geometries->object()},{"attributes",managedAttributes},
+        {"bufferRenderer",managedBufferRenderer->object()},{"indexedBufferRenderer",managedIndexedBufferRenderer->object()},
+        {"getDFGLUT",nativeGetDFGLUTFunction()},{"_height",height},{"stencil",false}})
         managedOwn(bindings, name, value);
     managedScenePipeline = nativeWebGLRendererScenePipeline(bindings);
     managedRenderer.get("render").setFunctionSourceText(managedScenePipeline.get("render").nativeFunctionSource());
     syncManagedViewport();
-    managedEmptyScene = managedCell("_emptyScene");
+    managedRenderer.get("renderBufferDirect").setFunctionSourceText(managedScenePipeline.get("renderBufferDirect").nativeFunctionSource());
 }
 JSValue renderManaged(JSValue scene, JSValue camera, JSValue receiver) {
     initializeManagedRenderer();
@@ -247,7 +196,7 @@ JSValue renderManaged(JSValue scene, JSValue camera, JSValue receiver) {
         --managedRenderDepth;
         if (outer) {
             if (recording) endFrame();
-            managedPrepared.clear(); rendering = false;
+            clearManagedProgramFrame(); rendering = false;
         }
         return result;
     } catch (...) {
@@ -257,7 +206,7 @@ JSValue renderManaged(JSValue scene, JSValue camera, JSValue receiver) {
         if (outer) {
             try { if (recording) endFrame(); } catch (...) { abortFrame(); }
             abortFrame();
-            managedPrepared.clear(); rendering = false;
+            clearManagedProgramFrame(); rendering = false;
         }
         throw;
     }

@@ -963,7 +963,7 @@
       "path": "src/renderers/shaders",
       "upstreamFiles": 5,
       "moduleCount": 5,
-      "modulesWithCppFiles": 4,
+      "modulesWithCppFiles": 5,
       "verifiedComplete": 0
     },
     {
@@ -984,7 +984,7 @@
       "path": "src/renderers/webgl",
       "upstreamFiles": 30,
       "moduleCount": 30,
-      "modulesWithCppFiles": 26,
+      "modulesWithCppFiles": 28,
       "verifiedComplete": 0
     },
     {
@@ -15903,8 +15903,8 @@
       "scope": "src",
       "kind": "core",
       "upstreamSha256": "c9512c191523396ab5da2252cfab7315a4765ea187cfdfcee9a7246f9a30dc89",
-      "header": null,
-      "implementation": null,
+      "header": "src/renderers/shaders/DFGLUTData.h",
+      "implementation": "src/renderers/shaders/DFGLUTData.cpp",
       "expectedHeader": "src/renderers/shaders/DFGLUTData.h",
       "expectedImplementation": "src/renderers/shaders/DFGLUTData.cpp",
       "status": "vulkan-port-pending",
@@ -15916,7 +15916,9 @@
           "pointer": "/modules/517"
         },
         "upstreamUnitTests": [],
-        "cppUnitTests": [],
+        "cppUnitTests": [
+          "test/unit/src/renderers/shaders/DFGLUTData.tests.cpp"
+        ],
         "reviewedImplementation": [],
         "differentialResults": [],
         "renderingResults": [],
@@ -19676,8 +19678,8 @@
       "scope": "src",
       "kind": "core",
       "upstreamSha256": "44c632d0541d015efa4ae3f785f21561a173e03c24deb0b91ab61dfe7806b5e7",
-      "header": null,
-      "implementation": null,
+      "header": "src/renderers/webgl/WebGLEnvironments.h",
+      "implementation": "src/renderers/webgl/WebGLEnvironments.cpp",
       "expectedHeader": "src/renderers/webgl/WebGLEnvironments.h",
       "expectedImplementation": "src/renderers/webgl/WebGLEnvironments.cpp",
       "status": "vulkan-port-pending",
@@ -19873,8 +19875,8 @@
       "scope": "src",
       "kind": "core",
       "upstreamSha256": "2e7f121a3b8e090cedd3ccfdc1ab8fa20d92790bba306b35fc7f3ea6cfe00f64",
-      "header": null,
-      "implementation": null,
+      "header": "src/renderers/webgl/WebGLMorphtargets.h",
+      "implementation": "src/renderers/webgl/WebGLMorphtargets.cpp",
       "expectedHeader": "src/renderers/webgl/WebGLMorphtargets.h",
       "expectedImplementation": "src/renderers/webgl/WebGLMorphtargets.cpp",
       "status": "vulkan-port-pending",

@@ -41,6 +41,13 @@
 // The set/get slots can synchronize mutable backend cells, including _height,
 // without replacing original material/program/uniform objects.
 //
+// renderBufferDirect is the complete original public function, available as
+// result.renderBufferDirect and WebGLRendererScene.renderBufferDirect. It uses
+// these additional optional actual backend services: geometries, attributes,
+// bufferRenderer, indexedBufferRenderer. Their source methods own index upload,
+// binding setup and draw dispatch. getTargetPixelRatio is compiled into the
+// same lexical scope and exposed through its corresponding internal slot.
+//
 // Nested render calls share the original render-list/state stacks. Abrupt
 // completion preserves the source's unfinished stacks and temporary state;
 // this helper does not add cleanup/finally logic. GPU submission/ownership

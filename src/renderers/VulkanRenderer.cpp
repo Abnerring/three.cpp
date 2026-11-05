@@ -4,6 +4,21 @@
 #include "renderers/webgl/WebGLRenderLists.h"
 #include "renderers/webgl/WebGLRenderStates.h"
 #include "renderers/webgl/WebGLExtensions.h"
+#include "renderers/webgl/WebGLState.h"
+#include "renderers/webgl/WebGLCapabilities.h"
+#include "renderers/webgl/WebGLUtils.h"
+#include "renderers/webgl/WebGLPrograms.h"
+#include "renderers/webgl/WebGLMaterials.h"
+#include "renderers/webgl/WebGLTextures.h"
+#include "renderers/webgl/WebGLUniformsGroups.h"
+#include "renderers/webgl/WebGLBufferRenderer.h"
+#include "renderers/webgl/WebGLIndexedBufferRenderer.h"
+#include "renderers/webgl/WebGLEnvironments.h"
+#include "renderers/webgl/WebGLMorphtargets.h"
+#include "renderers/shaders/DFGLUTData.h"
+#include "renderers/vulkan/VulkanProgramCommands.h"
+#include "renderers/vulkan/VulkanTextureCommands.h"
+#include "core/NativeArray.h"
 #include "core/JSGlobal.h"
 #include "core/InterleavedBufferAttribute.h"
 #include "core/RenderTarget.h"
@@ -369,7 +384,7 @@ struct VulkanRenderer::Impl {
     std::size_t activeDescriptorPool = 0;
     VkCommandBuffer textureCommandBuffer = VK_NULL_HANDLE;
     VkFence textureFence = VK_NULL_HANDLE;
-    bool samplerAnisotropy = false;
+    bool samplerAnisotropy = false, largePoints = false;
     float maxAnisotropy = 1;
     std::uint32_t maxTextureSize = 0;
     struct Image {
@@ -747,6 +762,17 @@ struct VulkanRenderer::Impl {
         int depthFunc;
         bool wireframe, polygonOffset;
         double polygonOffsetFactor, polygonOffsetUnits;
+        bool nativeGL = false;
+        std::uint32_t nativeSrcRGB = 1, nativeDstRGB = 0, nativeSrcAlpha = 1, nativeDstAlpha = 0;
+        std::uint32_t nativeEquationRGB = 0x8006, nativeEquationAlpha = 0x8006;
+        std::array<float,4> nativeBlendColor{};
+        std::uint32_t nativeColorMask = 15;
+        bool nativeBlend = false;
+        std::uint32_t nativeCullFace = 0x0405;
+        bool nativeCull = true;
+        std::uint32_t nativeFrontFace = 0x0901;
+        std::uint32_t nativeDepthFunc = 0x0201;
+        float nativeLineWidth = 1;
     };
     struct TextureUpload {
         std::uint32_t level, width, height;
@@ -1045,6 +1071,8 @@ struct VulkanRenderer::Impl {
         api.vkGetPhysicalDeviceFeatures(physicalDevice, &supported);
         VkPhysicalDeviceFeatures enabled{};
         enabled.samplerAnisotropy = supported.samplerAnisotropy;
+        enabled.largePoints = supported.largePoints;
+        largePoints = supported.largePoints == VK_TRUE;
         samplerAnisotropy = supported.samplerAnisotropy == VK_TRUE;
         VkDeviceCreateInfo deviceCreate{VK_STRUCTURE_TYPE_DEVICE_CREATE_INFO};
         deviceCreate.pEnabledFeatures = &enabled;
@@ -1247,7 +1275,11 @@ struct VulkanRenderer::Impl {
             // Every escaped interface remains inert even if disposal is interrupted.
             try { if (objects) objects->dispose(); if (geometries) geometries->dispose(); } catch (...) {}
             try { if (bindingStates) bindingStates->dispose(); } catch (...) {}
-            managedPrepared.clear(); managedIndices.clear();
+            resetManagedProgramDraw();
+            if (managedProgramCommands) managedProgramCommands->shutdown();
+            if (managedTextureCommands) managedTextureCommands->shutdown();
+            managedProgramCommands.reset(); managedTextureCommands.reset();
+            managedIndices.clear();
             boundInputs.clear(); matrixInputs.clear(); programs.clear();
             while (!instanceCache.empty()) removeInstance(instanceCache.begin()->first, true);
             while (!geometryCache.empty())
@@ -3111,7 +3143,8 @@ struct VulkanRenderer::Impl {
         applyViewportAndScissor();
     }
     void clearAttachments(bool clearColorAttachment, bool clearDepthAttachment, const Color& color,
-                          HIGH_PRECISION alpha, bool srgb, bool useScissor = true) {
+                          HIGH_PRECISION alpha, bool srgb, bool useScissor = true,
+                          std::optional<float> nativeDepthClear = {}) {
         // Ordinary render targets use working color space. An sRGB attachment
         // performs its transfer in the Vulkan format conversion, as GL storage does.
         srgb = srgb && !renderTarget && active->colorFormat != VK_FORMAT_R16G16B16A16_SFLOAT;
@@ -3131,7 +3164,7 @@ struct VulkanRenderer::Impl {
         if (clearDepthAttachment) {
             VkClearAttachment attachment{};
             attachment.aspectMask = VK_IMAGE_ASPECT_DEPTH_BIT;
-            attachment.clearValue.depthStencil.depth = reversedDepth ? 0 : 1;
+            attachment.clearValue.depthStencil.depth = nativeDepthClear.value_or(reversedDepth ? 0.0f : 1.0f);
             attachments.push_back(attachment);
         }
         VkClearRect rect{};
@@ -3213,6 +3246,9 @@ struct VulkanRenderer::Impl {
         collectRetiredTargets();
     }
 #include "renderers/vulkan/VulkanManagedDraw.inc"
+#include "renderers/vulkan/VulkanManagedTextures.inc"
+#include "renderers/vulkan/VulkanManagedProgramDraw.inc"
+#include "renderers/vulkan/VulkanManagedContext.inc"
 #include "renderers/vulkan/VulkanManagedRenderer.inc"
 };
 

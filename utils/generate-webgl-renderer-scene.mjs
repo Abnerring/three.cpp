@@ -16,7 +16,8 @@ const sourceHash=createHash('sha256').update(source).digest('hex');
 const ast=parse(source,{sourceType:'module',ecmaVersion:'latest'}),renderer=ast.body.find(n=>n.type==='ClassDeclaration'&&n.id.name==='WebGLRenderer');
 const body=renderer.body.body.find(n=>n.kind==='constructor').value.body.body;
 const render=body.find(n=>n.type==='ExpressionStatement'&&n.expression.type==='AssignmentExpression'&&n.expression.left.type==='MemberExpression'&&n.expression.left.object.type==='ThisExpression'&&n.expression.left.property.name==='render').expression.right;
-const selected=['projectObject','renderScene','renderTransmissionPass','renderObjects','renderObject',
+const renderBufferDirect=body.find(n=>n.type==='ExpressionStatement'&&n.expression.type==='AssignmentExpression'&&n.expression.left.type==='MemberExpression'&&n.expression.left.object.type==='ThisExpression'&&n.expression.left.property.name==='renderBufferDirect').expression.right;
+const selected=['projectObject','renderScene','renderTransmissionPass','renderObjects','renderObject','getTargetPixelRatio',
     'getProgram','getProgramVariant','getUniformList','updateCommonMaterialProperties','findLightProbeGrid','setProgram',
     'markUniformsLightsNeedsUpdate','materialNeedsLights','onMaterialDispose','deallocateMaterial','releaseMaterialProgramReferences'];
 const nodes=selected.map(name=>body.find(n=>n.type==='FunctionDeclaration'&&n.id.name===name));
@@ -190,7 +191,7 @@ function stmt(n,kind='method') {
     }
 }
 
-const generated=[['render',makeFunction(render)],...nodes.map(node=>[node.id.name,makeFunction(node)])];
+const generated=[['render',makeFunction(render)],['renderBufferDirect',makeFunction(renderBufferDirect)],...nodes.map(node=>[node.id.name,makeFunction(node)])];
 const targetSource=fs.readFileSync(path.join(upstream,'src/renderers/WebGLRenderTarget.js'),'utf8');
 source=targetSource;
 const targetClass=parse(source,{sourceType:'module',ecmaVersion:'latest'}).body.find(n=>n.type==='ClassDeclaration');
@@ -201,7 +202,7 @@ const imports=[['Matrix4','nativeMatrix4Constructor()'],['Vector3','nativeVector
 const required=['_this','objects','renderLists','renderStates','clipping','background','shadowMap','textures','state','xr','bindingStates','extensions','capabilities'];
 // Program services remain undefined when absent. A scene-only caller never
 // reads their properties; using a program hook requires the real backend.
-const optional=['_gl','properties','programCache','environments','materials','morphtargets','uniformsGroups'];
+const optional=['_gl','properties','programCache','environments','materials','morphtargets','uniformsGroups','geometries','attributes','bufferRenderer','indexedBufferRenderer'];
 const defaults=[['currentRenderList','nullptr'],['currentRenderState','nullptr'],['renderListStack','JSValue::array()',false],['renderStateStack','JSValue::array()',false],['output','nullptr'],['_isContextLost','false'],['_nodesHandler','nullptr'],['_currentActiveCubeFace','0'],['_currentActiveMipmapLevel','0'],['_currentRenderTarget','nullptr'],['_currentMaterialId','-1'],['_currentCamera','nullptr'],['_currentViewport','nativeVector4Constructor().construct()',false],['_currentClearColor','nativeColorConstructor().construct({0.0})',false],['_currentClearAlpha','0'],['_opaqueSort','nullptr'],['_transparentSort','nullptr'],['_frustum','nativeFrustumConstructor().construct()',false],['_frustumArray','nativeFrustumArrayConstructor().construct()',false],['_clippingEnabled','false'],['_localClippingEnabled','false'],['_projScreenMatrix','nativeMatrix4Constructor().construct()',false],['_vector3','nativeVector3Constructor().construct()',false],['_vector4','nativeVector4Constructor().construct()',false],['objectPosition','nativeVector3Constructor().construct()',false],['_emptyScene','emptyScene',false],['_pixelRatio','1'],['_height','JSValue{}'],['_renderBackground','false'],['stencil','false',false]];
 const init=required.map(x=>`declare(env,${q(x)},${x==='_this'?'false':'true'});initialize(env,${q(x)},bindings.get(${q(x)}));`).join('\n')+
  optional.map(x=>`declare(env,${q(x)},true);initialize(env,${q(x)},bindings.hasOwn(${q(x)})?bindings.get(${q(x)}):JSValue{});`).join('\n')+
@@ -209,7 +210,7 @@ const init=required.map(x=>`declare(env,${q(x)},${x==='_this'?'false':'true'});i
  defaults.map(([x,value,mutable=true])=>`declare(env,${q(x)},${mutable});initialize(env,${q(x)},bindings.hasOwn(${q(x)})?bindings.get(${q(x)}):JSValue(${value}));`).join('\n');
 const declarations=generated.map(([n])=>`declare(env,${q(n)},true);`).join('\n');
 const initializers=generated.map(([n,value])=>`initialize(env,${q(n)},${value});`).join('\n');
-const expose=generated.map(([n])=>n==='render'?`own(result,"render",read(env,"render"));`:`result.setInternalSlot(${q('WebGLRendererScene.'+n)},read(env,${q(n)}));`).join('\n');
+const expose=generated.map(([n])=>(n==='render'||n==='renderBufferDirect'?`own(result,${q(n)},read(env,${q(n)}));`:'')+`result.setInternalSlot(${q('WebGLRendererScene.'+n)},read(env,${q(n)}));`).join('\n');
 const output=`// Generated by utils/generate-webgl-renderer-scene.mjs.\n// Pinned WebGLRenderer.js SHA-256: ${sourceHash}\n#ifdef _MSC_VER\n#pragma warning(push)\n#pragma warning(disable:4456)\n#endif\n`+
  includes.map(x=>`#include "${x}"`).join('\n')+'\nnamespace WebGLRendererSceneGenerated {\nusing namespace GeometryRuntime;\n'+
  sources.map(([k,text])=>`inline constexpr char ${k}[]=${q(text)};`).join('\n')+'\n'+

@@ -789,7 +789,7 @@ if(THREECPP_BUILD_VULKAN)
     target_compile_definitions(threecpp_vulkan PRIVATE THREECPP_SHADER_DIRECTORY="${CMAKE_CURRENT_BINARY_DIR}/shaders")
     target_compile_definitions(threecpp_vulkan PUBLIC THREECPP_HAS_VULKAN=1)
     add_dependencies(threecpp_vulkan threecpp_shaders)
-    option(THREECPP_NATIVE_ESSL "Build the pinned native ESSL AST compiler candidate" OFF)
+    option(THREECPP_NATIVE_ESSL "Build the pinned native ESSL compiler for source GLSL rendering" ON)
     if(THREECPP_NATIVE_ESSL)
         include(cmake/essl/NativeEssl.cmake)
         target_sources(threecpp_vulkan PRIVATE src/renderers/vulkan/VulkanShaderCompilerESSL.cpp)
@@ -841,3 +841,9 @@ target_sources(threecpp PRIVATE
     src/nodes/materialx/MaterialXNoise.cpp
     src/nodes/materialx/MaterialXNodes.cpp
 )
+
+# Original native resource factories used by the managed Vulkan renderer.
+target_sources(threecpp PRIVATE
+    src/renderers/webgl/WebGLEnvironments.cpp
+    src/renderers/webgl/WebGLMorphtargets.cpp
+    src/renderers/shaders/DFGLUTData.cpp)

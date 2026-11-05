@@ -61,7 +61,9 @@ struct State {
     VulkanTextureCommands::Factory factory;
     VulkanTextureCommands::FramebufferFactory framebufferFactory;
     VulkanTextureCommands::Limits limits;
-    std::vector<std::array<TextureBinding,4>> bindings;
+    // Descriptor limits can exceed a million units. Only bound units belong in
+    // the ownership graph; querying or unbinding an empty unit allocates none.
+    std::map<std::uint32_t,std::array<TextureBinding,4>> bindings;
     std::vector<std::weak_ptr<Texture>> textures;
     std::vector<std::weak_ptr<Framebuffer>> framebuffers;
     FramebufferBinding draw,read;
@@ -72,7 +74,7 @@ struct State {
     std::array<bool,6> errors{};
     bool closed=false;
     State(VulkanTextureCommands::Factory f,VulkanTextureCommands::FramebufferFactory fb,VulkanTextureCommands::Limits l)
-        :factory(std::move(f)),framebufferFactory(std::move(fb)),limits(l),bindings(std::size_t(l.maxTextureUnits)){}
+        :factory(std::move(f)),framebufferFactory(std::move(fb)),limits(l){}
     void requireOpen()const {if(closed)throw JSTypeError("Vulkan texture commands are shut down");}
     void error(std::uint32_t value){errors[value-invalidEnum]=true;}
     std::uint32_t getError(){for(std::size_t i=0;i<errors.size();++i)if(errors[i]){errors[i]=false;return invalidEnum+std::uint32_t(i);}return 0;}
@@ -107,15 +109,36 @@ std::optional<std::size_t> bindingIndex(std::uint32_t target){
     switch(target){case texture2D:return 0;case textureCube:return 1;case texture3D:return 2;case textureArray:return 3;default:return {};}
 }
 std::uint32_t bindingTarget(std::uint32_t target){return target>=firstFace&&target<=lastFace?textureCube:target;}
+const TextureBinding* findBinding(const State& c,std::uint32_t unit,std::size_t index){
+    const auto it=c.bindings.find(unit);return it==c.bindings.end()?nullptr:&it->second[index];
+}
+bool emptyBindings(const std::array<TextureBinding,4>& unit){
+    return std::none_of(unit.begin(),unit.end(),[](const auto& binding){return bool(binding.texture);});
+}
+std::string bindingKey(std::uint32_t unit,std::size_t index){return std::to_string(unit)+":"+std::to_string(index);}
 std::shared_ptr<Texture> bound(State& c,std::uint32_t target){
     const auto i=bindingIndex(bindingTarget(target));if(!i){c.error(invalidEnum);return {};}
-    const auto t=c.bindings[c.activeUnit][*i].texture;
+    const auto b=findBinding(c,c.activeUnit,*i);const auto t=b?b->texture:nullptr;
     if(!t||t->deleted||!t->storage){c.error(invalidOperation);return {};}return t;
 }
 void revisionAvailable(const Texture& t){if(t.revision==std::numeric_limits<std::uint64_t>::max())throw JSRangeError("Vulkan texture revision exhausted");}
 void property(JSValue object,const char* key,JSValue value){JSPropertyDescriptor d;d.value=std::move(value);d.writable=d.enumerable=d.configurable=true;object.defineProperty(key,d);}
 void slot(JSValue object,const char* key,const JSValue& value){object.setInternalSlot(key,value);}
 JSValue weakObject(const JSWeakValue& value){const auto v=value.lock();return v&&!v->isUndefined()?*v:JSValue(nullptr);}
+JSValue bindingObject(const State& c,std::uint32_t unit,std::size_t index){
+    const auto binding=findBinding(c,unit,index);return binding?weakObject(binding->object):JSValue(nullptr);
+}
+void setBinding(const JSValue& wrapper,State& c,std::size_t index,const JSValue& object,const std::shared_ptr<Texture>& t){
+    auto roots=wrapper.getInternalSlot("textureBindings");const auto key=bindingKey(c.activeUnit,index);
+    if(t){
+        roots.set(key,object);c.bindings[c.activeUnit][index]={JSWeakValue(object),t};
+    }else{
+        roots.erase(key);
+        if(const auto it=c.bindings.find(c.activeUnit);it!=c.bindings.end()){
+            it->second[index]={};if(emptyBindings(it->second))c.bindings.erase(it);
+        }
+    }
+}
 JSNativeOwnerNode textureNode(const std::shared_ptr<Texture>& t){JSNativeOwnerNode n{t,{},{}};if(t->storage)n.edges.push_back({&t->storage,t->storage});return n;}
 void appendTexture(std::vector<JSNativeOwnerNode>& nodes,const std::shared_ptr<Texture>& t){nodes.push_back(textureNode(t));if(t->storage)nodes.push_back({t->storage,{},{}});}
 void appendFramebuffer(std::vector<JSNativeOwnerNode>& nodes,const std::shared_ptr<Framebuffer>& f){
@@ -287,7 +310,7 @@ JSValue getParameter(State& c,std::uint32_t name){
         case 0x9240:return c.unpack.flipY;case 0x9241:return c.unpack.premultiplyAlpha;case 0x9243:return c.unpack.colorSpaceConversion;
         case 0x0d33:return c.limits.maxTextureSize;case 0x851c:return c.limits.maxCubeMapSize;case 0x8073:return c.limits.max3DTextureSize;case 0x88ff:return c.limits.maxArrayLayers;
         case 0x8872:case 0x8b4d:return c.limits.maxTextureUnits;case 0x8d57:return c.limits.maxSamples;
-        case 0x8069:return weakObject(c.bindings[c.activeUnit][0].object);case 0x8514:return weakObject(c.bindings[c.activeUnit][1].object);case 0x806a:return weakObject(c.bindings[c.activeUnit][2].object);case 0x8c1d:return weakObject(c.bindings[c.activeUnit][3].object);
+        case 0x8069:return bindingObject(c,c.activeUnit,0);case 0x8514:return bindingObject(c,c.activeUnit,1);case 0x806a:return bindingObject(c,c.activeUnit,2);case 0x8c1d:return bindingObject(c,c.activeUnit,3);
         case 0x8ca6:return weakObject(c.draw.object);case 0x8caa:return weakObject(c.read.object);default:c.error(invalidEnum);return nullptr;
     }
 }
@@ -322,19 +345,20 @@ JSValue command(const JSValue&,const Args& a,const Args& captures){
     if(name=="createTexture")return createTexture(c);
     if(name=="createFramebuffer")return createFramebuffer(c);
     if(name=="getError")return c->getError();
-    if(name=="activeTexture"){requireArgs(a,1);const auto unit=unsignedInteger(a[0]);c->requireOpen();if(unit<texture0||unit-texture0>=c->bindings.size())c->error(invalidEnum);else c->activeUnit=unit-texture0;return {};}
+    if(name=="activeTexture"){requireArgs(a,1);const auto unit=unsignedInteger(a[0]);c->requireOpen();if(unit<texture0||unit-texture0>=std::uint32_t(c->limits.maxTextureUnits))c->error(invalidEnum);else c->activeUnit=unit-texture0;return {};}
     if(name=="bindTexture"){
         requireArgs(a,2);const auto target=unsignedInteger(a[0]);const auto t=texture(a[1],true);c->requireOpen();const auto i=bindingIndex(target);
         if(!i){c->error(invalidEnum);return {};}if(t&&(t->owner.lock()!=c||t->deleted||(t->target&&*t->target!=target))){c->error(invalidOperation);return {};}
         if(t)t->target=target;
-        captures[0].getInternalSlot("textureBindings").set(JSValue(c->activeUnit*4+*i),t?a[1]:JSValue(nullptr));
-        c->bindings[c->activeUnit][*i]={JSWeakValue(t?a[1]:JSValue(nullptr)),t};return {};
+        setBinding(captures[0],*c,*i,a[1],t);return {};
     }
     if(name=="deleteTexture"){
         requireArgs(a,1);const auto t=texture(a[0],true);if(!t)return {};if(t->owner.lock()!=c){c->error(invalidOperation);return {};}
         if(t->deleted)return {};if(c->nextGeneration==std::numeric_limits<std::uint64_t>::max())throw JSRangeError("Vulkan texture generation exhausted");
-        t->deleted=true;t->generation=c->nextGeneration++;for(std::size_t unit=0;unit<c->bindings.size();++unit)for(std::size_t i=0;i<4;++i)if(c->bindings[unit][i].texture==t){
-            captures[0].getInternalSlot("textureBindings").set(JSValue(unit*4+i),nullptr);c->bindings[unit][i]={};
+        t->deleted=true;t->generation=c->nextGeneration++;auto roots=captures[0].getInternalSlot("textureBindings");
+        for(auto it=c->bindings.begin();it!=c->bindings.end();){
+            for(std::size_t i=0;i<4;++i)if(it->second[i].texture==t){roots.erase(bindingKey(it->first,i));it->second[i]={};}
+            if(emptyBindings(it->second))it=c->bindings.erase(it);else ++it;
         }
         // Deleting from the currently bound framebuffer detaches the attachment.
         // Other framebuffer attachments retain the GL object's backing storage.
@@ -355,7 +379,27 @@ JSValue command(const JSValue&,const Args& a,const Args& captures){
     if(name=="generateMipmap"){
         requireArgs(a,1);const auto target=unsignedInteger(a[0]);c->requireOpen();if(!bindingIndex(target)){c->error(invalidEnum);return {};}
         const auto t=bound(*c,target);if(!t)return {};if(t->levels.empty()){c->error(invalidOperation);return {};}
-        revisionAvailable(*t);t->storage->generateMipmap(target);c->requireOpen();++t->revision;return {};
+        revisionAvailable(*t);t->storage->generateMipmap(target);c->requireOpen();
+        // gl.generateMipmap defines the derived mutable images. Subsequent
+        // subimage commands must resolve those actual levels, including odd
+        // base dimensions; immutable storage already defines its exact levels.
+        if(!t->immutable){
+            const auto baseParameter=t->parameters.find(0x813c),maxParameter=t->parameters.find(0x813d);
+            const int base=baseParameter==t->parameters.end()?0:int(baseParameter->second);
+            const int maximum=maxParameter==t->parameters.end()?1000:int(maxParameter->second);
+            const auto fill=[&](std::uint32_t imageTarget){
+                const auto it=t->levels.find({imageTarget,base});if(it==t->levels.end())return;
+                const auto image=it->second;
+                const int largest=std::max(image.width,std::max(image.height,target==texture3D?image.depth:1));
+                if(largest<=0)return;
+                const int last=std::min(maximum,base+int(std::floor(std::log2(double(largest)))));
+                for(int level=base+1;level<=last;++level){const auto shift=level-base;
+                    t->levels[{imageTarget,level}]={std::max(1,image.width>>shift),std::max(1,image.height>>shift),target==texture3D?std::max(1,image.depth>>shift):image.depth,image.internalFormat};
+                }
+            };
+            if(target==textureCube)for(auto face=firstFace;face<=lastFace;++face)fill(face);else fill(target);
+        }
+        ++t->revision;return {};
     }
     if(name=="bindFramebuffer"){
         requireArgs(a,2);const auto target=unsignedInteger(a[0]);const auto f=framebufferHandle(a[1],true);c->requireOpen();
@@ -394,10 +438,10 @@ VulkanTextureCommands::VulkanTextureCommands(Factory factory,FramebufferFactory 
     if(!factory)throw std::invalid_argument("Vulkan texture storage factory is required");
     if(limits.maxTextureUnits<=0||limits.maxTextureSize<=0||limits.maxCubeMapSize<=0||limits.max3DTextureSize<=0||limits.maxArrayLayers<=0||limits.maxSamples<0)throw std::invalid_argument("Invalid Vulkan texture limits");
     auto c=std::make_shared<State>(std::move(factory),std::move(framebuffers),limits);state_=JSValue::hostObject(c,c.get(),stateTag);
-    state_.setInternalSlot("textureBindings",JSValue::array());state_.setInternalSlot("drawFramebuffer",nullptr);state_.setInternalSlot("readFramebuffer",nullptr);
+    state_.setInternalSlot("textureBindings",JSValue::object(nullptr));state_.setInternalSlot("drawFramebuffer",nullptr);state_.setInternalSlot("readFramebuffer",nullptr);
     static const auto hooks=[]{auto h=std::make_shared<JSHostObjectHooks>();h->nativeOwnership=+[](const JSValue& v){
         const auto c=state(v);JSNativeOwnerNode n{c,{},{}};std::vector<JSNativeOwnerNode> nodes;
-        for(const auto& unit:c->bindings)for(const auto& b:unit)if(b.texture){n.edges.push_back({&b.texture,b.texture});appendTexture(nodes,b.texture);}
+        for(const auto& [_,unit]:c->bindings)for(const auto& b:unit)if(b.texture){n.edges.push_back({&b.texture,b.texture});appendTexture(nodes,b.texture);}
         for(const auto* b:{&c->draw,&c->read})if(b->framebuffer){n.edges.push_back({&b->framebuffer,b->framebuffer});appendFramebuffer(nodes,b->framebuffer);}
         nodes.push_back(std::move(n));return nodes;};return h;}();state_.setHostHooks(hooks);
     for(const auto& [name,arity]:std::initializer_list<std::pair<const char*,unsigned>>{
@@ -414,7 +458,7 @@ VulkanTextureCommands::VulkanTextureCommands(Factory factory,FramebufferFactory 
 JSValue VulkanTextureCommands::object()const{static_cast<void>(JSWeakValue(object_));return object_;}
 JSValue VulkanTextureCommands::boundTexture(std::uint32_t unit,std::uint32_t target)const{
     const auto c=state(state_);c->requireOpen();const auto i=bindingIndex(target);
-    if(!i||unit>=c->bindings.size())throw JSRangeError("Invalid Vulkan sampler binding");const auto v=c->bindings[unit][*i].object.lock();return v&&!v->isUndefined()?*v:JSValue(nullptr);
+    if(!i||unit>=std::uint32_t(c->limits.maxTextureUnits))throw JSRangeError("Invalid Vulkan sampler binding");return bindingObject(*c,unit,*i);
 }
 std::shared_ptr<VulkanTextureCommands::Storage> VulkanTextureCommands::storage(const JSValue& value)const{return readable(state_,value)->storage;}
 std::uint64_t VulkanTextureCommands::revision(const JSValue& value)const{return readable(state_,value)->revision;}

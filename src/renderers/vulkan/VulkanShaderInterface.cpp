@@ -184,7 +184,11 @@ Interface::Block block(const SpvReflectBlockVariable& source, const TypeIndex& i
 Interface::Variable variable(const SpvReflectInterfaceVariable& source, const TypeIndex& index) {
     Interface::Variable result;
     result.name=text(source.name);result.typeName=source.type_description?text(source.type_description->type_name):"";
-    result.location=source.location;result.component=source.component;result.format=source.format;
+    result.location=source.location;
+    // SPIRV-Reflect reports an absent Component decoration as UINT32_MAX.
+    // SPIR-V interface matching uses component zero when it is omitted.
+    result.component=source.component==std::numeric_limits<std::uint32_t>::max()?0:source.component;
+    result.format=source.format;
     result.builtIn=source.built_in;result.numeric=numeric(source.numeric,source.type_description,source.decoration_flags);
     result.array=array(source.array,source.type_description,index);
     for(std::uint32_t i=0;i<source.member_count;++i)result.members.push_back(variable(source.members[i],index));

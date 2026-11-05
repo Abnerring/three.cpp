@@ -29,6 +29,14 @@ const VulkanShaderInterface::Block& member(const VulkanShaderInterface::Block& b
     const auto found=std::find_if(block.members.begin(),block.members.end(),[&](const auto& m){return m.name==name;});
     if(found==block.members.end())throw std::runtime_error("Missing block member "+name);return *found;
 }
+std::size_t componentDecorations(const std::vector<std::uint32_t>& words) {
+    // SPIR-V OpDecorate = 71, Decoration Component = 31. Inspect the actual
+    // compiler output to distinguish an omitted decoration from an explicit 0.
+    std::size_t count=0;
+    for(std::size_t at=5;at<words.size();at+=words[at]>>16)
+        if((words[at]&0xffff)==71 && (words[at]>>16)>=4 && words[at+2]==31)++count;
+    return count;
+}
 }
 TEST_CASE("Linked uniforms retain the compiler-assigned block and sampler bindings", "[vulkan][reflection]") {
     auto compiled=compiler().compile(vertex,fragment);INFO(compiled.diagnostics);REQUIRE(compiled.linked);
@@ -45,7 +53,37 @@ TEST_CASE("Linked uniforms retain the compiler-assigned block and sampler bindin
     const auto p=std::find_if(vs.inputs.begin(),vs.inputs.end(),[](const auto& v){return v.name=="position";});
     REQUIRE(p!=vs.inputs.end());REQUIRE(p->location==3);REQUIRE(p->numeric.components==3);REQUIRE(p->numeric.width==32);
     REQUIRE(p->numeric.scalar==VulkanShaderInterface::Numeric::Scalar::FloatingPoint);
+    REQUIRE(componentDecorations(compiled.vertex)==0);REQUIRE(componentDecorations(compiled.fragment)==0);
+    REQUIRE(p->component==0);
+    for(const auto* stage:{&vs,&fs}) {
+        for(const auto& input:stage->inputs)REQUIRE(input.component==0);
+        for(const auto& output:stage->outputs)REQUIRE(output.component==0);
+    }
     compiled={};REQUIRE(member(descriptor(fs,0,0).block,"diffuse").offset==80);
+}
+TEST_CASE("Explicit SPIR-V interface components retain their actual packed locations", "[vulkan][reflection]") {
+    const auto compiled=compiler().compile(R"(#version 450
+layout(location=3) in vec3 position;
+layout(location=2,component=1) out vec2 uv;
+void main(){uv=position.xy;gl_Position=vec4(position,1);}
+)",R"(#version 450
+layout(location=2,component=1) in vec2 uv;
+layout(location=0) out vec4 color;
+void main(){color=vec4(uv,0,1);}
+)");INFO(compiled.diagnostics);REQUIRE(compiled.linked);
+    REQUIRE(componentDecorations(compiled.vertex)==1);REQUIRE(componentDecorations(compiled.fragment)==1);
+    const auto vs=VulkanShaderInterface::read(compiled.vertex),fs=VulkanShaderInterface::read(compiled.fragment);
+    const auto check=[](const auto& variables) {
+        const auto found=std::find_if(variables.begin(),variables.end(),[](const auto& value){return value.name=="uv";});
+        REQUIRE(found!=variables.end());REQUIRE(found->location==2);REQUIRE(found->component==1);
+        REQUIRE(found->numeric.scalar==VulkanShaderInterface::Numeric::Scalar::FloatingPoint);
+        REQUIRE(found->numeric.width==32);REQUIRE(found->numeric.components==2);
+    };
+    check(vs.outputs);check(fs.inputs);
+    const auto position=std::find_if(vs.inputs.begin(),vs.inputs.end(),[](const auto& value){return value.name=="position";});
+    REQUIRE(position!=vs.inputs.end());REQUIRE(position->location==3);REQUIRE(position->component==0);
+    const auto color=std::find_if(fs.outputs.begin(),fs.outputs.end(),[](const auto& value){return value.name=="color";});
+    REQUIRE(color!=fs.outputs.end());REQUIRE(color->location==0);REQUIRE(color->component==0);
 }
 TEST_CASE("Explicit nested blocks preserve arrays matrix layout and push constants", "[vulkan][reflection]") {
     const auto compiled=compiler().compile(R"(#version 450

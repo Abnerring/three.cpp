@@ -6,6 +6,8 @@
 
 当前包含数学与空间查询、事件与场景图、相机与计时器、普通/交错属性存储、曲线/路径/形状、几何体、纹理、灯光、传统材质、辅助对象、渲染目标、骨骼/蒙皮/实例化 CPU 对象、线/点/Sprite、LOD、关键帧轨道/动画片段/属性绑定、动画播放与混合及拾取。加载基础包含缓存、管理器、URL 处理、动画/几何/材质解析与原生 Promise；文件/网络传输尚未接入。Vulkan 已有实际离屏图形管线、深度、索引绘制、基础材质、排序、雾、Morph、实例矩阵/颜色与实例 Morph、2D DataTexture 的 map/alphaMap 采样和像素读回。新增 CPU 类不代表其 GPU 路径已接入；各模块仍有待移植和待验证边界。
 
+`VulkanRenderer::render(JSValue, JSValue)` 使用原始场景、材质和几何对象，已接入源程序选择、uniform 缓存、GLSL 编译及原生 Vulkan 纹理/绘制。该入口支持已验证的 Basic、ShaderMaterial、自定义 GLSL 和普通 2D DataTexture；完整材质、光照阴影、渲染目标和现代渲染执行仍在移植。
+
 ## 目录
 
 已有代码使用 three.js 的目录层级，同一模块的 C++ 头文件与实现放在一起。
@@ -24,7 +26,7 @@ Vulkan 使用 `src/renderers/VulkanRenderer.h/.cpp`；C++ 基础类型、JSON �
 
 ## 构建
 
-需要 C++20 编译器及支持浮点 `std::from_chars` / `std::to_chars` 的标准库、CMake 3.20+、Vulkan 1.1 运行时、Vulkan 头文件和 glslangValidator。CMake 会检查浮点 charconv 能力。差分测试使用 Node.js v26.5.0（V8 14.6.202.34-node.24）；排序比较调用顺序严格绑定此版本。Node 仅为开发测试依赖。
+需要 C++20 编译器及支持浮点 `std::from_chars` / `std::to_chars` 的标准库、CMake 3.24+、Python 3.8+、Vulkan 1.1 运行时、Vulkan 头文件和 glslangValidator。CMake 会检查浮点 charconv 能力。差分测试使用 Node.js v26.5.0（V8 14.6.202.34-node.24）；排序比较调用顺序严格绑定此版本。Node 仅为开发测试依赖。
 
 ```powershell
 cmake -S . -B build/native -DTHREEJS_SOURCE_DIR=<three.js checkout>
@@ -34,7 +36,7 @@ ctest --test-dir build/native -C Debug --output-on-failure
 ./build/native/bin/Debug/vulkan_basic.exe ./build/native/vulkan-basic.ppm
 ```
 
-SDK 非标准安装时显式传入 `-DTHREECPP_VULKAN_INCLUDE_DIR=<include>`、`-DTHREECPP_GLSLANG_VALIDATOR=<exe>`。CPU 开发可设置 `-DTHREECPP_BUILD_VULKAN=OFF`。消费库使用 `threecpp::threecpp`，渲染使用 `threecpp::vulkan`，公共入口为 `src/Three.h`。
+SDK 非标准安装时显式传入 `-DTHREECPP_VULKAN_INCLUDE_DIR=<include>`、`-DTHREECPP_GLSLANG_VALIDATOR=<exe>`。原生 ESSL 编译器默认启用，依赖按固定版本和 SHA256 获取；离线构建可使用 `-DTHREECPP_ESSL_ARCHIVE_DIR=<archive directory>`。显式关闭 `THREECPP_NATIVE_ESSL` 后，仅保留旧 typed Vulkan 入口，源 GLSL 渲染入口会明确报错。CPU 开发可设置 `-DTHREECPP_BUILD_VULKAN=OFF`（此配置仍支持 CMake 3.20+）。消费库使用 `threecpp::threecpp`，渲染使用 `threecpp::vulkan`，公共入口为 `src/Three.h`。
 
 已移植 addons 默认构建为 `threecpp::addons`，通过对应头文件显式使用，例如 `#include "helpers/VertexNormalsHelper.h"`；不加入 `Three.Core.h`。当前包含 VertexNormalsHelper 与 VertexTangentsHelper，CPU 几何更新已有差分验证，线段 GPU 绘制仍待实现。只消费核心库可设置 `-DTHREECPP_BUILD_ADDONS=OFF`。
 

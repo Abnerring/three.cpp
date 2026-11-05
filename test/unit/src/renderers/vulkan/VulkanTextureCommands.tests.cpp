@@ -9,6 +9,7 @@
 #include "core/JSJobs.h"
 #include "core/JSPromise.h"
 #include "constants.h"
+#include <limits>
 #include <map>
 #include <thread>
 
@@ -119,6 +120,38 @@ TEST_CASE("Vulkan immutable texture allocation and uploads honor actual typed vi
     REQUIRE(numbers(m->uploads.back().bytes)==std::vector<int>{0,60,0,64,0,66,0,68});
     REQUIRE(std::uint8_t(backing[0])==99);REQUIRE(std::uint8_t(backing[10])==99);REQUIRE(call(f.gl,"getError").strictEquals(0));
 }
+TEST_CASE("Vulkan texture unit bindings stay sparse with the full reported descriptor limit","[vulkan-texture-commands]"){
+    VulkanTextureCommands::Limits limits;limits.maxTextureUnits=std::numeric_limits<int>::max();
+    std::size_t created=0;VulkanTextureCommands commands([&]{++created;return std::make_shared<Memory>();},{},limits);auto gl=commands.object();
+    const auto last=std::uint32_t(limits.maxTextureUnits-1),middle=last/2;
+    REQUIRE(created==0);REQUIRE(call(gl,"getParameter",{0x8872}).strictEquals(limits.maxTextureUnits));
+    REQUIRE(call(gl,"getParameter",{0x8b4d}).strictEquals(limits.maxTextureUnits));
+    for(const auto unit:{0u,middle,last}){
+        call(gl,"activeTexture",{0x84c0u+unit});REQUIRE(call(gl,"getParameter",{0x84e0}).strictEquals(0x84c0u+unit));
+        for(const auto& [target,pname]:std::initializer_list<std::pair<std::uint32_t,std::uint32_t>>{{0x0de1,0x8069},{0x8513,0x8514},{0x806f,0x806a},{0x8c1a,0x8c1d}}){
+            REQUIRE(commands.boundTexture(unit,target).isNull());REQUIRE(call(gl,"getParameter",{pname}).isNull());call(gl,"bindTexture",{target,nullptr});
+        }
+    }
+    REQUIRE(created==0);
+    auto shared=call(gl,"createTexture"),cube=call(gl,"createTexture"),array=call(gl,"createTexture");
+    std::weak_ptr<VulkanTextureCommands::Storage> sharedStorage=commands.storage(shared);
+    call(gl,"bindTexture",{0x0de1,shared});call(gl,"bindTexture",{0x8513,cube});
+    call(gl,"activeTexture",{0x84c0u+middle});call(gl,"bindTexture",{0x8c1a,array});
+    call(gl,"activeTexture",{0x84c0});call(gl,"bindTexture",{0x0de1,shared});
+    REQUIRE(commands.boundTexture(last,0x0de1).sameValue(shared));REQUIRE(commands.boundTexture(last,0x8513).sameValue(cube));
+    REQUIRE(commands.boundTexture(middle,0x8c1a).sameValue(array));REQUIRE(commands.boundTexture(0,0x0de1).sameValue(shared));
+    call(gl,"deleteTexture",{shared});REQUIRE(commands.isDeleted(shared));REQUIRE(sharedStorage.expired());
+    REQUIRE(commands.boundTexture(0,0x0de1).isNull());REQUIRE(commands.boundTexture(last,0x0de1).isNull());
+    REQUIRE(commands.boundTexture(last,0x8513).sameValue(cube));REQUIRE(commands.boundTexture(middle,0x8c1a).sameValue(array));
+    call(gl,"activeTexture",{0x84c0u+last});call(gl,"activeTexture",{0x84c0u+std::uint32_t(limits.maxTextureUnits)});
+    REQUIRE(call(gl,"getParameter",{0x84e0}).strictEquals(0x84c0u+last));REQUIRE(call(gl,"getParameter",{0x8514}).sameValue(cube));
+    REQUIRE(call(gl,"getError").strictEquals(0x0500));REQUIRE(call(gl,"getError").strictEquals(0));
+    REQUIRE_THROWS_AS(commands.boundTexture(std::uint32_t(limits.maxTextureUnits),0x0de1),JSRangeError);
+    call(gl,"bindTexture",{0x8513,nullptr});REQUIRE(commands.boundTexture(last,0x8513).isNull());
+    call(gl,"texParameteri",{0x8513,0x2801,0x2600});REQUIRE(call(gl,"getError").strictEquals(0x0502));
+    commands.shutdown();REQUIRE_THROWS_AS(call(gl,"activeTexture",{0x84c0}),JSTypeError);
+    REQUIRE_THROWS_AS(commands.boundTexture(middle,0x8c1a),JSTypeError);
+}
 TEST_CASE("Vulkan texture pixel-store uses alignment rows skips images and keeps unpack flags","[vulkan-texture-commands]"){
     Fixture f;auto t=f.allocate(2,2);Uint8Array data(48);for(std::size_t i=0;i<data.size();++i)data[i]=double(i);
     for(const auto& [name,value]:std::initializer_list<std::pair<int,int>>{{0x0cf2,3},{0x0cf3,1},{0x0cf4,1},{0x9240,1},{0x9241,1},{0x9243,0}})call(f.gl,"pixelStorei",{name,value});
@@ -179,6 +212,21 @@ TEST_CASE("Vulkan texture commands dispatch cube faces and three dimensional sto
     const auto& u=f.memory(volume)->uploads.back().command;REQUIRE(u.z==1);REQUIRE(u.depth==1);REQUIRE(f.commands.revision(volume)==2);
     auto fallback=f.create(0x8c1a);call(f.gl,"texImage3D",{0x8c1a,0,0x1908,1,1,1,0,0x1908,0x1401,NativeArray_detail::wrap(Uint8Array(4))});
     REQUIRE_FALSE(f.memory(fallback)->allocations[0].immutable);REQUIRE(call(f.gl,"getError").strictEquals(0));
+}
+TEST_CASE("Vulkan generated mutable mip levels permit later subimage uploads with odd base dimensions","[vulkan-texture-commands]"){
+    Fixture f;auto t=f.create();call(f.gl,"texImage2D",{0x0de1,0,0x8058,3,3,0,0x1908,0x1401,NativeArray_detail::wrap(Uint8Array(36))});auto m=f.memory(t);
+    m->failMipmap=true;REQUIRE_THROWS_AS(call(f.gl,"generateMipmap",{0x0de1}),JSRangeError);
+    call(f.gl,"texSubImage2D",{0x0de1,1,0,0,1,1,0x1908,0x1401,NativeArray_detail::wrap(Uint8Array{9,8,7,255})});
+    REQUIRE(call(f.gl,"getError").strictEquals(0x0502));REQUIRE(m->uploads.size()==1);
+    m->failMipmap=false;call(f.gl,"generateMipmap",{0x0de1});const auto revision=f.commands.revision(t);
+    call(f.gl,"texSubImage2D",{0x0de1,1,0,0,1,1,0x1908,0x1401,NativeArray_detail::wrap(Uint8Array{9,8,7,255})});
+    REQUIRE(call(f.gl,"getError").strictEquals(0));REQUIRE(f.commands.revision(t)==revision+1);REQUIRE(m->uploads.back().command.level==1);
+    REQUIRE(numbers(m->uploads.back().bytes)==std::vector<int>{9,8,7,255});
+    call(f.gl,"texSubImage2D",{0x0de1,1,0,0,2,1,0x1908,0x1401,NativeArray_detail::wrap(Uint8Array(8))});
+    REQUIRE(call(f.gl,"getError").strictEquals(0x0501));REQUIRE(f.commands.revision(t)==revision+1);
+    auto volume=f.create(0x806f);call(f.gl,"texImage3D",{0x806f,0,0x8058,3,3,3,0,0x1908,0x1401,NativeArray_detail::wrap(Uint8Array(108))});
+    call(f.gl,"generateMipmap",{0x806f});call(f.gl,"texSubImage3D",{0x806f,1,0,0,0,1,1,1,0x1908,0x1401,NativeArray_detail::wrap(Uint8Array(4))});
+    REQUIRE(call(f.gl,"getError").strictEquals(0));REQUIRE(f.memory(volume)->uploads.back().command.level==1);
 }
 TEST_CASE("Vulkan framebuffer attachments retain deleted texture storage until detach and report device status","[vulkan-texture-commands]"){
     Fixture f;auto t=f.allocate(),frame=call(f.gl,"createFramebuffer");const auto weak=f.created.back();
@@ -264,5 +312,28 @@ TEST_CASE("Vulkan texture command owners release managed resource cycles and nat
             weakGl=JSWeakValue(gl);weakTexture=JSWeakValue(t);weakStorage=std::dynamic_pointer_cast<Memory>(commands.storage(t));
         }
         keeper.collectGarbage();REQUIRE(weakGl.expired());REQUIRE(weakTexture.expired());REQUIRE(weakStorage.expired());
+    }catch(...){failure=std::current_exception();}});worker.join();if(failure)std::rethrow_exception(failure);
+}
+TEST_CASE("Sparse high texture unit bindings retain raw identity until the last unbind or shutdown","[vulkan-texture-commands][gc]"){
+    std::exception_ptr failure;std::thread worker([&]{try{
+        auto keeper=JSValue::object();VulkanTextureCommands::Limits limits;limits.maxTextureUnits=1048576;
+        VulkanTextureCommands commands([]{return std::make_shared<Memory>();},{},limits);auto gl=commands.object();
+        const auto last=std::uint32_t(limits.maxTextureUnits-1);JSWeakValue weakTexture;std::weak_ptr<VulkanTextureCommands::Storage> weakStorage;
+        {
+            auto t=call(gl,"createTexture");weakTexture=JSWeakValue(t);weakStorage=commands.storage(t);
+            call(gl,"bindTexture",{0x0de1,t});call(gl,"activeTexture",{0x84c0u+last});call(gl,"bindTexture",{0x0de1,t});
+        }
+        keeper.collectGarbage();REQUIRE_FALSE(weakTexture.expired());REQUIRE_FALSE(weakStorage.expired());
+        REQUIRE(commands.boundTexture(last,0x0de1).sameValue(*weakTexture.lock()));
+        call(gl,"activeTexture",{0x84c0});call(gl,"bindTexture",{0x0de1,nullptr});keeper.collectGarbage();
+        REQUIRE_FALSE(weakTexture.expired());REQUIRE_FALSE(weakStorage.expired());
+        REQUIRE(commands.boundTexture(last,0x0de1).sameValue(*weakTexture.lock()));
+        call(gl,"activeTexture",{0x84c0u+last});call(gl,"bindTexture",{0x0de1,nullptr});keeper.collectGarbage();
+        REQUIRE(weakTexture.expired());REQUIRE(weakStorage.expired());
+        {
+            auto t=call(gl,"createTexture");weakTexture=JSWeakValue(t);weakStorage=commands.storage(t);call(gl,"bindTexture",{0x8513,t});
+        }
+        keeper.collectGarbage();REQUIRE_FALSE(weakTexture.expired());REQUIRE_FALSE(weakStorage.expired());
+        commands.shutdown();keeper.collectGarbage();REQUIRE(weakTexture.expired());REQUIRE(weakStorage.expired());
     }catch(...){failure=std::current_exception();}});worker.join();if(failure)std::rethrow_exception(failure);
 }

@@ -5,6 +5,7 @@
 #include "scenes/Scene.h"
 #include "cameras/OrthographicCamera.h"
 #include "materials/MeshBasicMaterial.h"
+#include "materials/RawShaderMaterial.h"
 #include "objects/Mesh.h"
 #include "objects/InstancedMesh.h"
 #include "math/Matrix4.h"
@@ -229,11 +230,19 @@ void clearAndMetadata(bool validation){
 void capabilityErrorsAndLifetime(bool validation){
     VulkanRenderer renderer({64,64,validation});renderer.srgbOutput=false;World world;auto facade=renderer.object();
     ValidationCheck layer(renderer,validation);
-    world.paint.set("map",JSValue::object());bool rejected=false;try{renderer.render(world.scene,world.view);}catch(const std::invalid_argument& error){rejected=std::string(error.what()).find("texture")!=std::string::npos;}
-    require(rejected,"raw texture capability is rejected explicitly at the Vulkan boundary");world.paint.set("map",nullptr);renderer.render(world.scene,world.view);expectPixel(renderer,{255,0,0},"a subsequent supported render recovers after the unsupported texture exception");
-    auto unsupported=material(0x00ff00);unsupported.set("isMeshBasicMaterial",false);world.mesh.set("material",unsupported);rejected=false;
-    try{renderer.render(world.scene,world.view);}catch(const std::invalid_argument& error){rejected=std::string(error.what()).find("MeshBasicMaterial")!=std::string::npos;}
-    require(rejected,"unsupported raw material capability is rejected explicitly");world.mesh.set("material",world.paint);renderer.render(world.scene,world.view);expectPixel(renderer,{255,0,0},"supported material rendering recovers after a capability exception");
+    // This is valid source geometry and GLSL300 material. Integer vertex input
+    // is an explicit remaining GPU boundary, independent of material type flags.
+    const auto integerGeometry=nativeBufferGeometryConstructor().construct();
+    const auto integerPositions=nativeUint32BufferAttributeConstructor().construct({list({0,0,0,1,0,0,0,1,0}),3});
+    call(integerGeometry,"setAttribute",{"position",integerPositions});
+    auto parameters=JSValue::object();parameters.set("glslVersion","300 es");
+    parameters.set("vertexShader","precision highp float;precision highp int;in uvec3 position;uniform mat4 projectionMatrix;uniform mat4 modelViewMatrix;void main(){gl_Position=projectionMatrix*modelViewMatrix*vec4(vec3(position)-vec3(.5,.5,0.),1.);}");
+    parameters.set("fragmentShader","precision highp float;out vec4 result;void main(){result=vec4(0.,1.,0.,1.);}");
+    const auto unsupported=nativeRawShaderMaterialConstructor().construct({parameters});
+    world.mesh.set("geometry",integerGeometry);world.mesh.set("material",unsupported);bool rejected=false;
+    try{renderer.render(world.scene,world.view);}catch(const std::logic_error& error){rejected=std::string(error.what()).find("integer or packed vertex input")!=std::string::npos;}
+    require(rejected,"valid integer shader input is rejected explicitly at the remaining Vulkan input boundary");
+    world.mesh.set("geometry",world.shape);world.mesh.set("material",world.paint);renderer.render(world.scene,world.view);expectPixel(renderer,{255,0,0},"supported geometry and material recover after the native integer-input exception");
     auto target=std::make_shared<RenderTarget>(32,32);renderer.setRenderTarget(target);rejected=false;try{renderer.render(world.scene,world.view);}catch(const std::exception& error){rejected=std::string(error.what()).find("target")!=std::string::npos||std::string(error.what()).find("Target")!=std::string::npos;}
     require(rejected,"raw rendering cannot silently draw into an unrelated typed render target");renderer.setRenderTarget(nullptr);renderer.render(world.scene,world.view);expectPixel(renderer,{255,0,0},"raw screen rendering resumes after restoring the typed target");
     JSValue escaped;{VulkanRenderer temporary({16,16,validation});ValidationCheck temporaryLayer(temporary,validation);escaped=temporary.object();temporaryLayer.verify();}
@@ -266,22 +275,40 @@ void indexUploadUniformOrder(bool validation){
 void directReentry(bool validation){
     VulkanRenderer renderer({64,64,validation});renderer.srgbOutput=false;World world,inner;auto facade=renderer.object();renderer.render(world.scene,world.view);
     ValidationCheck layer(renderer,validation);
+    // trace-webgl-renderer-reentry.mjs executes the unchanged pinned function:
+    // renderBufferDirect outside render has no currentRenderState and throws.
+    bool outsideRejected=false;
+    try{call(facade,"renderBufferDirect",{world.view,world.scene,world.shape,world.paint,world.mesh,nullptr});}catch(const JSTypeError&){outsideRejected=true;}
+    require(outsideRejected,"standalone renderBufferDirect preserves the pinned missing-render-state TypeError");
     facade.set("autoClear",false);call(inner.paint.get("color"),"setHex",{0x0000ff});auto info=facade.get("info"),originalUpdate=info.get("update"),state=JSValue::object();state.set("active",false);state.set("nested",0);
     info.set("update",JSValue::function(+[](const JSValue& self,const Args& a,const Args& c)->JSValue {
         const auto result=c[0].call(self,a);auto state=c[1];if(!state.get("active").toBoolean()){state.set("active",true);state.set("nested",state.get("nested").toNumber()+1);call(c[2],"render",{c[3],c[4]});state.set("active",false);}return result;
     },{originalUpdate,state,facade,inner.scene,inner.view}));
-    call(facade,"renderBufferDirect",{world.view,world.scene,world.shape,world.paint,world.mesh,nullptr});info.set("update",originalUpdate);
-    require(state.get("nested").strictEquals(1),"independent direct draw supports info.update reentry exactly once");expectPixel(renderer,{0,0,255},"nested render from info.update stays in the same live direct command stream");
+    renderer.render(world.scene,world.view);info.set("update",originalUpdate);
+    require(state.get("nested").strictEquals(1),"source render supports info.update reentry exactly once");expectPixel(renderer,{0,0,255},"nested render from info.update stays in the same live direct command stream");
     call(world.shape,"setIndex",{list({0,1,2})});auto index=world.shape.get("index");auto uploads=JSValue::object();uploads.set("nested",0);
     call(index,"onUpload",{JSValue::function(+[](const JSValue&,const Args&,const Args& c)->JSValue {auto state=c[0];state.set("nested",state.get("nested").toNumber()+1);call(c[1],"render",{c[2],c[3]});return {};},{uploads,facade,inner.scene,inner.view})});
-    call(facade,"renderBufferDirect",{world.view,world.scene,world.shape,world.paint,world.mesh,nullptr});
-    require(uploads.get("nested").strictEquals(1),"independent direct draw permits index upload to reenter source render");expectPixel(renderer,{255,0,0},"direct draw resumes with its captured uniforms after index upload reentry");
+    renderer.render(world.scene,world.view);
+    require(uploads.get("nested").strictEquals(1),"source draw permits index upload to reenter source render");expectPixel(renderer,{0,0,255},"draw uses the actual current program and uniforms left by index upload reentry");
     layer.verify();
 }
 }
 int main(int argc,char** argv){
     try{bool validation=false;for(int i=1;i<argc;++i)if(std::string(argv[i])=="--validation")validation=true;
-        baselineAndVersion(validation);colorsMirroringAndIndex(validation);instances(validation);groupsClippingAndWireframe(validation);sharedUUIDs(validation);loadedScene(validation);callbacks(validation);nestedRendering(validation);clearAndMetadata(validation);capabilityErrorsAndLifetime(validation);typedReverseDoesNotLeak(validation);indexUploadUniformOrder(validation);directReentry(validation);
+        const auto run=[&](const char* name,void(*group)(bool)){std::cout<<"managed group="<<name<<std::endl;group(validation);};
+        run("baselineAndVersion",baselineAndVersion);
+        run("colorsMirroringAndIndex",colorsMirroringAndIndex);
+        run("instances",instances);
+        run("groupsClippingAndWireframe",groupsClippingAndWireframe);
+        run("sharedUUIDs",sharedUUIDs);
+        run("loadedScene",loadedScene);
+        run("callbacks",callbacks);
+        run("nestedRendering",nestedRendering);
+        run("clearAndMetadata",clearAndMetadata);
+        run("capabilityErrorsAndLifetime",capabilityErrorsAndLifetime);
+        run("typedReverseDoesNotLeak",typedReverseDoesNotLeak);
+        run("indexUploadUniformOrder",indexUploadUniformOrder);
+        run("directReentry",directReentry);
         std::cout<<"managed Vulkan assertions="<<assertions<<" validation_requested="<<validationRequested<<" validation_enabled="<<validationEnabled<<" validation_messages="<<validationMessages<<'\n';
         if(validation&&validationEnabled==0)std::cout<<"Khronos validation layer unavailable; GPU rendering checks ran without layer validation.\n";
         return 0;
