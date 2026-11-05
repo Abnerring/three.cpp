@@ -103,3 +103,38 @@ TEST_CASE("PointShadowNode setupShadowFilter builds the point filter graph") {
     REQUIRE(result.toBoolean());
     REQUIRE(result.get("isNode").toBoolean());
 }
+TEST_CASE("PointShadowNode point filter selects the depth conversion branch") {
+    const auto shadowCoord = nativeTSLBaseBinding("vec4").call(
+        {}, {JSValue(0.5), JSValue(0.5), JSValue(0.5), JSValue(1.0)});
+    auto shadow = JSValue::object(nullptr);
+    auto shadowCamera = JSValue::object(nullptr);
+    shadowCamera.set("near", JSValue(0.1));
+    shadowCamera.set("far", JSValue(100.0));
+    shadow.set("camera", shadowCamera);
+    shadow.set("radius", JSValue(1.0));
+    auto mapSize = JSValue::object(nullptr);
+    mapSize.set("x", JSValue(64));
+    mapSize.set("y", JSValue(64));
+    shadow.set("mapSize", mapSize);
+    auto light = JSValue::object(nullptr);
+    light.set("shadow", shadow);
+    const auto node = nativePointShadowNodeConstructor().construct({light});
+    const auto filterFn = node.get("getShadowFilterFn").call(node, {JSValue(0)});
+    const auto depthTexture = nativeTexture(std::make_shared<CubeDepthTexture>(64.0));
+
+    for (const int branch : {0, 1, 2}) {
+        auto renderer = JSValue::object(nullptr);
+        renderer.set("reversedDepthBuffer", branch == 1);
+        renderer.set("logarithmicDepthBuffer", branch == 2);
+        auto builder = JSValue::object(nullptr);
+        builder.set("renderer", renderer);
+        auto configuration = JSValue::object(nullptr);
+        configuration.set("filterFn", filterFn);
+        configuration.set("depthTexture", depthTexture);
+        configuration.set("shadowCoord", shadowCoord);
+        configuration.set("shadow", shadow);
+        const auto result = node.get("setupShadowFilter").call(node, {builder, configuration});
+        REQUIRE(result.toBoolean());
+        REQUIRE(result.get("isNode").toBoolean());
+    }
+}

@@ -1,4 +1,28 @@
-# 当前接续：`PointShadowNode` 测试升级为真实 `CubeDepthTexture` + **`If` 包裹恢复上游结构**，2026-11-05
+# 当前接续：点光过滤三路深度转换分支全覆盖（addon 套件达 **39,000 断言**），2026-11-05
+
+目标保持 active：固定 three.js 11738a9d55e502fb484cefffcea3a66dc44e9fe9 全部 src + examples/jsm 原生 C++ 逻辑，Vulkan 后端；禁止 CEF/生产 JS 引擎/桥接。阶段本地 Git 提交，不推送。
+
+## 本轮交付
+
+新用例「point filter selects the depth conversion branch」：同一 `setupShadowFilter` 夹具（真实 `CubeDepthTexture`、`shadow.camera.near/far`、`mapSize.x/y`、`radius`、vec4 坐标），对 builder.renderer 的三组开关各构建一次图：
+1. `reversedDepthBuffer = false`、`logarithmicDepthBuffer = false` → **`viewZToPerspectiveDepth`** 普通分支；
+2. `reversedDepthBuffer = true` → **`viewZToReversedPerspectiveDepth`** 分支（`dp.subAssign(bias)`）；
+3. `logarithmicDepthBuffer = true` → **`viewZToLogarithmicDepth`** 分支（`dp.addAssign(bias)`）。
+每次断言 `result` truthy 且 `isNode == true`（+6 断言）。
+
+## 验证
+
+- 构建 exit 0；过滤 `*PointShadowNode*` = **6 cases / 17 assertions** 全过。
+- `THREECPPAddonTests` 全套 **1397 cases / 39,000 assertions** 通过（**断言数首次达到 39,000**）。
+- 审计不变（PointShadowNode 已 partial）：src 11 / 454；examples/jsm 322 / 154。
+
+**未执行验证（如实记录）**：三路分支仅证明「图可构建」，**未断言转换节点类型/数值**；`renderShadow` 仍无测试（`abrupt completion` 未定位）；`If` body 内 filtered 的图结构未差分。
+
+## 下一步
+
+1. 弱差分：导出三路 `dp` 节点类型对比（若节点 `toString()` 可用）；
+2. `renderShadow` 二分定位 `abrupt completion`；
+3. 之后推进 `PassNode`(26,843)/`ToonOutlinePassNode`(6,868)/`PhysicalLightingModel`(32,829)。# 当前接续：`PointShadowNode` 测试升级为真实 `CubeDepthTexture` + **`If` 包裹恢复上游结构**，2026-11-05
 
 目标保持 active：固定 three.js 11738a9d55e502fb484cefffcea3a66dc44e9fe9 全部 src + examples/jsm 原生 C++ 逻辑，Vulkan 后端；禁止 CEF/生产 JS 引擎/桥接。阶段本地 Git 提交，不推送。
 
