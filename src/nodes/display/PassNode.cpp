@@ -4,6 +4,7 @@
 #include "nodes/accessors/TextureNode.h"
 #include "constants.h"
 #include "core/JSGlobal.h"
+#include "core/JSPromise.h"
 #include "nodes/core/Node.h"
 #include "nodes/core/UniformNode.h"
 #include "nodes/lighting/LightingNodeRuntime.h"
@@ -47,6 +48,104 @@ JSValue passMultipleTextureNodeConstructor(const JSValue& baseConstructor) {
 }
 
 JSValue isCacheable(const JSValue&, const Args&, const Args&) { return JSValue(true); }
+
+// isCacheable( /*builder*/ ) { return false; }
+JSValue passIsCacheable(const JSValue&, const Args&, const Args&) { return JSValue(false); }
+
+// setResolutionScale( resolutionScale ) { this._resolutionScale = resolutionScale; return this; }
+JSValue passSetResolutionScale(const JSValue& rawSelf, const Args& args, const Args&) {
+    JSValue& self = const_cast<JSValue&>(rawSelf);
+    self.set("_resolutionScale", arg(args, 0, JSValue(1)));
+    return self;
+}
+JSValue passGetResolutionScale(const JSValue& rawSelf, const Args&, const Args&) {
+    return const_cast<JSValue&>(rawSelf).get("_resolutionScale");
+}
+
+// setLayers( layers ) { this._layers = layers; return this; }
+JSValue passSetLayers(const JSValue& rawSelf, const Args& args, const Args&) {
+    JSValue& self = const_cast<JSValue&>(rawSelf);
+    self.set("_layers", arg(args, 0, nullptr));
+    return self;
+}
+JSValue passGetLayers(const JSValue& rawSelf, const Args&, const Args&) {
+    return const_cast<JSValue&>(rawSelf).get("_layers");
+}
+
+// setMRT( mrt ) { this._mrt = mrt; return this; }
+JSValue passSetMRT(const JSValue& rawSelf, const Args& args, const Args&) {
+    JSValue& self = const_cast<JSValue&>(rawSelf);
+    self.set("_mrt", arg(args, 0, nullptr));
+    return self;
+}
+JSValue passGetMRT(const JSValue& rawSelf, const Args&, const Args&) {
+    return const_cast<JSValue&>(rawSelf).get("_mrt");
+}
+
+// getTexture( name ) { let texture = this._textures[ name ]; if ( texture === undefined ) { ... clone ... } return texture; }
+JSValue passGetTexture(const JSValue& rawSelf, const Args& args, const Args&) {
+    JSValue& self = const_cast<JSValue&>(rawSelf);
+    const auto name = arg(args, 0);
+    auto textures = self.get("_textures");
+    auto texture = textures.get(name);
+    if (!texture.toBoolean()) {
+        if (name.toString() == "depth") {
+            throw JSThrownValue(nativeGlobalBinding("Error")
+                                    .construct({"THREE.PassNode: Depth texture is not available for this pass."}));
+        }
+        const auto renderTarget = self.get("renderTarget");
+        texture = renderTarget.get("texture").get("clone").call(renderTarget.get("texture"), {});
+        texture.set("name", name);
+        textures.set(name, texture);
+        self.set("_textures", textures);
+        auto targetTextures = renderTarget.get("textures");
+        targetTextures.get("push").call(targetTextures, {texture});
+    }
+    return texture;
+}
+
+// getPreviousTexture( name ) { let texture = this._previousTextures[ name ]; if ( texture === undefined ) {
+//     texture = this.getTexture( name ).clone(); this._previousTextures[ name ] = texture; } return texture; }
+JSValue passGetPreviousTexture(const JSValue& rawSelf, const Args& args, const Args&) {
+    JSValue& self = const_cast<JSValue&>(rawSelf);
+    const auto name = arg(args, 0);
+    auto textures = self.get("_previousTextures");
+    auto texture = textures.get(name);
+    if (!texture.toBoolean()) {
+        const auto source = self.get("getTexture").call(self, {name});
+        texture = source.get("clone").call(source, {});
+        textures.set(name, texture);
+        self.set("_previousTextures", textures);
+    }
+    return texture;
+}
+
+// toggleTexture( name ) { const prevTexture = this._previousTextures[ name ]; if ( prevTexture !== undefined ) { ...swap... } }
+JSValue passToggleTexture(const JSValue& rawSelf, const Args& args, const Args&) {
+    JSValue& self = const_cast<JSValue&>(rawSelf);
+    const auto name = arg(args, 0);
+    auto previousTextures = self.get("_previousTextures");
+    const auto previousTexture = previousTextures.get(name);
+    if (previousTexture.toBoolean()) {
+        auto textures = self.get("_textures");
+        const auto texture = textures.get(name);
+        const auto renderTarget = self.get("renderTarget");
+        auto targetTextures = renderTarget.get("textures");
+        const auto index = targetTextures.get("indexOf").call(targetTextures, {texture});
+        targetTextures.set(index, previousTexture);
+        textures.set(name, previousTexture);
+        previousTextures.set(name, texture);
+        self.set("_textures", textures);
+        self.set("_previousTextures", previousTextures);
+        const auto textureNodes = self.get("_textureNodes");
+        const auto textureNode = textureNodes.get(name);
+        if (textureNode.toBoolean()) textureNode.get("updateTexture").call(textureNode, {});
+        const auto previousNodes = self.get("_previousTextureNodes");
+        const auto previousNode = previousNodes.get(name);
+        if (previousNode.toBoolean()) previousNode.get("updateTexture").call(previousNode, {});
+    }
+    return JSValue{};
+}
 
 // constructor( scope, scene, camera, options = {} ) { super( 'vec4' ); ... }
 JSValue passNodeInitialize(const JSValue& target, const Args& args, const Args& captures) {
@@ -202,6 +301,19 @@ JSValue nativePassNodeModule() {
         descriptor.set("enumerable", false);
         descriptor.set("configurable", false);
         defineProperty.call({}, {passNodeConstructor, JSValue(getterName), descriptor});
+    }
+    {
+        const auto prototype = passNodeConstructor.get("prototype");
+        method(prototype, "isCacheable", 0, passIsCacheable, {}, "");
+        method(prototype, "setResolutionScale", 1, passSetResolutionScale, {}, "");
+        method(prototype, "getResolutionScale", 0, passGetResolutionScale, {}, "");
+        method(prototype, "setLayers", 1, passSetLayers, {}, "");
+        method(prototype, "getLayers", 0, passGetLayers, {}, "");
+        method(prototype, "setMRT", 1, passSetMRT, {}, "");
+        method(prototype, "getMRT", 0, passGetMRT, {}, "");
+        method(prototype, "getTexture", 1, passGetTexture, {}, "");
+        method(prototype, "getPreviousTexture", 1, passGetPreviousTexture, {}, "");
+        method(prototype, "toggleTexture", 1, passToggleTexture, {}, "");
     }
     own(bindings, "PassNode", passNodeConstructor);
 

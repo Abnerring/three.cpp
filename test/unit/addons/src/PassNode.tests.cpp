@@ -110,3 +110,59 @@ TEST_CASE("PassNode module exposes the passTexture factory") {
     REQUIRE(node.get("type").toString() == "PassTextureNode");
     REQUIRE(node.get("passNode").strictEquals(passNode));
 }
+TEST_CASE("PassNode texture accessors clone and toggle the pass textures") {
+    auto scene = JSValue::object(nullptr);
+    auto camera = JSValue::object(nullptr);
+    auto options = JSValue::object(nullptr);
+    const auto node = nativePassNodeConstructor().construct(
+        {JSValue("color"), scene, camera, options});
+    REQUIRE_FALSE(node.get("isCacheable").call(node, {}).toBoolean());
+
+    // The output texture is the render target texture itself.
+    const auto output = node.get("getTexture").call(node, {JSValue("output")});
+    REQUIRE(output.strictEquals(node.get("renderTarget").get("texture")));
+    // The depth texture exists for a default colour pass.
+    const auto depthTexture = node.get("getTexture").call(node, {JSValue("depth")});
+    REQUIRE(depthTexture.get("name").toString() == "depth");
+
+    // Any other name clones the render target texture and records it.
+    const auto custom = node.get("getTexture").call(node, {JSValue("custom")});
+    REQUIRE(custom.get("name").toString() == "custom");
+    REQUIRE(node.get("_textures").get("custom").strictEquals(custom));
+    REQUIRE(node.get("getTexture").call(node, {JSValue("custom")}).strictEquals(custom));
+
+    // Previous textures are cloned on demand and cached.
+    const auto previous = node.get("getPreviousTexture").call(node, {JSValue("output")});
+    REQUIRE(previous.toBoolean());
+    REQUIRE(node.get("getPreviousTexture").call(node, {JSValue("output")}).strictEquals(previous));
+
+    // Toggling swaps the current and previous textures for that name.
+    node.get("toggleTexture").call(node, {JSValue("output")});
+    REQUIRE(node.get("_textures").get("output").strictEquals(previous));
+    REQUIRE(node.get("_previousTextures").get("output").strictEquals(output));
+}
+
+TEST_CASE("PassNode depth texture access raises when the pass has no depth") {
+    auto scene = JSValue::object(nullptr);
+    auto camera = JSValue::object(nullptr);
+    auto options = JSValue::object(nullptr);
+    options.set("depthBuffer", false);
+    const auto node = nativePassNodeConstructor().construct(
+        {JSValue("color"), scene, camera, options});
+    REQUIRE_THROWS(node.get("getTexture").call(node, {JSValue("depth")}));
+}
+
+TEST_CASE("PassNode resolution layers and mrt setters round trip") {
+    auto scene = JSValue::object(nullptr);
+    auto camera = JSValue::object(nullptr);
+    const auto node = nativePassNodeConstructor().construct(
+        {JSValue("color"), scene, camera});
+    REQUIRE(node.get("setResolutionScale").call(node, {JSValue(2)}).strictEquals(node));
+    REQUIRE(node.get("getResolutionScale").call(node, {}).toNumber() == Approx(2));
+    auto layers = JSValue::object(nullptr);
+    node.get("setLayers").call(node, {layers});
+    REQUIRE(node.get("getLayers").call(node, {}).strictEquals(layers));
+    auto mrt = JSValue::object(nullptr);
+    node.get("setMRT").call(node, {mrt});
+    REQUIRE(node.get("getMRT").call(node, {}).strictEquals(mrt));
+}

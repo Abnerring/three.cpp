@@ -1,4 +1,34 @@
-# 当前接续：`PassNode` **Stage B 完成**（主类构造器 + 静态 COLOR/DEPTH + 模块工厂），2026-11-05
+# 当前接续：`PassNode` **Stage C 第一批**（纹理/toggle/resolution/layers/MRT）完成，2026-11-05
+
+目标保持 active：固定 three.js 11738a9d55e502fb484cefffcea3a66dc44e9fe9 全部 src + examples/jsm 原生 C++ 逻辑，Vulkan 后端；禁止 CEF/生产 JS 引擎/桥接。阶段本地 Git 提交，不推送。
+
+## 本轮交付（照 L512–699）
+
+- `isCacheable → false`；
+- `setResolutionScale/getResolutionScale`（存 `_resolutionScale`，返回 this）；
+- `setLayers/getLayers`、`setMRT/getMRT`（返回 this）；
+- **`getTexture(name)`**：`_textures[name]` 命中直接返回；`name==='depth'` 未命中 → **抛 `THREE.PassNode: Depth texture is not available for this pass.`**；其他名 → `renderTarget.texture.clone()`、改名、存 `_textures`、push 到 `renderTarget.textures`；
+- **`getPreviousTexture(name)`**：`_previousTextures[name]` 命中返回；否则 `getTexture(name).clone()` 并缓存；
+- **`toggleTexture(name)`**：交换 `_textures`/`_previousTextures`，替换 `renderTarget.textures[index]`，并对已存在的 `_textureNodes`/`_previousTextureNodes` 调 `updateTexture()`。
+
+**坑**：`JSThrownValue` 在 **`core/JSPromise.h`**（需 include）。
+
+## 测试（+3 例 / 15 断言）
+
+纹理访问器（output 同一对象、depth 存在、custom 克隆+缓存、previous 缓存、toggle 交换）、depth 缺失抛错、resolution/layers/MRT 往返。
+
+## 验证
+
+- 构建 exit 0；过滤 `*Pass*` = **19 cases / 88 assertions** 全过；`THREECPPAddonTests` 全套 **1412 cases / 39,163 assertions** 通过。
+- 审计不变（PassNode 已 partial）：src 10 / 455；examples/jsm 322 / 154。
+
+**未执行验证（如实记录）**：`setResolution/getResolution`（已废弃告警版）未实现；`getTextureNode`/`getPreviousTextureNode`/`getViewZNode`/`getLinearDepthNode` 未实现；`setup`/`updateBefore`/`setSize`/`setScissor`/`setViewport`/`dispose` 未实现。
+
+## 下一步
+
+1. **Stage C 第二批**：`getTextureNode`/`getPreviousTextureNode`/`getViewZNode`/`getLinearDepthNode`（读 L711–825）；
+2. **Stage D**：`setup`/`updateBefore`/`setSize`/`setScissor`/`setViewport`/`dispose`；
+3. 之后 `ToonOutlinePassNode`(6,868)。# 当前接续：`PassNode` **Stage B 完成**（主类构造器 + 静态 COLOR/DEPTH + 模块工厂），2026-11-05
 
 目标保持 active：固定 three.js 11738a9d55e502fb484cefffcea3a66dc44e9fe9 全部 src + examples/jsm 原生 C++ 逻辑，Vulkan 后端；禁止 CEF/生产 JS 引擎/桥接。阶段本地 Git 提交，不推送。
 
