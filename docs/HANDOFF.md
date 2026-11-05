@@ -1,3 +1,19 @@
+# 当前接续：HemisphereLightNode 已移植并差分验收，2026-11-05
+
+目标保持 active：固定 three.js 11738a9d55e502fb484cefffcea3a66dc44e9fe9 全部 src + examples/jsm 原生 C++ 逻辑，Vulkan 后端；禁止 CEF/生产 JS 引擎/桥接。阶段本地 Git 提交，不推送。
+
+本轮新增 `src/nodes/lighting/HemisphereLightNode.{h,cpp}`：构造期建 `lightPositionNode = lightPosition( light )`、`lightDirectionNode = lightPositionNode.normalize()`、`groundColorNode = uniform( new Color() ).setGroup( renderGroup )`；`update` 内联父类 update 体（按 LightProbeNode 的既有做法，本族原生类不做 super 分派），再写 `lightPositionNode.object3d` 并按 `light.intensity` 逐分量缩放 `groundColor`；`setup` 求 `normalWorld.dot( lightDirectionNode ).mul(0.5).add(0.5)` 后 `mix( groundColorNode, colorNode, weight )` 交给 `context.irradiance.addAssign`。`LightingEventNodeSources.inc` 追加 `HemisphereLightNodeSource{classSource,typeSource,updateSource,setupSource}`（提取器生成，键名 `typeSource`/`updateSource`/`setupSource`）。
+
+本族沿用的两个约束：① 原生类不做 super 方法分派，父类 update 体必须按字段顺序内联（Color 逐分量缩放而非 `multiplyScalar`，与 AnalyticLightNode 一致）；② light accessor 以 light 为 WeakMap 键，**`null` 不是合法键**，故差分探针与构造测试一律传入普通对象而非默认 `null`。
+
+验证：构建 exit 0（`THREECPPTests` + 探针）。THREECPPTests **1511 cases / 214,024 assertions 全过**，较上轮 1508/214,002 增 3 例 22 断言，与 `*Hemisphere*` 过滤的 3 用例/22 断言完全一致，确认真实执行。三个差分同时通过：ambient 1.24s / directional 0.85s / **hemisphere 1.10s**，`assert.deepEqual` 无容差，比较 name / length=0 / static type / 实例 type / isAnalyticLightNode / light 身份 / `lightPositionNode.type=UniformNode` / `groupNode.name=render` / `lightDirectionNode.isNode` / `groundColorNode.type=UniformNode` / `groundColorNode.groupNode.name=render` / class `toString` 源位置。
+
+审计（固定 worktree `D:/Temp/surui/threejs-pinned-11738a-20261104`，HEAD=11738a9d55）刷新后：**src missing 59→58、partial 406→407**；HemisphereLightNode 记 `partial-unverified` 并登记 h/cpp。总计 partial 543 / missing 398 / vulkan-port-pending 290 / dependency 20；examples/jsm 仍 340 missing。
+
+`src/nodes/lighting` 仍缺 **11 个**：EnvironmentNode、IESSpotLightNode、LightsNode、PointLightNode、PointShadowNode、ProjectorLightNode、RectAreaLightNode、ShadowBaseNode、ShadowFilterNode、ShadowNode、SpotLightNode。其中 shadow 三件与 PointShadowNode 依赖 `src/nodes/utils/PostProcessingUtils`（**尚未移植**），须先补该 utils，或先做不依赖它的 SpotLightNode / RectAreaLightNode / EnvironmentNode。
+
+下一步：`SpotLightNode`（依赖 LightUtils 的 `getDistanceAttenuation`、MathNode 的 `smoothstep`、Lights 的 `lightTargetDirection`/`lightProjectionUV`、TextureNode 的 `texture`，这些都已移植；但源码用到 `this.getLightVector( builder )`，需先定位其归属——不在本文件亦不在 LightUtils 前 80 行内）。或 `EnvironmentNode`（依赖 IsolateNode/PropertyNode/Camera/Normal/Position/MaterialProperties/PMREMNode，除 `AccessorsUtils` 需确认外均已移植）。
+
 # 当前接续：DirectionalLightNode 已移植并差分验收，2026-11-05
 
 目标保持 active：固定 three.js 11738a9d55e502fb484cefffcea3a66dc44e9fe9 全部 src + examples/jsm 原生 C++ 逻辑，Vulkan 后端；禁止 CEF/生产 JS 引擎/桥接。阶段本地 Git 提交，不推送。
