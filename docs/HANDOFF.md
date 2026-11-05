@@ -1,4 +1,29 @@
-# 当前接续：addon `RectAreaLightHelper` 移植（几何/颜色/world 矩阵差分），examples 连续第 12 个，2026-11-05
+# 当前接续：src 三个纯聚合模块（`Three.TSL` / `Three.WebGPU` / `Three.WebGPU.Nodes`）忠实移植为聚合头，src 缺口 19→16，2026-11-05
+
+目标保持 active：固定 three.js 11738a9d55e502fb484cefffcea3a66dc44e9fe9 全部 src + examples/jsm 原生 C++ 逻辑，Vulkan 后端；禁止 CEF/生产 JS 引擎/桥接。阶段本地 Git 提交，不推送。
+
+## 本轮交付：三个 src 聚合模块（上游合计仅 ~5.5KB，全部是 re-export）
+
+- `src/Three.TSL.h`：对应 `src/Three.TSL.js`（**62 字节**，只有两行：`import './Three.Core.js'` + `export * from './nodes/TSL.js'`）。C++ 侧 `#include "Three.Core.h"` 复现 import；**`nodes/TSL.js` 尚未移植**，头注释明确写出该 re-export 缺失 → 本模块为 **partial**。
+- `src/Three.WebGPU.Nodes.h` / `src/Three.WebGPU.h`：对应 `Three.WebGPU.Nodes.js`(2297) / `Three.WebGPU.js`(3183)，上游同样是 `export * from './Three.Core.js'` + `NodeMaterials` + 一组渲染器类。C++ 只 include 已存在的 `Three.Core.h`，**其余 10 个 re-export（NodeMaterials/WebGPURenderer/WebGPUBackend/WebGLBackend/Lighting/BundleGroup/QuadMesh/PMREMGenerator/RenderPipeline/DirectRenderPipeline 等）在头注释里逐条列出并标注未移植** → 均为 partial。
+- `test/unit/addons/src/ThreeAggregators.tests.cpp`：一个**编译级**用例，同时 include 三个聚合头，证明核心入口可编译且聚合不产生重复符号（1 例 / 1 断言）。
+
+## 语义边界（必须如实理解）
+
+**这三个模块本身没有任何可执行逻辑**——上游就是 re-export 清单。本端口把「有 C++ 对应物的 import」落实为 include，把「尚不存在的 re-export」写成头注释清单，**没有伪造 TSL / WebGPU 的 API 表面**。因此审计把它们记为 `partial-unverified` 而不是已实现，符合仓库既有的「一源文件一头文件」规则。
+
+## 验证
+
+- 构建 exit 0；过滤 `*aggregator*` = 1 case / 1 assertion 通过。
+- 审计：**src missing 19→16、partial-unverified 446→449**（三个模块各自 partial）；`examples/jsm` 不变（328 / 148）。
+- `THREECPPAddonTests` 全套结果见本轮提交前的运行（本轮唯一新增用例为编译级）。
+
+**未执行验证（如实记录）**：三个聚合头**没有任何行为测试**（无行为可测）；`nodes/TSL.js`、`NodeMaterials.js`、渲染器栈仍未移植，因此这三个聚合器**不能**真正当作 TSL / WebGPU 入口使用。
+
+## 下一步
+
+src 剩余 16 个：`nodes/TSL.js`(7493，缺 6 依赖)、`nodes/Nodes.js`(10073)、`NodeMaterials.js`(1639，解锁 MeshStandard/Physical/SSS NodeMaterial)、`ShadowNode`(24331，依赖齐备，最大可做项)、`PointShadowNode`(12693)、`PhysicalLightingModel`(32829)、`PassNode`(26843)、`ToonOutlinePassNode`、`ReflectorNode`(17567)、`Line2NodeMaterial`(18172)、`MaterialXNodes`、`MaterialXNoise`(48687)、`NodeObjectLoader`（被 `ObjectLoader` 阻塞）。
+examples/jsm 剩余 328（候选：`modifiers/SimplifyModifier`、`utils/SceneUtils`、`transpiler/AST.js`、`exporters/OBJExporter`）。# 当前接续：addon `RectAreaLightHelper` 移植（几何/颜色/world 矩阵差分），examples 连续第 12 个，2026-11-05
 
 目标保持 active：固定 three.js 11738a9d55e502fb484cefffcea3a66dc44e9fe9 全部 src + examples/jsm 原生 C++ 逻辑，Vulkan 后端；禁止 CEF/生产 JS 引擎/桥接。阶段本地 Git 提交，不推送。
 
