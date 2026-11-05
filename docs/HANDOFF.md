@@ -1,4 +1,37 @@
-# 当前接续：AST 第五批（剩余 15 类）——`transpiler/AST.js` 30 个类全部移植完成，2026-11-05
+# 当前接续：AST 数据级差分落地（21 项谓词/类型比较，首次即通过），2026-11-05
+
+目标保持 active：固定 three.js 11738a9d55e502fb484cefffcea3a66dc44e9fe9 全部 src + examples/jsm 原生 C++ 逻辑，Vulkan 后端；禁止 CEF/生产 JS 引擎/桥接。阶段本地 Git 提交，不推送。
+
+## 本轮交付：`transpiler/AST` 差分
+
+r95 记录「30 类仍无差分」。本轮补上 `test/unit/utils/parity/ASTParityProbe.cpp` + `compare-ast.mjs`（**首次运行即通过**）：
+
+- 上游加载：`AST.js` 顶部有相对导入 `./TranspilerUtils.js` → 复用「写 pinned 目录临时文件 → import → finally 删除」范式（pinned 工作树保持 `dirty = 0`）。
+- 比较 **21 项**：
+  - `Operator` 四算子（`+`/`+=`/`>>>=`/`<`）的 `isAssignment`/`isNumeric`/`getType`；
+  - 数值 + 字符串拼接的 `isNumeric == false`；数值 + `vec3` 的 `getType == null`；
+  - `Unary` 三算子（`++`/`--`/`-`）的 `isAssignment`/`isNumeric`；
+  - `VariableDeclaration` 无值/有值/链式 `next` 的 `isAssignment`，以及**父链 `hasAssignment`**（有值声明及其 next 链）；
+  - `FunctionCall` 三路 `getType`（内建 `float` / linker 引用 `vec3` / 无引用 → null）；
+  - `Accessor` 有/无 `linker.reference` 的类型；
+  - `SwitchCase` 的 `isDefault` 两分支；
+  - `Program` 子节点 `getProgram() === program`；
+  - `Number`/`String` 的 `isNumericExpression`/`getType`。
+- 结论：C++ 侧谓词与类型合成（含 `toFloatType` 提升）与上游**完全一致**，r94/r95 的实现获得行为级背书。
+
+## 验证
+
+- 探针构建 exit 0；`threecpp.threejs-ast-parity` **Passed**。
+- `THREECPPAddonTests` 全套 **1356 cases / 38,856 assertions** 通过（差分不改变用例数）。
+- 审计不变：examples/jsm 324 / 152；src 13 / 452。
+
+**未执行验证（如实记录）**：差分覆盖的是**构造后的谓词/字段**，未覆盖 `initialize()`（C++ 用 adopt 显式替代）；r95 记录的两处类型假设（`Accessor.property`、`StaticElement/DynamicElement.value`）**仍需与 parser 联调核对**；未测 `For`/`While`/`Switch` 的 adopt 行为（仅单测）。
+
+## 下一步
+
+1. 与 parser/`TranspilerUtils::isExpression` 联调（顺带核对两处类型假设）；
+2. **`ShadowNode`(24,331)** —— src 剩余项中依赖最齐备的大模块；
+3. `PhysicalLightingModel`(32,829) —— 单点解锁三材质。# 当前接续：AST 第五批（剩余 15 类）——`transpiler/AST.js` 30 个类全部移植完成，2026-11-05
 
 目标保持 active：固定 three.js 11738a9d55e502fb484cefffcea3a66dc44e9fe9 全部 src + examples/jsm 原生 C++ 逻辑，Vulkan 后端；禁止 CEF/生产 JS 引擎/桥接。阶段本地 Git 提交，不推送。
 
