@@ -416,3 +416,13 @@ const VSMPassHorizontal = Fn( ( { samples, radius, size, shadowPass, depthLayer 
 - `_mrt=null`、`_layers=null`、`_resolutionScale=1`、`_viewport=null`、`_scissor=null`；
 - `isPassNode=true`、`updateBeforeType = NodeUpdateType.FRAME`、`global=true`。
 - **静态 getter**：`PassNode.COLOR`/`PassNode.DEPTH`（值见 L1082/L1093，Stage D 时读取）。
+
+#### NodeObjectLoader 阻塞分析（r177，结论：需重构后置）
+
+- 上游 `src/loaders/nodes/NodeObjectLoader.js`（169 行，逻辑约 60 行）**继承 `ObjectLoader`**，仅重写 5 处：构造（`nodes/nodeMaterials/_nodesJSON`）、`setNodes`/`setNodeMaterials`、`parse`/`parseAsync`（暂存 `json.nodes` 后调 `super.parse`）、`parseNodes`（`NodeLoader`）、`parseMaterials`（`NodeMaterialLoader`）。
+- 本端口 `ObjectLoader` 是 **typed C++ 类**（`src/loaders/ObjectLoader.h`，当前为 first slice：`Result parse(json)` + 私有 `parseObject`，内部用 typed `MaterialLoader`，**无虚钩子**）。
+- `NodeLoader`/`NodeMaterialLoader` 是 **JSValue 托管**模块（`nativeNodeLoaderConstructor`/`nativeNodeMaterialLoaderConstructor`），其产出为 JSValue 节点/材质，**无法放入 typed `std::map<uuid, shared_ptr<Material>>`**。
+- 因此忠实移植 `NodeObjectLoader` 需要二选一：
+  1. 把 `ObjectLoader` **改为 JSValue 托管实现**（与上游一致，但需重写已有 typed 解析器与全部调用点）；
+  2. 为 typed `ObjectLoader` 增加**虚钩子 + JSValue↔typed 材质桥接层**（引入两套材质表示，复杂）。
+- **决策**：作为大重构后置，先在 `docs/NEXT-STEPS.md` 记录；当前优先推进 `ReflectorNode`/`Line2NodeMaterial`/`PhysicalLightingModel` 等无此类结构冲突的模块。
