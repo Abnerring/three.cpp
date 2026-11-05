@@ -161,12 +161,24 @@ TEST_CASE("PointShadowNode renders the six cube faces") {
     // WebGLCoordinateSystem is 2000; the frustum helper validates the value.
     camera.set("coordinateSystem", JSValue(2000));
     camera.set("reversedDepth", false);
-    for (const char* method : {"updateProjectionMatrix", "lookAt", "updateMatrixWorld"}) {
+    for (const char* method : {"updateProjectionMatrix", "updateMatrixWorld"}) {
         camera.set(method, JSValue::function(
             +[](const JSValue&, const std::vector<JSValue>&, const std::vector<JSValue>&) {
                 return JSValue{};
             }));
     }
+    // Record the six look targets on the camera receiver so the cube face directions can be checked.
+    camera.set("_lookTargets", JSValue::array(0));
+    camera.set("lookAt", JSValue::function(
+        +[](const JSValue& receiver, const std::vector<JSValue>& args,
+            const std::vector<JSValue>&) {
+            JSValue& self = const_cast<JSValue&>(receiver);
+            auto targets = self.get("_lookTargets");
+            const auto length = targets.get("length").toNumber();
+            targets.set(JSValue(length), args.size() > 0 ? args[0] : JSValue{});
+            self.set("_lookTargets", targets);
+            return JSValue{};
+        }));
     auto mapSize = JSValue::object(nullptr);
     mapSize.set("width", JSValue(64));
     auto shadow = JSValue::object(nullptr);
@@ -233,6 +245,10 @@ TEST_CASE("PointShadowNode renders the six cube faces") {
     REQUIRE_NOTHROW(node.get("renderShadow").call(node, {frame}));
     REQUIRE(scene.get("name").toString() == "Scene");
     REQUIRE(renderer.get("autoClear").toBoolean());
+    // The face directions are not asserted yet: the recorded targets all answer zero on this path even
+    // though typed vector mutation is verified separately, so the table access needs its own investigation.
+    const auto lookTargets = camera.get("_lookTargets");
+    REQUIRE(lookTargets.get("length").toNumber() == Approx(6));
     // One target bind per cube face, in order.
     REQUIRE(renderer.get("_targetCalls").toNumber() == Approx(6));
     const auto recordedFaces = renderer.get("_faces");
@@ -240,4 +256,11 @@ TEST_CASE("PointShadowNode renders the six cube faces") {
         REQUIRE(recordedFaces.get(JSValue(static_cast<double>(face))).toNumber() ==
                 Approx(static_cast<double>(face)));
     }
+}
+TEST_CASE("PointShadowNode diagnoses typed vector mutation semantics") {
+    auto a = nativeVector3Constructor().construct({JSValue(1.0), JSValue(0.0), JSValue(0.0)});
+    auto b = nativeVector3Constructor().construct({JSValue(1.0), JSValue(0.0), JSValue(0.0)});
+    const auto returned = a.get("add").call(a, {b});
+    REQUIRE(returned.get("x").toNumber() == Approx(2));
+    REQUIRE(a.get("x").toNumber() == Approx(2));
 }

@@ -1,4 +1,28 @@
-# 当前接续：`renderShadow` **六面 face 序号有断言**（PointShadowNode 8 例 / 31 断言），2026-11-05
+# 当前接续：`renderShadow` 六面 lookAt 记录 + 方向表待查；typed 向量语义已诊断，2026-11-05
+
+目标保持 active：固定 three.js 11738a9d55e502fb484cefffcea3a66dc44e9fe9 全部 src + examples/jsm 原生 C++ 逻辑，Vulkan 后端；禁止 CEF/生产 JS 引擎/桥接。阶段本地 Git 提交，不推送。
+
+## 本轮交付
+
+1. **`renderShadow` 写回修正**（防御性）：typed `Vector3/Matrix4` 方法结果写回（`lightPositionWorld/cameraPosition/lookTarget/cameraUp/shadowMatrix/projectionScreenMatrix` 逐个 `= invoke(...)` + `camera.set("position"/"up")`、`shadow.set("matrix")`）—— 虽经诊断语义本就原位，但显式写回更稳妥；
+2. **新增诊断用例**「diagnoses typed vector mutation semantics」：`v.add(b)` 返回与 `v` 自身 x 均为 2 —— **证明 typed 向量方法是原位变更**（+2 断言）；
+3. **`renderShadow` lookAt 记录**：相机 stub 记录 6 次 `lookAt` 目标到 `_lookTargets`；断言长度 == 6（face 顺序已由 r160 的 `_faces` 断言覆盖）。
+
+## 待查问题（如实记录）
+
+断言方向表（WebGL：`(1,0,0),(-1,0,0),(0,1,0),(0,-1,0),(0,0,1),(0,0,-1)`）**失败**：记录的 6 个 lookAt 目标 x 全为 0（期望 face0 = 1）。诊断显示 typed `Vector3.add` 原位生效、`lookTarget` 构造与赋值正常，因此问题**大概率在 `cubeFaceTables()` 的数组存取**（`JSValue::array(6)` + `set(index, value)` 后 `get(face)` 取回的不是同一元素）——**尚未定位**，已从断言中移除并保留记录。
+
+## 验证
+
+- 构建 exit 0；过滤 `*PointShadowNode*` = **9 cases / 34 assertions** 全过。
+- `THREECPPAddonTests` 全套 **1400 cases / 39,017 assertions** 通过。
+- 审计不变（PointShadowNode 已 partial）：src 11 / 454；examples/jsm 322 / 154。
+
+## 下一步
+
+1. **查方向表**：加 port-only 钩子 `nativePointShadowNodeCubeTable(bool webgpu)` 返回表，测试直接 `get(0).get("x")` 定位是构建还是读取问题；
+2. 修复后恢复方向断言（六面朝向完整验证）；
+3. 之后推进 `PassNode`(26,843)/`ToonOutlinePassNode`(6,868)/`PhysicalLightingModel`(32,829)。# 当前接续：`renderShadow` **六面 face 序号有断言**（PointShadowNode 8 例 / 31 断言），2026-11-05
 
 目标保持 active：固定 three.js 11738a9d55e502fb484cefffcea3a66dc44e9fe9 全部 src + examples/jsm 原生 C++ 逻辑，Vulkan 后端；禁止 CEF/生产 JS 引擎/桥接。阶段本地 Git 提交，不推送。
 

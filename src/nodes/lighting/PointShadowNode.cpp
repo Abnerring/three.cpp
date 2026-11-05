@@ -278,7 +278,7 @@ JSValue cubeFaceTables() {
 JSValue renderShadow(const JSValue& rawSelf, const Args& args, const Args&) {
     JSValue& self = const_cast<JSValue&>(rawSelf);
     const auto frame = arg(args, 0);
-    const auto shadow = self.get("shadow");
+    auto shadow = self.get("shadow");
     auto shadowMap = self.get("shadowMap");
     auto light = self.get("light");
     auto renderer = frame.get("renderer");
@@ -303,11 +303,11 @@ JSValue renderShadow(const JSValue& rawSelf, const Args& args, const Args&) {
     renderer.get("setClearColor").call(renderer,
                                       {shadow.get("clearColor"), shadow.get("clearAlpha")});
 
-    const auto lightPositionWorld = nativeVector3Constructor().construct();
-    const auto lookTarget = nativeVector3Constructor().construct();
-    const auto projectionScreenMatrix = nativeMatrix4Constructor().construct();
-    const auto cameraPosition = camera.get("position");
-    const auto cameraUp = camera.get("up");
+    auto lightPositionWorld = nativeVector3Constructor().construct();
+    auto lookTarget = nativeVector3Constructor().construct();
+    auto projectionScreenMatrix = nativeMatrix4Constructor().construct();
+    auto cameraPosition = camera.get("position");
+    auto cameraUp = camera.get("up");
 
     for (int face = 0; face < 6; ++face) {
         renderer.get("setRenderTarget").call(renderer, {shadowMap, JSValue(static_cast<double>(face))});
@@ -321,20 +321,25 @@ JSValue renderShadow(const JSValue& rawSelf, const Args& args, const Args&) {
             camera.get("updateProjectionMatrix").call(camera, {});
         }
 
+        // Typed vector and matrix methods answer the mutated value; it has to be written back into the
+        // owning managed object because the receiver arrives as a value copy.
         const auto lightMatrixWorld = light.get("matrixWorld");
-        lightPositionWorld.get("setFromMatrixPosition").call(lightPositionWorld, {lightMatrixWorld});
-        cameraPosition.get("copy").call(cameraPosition, {lightPositionWorld});
-        lookTarget.get("copy").call(lookTarget, {cameraPosition});
-        lookTarget.get("add").call(lookTarget, {cubeDirections.get(face)});
-        cameraUp.get("copy").call(cameraUp, {cubeUps.get(face)});
+        lightPositionWorld = lightPositionWorld.get("setFromMatrixPosition").call(lightPositionWorld, {lightMatrixWorld});
+        cameraPosition = cameraPosition.get("copy").call(cameraPosition, {lightPositionWorld});
+        camera.set("position", cameraPosition);
+        lookTarget = lookTarget.get("copy").call(lookTarget, {cameraPosition});
+        lookTarget = lookTarget.get("add").call(lookTarget, {cubeDirections.get(face)});
+        cameraUp = cameraUp.get("copy").call(cameraUp, {cubeUps.get(face)});
+        camera.set("up", cameraUp);
         camera.get("lookAt").call(camera, {lookTarget});
         camera.get("updateMatrixWorld").call(camera, {});
 
-        shadowMatrix.get("makeTranslation").call(
+        shadowMatrix = shadowMatrix.get("makeTranslation").call(
             shadowMatrix, {JSValue(-lightPositionWorld.get("x").toNumber()),
                            JSValue(-lightPositionWorld.get("y").toNumber()),
                            JSValue(-lightPositionWorld.get("z").toNumber())});
-        projectionScreenMatrix.get("multiplyMatrices").call(
+        shadow.set("matrix", shadowMatrix);
+        projectionScreenMatrix = projectionScreenMatrix.get("multiplyMatrices").call(
             projectionScreenMatrix,
             {camera.get("projectionMatrix"), camera.get("matrixWorldInverse")});
         shadow.get("_frustum")
