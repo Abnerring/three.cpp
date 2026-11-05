@@ -1,4 +1,35 @@
-# 当前接续：`setupShadow` 不支持类型路径加"抛错"断言 + 发现早停问题（待查），2026-11-05
+# 当前接续：**定位并修复早停根因**（`Compatibility` 常量取值错误）→ `setupShadow` 端到端跑通 + pinned 错误消息断言通过，2026-11-05
+
+目标保持 active：固定 three.js 11738a9d55e502fb484cefffcea3a66dc44e9fe9 全部 src + examples/jsm 原生 C++ 逻辑，Vulkan 后端；禁止 CEF/生产 JS 引擎/桥接。阶段本地 Git 提交，不推送。
+
+## 根因与修复（r142 记录的 `Property access on null/undefined`）
+
+- 错误写法：`nativeNodeConstantsBinding("Compatibility")` → 返回 **undefined** → 后续 `.get("TEXTURE_COMPARE")` 抛「Property access on null/undefined」；
+- 正确写法（参照 `TextureNode.cpp` L290-291 的既有范式）：`nativeConstantsModule().get("Compatibility")`；
+- 已修：`ShadowNode.cpp` 加 `#include "constants.h"`，改为 `const auto compatibility = nativeConstantsModule().get("Compatibility");`。
+
+## 修复后的验证结果（重要）
+
+1. **段 1 用例（r130）**：原断言「仍在段 2–4 抛错」——修复后 `setupShadow` **完整跑通不再抛错**，用例改为 **`REQUIRE_NOTHROW`**（stub targets + stub compatibility 足以走完全部四段）。
+2. **不支持类型用例（r142）**：断言收紧为**精确 pinned 消息**：
+   ```cpp
+   REQUIRE(message.find("Shadow map type not supported yet") != std::string::npos);
+   ```
+   **通过** —— 证明代码路径确实到达段 4 的过滤判断，且错误消息与上游一致。
+
+## 验证
+
+- 构建 exit 0；过滤 `*ShadowNode*` = **18 cases / 56 assertions** 全过。
+- `THREECPPAddonTests` 全套 **1383 cases / 38,959 assertions** 通过。
+- 审计不变（ShadowNode 已 partial）：src 12 / 453；examples/jsm 322 / 154。
+
+**未执行验证（如实记录）**：`setupShadow` 端到端只验证「不抛 + 错误路径」，**未断言生成图的结构/数值**；`toInspector` 仍省略；段 3 高精度分支未触发；`updateShadow` 无测试。
+
+## 下一步
+
+1. 段 3 高精度分支测试（`renderer.highPrecision = true` 且无 receivedShadowPositionNode → 走 `uniform('mat4').onObjectUpdate` 路径）；
+2. `updateShadow` 真实 renderer 夹具；段 4 transmitted 路径（`renderer.shadowMap.transmitted = true`）；
+3. 收口 `ShadowNode` 后推进 **`PointShadowNode`(12,693)**、`PhysicalLightingModel`(32,829)。# 当前接续：`setupShadow` 不支持类型路径加"抛错"断言 + 发现早停问题（待查），2026-11-05
 
 目标保持 active：固定 three.js 11738a9d55e502fb484cefffcea3a66dc44e9fe9 全部 src + examples/jsm 原生 C++ 逻辑，Vulkan 后端；禁止 CEF/生产 JS 引擎/桥接。阶段本地 Git 提交，不推送。
 

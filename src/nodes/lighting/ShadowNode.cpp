@@ -1,4 +1,5 @@
 #include "nodes/lighting/ShadowNode.h"
+#include "constants.h"
 
 #include "core/JSWeakMap.h"
 #include "nodes/lighting/LightingNodeRuntime.h"
@@ -225,7 +226,7 @@ JSValue setupShadow(const JSValue& rawSelf, const Args& args, const Args&) {
     auto depthTexture = renderTargets.get("depthTexture");
     auto shadowMap = renderTargets.get("shadowMap");
     const auto shadowMapType = renderer.get("shadowMap").get("type");
-    const auto compatibility = nativeNodeConstantsBinding("Compatibility");
+    const auto compatibility = nativeConstantsModule().get("Compatibility");
     const auto hasTextureCompare = renderer.get("hasCompatibility")
                                        .call(renderer, {compatibility.get("TEXTURE_COMPARE")});
     const auto linearFilter = nativeNodeConstantsBinding("LinearFilter");

@@ -354,9 +354,9 @@ TEST_CASE("ShadowNode setupShadow configures the depth filters before the remain
             targets.set("shadowMap", JSValue::object(nullptr));
             return targets;
         }));
-    // The stub setupRenderTarget may not answer with the objects above, so the call is expected to reach
-    // the still raising segment after configuring what it can.
-    REQUIRE_THROWS(node.get("setupShadow").call(node, {builder}));
+    // The stubbed targets plus the stub compatibility make the whole graph builder run through; the shadow
+    // map is stored on the node by its last segment.
+    REQUIRE_NOTHROW(node.get("setupShadow").call(node, {builder}));
     (void) projectionUpdates;
 }
 TEST_CASE("ShadowNode setupShadowFilter builds the frustum select") {
@@ -522,5 +522,5 @@ TEST_CASE("ShadowNode setupShadow rejects an unsupported shadow map type") {
         message = error.what();
     }
     INFO("exception message: " << message);
-    REQUIRE_FALSE(message.empty());
+    REQUIRE(message.find("Shadow map type not supported yet") != std::string::npos);
 }
