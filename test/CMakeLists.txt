@@ -112,6 +112,7 @@ add_executable(THREECPPTests
         unit/src/materials/nodes/BasicNodeMaterials.tests.cpp
         unit/src/materials/nodes/ShadowNodeMaterial.tests.cpp
         unit/src/nodes/functions/ShadowMaskModel.tests.cpp
+        unit/src/nodes/functions/ToonPhongLightingModel.tests.cpp
         unit/src/nodes/utils/Oscillators.tests.cpp
         unit/src/nodes/utils/ViewportUtils.tests.cpp
         unit/src/nodes/utils/PostProcessingUtils.tests.cpp
@@ -1060,6 +1061,13 @@ if(THREECPP_NODE_EXECUTABLE AND THREEJS_SOURCE_DIR)
     add_test(NAME threecpp.threejs-shadow-node-material-parity
         COMMAND "${THREECPP_NODE_EXECUTABLE}" "${CMAKE_CURRENT_SOURCE_DIR}/unit/utils/parity/compare-shadow-node-material.mjs"
         "${THREEJS_SOURCE_DIR}" "$<TARGET_FILE:ThreeJsShadowNodeMaterialParityProbe>")
+endif()
+add_executable(ThreeJsToonPhongLightingModelParityProbe unit/utils/parity/ToonPhongLightingModelParityProbe.cpp)
+target_link_libraries(ThreeJsToonPhongLightingModelParityProbe PRIVATE threecpp::threecpp)
+if(THREECPP_NODE_EXECUTABLE AND THREEJS_SOURCE_DIR)
+    add_test(NAME threecpp.threejs-toon-phong-lighting-model-parity
+        COMMAND "${THREECPP_NODE_EXECUTABLE}" "${CMAKE_CURRENT_SOURCE_DIR}/unit/utils/parity/compare-toon-phong-lighting-model.mjs"
+        "${THREEJS_SOURCE_DIR}" "$<TARGET_FILE:ThreeJsToonPhongLightingModelParityProbe>")
 endif()
 add_executable(ThreeJsMaterialXColorParityProbe unit/utils/parity/MaterialXColorParityProbe.cpp)
 target_link_libraries(ThreeJsMaterialXColorParityProbe PRIVATE threecpp::threecpp)

@@ -1,4 +1,23 @@
-# 当前接续：ShadowMaskModel + ShadowNodeMaterial 已移植，顺带修正 LightingModel 基类的钩子 arity，2026-11-05
+# 当前接续：ToonLightingModel + PhongLightingModel 已移植（行为计数差分），2026-11-05
+
+目标保持 active：固定 three.js 11738a9d55e502fb484cefffcea3a66dc44e9fe9 全部 src + examples/jsm 原生 C++ 逻辑，Vulkan 后端；禁止 CEF/生产 JS 引擎/桥接。阶段本地 Git 提交，不推送。
+
+本轮新增两个 lighting model（各独立 h/cpp）：
+
+- **`src/nodes/functions/ToonLightingModel.{h,cpp}`**（2,276 B）：内部 `getGradientIrradiance` 为 `Fn`，按 `builder.material.gradientMap` 分支——有 gradientMap 时走 `materialReference('gradientMap','texture').context({ getUV: () => coord })` 并取 `.r`，否则用 `coord.fwidth().mul(0.5)` 与 `smoothstep/mix` 生成三档梯度；`direct( { lightDirection, lightColor, reflectedLight }, builder )`（**arity 2**）把 `irradiance.mul(BRDF_Lambert({diffuseColor: diffuseColor.rgb}))` 加到 `directDiffuse`；`indirect(builder)`（arity 1）加 `irradiance.mul(BRDF_Lambert({diffuseColor}))` 再 `mulAssign(ambientOcclusion)`。
+- **`src/nodes/functions/PhongLightingModel.{h,cpp}`**（2,978 B）：**extends 既有 `BasicLightingModel`**（直接复用其基座与 `start`），`constructor( specular = true )`（**arity 0**）设 `this.specular`；内部 `BRDF_BlinnPhong` 为 `Fn`（`halfDir = lightDirection.add(positionViewDirection).normalize()`、`dotNH`/`dotVH` clamp、`F_Schlick`、`G = float(0.25)`、`D = shininess*0.5+1 * 1/π * dotNH.pow(shininess)`）；`direct( { lightDirection, lightColor, reflectedLight } )`（**arity 1——没有 builder 参数**）在 `specular === true` 时额外加到 `directSpecular`；`indirect(builder)` 与 Toon 同构。
+
+**本轮一处自我更正（由差分抓出）**：我起初把 `PhongLightingModel.direct` 的 arity 也注册成 2（照抄了 Toon 的 `( {…}, builder )` 签名），差分第一版即报 `phongDirectLength: 2 vs 1`。**上游 Phong 的 direct 只有解构参数**，已把注册 arity 与单测断言一并改回 1。
+
+追踪：`src/nodes/functions/NodeFunctionSources.inc` 重生成，现有 3 个 namespace（ShadowMaskModel / Toon / Phong）。
+
+验证：构建 exit 0（首轮两处缺 `nodes/tsl/TSLCore.h`，`nativeTSLCoreBinding` 未声明）。THREECPPTests **1573 cases / 214,436 assertions 全过**，较上轮 1569/214,416 增 4 例 20 断言。差分 `threecpp.threejs-toon-phong-lighting-model-parity` **Passed 1.08s**，且**两个模型都是真实执行的**，比较的是行为计数：Toon 的 `directDiffuse.addAssign = 1`、`indirect` 的 add/mul = 1/1；Phong 的 `directDiffuse = 1`、`directSpecular = 1`（specular 默认 true）、`new PhongLightingModel(false)` 时 `directSpecular = 0`、`indirect` 的 add/mul = 1/1；再加两者的 name/arity（含继承的 `start` 1、`finish` 0）、`phongCtorLength = 0`、`specular` 默认值与 class `toString` 逐字节。
+
+**未执行验证的部分（如实记录）**：① 两个模型的节点图都真实构建但**未被求值**；② Toon 的 **gradientMap 分支未执行**（测试里的 `builder.material` 没有 gradientMap，走的是 smoothstep 分支）；③ `specular` 关闭分支已执行（计数 0）；④ 真实渲染路径未触及。
+
+审计（固定 worktree，HEAD=11738a9d55）刷新后：**src missing 43→41、partial 422→424**，两个模块各记 `partial-unverified`。
+
+下一步：`MeshMatcapNodeMaterial`（1,694，可直接做）与 `MeshLambertNodeMaterial`（1,861，需 `LambertLightingModel`——注意该文件在审计里查不到记录，可能根本不存在于固定版本，需先确认）/ `MeshToonNodeMaterial`（1,269，本轮 `ToonLightingModel` 已就位）；`ShadowNode` + `PointShadowNode` 仍待较充裕上下文。# 当前接续：ShadowMaskModel + ShadowNodeMaterial 已移植，顺带修正 LightingModel 基类的钩子 arity，2026-11-05
 
 目标保持 active：固定 three.js 11738a9d55e502fb484cefffcea3a66dc44e9fe9 全部 src + examples/jsm 原生 C++ 逻辑，Vulkan 后端；禁止 CEF/生产 JS 引擎/桥接。阶段本地 Git 提交，不推送。
 

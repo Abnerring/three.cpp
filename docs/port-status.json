@@ -201,8 +201,8 @@
     "note": "Accepted port scope is src and examples/jsm, including tracked third-party dependencies. Editor/manual web applications are excluded from native application rewrites. Native host behavior, packaging and all three platforms require separate implementation and verification evidence."
   },
   "counts": {
-    "partial-unverified": 558,
-    "missing": 383,
+    "partial-unverified": 560,
+    "missing": 381,
     "vulkan-port-pending": 290,
     "dependency-unverified": 20
   },
@@ -210,8 +210,8 @@
     "src": {
       "modules": 755,
       "counts": {
-        "partial-unverified": 422,
-        "missing": 43,
+        "partial-unverified": 424,
+        "missing": 41,
         "vulkan-port-pending": 290
       }
     },
@@ -831,7 +831,7 @@
       "path": "src/nodes/functions",
       "upstreamFiles": 6,
       "moduleCount": 6,
-      "modulesWithCppFiles": 2,
+      "modulesWithCppFiles": 4,
       "verifiedComplete": 0
     },
     {
@@ -10780,11 +10780,11 @@
       "scope": "src",
       "kind": "core",
       "upstreamSha256": "d4147beeb182d7dfa8cbd755567d4268f734177fd3c92addd230ce6ea575f231",
-      "header": null,
-      "implementation": null,
+      "header": "src/nodes/functions/PhongLightingModel.h",
+      "implementation": "src/nodes/functions/PhongLightingModel.cpp",
       "expectedHeader": "src/nodes/functions/PhongLightingModel.h",
       "expectedImplementation": "src/nodes/functions/PhongLightingModel.cpp",
-      "status": "missing",
+      "status": "partial-unverified",
       "verifiedComplete": false,
       "apiExtraction": "static-only",
       "verification": {
@@ -10863,11 +10863,11 @@
       "scope": "src",
       "kind": "core",
       "upstreamSha256": "0dba1ef6e76b4a0d8c8f6082db9740d26d80771e2dcf36e5a23540135d9294da",
-      "header": null,
-      "implementation": null,
+      "header": "src/nodes/functions/ToonLightingModel.h",
+      "implementation": "src/nodes/functions/ToonLightingModel.cpp",
       "expectedHeader": "src/nodes/functions/ToonLightingModel.h",
       "expectedImplementation": "src/nodes/functions/ToonLightingModel.cpp",
-      "status": "missing",
+      "status": "partial-unverified",
       "verifiedComplete": false,
       "apiExtraction": "static-only",
       "verification": {
