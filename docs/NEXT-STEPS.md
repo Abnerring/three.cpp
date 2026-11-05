@@ -276,3 +276,36 @@ static get type() { return 'ShadowNode'; }
 - **`getShadowFilterFn(type)`**（L327）：`return _shadowFilterLib[ type ];`，其中 `_shadowFilterLib = [ BasicShadowFilter, PCFShadowFilter, null /* PCFSoftShadowMap removed */, VSMShadowFilter ]`（模块级常量，来自 `ShadowFilterNode` 的三个导出）。
 - **`dispose()`**（L737 起）与 **`_reset()`**（L750 起）：释放/清空 `shadowMap`、`vsmShadowMapVertical/Horizontal`、`vsmMaterialVertical/Horizontal`、`_node` 等缓存（具体逐行语义参见 pinned 行 737–800；A 段先落字段与空实现骨架，行为在 C/D 段补全）。
 - **实现风格**：本端口 `src/nodes/**` 一律为 **JSValue 托管类**（`native<Name>Module/Constructor/Binding` + `makeClass/builtinConstructor` + 生成的 `*Sources.inc` 类源），继承通过基类 prototype 实现；`ShadowBaseNode` 已有 `nativeShadowBaseNodeModule/Constructor/Binding` 与 C++ 包装类可参考。
+
+#### `setupShadow` 完整实现规格（r129，L355–595，ShadowNode 唯一剩余抛错成员）
+
+**段 1：RT 与过滤（L357–380）**
+`const { depthTexture, shadowMap } = this.setupRenderTarget(shadow, builder)`；`shadowMapType = renderer.shadowMap.type`；
+`hasTextureCompare = renderer.hasCompatibility(Compatibility.TEXTURE_COMPARE)`；若 `shadowMapType === PCFShadowMap && hasTextureCompare` → `depthTexture.minFilter = depthTexture.magFilter = LinearFilter`，否则两者 = `NearestFilter`；
+`shadow.camera.coordinateSystem = camera.coordinateSystem`；`shadow.camera._reversedDepth = renderer.reversedDepthBuffer`；`shadow.camera.updateProjectionMatrix()`。
+
+**段 2：VSM 两趟（L384–448，仅 `shadowMapType === VSMShadowMap && !shadow.isPointLightShadow`）**
+- `depthTexture.compareFunction = null`；
+- `shadowMap.depth > 1` 时复用 `shadowMap._vsmShadowMapVertical/Horizontal`（不存在则 `builder.createRenderTarget(w,h,{...,depth})` 并命名 `VSMVertical`/`VSMHorizontal`）；否则直接 `builder.createRenderTarget(w,h,{format: RGFormat})` 两次；
+- `shadowPassVertical = texture(depthTexture)`（数组纹理时 `.depth(depthLayer)`）；`shadowPassHorizontal = texture(vsmShadowMapVertical.texture)` 同理；
+- `samples/radius/size` 为 `reference('blurSamples'|'radius'|'mapSize', 'float'|'vec2', shadow).setGroup(renderGroup)`；
+- `sharedContext = context(builder.getSharedContext())`；
+- `vsmMaterialVertical = vsmMaterialVertical || new NodeMaterial()`，设 `contextNode = sharedContext`、`fragmentNode = VSMPassVertical({samples, radius, size, shadowPass, depthLayer, ...})`、`name = 'VSMVertical'`；Horizontal 同理。
+
+**段 3：阴影坐标（L452–476）**
+`shadowIntensity = reference('intensity','float',shadow).setGroup(renderGroup)`；`normalBias = reference('normalBias','float',shadow)...`；
+`shadowMatrix = lightShadowMatrix(light)`；`shadowNormalBias = normalWorld.mul(normalBias)`；
+若 `!renderer.highPrecision || builder.material.receivedShadowPositionNode || builder.context.shadowPositionWorld` → `shadowPosition = shadowMatrix.mul(shadowPositionWorld.add(shadowNormalBias))`；
+否则 `highpShadowModelMatrix = uniform('mat4').onObjectUpdate(({object}, self) => self.value.multiplyMatrices(shadowMatrix.value, object.matrixWorld))`，`shadowPosition = highpShadowModelMatrix.mul(positionLocal).add(shadowMatrix.mul(vec4(shadowNormalBias, 0)))`；
+`shadowCoord = this.setupShadowCoord(builder, shadowPosition)`。
+
+**段 4：过滤与输出（L480–585）**
+`filterFn = shadow.filterNode || this.getShadowFilterFn(renderer.shadowMap.type) || null`；为 null → **抛 `THREE.WebGPURenderer: Shadow map type not supported yet.`**；
+`shadowDepthTexture = (VSM && !point) ? vsmShadowMapVertical.texture : ...`；`shadowNode = this.setupShadowFilter(builder,{filterFn, shadowTexture: shadowMap.texture, depthTexture, shadow: ..., shadowCoord, depthLayer})`；
+`renderer.shadowMap.transmitted === true` 时取 `shadowColor = cubeTexture(...)/texture(...)`；`shadowOutput = shadowColor ? mix(1, shadowNode.rgb.mix(shadowColor,1), shadowIntensity.mul(shadowColor.a)).toVar() : mix(1, shadowNode, shadowIntensity).toVar()`；
+`this.shadowMap = shadowMap; this.shadow.map = shadowMap;`
+`toInspector(...)` 两处（`${light.type} Shadow [ ${light.name || 'ID: '+light.id} ] / Color|Depth`），Depth 分支用 `perspectiveDepthToViewZ` / `orthographicDepthToViewZ` + `viewZToOrthographicDepth` + `oneMinus`。
+
+**所需绑定清单**：`nativeDepthTextureConstructor`、`nativeNodeMaterialConstructor`（`NodeMaterial`）、`nativeContextNodeBinding("context")`、`nativeTextureNodeBinding("texture")`、`nativeCubeTextureNodeBinding("cubeTexture")`、`nativeReferenceNodeBinding("reference")`、`nativeTSLBaseBinding("mix"|"vec4")`、`nativeMathNodeBinding("mix")`、`nativeLightsBinding("lightShadowMatrix")`、`nativeNormalBinding("normalWorld")`、`nativePositionBinding("positionLocal")`、`nativeShadowBaseNodeBinding("shadowPositionWorld")`、`nativeUniformNodeBinding("uniform")`、`nativeUniformGroupNodeBinding("renderGroup")`、`nativeViewportDepthNodeBinding("perspectiveDepthToViewZ"|"orthographicDepthToViewZ"|"viewZToOrthographicDepth")`、`nativeEquirectUVBinding("equirectDirection")`、`nativeShadowFilterNodeBinding(...)`、`nativeNodeConstantsBinding("PCFShadowMap"|"VSMShadowMap"|"LinearFilter"|"NearestFilter"|"RGFormat"|"Compatibility")`、`renderer.hasCompatibility`。
+
+**建议**：分 4 次提交（每段一次），段 4 可用「过滤函数缺失时抛错」的既有测试断言；VSM 段需先确认 `createRenderTarget` 的 `{format, depth}` 参数与 `NodeMaterial` 绑定可用。
