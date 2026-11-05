@@ -8,20 +8,19 @@ const lock = (await import('../../../../upstream.json', { with: { type: 'json' }
 assert.equal(execFileSync('git', [ '-C', upstream, 'rev-parse', 'HEAD' ], { encoding: 'utf8' }).trim(), lock.commit);
 const { default: ProjectorLightNode } = await import(pathToFileURL(path.join(upstream, 'src/nodes/lighting/ProjectorLightNode.js')).href);
 const { Color } = await import(pathToFileURL(path.join(upstream, 'src/math/Color.js')).href);
+const { EventDispatcher } = await import(pathToFileURL(path.join(upstream, 'src/core/EventDispatcher.js')).href);
 
-// A light the projector's update can read. The accessors key a weak map on it, so it is an object.
-// The shadow container is attached only after construction: the upstream analytic constructor calls
-// addEventListener on a light that already has a shadow, and this stand-in light has no dispatcher.
-const light = {
+// Install the same event protocol and shadow before construction as the native fixture.
+const light = Object.assign(new EventDispatcher(), {
   color: new Color(0.25, 0.5, 0.75),
   intensity: 2,
   angle: 0.5,
   penumbra: 0.25,
   aspect: null,
-  map: null
-};
+  map: null,
+  shadow: {}
+});
 const node = new ProjectorLightNode(light);
-light.shadow = {};
 node.update({});
 const expected = {
   moduleSame: true,
@@ -30,6 +29,7 @@ const expected = {
   staticType: ProjectorLightNode.type,
   type: node.type,
   isAnalyticLightNode: node.isAnalyticLightNode,
+  shadowListenerRegistered: light.hasEventListener('dispose', node._shadowDisposeListener),
   coneCosNodeValue: node.coneCosNode.value,
   penumbraCosNodeValue: node.penumbraCosNode.value,
   colorR: node.color.r,

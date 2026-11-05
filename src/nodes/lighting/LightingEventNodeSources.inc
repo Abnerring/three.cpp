@@ -30,17 +30,6 @@ constexpr const char* classSource="class BasicEnvironmentNode extends LightingNo
 constexpr const char* typeSource="get type() {\r\n\r\n		return 'BasicEnvironmentNode';\r\n\r\n	}";
 constexpr const char* setupSource="	setup( builder ) {\r\n\r\n		// environment property is used in the finish() method of BasicLightingModel\r\n\r\n		builder.context.environment = cubeMapNode( this.envNode ).context( {\r\n			getUV: ( textureNode ) => materialEnvRotation.mul( textureNode.uvNode || textureNode.getDefaultUV() ),\r\n			forceUVContext: true\r\n		} );\r\n\r\n	}\r\n\r\n}";
 }
-namespace AnalyticLightNodeSource {
-constexpr const char* classSource="class AnalyticLightNode extends LightingNode {\r\n\r\n\tstatic get type() { return 'AnalyticLightNode'; }\r\n\r\n\tconstructor( light = null ) {\r\n\r\n\t\tsuper();\r\n\t\tthis.light = light;\r\n\t\tthis.color = new Color();\r\n\t\tthis.colorNode = uniform( this.color ).setGroup( renderGroup );\r\n\t\tthis.baseColorNode = null;\r\n\t\tthis.shadowNode = null;\r\n\t\tthis.shadowColorNode = null;\r\n\t\tthis.isAnalyticLightNode = true;\r\n\t\tthis.updateType = NodeUpdateType.FRAME;\r\n\r\n\t}\r\n\r\n\tupdate( frame ) {\r\n\r\n\t\tthis.color.copy( this.light.color ).multiplyScalar( this.light.intensity );\r\n\r\n\t}\r\n\r\n\tgetHash() { return this.light.uuid; }\r\n\r\n\tsetup( builder ) { }\r\n\tsetupDirect( builder ) { }\r\n\tsetupDirectRectArea( builder ) { }\r\n\tdispose() { }\r\n\r\n}";
-constexpr const char* typeSource="get type() { return 'AnalyticLightNode'; }";
-constexpr const char* updateSource="update( frame ) { this.color.copy( this.light.color ).multiplyScalar( this.light.intensity ); }";
-constexpr const char* getHashSource="getHash() { return this.light.uuid; }";
-constexpr const char* setupSource="setup( builder ) { }";
-constexpr const char* setupDirectSource="setupDirect( builder ) { }";
-constexpr const char* setupDirectRectAreaSource="setupDirectRectArea( builder ) { }";
-constexpr const char* disposeSource="dispose() { }";
-constexpr const char* getLightVectorSource="getLightVector( builder ) {\r\n\r\n\t\treturn lightViewPosition( this.light ).sub( builder.context.positionView || positionView );\r\n\r\n\t}";
-}
 namespace LightProbeNodeSource {
 constexpr const char* classSource="class LightProbeNode extends AnalyticLightNode {\r\n\r\n\tstatic get type() { return 'LightProbeNode'; }\r\n\r\n\tconstructor( light = null ) {\r\n\r\n\t\tsuper( light );\r\n\t\tconst array = [];\r\n\t\tfor ( let i = 0; i < 9; i ++ ) array.push( new Vector3() );\r\n\t\tthis.lightProbe = uniformArray( array );\r\n\r\n\t}\r\n\r\n\tupdate( frame ) {\r\n\r\n\t\tsuper.update( frame );\r\n\t\tfor ( let i = 0; i < 9; i ++ ) this.lightProbe.array[ i ].copy( this.light.sh.coefficients[ i ] ).multiplyScalar( this.light.intensity );\r\n\r\n\t}\r\n\r\n\tsetup( builder ) {\r\n\r\n\t\tconst irradiance = getShIrradianceAt( normalWorld, this.lightProbe );\r\n\t\tbuilder.context.irradiance.addAssign( irradiance );\r\n\r\n\t}\r\r\n\r\n}";
 constexpr const char* typeSource="get type() { return 'LightProbeNode'; }";

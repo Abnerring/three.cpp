@@ -1,5 +1,6 @@
 #include "nodes/lighting/ProjectorLightNode.h"
 
+#include "core/EventDispatcher.h"
 #include "math/Color.h"
 #include "math/JSNumberMath.h"
 #include "nodes/core/Node.h"
@@ -9,10 +10,9 @@
 #include <algorithm>
 
 namespace {
-// The light the projector's update reads. A plain object is enough: the light accessors key a weak
-// map on it and the update only reads fields.
+// A light with the EventDispatcher protocol required by the analytic shadow lifecycle.
 JSValue makeLight(double angle, double penumbra, const JSValue& aspect, const JSValue& map) {
-    auto light = JSValue::object(nullptr);
+    auto light = EventDispatcher::runtimeObject();
     auto color = nativeColorConstructor().construct();
     color.set("r", 0.25); color.set("g", 0.5); color.set("b", 0.75);
     light.set("color", color);
@@ -38,6 +38,7 @@ TEST_CASE("ProjectorLightNode exposes the pinned projector shape") {
     const auto node = ctor.construct({light});
     REQUIRE(node.get("type").strictEquals("ProjectorLightNode"));
     REQUIRE(node.get("isAnalyticLightNode").strictEquals(true));
+    REQUIRE(light.get("hasEventListener").call(light, {"dispose", node.get("_shadowDisposeListener")}).strictEquals(true));
     REQUIRE(node.get("getSpotAttenuation").get("length").strictEquals(1));
     REQUIRE(node.get("update").get("length").strictEquals(1));
 }

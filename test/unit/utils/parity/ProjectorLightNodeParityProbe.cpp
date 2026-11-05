@@ -1,5 +1,6 @@
 #include "nodes/lighting/ProjectorLightNode.h"
 
+#include "core/EventDispatcher.h"
 #include "core/JSValue.h"
 #include "math/Color.h"
 #include "nodes/core/Node.h"
@@ -8,7 +9,7 @@
 
 namespace {
 JSValue makeLight(double angle, double penumbra) {
-    auto light = JSValue::object(nullptr);
+    auto light = EventDispatcher::runtimeObject();
     auto color = nativeColorConstructor().construct();
     color.set("r", 0.25); color.set("g", 0.5); color.set("b", 0.75);
     light.set("color", color);
@@ -37,6 +38,7 @@ int main() {
         output.set("staticType", ctor.get("type"));
         output.set("type", node.get("type"));
         output.set("isAnalyticLightNode", node.get("isAnalyticLightNode"));
+        output.set("shadowListenerRegistered", light.get("hasEventListener").call(light, {"dispose", node.get("_shadowDisposeListener")}));
         output.set("coneCosNodeValue", node.get("coneCosNode").get("value"));
         output.set("penumbraCosNodeValue", node.get("penumbraCosNode").get("value"));
         output.set("colorR", node.get("color").get("r"));
