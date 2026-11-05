@@ -1,4 +1,32 @@
-# 当前接续：全仓健康校验轮（主套件 + addon 套件 + 抽样差分全部通过），2026-11-05
+# 当前接续：`STLExporter` binary 分支实现 + 字节级差分（ascii/binary 双路径均已验证），2026-11-05
+
+目标保持 active：固定 three.js 11738a9d55e502fb484cefffcea3a66dc44e9fe9 全部 src + examples/jsm 原生 C++ 逻辑，Vulkan 后端；禁止 CEF/生产 JS 引擎/桥接。阶段本地 Git 提交，不推送。
+
+## 本轮交付
+
+r66 曾把 `STLExporter` 的 binary 分支记为「未实现、调用抛错」。本轮补齐：
+
+- `examples/jsm/exporters/STLExporter.cpp`：新增 binary 路径，逐字节照抄上游 DataView 布局：
+  - **80 字节零头**（跳过 header）；
+  - `uint32` 小端三角形数（先遍历统计：有 index 用 `index.count/3`，否则 `position.count/3`）；
+  - 每三角形：法线 3×`float32` 小端 + 三个顶点各 3×`float32` 小端 + **`uint16` 属性字节数 = 0**；
+  - 法线与 ascii 路径同一算法（`cb = vC - vB`、`ab = vA - vB`、cross→normalize），顶点同样经 `matrixWorld`；
+  - `float32` 用 `static_cast<float>` + `memcpy` 取位模式再按小端写字节（与 JS `DataView.setFloat32(..., true)` 同义）。
+- `examples/jsm/exporters/STLExporter.h`：范围注释更新为「两种 flavour 均已实现」，仅保留 SkinnedMesh 未接的说明。
+- **单测**（`STLExporter.tests.cpp`）：把 r66 的「binary 抛错」用例替换为**字节布局精确断言**——总量 134 字节、前 80 字节全零、`uint32 count = 1`、法线 `(0,0,1)` 的 `00 00 80 3F`、三个顶点字节、结尾两个 `00` 属性字节。
+- **差分扩展**：`STLExporterParityProbe.cpp` 额外输出 binary 字节数组；`compare-stl-exporter.mjs` 用上游 `parse(scene,{binary:true})` 的 `DataView` 取 `Uint8Array` **逐字节比对**（BoxGeometry+平移场景）。
+
+## 验证
+
+- 构建 exit 0；过滤 `*STLExporter*` = 3 cases / 12 assertions 通过。
+- 差分 `threecpp.threejs-stl-exporter-parity` **Passed**（ascii 整份 + **binary 全量字节**）。
+- 审计计数不变（未新增模块头）：examples/jsm 325 / 151，src 13 / 452。
+
+**未执行验证（如实记录）**：SkinnedMesh 的 `applyBoneTransform` 仍未接；binary 只测 BoxGeometry 与单三角形两种输入；`float32` 舍入与 JS 的差异由本轮字节级差分覆盖（未再单测 NaN/Inf 等特殊值）；未做文件落盘。
+
+## 下一步
+
+examples/jsm 剩余 325：`transpiler/AST.js`(8868) 最有价值。src 剩余 13：`ShadowNode`(24,331，依赖齐备) / `PhysicalLightingModel`(32,829，解锁三材质)。# 当前接续：全仓健康校验轮（主套件 + addon 套件 + 抽样差分全部通过），2026-11-05
 
 目标保持 active：固定 three.js 11738a9d55e502fb484cefffcea3a66dc44e9fe9 全部 src + examples/jsm 原生 C++ 逻辑，Vulkan 后端；禁止 CEF/生产 JS 引擎/桥接。阶段本地 Git 提交，不推送。
 

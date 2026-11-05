@@ -19,10 +19,17 @@ int main() {
 
         STLExporter exporter;
         const std::string ascii = exporter.parse(scene);
+        const std::string binary = exporter.parse(scene, true);
+        auto binaryBytes = JSValue::array();
+        for (std::size_t i = 0; i < binary.size(); ++i) {
+            binaryBytes.set(i, JSValue(static_cast<double>(static_cast<unsigned char>(binary[i]))));
+        }
 
         auto output = JSValue::object(nullptr);
         output.set("ascii", JSValue(ascii));
         output.set("lineCount", JSValue(static_cast<double>(std::count(ascii.begin(), ascii.end(), '\n'))));
+        output.set("binaryBytes", binaryBytes);
+        output.set("binarySize", JSValue(static_cast<double>(binary.size())));
         output.set("startsWithSolid", JSValue(ascii.rfind("solid exported\n", 0) == 0));
         output.set("endsWithEndsolid", JSValue(ascii.size() >= 18 &&
                                                ascii.rfind("endsolid exported\n") == ascii.size() - 18));

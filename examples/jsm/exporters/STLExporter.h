@@ -12,10 +12,10 @@
 // matrix. Numbers are formatted with the port's JavaScript number to string algorithm, which is what
 // the pinned string concatenation does.
 //
-// Current scope: the ascii flavour is implemented. The binary flavour needs the DataView byte layout
-// and is not ported yet, so asking for it raises instead of silently producing ascii. Skinned meshes
-// are also not handled; the pinned exporter applies the bone transform for them, this port only uses
-// the geometry positions and the world matrix.
+// Both flavours are implemented: the ascii document and the binary little endian layout with the
+// eight byte header, the triangle count, and per triangle twelve float32 values plus the attribute
+// byte count. Skinned meshes are not handled; the pinned exporter applies the bone transform for
+// them, this port only uses the geometry positions and the world matrix.
 class STLExporter {
   public:
     // binary = false matches the pinned default of options.binary.

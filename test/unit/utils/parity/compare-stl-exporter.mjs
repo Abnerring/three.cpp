@@ -26,13 +26,18 @@ mesh.matrixWorld.makeTranslation(1, 2, 3);
 const scene = new THREE.Scene();
 scene.add(mesh);
 
-const ascii = new STLExporter().parse(scene);
+const exporter = new STLExporter();
+const ascii = exporter.parse(scene);
+const binaryView = exporter.parse(scene, { binary: true });
+const binaryBytes = Array.from(new Uint8Array(binaryView.buffer));
 
 const expected = {
   ascii,
   lineCount: (ascii.match(/\n/g) ?? []).length,
   startsWithSolid: ascii.startsWith('solid exported\n'),
-  endsWithEndsolid: ascii.endsWith('endsolid exported\n')
+  endsWithEndsolid: ascii.endsWith('endsolid exported\n'),
+  binaryBytes,
+  binarySize: binaryBytes.length
 };
 const actual = JSON.parse(execFileSync(path.resolve(probe), { encoding: 'utf8' }));
 assert.deepEqual(actual, expected);
