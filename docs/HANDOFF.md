@@ -1,4 +1,27 @@
-# 当前接续：VolumetricLightingModel 部分移植（4 个方法可用、start 显式报未移植）；修了追踪生成器分隔符缺陷，2026-11-05
+# 当前接续：VolumeNodeMaterial 已移植（无 defaults 对象的材质），2026-11-05
+
+目标保持 active：固定 three.js 11738a9d55e502fb484cefffcea3a66dc44e9fe9 全部 src + examples/jsm 原生 C++ 逻辑，Vulkan 后端；禁止 CEF/生产 JS 引擎/桥接。阶段本地 Git 提交，不推送。
+
+本轮新增 `src/materials/nodes/VolumeNodeMaterial.{h,cpp}`（1,507 B）。**它与之前移植的材质有一个结构性差异：没有 `_defaultValues`，也不调用 `setDefaultValues`** —— 九个字段全部由构造函数自己写，顺序为 `isVolumeNodeMaterial = true`、`steps = 25`、`offsetNode = null`、`scatteringNode = null`、`lights = true`、`transparent = true`、`side = BackSide(1)`、`depthTest = false`、`depthWrite = false`，最后才 `setValues( parameters )`。`setupLightingModel()` 返回 `new VolumetricLightingModel()`（上一轮的部分移植；**构造它不受 `start` 未移植的影响**）。
+
+跟踪生成恢复：`NodeMaterialSources.inc` 现在是 **10 个 namespace**（新增 `VolumeNodeMaterialSource`）。**注意生成器成员分隔符已于上一轮改为分号**，本轮第一次调用仍用逗号导致 "member not found"，已改用 `;` 重新生成。
+
+**本轮一处 arity 自我更正**：`setupLightingModel` 在上游是 **`setupLightingModel()`——完全无参数**（不是其他材质那种 `( /*builder*/ )` 注释掉参数的写法），故 `Function.length` 为 **0**；我起初注册成 1，差分报 `1 vs 0`，已改注册与断言为 0。
+
+验证：构建 exit 0。THREECPPTests **1602 cases / 214,594 assertions 全过**，较上轮 1599/214,573 增 3 例 21 断言。差分 `threecpp.threejs-volume-node-material-parity` **Passed**，比较：name/length=1/静态与实例 type/`isVolumeNodeMaterial`/`isNodeMaterial`、**九个字段各自的真实值**（`steps = 25`、两个覆盖节点 `=== null`、`lights`、`transparent`、**`side === 1`（BackSide）**、`depthTest === false`、`depthWrite === false`）、**完整自有属性快照**、`setupLightingModel.length === 0`、模型三个钩子 arity（`scatteringLight` 2 / `direct` 2 / `finish` 1）、两次调用不同实例、以及**带参数构造**（`{ steps: 50, transparent: false }` 覆盖生效）、class `toString` 逐字节。
+
+**未执行验证的部分（如实记录）**：① `setupLightingModel()` 返回的模型**只验证了钩子 arity 与实例性**，其 `start` 仍会在渲染时抛"循环未移植"（上一轮已声明）；② 材质真实渲染路径未触及；③ 九个字段只比对值，不涉及渲染语义。
+
+审计（固定 worktree，HEAD=11738a9d55）：**src missing 32→31、partial 433→434**，`VolumeNodeMaterial` 记 `partial-unverified`。
+
+`src` 剩余 **31** 个 missing 中，最小的几个（已实测体量）：`Three.Legacy.js`（0）、`Three.TSL.js`（62）、`NodeMaterials.js`（1,639）、`NodeMaterialLoader.js`（2,246）、`Three.WebGPU.Nodes.js`（2,297）、`SpriteUtils.js`（3,079）、`Three.WebGPU.js`（3,183）。
+
+下一步建议：
+1. **`NodeMaterials.js`（1,639）** —— 汇总注册表：它是 `src/materials/nodes` 里最后一个非 Lite 的模块，做之前需核对其 import 的每个材质是否都已移植（当前已移植 LineBasic / LineDashed / MeshBasic / MeshLambert / MeshMatcap / MeshNormal / MeshPhong / MeshToon / Shadow / Volume，缺 MeshSSS、MeshStandard、MeshPhysical、MeshMatcap？需逐项核对）。
+2. **单独一轮定位 `proxyFactory` 抛错点**（第 29/30 轮两次未收敛，需逐语句插桩），以消除 `nodeProxy` 偏差。
+3. `SpriteUtils`（3,079）—— 含 `worldMatrix[3][0] = …` 这类**矩阵元素赋值**，需先确认本运行时的索引赋值语义。
+4. `ShadowNode`（24,331）+ `PointShadowNode`（12,693）—— lighting 最后两个缺口。
+5. `Three.*.js` 三个入口汇总文件体量小但属**打包入口**，需先判断是否应作为 C++ 模块移植（可能只暴露 re-export 面）。# 当前接续：VolumetricLightingModel 部分移植（4 个方法可用、start 显式报未移植）；修了追踪生成器分隔符缺陷，2026-11-05
 
 目标保持 active：固定 three.js 11738a9d55e502fb484cefffcea3a66dc44e9fe9 全部 src + examples/jsm 原生 C++ 逻辑，Vulkan 后端；禁止 CEF/生产 JS 引擎/桥接。阶段本地 Git 提交，不推送。
 

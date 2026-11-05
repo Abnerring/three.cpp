@@ -116,6 +116,7 @@ add_executable(THREECPPTests
         unit/src/materials/nodes/MeshPhongNodeMaterial.tests.cpp
         unit/src/materials/nodes/MeshBasicNodeMaterial.tests.cpp
         unit/src/materials/nodes/LineDashedNodeMaterial.tests.cpp
+        unit/src/materials/nodes/VolumeNodeMaterial.tests.cpp
         unit/src/nodes/display/ViewportSharedTextureNode.tests.cpp
         unit/src/nodes/utils/SampleNode.tests.cpp
         unit/src/nodes/functions/ShadowMaskModel.tests.cpp
@@ -1125,6 +1126,13 @@ if(THREECPP_NODE_EXECUTABLE AND THREEJS_SOURCE_DIR)
     add_test(NAME threecpp.threejs-volumetric-lighting-model-parity
         COMMAND "${THREECPP_NODE_EXECUTABLE}" "${CMAKE_CURRENT_SOURCE_DIR}/unit/utils/parity/compare-volumetric-lighting-model.mjs"
         "${THREEJS_SOURCE_DIR}" "$<TARGET_FILE:ThreeJsVolumetricLightingModelParityProbe>")
+endif()
+add_executable(ThreeJsVolumeNodeMaterialParityProbe unit/utils/parity/VolumeNodeMaterialParityProbe.cpp)
+target_link_libraries(ThreeJsVolumeNodeMaterialParityProbe PRIVATE threecpp::threecpp)
+if(THREECPP_NODE_EXECUTABLE AND THREEJS_SOURCE_DIR)
+    add_test(NAME threecpp.threejs-volume-node-material-parity
+        COMMAND "${THREECPP_NODE_EXECUTABLE}" "${CMAKE_CURRENT_SOURCE_DIR}/unit/utils/parity/compare-volume-node-material.mjs"
+        "${THREEJS_SOURCE_DIR}" "$<TARGET_FILE:ThreeJsVolumeNodeMaterialParityProbe>")
 endif()
 add_executable(ThreeJsMaterialXColorParityProbe unit/utils/parity/MaterialXColorParityProbe.cpp)
 target_link_libraries(ThreeJsMaterialXColorParityProbe PRIVATE threecpp::threecpp)

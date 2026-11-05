@@ -201,8 +201,8 @@
     "note": "Accepted port scope is src and examples/jsm, including tracked third-party dependencies. Editor/manual web applications are excluded from native application rewrites. Native host behavior, packaging and all three platforms require separate implementation and verification evidence."
   },
   "counts": {
-    "partial-unverified": 569,
-    "missing": 372,
+    "partial-unverified": 570,
+    "missing": 371,
     "vulkan-port-pending": 290,
     "dependency-unverified": 20
   },
@@ -210,8 +210,8 @@
     "src": {
       "modules": 755,
       "counts": {
-        "partial-unverified": 433,
-        "missing": 32,
+        "partial-unverified": 434,
+        "missing": 31,
         "vulkan-port-pending": 290
       }
     },
@@ -761,7 +761,7 @@
       "path": "src/materials/nodes",
       "upstreamFiles": 19,
       "moduleCount": 19,
-      "modulesWithCppFiles": 10,
+      "modulesWithCppFiles": 11,
       "verifiedComplete": 0
     },
     {
@@ -6393,11 +6393,11 @@
       "scope": "src",
       "kind": "core",
       "upstreamSha256": "d2de63678b261105349a850f97d89c14e6628198661b20332c645e6ace9b242c",
-      "header": null,
-      "implementation": null,
+      "header": "src/materials/nodes/VolumeNodeMaterial.h",
+      "implementation": "src/materials/nodes/VolumeNodeMaterial.cpp",
       "expectedHeader": "src/materials/nodes/VolumeNodeMaterial.h",
       "expectedImplementation": "src/materials/nodes/VolumeNodeMaterial.cpp",
-      "status": "missing",
+      "status": "partial-unverified",
       "verifiedComplete": false,
       "apiExtraction": "static-only",
       "verification": {
@@ -6406,7 +6406,9 @@
           "pointer": "/modules/180"
         },
         "upstreamUnitTests": [],
-        "cppUnitTests": [],
+        "cppUnitTests": [
+          "test/unit/src/materials/nodes/VolumeNodeMaterial.tests.cpp"
+        ],
         "reviewedImplementation": [],
         "differentialResults": [],
         "renderingResults": [],
