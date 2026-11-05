@@ -1,4 +1,27 @@
-# 当前接续：VolumeNodeMaterial 已移植（无 defaults 对象的材质），2026-11-05
+# 当前接续：nodeProxy 偏差根因找到并消除——是我调用写错，不是运行时的错，2026-11-05
+
+目标保持 active：固定 three.js 11738a9d55e502fb484cefffcea3a66dc44e9fe9 全部 src + examples/jsm 原生 C++ 逻辑，Vulkan 后端；禁止 CEF/生产 JS 引擎/桥接。阶段本地 Git 提交，不推送。
+
+**正式撤回第 29、30、31 轮关于 `nodeProxy`/`proxyFactory` 的结论**：那几轮记录「调用 `nodeProxy(ctor).setParameterLength(0,2)` 得到的包装器一被调用就在 `proxyFactory` 内部抛 `Property access on null/undefined`，疑似运行时缺陷，故改用等价普通工厂并声明偏差」。**这个判断是错的。`proxyFactory` 没有问题，是我的调用写法错了。**
+
+**真实根因**：我写的是 `invoke(nativeTSLCoreBinding("nodeProxy"), "call")({ctor})`，按 JS 语义这等于 **`nodeProxy.call( ctor )`** —— `ctor` 变成了 **thisArg**，而 **参数列表是空的**。于是 `proxyFactory(module, {})` 里 `arg(args,0)` 为 undefined，`state.set("constructor", undefined)`；等到调用包装器时走 `name.toBoolean()` 的 else 分支 `state.get("constructor").get("type")` → 对 undefined 取属性 → 抛错。**既有先例的写法是 `nativeTSLBaseBinding("nodeProxy").call({}, {ctor})`**（receiver 为空对象、ctor 在参数列表里），我漏看了这个差别。
+
+**本轮定位方法（值得复用）**：在 `proxyFactory` 内层函数逐语句插入 `std::cerr` 标记，最终打印出 `state` 的键集合（8 个键、含 `constructor`）却 `state.get("constructor")` 为 undefined，与同一 state 上 `name`/`scope`/`min`/`fn` 都可读形成矛盾——这个矛盾直接指向「存进去的就是 undefined」而不是「读取机制坏了」，从而锁定到我传参错误。**全部插桩改动已 `git checkout` 回退，未留在树里**；临时探针 target 也已从 `test/CMakeLists.txt` 移除（从未提交）。
+
+**本轮唯一产品改动**：`src/nodes/display/ViewportSharedTextureNode.cpp` 把上一轮的「等价普通工厂 + `DEVIATION:` 注释」替换回**源码原样的 `nodeProxy` 包装**：
+```cpp
+const auto proxy = nativeTSLBaseBinding("nodeProxy").call({}, {ctor});
+const auto configured = invoke(proxy, "setParameterLength")({JSValue(0), JSValue(2)});
+```
+**第 29 轮声明的偏差至此消除**，`viewportSharedTexture` 与上游同样是 `nodeProxy` 包装器。
+
+验证：构建 exit 0。THREECPPTests **1602 cases / 214,594 assertions 全过**（与上轮持平，本轮不新增用例）。差分 `threecpp.threejs-sample-and-shared-texture-parity` **Passed**，其中 `proxyLength`、`proxyIsCallable`、`proxyProducesCallable`、`proxyTextureIsNotNull`、`produced.getTextureForReference()` 与共享帧缓冲同一性等**全部与上游一致**——即现在比对的是真正的 `nodeProxy` 包装器行为。
+
+**审计计数未变**（`src` missing 31 / partial 434 / vulkan 290），因为本轮没有新增模块，只修正了既有模块的一处实现偏差与一条错误记录。**不声称覆盖率提升。**
+
+**方法论教训（第三次同型问题，值得记牢）**：本仓库大量 TSL 工厂是「函数对象 + 用 `.call(receiver, args)` 调用」的模式。`invoke(fn,"call")({x})` 与 `fn.call({}, {x})` **不等价**：前者把 `{x}` 当 **thisArg** 且参数为空，后者才是「receiver 空对象、参数 `{x}`」。遇到「参数莫名是 undefined」时，先核对调用形态，再怀疑底层机制。
+
+下一步：`NodeMaterials.js`（1,639，需先核对它 import 的材质清单是否齐备）；`NodeMaterialLoader`（2,246）；`SpriteUtils`（3,079，需先确认矩阵索引赋值语义）；`ShadowNode`（24,331）+ `PointShadowNode`（12,693）仍是 lighting 最后两个缺口。# 当前接续：VolumeNodeMaterial 已移植（无 defaults 对象的材质），2026-11-05
 
 目标保持 active：固定 three.js 11738a9d55e502fb484cefffcea3a66dc44e9fe9 全部 src + examples/jsm 原生 C++ 逻辑，Vulkan 后端；禁止 CEF/生产 JS 引擎/桥接。阶段本地 Git 提交，不推送。
 

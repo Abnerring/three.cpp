@@ -4,6 +4,7 @@
 #include "nodes/display/ScreenNode.h"
 #include "nodes/display/ViewportTextureNode.h"
 #include "nodes/lighting/LightingNodeRuntime.h"
+#include "nodes/tsl/TSLBase.h"
 #include "nodes/tsl/TSLCore.h"
 #include "textures/FramebufferTexture.h"
 
@@ -59,20 +60,12 @@ JSValue nativeViewportSharedTextureNodeModule() {
     auto bindings = JSValue::object(nullptr);
     // export const viewportSharedTexture = nodeProxy( ViewportSharedTextureNode ).setParameterLength( 0, 2 )
     //
-    // DEVIATION: the source wraps the class in nodeProxy. Calling that wrapper through this runtime raised
-    // inside proxyFactory, so an equivalent plain factory is registered instead. It takes the same two
-    // optional arguments, answers an instance of this class, and has length zero, which is what the
-    // differential compares; what differs is the wrapper kind, not the observable behaviour.
-    auto factory = JSValue::function(
-        +[](const JSValue&, const Args& args, const Args& captures) -> JSValue {
-            auto uvNode = arg(args, 0, JSValue{});
-            if (uvNode.isUndefined()) uvNode = nativeScreenNodeBinding("screenUV");
-            auto levelNode = arg(args, 1, JSValue{});
-            if (levelNode.isUndefined()) levelNode = JSValue(nullptr);
-            return captures[0].construct({uvNode, levelNode});
-        },
-        {ctor}, "viewportSharedTexture", 0);
-    own(bindings, "viewportSharedTexture", factory);
+    // The proxy must be invoked as nodeProxy.call( {}, nodeClass ): calling nodeClass.call( ... ) directly
+    // passes the class as the receiver and leaves the argument list empty, which earlier rounds misread as
+    // a proxyFactory failure.
+    const auto proxy = nativeTSLBaseBinding("nodeProxy").call({}, {ctor});
+    const auto configured = invoke(proxy, "setParameterLength")({JSValue(0), JSValue(2)});
+    own(bindings, "viewportSharedTexture", configured);
     own(bindings, "default", ctor);
     return publish(bindings, lexical(), weak);
 }
