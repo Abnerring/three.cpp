@@ -1,4 +1,39 @@
-# 当前接续：SpriteUtils 已移植（billboarding 的矩阵索引赋值 + 四个分支构建），并解释了上一轮两处开放问题的共同原因，2026-11-05
+# 当前接续：补上缺失的 `toStack` 链式方法（运行时保真修复）；并定位 `atomic*` 工厂失败的真实位置，2026-11-05
+
+目标保持 active：固定 three.js 11738a9d55e502fb484cefffcea3a66dc44e9fe9 全部 src + examples/jsm 原生 C++ 逻辑，Vulkan 后端；禁止 CEF/生产 JS 引擎/桥接。阶段本地 Git 提交，不推送。
+
+**本轮是运行时修复，不新增模块，审计计数不变（src missing 24 / partial 441）——不声称覆盖率提升。**
+
+## 修复：`toStack` 链式方法缺失
+
+上游 `src/nodes/tsl/TSLCore.js:1234` 有 `addMethodChaining( 'toStack', Stack )`，其中
+```js
+export function Stack( node ) { if ( currentStack ) currentStack.addToStack( node ); return node; }
+```
+本端口 `TSLCoreRuntime.cpp` **从未注册过 `toStack`**，因此 `Node.prototype` 上没有该方法（可解释第 38 轮 `atomicFunc(...).toStack()` 的抛错）。本轮在 TSLCore 模块装配处补上：导出 `Stack`（arity 1），并 `addMethodChaining("toStack", Stack)`；`Stack` 内部用 `nativeGetCurrentStack()` 判断有无栈上下文，有则 `addToStack(node)`，**始终返回 node**（与上游一致）。
+
+## 定位：`atomic*` 工厂失败的真实位置（新结论，取代上一轮的猜测）
+
+上一轮记录为「`toStack` 需要栈上下文」，**本轮实测否定该归因**。加诊断后得到：
+- 直接调用 `nodeProxy(AtomicFunctionNode)(...args)` 就抛 `Property access on null/undefined`（`rawBuilt = false`，发生在 `.toStack()` 之前）；
+- 手工对已构造节点调用 `toStack()` **成功**（`chainBuilt = true`）。
+
+结论：失败在 **`nodeProxy` 包装器内部把实参列表经 `nodeArray`/`nodeObject` 转换** 这一步，plain-object 形参（`{ getNodeType, build }` 这种桩）在本端口得不到正确处理；而上游用同样桩调用 `atomicLoad(pointer)` **可以成功**（实测 `isNode: true`、无 `isStackNode`）。这是 **`nodeObject` 对普通对象的处理差异**，属运行时保真缺口，列为开放问题。
+
+## 验证
+
+构建 exit 0。THREECPPTests **1626 cases / 214,758 assertions 全过**（较上轮 1625/214,756 增 1 例 2 断言，新增 `toStack` 用例）。差分 `threecpp.threejs-atomic-function-node-parity` **Passed**，本轮新增两项**行为级**比较：
+- `toStackCallable`：两侧构造出的节点都带 `toStack` 方法；
+- `toStackReturnsSelf`：无栈上下文调用 `toStack()` 时**都返回节点自身**。
+其余项与上一轮相同（元数据、9 个常量、类型钩子、字段与同一性、三个工厂 arity、class `toString` 逐字节）。
+
+## 仍未解决（如实记录）
+
+1. **`atomic*` 工厂**：因上述 `nodeObject` 普通对象处理差异仍抛错；差分只比较 arity 与 `toStack` 链行为，**未声称工厂可用**。
+2. **`generate( builder )` 的 SIGSEGV**：本轮未改动，仍未验证（上一轮已从测试/差分中移除，源码保留忠实实现）。
+3. 上一轮记录的「No stack defined for assign operation」现象仍成立（`billboarding` 类调用），但已确认**与 `atomic*` 的失败无关**。
+
+下一步建议：① 修 `nodeObject`/`nodeArray` 对普通对象的转换（可同时解锁 `atomic*` 工厂与更多 TSL 调用点）；② 再查 `generate` 的 SIGSEGV（可用同一套桩 builder + 逐步二分）；③ 之后回到模块：`SubgroupFunctionNode`(16,784) / 3 个 `loaders/nodes` / `NodeMaterials`（仍被 4 个材质阻塞）。# 当前接续：SpriteUtils 已移植（billboarding 的矩阵索引赋值 + 四个分支构建），并解释了上一轮两处开放问题的共同原因，2026-11-05
 
 目标保持 active：固定 three.js 11738a9d55e502fb484cefffcea3a66dc44e9fe9 全部 src + examples/jsm 原生 C++ 逻辑，Vulkan 后端；禁止 CEF/生产 JS 引擎/桥接。阶段本地 Git 提交，不推送。
 

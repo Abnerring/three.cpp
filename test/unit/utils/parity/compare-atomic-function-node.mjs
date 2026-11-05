@@ -50,6 +50,8 @@ const expected = {
   atomicLoadLength: mod.atomicLoad.length,
   atomicAddLength: mod.atomicAdd.length,
 
+  toStackCallable: typeof atomic.toStack === 'function',
+  toStackReturnsSelf: typeof atomic.toStack === 'function' && atomic.toStack() === atomic,
   source: AtomicFunctionNode.toString()
 };
 const actual = JSON.parse(execFileSync(path.resolve(probe), { encoding: 'utf8' }));

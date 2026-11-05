@@ -250,6 +250,19 @@ void installNativeTSLCoreExtensions(const JSValue& module,const JSValue& constNo
     for(const auto* name:{"color","float","int","uint","bool","vec2","ivec2","uvec2","bvec2","vec3","ivec3","uvec3","bvec3","vec4","ivec4","uvec4","bvec4","mat2","mat3","mat4"}) {
         std::string method=name;method[0]=static_cast<char>(method[0]-'a'+'A');if(method.size()>1&&(method[0]=='I'||method[0]=='U'||method[0]=='B')&&method.substr(1,3)=="vec")method[1]='V';
         module.get("addMethodChaining").call({}, {"to"+method,module.get(name)});
+    // export function Stack( node ) { if ( currentStack ) currentStack.addToStack( node ); return node; }
+    // addMethodChaining( 'toStack', Stack );
+    own(module, "Stack", JSValue::function(
+        +[](const JSValue&, const Args& args, const Args&) -> JSValue {
+            const auto node = arg(args, 0, nullptr);
+            const auto current = nativeGetCurrentStack();
+            if (current.toBoolean()) {
+                invoke(current, "addToStack")({node});
+            }
+            return node;
+        },
+        {}, "Stack", 1));
+    module.get("addMethodChaining").call({}, {JSValue("toStack"), module.get("Stack")});
     }
     const auto element=module.get("nodeProxy").call({}, {nativeArrayElementNodeConstructor()});own(module,"element",invoke(element,"setParameterLength")({2}));
     own(module,"convert",JSValue::function([](const JSValue&,const Args& args,const Args& cap)->JSValue {JSSourceTrace::FrameScope sourceTraceTSL_31({"convert",{"file:///D:/Temp/surui/threejs-pinned-11738a9-20261101/src/nodes/tsl/TSLCore.js",1288,24,26721,"272524b87c2ded3333c693631d8aac2000a4af14adfbdfaf975027f5036808fd"},std::string{},"",false,false,false,{"file:///D:/Temp/surui/threejs-pinned-11738a9-20261101/src/nodes/tsl/TSLCore.js",1288,24,26721,"272524b87c2ded3333c693631d8aac2000a4af14adfbdfaf975027f5036808fd"}});return nativeConvertNodeConstructor().construct({cap[0].call({}, {arg(args,0)}),arg(args,1)});},{module.get("nodeObject")},"convert",2));

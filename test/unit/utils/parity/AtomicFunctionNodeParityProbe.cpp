@@ -1,11 +1,15 @@
 #include "nodes/gpgpu/AtomicFunctionNode.h"
 
 #include "core/JSValue.h"
+#include "nodes/lighting/LightingNodeRuntime.h"
+#include "nodes/tsl/TSLCore.h"
 
 #include <iostream>
 #include <string>
 #include <vector>
 
+
+using namespace UtilityNodeRuntime;
 namespace {
 using ArgList = std::vector<JSValue>;
 
@@ -72,7 +76,20 @@ int main() {
 
         output.set("atomicFuncLength", module.get("atomicFunc").get("length"));
         output.set("atomicLoadLength", module.get("atomicLoad").get("length"));
+
         output.set("atomicAddLength", module.get("atomicAdd").get("length"));
+
+
+        // toStack is a TSL chain method (registered through addMethodChaining in TSLCore), so a constructed node
+        // answers it and chaining returns the node itself.
+        const auto stackMethod = atomic.get("toStack");
+        const bool toStackCallable = stackMethod.isCallable();
+        bool toStackReturnsSelf = false;
+        if (toStackCallable) {
+            toStackReturnsSelf = stackMethod.call(atomic, {}).sameValue(atomic);
+        }
+        output.set("toStackCallable", toStackCallable);
+        output.set("toStackReturnsSelf", toStackReturnsSelf);
         output.set("source", ctor.get("toString").call(ctor));
         std::cout << output.toJSON()->dump() << '\n';
         return 0;

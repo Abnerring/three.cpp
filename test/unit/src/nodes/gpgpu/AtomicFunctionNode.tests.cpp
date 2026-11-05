@@ -121,3 +121,12 @@ TEST_CASE("AtomicFunctionNode keeps the method name and its operands") {
 // NOTE: the generate path is implemented faithfully but is NOT exercised yet. Calling it from a test against a
 // stub builder raises an access violation inside this runtime, which is recorded as an open issue for a later
 // round rather than hidden behind a passing test.
+
+TEST_CASE("AtomicFunctionNode answers the toStack chain method") {
+    const auto atomic = nativeAtomicFunctionNodeConstructor().construct(
+        {JSValue("atomicAdd"), pointerStub(), valueStub()});
+    // toStack is registered through addMethodChaining in TSLCore, so every node carries it.
+    const auto toStack = atomic.get("toStack");
+    REQUIRE(toStack.isCallable());
+    REQUIRE(toStack.call(atomic, {}).sameValue(atomic));
+}
