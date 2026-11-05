@@ -1,4 +1,36 @@
-# 当前接续：`transpiler/Linker.js` 首次实现失败并已回滚（根因与修复点已定位），2026-11-05
+# 当前接续：`Linker` 第二次尝试仍失败（AST.h 替换锚点不匹配）——精确修复指令已记录，2026-11-05
+
+目标保持 active：固定 three.js 11738a9d55e502fb484cefffcea3a66dc44e9fe9 全部 src + examples/jsm 原生 C++ 逻辑，Vulkan 后端；禁止 CEF/生产 JS 引擎/桥接。阶段本地 Git 提交，不推送。
+
+## 本轮结果：失败轮（无残留）
+
+r97 记录了 Linker 首版唯一编译错误（`AccessorElements::elements` 需 dynamic_cast）。本轮按该修复重做，同时尝试把 `SwitchCase.conditions` 改为 `std::optional<std::vector<ASTNode*>>`（上游 `for…of` 证明是数组）。
+
+**失败根因（本轮新发现）**：对 `AST.h` 中 `SwitchCase` 代码块用的**字符串替换锚点与实际文本不匹配** → 替换静默未生效，`conditions` 仍是 `ASTNode*`。于是 Linker 里 `switchCase->conditions.has_value()` / `for (auto* condition : *conditions)` 全部报错（C2228/C3312/C3531/C2451），测试构造 `SwitchCase({}, std::vector<ASTNode*>{&condition})` 无匹配重载（C2665）。
+
+**安全网再次生效**：构建失败 → 自动 `git checkout` 六个已跟踪文件 + 删除 `Linker.h/.cpp`、`Linker.tests.cpp`；`dirty = 0`，无半成品。
+
+## 精确修复指令（下一轮照此执行，避免再踩）
+
+1. **先读** `examples/jsm/transpiler/AST.h` 中 `class SwitchCase` 段落（本轮已确认起始行见运行输出，实际文本见下方）：
+   - 现状字段为 `ASTNode* conditions = nullptr;`、构造签名 `SwitchCase(std::vector<ASTNode*> body, ASTNode* conditions = nullptr);`
+   - 改为 `std::optional<std::vector<ASTNode*>> conditions;`、构造 `SwitchCase(std::vector<ASTNode*> body, std::optional<std::vector<ASTNode*>> conditions = std::nullopt);`
+   - `const bool isDefault;` 保持，但在 `AST.cpp` 构造器初始化列表里写 `isDefault(!conditions.has_value())`。
+   - `AST.cpp::SwitchCase::initialize()` 改为：`if (conditions.has_value()) for (auto* c : *conditions) adopt(c);` 再遍历 body。
+2. **同步调用点**（3 处）：`AST.tests.cpp`（`SwitchCase conditionalCase({&statement}, std::vector<ASTNode*>{&condition});`）、`ASTParityProbe.cpp`（同样写法）、`compare-ast.mjs`（`new SwitchCase([], [ intTwo ])`）。
+3. **然后**重做 Linker（r97 记录的结构与分支修复可直接复用：`AccessorElements` 元素按 `StaticElement`/`DynamicElement` dynamic_cast 取 `value`）。
+4. **工程教训（已两次生效）**：批量字符串替换前**必须先读取目标文件的真实文本**（或改用行号/正则断言替换成功），并在脚本里断言「替换后包含目标文本」，否则静默失败会在下一阶段表现为莫名其妙的类型错误。
+
+## 验证
+
+- `dirty = 0`；HEAD 仍为上一轮提交；审计保持 examples/jsm 324 / 152、src 13 / 452。
+- 本轮未产生源码/构建变更。
+
+## 下一步
+
+1. 按上面 1–3 步完成 Linker（约 300 行 C++，结构已在 r97/r98 两次尝试中验证除 SwitchCase 外的全部逻辑）；
+2. Linker 差分（无相对导入，可 `data:` URL 加载）：比较 `linker.reference` 链路与 `accesses`/`assignments`；
+3. 之后：`ShadowNode`(24,331) / `PhysicalLightingModel`(32,829)。# 当前接续：`transpiler/Linker.js` 首次实现失败并已回滚（根因与修复点已定位），2026-11-05
 
 目标保持 active：固定 three.js 11738a9d55e502fb484cefffcea3a66dc44e9fe9 全部 src + examples/jsm 原生 C++ 逻辑，Vulkan 后端；禁止 CEF/生产 JS 引擎/桥接。阶段本地 Git 提交，不推送。
 
