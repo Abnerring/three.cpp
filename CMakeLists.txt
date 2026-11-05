@@ -218,6 +218,7 @@ target_sources(threecpp PRIVATE
     src/materials/nodes/MeshPhongNodeMaterial.cpp
     src/materials/nodes/MeshBasicNodeMaterial.cpp
     src/materials/nodes/LineDashedNodeMaterial.cpp
+    src/nodes/functions/VolumetricLightingModel.cpp
     src/nodes/display/ViewportSharedTextureNode.cpp
     src/nodes/utils/SampleNode.cpp
     src/materials/nodes/MeshToonNodeMaterial.cpp

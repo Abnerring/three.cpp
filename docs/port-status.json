@@ -201,8 +201,8 @@
     "note": "Accepted port scope is src and examples/jsm, including tracked third-party dependencies. Editor/manual web applications are excluded from native application rewrites. Native host behavior, packaging and all three platforms require separate implementation and verification evidence."
   },
   "counts": {
-    "partial-unverified": 568,
-    "missing": 373,
+    "partial-unverified": 569,
+    "missing": 372,
     "vulkan-port-pending": 290,
     "dependency-unverified": 20
   },
@@ -210,8 +210,8 @@
     "src": {
       "modules": 755,
       "counts": {
-        "partial-unverified": 432,
-        "missing": 33,
+        "partial-unverified": 433,
+        "missing": 32,
         "vulkan-port-pending": 290
       }
     },
@@ -831,7 +831,7 @@
       "path": "src/nodes/functions",
       "upstreamFiles": 6,
       "moduleCount": 6,
-      "modulesWithCppFiles": 4,
+      "modulesWithCppFiles": 5,
       "verifiedComplete": 0
     },
     {
@@ -10900,11 +10900,11 @@
       "scope": "src",
       "kind": "core",
       "upstreamSha256": "6335dddf5df9d0751d4b08474e1ee9b96fe76fc20c9ce90c5eec23d7fa2091e3",
-      "header": null,
-      "implementation": null,
+      "header": "src/nodes/functions/VolumetricLightingModel.h",
+      "implementation": "src/nodes/functions/VolumetricLightingModel.cpp",
       "expectedHeader": "src/nodes/functions/VolumetricLightingModel.h",
       "expectedImplementation": "src/nodes/functions/VolumetricLightingModel.cpp",
-      "status": "missing",
+      "status": "partial-unverified",
       "verifiedComplete": false,
       "apiExtraction": "static-only",
       "verification": {
@@ -10913,7 +10913,9 @@
           "pointer": "/modules/339"
         },
         "upstreamUnitTests": [],
-        "cppUnitTests": [],
+        "cppUnitTests": [
+          "test/unit/src/nodes/functions/VolumetricLightingModel.tests.cpp"
+        ],
         "reviewedImplementation": [],
         "differentialResults": [],
         "renderingResults": [],

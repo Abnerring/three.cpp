@@ -1,4 +1,23 @@
-# 当前接续：SampleNode + ViewportSharedTextureNode 移植；一处 nodeProxy 包装改为等价工厂（已记录偏差），2026-11-05
+# 当前接续：VolumetricLightingModel 部分移植（4 个方法可用、start 显式报未移植）；修了追踪生成器分隔符缺陷，2026-11-05
+
+目标保持 active：固定 three.js 11738a9d55e502fb484cefffcea3a66dc44e9fe9 全部 src + examples/jsm 原生 C++ 逻辑，Vulkan 后端；禁止 CEF/生产 JS 引擎/桥接。阶段本地 Git 提交，不推送。
+
+**本轮开头先做了一次失败的尝试并完整回退**：为消除第 29 轮记录的 `nodeProxy` 偏差，我改了 `proxyFactory`（`undefined` 归一化为 `null`、`nodeArray` 改为调用时查找），两者都不解决问题——异常仍在 `proxy.call(...)` 时抛出。`nodeArray` 在 `nodeProxy` 之前定义（177 vs 181），假设也被排除。**这些试验性改动已 `git checkout` 回退，未留在树里**；`ViewportSharedTextureNode` 恢复为第 29 轮提交的等价工厂。结论：`proxyFactory` 需要单独一轮，用**逐语句插桩**定位，本轮不做无根据猜测。
+
+本轮新增 `src/nodes/functions/VolumetricLightingModel.{h,cpp}`（6,004 B 源码），**明确只完成可验证的部分**：
+
+- **完整实现并验证**：`scatteringLight( lightColor, builder )`（有 `context.sceneDepthNode` 时 `If(depth >= linearDepthRay)` 内 `addAssign`，否则直接 `addAssign`）、`direct( { lightNode, lightColor }, builder )`（**先判 `isAnalyticLightNode !== true` 与 `light.distance === undefined` 两个早退**，再 `lightColor.xyz.toVar()`、有 `shadowNode` 时 `mulAssign`、最后 `scatteringLight`）、`directRectArea(...)`（四角点 `p0..p3`、`LTC_Evaluate_Volume({P,p0..p3})`、`.pow(1.5)`、`scatteringLight`）、`finish( builder )`（`context.outgoingLight.assign( outgoingRayLight )`）。
+- **`start( builder )` 只移植了前半**（`cameraPosition.sub(positionWorld).length() > modelRadius*2` 的 `If/Else` 前向/后向判定），**后半的 ray marching 循环未移植**，因此该方法**显式抛错**（按项目规则：未实现必须报错，不得静默忽略体积）。这样 `VolumeNodeMaterial` 的**构造**（`new VolumetricLightingModel()`）不受影响，下一轮可做材质本身。
+
+**修掉一个工具缺陷**：`build/gen-material-traces.mjs` 原以**逗号**分隔成员列表，而成员签名本身含逗号（`direct( { lightNode, lightColor }, builder )`），导致生成重复键（`builderSource` 定义两次）直接编译失败。改为 **分号分隔** 后重新生成 `NodeFunctionSources.inc`（4 个 namespace，键唯一）。
+
+验证：构建 exit 0。THREECPPTests **1599 cases / 214,573 assertions 全过**，较上轮 1595/214,561 增 4 例 12 断言。差分 `threecpp.threejs-volumetric-lighting-model-parity` **Passed**，比较：5 个钩子 arity（`start` 1、`scatteringLight` 2、`direct` 2、`directRectArea` 2、`finish` 1）、继承的 `indirect` 为 0、**`direct` 的两条早退分支都返回 undefined**、**`finish` 对 `outgoingLight.assign` 的调用计数 = 1**、`start` 是否抛错（两侧都用 try 包裹后比较布尔，**不再假设上游在桩 builder 下不抛**）、以及 class `toString` 逐字节。
+
+**未执行/未移植（如实记录）**：① `start` 的 ray marching 循环（`Loop` + 每步 context 写入 + 散射累积）**未移植**，方法显式抛错；② `scatteringLight` 的 `sceneDepthNode` 分支、`directRectArea` 的 LTC 求值路径**未执行**（需要 `If` 的栈上下文与完整 builder）；③ 节点图均未求值。
+
+审计（固定 worktree，HEAD=11738a9d55）：**src missing 33→32、partial 432→433**，`VolumetricLightingModel` 记 `partial-unverified`。
+
+下一步：① `VolumeNodeMaterial`（1,507）—— 其 `setupLightingModel()` 只构造本轮的模型，**现在已可做**；② 单独一轮定位 `proxyFactory` 的真实抛错点（逐语句插桩），以消除第 29 轮的 `nodeProxy` 偏差；③ `SpriteUtils`（3,079，含矩阵元素赋值，需先确认索引赋值语义）；④ `ShadowNode`（24,331）+ `PointShadowNode`（12,693）仍是 lighting 最后两个缺口。# 当前接续：SampleNode + ViewportSharedTextureNode 移植；一处 nodeProxy 包装改为等价工厂（已记录偏差），2026-11-05
 
 目标保持 active：固定 three.js 11738a9d55e502fb484cefffcea3a66dc44e9fe9 全部 src + examples/jsm 原生 C++ 逻辑，Vulkan 后端；禁止 CEF/生产 JS 引擎/桥接。阶段本地 Git 提交，不推送。
 
