@@ -14,6 +14,10 @@
 #include "nodes/tsl/TSLBase.h"
 #include "renderers/common/QuadMesh.h"
 #include "renderers/common/RendererUtils.h"
+#include "nodes/accessors/CubeTextureNode.h"
+#include "nodes/accessors/TextureNode.h"
+#include "nodes/math/MathNode.h"
+#include "nodes/utils/EquirectUV.h"
 #include "textures/DepthTexture.h"
 
 #include <stdexcept>
@@ -201,6 +205,7 @@ JSValue setupShadow(const JSValue& rawSelf, const Args& args, const Args&) {
 
     const auto renderTargets = self.get("setupRenderTarget").call(self, {shadow, builder});
     auto depthTexture = renderTargets.get("depthTexture");
+    auto shadowMap = renderTargets.get("shadowMap");
     const auto shadowMapType = renderer.get("shadowMap").get("type");
     const auto compatibility = nativeNodeConstantsBinding("Compatibility");
     const auto hasTextureCompare = renderer.get("hasCompatibility")
@@ -276,7 +281,66 @@ JSValue setupShadow(const JSValue& rawSelf, const Args& args, const Args&) {
     self.set("_shadowIntensity", shadowIntensity);
     const auto shadowCoord = self.get("setupShadowCoord").call(self, {builder, shadowPosition});
 
-    return notPorted("setupShadow (segments 2 and 4)");
+    // Segment 4: resolve the filter, sample the shadow colour when transmitted and mix the output.
+    // The pinned toInspector() debug hooks are omitted here (inspector only, no rendering effect).
+    const bool isVsmShadow =
+        renderer.get("shadowMap").get("type").strictEquals(nativeNodeConstantsBinding("VSMShadowMap")) &&
+        !shadow.get("isPointLightShadow").toBoolean();
+    auto shadowDepthTexture = depthTexture;
+    if (isVsmShadow) {
+        const auto vsmMap = self.get("vsmShadowMapVertical");
+        if (vsmMap.toBoolean()) shadowDepthTexture = vsmMap.get("texture");
+    }
+
+    auto filterFn = shadow.get("filterNode");
+    if (!filterFn.toBoolean()) {
+        filterFn = self.get("getShadowFilterFn").call(self, {renderer.get("shadowMap").get("type")});
+    }
+    if (!filterFn.toBoolean()) {
+        throw std::runtime_error("THREE.WebGPURenderer: Shadow map type not supported yet.");
+    }
+
+    auto filterConfiguration = JSValue::object(nullptr);
+    filterConfiguration.set("filterFn", filterFn);
+    filterConfiguration.set("shadowTexture", shadowMap.get("texture"));
+    filterConfiguration.set("depthTexture", shadowDepthTexture);
+    filterConfiguration.set("shadow", shadow);
+    filterConfiguration.set("shadowCoord", shadowCoord);
+    filterConfiguration.set("depthLayer", self.get("depthLayer"));
+    const auto shadowNode = self.get("setupShadowFilter").call(self, {builder, filterConfiguration});
+
+    auto shadowColor = JSValue{};
+    if (renderer.get("shadowMap").get("transmitted").toBoolean()) {
+        auto mapTexture = shadowMap.get("texture");
+        if (mapTexture.get("isCubeTexture").toBoolean()) {
+            shadowColor = nativeCubeTextureNodeBinding("cubeTexture")
+                              .call({}, {mapTexture, shadowCoord.get("xyz")});
+        } else {
+            shadowColor =
+                nativeTextureNodeBinding("texture").call({}, {mapTexture, shadowCoord});
+            if (depthTexture.get("isArrayTexture").toBoolean()) {
+                shadowColor = shadowColor.get("depth").call(shadowColor, {self.get("depthLayer")});
+            }
+        }
+    }
+
+    const auto mixFn = nativeMathNodeBinding("mix");
+    const auto intensity = self.get("_shadowIntensity");
+    JSValue shadowOutput;
+    if (shadowColor.toBoolean()) {
+        const auto rgb = shadowNode.get("rgb");
+        const auto colored = rgb.get("mix").call(rgb, {shadowColor, JSValue(1.0)});
+        const auto weight = intensity.get("mul").call(intensity, {shadowColor.get("a")});
+        auto mixed = mixFn.call({}, {JSValue(1.0), colored, weight});
+        shadowOutput = mixed.get("toVar").call(mixed, {});
+    } else {
+        auto mixed = mixFn.call({}, {JSValue(1.0), shadowNode, intensity});
+        shadowOutput = mixed.get("toVar").call(mixed, {});
+    }
+
+    self.set("shadowMap", shadowMap);
+    const_cast<JSValue&>(shadow).set("map", shadowMap);
+    return shadowOutput;
 }
 // setup( builder ) { check the renderer shadow state, reuse the cached node and run the material hook. }
 // The pinned wrapper runs the body inside Fn(...)(); the body is executed directly here, which has the

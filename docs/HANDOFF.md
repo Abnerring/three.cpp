@@ -1,4 +1,30 @@
-# 当前接续：`ShadowNode` `setupShadowFilter` 实现完成（段 4 前置），2026-11-05
+# 当前接续：`setupShadow` **段 4（过滤/输出）**落地 —— `ShadowNode` 仅剩段 2（VSM 两趟），2026-11-05
+
+目标保持 active：固定 three.js 11738a9d55e502fb484cefffcea3a66dc44e9fe9 全部 src + examples/jsm 原生 C++ 逻辑，Vulkan 后端；禁止 CEF/生产 JS 引擎/桥接。阶段本地 Git 提交，不推送。
+
+## 本轮交付：`setupShadow` 段 4（L480–585）
+
+- `isVsmShadow = type === VSMShadowMap && !shadow.isPointLightShadow`；VSM 时 `shadowDepthTexture = vsmShadowMapVertical.texture`（**段 2 未实现时退回 `depthTexture`，已在注释标注**）；
+- `filterFn = shadow.filterNode || getShadowFilterFn(type)`；仍为空 → **抛 `THREE.WebGPURenderer: Shadow map type not supported yet.`**；
+- `setupShadowFilter(builder, {filterFn, shadowTexture, depthTexture, shadow, shadowCoord, depthLayer})`（上轮实现）；
+- `renderer.shadowMap.transmitted` 为真时：cube → `cubeTexture(mapTexture, shadowCoord.xyz)`；否则 `texture(mapTexture, shadowCoord)` 且 `depthTexture.isArrayTexture` 时 `.depth(depthLayer)`；
+- 输出：有色 → `mix(1, shadowNode.rgb.mix(shadowColor, 1), intensity.mul(shadowColor.a)).toVar()`；无色 → `mix(1, shadowNode, intensity).toVar()`（`_shadowIntensity` 由段 3 暂存）；
+- `this.shadowMap = shadowMap`、`shadow.map = shadowMap`。
+- **省略项（如实记录）**：上游两处 `toInspector(name, callback)` **调试钩子未实现**（仅 inspector 可视化，无渲染语义），代码中已注明。
+
+## 验证
+
+- 构建 exit 0（修掉段 1 缺失的 `shadowMap` 局部变量）；过滤 `*ShadowNode*` = **14 cases / 45 assertions** 全过；`THREECPPAddonTests` 全套 **1379 cases / 38,948 assertions** 通过。
+- 审计不变（ShadowNode 已 partial）：src 12 / 453；examples/jsm 322 / 154。
+
+**未执行验证（如实记录）**：段 4 **无测试**（需可观察 TSL 图/材质状态的夹具）；`toInspector` 未实现；**段 2（VSM 两趟）缺失**，因此 VSM 阴影路径不完整（`vsmShadowMap*`/`vsmMaterial*` 不会被创建）。
+
+## 下一步（`ShadowNode` 最后一段）
+
+**段 2（VSM 两趟，L384–448）**：
+1. 先移植上游模块级 `VSMPassVertical` / `VSMPassHorizontal` 两个 `Fn`（各约 20 行：`float().toVar`、`Loop({start,end,type,condition}, cb)`、`shadowPass.sample(uv)`、`depthLayer` 分支、`sqrt`、`vec2`）；
+2. 然后：`depthTexture.compareFunction = null`；`shadowMap.depth>1` 复用 `_vsmShadowMapVertical/Horizontal` 或新建（`format: RGFormat`）；`texture()` 两个采样节点；`reference('blurSamples'|'radius'|'mapSize')`；`context(builder.getSharedContext())`；两个 `NodeMaterial` 设 `contextNode`/`fragmentNode`/`name`。
+3. 完成后：`setup` 非缓存路径测试、`_quadMesh` 单例、`updateShadow` 真实 renderer 夹具、`PointShadowNode`。# 当前接续：`ShadowNode` `setupShadowFilter` 实现完成（段 4 前置），2026-11-05
 
 目标保持 active：固定 three.js 11738a9d55e502fb484cefffcea3a66dc44e9fe9 全部 src + examples/jsm 原生 C++ 逻辑，Vulkan 后端；禁止 CEF/生产 JS 引擎/桥接。阶段本地 Git 提交，不推送。
 
