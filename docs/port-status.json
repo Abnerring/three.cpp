@@ -201,8 +201,8 @@
     "note": "Accepted port scope is src and examples/jsm, including tracked third-party dependencies. Editor/manual web applications are excluded from native application rewrites. Native host behavior, packaging and all three platforms require separate implementation and verification evidence."
   },
   "counts": {
-    "partial-unverified": 589,
-    "missing": 352,
+    "partial-unverified": 590,
+    "missing": 351,
     "vulkan-port-pending": 290,
     "dependency-unverified": 20
   },
@@ -218,8 +218,8 @@
     "examples/jsm": {
       "modules": 496,
       "counts": {
-        "missing": 333,
-        "partial-unverified": 143,
+        "missing": 332,
+        "partial-unverified": 144,
         "dependency-unverified": 20
       }
     }
@@ -572,7 +572,7 @@
       "path": "examples/jsm/transpiler",
       "upstreamFiles": 8,
       "moduleCount": 8,
-      "modulesWithCppFiles": 0,
+      "modulesWithCppFiles": 1,
       "verifiedComplete": 0
     },
     {
@@ -33247,11 +33247,11 @@
       "scope": "examples/jsm",
       "kind": "addon",
       "upstreamSha256": "4359dfdea50aa469b3bd2b648ad3f2a0cb07b50bbc2d596f933ada79ff385423",
-      "header": null,
-      "implementation": null,
+      "header": "examples/jsm/transpiler/TranspilerUtils.h",
+      "implementation": "examples/jsm/transpiler/TranspilerUtils.cpp",
       "expectedHeader": "examples/jsm/transpiler/TranspilerUtils.h",
       "expectedImplementation": "examples/jsm/transpiler/TranspilerUtils.cpp",
-      "status": "missing",
+      "status": "partial-unverified",
       "verifiedComplete": false,
       "apiExtraction": "static-only",
       "verification": {
@@ -33260,7 +33260,9 @@
           "pointer": "/modules/1150"
         },
         "upstreamUnitTests": [],
-        "cppUnitTests": [],
+        "cppUnitTests": [
+          "test/unit/addons/transpiler/TranspilerUtils.tests.cpp"
+        ],
         "reviewedImplementation": [],
         "differentialResults": [],
         "renderingResults": [],

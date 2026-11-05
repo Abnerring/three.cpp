@@ -1,4 +1,31 @@
-# 当前接续：addon `GroundedSkybox` 移植（几何顶点级变形差分，全位置缓冲逐值比对），examples 连续第 7 个，2026-11-05
+# 当前接续：addon `TranspilerUtils` 移植（正则/标志模拟，输入电池逐项差分），examples 连续第 8 个，2026-11-05
+
+目标保持 active：固定 three.js 11738a9d55e502fb484cefffcea3a66dc44e9fe9 全部 src + examples/jsm 原生 C++ 逻辑，Vulkan 后端；禁止 CEF/生产 JS 引擎/桥接。阶段本地 Git 提交，不推送。
+
+## 本轮交付：`examples/jsm/transpiler/TranspilerUtils`
+
+- `examples/jsm/transpiler/TranspilerUtils.{h,cpp}`：命名空间 `TranspilerUtils`，四个函数：
+  - `bool isExpression(const JSValue& statement)`：逐个读 `isFunctionDeclaration`/`isFor`/`isWhile`/`isConditional`/`isSwitch`/`isStructDefinition`，**只有严格 `true` 才判否**（JS 的 `!== true` 语义）。
+  - `bool isPrimitive(const std::string&)`：`/^(true|false|-?(\d|\.\d))/`（`std::regex_search`，因为 JS 是 `test()` 非全串匹配）。
+  - `bool isBuiltinType(const std::string&)`：`/^(void|bool|float|u?int|mat[234]|mat[234]x[234]|(u|i|b)?vec[234])$/`（`std::regex_match`）。
+  - `std::string toFloatType(const std::string&)`：`^(i?int)$`→`float`；`^(i|u)?vec([234])$`→`vec`+捕获数字；否则原样返回。
+  - **一处语言边界适配（已记录）**：上游 AST 是普通 JS 对象 → C++ 用 `JSValue` 接收语句（可读同名标志），类型名用 `std::string`；正在被 transpiler 使用的 AST 类型在本端口未移植，所以本模块目前是**独立工具函数**（与被移植的 transpiler 前端尚未联调）。
+- `test/unit/addons/transpiler/TranspilerUtils.tests.cpp`（3 用例 / 39 断言）：`isExpression` 全标志 + 非严格 true 反例；`isPrimitive` 12 串；`isBuiltinType` 22 个类型名；`toFloatType` 的整数/整数向量/原样三类。
+- 差分 `TranspilerUtilsParityProbe.cpp` + `compare-transpiler-utils.mjs`：上游模块**无 import**，直接导入；三组电池（9 语句 / 12 串 / 22 类型）逐项比对全部结果（布尔与字符串）。
+
+## 验证
+
+- 构建 exit 0（**首次编译即通过**）。
+- `THREECPPAddonTests`：**1308 cases / 31,322 assertions 全过**（较上轮 1305/31,283 → +3 例 / +39 断言）；过滤 `*TranspilerUtils*` = 3 cases / 39 assertions。
+- 差分 `threecpp.threejs-transpiler-utils-parity` **Passed**（三组电池逐项）。
+- 审计：**examples/jsm missing 333→332、partial-unverified 143→144**；`src` 不变（19 / 446）。
+
+**未执行验证（如实记录）**：本模块**尚未与实际 transpiler 前端联调**（`AST` 类型未移植）；`std::regex` 与 JS 正则的差异通过电池覆盖（含 `.5`、`-.25`、`0x10`、`1e3`、`falsy` 等边界），但**未穷举**所有字符组合；未验证非 ASCII 输入。
+
+## 下一步
+
+examples 小 addon：`helpers/OctreeHelper`(2913，需确认 Octree 移植)、`materialx/MaterialXArchive`(2327，依赖 fflate/Blob → 宿主边界，**建议跳过**)、`generators/city/InstancedMeshGenerator`(2230，需要 `mesh.count` 等 JS 侧可写状态，**本端口 C++ 类无句柄、风险高**，或改用 JSValue 风格模块)。
+src 侧仍剩 19 个（`ShadowNode` 24,331 / `PhysicalLightingModel` 32,829 为最大缺口）。# 当前接续：addon `GroundedSkybox` 移植（几何顶点级变形差分，全位置缓冲逐值比对），examples 连续第 7 个，2026-11-05
 
 目标保持 active：固定 three.js 11738a9d55e502fb484cefffcea3a66dc44e9fe9 全部 src + examples/jsm 原生 C++ 逻辑，Vulkan 后端；禁止 CEF/生产 JS 引擎/桥接。阶段本地 Git 提交，不推送。
 
