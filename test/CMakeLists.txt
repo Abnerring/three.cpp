@@ -1257,6 +1257,13 @@ if(THREECPP_NODE_EXECUTABLE AND THREEJS_SOURCE_DIR)
         COMMAND "${THREECPP_NODE_EXECUTABLE}" "${CMAKE_CURRENT_SOURCE_DIR}/unit/utils/parity/compare-sort-instanced-mesh.mjs"
         "${THREEJS_SOURCE_DIR}" "$<TARGET_FILE:ThreeJsSortInstancedMeshParityProbe>")
 endif()
+add_executable(ThreeJsInstancedMeshGeneratorParityProbe unit/utils/parity/InstancedMeshGeneratorParityProbe.cpp)
+target_link_libraries(ThreeJsInstancedMeshGeneratorParityProbe PRIVATE threecpp::addons)
+if(THREECPP_NODE_EXECUTABLE AND THREEJS_SOURCE_DIR)
+    add_test(NAME threecpp.threejs-instanced-mesh-generator-parity
+        COMMAND "${THREECPP_NODE_EXECUTABLE}" "${CMAKE_CURRENT_SOURCE_DIR}/unit/utils/parity/compare-instanced-mesh-generator.mjs"
+        "${THREEJS_SOURCE_DIR}" "$<TARGET_FILE:ThreeJsInstancedMeshGeneratorParityProbe>")
+endif()
 add_executable(ThreeJsLinkerParityProbe unit/utils/parity/LinkerParityProbe.cpp)
 target_link_libraries(ThreeJsLinkerParityProbe PRIVATE threecpp::addons)
 if(THREECPP_NODE_EXECUTABLE AND THREEJS_SOURCE_DIR)

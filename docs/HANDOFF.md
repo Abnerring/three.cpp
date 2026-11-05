@@ -1,4 +1,27 @@
-# 当前接续：`InstancedMeshGenerator` 容量增长分支补测（r111 遗留缺口），2026-11-05
+# 当前接续：`InstancedMeshGenerator` 差分落地 + `_receiveShadow` 语义对齐修正，2026-11-05
+
+目标保持 active：固定 three.js 11738a9d55e502fb484cefffcea3a66dc44e9fe9 全部 src + examples/jsm 原生 C++ 逻辑，Vulkan 后端；禁止 CEF/生产 JS 引擎/桥接。阶段本地 Git 提交，不推送。
+
+## 本轮交付
+
+1. **差分** `InstancedMeshGeneratorParityProbe.cpp` + `compare-instanced-mesh-generator.mjs`：比较 **9 项** —— `capacity`、`count`、`visible`、`name`、`castShadow`、`receiveShadow`、两个实例的平移分量（12/13/14）、`geometryIsBox`、`materialIsBasic`。
+2. **差分暴露并修正一处忠实度差异**：上游把第 5 个构造参数存为**私有 `_receiveShadow`**，`build()` 里从它拷贝到 mesh；r111 我在 C++ 暴露了公开可变的 `receiveShadow` 字段（外部赋值会生效，而 JS 里同名属性是无用的新增属性）。
+   - 修正：C++ 字段改名 `_receiveShadow`（注释说明对应上游私有字段），`build()` 从它拷贝；
+   - 同步测试（`generator.receiveShadow` → `_receiveShadow`）与差分探针（通过**第 5 个构造参数**传 `false`）；
+   - 比较脚本也改为传构造参数（`new InstancedMeshGenerator(params, geo, mat, 'city', false)`），两侧语义一致 → **Passed**。
+
+## 验证
+
+- 构建 exit 0；`threecpp.threejs-instanced-mesh-generator-parity` **Passed**。
+- `THREECPPAddonTests` 全套 **1365 cases / 38,903 assertions** 全过（字段重命名不改变用例数）。
+- 审计不变：examples/jsm 322 / 154；src 13 / 452。
+
+**未执行验证（如实记录）**：差分只覆盖单次构建场景（未覆盖参数变更/容量增长重建的 JS 侧对照）；`parameters` 的 `dump()` vs `JSON.stringify` 表示差异仍未验证（仅内部缓存用）；`createGeometry(parameters)` 内容未断言。
+
+## 下一步
+
+1. 差分扩展：参数变更重建、容量增长重建（JS 侧对照）；
+2. `ShadowNode`(24,331，前置已确认齐备) / `PhysicalLightingModel`(32,829)。# 当前接续：`InstancedMeshGenerator` 容量增长分支补测（r111 遗留缺口），2026-11-05
 
 目标保持 active：固定 three.js 11738a9d55e502fb484cefffcea3a66dc44e9fe9 全部 src + examples/jsm 原生 C++ 逻辑，Vulkan 后端；禁止 CEF/生产 JS 引擎/桥接。阶段本地 Git 提交，不推送。
 

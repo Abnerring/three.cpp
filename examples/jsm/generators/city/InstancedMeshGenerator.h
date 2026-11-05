@@ -29,7 +29,8 @@ class InstancedMeshGenerator {
     std::function<std::shared_ptr<BufferGeometry>(const JsonValue&)> createGeometry;
     std::function<std::shared_ptr<Material>()> createMaterial;
     std::string name;
-    bool receiveShadow = true;
+    // The pinned constructor stores this as _receiveShadow and the builder copies it to the mesh.
+    bool _receiveShadow = true;
 
     InstancedMeshGenerator(JsonValue parameters,
                            std::function<std::shared_ptr<BufferGeometry>(const JsonValue&)> createGeometry,

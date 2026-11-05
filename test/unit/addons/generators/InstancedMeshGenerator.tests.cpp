@@ -56,7 +56,7 @@ TEST_CASE("InstancedMeshGenerator builds once and rebuilds when the parameters c
     auto createGeometry = [](const JsonValue&) { return std::make_shared<BoxGeometry>(); };
     auto createMaterial = [] { return std::make_shared<MeshBasicMaterial>(); };
     InstancedMeshGenerator generator(JsonValue(), createGeometry, createMaterial, "city");
-    REQUIRE(generator.receiveShadow == true);
+    REQUIRE(generator._receiveShadow == true);
 
     const auto placements = makePlacements();
     const auto firstMesh = generator.build(placements);

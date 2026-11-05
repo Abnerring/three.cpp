@@ -15,7 +15,7 @@ InstancedMeshGenerator::InstancedMeshGenerator(
       createGeometry(std::move(createGeometry)),
       createMaterial(std::move(createMaterial)),
       name(std::move(name)),
-      receiveShadow(receiveShadow) {
+      _receiveShadow(receiveShadow) {
     // Object.assign( {}, defaults, parameters ): the parameters overwrite the defaults.
     if (parameters.isObject()) {
         for (const auto& entry : parameters.get<JsonValue::Object>()) {
@@ -37,7 +37,7 @@ std::shared_ptr<InstancedMesh> InstancedMeshGenerator::build(const std::vector<M
     if (material == nullptr && createMaterial) material = createMaterial();
     if (mesh == nullptr) {
         mesh = createInstances(geometry, material, placements.size(), name);
-        mesh->receiveShadow = receiveShadow;
+        mesh->receiveShadow = _receiveShadow;
     }
     updateInstances(mesh, placements);
     return mesh;
