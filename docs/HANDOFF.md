@@ -1,3 +1,25 @@
+# 当前接续：RectAreaLightNode 已移植，update 数值与 LTC 选取分支均双侧验证，2026-11-05
+
+目标保持 active：固定 three.js 11738a9d55e502fb484cefffcea3a66dc44e9fe9 全部 src + examples/jsm 原生 C++ 逻辑，Vulkan 后端；禁止 CEF/生产 JS 引擎/桥接。阶段本地 Git 提交，不推送。
+
+本轮新增 `src/nodes/lighting/RectAreaLightNode.{h,cpp}`（extends AnalyticLightNode）。模块级状态：`_matrix41` / `_matrix42`（各一个 `Matrix4`）、`_ltcLib = null`（由**静态 `setLTC`** 注入）。构造期建 `halfHeight` / `halfWidth` 两个 `uniform( new Vector3() )` 并置 `renderGroup`，且 **`updateType = NodeUpdateType.RENDER`**（不是 `updateBeforeType`）。
+
+- **`update( frame )`**：先调父类 `AnalyticLightNode` 的 `update`（取 prototype 以 `this` 为接收者），随后 `viewMatrix = frame.camera.matrixWorldInverse`；`_matrix42.identity()`、`_matrix41.copy(light.matrixWorld).premultiply(viewMatrix)`、`_matrix42.extractRotation(_matrix41)`；`halfWidth.value.set(width*0.5,0,0)`、`halfHeight.value.set(0,height*0.5,0)`，再各自 `applyMatrix4(_matrix42)`。
+- **`setupDirectRectArea( builder )`**：按 `builder.isAvailable('float32Filterable')` 选 **FLOAT** 或 **HALF** 两对 LTC 纹理，`texture(...)` 包成节点，返回 `{ lightColor: colorNode, lightPosition: lightViewPosition(light), halfWidth, halfHeight, ltc_1, ltc_2 }`。`setLTC` 未调用时**显式抛 `std::runtime_error`**（上游是解引用 null，这里给明确信息）。
+
+验证：构建 exit 0（首轮 `const auto ctor` 上调 `set` 加静态方法报 C2663，改为**非 const 句柄拷贝**）。THREECPPTests **1549 cases / 214,270 assertions 全过**，较上轮 1546/214,234 增 3 例 36 断言，与 `*RectAreaLight*` 过滤的 3 用例/36 断言一致。
+
+**本轮验证强度是这一系列里最高的**：
+1. **`update` 是精确数值验证**——两侧都用**真实 `Matrix4`/`Vector3`**，光线矩阵取「绕 Y 轴 90° 旋转」，宽度 4、高度 2，相机矩阵为单位阵；期望可手算：`halfWidth = (0, 0, -2)`、`halfHeight = (0, 1, 0)`。差分逐分量比对 `halfWidthX/Y/Z` 与 `halfHeightX/Y/Z`，**无容差**。
+2. **`float32Filterable` 的两个分支也被区分验证**——`texture(...)` 节点的 `.value` 就是被包裹的纹理对象，故两侧都断言「filterable 时 `ltc_1.value === LTC_FLOAT_1`、`ltc_2.value === LTC_FLOAT_2`」与「非 filterable 时对应 HALF」，并比对该四项布尔。
+3. 另外比对 `keys`、`ltc_1.isNode`/`ltc_2.isNode`、`ltcDistinct`、`halfWidth === node.halfWidth`、`lightColor === node.colorNode`、四个 arity、以及 **class `toString` 逐字节**（差分 Passed **1.80s**）。
+
+**未执行验证的部分（如实记录）**：本轮没有渲染管线上下文，因此 `update` 之外没有任何涉及真实渲染的部分被执行——但 `update` 与 `setupDirectRectArea` 这两个方法**本身都是真实执行的**，不是只验签名。
+
+审计（固定 worktree，HEAD=11738a9d55）刷新后应为 **src missing 49→48、partial 416→417**；RectAreaLightNode 记 `partial-unverified` 并登记 h/cpp（若读数与预期不符，提交会被脚本拦下并在此说明）。
+
+`src/nodes/lighting` 仍缺 **3 个**：**LightsNode**（10,518 B，枢纽）、**PointShadowNode**（12,693 B）、**ShadowNode**（24,331 B）。下一步建议 `LightsNode`——它是 lighting 的中枢（收集灯光、组织 light nodes、`setupLights`），依赖面比 ShadowNode 小但重要性更高；之后 `PointShadowNode` / `ShadowNode` 这一对。
+
 # 当前接续：LTC（线性变换余弦）已移植，LTC_Uv 双侧执行并比对，2026-11-05
 
 目标保持 active：固定 three.js 11738a9d55e502fb484cefffcea3a66dc44e9fe9 全部 src + examples/jsm 原生 C++ 逻辑，Vulkan 后端；禁止 CEF/生产 JS 引擎/桥接。阶段本地 Git 提交，不推送。
