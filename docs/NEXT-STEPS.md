@@ -1,0 +1,53 @@
+# NEXT-STEPS — 接手指南（由多轮移植沉淀，最后更新：2026-11-05）
+
+本文件是**精简接手入口**。完整历史在 `docs/HANDOFF.md`（>1MB，按时间从新到旧），
+进度真源是 `docs/port-status.json`（由 `utils/port-audit.mjs` 生成，勿手改）。
+
+## 1. 总进度（审计口径，2026-11-05）
+
+| 范围 | missing | partial-unverified | 其他 |
+|---|---|---|---|
+| `src` | **13** | 452 | vulkan-port-pending 290 |
+| `examples/jsm` | **325** | 151 | dependency-unverified 20 |
+
+上游固定为 `11738a9d55e502fb484cefffcea3a66dc44e9fe9`（`upstream.json`）；审计脚本**拒绝其他 commit**。
+
+## 2. 一轮标准工作流
+
+1. `utils/port-audit.mjs <pinnedDir>` 刷新 `docs/port-status.json`（每轮必做，提交前核对计数）。
+2. 实现（`src/**` 或 `examples/jsm/**`）。
+3. 加单测：`src` 类进 `THREECPPTests`；**addon 类进 `THREECPPAddonTests`**（`test/CMakeLists.txt` 的 `if(THREECPP_BUILD_ADDONS)` 块内，addon 测试链 `threecpp::addons`）。
+4. 差分 parity：探针（C++ 输出 JSON 到 stdout 最后一行）+ `compare-*.mjs`（导入 pinned 上游，`assert.deepEqual`/1e-12 容差）。
+5. 构建：`cmake --build build --target THREECPPAddonTests <ProbeTarget>`；跑对应过滤测试 + `ctest -R '<name>-parity'`。
+6. HANDOFF：新条目（LF、UTF-8 无 BOM）**前置**拼接到 `docs/HANDOFF.md`，校验旧字节逐字节保留，`git -c core.autocrlf=false add -- docs/HANDOFF.md`，提交信息用 `-F` 文件。
+
+## 3. 差分编写范式
+
+- 上游模块 `import ... from 'three'` → 把 `from 'three'` 重写为 `file:///.../build/three.module.js`。
+- 无相对导入 → 可包成 `data:` URL 导入。
+- **含相对导入**（如 `./BufferGeometryUtils.js`）→ 把重写源码写入 pinned 目录的临时文件，`import` 后 `finally` 删除（保持 pinned 工作树 `dirty = 0`）。
+- 探针 stdout 可能混入 TSL 警告 → 比较脚本只解析**最后一行**。
+
+## 4. 已踩过的关键陷阱（务必先看）
+
+- 字面量 `0` 匹配 `set(const char*, ...)` 重载（空指针崩溃）→ 传 `JSValue(0.0)`。
+- `struct Event` 在 `core/EventDispatcher.h`，**没有** `core/Event.h`。
+- `SphereGeometry` 参数在 `parameters` 结构体里。
+- `Object3D` **不可拷贝**、`traverse` 非 const；`Matrix4` 无 `operator==`（用 `std::equal` + `elements()` span）。
+- `JSMember` 必须立即物化（`.toNumber()`），否则读到后续修改值。
+- `Array.prototype.sort` 回调返回**数值**（负/0/正），不是布尔。
+- C++ 列表初始化**禁止隐式收缩**（`double → float` 需显式 `static_cast`）。
+- `arg(args,0,nullptr)` 会传 null（与 `arg(args,0)` 不同）。
+
+## 5. 首批目标（按杠杆排序）
+
+1. **`examples/jsm/transpiler/AST.js`**(8,868) — 纯 AST 类；完成后可与已完成 `TranspilerUtils` 联调。
+2. **`src/nodes/lighting/ShadowNode.js`**(24,331) — 依赖齐备（上轮已确认），845 行左右。
+3. **`src/nodes/functions/PhysicalLightingModel.js`**(32,829) — 单点解锁 `MeshStandard/Physical/SSSNodeMaterial`。
+4. 其余 examples 小项：多数依赖 wasm/host（meshopt、fflate、canvas、navigator），已在 HANDOFF 中逐条排除原因。
+
+## 6. 近期已完成（避免重复劳动）
+
+- `examples/jsm`（部分验证，多为 partial）：ColorEnvironment、ColorUtils、DebugEnvironment、GeometryUtils、GroundedSkybox、MaterialXLog、MorphAnimMesh、MorphBlendMesh、OBJExporter、RectAreaLightHelper、SceneUtils（全部 helper）、ShadowMesh、STLExporter（ascii+binary）、TranspilerUtils、Gyroscope。
+- `src` 聚合/映射：`Three.TSL`、`Three.WebGPU`、`Three.WebGPU.Nodes`、`nodes/TSL`、`nodes/Nodes`、`NodeMaterials`（15 个构造器映射；缺 4 个未移植材质）。
+- **已确认既有实现**：`BufferGeometryUtils.mergeGroups`（r81 更正）。
