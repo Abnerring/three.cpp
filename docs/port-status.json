@@ -201,8 +201,8 @@
     "note": "Accepted port scope is src and examples/jsm, including tracked third-party dependencies. Editor/manual web applications are excluded from native application rewrites. Native host behavior, packaging and all three platforms require separate implementation and verification evidence."
   },
   "counts": {
-    "partial-unverified": 591,
-    "missing": 350,
+    "partial-unverified": 592,
+    "missing": 349,
     "vulkan-port-pending": 290,
     "dependency-unverified": 20
   },
@@ -218,8 +218,8 @@
     "examples/jsm": {
       "modules": 496,
       "counts": {
-        "missing": 331,
-        "partial-unverified": 145,
+        "missing": 330,
+        "partial-unverified": 146,
         "dependency-unverified": 20
       }
     }
@@ -509,7 +509,7 @@
       "path": "examples/jsm/misc",
       "upstreamFiles": 19,
       "moduleCount": 18,
-      "modulesWithCppFiles": 2,
+      "modulesWithCppFiles": 3,
       "verifiedComplete": 0
     },
     {
@@ -29706,11 +29706,11 @@
       "scope": "examples/jsm",
       "kind": "addon",
       "upstreamSha256": "a26f429391b6e709932c13d754c85395e766542b6099f8c47841426528302998",
-      "header": null,
-      "implementation": null,
+      "header": "examples/jsm/misc/MorphBlendMesh.h",
+      "implementation": "examples/jsm/misc/MorphBlendMesh.cpp",
       "expectedHeader": "examples/jsm/misc/MorphBlendMesh.h",
       "expectedImplementation": "examples/jsm/misc/MorphBlendMesh.cpp",
-      "status": "missing",
+      "status": "partial-unverified",
       "verifiedComplete": false,
       "apiExtraction": "static-only",
       "verification": {
@@ -29719,7 +29719,9 @@
           "pointer": "/modules/1019"
         },
         "upstreamUnitTests": [],
-        "cppUnitTests": [],
+        "cppUnitTests": [
+          "test/unit/addons/misc/MorphBlendMesh.tests.cpp"
+        ],
         "reviewedImplementation": [],
         "differentialResults": [],
         "renderingResults": [],

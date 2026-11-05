@@ -1,4 +1,33 @@
-# 当前接续：addon `GeometryUtils` 移植（Hilbert 2D/3D + Gosper 三个纯点生成器，逐点差分），examples 连续第 9 个，2026-11-05
+# 当前接续：addon `MorphBlendMesh` 移植（手写 morph 影响权重动画，状态级差分），examples 连续第 10 个，2026-11-05
+
+目标保持 active：固定 three.js 11738a9d55e502fb484cefffcea3a66dc44e9fe9 全部 src + examples/jsm 原生 C++ 逻辑，Vulkan 后端；禁止 CEF/生产 JS 引擎/桥接。阶段本地 Git 提交，不推送。
+
+## 本轮交付：`examples/jsm/misc/MorphBlendMesh`
+
+- `examples/jsm/misc/MorphBlendMesh.{h,cpp}`：`class MorphBlendMesh : public Mesh`，把上游的普通 JS 动画对象改为 C++ 结构：
+  - `struct Animation { start, end, length, fps, duration, lastFrame, currentFrame, time, direction, weight, active, directionBackwards, mirroredLoop }`（**不含 `name` 字段**——上游动画对象本身也不存 name，本轮差分第一版因此多出 `name` 而失败，已对齐）。
+  - `std::unordered_map<std::string, Animation> animationsMap` + `std::vector<Animation*> animationsList`（`unordered_map` 插入不致指针失效，等价上游共享同一批动画对象）。
+  - 构造：基类 `Mesh` 后建 `__default` 动画（`start=0, end=numFrames-1, fps=numFrames`）并 `setAnimationWeight("__default", 1)`；`numFrames` 来自 `morphTargetDictionary->size()`。
+  - 方法：`createAnimation`（length/duration 公式照抄）、`autoCreateAnimations(fps)`（`/([a-z]+)_?(\d+)/i` 推导帧区间与 `firstAnimation`）、6 个 setter、2 个 getter（未知名返回 `0` / `-1`）、`playAnimation`（未知名**只 warn 不抛**）、`stopAnimation`、`update(delta)`（frameTime、镜像/取模循环、keyframe 夹取、`lastFrame/currentFrame` 权重写入与 `mix` 混合）。
+- **两处结构性差异（如实记录）**：
+  1. `morphTargetDictionary` 在 C++ 是 **`std::map`（按键排序）**，上游 JS 对象是插入序 → `autoCreateAnimations` 的索引按排序序枚举；**键按字母序插入时两侧一致**（探针即如此构造）。
+  2. 无 morph 属性的几何时 `morphTargetDictionary` 为 null（上游同为 undefined，构造会抛）；探针两侧都构造 **3 个 position morph 属性**（字典键 `"0"/"1"/"2"`，默认动画 `end=2, fps=3`）。
+- `test/unit/addons/misc/MorphBlendMesh.tests.cpp`（5 用例 / 40 断言）：默认动画（含 `duration` 为负无穷）、createAnimation 与各 setter/getter、`autoCreateAnimations` 的 run/walk 区间（start/end/fps = 0/1/30、2/3/30）与 `firstAnimation = "run"`、`update(0.1)` 后 `influences[0]=1`、跨帧后 `influences[0]≈0.2 / influences[1]≈0.8`、镜像循环回弹（`direction=-1, time=1, directionBackwards, currentFrame=2`）。
+- 差分 `MorphBlendMeshParityProbe.cpp` + `compare-morph-blend-mesh.mjs`：比较 **13 项**——动画计数/列表计数、`__default` 与 run/walk 动画全字段、`duration` 负无穷布尔、`firstAnimation`、FPS 换算后的 duration、方向切换、**两次 update 后的 influences 数组**、镜像循环动画全字段。
+
+## 验证
+
+- 构建 exit 0。
+- `THREECPPAddonTests`：**1316 cases / 38,579 assertions 全过**（上轮 1311/38,539 → +5 例 / +40 断言）；过滤 `*MorphBlendMesh*` = 5 cases / 40 assertions。
+- 差分 `threecpp.threejs-morph-blend-mesh-parity` **Passed**。
+- 审计：**examples/jsm missing 331→330、partial-unverified 145→146**；`src` 不变（19 / 446）。
+
+**未执行验证（如实记录）**：未做渲染；`update` 只覆盖了少量 delta（0.1/0.5/0.2），未穷举时间轴；`autoCreateAnimations` 与上游**在字典非字母序插入时会有索引差异**（结构差异已记录，未做该情形的差分）；无 influences 的几何下 `update` 只推进状态不写权重（上游会写 undefined 索引抛错，**行为差异已记录**）。
+
+## 下一步
+
+examples 还剩 330 个。已筛出的可做候选：`objects/ShadowMesh`(3418)、`helpers/RectAreaLightHelper`(3089)、`modifiers/SimplifyModifier`(4569)、`utils/SceneUtils`(8997)、`transpiler/AST.js`(8868，可与 `TranspilerUtils` 联调)、`exporters/OBJExporter`(6378，注意数字格式化)。
+src 侧仍剩 19 个（`ShadowNode` 24,331 / `PhysicalLightingModel` 32,829 为最大缺口）。# 当前接续：addon `GeometryUtils` 移植（Hilbert 2D/3D + Gosper 三个纯点生成器，逐点差分），examples 连续第 9 个，2026-11-05
 
 目标保持 active：固定 three.js 11738a9d55e502fb484cefffcea3a66dc44e9fe9 全部 src + examples/jsm 原生 C++ 逻辑，Vulkan 后端；禁止 CEF/生产 JS 引擎/桥接。阶段本地 Git 提交，不推送。
 
