@@ -645,3 +645,84 @@ TEST_CASE("ShadowNode setupShadow samples a transmitted shadow colour") {
     REQUIRE(output.toBoolean());
     REQUIRE(output.get("isNode").toBoolean());
 }
+namespace {
+JSValue shadowFixtureBuilder(const JSValue& depthTexture, const JSValue& mapTexture,
+                             bool transmitted) {
+    auto mapSize = JSValue::object(nullptr);
+    mapSize.set("width", JSValue(64));
+    mapSize.set("height", JSValue(64));
+    auto shadowCamera = JSValue::object(nullptr);
+    shadowCamera.set("coordinateSystem", JSValue(0));
+    shadowCamera.set("layers", JSValue::object(nullptr));
+    shadowCamera.set("updateProjectionMatrix", JSValue::function(
+        +[](const JSValue&, const std::vector<JSValue>&, const std::vector<JSValue>&) {
+            return JSValue{};
+        }));
+    auto shadow = JSValue::object(nullptr);
+    shadow.set("mapSize", mapSize);
+    shadow.set("camera", shadowCamera);
+    shadow.set("biasNode", nativeTSLBaseBinding("float").call({}, {JSValue(0.0)}));
+    auto light = JSValue::object(nullptr);
+    light.set("shadow", shadow);
+    light.set("isLight", true);
+    auto camera = JSValue::object(nullptr);
+    camera.set("coordinateSystem", JSValue(0));
+    auto rendererShadowMap = JSValue::object(nullptr);
+    rendererShadowMap.set("type", JSValue(1));
+    rendererShadowMap.set("enabled", true);
+    rendererShadowMap.set("transmitted", transmitted);
+    auto renderer = JSValue::object(nullptr);
+    renderer.set("shadowMap", rendererShadowMap);
+    renderer.set("reversedDepthBuffer", false);
+    renderer.set("highPrecision", false);
+    renderer.set("hasCompatibility", JSValue::function(
+        +[](const JSValue&, const std::vector<JSValue>&, const std::vector<JSValue>&) {
+            return JSValue(false);
+        }));
+    auto builder = JSValue::object(nullptr);
+    builder.set("renderer", renderer);
+    builder.set("camera", camera);
+    builder.set("material", JSValue::object(nullptr));
+    builder.set("context", JSValue::object(nullptr));
+    auto node = nativeShadowNodeConstructor().construct({light});
+    auto targets = JSValue::object(nullptr);
+    targets.set("depthTexture", depthTexture);
+    auto shadowMapObject = JSValue::object(nullptr);
+    shadowMapObject.set("texture", mapTexture);
+    shadowMapObject.set("depth", JSValue(1));
+    targets.set("shadowMap", shadowMapObject);
+    node.set("_shadowFixture", targets);
+    auto stub = JSValue::function(
+        +[](const JSValue& receiver, const std::vector<JSValue>&, const std::vector<JSValue>&) {
+            return const_cast<JSValue&>(receiver).get("_shadowFixture");
+        });
+    node.set("setupRenderTarget", stub);
+    auto pair = JSValue::object(nullptr);
+    pair.set("node", node);
+    pair.set("builder", builder);
+    return pair;
+}
+}  // namespace
+
+TEST_CASE("ShadowNode setupShadow handles the array and cube texture branches") {
+    auto arrayDepth = JSValue::object(nullptr);
+    arrayDepth.set("isArrayTexture", true);
+    auto plainMap = JSValue::object(nullptr);
+    plainMap.set("isCubeTexture", false);
+    auto arrayPair = shadowFixtureBuilder(arrayDepth, plainMap, true);
+    auto arrayNode = arrayPair.get("node");
+    auto arrayOutput =
+        arrayNode.get("setupShadow").call(arrayNode, {arrayPair.get("builder")});
+    REQUIRE(arrayOutput.toBoolean());
+    REQUIRE(arrayOutput.get("isNode").toBoolean());
+
+    auto flatDepth = JSValue::object(nullptr);
+    flatDepth.set("isArrayTexture", false);
+    auto cubeMap = JSValue::object(nullptr);
+    cubeMap.set("isCubeTexture", true);
+    auto cubePair = shadowFixtureBuilder(flatDepth, cubeMap, true);
+    auto cubeNode = cubePair.get("node");
+    auto cubeOutput = cubeNode.get("setupShadow").call(cubeNode, {cubePair.get("builder")});
+    REQUIRE(cubeOutput.toBoolean());
+    REQUIRE(cubeOutput.get("isNode").toBoolean());
+}
