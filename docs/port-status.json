@@ -935,7 +935,7 @@
       "path": "src/renderers",
       "upstreamFiles": 5,
       "moduleCount": 5,
-      "modulesWithCppFiles": 1,
+      "modulesWithCppFiles": 2,
       "verifiedComplete": 0
     },
     {
@@ -984,7 +984,7 @@
       "path": "src/renderers/webgl",
       "upstreamFiles": 30,
       "moduleCount": 30,
-      "modulesWithCppFiles": 28,
+      "modulesWithCppFiles": 29,
       "verifiedComplete": 0
     },
     {
@@ -13980,8 +13980,8 @@
       "scope": "src",
       "kind": "core",
       "upstreamSha256": "2ee75eec59463094658837b702a852ea752e48a27d929b7369f67ba111c30d1b",
-      "header": null,
-      "implementation": null,
+      "header": "src/renderers/WebGLCubeRenderTarget.h",
+      "implementation": "src/renderers/WebGLCubeRenderTarget.cpp",
       "expectedHeader": "src/renderers/WebGLCubeRenderTarget.h",
       "expectedImplementation": "src/renderers/WebGLCubeRenderTarget.cpp",
       "status": "vulkan-port-pending",
@@ -20159,8 +20159,8 @@
       "scope": "src",
       "kind": "core",
       "upstreamSha256": "60ea495f0843b12284c2ef1842a48fd77fdbaa0fae910a9302d675c0ddc0d4da",
-      "header": null,
-      "implementation": null,
+      "header": "src/renderers/webgl/WebGLShadowMap.h",
+      "implementation": "src/renderers/webgl/WebGLShadowMap.cpp",
       "expectedHeader": "src/renderers/webgl/WebGLShadowMap.h",
       "expectedImplementation": "src/renderers/webgl/WebGLShadowMap.cpp",
       "status": "vulkan-port-pending",

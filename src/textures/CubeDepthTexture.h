@@ -1,5 +1,8 @@
 #pragma once
 #include "textures/DepthTexture.h"
+JSValue nativeCubeDepthTextureModule();
+JSValue nativeCubeDepthTextureBinding(const std::string& name);
+JSValue nativeCubeDepthTextureConstructor();
 class CubeDepthTexture : public DepthTexture {
   public:
     ImageProperty images{this};

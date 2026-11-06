@@ -9,6 +9,7 @@
 #include "renderers/webgl/WebGLUtils.h"
 #include "renderers/webgl/WebGLPrograms.h"
 #include "renderers/webgl/WebGLMaterials.h"
+#include "renderers/webgl/WebGLShadowMap.h"
 #include "renderers/webgl/WebGLTextures.h"
 #include "renderers/webgl/WebGLUniformsGroups.h"
 #include "renderers/webgl/WebGLBufferRenderer.h"
@@ -174,7 +175,7 @@ void check(VkResult result, const char* operation) {
                                             X(vkCreateFence) X(vkDestroyFence) X(vkResetFences)    \
                                                 X(vkQueueSubmit) X(vkWaitForFences) \
     X(vkCreateSampler) X(vkDestroySampler) X(vkCmdCopyBufferToImage) X(vkCmdBlitImage) \
-    X(vkCmdCopyImage) X(vkCmdClearColorImage) \
+    X(vkCmdCopyImage) X(vkCmdClearColorImage) X(vkCmdClearDepthStencilImage) \
     X(vkCreateDescriptorSetLayout) X(vkDestroyDescriptorSetLayout) \
     X(vkCreateDescriptorPool) X(vkDestroyDescriptorPool) X(vkResetDescriptorPool) \
     X(vkAllocateDescriptorSets) X(vkUpdateDescriptorSets) X(vkCmdBindDescriptorSets)
@@ -410,6 +411,9 @@ struct VulkanRenderer::Impl {
         bool managedAttachment = false;
         VkRenderPass nativeRenderPass = VK_NULL_HANDLE;
         std::uint32_t imageMip = 0, imageLayer = 0;
+        bool managedDepthTexture = false;
+        VkImageView managedDepthView = VK_NULL_HANDLE;
+        std::uint32_t managedDepthMip = 0, managedDepthLayer = 0;
         std::vector<std::shared_ptr<void>> attachmentOwners;
         std::weak_ptr<TextureResource> sampledTexture;
         VkSampler sampler = VK_NULL_HANDLE;
@@ -451,7 +455,10 @@ struct VulkanRenderer::Impl {
         if (format == VK_FORMAT_R8G8_UNORM) return 2;
         if (format == VK_FORMAT_R8G8B8_UNORM) return 3;
         if (format == VK_FORMAT_R8G8B8A8_UNORM || format == VK_FORMAT_R8G8B8A8_SRGB) return 4;
-        if (format == VK_FORMAT_R16G16B16A16_SFLOAT) return 8;
+        if (format == VK_FORMAT_R16_SFLOAT) return 2;
+        if (format == VK_FORMAT_R16G16_SFLOAT || format == VK_FORMAT_R32_SFLOAT || format == VK_FORMAT_B10G11R11_UFLOAT_PACK32) return 4;
+        if (format == VK_FORMAT_R16G16B16A16_SFLOAT || format == VK_FORMAT_R32G32_SFLOAT) return 8;
+        if (format == VK_FORMAT_R32G32B32A32_SFLOAT) return 16;
         throw std::logic_error("Unsupported Vulkan color target storage format");
     }
     void requireColorFeatures(VkFormat format, VkFormatFeatureFlags required) const {
@@ -3631,7 +3638,8 @@ std::vector<std::uint16_t> VulkanRenderer::readPixelsHalfFloat() const {
         impl->beginFrame(false, false, impl->clearColor, impl->clearAlpha, srgbOutput);
     }
     if (retiredReadback || !impl->active || !impl->active->initialized) return {};
-    if (impl->active->colorFormat != VK_FORMAT_R16G16B16A16_SFLOAT)
+    if (impl->active->colorFormat != VK_FORMAT_R16_SFLOAT && impl->active->colorFormat != VK_FORMAT_R16G16_SFLOAT &&
+        impl->active->colorFormat != VK_FORMAT_R16G16B16A16_SFLOAT)
         throw std::invalid_argument("Uint16 current target readback requires HalfFloat storage");
     const auto& bytes = impl->active->pixels;
     std::vector<std::uint16_t> result(bytes.size() / sizeof(std::uint16_t));

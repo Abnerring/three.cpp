@@ -480,6 +480,8 @@ target_sources(threecpp PRIVATE
     src/renderers/webgl/WebGLRenderLists.cpp
     src/renderers/WebGLRendererScene.cpp
     src/renderers/WebGLRenderTarget.cpp
+    src/renderers/WebGLCubeRenderTarget.cpp
+    src/renderers/webgl/WebGLShadowMap.cpp
     src/renderers/webgl/WebGLBackground.cpp
     src/renderers/webgl/WebGLTextures.cpp
     src/renderers/webgl/WebGLUniforms.cpp

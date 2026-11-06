@@ -14,6 +14,8 @@ struct ManagedTextureSampler {
     VkSamplerAddressMode wrapR=VK_SAMPLER_ADDRESS_MODE_REPEAT;
     float minLod=-1000,maxLod=1000;
     std::uint32_t baseLevel=0,maxLevel=1000;
+    bool compare=false;
+    VkCompareOp compareOp=VK_COMPARE_OP_LESS_OR_EQUAL;
 };
 struct ManagedTexturePatch {
     std::uint32_t level=0,layer=0,x=0,y=0,z=0,width=0,height=0,depth=1,layerCount=1;
@@ -26,15 +28,34 @@ static VkSamplerAddressMode managedTextureWrap(double value){
     if(value==0x8370)return VK_SAMPLER_ADDRESS_MODE_MIRRORED_REPEAT;
     throw std::invalid_argument("Unsupported native GL texture wrapping token");
 }
+static VkImageAspectFlags managedTextureAspect(VkFormat format){
+    switch(format){
+    case VK_FORMAT_D16_UNORM:case VK_FORMAT_X8_D24_UNORM_PACK32:case VK_FORMAT_D32_SFLOAT:return VK_IMAGE_ASPECT_DEPTH_BIT;
+    default:return VK_IMAGE_ASPECT_COLOR_BIT;
+    }
+}
+static VkCompareOp managedTextureCompare(double value){
+    switch(std::uint32_t(value)){
+    case 0x0200:return VK_COMPARE_OP_NEVER;case 0x0201:return VK_COMPARE_OP_LESS;
+    case 0x0202:return VK_COMPARE_OP_EQUAL;case 0x0203:return VK_COMPARE_OP_LESS_OR_EQUAL;
+    case 0x0204:return VK_COMPARE_OP_GREATER;case 0x0205:return VK_COMPARE_OP_NOT_EQUAL;
+    case 0x0206:return VK_COMPARE_OP_GREATER_OR_EQUAL;case 0x0207:return VK_COMPARE_OP_ALWAYS;
+    default:throw std::invalid_argument("Invalid native GL texture comparison function");
+    }
+}
 static TextureConfig managedTextureFormat(std::uint32_t format){
     TextureConfig c;
     switch(format){
+        case 0x81a5:c.components=1;c.componentBytes=2;c.format=VK_FORMAT_D16_UNORM;c.type=UnsignedShortType;break;
+        case 0x81a6:c.components=1;c.componentBytes=4;c.format=VK_FORMAT_X8_D24_UNORM_PACK32;c.type=UnsignedIntType;break;
+        case 0x8cac:c.components=1;c.componentBytes=4;c.format=VK_FORMAT_D32_SFLOAT;c.type=FloatType;break;
         case 0x1903:case 0x8229:c.components=1;c.componentBytes=1;c.format=VK_FORMAT_R8_UNORM;c.type=UnsignedByteType;break;
         case 0x8227:case 0x822b:c.components=2;c.componentBytes=1;c.format=VK_FORMAT_R8G8_UNORM;c.type=UnsignedByteType;break;
         case 0x1907:case 0x8051:c.components=3;c.componentBytes=1;c.format=VK_FORMAT_R8G8B8_UNORM;c.type=UnsignedByteType;break;
         case 0x1908:case 0x8058:c.components=4;c.componentBytes=1;c.format=VK_FORMAT_R8G8B8A8_UNORM;c.type=UnsignedByteType;break;
         case 0x8c41:c.components=3;c.componentBytes=1;c.format=VK_FORMAT_R8G8B8_SRGB;c.type=UnsignedByteType;break;
         case 0x8c43:c.components=4;c.componentBytes=1;c.format=VK_FORMAT_R8G8B8A8_SRGB;c.type=UnsignedByteType;break;
+        case 0x8c3a:c.components=1;c.componentBytes=4;c.format=VK_FORMAT_B10G11R11_UFLOAT_PACK32;c.type=UnsignedInt101111Type;break;
         case 0x822d:c.components=1;c.componentBytes=2;c.format=VK_FORMAT_R16_SFLOAT;c.type=HalfFloatType;break;
         case 0x822f:c.components=2;c.componentBytes=2;c.format=VK_FORMAT_R16G16_SFLOAT;c.type=HalfFloatType;break;
         case 0x881b:c.components=3;c.componentBytes=2;c.format=VK_FORMAT_R16G16B16_SFLOAT;c.type=HalfFloatType;break;
@@ -47,11 +68,15 @@ static TextureConfig managedTextureFormat(std::uint32_t format){
     }
     return c;
 }
-void validateManagedTexture(const TextureConfig& c,const ManagedTextureShape& shape,bool generate)const{
+void validateManagedTexture(const TextureConfig& c,const ManagedTextureShape& shape,bool generate,bool comparison)const{
     if(!c.width||!c.height||!c.levels||!shape.depth)throw std::invalid_argument("Native Vulkan texture storage requires positive dimensions");
     VkFormatProperties p{};api.vkGetPhysicalDeviceFormatProperties(physicalDevice,c.format,&p);
     VkFormatFeatureFlags required=VK_FORMAT_FEATURE_SAMPLED_IMAGE_BIT|VK_FORMAT_FEATURE_TRANSFER_SRC_BIT|VK_FORMAT_FEATURE_TRANSFER_DST_BIT;
-    if(c.mag==VK_FILTER_LINEAR||c.min==VK_FILTER_LINEAR||c.mipmapMode==VK_SAMPLER_MIPMAP_MODE_LINEAR||generate)required|=VK_FORMAT_FEATURE_SAMPLED_IMAGE_FILTER_LINEAR_BIT;
+    const bool depth=managedTextureAspect(c.format)&VK_IMAGE_ASPECT_DEPTH_BIT;
+    if(depth&&generate)throw std::invalid_argument("Native depth textures cannot generate mipmaps");
+    // WebGL comparison filtering may use nearest on devices without depth
+    // linear filtering. Ordinary texture sampling still requires the feature.
+    if((!depth||!comparison)&&(c.mag==VK_FILTER_LINEAR||c.min==VK_FILTER_LINEAR||c.mipmapMode==VK_SAMPLER_MIPMAP_MODE_LINEAR||generate))required|=VK_FORMAT_FEATURE_SAMPLED_IMAGE_FILTER_LINEAR_BIT;
     if(generate&&c.levels>1)required|=VK_FORMAT_FEATURE_BLIT_SRC_BIT|VK_FORMAT_FEATURE_BLIT_DST_BIT;
     if((p.optimalTilingFeatures&required)!=required)throw std::invalid_argument("Native GL texture format/filter/mipmap exceeds actual Vulkan capabilities");
     const auto flags=shape.target==0x8513?VK_IMAGE_CREATE_CUBE_COMPATIBLE_BIT:VkImageCreateFlags(0);
@@ -67,7 +92,9 @@ void validateManagedTexture(const TextureConfig& c,const ManagedTextureShape& sh
 TextureRef createManagedTextureResource(const TextureConfig& config,const ManagedTextureShape& shape,
     const ManagedTextureSampler& settings,const TextureRef& previous,const std::vector<ManagedTexturePatch>& patches,
     const std::vector<VkImageSubresourceRange>& clears={},bool generate=false){
-    validateManagedTexture(config,shape,generate);
+    validateManagedTexture(config,shape,generate,settings.compare);
+    const auto aspect=managedTextureAspect(config.format);
+    const bool depth=aspect&VK_IMAGE_ASPECT_DEPTH_BIT;
     // Source uploads may follow draws into the same image. Finish those writes
     // before copying their committed contents into a replacement generation.
     if(recording)endFrame();
@@ -82,7 +109,11 @@ TextureRef createManagedTextureResource(const TextureConfig& config,const Manage
     create.mipLevels=config.levels;create.arrayLayers=shape.layers();create.samples=VK_SAMPLE_COUNT_1_BIT;
     create.tiling=VK_IMAGE_TILING_OPTIMAL;create.usage=VK_IMAGE_USAGE_TRANSFER_DST_BIT|VK_IMAGE_USAGE_TRANSFER_SRC_BIT|VK_IMAGE_USAGE_SAMPLED_BIT;
     VkFormatProperties attachmentProperties{};api.vkGetPhysicalDeviceFormatProperties(physicalDevice,config.format,&attachmentProperties);
-    if(attachmentProperties.optimalTilingFeatures&VK_FORMAT_FEATURE_COLOR_ATTACHMENT_BIT)
+    if(depth){
+        if(!(attachmentProperties.optimalTilingFeatures&VK_FORMAT_FEATURE_DEPTH_STENCIL_ATTACHMENT_BIT))
+            throw std::invalid_argument("Native depth texture format is not attachment-capable");
+        create.usage|=VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT;
+    }else if(attachmentProperties.optimalTilingFeatures&VK_FORMAT_FEATURE_COLOR_ATTACHMENT_BIT)
         create.usage|=VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT;
     VkImageFormatProperties actualLimits{};
     const auto supported=api.vkGetPhysicalDeviceImageFormatProperties(physicalDevice,create.format,create.imageType,create.tiling,create.usage,create.flags,&actualLimits);
@@ -100,11 +131,15 @@ TextureRef createManagedTextureResource(const TextureConfig& config,const Manage
     const auto baseLevel=std::min(settings.baseLevel,config.levels-1);
     const auto lastLevel=config.mipFilter?std::max(baseLevel,std::min(settings.maxLevel,config.levels-1)):baseLevel;
     VkImageViewCreateInfo view{VK_STRUCTURE_TYPE_IMAGE_VIEW_CREATE_INFO};view.image=image.image;view.viewType=shape.view();view.format=config.format;
-    view.subresourceRange={VK_IMAGE_ASPECT_COLOR_BIT,baseLevel,lastLevel-baseLevel+1,0,shape.layers()};
+    view.subresourceRange={aspect,baseLevel,lastLevel-baseLevel+1,0,shape.layers()};
     check(api.vkCreateImageView(device,&view,nullptr,&image.view),"vkCreateImageView(managed texture)");
     VkSamplerCreateInfo sampler{VK_STRUCTURE_TYPE_SAMPLER_CREATE_INFO};sampler.magFilter=config.mag;sampler.minFilter=config.min;sampler.mipmapMode=config.mipmapMode;
     sampler.addressModeU=config.wrapS;sampler.addressModeV=config.wrapT;sampler.addressModeW=settings.wrapR;
     sampler.anisotropyEnable=config.anisotropy>1;sampler.maxAnisotropy=config.anisotropy;
+    sampler.compareEnable=depth&&settings.compare;sampler.compareOp=settings.compareOp;
+    if(depth&&settings.compare&&!(attachmentProperties.optimalTilingFeatures&VK_FORMAT_FEATURE_SAMPLED_IMAGE_FILTER_LINEAR_BIT)){
+        sampler.magFilter=sampler.minFilter=VK_FILTER_NEAREST;sampler.mipmapMode=VK_SAMPLER_MIPMAP_MODE_NEAREST;
+    }
     sampler.maxLod=config.mipFilter?std::max(0.f,std::min(float(lastLevel-baseLevel),settings.maxLod)):0.f;
     sampler.minLod=std::min(sampler.maxLod,std::max(0.f,settings.minLod));
     check(api.vkCreateSampler(device,&sampler,nullptr,&result->sampler),"vkCreateSampler(managed texture)");
@@ -113,7 +148,7 @@ TextureRef createManagedTextureResource(const TextureConfig& config,const Manage
     const std::size_t alignment=pixelBytes%4==0?pixelBytes:pixelBytes*4;
     for(const auto& patch:patches){
         bytes.resize((bytes.size()+alignment-1)/alignment*alignment);
-        VkBufferImageCopy copy{};copy.bufferOffset=bytes.size();copy.imageSubresource={VK_IMAGE_ASPECT_COLOR_BIT,patch.level,patch.layer,patch.layerCount};
+        VkBufferImageCopy copy{};copy.bufferOffset=bytes.size();copy.imageSubresource={aspect,patch.level,patch.layer,patch.layerCount};
         copy.imageOffset={int(patch.x),int(patch.y),int(patch.z)};copy.imageExtent={patch.width,patch.height,patch.depth};copies.push_back(copy);
         bytes.insert(bytes.end(),patch.pixels.begin(),patch.pixels.end());
     }
@@ -127,24 +162,27 @@ TextureRef createManagedTextureResource(const TextureConfig& config,const Manage
     const auto barrier=[&](VkImage target,std::uint32_t first,std::uint32_t levels,VkImageLayout oldLayout,VkImageLayout newLayout,
         VkAccessFlags source,VkAccessFlags destination,VkPipelineStageFlags sourceStage,VkPipelineStageFlags destinationStage){
         VkImageMemoryBarrier b{VK_STRUCTURE_TYPE_IMAGE_MEMORY_BARRIER};b.srcAccessMask=source;b.dstAccessMask=destination;b.oldLayout=oldLayout;b.newLayout=newLayout;
-        b.srcQueueFamilyIndex=b.dstQueueFamilyIndex=VK_QUEUE_FAMILY_IGNORED;b.image=target;b.subresourceRange={VK_IMAGE_ASPECT_COLOR_BIT,first,levels,0,shape.layers()};
+        b.srcQueueFamilyIndex=b.dstQueueFamilyIndex=VK_QUEUE_FAMILY_IGNORED;b.image=target;b.subresourceRange={aspect,first,levels,0,shape.layers()};
         api.vkCmdPipelineBarrier(textureCommandBuffer,sourceStage,destinationStage,0,0,nullptr,0,nullptr,1,&b);
     };
     barrier(image.image,0,config.levels,VK_IMAGE_LAYOUT_UNDEFINED,VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL,0,VK_ACCESS_TRANSFER_WRITE_BIT,VK_PIPELINE_STAGE_TOP_OF_PIPE_BIT,VK_PIPELINE_STAGE_TRANSFER_BIT);
-    const VkClearColorValue zero{};const VkImageSubresourceRange all{VK_IMAGE_ASPECT_COLOR_BIT,0,config.levels,0,shape.layers()};
-    api.vkCmdClearColorImage(textureCommandBuffer,image.image,VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL,&zero,1,&all);
+    const auto clearRanges=[&](std::uint32_t count,const VkImageSubresourceRange* ranges){
+        if(depth){const VkClearDepthStencilValue zero{0.f,0};api.vkCmdClearDepthStencilImage(textureCommandBuffer,image.image,VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL,&zero,count,ranges);}
+        else{const VkClearColorValue zero{};api.vkCmdClearColorImage(textureCommandBuffer,image.image,VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL,&zero,count,ranges);}
+    };
+    const VkImageSubresourceRange all{aspect,0,config.levels,0,shape.layers()};clearRanges(1,&all);
     barrier(image.image,0,config.levels,VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL,VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL,VK_ACCESS_TRANSFER_WRITE_BIT,VK_ACCESS_TRANSFER_WRITE_BIT,VK_PIPELINE_STAGE_TRANSFER_BIT,VK_PIPELINE_STAGE_TRANSFER_BIT);
     if(previous){
         barrier(previous->image.image,0,previous->config.levels,VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL,VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL,
             VK_ACCESS_SHADER_READ_BIT,VK_ACCESS_TRANSFER_READ_BIT,VK_PIPELINE_STAGE_VERTEX_SHADER_BIT|VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT,VK_PIPELINE_STAGE_TRANSFER_BIT);
         std::vector<VkImageCopy> regions;
-        for(std::uint32_t level=0;level<std::min(config.levels,previous->config.levels);++level){VkImageCopy copy{};copy.srcSubresource=copy.dstSubresource={VK_IMAGE_ASPECT_COLOR_BIT,level,0,shape.layers()};copy.extent={std::max(1u,config.width>>level),std::max(1u,config.height>>level),shape.mipDepth(level)};regions.push_back(copy);}
+        for(std::uint32_t level=0;level<std::min(config.levels,previous->config.levels);++level){VkImageCopy copy{};copy.srcSubresource=copy.dstSubresource={aspect,level,0,shape.layers()};copy.extent={std::max(1u,config.width>>level),std::max(1u,config.height>>level),shape.mipDepth(level)};regions.push_back(copy);}
         api.vkCmdCopyImage(textureCommandBuffer,previous->image.image,VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL,image.image,VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL,std::uint32_t(regions.size()),regions.data());
         barrier(previous->image.image,0,previous->config.levels,VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL,VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL,
             VK_ACCESS_TRANSFER_READ_BIT,VK_ACCESS_SHADER_READ_BIT,VK_PIPELINE_STAGE_TRANSFER_BIT,VK_PIPELINE_STAGE_VERTEX_SHADER_BIT|VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT);
         barrier(image.image,0,config.levels,VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL,VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL,VK_ACCESS_TRANSFER_WRITE_BIT,VK_ACCESS_TRANSFER_WRITE_BIT,VK_PIPELINE_STAGE_TRANSFER_BIT,VK_PIPELINE_STAGE_TRANSFER_BIT);
     }
-    for(const auto& clear:clears)api.vkCmdClearColorImage(textureCommandBuffer,image.image,VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL,&zero,1,&clear);
+    for(const auto& clear:clears)clearRanges(1,&clear);
     if(!clears.empty())barrier(image.image,0,config.levels,VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL,VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL,VK_ACCESS_TRANSFER_WRITE_BIT,VK_ACCESS_TRANSFER_WRITE_BIT,VK_PIPELINE_STAGE_TRANSFER_BIT,VK_PIPELINE_STAGE_TRANSFER_BIT);
     if(staging)api.vkCmdCopyBufferToImage(textureCommandBuffer,staging->buffer,image.image,VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL,std::uint32_t(copies.size()),copies.data());
     for(std::uint32_t level=1;generate&&level<config.levels;++level){
@@ -209,7 +247,7 @@ struct ManagedTextureStorage final:VulkanTextureCommands::Storage {
         else{
             const auto layer=target==0x8513?a.target-0x8515:0u;const auto count=target==0x8c1a?next.shape.layers():1u;
             for(std::uint32_t i=0;i<count;++i)next.define(layer+i,std::uint32_t(a.level));
-            clears.push_back({VK_IMAGE_ASPECT_COLOR_BIT,std::uint32_t(a.level),1,layer,count});
+            clears.push_back({managedTextureAspect(next.config.format),std::uint32_t(a.level),1,layer,count});
         }
         next.resource=renderer.createManagedTextureResource(next.config,next.shape,next.sampler,compatible&&!a.immutable?resource:TextureRef{}, {},clears);
         *this=std::move(next);
@@ -218,19 +256,28 @@ struct ManagedTextureStorage final:VulkanTextureCommands::Storage {
         auto& renderer=owner();if(!resource)throw std::logic_error("Native Vulkan texture upload has no allocated storage");
         if(u.compressed)throw std::invalid_argument("Compressed native Vulkan texture upload is not implemented");
         const auto target=managedTextureTarget(u.target);if(target!=shape.target)throw std::invalid_argument("Native Vulkan texture upload target does not match storage");
-        const auto components=u.format==0x1903?1u:u.format==0x8227?2u:u.format==0x1907?3u:u.format==0x1908?4u:0u;
-        const auto type=u.type==0x1401?UnsignedByteType:u.type==0x140b?HalfFloatType:u.type==0x1406?FloatType:-1;
-        if(components!=config.components||type!=config.type)throw std::invalid_argument("Native Vulkan texture upload format/type conversion is not implemented");
+        const auto components=u.type==0x8c3b&&u.format==0x1907?1u:u.format==0x1902?1u:u.format==0x1903?1u:u.format==0x8227?2u:u.format==0x1907?3u:u.format==0x1908?4u:0u;
+        const auto type=u.type==0x8c3b?UnsignedInt101111Type:u.type==0x1403?UnsignedShortType:u.type==0x1405?UnsignedIntType:u.type==0x1401?UnsignedByteType:u.type==0x140b?HalfFloatType:u.type==0x1406?FloatType:-1;
+        const bool depth=managedTextureAspect(config.format)&VK_IMAGE_ASPECT_DEPTH_BIT;
+        const bool uintToDepth16=config.format==VK_FORMAT_D16_UNORM&&type==UnsignedIntType;
+        // ES 3 Table 3.2 permits both USHORT and UINT for DEPTH_COMPONENT16;
+        // DEPTH_COMPONENT24 takes UINT and DEPTH_COMPONENT32F takes FLOAT.
+        if(depth?(u.format!=0x1902||(type!=config.type&&!uintToDepth16)):
+            (u.format==0x1902||components!=config.components||type!=config.type))
+            throw std::invalid_argument("Native Vulkan texture upload format/type conversion is not implemented");
         if(u.nullData||!u.width||!u.height||!u.depth)return;
         const std::size_t pixelBytes=std::size_t(config.components)*config.componentBytes;
+        const std::size_t sourceComponentBytes=u.type==0x1401?1u:u.type==0x1403||u.type==0x140b?2u:4u;
+        const std::size_t sourcePixelBytes=std::size_t(components)*sourceComponentBytes;
         const auto& p=u.unpack;
         const std::size_t rowLength=p.rowLength?std::size_t(p.rowLength):std::size_t(u.width);
-        const std::size_t sourceRow=(rowLength*pixelBytes+std::size_t(p.alignment)-1)/std::size_t(p.alignment)*std::size_t(p.alignment);
+        const std::size_t sourceRow=(rowLength*sourcePixelBytes+std::size_t(p.alignment)-1)/std::size_t(p.alignment)*std::size_t(p.alignment);
         const std::size_t imageHeight=p.imageHeight?std::size_t(p.imageHeight):std::size_t(u.height);
         const std::size_t sourceImage=sourceRow*imageHeight;
         const bool layered=shape.target==0x806f||shape.target==0x8c1a;
-        const std::size_t first=std::size_t(p.skipRows)*sourceRow+std::size_t(p.skipPixels)*pixelBytes+(layered?std::size_t(p.skipImages)*sourceImage:0);
+        const std::size_t first=std::size_t(p.skipRows)*sourceRow+std::size_t(p.skipPixels)*sourcePixelBytes+(layered?std::size_t(p.skipImages)*sourceImage:0);
         const std::size_t rowBytes=std::size_t(u.width)*pixelBytes;
+        const std::size_t sourceRowBytes=std::size_t(u.width)*sourcePixelBytes;
         if(std::size_t(u.height)>SIZE_MAX/std::size_t(u.depth)||std::size_t(u.height)*std::size_t(u.depth)>SIZE_MAX/rowBytes)throw std::invalid_argument("Native Vulkan texture upload byte count overflows");
         ManagedTexturePatch patch;patch.level=std::uint32_t(u.level);patch.x=std::uint32_t(u.x);patch.y=std::uint32_t(u.y);patch.width=std::uint32_t(u.width);patch.height=std::uint32_t(u.height);
         patch.layer=shape.target==0x8513?u.target-0x8515:shape.target==0x8c1a?std::uint32_t(u.z):0u;
@@ -238,8 +285,28 @@ struct ManagedTextureStorage final:VulkanTextureCommands::Storage {
         patch.pixels.resize(rowBytes*std::size_t(u.height)*std::size_t(u.depth));
         for(int z=0;z<u.depth;++z)for(int row=0;row<u.height;++row){const auto sourceRowIndex=p.flipY?u.height-row-1:row;
             const auto offset=first+std::size_t(z)*sourceImage+std::size_t(sourceRowIndex)*sourceRow;
-            if(offset>u.pixels.size()||rowBytes>u.pixels.size()-offset)throw std::invalid_argument("Native Vulkan texture upload exceeds the actual pixel view");
-            std::memcpy(patch.pixels.data()+(std::size_t(z)*std::size_t(u.height)+std::size_t(row))*rowBytes,u.pixels.data()+offset,rowBytes);
+            if(offset>u.pixels.size()||sourceRowBytes>u.pixels.size()-offset)throw std::invalid_argument("Native Vulkan texture upload exceeds the actual pixel view");
+            auto* destination=patch.pixels.data()+(std::size_t(z)*std::size_t(u.height)+std::size_t(row))*rowBytes;
+            const auto* source=u.pixels.data()+offset;
+            if(uintToDepth16)for(int x=0;x<u.width;++x){
+                std::uint32_t value;std::memcpy(&value,source+std::size_t(x)*4,4);
+                const auto packed=std::uint16_t((std::uint64_t(value)*65535u+2147483647u)/4294967295u);
+                std::memcpy(destination+std::size_t(x)*2,&packed,2);
+            }else std::memcpy(destination,source,rowBytes);
+        }
+        // GL UNSIGNED_INT depth is normalized across all 32 source bits;
+        // Vulkan X8_D24 stores the normalized value in the low 24 packed bits.
+        if(config.format==VK_FORMAT_X8_D24_UNORM_PACK32)for(std::size_t offset=0;offset<patch.pixels.size();offset+=4){
+            std::uint32_t source;std::memcpy(&source,patch.pixels.data()+offset,4);
+            const auto packed=std::uint32_t(std::llround(double(source)*(16777215.0/4294967295.0)));
+            std::memcpy(patch.pixels.data()+offset,&packed,4);
+        }
+        // ES depth uploads clamp before storage. Vulkan buffer-to-depth copies
+        // require [0,1]; choose zero for the unspecified GL NaN input as well.
+        if(config.format==VK_FORMAT_D32_SFLOAT)for(std::size_t offset=0;offset<patch.pixels.size();offset+=4){
+            float source;std::memcpy(&source,patch.pixels.data()+offset,4);
+            const auto clamped=std::isnan(source)?0.f:std::clamp(source,0.f,1.f);
+            std::memcpy(patch.pixels.data()+offset,&clamped,4);
         }
         if(p.premultiplyAlpha&&components==4)for(std::size_t offset=0;offset<patch.pixels.size();offset+=pixelBytes){
             if(type==UnsignedByteType){const float alpha=float(std::to_integer<unsigned>(patch.pixels[offset+3]))/255.f;for(unsigned c=0;c<3;++c)patch.pixels[offset+c]=std::byte(std::uint8_t(float(std::to_integer<unsigned>(patch.pixels[offset+c]))*alpha));}
@@ -256,8 +323,8 @@ struct ManagedTextureStorage final:VulkanTextureCommands::Storage {
             case 0x2802:next.config.wrapS=managedTextureWrap(value);break;case 0x2803:next.config.wrapT=managedTextureWrap(value);break;case 0x8072:next.sampler.wrapR=managedTextureWrap(value);break;
             case 0x84fe:next.config.anisotropy=float(value);break;case 0x813a:next.sampler.minLod=float(value);break;case 0x813b:next.sampler.maxLod=float(value);break;
             case 0x813c:next.sampler.baseLevel=std::uint32_t(value);break;case 0x813d:next.sampler.maxLevel=std::uint32_t(value);break;
-            case 0x884c:if(value!=0)throw std::invalid_argument("Native Vulkan shadow texture comparison requires depth storage");break;
-            case 0x884d:break; // A disabled comparison function cannot affect color sampling.
+            case 0x884c:next.sampler.compare=value==0x884e;break;
+            case 0x884d:next.sampler.compareOp=managedTextureCompare(value);break;
             default:throw std::invalid_argument("Native Vulkan texture parameter is not implemented");
         }
         if(next.sampler.minLod>next.sampler.maxLod)throw std::invalid_argument("Native Vulkan inverted texture LOD clamps are not implemented");

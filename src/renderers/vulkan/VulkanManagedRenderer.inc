@@ -106,14 +106,7 @@ JSValue managedDispatch(const std::string& name, const JSValue& receiver, const 
     if (name == "xr.getDepthSensingMesh") return nullptr;
     if (name == "xr.updateCamera" || name == "xr.getCamera")
         throw std::logic_error("Native Vulkan XR session integration is not implemented");
-    if (name == "shadowMap.render") {
-        const auto shadow = managedRenderer.get("shadowMap");
-        // Original WebGLShadowMap early exits, before any GPU work.
-        if (shadow.get("enabled").strictEquals(false)) return {};
-        if (shadow.get("autoUpdate").strictEquals(false) && shadow.get("needsUpdate").strictEquals(false)) return {};
-        if (a.get("length").strictEquals(0)) return {};
-        throw std::logic_error("Managed Vulkan shadow rendering is not implemented");
-    }
+
     throw std::logic_error("Unknown managed Vulkan service: " + name);
 }
 void initializeManagedRenderer() {
@@ -142,12 +135,11 @@ void initializeManagedRenderer() {
     for (const char* name : {"getEnvironmentBlendMode", "hasDepthSensing", "getDepthSensingMesh", "updateCamera", "getCamera"})
         managedOwn(managedXR, name, managedService((std::string("xr.") + name).c_str()));
     property("xr", managedXR);
-    auto shadow = JSValue::object(); managedOwn(shadow, "enabled", false); managedOwn(shadow, "autoUpdate", true);
-    managedOwn(shadow, "needsUpdate", false); managedOwn(shadow, "type", PCFShadowMap);
-    managedOwn(shadow, "render", managedService("shadowMap.render", 3)); property("shadowMap", shadow);
     auto debug=JSValue::object();managedOwn(debug,"checkShaderErrors",true);managedOwn(debug,"onShaderError",nullptr);property("debug",debug);
     managedViewport = nativeVector4Constructor().construct({viewport.x, viewport.y, viewport.z, viewport.w});
     initializeManagedContext();
+    const auto shadow=nativeWebGLShadowMap(managedRenderer,objects->object(),managedCapabilities->object());
+    property("shadowMap",shadow);
     property("domElement",managedGLCanvas);property("state",managedState);
     property("capabilities",managedCapabilities->object());property("extensions",managedExtensions->object());
     property("properties",clippingProperties->object());

@@ -462,8 +462,8 @@ JSValue module() {
         return *value;
     auto state = JSValue::object(nullptr);
     literal(state, "emptyTexture", nativeTexture(std::make_shared<Texture>()));
-    literal(state, "emptyShadowTexture", nativeTexture(std::make_shared<DepthTexture>(1, 1)));
-    literal(state, "emptyCubeShadowTexture", nativeTexture(std::make_shared<CubeDepthTexture>(1)));
+    literal(state, "emptyShadowTexture", nativeDepthTextureConstructor().construct({1, 1}));
+    literal(state, "emptyCubeShadowTexture", nativeCubeDepthTextureConstructor().construct({1}));
     literal(state, "emptyArrayTexture", nativeTexture(std::make_shared<DataArrayTexture>()));
     literal(state, "empty3dTexture", nativeTexture(std::make_shared<Data3DTexture>()));
     literal(state, "emptyCubeTexture", nativeTexture(std::make_shared<CubeTexture>()));

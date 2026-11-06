@@ -397,9 +397,10 @@ void nativeFramebufferCompletenessBoundaries(bool validation){
     require(status().strictEquals(0x8cd6),"RGBA color storage is not a legal depth attachment");
     call(gl,"framebufferTexture2D",{0x8d40,0x8d00,0x0de1,nullptr,0});
     const auto half=allocate(0x0de1,1,8,8,1,0x881a);
-    require(call(gl,"getExtension",{"EXT_color_buffer_float"}).isNull(),"native context does not advertise EXT_color_buffer_float");
     call(gl,"framebufferTexture2D",{0x8d40,0x8ce0,0x0de1,half,0});
-    require(status().strictEquals(0x8cd6),"RGBA16F stays incomplete without the float color-buffer extension");
+    require(status().strictEquals(0x8cd6),"RGBA16F stays incomplete before enabling the float color-buffer extension");
+    const auto extension=call(gl,"getExtension",{"EXT_color_buffer_float"});
+    require(extension.isNull()?status().strictEquals(0x8cd6):status().strictEquals(0x8cd5),"RGBA16F renderability follows the actual float-color extension capability and enable state");
     call(gl,"framebufferTexture2D",{0x8d40,0x8ce0,0x0de1,color,0});
     require(status().strictEquals(0x8cd5),"legal RGBA8 attachment recovers after invalid native attachment formats");
     require(call(gl,"getError").strictEquals(0),"framebuffer completeness checks report statuses without adding GL command errors");

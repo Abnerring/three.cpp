@@ -18,7 +18,7 @@ struct ManagedProgramDrawSnapshot {
     PipelineState state;
     int side = FrontSide;
     bool frontFaceCW = false, reversed = false;
-    bool samplingFeedback = false;
+    bool invalidSampling = false;
     std::uint32_t firstInstance = 0;
     std::map<VulkanProgramUniforms::Key, std::vector<std::byte>> blocks;
     std::map<VulkanProgramUniforms::Key, std::vector<TextureRef>> samplers;
@@ -53,6 +53,10 @@ ManagedProgramDrawSnapshot captureManagedProgramDraw(const PipelineState& state,
     ManagedProgramDrawSnapshot result;
     result.program=program;result.state=state;result.side=side;
     result.frontFaceCW=frontFaceCW;result.reversed=reversed;result.firstInstance=firstInstance;
+    // EXT_color_buffer_float does not enable blending into 32-bit float images.
+    // This context does not advertise EXT_float_blend.
+    if(state.nativeBlend&&(active->colorFormat==VK_FORMAT_R32_SFLOAT||active->colorFormat==VK_FORMAT_R32G32_SFLOAT||active->colorFormat==VK_FORMAT_R32G32B32A32_SFLOAT))
+        result.invalidSampling=true;
     // Negative height selects the GL-oriented offscreen viewport in the ESSL adapter.
     program->uniforms->writeBackend(firstInstance, active->managedAttachment ? -float(height) : float(height));
     for (const auto& [key, block] : program->uniforms->blocks()) {
@@ -76,20 +80,20 @@ ManagedProgramDrawSnapshot captureManagedProgramDraw(const PipelineState& state,
                         descriptor = &candidate;
                     }
         if (!descriptor || descriptor->type != VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER ||
-            descriptor->imageMultisampled ||
-            descriptor->imageDepth == 1 || descriptor->count != sampler.units.size())
-            throw std::logic_error("Managed Vulkan comparison, multisample and separate image samplers are not implemented");
+            descriptor->imageMultisampled || descriptor->count != sampler.units.size())
+            throw std::logic_error("Managed Vulkan multisample and separate image samplers are not implemented");
+        const bool comparison=descriptor->imageDepth==1;
         // SPIR-V Dim and Arrayed describe the real image view. Original active
         // uniform types additionally distinguish ordinary from integer samplers.
         std::uint32_t target = 0;
         int glType = 0;
         if (descriptor->imageDimension == 1) {
             target = descriptor->imageArray ? 0x8c1a : 0x0de1;
-            glType = descriptor->imageArray ? 0x8dc1 : 0x8b5e;
+            glType = comparison?(descriptor->imageArray?0x8dc4:0x8b62):(descriptor->imageArray?0x8dc1:0x8b5e);
         } else if (descriptor->imageDimension == 2 && !descriptor->imageArray) {
             target = 0x806f; glType = 0x8b5f;
         } else if (descriptor->imageDimension == 3 && !descriptor->imageArray) {
-            target = 0x8513; glType = 0x8b60;
+            target = 0x8513; glType = comparison?0x8dc5:0x8b60;
         } else {
             throw std::logic_error("Managed Vulkan sampler image dimension is not implemented");
         }
@@ -97,15 +101,20 @@ ManagedProgramDrawSnapshot captureManagedProgramDraw(const PipelineState& state,
         for (const auto& uniform : program->result.activeUniforms)
             if (uniform.name == name || uniform.name.starts_with(name + "[")) {
                 originalType = true;
-                if (uniform.glType != glType)
-                    throw std::logic_error("Managed integer and comparison samplers are not implemented");
+                if (uniform.glType != glType)result.invalidSampling=true;
             }
         if (!originalType) throw std::logic_error("Native sampler lacks an original active uniform type");
         auto& textures = result.samplers[sampler.key];
         for (const auto unit : sampler.units) {
             if (unit < 0) throw std::invalid_argument("Negative native sampler texture unit");
-            auto texture = managedSampledTexture(std::uint32_t(unit), target);
-            result.samplingFeedback=result.samplingFeedback||managedFeedbackLoop(std::uint32_t(unit),target);
+            const auto handle=managedTextureCommands->boundTexture(std::uint32_t(unit),target);
+            const auto storage=std::dynamic_pointer_cast<ManagedTextureStorage>(managedTextureCommands->storage(handle));
+            if(!storage)throw std::invalid_argument("Native Vulkan draw has no texture storage at its sampler unit");
+            const bool depth=managedTextureAspect(storage->config.format)&VK_IMAGE_ASPECT_DEPTH_BIT;
+            if(comparison?(!depth||!storage->sampler.compare):(depth&&storage->sampler.compare))result.invalidSampling=true;
+            if(result.invalidSampling)continue;
+            auto texture=storage->sampled();
+            result.invalidSampling=result.invalidSampling||managedFeedbackLoop(std::uint32_t(unit),target);
             if (!texture || !texture->sampler || !texture->image.view)
                 throw std::logic_error("Native texture binding has no Vulkan sampled image");
             textures.push_back(std::move(texture));

@@ -1,4 +1,28 @@
-# 2026-11-06: canonical source render targets connected to Vulkan
+# 当前接续：`WebGLCubeRenderTarget` / `WebGLShadowMap` 端口 + Vulkan 深度/VSM 阴影落地（补接线并全量验证），2026-11-06
+
+目标保持 active：固定 three.js 11738a9d55e502fb484cefffcea3a66dc44e9fe9 全部模块原生 C++ 实现，Vulkan 后端；禁止 CEF/生产 JS 引擎/桥接。阶段本地 Git 提交，不推送。
+
+## 本轮完成（收尾一批在飞改动）
+
+1. **新增端口**：`src/renderers/WebGLCubeRenderTarget.{h,cpp}`（立方体 RT）、`src/renderers/webgl/WebGLShadowMap.{h,cpp}`（阴影贴图管理）；`src/textures/CubeDepthTexture.{h,cpp}` 扩展；
+2. **Vulkan 渲染**：`VulkanManagedTextures/Framebuffers/ProgramDraw/Context/Renderer` inc 更新（深度纹理采样、VSM 阴影、立方体面）；`VulkanRenderer.cpp` 与 `utils/generate-render-target-runtime.mjs`、`WebGLUniforms.cpp` 配套；
+3. **接线补齐**：`test/CMakeLists.txt` 新增 `VulkanManagedVSMShadowsTests`（此前文件已存在但未接入构建）；
+4. **差分探针**：`WebGLShadowMapParityProbe` + `compare-webgl-shadow-map.mjs`、`CubeDepthRenderTargetParityProbe` + `compare-cube-depth-render-target.mjs`。
+
+## 验证（全部本地实测）
+
+- 两个探针构建 exit 0；**shadow map 差分 43 例 0 失败**（边界：pinned CPU 状态/命令追踪，不含 GPU 执行）；**cube depth 差分 91 行通过**；
+- `VulkanManagedDepthTexturesTests`：exit 0，**390 断言 / 60 renders**；`VulkanManagedVSMShadowsTests`：exit 0，**334 断言 / 20 renders**；
+- `THREECPPTests`：**All tests passed（1784 例 / 219,362 断言）**；`THREECPPAddonTests`：**All tests passed（1441 例 / 39,577 断言）**；
+- `docs/port-status.json` 已随之刷新（`WebGLCubeRenderTarget`、`WebGLShadowMap` 记录实现文件）。
+
+**未执行验证（如实记录）**：Vulkan 测试 `validation_requested=0 / validation_enabled=0`（本机未启用 GPU 校验层）；差分仅覆盖 CPU 侧状态/命令追踪，未声称 GPU 执行结果；两新端口的其余调用方（如 `MaterialX`/后处理路径）未逐一回归。
+
+## 下一步
+
+1. 审计核对：`WebGLCubeRenderTarget`/`WebGLShadowMap` 的状态与剩余 `vulkan-port-pending` 项；
+2. 继续 Vulkan 后端覆盖（阴影/后处理/立方体路径的下一个缺口）；
+3. 继续 examples/jsm 与 src 余项端口。# 2026-11-06: canonical source render targets connected to Vulkan
 
 Parent commit `c2c23698`; fixed upstream `11738a9d55e502fb484cefffcea3a66dc44e9fe9`.
 

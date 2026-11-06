@@ -39,7 +39,7 @@ struct ManagedFramebufferStorage final:VulkanTextureCommands::FramebufferStorage
     std::weak_ptr<Lifecycle> lifecycle;
     std::map<std::uint32_t,Attachment> attachments;
     std::shared_ptr<GpuTarget> cached;
-    TextureRef cachedColor;
+    TextureRef cachedColor,cachedDepthTexture;
     std::shared_ptr<ManagedRenderbufferImage> cachedDepth;
     explicit ManagedFramebufferStorage(const std::shared_ptr<Lifecycle>& token):lifecycle(token){}
     Impl& owner()const{const auto token=lifecycle.lock();if(!token||!token->owner)throw JSTypeError("Native framebuffer owner has been retired");return *token->owner;}
@@ -48,13 +48,13 @@ struct ManagedFramebufferStorage final:VulkanTextureCommands::FramebufferStorage
         if(value){next.texture=std::dynamic_pointer_cast<ManagedTextureStorage>(value);if(!next.texture)throw JSTypeError("Foreign Vulkan framebuffer texture");}
         for(const auto point:attachment==0x821a?std::vector<std::uint32_t>{0x8d00,0x8d20}:std::vector<std::uint32_t>{attachment})
             if(value)attachments[point]=next;else attachments.erase(point);
-        cached.reset();cachedColor.reset();cachedDepth.reset();
+        cached.reset();cachedColor.reset();cachedDepth.reset();cachedDepthTexture.reset();
     }
     void renderbuffer(std::uint32_t attachment,const std::shared_ptr<VulkanTextureCommands::RenderbufferStorage>& value)override{
         Attachment next;if(value){next.renderbuffer=std::dynamic_pointer_cast<ManagedRenderbufferStorage>(value);if(!next.renderbuffer)throw JSTypeError("Foreign Vulkan framebuffer renderbuffer");}
         for(const auto point:attachment==0x821a?std::vector<std::uint32_t>{0x8d00,0x8d20}:std::vector<std::uint32_t>{attachment})
             if(value)attachments[point]=next;else attachments.erase(point);
-        cached.reset();cachedColor.reset();cachedDepth.reset();
+        cached.reset();cachedColor.reset();cachedDepth.reset();cachedDepthTexture.reset();
     }
     const Attachment* color()const{const auto found=attachments.find(0x8ce0);return found==attachments.end()?nullptr:&found->second;}
     const Attachment* depth()const{for(const auto point:{0x8d00u,0x821au})if(const auto found=attachments.find(point);found!=attachments.end())return &found->second;return nullptr;}
@@ -124,10 +124,9 @@ struct ManagedFramebufferStorage final:VulkanTextureCommands::FramebufferStorage
                 // These sized texture formats are not color-renderable in
                 // WebGL 2, even when Vulkan can attach the corresponding image.
                 if(format==VK_FORMAT_R8G8B8_SRGB||format==VK_FORMAT_R16G16B16_SFLOAT||format==VK_FORMAT_R32G32B32_SFLOAT)return 0x8cd6;
-                // This context currently advertises no float-color extension.
-                // Sampled floating storage alone does not enable renderability.
-                if(format==VK_FORMAT_R16_SFLOAT||format==VK_FORMAT_R16G16_SFLOAT||format==VK_FORMAT_R16G16B16A16_SFLOAT||
-                   format==VK_FORMAT_R32_SFLOAT||format==VK_FORMAT_R32G32_SFLOAT||format==VK_FORMAT_R32G32B32A32_SFLOAT)return 0x8cd6;
+                // Sampling alone does not enable floating color attachments.
+                if(!renderer.managedFloatColorEnabled&&(format==VK_FORMAT_R16_SFLOAT||format==VK_FORMAT_R16G16_SFLOAT||format==VK_FORMAT_R16G16B16A16_SFLOAT||
+                   format==VK_FORMAT_R32_SFLOAT||format==VK_FORMAT_R32G32_SFLOAT||format==VK_FORMAT_R32G32B32A32_SFLOAT||format==VK_FORMAT_B10G11R11_UFLOAT_PACK32))return 0x8cd6;
                 required=VK_FORMAT_FEATURE_COLOR_ATTACHMENT_BIT;
                 for(const auto& other:colorImages)if(sameImage(other,image))return 0x8cdd;
                 colorImages.push_back(image);
@@ -152,32 +151,42 @@ struct ManagedFramebufferStorage final:VulkanTextureCommands::FramebufferStorage
         auto& r=owner();if(status(0x8d40)!=0x8cd5)throw std::invalid_argument("Native Vulkan framebuffer is incomplete");
         if(attachments.contains(0x8d20))throw std::logic_error("Native Vulkan framebuffer stencil execution is not implemented");
         if(!color()||!color()->texture)throw std::logic_error("Native framebuffer rendering requires a texture at COLOR_ATTACHMENT0");
-        if(depth()&&!depth()->renderbuffer)throw std::logic_error("Native framebuffer depth texture execution is not implemented");
-        const auto& c=*color();auto storage=c.texture;const auto d=depth();const auto depthImage=d?d->renderbuffer->image:std::shared_ptr<ManagedRenderbufferImage>{};
-        if(attachments.size()>(depthImage?2u:1u))throw std::logic_error("Native multiple framebuffer color attachments are not implemented");
-        if(cached&&cachedColor==storage->resource&&cachedDepth==depthImage)return cached;
+        const auto& c=*color();const auto storage=c.texture;const auto d=depth();
+        const auto depthImage=d&&d->renderbuffer?d->renderbuffer->image:std::shared_ptr<ManagedRenderbufferImage>{};
+        const auto depthTexture=d&&d->texture?d->texture->resource:TextureRef{};
+        const auto depthFormat=depthTexture?d->texture->config.format:depthImage?depthImage->format:VK_FORMAT_UNDEFINED;
+        if(attachments.size()>(depthFormat!=VK_FORMAT_UNDEFINED?2u:1u))throw std::logic_error("Native multiple framebuffer color attachments are not implemented");
+        if(cached&&cachedColor==storage->resource&&cachedDepth==depthImage&&cachedDepthTexture==depthTexture)return cached;
         r.requireColorFeatures(storage->config.format,VK_FORMAT_FEATURE_COLOR_ATTACHMENT_BIT);
-        if(storage->shape.target==0x806f)throw std::logic_error("Native 3D texture framebuffer slices are not implemented");
+        if(storage->shape.target==0x806f||(depthTexture&&d->texture->shape.target==0x806f))throw std::logic_error("Native 3D texture framebuffer slices are not implemented");
         auto result=std::shared_ptr<GpuTarget>(new GpuTarget{},[&r](auto* value){
             if(value->framebuffer)r.api.vkDestroyFramebuffer(r.device,value->framebuffer,nullptr);
             if(value->faceView)r.api.vkDestroyImageView(r.device,value->faceView,nullptr);
+            if(value->managedDepthView)r.api.vkDestroyImageView(r.device,value->managedDepthView,nullptr);
             delete value;
         });
         result->managedAttachment=true;result->color=storage->resource->image;result->colorFormat=storage->config.format;
         result->imageMip=std::uint32_t(c.level);result->imageLayer=storage->shape.target==0x8513?c.target-0x8515:storage->shape.target==0x8c1a?std::uint32_t(c.layer):0u;
         result->width=std::max(1u,storage->config.width>>c.level);result->height=std::max(1u,storage->config.height>>c.level);
         result->attachmentOwners.push_back(storage->resource);
-        if(depthImage){result->depth=depthImage->image;result->attachmentOwners.push_back(depthImage);}
-        result->nativeRenderPass=r.renderPassFor(result->colorFormat,depthImage?depthImage->format:VK_FORMAT_UNDEFINED);
+        if(depthTexture){
+            result->managedDepthTexture=true;result->depth=depthTexture->image;result->attachmentOwners.push_back(depthTexture);
+            result->managedDepthMip=std::uint32_t(d->level);
+            result->managedDepthLayer=d->texture->shape.target==0x8513?d->target-0x8515:d->texture->shape.target==0x8c1a?std::uint32_t(d->layer):0u;
+            VkImageViewCreateInfo view{VK_STRUCTURE_TYPE_IMAGE_VIEW_CREATE_INFO};view.image=result->depth.image;view.viewType=VK_IMAGE_VIEW_TYPE_2D;view.format=depthFormat;
+            view.subresourceRange={VK_IMAGE_ASPECT_DEPTH_BIT,result->managedDepthMip,1,result->managedDepthLayer,1};
+            check(r.api.vkCreateImageView(r.device,&view,nullptr,&result->managedDepthView),"vkCreateImageView(native depth attachment)");
+        }else if(depthImage){result->depth=depthImage->image;result->attachmentOwners.push_back(depthImage);}
+        result->nativeRenderPass=r.renderPassFor(result->colorFormat,depthFormat);
         VkImageViewCreateInfo view{VK_STRUCTURE_TYPE_IMAGE_VIEW_CREATE_INFO};view.image=result->color.image;view.viewType=VK_IMAGE_VIEW_TYPE_2D;view.format=result->colorFormat;
         view.subresourceRange={VK_IMAGE_ASPECT_COLOR_BIT,result->imageMip,1,result->imageLayer,1};
         check(r.api.vkCreateImageView(r.device,&view,nullptr,&result->faceView),"vkCreateImageView(native framebuffer)");
-        const VkImageView views[]={result->faceView,depthImage?depthImage->image.view:VK_NULL_HANDLE};
-        VkFramebufferCreateInfo info{VK_STRUCTURE_TYPE_FRAMEBUFFER_CREATE_INFO};info.renderPass=result->nativeRenderPass;info.attachmentCount=depthImage?2:1;info.pAttachments=views;
+        const VkImageView views[]={result->faceView,depthTexture?result->managedDepthView:depthImage?depthImage->image.view:VK_NULL_HANDLE};
+        VkFramebufferCreateInfo info{VK_STRUCTURE_TYPE_FRAMEBUFFER_CREATE_INFO};info.renderPass=result->nativeRenderPass;info.attachmentCount=depthFormat!=VK_FORMAT_UNDEFINED?2:1;info.pAttachments=views;
         info.width=result->width;info.height=result->height;info.layers=1;
         check(r.api.vkCreateFramebuffer(r.device,&info,nullptr,&result->framebuffer),"vkCreateFramebuffer(native framebuffer)");
         result->pixels.resize(std::size_t(result->width)*result->height*colorPixelBytes(result->colorFormat));
-        cached=std::move(result);cachedColor=storage->resource;cachedDepth=depthImage;return cached;
+        cached=std::move(result);cachedColor=storage->resource;cachedDepth=depthImage;cachedDepthTexture=depthTexture;return cached;
     }
 };
 bool managedFramebufferColorOutput=true;
@@ -194,8 +203,10 @@ unsigned managedFramebufferDepthBits(){
         switch(depthFormat){case VK_FORMAT_D16_UNORM:return 16;case VK_FORMAT_X8_D24_UNORM_PACK32:case VK_FORMAT_D24_UNORM_S8_UINT:return 24;case VK_FORMAT_UNDEFINED:return 0;default:return 32;}
     }
     const auto fb=std::dynamic_pointer_cast<ManagedFramebufferStorage>(managedTextureCommands->framebufferStorage(handle));
-    if(!fb)return 0;const auto depth=fb->depth();if(!depth||!depth->renderbuffer||!depth->renderbuffer->image)return 0;
-    switch(depth->renderbuffer->image->format){case VK_FORMAT_D16_UNORM:return 16;case VK_FORMAT_X8_D24_UNORM_PACK32:case VK_FORMAT_D24_UNORM_S8_UINT:return 24;default:return 32;}
+    if(!fb)return 0;const auto depth=fb->depth();if(!depth)return 0;
+    const auto format=depth->texture?depth->texture->config.format:depth->renderbuffer&&depth->renderbuffer->image?depth->renderbuffer->image->format:VK_FORMAT_UNDEFINED;
+    if(format==VK_FORMAT_UNDEFINED)return 0;
+    switch(format){case VK_FORMAT_D16_UNORM:return 16;case VK_FORMAT_X8_D24_UNORM_PACK32:case VK_FORMAT_D24_UNORM_S8_UINT:return 24;default:return 32;}
 }
 unsigned managedFramebufferStencilBits(){
     const auto handle=managedTextureCommands->boundFramebuffer(0x8ca9);if(handle.isNull())return 0;
@@ -241,7 +252,12 @@ void beginManagedFramebufferFrame(bool clearColor,bool clearDepth,const Color& c
         VK_ACCESS_SHADER_READ_BIT,VK_ACCESS_COLOR_ATTACHMENT_READ_BIT|VK_ACCESS_COLOR_ATTACHMENT_WRITE_BIT,
         VK_PIPELINE_STAGE_VERTEX_SHADER_BIT|VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT,VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT,active->imageMip,active->imageLayer);
     bool initializeDepth=false;
-    if(active->depth.image){
+    if(active->depth.image&&active->managedDepthTexture){
+        managedFramebufferBarrier(active->depth.image,VK_IMAGE_ASPECT_DEPTH_BIT,VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL,VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL,
+            VK_ACCESS_SHADER_READ_BIT,VK_ACCESS_DEPTH_STENCIL_ATTACHMENT_READ_BIT|VK_ACCESS_DEPTH_STENCIL_ATTACHMENT_WRITE_BIT,
+            VK_PIPELINE_STAGE_VERTEX_SHADER_BIT|VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT,VK_PIPELINE_STAGE_EARLY_FRAGMENT_TESTS_BIT|VK_PIPELINE_STAGE_LATE_FRAGMENT_TESTS_BIT,
+            active->managedDepthMip,active->managedDepthLayer);
+    }else if(active->depth.image){
         auto depth=std::static_pointer_cast<ManagedRenderbufferImage>(active->attachmentOwners[1]);initializeDepth=!depth->initialized;
         if(initializeDepth)managedFramebufferBarrier(depth->image.image,depth->aspect,VK_IMAGE_LAYOUT_UNDEFINED,VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL,0,
             VK_ACCESS_DEPTH_STENCIL_ATTACHMENT_READ_BIT|VK_ACCESS_DEPTH_STENCIL_ATTACHMENT_WRITE_BIT,VK_PIPELINE_STAGE_TOP_OF_PIPE_BIT,
@@ -254,6 +270,11 @@ void beginManagedFramebufferFrame(bool clearColor,bool clearDepth,const Color& c
 }
 void endManagedFramebufferFrame(){
     api.vkCmdEndRenderPass(commandBuffer);
+    if(active->depth.image&&active->managedDepthTexture)
+        managedFramebufferBarrier(active->depth.image,VK_IMAGE_ASPECT_DEPTH_BIT,VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL,VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL,
+            VK_ACCESS_DEPTH_STENCIL_ATTACHMENT_WRITE_BIT,VK_ACCESS_SHADER_READ_BIT,
+            VK_PIPELINE_STAGE_EARLY_FRAGMENT_TESTS_BIT|VK_PIPELINE_STAGE_LATE_FRAGMENT_TESTS_BIT,VK_PIPELINE_STAGE_VERTEX_SHADER_BIT|VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT,
+            active->managedDepthMip,active->managedDepthLayer);
     managedFramebufferBarrier(active->color.image,VK_IMAGE_ASPECT_COLOR_BIT,VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL,VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL,
         VK_ACCESS_COLOR_ATTACHMENT_WRITE_BIT,VK_ACCESS_TRANSFER_READ_BIT,VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT,VK_PIPELINE_STAGE_TRANSFER_BIT,active->imageMip,active->imageLayer);
     VkBufferImageCopy copy{};copy.imageSubresource={VK_IMAGE_ASPECT_COLOR_BIT,active->imageMip,active->imageLayer,1};copy.imageExtent={width,height,1};
@@ -268,7 +289,7 @@ void endManagedFramebufferFrame(){
     check(api.vkWaitForFences(device,1,&fence,VK_TRUE,UINT64_MAX),"vkWaitForFences(native framebuffer)");targetSubmissionPending=false;
     void* mapped=nullptr;check(api.vkMapMemory(device,readback.memory,0,readback.size,0,&mapped),"vkMapMemory(native framebuffer)");
     std::memcpy(active->pixels.data(),mapped,active->pixels.size());api.vkUnmapMemory(device,readback.memory);active->initialized=true;
-    if(active->depth.image)std::static_pointer_cast<ManagedRenderbufferImage>(active->attachmentOwners[1])->initialized=true;
+    if(active->depth.image&&!active->managedDepthTexture)std::static_pointer_cast<ManagedRenderbufferImage>(active->attachmentOwners[1])->initialized=true;
     collectRetiredTargets();
 }
 bool managedFeedbackLoop(std::uint32_t unit,std::uint32_t target)const{

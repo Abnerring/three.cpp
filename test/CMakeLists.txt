@@ -3830,3 +3830,33 @@ if(TARGET threecpp_vulkan AND THREECPP_NATIVE_ESSL)
     add_test(NAME threecpp.vulkan-ManagedRenderTargets COMMAND VulkanManagedRenderTargetsTests)
     set_tests_properties(threecpp.vulkan-ManagedRenderTargets PROPERTIES LABELS "Vulkan;GPU" TIMEOUT 180)
 endif()
+
+add_executable(WebGLShadowMapParityProbe unit/utils/parity/WebGLShadowMapParityProbe.cpp)
+target_link_libraries(WebGLShadowMapParityProbe PRIVATE threecpp::threecpp)
+if(THREECPP_NODE_EXECUTABLE AND THREEJS_SOURCE_DIR)
+    add_test(NAME threecpp.threejs-webgl-shadow-map-parity
+        COMMAND "${THREECPP_NODE_EXECUTABLE}" "${CMAKE_CURRENT_SOURCE_DIR}/unit/utils/parity/compare-webgl-shadow-map.mjs"
+            "${THREEJS_SOURCE_DIR}" "$<TARGET_FILE:WebGLShadowMapParityProbe>")
+endif()
+if(TARGET threecpp_vulkan AND THREECPP_NATIVE_ESSL)
+    add_executable(VulkanManagedDepthTexturesTests unit/src/renderers/VulkanManagedDepthTextures.tests.cpp)
+    target_link_libraries(VulkanManagedDepthTexturesTests PRIVATE threecpp::vulkan)
+    add_test(NAME threecpp.vulkan-managed-depth-textures COMMAND VulkanManagedDepthTexturesTests)
+    set_tests_properties(threecpp.vulkan-managed-depth-textures PROPERTIES LABELS "Vulkan;GPU" TIMEOUT 300)
+endif()
+
+if(TARGET threecpp_vulkan AND THREECPP_NATIVE_ESSL)
+    add_executable(VulkanManagedVSMShadowsTests unit/src/renderers/VulkanManagedVSMShadows.tests.cpp)
+    target_link_libraries(VulkanManagedVSMShadowsTests PRIVATE threecpp::vulkan)
+    add_test(NAME threecpp.vulkan-managed-vsm-shadows COMMAND VulkanManagedVSMShadowsTests)
+    set_tests_properties(threecpp.vulkan-managed-vsm-shadows PROPERTIES LABELS "Vulkan;GPU" TIMEOUT 300)
+endif()
+
+add_executable(CubeDepthRenderTargetParityProbe unit/utils/parity/CubeDepthRenderTargetParityProbe.cpp)
+target_link_libraries(CubeDepthRenderTargetParityProbe PRIVATE threecpp::threecpp)
+if(THREECPP_NODE_EXECUTABLE AND THREEJS_SOURCE_DIR)
+    add_test(NAME threecpp.cube-depth-render-target-source-parity
+        COMMAND "${THREECPP_NODE_EXECUTABLE}" "${CMAKE_CURRENT_SOURCE_DIR}/unit/utils/parity/compare-cube-depth-render-target.mjs"
+            "${THREEJS_SOURCE_DIR}" "$<TARGET_FILE:CubeDepthRenderTargetParityProbe>"
+            "${CMAKE_CURRENT_BINARY_DIR}/cube-depth-render-target-source-parity")
+endif()

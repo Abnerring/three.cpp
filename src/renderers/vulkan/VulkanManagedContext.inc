@@ -3,6 +3,20 @@
 // state. These values are native GL state, not a second material/scene model.
 std::unique_ptr<VulkanProgramCommands> managedProgramCommands;
 JSValue managedGL, managedGLCanvas;
+JSValue managedFloatColorExtension;
+bool managedFloatColorEnabled=false;
+bool managedFloatColorSupported()const{
+    for(const auto format:{VK_FORMAT_R16_SFLOAT,VK_FORMAT_R16G16_SFLOAT,VK_FORMAT_R16G16B16A16_SFLOAT,
+        VK_FORMAT_R32_SFLOAT,VK_FORMAT_R32G32_SFLOAT,VK_FORMAT_R32G32B32A32_SFLOAT,VK_FORMAT_B10G11R11_UFLOAT_PACK32}){
+        VkFormatProperties properties{};api.vkGetPhysicalDeviceFormatProperties(physicalDevice,format,&properties);
+        const auto required=VK_FORMAT_FEATURE_COLOR_ATTACHMENT_BIT|VK_FORMAT_FEATURE_SAMPLED_IMAGE_BIT|VK_FORMAT_FEATURE_TRANSFER_SRC_BIT|VK_FORMAT_FEATURE_TRANSFER_DST_BIT;
+        if((properties.optimalTilingFeatures&required)!=required)return false;
+        VkImageFormatProperties limits{};
+        if(api.vkGetPhysicalDeviceImageFormatProperties(physicalDevice,format,VK_IMAGE_TYPE_2D,VK_IMAGE_TILING_OPTIMAL,
+            VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT|VK_IMAGE_USAGE_SAMPLED_BIT|VK_IMAGE_USAGE_TRANSFER_SRC_BIT|VK_IMAGE_USAGE_TRANSFER_DST_BIT,0,&limits)!=VK_SUCCESS)return false;
+    }
+    return true;
+}
 std::unique_ptr<WebGLState> managedSourceState;
 std::unique_ptr<WebGLCapabilities> managedCapabilities;
 std::unique_ptr<WebGLUtils> managedUtils;
@@ -102,8 +116,18 @@ JSValue managedNativeGL(const std::string& name,const std::vector<JSValue>& args
         }
         return 0;
     }
-    if(name=="getExtension") {arg(0).toString();return nullptr;}
-    if(name=="getSupportedExtensions")return JSValue::array();
+    if(name=="getExtension") {
+        const auto extension=arg(0).toString();
+        if(extension=="EXT_color_buffer_float"&&managedFloatColorSupported()){
+            managedFloatColorEnabled=true;
+            if(managedFloatColorExtension.isUndefined())managedFloatColorExtension=JSValue::object();
+            return managedFloatColorExtension;
+        }
+        return nullptr;
+    }
+    if(name=="getSupportedExtensions"){
+        auto result=JSValue::array();if(managedFloatColorSupported())result.set("0","EXT_color_buffer_float");return result;
+    }
     if(name=="getContextAttributes") {
         auto result=JSValue::object();
         managedOwn(result,"alpha",managedAlpha);managedOwn(result,"premultipliedAlpha",managedPremultipliedAlpha);
@@ -217,7 +241,7 @@ JSValue managedNativeGL(const std::string& name,const std::vector<JSValue>& args
         if(indexed&&offset/bytes>UINT32_MAX)throw std::overflow_error("Native GL index offset exceeds Vulkan draw range");
         if(!ensureManagedRecording())return {};
         auto snapshot=captureManagedProgramDraw(managedGLFixed,FrontSide,false,false);
-        if(snapshot.samplingFeedback){bindingCommands->invalidDraw();return {};}
+        if(snapshot.invalidSampling){bindingCommands->invalidDraw();return {};}
         if(!managedFramebufferColorOutput){snapshot.state.nativeColorMask=0;snapshot.state.colorWrite=false;}
         recordManagedProgramDraw(std::move(snapshot),mode,indexed?std::uint32_t(offset/bytes):std::uint32_t(first),
             std::uint32_t(count),std::uint32_t(instances),indexed,double(type));
